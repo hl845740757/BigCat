@@ -1,0 +1,322 @@
+/*
+ * Copyright 2023 wjybxx
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package cn.wjybxx.bigcat.common.async;
+
+import cn.wjybxx.bigcat.common.time.TimeProvider;
+
+import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.concurrent.*;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+/**
+ * @author wjybxx
+ * date 2023/4/3
+ */
+public class FutureUtils {
+
+    private static final FluentFuture<?> EMPTY_FUTURE = newSucceedFuture(null);
+
+    private static final BiFunction<Object, Throwable, Object> FALLBACK_NULL_IF_FAILED = (o, throwable) -> {
+        if (throwable != null) {
+            return null;
+        } else {
+            return o;
+        }
+    };
+
+    // region 异常处理
+
+    /**
+     * 如果future失败则返回null
+     */
+    @SuppressWarnings("unchecked")
+    public static <V> BiFunction<V, Throwable, V> fallbackNullIfFailed() {
+        return (BiFunction<V, Throwable, V>) FALLBACK_NULL_IF_FAILED;
+    }
+
+    /**
+     * {@link CompletableFuture}总是使用{@link CompletionException}包装异常，我们需要找到原始异常
+     */
+    public static Throwable unwrapCompletionException(Throwable t) {
+        while (t instanceof CompletionException && t.getCause() != null) {
+            t = t.getCause();
+        }
+        return t;
+    }
+    // endregion
+
+    // region future工厂
+
+    @SuppressWarnings("unchecked")
+    public static <V> FluentFuture<V> emptyFuture() {
+        return (FluentFuture<V>) EMPTY_FUTURE;
+    }
+
+    public static <V> FluentPromise<V> newPromise() {
+        return new DefaultPromise<>();
+    }
+
+    /**
+     * 创建一个{@link FluentFuture}，该future表示它关联的任务早已成功。因此{@link FluentFuture#isSucceeded()} 总是返回true。
+     * 所有添加到该future上的监听器都会立即被通知。
+     *
+     * @param <V>    the type of value
+     * @param result 任务的执行结果
+     * @return Future
+     */
+    public static <V> FluentFuture<V> newSucceedFuture(V result) {
+        final DefaultPromise<V> promise = new DefaultPromise<>();
+        promise.trySuccess(result);
+        return promise;
+    }
+
+    /**
+     * 创建一个{@link FluentFuture}，该future表示它关联的任务早已失败。因此{@link FluentFuture#isFailed()}总是返回true。
+     * 所有添加到该future上的监听器都会立即被通知。
+     *
+     * @param <V>   the type of value
+     * @param cause 任务失败的原因
+     * @return Future
+     */
+    public static <V> FluentFuture<V> newFailedFuture(@Nonnull Throwable cause) {
+        return newFailedFuture(cause, true);
+    }
+
+    /**
+     * 创建一个{@link FluentFuture}，该future表示它关联的任务早已失败。因此{@link FluentFuture#isFailed()}总是返回true。
+     * 所有添加到该future上的监听器都会立即被通知。
+     *
+     * @param cause    任务失败的原因
+     * @param logCause 是否自动记录日志
+     * @return Future
+     */
+    public static <V> FluentFuture<V> newFailedFuture(@Nonnull Throwable cause, boolean logCause) {
+        final DefaultPromise<V> promise = new DefaultPromise<>();
+        promise.tryFailure(cause, logCause);
+        return promise;
+    }
+
+    /**
+     * 创建一个future聚合器
+     *
+     * @return futureCombiner
+     */
+    public static FutureCombiner newCombiner() {
+        return new DefaultFutureCombiner();
+    }
+
+    public static FutureCombiner newCombiner(Collection<? extends FluentFuture<?>> futures) {
+        return new DefaultFutureCombiner()
+                .addAll(futures);
+    }
+
+    public static SameThreadExecutor newSameThreadExecutor() {
+        return new DefaultSameThreadExecutor();
+    }
+
+    /**
+     * @param countLimit 每帧允许运行的最大任务数，-1表示不限制；不可以为0
+     * @param timeLimit  每帧允许的最大时间，-1表示不限制；不可以为0
+     */
+    public static SameThreadExecutor newSameThreadExecutor(int countLimit, long timeLimit, TimeUnit timeUnit) {
+        return new DefaultSameThreadExecutor(countLimit, timeLimit, timeUnit);
+    }
+
+    /**
+     * 返回的{@link SameThreadScheduledExecutor#tick()}默认不执行tick过程中新增加的任务
+     *
+     * @param timeProvider 用于调度器获取当前时间
+     */
+    public static SameThreadScheduledExecutor newScheduledExecutor(TimeProvider timeProvider) {
+        return new DefaultScheduledExecutor(timeProvider);
+    }
+
+    // endregion
+
+    // region 适配和执行
+
+    public static <T> Callable<T> toCallable(Runnable task, T result) {
+        if (task == null) throw new NullPointerException();
+        return new RunnableAdapter<>(task, result);
+    }
+
+    public static Callable<Object> toCallable(Runnable task) {
+        if (task == null) throw new NullPointerException();
+        return new RunnableAdapter<>(task, null);
+    }
+
+    public static <T, R> Function<T, R> toFunction(Consumer<T> action, R result) {
+        if (action == null) throw new NullPointerException();
+        return new FunctionAdapter<>(action, result);
+    }
+
+    public static <T> Function<T, Object> toFunction(Consumer<T> action) {
+        if (action == null) throw new NullPointerException();
+        return new FunctionAdapter<>(action, null);
+    }
+
+    /**
+     * @param executor 用于在当前线程延迟执行任务的Executor
+     * @return future
+     */
+    public static FluentFuture<Void> runAsync(Executor executor, Runnable task) {
+        Objects.requireNonNull(executor, "executor");
+        Objects.requireNonNull(task, "task");
+        final FluentPromise<Void> promise = new DefaultPromise<>();
+        final Runnable asyncRun = new AsyncRun(promise, task);
+        executor.execute(asyncRun);
+        return promise;
+    }
+
+    /**
+     * @param executor 用于在当前线程延迟执行任务的Executor
+     * @return future
+     */
+    public static <V> FluentFuture<V> callAsync(Executor executor, Callable<V> task) {
+        Objects.requireNonNull(executor, "executor");
+        Objects.requireNonNull(task, "task");
+        final FluentPromise<V> promise = new DefaultPromise<>();
+        final Runnable asyncRun = new AsyncCall<>(promise, task);
+        executor.execute(asyncRun);
+        return promise;
+    }
+
+    public static <V> FluentFuture<V> runFluent(FluentTask<V> task) {
+        try {
+            return task.run();
+        } catch (Throwable e) {
+            return newFailedFuture(e);
+        }
+    }
+
+    /**
+     * 将future的结果传输到promise上
+     */
+    public static <V> void setFuture(FluentPromise<? super V> promise, FluentFuture<V> future) {
+        Objects.requireNonNull(promise, "promise");
+        future.addListener((v, throwable) -> {
+            if (throwable != null) {
+                promise.tryFailure(throwable);
+            } else {
+                promise.trySuccess(v);
+            }
+        });
+    }
+
+    // endregion
+
+    // region 内部实现
+
+    private static final class AsyncRun implements Runnable {
+
+        final FluentPromise<Void> output;
+        final Runnable action;
+
+        AsyncRun(FluentPromise<Void> output, Runnable action) {
+            this.output = output;
+            this.action = action;
+        }
+
+        @Override
+        public void run() {
+            if (output.isDone()) {
+                return;
+            }
+            try {
+                action.run();
+                output.trySuccess(null);
+            } catch (Throwable ex) {
+                output.tryFailure(ex);
+            }
+        }
+    }
+
+    private static class AsyncCall<U> implements Runnable {
+
+        final FluentPromise<U> output;
+        final Callable<U> fn;
+
+        AsyncCall(FluentPromise<U> output, Callable<U> fn) {
+            this.output = output;
+            this.fn = fn;
+        }
+
+        @Override
+        public void run() {
+            if (output.isDone()) {
+                return;
+            }
+            try {
+                final U result = fn.call();
+                output.trySuccess(result);
+            } catch (Throwable ex) {
+                output.tryFailure(ex);
+            }
+        }
+    }
+
+    private static class RunnableAdapter<T> implements Callable<T> {
+
+        final Runnable task;
+        final T result;
+
+        public RunnableAdapter(Runnable task, T result) {
+            this.task = task;
+            this.result = result;
+        }
+
+        @Override
+        public T call() throws Exception {
+            task.run();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "RunnableAdapter1{" + "task=" + task + '}';
+        }
+    }
+
+    private static class FunctionAdapter<T, R> implements Function<T, R> {
+
+        final Consumer<T> action;
+        final R result;
+
+        private FunctionAdapter(Consumer<T> action, R result) {
+            this.action = action;
+            this.result = result;
+        }
+
+        @Override
+        public R apply(T t) {
+            action.accept(t);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "FunctionAdapter{" + "action=" + action + '}';
+        }
+    }
+
+    // endregion
+
+}
