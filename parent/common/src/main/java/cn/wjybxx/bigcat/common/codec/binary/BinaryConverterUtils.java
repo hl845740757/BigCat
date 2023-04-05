@@ -37,30 +37,32 @@ public class BinaryConverterUtils extends EntityConverterUtils {
     @SuppressWarnings("rawtypes")
     private static final BinaryPojoCodec<Map> MAP_CODEC = newCodec(new MapCodec(), 14);
 
-    public static final List<BinaryPojoCodec<?>> DEFAULT_CODECS = List.of(
-            // 基础类型的数组codec用于避免拆装箱，提高性能
-            newCodec(new IntArrayCodec(), 1),
-            newCodec(new LongArrayCodec(), 2),
-            newCodec(new FloatArrayCodec(), 3),
-            newCodec(new DoubleArrayCodec(), 4),
-            newCodec(new BooleanArrayCodec(), 5),
-            newCodec(new StringArrayCodec(), 6),
-            newCodec(new ShortArrayCodec(), 7),
-            newCodec(new CharArrayCodec(), 8),
-
-            OBJECT_ARRAY_CODEC,
-            SET_CODEC,
-            COLLECTION_CODEC,
-            MAP_CODEC
-    );
-
     /** 默认id注册表 */
-    private static final TypeIdRegistry TYPE_ID_REGISTRY = TypeIdRegistries.fromTypeIdMap(
-            DEFAULT_CODECS.stream()
-                    .collect(Collectors.toMap(BinaryPojoCodec::getEncoderClass, BinaryPojoCodec::getWrapedTypeId))
-    );
+    private static final TypeIdRegistry TYPE_ID_REGISTRY;
     /** 默认codec注册表 */
-    private static final BinaryCodecRegistry CODEC_REGISTRY = BinaryCodecRegistries.fromPojoCodecs(DEFAULT_CODECS);
+    private static final BinaryCodecRegistry CODEC_REGISTRY;
+
+    static {
+        List<BinaryPojoCodec<?>> DEFAULT_CODECS = List.of(
+                // 基础类型的数组codec用于避免拆装箱，提高性能
+                newCodec(new IntArrayCodec(), 1),
+                newCodec(new LongArrayCodec(), 2),
+                newCodec(new FloatArrayCodec(), 3),
+                newCodec(new DoubleArrayCodec(), 4),
+                newCodec(new BooleanArrayCodec(), 5),
+                newCodec(new StringArrayCodec(), 6),
+                newCodec(new ShortArrayCodec(), 7),
+                newCodec(new CharArrayCodec(), 8),
+
+                OBJECT_ARRAY_CODEC,
+                SET_CODEC,
+                COLLECTION_CODEC,
+                MAP_CODEC
+        );
+        TYPE_ID_REGISTRY = TypeIdRegistries.fromTypeIdMap(DEFAULT_CODECS.stream()
+                .collect(Collectors.toMap(BinaryPojoCodec::getEncoderClass, BinaryPojoCodec::getWrapedTypeId)));
+        CODEC_REGISTRY = BinaryCodecRegistries.fromPojoCodecs(DEFAULT_CODECS);
+    }
 
     private static <T> BinaryPojoCodec<T> newCodec(BinaryPojoCodecImpl<T> codecImpl, int classId) {
         assert classId > 0 : "classId must be positive";

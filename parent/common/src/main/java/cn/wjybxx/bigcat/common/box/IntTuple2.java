@@ -17,6 +17,7 @@
 package cn.wjybxx.bigcat.common.box;
 
 import cn.wjybxx.bigcat.common.codec.binary.BinaryReader;
+import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
 
 /**
  * int值的二元组
@@ -24,6 +25,7 @@ import cn.wjybxx.bigcat.common.codec.binary.BinaryReader;
  * @author wjybxx
  * date 2023/3/31
  */
+@BinarySerializable
 public class IntTuple2 {
 
     private final int first;

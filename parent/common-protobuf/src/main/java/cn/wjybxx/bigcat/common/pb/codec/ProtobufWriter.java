@@ -182,6 +182,10 @@ public class ProtobufWriter implements BinaryWriter {
         codedDataOutputStream.writeRawByte((byte) valueType.getNumber());
     }
 
+    public static void writeNameSpace(CodedDataOutputStream codedDataOutputStream, byte nameSpace) throws IOException {
+        codedDataOutputStream.writeRawByte(nameSpace);
+    }
+
     public static void writeTypeId(CodedDataOutputStream codedDataOutputStream, long guid) throws IOException {
         codedDataOutputStream.writeRawByte(TypeId.parseNamespace(guid));
         codedDataOutputStream.writeFixed32(TypeId.parseClassId(guid));
@@ -301,15 +305,15 @@ public class ProtobufWriter implements BinaryWriter {
     public void writeStartObject(@Nullable Object value, @Nonnull TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
         // 上下文分两种：
-        // 1.外部确定了其codec，codec调用writeStartObject走到这里 -- 此时context状态为waitStart，参数typeArg为当前对象的类型信息
-        // 2.codec在读值的过程中直接调用writeStartObject，通常是用户自行调用 -- 此时context的状态为writing，参数typeArg为新对象的类型信息
+        // 1.写当前对象，外部确定了其codec，codec调用writeStartObject走到这里 -- 此时context状态为waitStart，参数typeArg为当前对象的类型信息
+        // 2.写嵌套对象，codec在读值的过程中直接调用writeStartObject，通常是用户自行调用 -- 此时context的状态为writing，参数typeArg为新对象的类型信息
         if (this.context.state == State.WRITING) {
             // 用户直接调用writeStartObject
             if (value == null) {
                 writeNull();
                 return;
             }
-            if (context.recursionDepth >= EntityConverterUtils.RECURSION_LIMIT) {
+            if (context.recursionDepth >= converter.recursionLimit) {
                 throw ProtobufCodecException.recursionLimitExceeded();
             }
             Context context = newContext();
@@ -334,10 +338,9 @@ public class ProtobufWriter implements BinaryWriter {
             // 2.codec为null表示用户知道具体类型
             final BinaryPojoCodec<?> codec = context.codec;
             if (!(value instanceof MessageLite) && (type == typeArgInfo.declaredType || codec == null)) {
-                writeTag(outputStream, BinaryValueType.META_NO_TYPE_ID);
+                writeNameSpace(outputStream, TypeId.INVALID_NAMESPACE);
             } else {
                 // 类型不同要写入typeId
-                writeTag(outputStream, BinaryValueType.META_TYPE_ID);
                 writeTypeId(outputStream, codec.getTypeId());
             }
 
@@ -354,7 +357,7 @@ public class ProtobufWriter implements BinaryWriter {
             // 回写size
             final int size = outputStream.getTotalBytesWritten() - context.preWritten;
             outputStream.setFixedInt32(context.preWritten - 4, size);
-            context.state = State.WRITE_END;
+            context.state = State.END;
 
             this.context = context.parent;
             poolContext(context);
@@ -421,7 +424,7 @@ public class ProtobufWriter implements BinaryWriter {
         WRITING,
 
         /** 读完毕 */
-        WRITE_END,
+        END,
 
     }
 }

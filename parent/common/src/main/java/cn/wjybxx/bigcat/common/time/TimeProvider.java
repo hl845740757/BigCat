@@ -26,6 +26,6 @@ public interface TimeProvider {
      * 获取当前的时间戳
      * 时间的单位需要自行约定，通常是毫秒
      */
-    long curTime();
+    long getTime();
 
 }

@@ -17,6 +17,8 @@
 package cn.wjybxx.bigcat.common;
 
 /**
+ * 大小写模式
+ *
  * @author wjybxx
  * date 2023/4/1
  */
@@ -32,4 +34,9 @@ public enum CaseMode {
     public boolean isLowerCase() {
         return this == LOWER_CASE;
     }
+
+    public CaseMode invert() {
+        return this == UPPER_CASE ? LOWER_CASE : UPPER_CASE;
+    }
+
 }

@@ -33,14 +33,14 @@ public class BufferPool {
      * 单个buffer大小
      */
     private static final int BUFFER_SIZE = NumberUtils.toInt(
-            System.getProperty("cn.wjybxx.bigcat.pb.codec.buffsize"), 1024 * 1024);
+            System.getProperty("cn.wjybxx.bigcat.common.pb.codec.buffsize"), 1024 * 1024);
 
     /**
      * 单线程缓存数量
      * 正常情况下应该只会消耗一个，支持该值是为了支持用户在编码的过程中递归
      */
     private static final int POOL_SIZE = NumberUtils.toInt(
-            System.getProperty("cn.wjybxx.bigcat.pb.codec.poolsize"), 4);
+            System.getProperty("cn.wjybxx.bigcat.common.codec.poolsize"), 4);
 
     private static final ThreadLocal<Queue<byte[]>> LOCAL_BUFFER_QUEUE = ThreadLocal.withInitial(() -> new ArrayDeque<>(POOL_SIZE));
 

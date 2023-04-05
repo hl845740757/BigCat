@@ -21,7 +21,6 @@ package cn.wjybxx.bigcat.common;
  * <p>
  * Q: 常量的含义？
  * A: 常量类似于枚举，仅仅使用==判断相等性，一般由{@link ConstantPool}创建。
- *
  * <p>
  * Q: 使用常量时需要注意的地方？
  * A: 1. 一般由{@link ConstantPool}创建。

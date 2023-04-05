@@ -19,6 +19,7 @@ package cn.wjybxx.bigcat.common.pb.codec;
 import cn.wjybxx.bigcat.common.EnumUtils;
 import cn.wjybxx.bigcat.common.IndexableEnum;
 import cn.wjybxx.bigcat.common.IndexableEnumMapper;
+import cn.wjybxx.bigcat.common.codec.binary.TypeId;
 
 /**
  * @author wjybxx
@@ -47,22 +48,19 @@ public enum BinaryValueType implements IndexableEnum {
 
     /**
      * 对象（容器） - 自定义Bean,Map,Collection,Array,Message,Enum等都属于该类型。
-     * 普通对象格式：tag + length(fixed32) + (tag + [typeId]) + [tag, value], [tag, value], [tag, value]....
-     * Message格式：tag + length(fixed32) + (tag + typeId) + messageBytes
+     * 普通对象格式：tag + length(fixed32) + (namespace + [classId]) + [tag, value], [tag, value], [tag, value]....
+     * Message格式：tag + length(fixed32) + (namespace + classId) + messageBytes
      * <p>
      * 1.length固定4个字节 - 自定义类无法提前计算，以平均增加进3个字节的开销换取通用性和性能 -- pb由于没有多态等问题，是可以计算写前size的
      * 2.typeId固定5个字节，是分开写入的 - 1(namespace) + 4(classId)
      * 3.pb的Message我们总是写入typeId，保持稳定的序列化结果，以方便跨语言等
      * 4.pb的Message载荷部分直接是一个bytes
+     * 5.我们以{@link TypeId#INVALID_NAMESPACE}表示未写入typeId
      * <p>
      * Q: 为什么length要放前面？
      * A: length放前面时，对象的内容部分是连续的。
      */
     OBJECT(10, null),
-    /** 用于表示对象写入了类型信息 - 下面5个字节是类型信息 */
-    META_TYPE_ID(11, null),
-    /** 表示对象没有写入类型信息 */
-    META_NO_TYPE_ID(12, null),
     ;
 
     private final int number;

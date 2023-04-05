@@ -42,22 +42,22 @@ public class TimeProviders {
      * 创建一个支持缓存的时间提供器，但不是线程安全的。
      * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值。
      *
-     * @param curTimeMillis 初始系统时间
+     * @param curTime 初始时间
      * @return timeProvider
      */
-    public static CachedTimeProvider newCachedTimeProvider(long curTimeMillis) {
-        return new UnsharableCachedTimeProvider(curTimeMillis);
+    public static CachedTimeProvider newCachedTimeProvider(long curTime) {
+        return new UnsharableCachedTimeProvider(curTime);
     }
 
     /**
      * 创建一个支持缓存的时间提供器，且可以多线程安全访问。
      * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值。
      *
-     * @param curTimeMillis 初始系统时间
+     * @param curTime 初始时间
      * @return timeProvider - threadSafe
      */
-    public static CachedTimeProvider newThreadSafeCachedTimeProvider(long curTimeMillis) {
-        return new ThreadSafeCachedTimeProvider(curTimeMillis);
+    public static CachedTimeProvider newThreadSafeCachedTimeProvider(long curTime) {
+        return new ThreadSafeCachedTimeProvider(curTime);
     }
 
     /**
@@ -80,7 +80,7 @@ public class TimeProviders {
         }
 
         @Override
-        public long curTime() {
+        public long getTime() {
             return System.currentTimeMillis();
         }
 
@@ -93,25 +93,25 @@ public class TimeProviders {
     @NotThreadSafe
     private static class UnsharableCachedTimeProvider implements CachedTimeProvider {
 
-        private long curTimeMillis;
+        private long time;
 
-        private UnsharableCachedTimeProvider(long curTimeMillis) {
-            setTime(curTimeMillis);
+        private UnsharableCachedTimeProvider(long time) {
+            setTime(time);
         }
 
         public void setTime(long curTime) {
-            this.curTimeMillis = curTime;
+            this.time = curTime;
         }
 
         @Override
-        public long curTime() {
-            return curTimeMillis;
+        public long getTime() {
+            return time;
         }
 
         @Override
         public String toString() {
             return "UnsharableCachedTimeProvider{" +
-                    "curTimeMillis=" + curTimeMillis +
+                    "curTime=" + time +
                     '}';
         }
     }
@@ -123,25 +123,25 @@ public class TimeProviders {
          * 缓存一个值而不是多个值，可以实现原子更新。
          * 缓存多个值时，多个值之间具有联系，需要使用对象封装才能原子更新。
          */
-        private volatile long curTimeMillis;
+        private volatile long time;
 
-        private ThreadSafeCachedTimeProvider(long curTimeMillis) {
-            setTime(curTimeMillis);
+        private ThreadSafeCachedTimeProvider(long time) {
+            setTime(time);
         }
 
         public void setTime(long curTime) {
-            this.curTimeMillis = curTime;
+            this.time = curTime;
         }
 
         @Override
-        public long curTime() {
-            return curTimeMillis;
+        public long getTime() {
+            return time;
         }
 
         @Override
         public String toString() {
             return "ThreadSafeCachedTimeProvider{" +
-                    "curTimeMillis=" + curTimeMillis +
+                    "curTime=" + time +
                     '}';
         }
     }
@@ -154,7 +154,7 @@ public class TimeProviders {
         private long deltaTime;
 
         @Override
-        public long curTime() {
+        public long getTime() {
             return time;
         }
 
@@ -185,9 +185,9 @@ public class TimeProviders {
         }
 
         @Override
-        public void restart(long curTimeMillis, long deltaTime) {
+        public void restart(long curTime, long deltaTime) {
             checkDeltaTime(deltaTime);
-            this.time = curTimeMillis;
+            this.time = curTime;
             this.deltaTime = deltaTime;
         }
 

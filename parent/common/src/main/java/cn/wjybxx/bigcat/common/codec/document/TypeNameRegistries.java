@@ -35,7 +35,6 @@ public class TypeNameRegistries {
     }
 
     public static TypeNameRegistry fromMapper(final Set<Class<?>> typeSet, TypeNameMapper typeNameMapper) {
-        // 编解码的频率非常高，使用更稀疏的散列
         final IdentityHashMap<Class<?>, String> type2NameMap = new IdentityHashMap<>(typeSet.size());
         final HashMap<String, Class<?>> name2TypeMap = new HashMap<>(typeSet.size());
 

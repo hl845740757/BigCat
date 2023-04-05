@@ -16,9 +16,9 @@
 
 package cn.wjybxx.bigcat.common.codec.binary;
 
+import cn.wjybxx.bigcat.common.CollectionUtils;
 import cn.wjybxx.bigcat.common.annotation.NameIsStable;
 import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
-import cn.wjybxx.bigcat.common.CollectionUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -150,7 +150,7 @@ public interface BinaryReader extends AutoCloseable {
 
     @NameIsStable
     default char readChar() {
-        return (char) readInt();
+        return (char) readInt(); // int的0并不是char的第一个字'\0'，但并不想对char做过多支持
     }
 
     @NameIsStable

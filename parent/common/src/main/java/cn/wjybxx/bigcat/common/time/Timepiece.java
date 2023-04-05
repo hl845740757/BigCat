@@ -25,7 +25,7 @@ package cn.wjybxx.bigcat.common.time;
 public interface Timepiece extends CachedTimeProvider {
 
     @Override
-    long curTime();
+    long getTime();
 
     /**
      * （这其实只是个工具方法，提供在底层，是因为使用的较为普遍）

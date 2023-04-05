@@ -16,9 +16,9 @@
 
 package cn.wjybxx.bigcat.common.codec.document;
 
+import cn.wjybxx.bigcat.common.CollectionUtils;
 import cn.wjybxx.bigcat.common.annotation.NameIsStable;
 import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
-import cn.wjybxx.bigcat.common.CollectionUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

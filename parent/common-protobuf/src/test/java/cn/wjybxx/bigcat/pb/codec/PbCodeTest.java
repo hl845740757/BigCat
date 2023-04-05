@@ -71,7 +71,7 @@ public class PbCodeTest {
     void testStructCodec() {
         ProtobufConverter converter = ProtobufConverter.newInstance(Set.of(),
                 List.of(new MyStructCodec()),
-                Map.of(MyStruct.class, typeId));
+                Map.of(MyStruct.class, typeId), 32);
 
         MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(MyStruct.class));
         Assertions.assertEquals(myStruct, clonedObject);

@@ -54,7 +54,7 @@ public class LazyCodeTest {
         {
             ProtobufConverter converter = ProtobufConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.SOURCE)),
-                    Map.of(MyStruct.class, typeId));
+                    Map.of(MyStruct.class, typeId), 32);
             bytesSource = converter.write(myStruct);
         }
 
@@ -63,7 +63,7 @@ public class LazyCodeTest {
         {
             ProtobufConverter converter = ProtobufConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.ROUTER)),
-                    Map.of(MyStruct.class, typeId));
+                    Map.of(MyStruct.class, typeId), 32);
             routerBytes = converter.write(converter.read(bytesSource));
         }
 
@@ -72,7 +72,7 @@ public class LazyCodeTest {
         {
             ProtobufConverter converter = ProtobufConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.DESTINATION)),
-                    Map.of(MyStruct.class, typeId));
+                    Map.of(MyStruct.class, typeId), 32);
             destStruct = (MyStruct) converter.read(routerBytes);
         }
         Assertions.assertEquals(myStruct, destStruct);

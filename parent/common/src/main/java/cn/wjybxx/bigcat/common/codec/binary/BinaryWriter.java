@@ -85,8 +85,8 @@ public interface BinaryWriter extends AutoCloseable {
     // region 自定义写支持
 
     /**
-     * Q:该方法的作用？
-     * A：用于定制化编解码，通常用于减少拆装箱等性能优化。
+     * Q：该方法的作用？
+     * A：自定义读写可实现一些有用的效果：WriteObjectBytes，WriteReplace...
      * <p>
      * Q：为什么没有{@code writStartArray}方法？
      * A：因为我们在二进制编码中不写入字段名字或number，因此数组和普通对象是一样的。

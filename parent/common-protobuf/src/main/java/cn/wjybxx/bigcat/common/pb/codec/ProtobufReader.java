@@ -158,11 +158,14 @@ public class ProtobufReader implements BinaryReader {
         return BinaryValueType.forNumber(number);
     }
 
-    static long readTypeId(CodedDataInputStream codedDataInputStream) throws IOException {
-        final byte namespace = codedDataInputStream.readRawByte();
-        int classId = codedDataInputStream.readFixed32();
-        return TypeId.toGuid(namespace, classId);
+    static byte readNameSpace(CodedDataInputStream codedDataInputStream) throws IOException {
+        return codedDataInputStream.readRawByte();
     }
+
+    static int readClassId(CodedDataInputStream codedDataInputStream) throws IOException {
+        return codedDataInputStream.readFixed32();
+    }
+
     // endregion
 
     // region 值解析
@@ -465,11 +468,11 @@ public class ProtobufReader implements BinaryReader {
         context.oldLimit = inputStream.pushLimit(size);
 
         // 读取typeId
-        final BinaryValueType typeIdTag = readTag(inputStream);
-        if (typeIdTag == BinaryValueType.META_TYPE_ID) {
-            context.typeId = readTypeId(inputStream);
+        byte nameSpace = readNameSpace(inputStream);
+        if (nameSpace != TypeId.INVALID_NAMESPACE) {
+            int classId = readClassId(inputStream);
+            context.typeId = TypeId.toGuid(nameSpace, classId);
         } else {
-            assert typeIdTag == BinaryValueType.META_NO_TYPE_ID;
             context.typeId = 0;
         }
 
@@ -492,7 +495,7 @@ public class ProtobufReader implements BinaryReader {
 
     private Class<?> findEncodedType(long typeId) {
         if (typeId > 0) {
-            return TypeId.isDefaultNameSpace(typeId) ?
+            return TypeId.isDefaultNameSpaceTypeId(typeId) ?
                     BinaryConverterUtils.classOfId(typeId) : converter.typeIdRegistry.ofId(typeId);
         }
         return null;
@@ -503,7 +506,7 @@ public class ProtobufReader implements BinaryReader {
         Objects.requireNonNull(typeArgInfo);
         // 上下文分两种：
         // 1.读当前对象，外部读取到接下来是一个Object，codec调用readStartObject走到这里 -- 此时context状态为waitStart，参数typeArg为当前对象的类型信息
-        // 2.读子对象，codec在读值的过程中直接调用readStartObject，通常是用户自行调用 -- 此时context的状态为reading，参数typeArg为新对象的类型信息
+        // 2.读嵌套对象，codec在读值的过程中直接调用readStartObject，通常是用户自行调用 -- 此时context的状态为reading，参数typeArg为新对象的类型信息
         if (this.context.state == State.READING) {
             // 用户直接调用readStartObject
             try {
@@ -514,7 +517,7 @@ public class ProtobufReader implements BinaryReader {
                 if (valueType != BinaryValueType.OBJECT) { // 该上下文只支持Object
                     throw ProtobufCodecException.incompatible(BinaryValueType.OBJECT, valueType);
                 }
-                if (context.recursionDepth >= EntityConverterUtils.RECURSION_LIMIT) {
+                if (context.recursionDepth >= converter.recursionLimit) {
                     throw ProtobufCodecException.recursionLimitExceeded();
                 }
 
@@ -547,7 +550,7 @@ public class ProtobufReader implements BinaryReader {
             if (!inputStream.isAtEnd()) {
                 inputStream.skipRawBytes(inputStream.getBytesUntilLimit());
             }
-            context.state = State.READ_END;
+            context.state = State.END;
 
             // 恢复到之前的上下文和限制
             inputStream.popLimit(context.oldLimit);
@@ -621,7 +624,7 @@ public class ProtobufReader implements BinaryReader {
         READING,
 
         /** 读完毕 */
-        READ_END,
+        END,
 
     }
 

@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.collect.DefaultIndexedPriorityQueue;
+import cn.wjybxx.bigcat.common.collect.IndexedPriorityQueue;
 import cn.wjybxx.bigcat.common.time.TimeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +95,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleAtFixedDelay(long initialDelay, long period, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleFixedDelay(long initialDelay, long period, @Nonnull Runnable task) {
         Objects.requireNonNull(task);
         checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
@@ -107,7 +109,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleAtFixedRate(long initialDelay, long period, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleFixedRate(long initialDelay, long period, @Nonnull Runnable task) {
         Objects.requireNonNull(task);
         checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
@@ -121,14 +123,14 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
     @Nonnull
     @Override
-    public <V> ScheduledFluentFuture<V> timeSharingAtFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                                long timeout) {
+    public <V> ScheduledFluentFuture<V> timeSharingFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                              long timeout) {
         Objects.requireNonNull(task);
         checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
         checkTimeSharingTimeout(timeout);
 
-        final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.curTime());
+        final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.getTime());
         final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
                 task, ScheduleType.FIXED_DELAY, period,
                 timeSharingContext, nextTriggerTime(initialDelay));
@@ -138,14 +140,14 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
     @Nonnull
     @Override
-    public <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                               long timeout) {
+    public <V> ScheduledFluentFuture<V> timeSharingFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                             long timeout) {
         Objects.requireNonNull(task);
         checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
         checkTimeSharingTimeout(timeout);
 
-        final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.curTime());
+        final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.getTime());
         final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
                 task, ScheduleType.FIXED_RATE, period,
                 timeSharingContext, nextTriggerTime(initialDelay));
@@ -176,7 +178,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         }
 
         // 需要缓存下来，以供新增任务的时候判断
-        final long curTime = timeProvider.curTime();
+        final long curTime = timeProvider.getTime();
         tickTime = curTime;
 
         // 记录最后一个任务id，避免执行本次tick期间添加的任务
@@ -225,7 +227,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     // region 内部实现
 
     private long nextTriggerTime(long delay) {
-        final long r = timeProvider.curTime() + delay;
+        final long r = timeProvider.getTime() + delay;
         if (delay > 0 && r < 0) { // 溢出
             throw new IllegalArgumentException(String.format("nextTriggerTime: %d, delay: %d", r, delay));
         }
@@ -249,8 +251,8 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         taskQueue.removeTyped(queueTask);
     }
 
-    private long curTimeMillis() {
-        return timeProvider.curTime();
+    private long curTime() {
+        return timeProvider.getTime();
     }
 
     private void checkFirstDelay(long firstDelay) {
@@ -319,7 +321,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
         @Override
         public long getDelay() {
-            return Math.max(0, nextTriggerTime - executor.curTimeMillis());
+            return Math.max(0, nextTriggerTime - executor.curTime());
         }
 
         @Override

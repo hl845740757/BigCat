@@ -16,10 +16,9 @@
 
 package cn.wjybxx.bigcat.common.pb.codec;
 
-import cn.wjybxx.bigcat.common.codec.EntityConverterUtils;
+import cn.wjybxx.bigcat.common.CollectionUtils;
 import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
 import cn.wjybxx.bigcat.common.codec.binary.*;
-import cn.wjybxx.bigcat.common.CollectionUtils;
 import com.google.protobuf.Message;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
@@ -37,10 +36,12 @@ public class ProtobufConverter implements BinaryConverter {
 
     final TypeIdRegistry typeIdRegistry;
     final BinaryCodecRegistry codecRegistry;
+    final int recursionLimit;
 
-    private ProtobufConverter(TypeIdRegistry typeIdRegistry, BinaryCodecRegistry codecRegistry) {
+    private ProtobufConverter(TypeIdRegistry typeIdRegistry, BinaryCodecRegistry codecRegistry, int recursionLimit) {
         this.codecRegistry = codecRegistry;
         this.typeIdRegistry = typeIdRegistry;
+        this.recursionLimit = recursionLimit;
     }
 
     @Override
@@ -69,6 +70,7 @@ public class ProtobufConverter implements BinaryConverter {
     @Nonnull
     @Override
     public byte[] write(Object value, @Nonnull TypeArgInfo<?> typeArgInfo) {
+        Objects.requireNonNull(value);
         final byte[] localBuffer = BufferPool.allocateBuffer();
         try {
             final Chunk chunk = new Chunk(localBuffer);
@@ -85,15 +87,7 @@ public class ProtobufConverter implements BinaryConverter {
     @SuppressWarnings("unchecked")
     @Override
     public <U> U cloneObject(Object value, TypeArgInfo<U> typeArgInfo) {
-        if (value == null) {
-            return null;
-        }
-        if (value.getClass() == String.class) {
-            return (U) value;
-        }
-        if (EntityConverterUtils.isBoxType(value.getClass())) {
-            return (U) value;
-        }
+        Objects.requireNonNull(value);
         final byte[] localBuffer = BufferPool.allocateBuffer();
         try {
             // 写入
@@ -134,7 +128,8 @@ public class ProtobufConverter implements BinaryConverter {
     @SuppressWarnings("unchecked")
     public static ProtobufConverter newInstance(final String protoBufPackage,
                                                 final Set<String> pojoPackages,
-                                                final TypeIdMapper typeIdMapper) {
+                                                final TypeIdMapper typeIdMapper,
+                                                final int recursionLimit) {
         final Set<Class<?>> allProtoBufClasses = ProtoUtils.scan(Collections.singleton(protoBufPackage));
 
         final HashSet<Class<?>> allClasses = new HashSet<>(allProtoBufClasses);
@@ -144,17 +139,21 @@ public class ProtobufConverter implements BinaryConverter {
         final Map<Class<?>, TypeId> typeIdMap = allClasses.stream()
                 .collect(Collectors.toMap(e -> e, typeIdMapper::map));
 
-        return newInstance(allProtoBufClasses, pojoCodecImplList, typeIdMap);
+        return newInstance(allProtoBufClasses, pojoCodecImplList, typeIdMap, recursionLimit);
     }
 
     /**
      * @param allProtoBufClasses 所有的protobuf类
      * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
      * @param typeIdMap          所有的类型id信息，包括protobuf的类
+     * @param recursionLimit     递归深度限制
      */
     public static ProtobufConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                 final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
-                                                final Map<Class<?>, TypeId> typeIdMap) {
+                                                final Map<Class<?>, TypeId> typeIdMap, int recursionLimit) {
+        if (recursionLimit < 1) {
+            throw new IllegalArgumentException("recursionLimit " + recursionLimit);
+        }
         // 检查typeId是否存在，以及命名空间是否非法
         for (Class<?> clazz : allProtoBufClasses) {
             TypeId typeId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
@@ -193,7 +192,7 @@ public class ProtobufConverter implements BinaryConverter {
         }
 
         final BinaryCodecRegistry codecRegistry = BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList);
-        return new ProtobufConverter(typeIdRegistry, codecRegistry);
+        return new ProtobufConverter(typeIdRegistry, codecRegistry, recursionLimit);
     }
 
     private static <T extends MessageLite> MessageCodec<T> parseMessageCodec(Class<T> messageClazz) {
@@ -205,4 +204,5 @@ public class ProtobufConverter implements BinaryConverter {
         final var enumLiteMap = ProtoUtils.findMapper(messageClazz);
         return new MessageEnumCodec<>(messageClazz, enumLiteMap);
     }
+
 }

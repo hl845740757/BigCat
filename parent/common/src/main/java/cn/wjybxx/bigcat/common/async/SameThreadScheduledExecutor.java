@@ -72,7 +72,7 @@ public interface SameThreadScheduledExecutor extends SameThreadExecutor {
      * @param task         定时执行的任务
      */
     @Nonnull
-    ScheduledFluentFuture<?> scheduleAtFixedDelay(long initialDelay, long period, @Nonnull Runnable task);
+    ScheduledFluentFuture<?> scheduleFixedDelay(long initialDelay, long period, @Nonnull Runnable task);
 
     /**
      * 创建一个以固定频率执行的任务。
@@ -83,27 +83,27 @@ public interface SameThreadScheduledExecutor extends SameThreadExecutor {
      * @param task         定时执行的任务
      */
     @Nonnull
-    ScheduledFluentFuture<?> scheduleAtFixedRate(long initialDelay, long period, @Nonnull Runnable task);
+    ScheduledFluentFuture<?> scheduleFixedRate(long initialDelay, long period, @Nonnull Runnable task);
 
     /**
      * 给定的任务将按照给定周期被调度，直到得到结果或超时。
      * 如果任务超时，将以{@link TimeSharingTimeoutException}异常结束
      *
      * @param timeout 超时时间
-     * @see #scheduleAtFixedDelay(long, long, Runnable)
+     * @see #scheduleFixedDelay(long, long, Runnable)
      */
     @Nonnull
-    <V> ScheduledFluentFuture<V> timeSharingAtFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                         long timeout);
+    <V> ScheduledFluentFuture<V> timeSharingFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                       long timeout);
 
     /**
      * 给定的任务将按照给定周期被调度，直到得到结果或超时。
      * 如果任务超时，将以{@link TimeSharingTimeoutException}异常结束.
      *
      * @param timeout 超时时间
-     * @see #scheduleAtFixedRate(long, long, Runnable)
+     * @see #scheduleFixedRate(long, long, Runnable)
      */
     @Nonnull
-    <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                        long timeout);
+    <V> ScheduledFluentFuture<V> timeSharingFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                      long timeout);
 }

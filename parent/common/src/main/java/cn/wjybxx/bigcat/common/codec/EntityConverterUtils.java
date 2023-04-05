@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  */
 public class EntityConverterUtils {
 
-    /** 递归限制 */
+    /** 默认递归限制 */
     public static final int RECURSION_LIMIT = 32;
 
     private static final Map<Class<?>, Class<?>> wrapperToPrimitiveTypeMap = new IdentityHashMap<>(9);
@@ -84,6 +84,10 @@ public class EntityConverterUtils {
 
     public static boolean isBoxType(Class<?> type) {
         return wrapperToPrimitiveTypeMap.containsKey(type);
+    }
+
+    public static boolean isPrimitiveType(Class<?> type) {
+        return type.isPrimitive();
     }
 
     /**

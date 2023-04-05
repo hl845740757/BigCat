@@ -53,11 +53,11 @@ public interface EntityConverter<T> {
      */
     @Nonnull
     default T write(Object value, @Nonnull Class<?> declaredType) {
-        return write(value, new TypeArgInfo<>(declaredType));
+        return write(value, TypeArgInfo.of(declaredType));
     }
 
     default <U> U read(@Nonnull T source, Class<U> declaredType) {
-        return read(source, new TypeArgInfo<>(declaredType));
+        return read(source, TypeArgInfo.of(declaredType));
     }
 
     /**

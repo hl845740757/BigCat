@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.collect;
 
 import java.util.Queue;
 

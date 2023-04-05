@@ -24,6 +24,11 @@ import cn.wjybxx.bigcat.common.CommonMathUtils;
  */
 public class TypeId {
 
+    /** 默认命名空间 */
+    public static final byte DEFAULT_NAMESPACE = 0;
+    /** 无效命名空间 */
+    public static final byte INVALID_NAMESPACE = Byte.MIN_VALUE;
+
     /**
      * 1. 当使用算法生成id时可以减少冲突。
      * 2. 可以表示来源。
@@ -32,7 +37,7 @@ public class TypeId {
     private final byte namespace;
     /**
      * class尽量保持稳定。
-     * 最简单的方式是计算类的简单名的hash。 {@link Class#getSimpleName()}
+     * 最简单的方式是计算类的简单名的hash，{@link Class#getSimpleName}
      */
     private final int classId;
 
@@ -40,8 +45,8 @@ public class TypeId {
      * @param namespace 0是保留命名空间，用户应避免使用
      */
     public TypeId(byte namespace, int classId) {
-        if (namespace < 0) {
-            throw new IllegalArgumentException("invalid namespace");
+        if (namespace == INVALID_NAMESPACE) {
+            throw new IllegalArgumentException("invalid namespace " + namespace);
         }
         if (namespace == 0 && classId == 0) {
             throw new IllegalArgumentException("invalid typeId{0,0}");
@@ -72,24 +77,6 @@ public class TypeId {
         return new TypeId(namespace, classId);
     }
 
-    public static byte parseNamespace(long guid) {
-        return (byte) CommonMathUtils.higherIntOfLong(guid);
-    }
-
-    public static int parseClassId(long guid) {
-        return CommonMathUtils.lowerIntOfLong(guid);
-    }
-
-    public static long toGuid(byte namespace, int classId) {
-        return CommonMathUtils.composeIntToLong(namespace, classId);
-    }
-
-    /** 是否是默认空间 */
-    public static boolean isDefaultNameSpace(long guid) {
-        // 其实可以通过大小测试决定
-        return CommonMathUtils.higherIntOfLong(guid) == 0;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -116,5 +103,28 @@ public class TypeId {
                 ", classId=" + classId +
                 '}';
     }
+
+    // region 非一般业务
+
+    public static byte parseNamespace(long guid) {
+        return (byte) CommonMathUtils.higherIntOfLong(guid);
+    }
+
+    public static int parseClassId(long guid) {
+        return CommonMathUtils.lowerIntOfLong(guid);
+    }
+
+    public static long toGuid(byte namespace, int classId) {
+        return CommonMathUtils.composeIntToLong(namespace, classId);
+    }
+
+    /** 是否是默认空间下的typeId */
+    public static boolean isDefaultNameSpaceTypeId(long guid) {
+        // 其实可以通过大小测试决定
+        return CommonMathUtils.higherIntOfLong(guid) == DEFAULT_NAMESPACE;
+    }
+
+    // endregion
+
 
 }

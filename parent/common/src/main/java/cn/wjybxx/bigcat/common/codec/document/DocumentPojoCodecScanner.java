@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.codec.binary;
+package cn.wjybxx.bigcat.common.codec.document;
 
 import cn.wjybxx.bigcat.common.ClassScanner;
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,21 +29,21 @@ import java.util.stream.Collectors;
 
 /**
  * @author wjybxx
- * date 2023/3/31
+ * date 2023/4/5
  */
-public class BinaryPojoCodecScanner {
+public class DocumentPojoCodecScanner {
 
-    public static List<? extends BinaryPojoCodecImpl<?>> scan(Set<String> packages) {
+    public static List<? extends DocumentPojoCodecImpl<?>> scan(Set<String> packages) {
         return packages.stream()
-                .map(scanPackage -> ClassScanner.findClasses(scanPackage, name -> true, BinaryPojoCodecScanner::isPojoCodecImpl))
+                .map(scanPackage -> ClassScanner.findClasses(scanPackage, name -> true, DocumentPojoCodecScanner::isPojoCodecImpl))
                 .flatMap(Collection::stream)
-                .map(BinaryPojoCodecScanner::newInstance)
+                .map(DocumentPojoCodecScanner::newInstance)
                 .collect(Collectors.toList());
     }
 
-    private static BinaryPojoCodecImpl<?> newInstance(Class<?> clazz) {
+    private static DocumentPojoCodecImpl<?> newInstance(Class<?> clazz) {
         try {
-            return (BinaryPojoCodecImpl<?>) Arrays.stream(clazz.getDeclaredConstructors())
+            return (DocumentPojoCodecImpl<?>) Arrays.stream(clazz.getDeclaredConstructors())
                     .filter(constructor -> constructor.getParameterCount() == 0)
                     .findFirst()
                     .orElseThrow()
@@ -57,10 +57,10 @@ public class BinaryPojoCodecScanner {
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return false;
         }
-        if (!BinaryPojoCodecImpl.class.isAssignableFrom(clazz)) {
+        if (!DocumentPojoCodecImpl.class.isAssignableFrom(clazz)) {
             return false;
         }
-        if (clazz.isAnnotationPresent(BinaryPojoCodecScanIgnore.class)) {
+        if (clazz.isAnnotationPresent(DocumentPojoCodecScanIgnore.class)) {
             return false;
         }
         return hasNoArgsConstructor(clazz);
