@@ -91,22 +91,6 @@ public class Regulator {
     }
 
     /**
-     * @param curTime 当前系统时间
-     * @return 按固定延迟更新的调节器，它保证的是两次执行的间隔大于更新间隔
-     */
-    public static Regulator newStartedFixedDelay(long firstDelay, long period, long curTime) {
-        return new Regulator(FIX_DELAY, firstDelay, period, curTime);
-    }
-
-    /**
-     * @param curTime 当前系统时间
-     * @return 按固定频率更新的调节器，它尽可能的保证总运行次数
-     */
-    public static Regulator newStartedFixedRate(long firstDelay, long period, long curTime) {
-        return new Regulator(FIX_RATE, firstDelay, period, curTime);
-    }
-
-    /**
      * 重新启动调节器
      * （没有单独的start方法，因为逻辑无区别）
      *

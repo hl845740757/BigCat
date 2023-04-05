@@ -18,11 +18,7 @@ package cn.wjybxx.bigcat.common.async;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -37,7 +33,10 @@ import java.util.function.Supplier;
  * <p>
  * Q：为什么接口比{@link CompletableFuture}少？
  * A：一部分我们转移到了{@link FutureCombiner}，另一部分我们在{@link FutureUtils}提供了适配方法，这可以让我们的接口变得干净。
- *
+ * <p>
+ * Q：为什么不实现JDK的{@link Future}接口？
+ * A：因为{@link Future}要求是线程安全的，继承接口是不安全的。
+ * <p>
  * {@link FutureUtils}提供了一些工具方法
  *
  * @author wjybxx
@@ -69,7 +68,7 @@ public interface FluentFuture<V> {
      * 如果对应的计算失败，则抛出对应的异常。
      * 如果计算尚未完成，则返回null。
      * <p>
-     * 如果future关联的task没有返回值(操作完成返回null)，对于这种情况，你可以使用{@link #isFailed()}作为判断任务是否成功执行的更好选择。
+     * 如果future关联的task没有返回值(操作完成返回null)，对于这种情况，你可以使用{@link #isSucceeded()}作为判断任务是否成功执行的更好选择。
      *
      * @return task的结果
      * @throws CancellationException 如果任务被取消了，则抛出该异常

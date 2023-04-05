@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package cn.wjybxx.bigcat.common.rpc;
 
-package cn.wjybxx.bigcat.common.async;
+
+import cn.wjybxx.bigcat.common.ExtensibleObject;
+
+import javax.annotation.Nonnull;
+import java.util.Map;
 
 /**
+ * 如果一个rpc服务实现了该接口，将自动导出这两个扩展方法
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/1
  */
-public final class ResultHolder<V> {
+@SuppressWarnings("unused")
+public interface ExtensibleService extends ExtensibleObject {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
+    @Nonnull
+    @Override
+    @RpcMethod(methodId = 9998)
+    Map<String, Object> getExtBlackboard();
 
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
-    }
-
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
-    }
+    @Override
+    @RpcMethod(methodId = 9999)
+    Object execute(@Nonnull String cmd, Object params);
 
 }

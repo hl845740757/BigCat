@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  * @author wjybxx
  * date 2023/4/1
  */
-public class ArrayTest {
+public class ArrayCopyTest {
 
     /**
      * 测试Object[]数组是否可以快速拷贝到int[]

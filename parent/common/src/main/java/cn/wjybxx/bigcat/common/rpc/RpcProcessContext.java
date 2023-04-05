@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.rpc;
 
 /**
+ * rpc执行时的上下文。
+ * 定义该接口，方便扩展，比如添加接收到请求时的时间等信息。
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/1
  */
-public final class ResultHolder<V> {
+public interface RpcProcessContext {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
-
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
-    }
-
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
-    }
+    /**
+     * @return 返回调用的详细信息
+     */
+    RpcRequest request();
 
 }

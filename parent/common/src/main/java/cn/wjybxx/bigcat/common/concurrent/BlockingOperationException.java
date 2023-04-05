@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.concurrent;
 
 /**
+ * 如果一个操作可能导致死锁状态将抛出该异常
+ * 通常是因为监听者和执行者在同一个线程，监听者尝试阻塞等待结果。
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/5
  */
-public final class ResultHolder<V> {
+public class BlockingOperationException extends RuntimeException {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
-
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
+    public BlockingOperationException() {
     }
 
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
+    public BlockingOperationException(String s) {
+        super(s);
     }
 
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
+    public BlockingOperationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public BlockingOperationException(Throwable cause) {
+        super(cause);
     }
 
 }

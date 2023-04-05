@@ -37,10 +37,17 @@ public class ThreadUtils {
             StackWalker.Option.RETAIN_CLASS_REFERENCE));
 
     /**
-     * 恢复中断。
+     * 恢复中断
+     */
+    public static void recoveryInterrupted() {
+        try {
+            Thread.currentThread().interrupt();
+        } catch (SecurityException ignore) {
+        }
+    }
+
+    /**
      * 如果是中断异常，则恢复线程中断状态。
-     *
-     * @param t 异常
      */
     public static void recoveryInterrupted(Throwable t) {
         if (t instanceof InterruptedException) {

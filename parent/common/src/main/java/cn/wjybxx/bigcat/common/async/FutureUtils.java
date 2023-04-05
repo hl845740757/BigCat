@@ -114,6 +114,65 @@ public class FutureUtils {
         return promise;
     }
 
+    /** 将单线程的Future转换为JDK的Future */
+    public static <V> CompletableFuture<V> toJDKFuture(FluentFuture<V> future) {
+        final CompletableFuture<V> jdkFuture = new CompletableFuture<>();
+        future.addListener(((v, throwable) -> {
+            if (throwable != null) {
+                jdkFuture.completeExceptionally(throwable);
+            } else {
+                jdkFuture.complete(v);
+            }
+        }));
+        return jdkFuture;
+    }
+
+    /**
+     * 将JDK的Future转换为本地线程的Future
+     * 注意：务必确保{@link CompletableFuture}完成时是在逻辑线程;否则需指定一个线程安全的{@link Executor}
+     *
+     * @param jdkFuture 请确保该
+     */
+    public static <V> FluentFuture<V> fromJDKFuture(CompletableFuture<V> jdkFuture) {
+        FluentPromise<V> promise = newPromise();
+        jdkFuture.whenComplete((v, throwable) -> {
+            if (throwable != null) {
+                promise.tryFailure(throwable);
+            } else {
+                promise.trySuccess(v);
+            }
+        });
+        return promise;
+    }
+
+    /** @param executor 请确保是线程安全的，可多线程提交任务的 */
+    public static <V> FluentFuture<V> fromJDKFuture(CompletableFuture<V> jdkFuture, Executor executor) {
+        Objects.requireNonNull(executor);
+        FluentPromise<V> promise = newPromise();
+        jdkFuture.whenCompleteAsync((v, throwable) -> {
+            if (throwable != null) {
+                promise.tryFailure(throwable);
+            } else {
+                promise.trySuccess(v);
+            }
+        }, executor);
+        return promise;
+    }
+
+    /**
+     * 将future的结果传输到promise上
+     */
+    public static <V> void setFuture(FluentPromise<? super V> promise, FluentFuture<V> future) {
+        Objects.requireNonNull(promise, "promise");
+        future.addListener((v, throwable) -> {
+            if (throwable != null) {
+                promise.tryFailure(throwable);
+            } else {
+                promise.trySuccess(v);
+            }
+        });
+    }
+
     /**
      * 创建一个future聚合器
      *
@@ -205,20 +264,6 @@ public class FutureUtils {
         } catch (Throwable e) {
             return newFailedFuture(e);
         }
-    }
-
-    /**
-     * 将future的结果传输到promise上
-     */
-    public static <V> void setFuture(FluentPromise<? super V> promise, FluentFuture<V> future) {
-        Objects.requireNonNull(promise, "promise");
-        future.addListener((v, throwable) -> {
-            if (throwable != null) {
-                promise.tryFailure(throwable);
-            } else {
-                promise.trySuccess(v);
-            }
-        });
     }
 
     // endregion

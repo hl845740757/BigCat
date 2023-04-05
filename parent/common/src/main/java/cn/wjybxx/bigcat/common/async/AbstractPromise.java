@@ -311,7 +311,6 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
         }
     }
 
-
     private static void logCause(Throwable x) {
         if (!(x instanceof NoLogRequiredException)) {
             logger.warn("future completed with exception", x);
@@ -322,7 +321,6 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
         return new AltResult((x instanceof CompletionException) ? x :
                 new CompletionException(x));
     }
-
 
     /** 表示当前future由一个新的值进入完成状态 */
     final void completeValue(V value) {

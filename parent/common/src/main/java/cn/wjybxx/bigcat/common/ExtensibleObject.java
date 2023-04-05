@@ -30,11 +30,8 @@ import java.util.Map;
 public interface ExtensibleObject {
 
     /**
-     * 获取对象的黑板（用于扩展属性）
+     * 获取对象的扩展黑板（用于临时存储属性）
      * 注意：必须是对象的一个属性字段。
-     * <p>
-     * Q: 为什么修改方法名？
-     * A: 这个黑板只是为了热更新使用的，直接命名为黑板会占用正常业务逻辑需要的命名。
      */
     @Nonnull
     Map<String, Object> getExtBlackboard();

@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.rpc;
 
 /**
+ * Rpc请求存根
+ * 该接口用于为用户提供一个视图，以查看一些信息 -- 主要用于debug
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/5
  */
-public final class ResultHolder<V> {
+public interface RpcRequestStub {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
+    /** 请求的超时时间 */
+    long getDeadline();
 
-    public final V result;
+    /** 获取请求的目的地 */
+    NodeSpec getTargetNode();
 
-    private ResultHolder(V result) {
-        this.result = result;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
-    }
-
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
-    }
+    /** 获取请求信息 */
+    RpcRequest getRequest();
 
 }

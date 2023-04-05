@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.rpc;
+
+import cn.wjybxx.bigcat.common.concurrent.WatchableEventQueue;
 
 /**
+ * rpc接收处理器
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/5
  */
-public final class ResultHolder<V> {
+public interface RpcReceiverHandler {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
+    /**
+     * 监听rpc结果
+     * 该方法应将watcher适配为事件队列的watcher，并注册到事件队列中
+     */
+    void watch(WatchableEventQueue.Watcher<? super RpcResponse> watcher);
 
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
-    }
-
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
-    }
+    void cancelWatch(WatchableEventQueue.Watcher<? super RpcResponse> watcher);
 
 }

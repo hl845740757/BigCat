@@ -14,29 +14,28 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.rpc;
 
 /**
+ * 表示服务器的异常
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/1
  */
-public final class ResultHolder<V> {
+public class RpcServerException extends RpcException {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
-
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
+    public RpcServerException(int errorCode, String message) {
+        super(errorCode, message, null, true, false);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        // 不填充堆栈，没有意义（因为错误信息是远端的）
+        return this;
     }
 
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
+    public static RpcServerException failed(int errorCode, String message) {
+        return new RpcServerException(errorCode, message);
     }
 
 }

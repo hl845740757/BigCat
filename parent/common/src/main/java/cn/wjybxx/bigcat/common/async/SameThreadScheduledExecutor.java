@@ -17,6 +17,7 @@
 package cn.wjybxx.bigcat.common.async;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
@@ -39,6 +40,7 @@ import java.util.concurrent.Executors;
  * @author wjybxx
  * date 2023/4/3
  */
+@NotThreadSafe
 public interface SameThreadScheduledExecutor extends SameThreadExecutor {
 
     /**

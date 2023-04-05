@@ -14,29 +14,23 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.rpc;
 
 /**
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/1
  */
-public final class ResultHolder<V> {
+public class DefaultRpcProcessContext implements RpcProcessContext {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
+    private final RpcRequest rpcRequest;
 
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
+    public DefaultRpcProcessContext(RpcRequest rpcRequest) {
+        this.rpcRequest = rpcRequest;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
-    }
-
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
+    @Override
+    public RpcRequest request() {
+        return rpcRequest;
     }
 
 }
