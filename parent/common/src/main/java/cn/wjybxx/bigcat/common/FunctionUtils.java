@@ -24,6 +24,8 @@ import java.util.function.*;
  */
 public class FunctionUtils {
 
+    private static final Function<?, ?> identity = t -> t;
+
     private static final Consumer<?> _emptyConsumer = v -> {
     };
 
@@ -44,9 +46,12 @@ public class FunctionUtils {
 
     private static final BiPredicate<?, ?> _biAlwaysFalse = (t, u) -> false;
 
-    private static final Function<?, ?> identity = t -> t;
-
     //
+    @SuppressWarnings("unchecked")
+    public static <T> Function<T, T> identity() {
+        return (Function<T, T>) identity;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> Consumer<T> emptyConsumer() {
         return (Consumer<T>) _emptyConsumer;

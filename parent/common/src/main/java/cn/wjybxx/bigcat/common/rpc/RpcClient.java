@@ -70,8 +70,6 @@ public interface RpcClient {
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回 -- 使用默认的超时时间。
      *
-     * <h3>实现者注意</h3>
-     *
      * @param target     远程节点信息
      * @param methodSpec 要调用的方法信息
      * @return 方法返回值

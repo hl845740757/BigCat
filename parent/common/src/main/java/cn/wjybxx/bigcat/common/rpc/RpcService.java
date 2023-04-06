@@ -20,10 +20,10 @@ import java.lang.annotation.*;
 
 /**
  * 该注解表示该类是可以对外提供服务，只有拥有该标记，才会为该类生成对应的代理工具类。
- * 生成的代理类名: {@code xxxProxy} {@code xxxExporter}，其中Proxy是客户端用，Exporter是服务器用。
+ * 生成的代理类名: {@code xxxProxy} {@code xxxExporter}
  * 其中：
- * RpcRegister用于暴露接口，向{@link RpcMethodProxyRegistry}中注册暴露的方法。
- * RpcProxy用于请求方创建{@link RpcMethodSpec}。
+ * Proxy用于客户端创建{@link RpcMethodSpec}，即：打包参数。
+ * Exporter用于服务端暴露接口，向{@link RpcMethodProxyRegistry}中注册暴露的方法。
  * 注意事项:
  * 1. service需要定义在公共模块，因为它为其它模块提供服务。
  * 2. 建议接口命名遵循统一的规范，比如{@code XXXService}。

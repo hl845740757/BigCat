@@ -61,36 +61,12 @@ public class CollectionUtils {
         }
         return elements.get(elements.size() - 1);
     }
-    //
-
-    public static boolean remove(List<?> list, Object element, boolean identity) {
-        return identity ? removeIdentity(list, element) : list.remove(element);
-    }
-
-    /**
-     * 删除指定位置的元素，可以选择是否保持列表中元素的顺序，当不需要保持顺序时可以对删除性能进行优化
-     * 注意：应当小心使用该特性，能够使用该特性的场景不多，应当慎之又慎。
-     *
-     * @param ordered 是否保持之前的顺序。
-     * @return 删除的元素
-     */
-    public static <E> E removeAt(List<E> list, int index, boolean ordered) {
-        if (ordered) {
-            return list.remove(index);
-        } else {
-            // 将最后一个元素赋值到要删除的位置，然后删除最后一个
-            final E deleted = list.get(index);
-            final int tailIndex = list.size() - 1;
-            if (index < tailIndex) {
-                list.set(index, list.get(tailIndex));
-            }
-            list.remove(tailIndex);
-            return deleted;
-        }
-    }
 
     /** 删除list的前n个元素 */
     public static void removeTopN(List<?> list, int n) {
+        if (n <= 0) {
+            return;
+        }
         if (list.size() <= n) {
             list.clear();
         } else {
@@ -120,7 +96,7 @@ public class CollectionUtils {
         if (list.size() == 0) {
             return false;
         }
-        final int index = indexCustom(list, predicate);
+        final int index = indexOfCustom(list, predicate);
         if (index >= 0) {
             list.remove(index);
             return true;
@@ -133,12 +109,34 @@ public class CollectionUtils {
         if (list.size() == 0) {
             return false;
         }
-        final int index = lastIndexCustom(list, predicate);
+        final int index = lastIndexOfCustom(list, predicate);
         if (index >= 0) {
             list.remove(index);
             return true;
         }
         return false;
+    }
+
+    /**
+     * 删除指定位置的元素，可以选择是否保持列表中元素的顺序，当不需要保持顺序时可以对删除性能进行优化
+     * 注意：应当小心使用该特性，能够使用该特性的场景不多，应当慎之又慎。
+     *
+     * @param ordered 是否保持之前的顺序。
+     * @return 删除的元素
+     */
+    public static <E> E removeAt(List<E> list, int index, boolean ordered) {
+        if (ordered) {
+            return list.remove(index);
+        } else {
+            // 将最后一个元素赋值到要删除的位置，然后删除最后一个
+            final E deleted = list.get(index);
+            final int tailIndex = list.size() - 1;
+            if (index < tailIndex) {
+                list.set(index, list.get(tailIndex));
+            }
+            list.remove(tailIndex);
+            return deleted;
+        }
     }
 
     /**
@@ -170,20 +168,8 @@ public class CollectionUtils {
     }
     //
 
-    public static boolean contains(List<?> list, Object element, boolean identity) {
-        return identity ? containsIdentity(list, element) : list.contains(element);
-    }
-
-    public static int indexOf(List<?> list, Object element, boolean identity) {
-        return identity ? indexIdentity(list, element) : list.indexOf(element);
-    }
-
-    public static int lastIndexOf(List<?> list, Object element, boolean identity) {
-        return identity ? lastIndexIdentity(list, element) : list.lastIndexOf(element);
-    }
-
     /** @param list 最好为数组列表 */
-    public static <E> int indexCustom(List<E> list, Predicate<? super E> indexFunc) {
+    public static <E> int indexOfCustom(List<E> list, Predicate<? super E> indexFunc) {
         for (int i = 0, size = list.size(); i < size; i++) {
             if (indexFunc.test(list.get(i))) {
                 return i;
@@ -193,7 +179,7 @@ public class CollectionUtils {
     }
 
     /** @param list 最好为数组列表 */
-    public static <E> int lastIndexCustom(List<E> list, Predicate<? super E> indexFunc) {
+    public static <E> int lastIndexOfCustom(List<E> list, Predicate<? super E> indexFunc) {
         for (int i = list.size() - 1; i >= 0; i--) {
             if (indexFunc.test(list.get(i))) {
                 return i;
@@ -204,7 +190,7 @@ public class CollectionUtils {
 
     /** @param list 最好为数组列表 */
     public static <E> boolean containsCustom(List<E> list, Predicate<? super E> indexFunc) {
-        return indexCustom(list, indexFunc) >= 0;
+        return indexOfCustom(list, indexFunc) >= 0;
     }
 
     /** @param list 最好为数组列表 */
@@ -229,10 +215,38 @@ public class CollectionUtils {
         return null;
     }
 
+    /** 返回List中第一个不为null的元素 */
+    public static <E> E firstPresent(List<E> list) {
+        for (int i = 0, size = list.size(); i < size; i++) {
+            final E e = list.get(i);
+            if (e != null) return e;
+        }
+        return null;
+    }
+
+    /** 返回list中最后一个不为null的元素 */
+    public static <E> E lastPresent(List<E> list) {
+        for (int i = list.size() - 1; i >= 0; i--) {
+            final E e = list.get(i);
+            if (e != null) return e;
+        }
+        return null;
+    }
+
+    /** 返回List中非null元素个数 */
+    public static int presentCount(List<?> list) {
+        int count = 0;
+        for (int i = list.size() - 1; i >= 0; i--) {
+            final Object e = list.get(i);
+            if (e != null) count++;
+        }
+        return count;
+    }
+
     // region 使用“==”操作集合
     // 注意：对于拆装箱的对象慎用
 
-    public static boolean containsIdentity(List<?> list, Object element) {
+    public static boolean containsRef(List<?> list, Object element) {
         for (int i = 0, size = list.size(); i < size; i++) {
             if (list.get(i) == element) {
                 return true;
@@ -244,7 +258,7 @@ public class CollectionUtils {
     /**
      * 使用“==”查询元素位置
      */
-    public static int indexIdentity(List<?> list, Object element) {
+    public static int indexOfRef(List<?> list, Object element) {
         for (int i = 0, size = list.size(); i < size; i++) {
             if (list.get(i) == element) {
                 return i;
@@ -253,7 +267,7 @@ public class CollectionUtils {
         return -1;
     }
 
-    public static int lastIndexIdentity(List<?> list, Object element) {
+    public static int lastIndexOfRef(List<?> list, Object element) {
         for (int i = list.size() - 1; i >= 0; i--) {
             if (list.get(i) == element) {
                 return i;
@@ -265,8 +279,8 @@ public class CollectionUtils {
     /**
      * 使用“==”删除对象
      */
-    public static boolean removeIdentity(List<?> list, Object element) {
-        final int index = indexIdentity(list, element);
+    public static boolean removeRef(List<?> list, Object element) {
+        final int index = indexOfRef(list, element);
         if (index < 0) {
             return false;
         }
@@ -277,8 +291,8 @@ public class CollectionUtils {
     /**
      * 使用“==”删除对象
      */
-    public static boolean removeIdentity(List<?> list, Object element, boolean ordered) {
-        final int index = indexIdentity(list, element);
+    public static boolean removeRef(List<?> list, Object element, boolean ordered) {
+        final int index = indexOfRef(list, element);
         if (index < 0) {
             return false;
         }
@@ -391,8 +405,12 @@ public class CollectionUtils {
         return collection == null || collection.isEmpty();
     }
 
+    public static boolean isNotEmptyList(@Nullable Object obj) {
+        return obj instanceof List<?> && ((List<?>) obj).size() > 0;
+    }
+
     public static boolean isNotEmptyCollection(@Nullable Object obj) {
-        return obj instanceof Collection<?> && ((Collection) obj).size() > 0;
+        return obj instanceof Collection<?> && ((Collection<?>) obj).size() > 0;
     }
 
     /** 如果两个集合存在公共元素，则返回true */
@@ -421,7 +439,8 @@ public class CollectionUtils {
      * @param <E>        元素的类型。注意：不可以是{@link Map.Entry}
      * @return 返回删除成功的元素
      */
-    public static <E> int removeIfAndThen(final Collection<E> collection, final Predicate<E> filter, @Nullable final Consumer<E> action) {
+    public static <E> int removeIfAndThen(final Collection<E> collection, final Predicate<E> filter,
+                                          @Nullable final Consumer<E> action) {
         if (collection.size() == 0) {
             return 0;
         }
@@ -451,7 +470,8 @@ public class CollectionUtils {
      * @param <V>       the type of value
      * @return 删除的元素数量
      */
-    public static <K, V> int removeIfAndThen(final Map<K, V> map, final BiPredicate<? super K, ? super V> predicate, @Nullable final BiConsumer<K, V> then) {
+    public static <K, V> int removeIfAndThen(final Map<K, V> map, final BiPredicate<? super K, ? super V> predicate,
+                                             @Nullable final BiConsumer<K, V> then) {
         if (map.size() == 0) {
             return 0;
         }
@@ -504,13 +524,13 @@ public class CollectionUtils {
     /**
      * 使用“==”删除对象
      */
-    public static boolean removeIdentity(Collection<?> collection, Object element) {
+    public static boolean removeRef(Collection<?> collection, Object element) {
         if (collection.isEmpty()) {
             return false;
         }
         if (collection instanceof RandomAccess) {
             final List<?> list = (List<?>) collection;
-            return removeIdentity(list, element);
+            return removeRef(list, element);
         }
         for (Iterator<?> iterator = collection.iterator(); iterator.hasNext(); ) {
             final Object e = iterator.next();

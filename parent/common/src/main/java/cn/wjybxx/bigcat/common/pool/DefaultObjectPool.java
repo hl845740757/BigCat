@@ -16,7 +16,11 @@
 
 package cn.wjybxx.bigcat.common.pool;
 
+import cn.wjybxx.bigcat.common.CollectionUtils;
+
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -27,36 +31,114 @@ import java.util.function.Supplier;
  * date 2023/4/1
  */
 @NotThreadSafe
-public class DefaultObjectPool<T> extends AbstractObjectPool<T> {
+public final class DefaultObjectPool<T> implements ObjectPool<T> {
+
+    /** 默认不能无限缓存 */
+    private static final int DEFAULT_MAX_CAPACITY = 1024;
+    private final ArrayList<T> freeObjects;
+    private final int maxCapacity;
 
     private final Supplier<? extends T> factory;
     private final ResetPolicy<? super T> resetPolicy;
 
     public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy) {
-        super();
-        this.factory = Objects.requireNonNull(factory, "factory");
-        this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");
+        this(factory, resetPolicy, 16, DEFAULT_MAX_CAPACITY);
     }
 
     public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy, int initialCapacity) {
-        super(initialCapacity);
-        this.factory = Objects.requireNonNull(factory, "factory");
-        this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");
+        this(factory, resetPolicy, initialCapacity, DEFAULT_MAX_CAPACITY);
     }
 
     public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy, int initialCapacity, int maxCapacity) {
-        super(initialCapacity, maxCapacity);
+        if (maxCapacity <= 0 || initialCapacity > maxCapacity) {
+            throw new IllegalArgumentException("initialCapacity: " + initialCapacity + ", maxCapacity: " + maxCapacity);
+        }
+        this.freeObjects = new ArrayList<>(initialCapacity);
+        this.maxCapacity = maxCapacity;
         this.factory = Objects.requireNonNull(factory, "factory");
         this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");
     }
 
     @Override
-    protected T newObject() {
-        return factory.get();
+    public final T get() {
+        // 从最后一个开始删除可避免复制
+        final ArrayList<T> freeObjects = this.freeObjects;
+        return freeObjects.size() == 0 ? factory.get() : freeObjects.remove(freeObjects.size() - 1);
     }
 
     @Override
-    protected void reset(T object) {
+    public final void returnOne(T object) {
+        if (object == null) {
+            throw new IllegalArgumentException("object cannot be null.");
+        }
+
+        // 先调用reset，避免reset出现异常导致添加脏对象到缓存池中 -- 断言是否在池中还是有较大开销
         resetPolicy.reset(object);
+        assert !CollectionUtils.containsRef(freeObjects, object);
+
+        if (freeObjects.size() < maxCapacity) {
+            freeObjects.add(object);
+        }
     }
+
+    @Override
+    public final void returnAll(ArrayList<? extends T> objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("objects cannot be null.");
+        }
+
+        final ArrayList<T> freeObjects = this.freeObjects;
+        final int maxCapacity = this.maxCapacity;
+        for (int i = 0, n = objects.size(); i < n; i++) {
+            T e = objects.get(i);
+            if (null == e) {
+                continue;
+            }
+
+            resetPolicy.reset(e);
+            assert !CollectionUtils.containsRef(freeObjects, e);
+
+            if (freeObjects.size() < maxCapacity) {
+                freeObjects.add(e);
+            }
+        }
+    }
+
+    @Override
+    public final void returnAll(Collection<? extends T> objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("objects cannot be null.");
+        }
+
+        final ArrayList<T> freeObjects = this.freeObjects;
+        final int maxCapacity = this.maxCapacity;
+        for (T e : objects) {
+            if (null == e) {
+                continue;
+            }
+
+            resetPolicy.reset(e);
+            assert !CollectionUtils.containsRef(freeObjects, e);
+
+            if (freeObjects.size() < maxCapacity) {
+                freeObjects.add(e);
+            }
+        }
+    }
+
+    @Override
+    public final int maxCount() {
+        return maxCapacity;
+    }
+
+    @Override
+    public final int idleCount() {
+        return freeObjects.size();
+    }
+
+    @Override
+    public final void clear() {
+        freeObjects.clear();
+    }
+
 }

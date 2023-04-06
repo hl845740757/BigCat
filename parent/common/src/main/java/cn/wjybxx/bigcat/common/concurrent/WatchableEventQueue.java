@@ -31,9 +31,9 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * 一些指导：
  * 1.监听器应该设定超时时间，不可无限阻塞，否则可能有死锁风险，或者总是超时失败 -- 如果任务队列是有界的。
- * 2.应当先watch再执行阻塞等操作，否则可能丢失信号
- * 3.在不需要使用的时候及时取消watch
- * 4.实现必须是线程安全的，因为事件的发布者通常是另一个线程 -- 通常可以通过{@link CompletableFuture}实现跨线程数据传输
+ * 2.应当先watch再执行阻塞等操作，否则可能丢失信号。
+ * 3.在不需要使用的时候及时取消watch -- 建议在try-finally块中执行。
+ * 4.实现必须是线程安全的，因为事件的发布者通常是另一个线程 -- 通常可以通过{@link CompletableFuture}实现跨线程数据传输。
  * 5.监听和取消监听都是低频操作，因此可以简单实现为{@code synchronized}写，{@code volatile}读。
  *
  * <h3>api设计</h3>

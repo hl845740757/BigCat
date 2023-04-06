@@ -18,8 +18,6 @@ package cn.wjybxx.bigcat.common;
 
 import cn.wjybxx.bigcat.common.concurrent.SimpleWatcherMgr;
 import cn.wjybxx.bigcat.common.concurrent.WatchableEventQueue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
@@ -32,8 +30,6 @@ import java.util.concurrent.TimeUnit;
  */
 @ThreadSafe
 class SimpleEventQueue<E> implements WatchableEventQueue<E> {
-
-    private static final Logger logger = LoggerFactory.getLogger(SimpleEventQueue.class);
 
     /** 无界队列，避免死锁 */
     private final LinkedBlockingQueue<E> blockingQueue = new LinkedBlockingQueue<>(10);
