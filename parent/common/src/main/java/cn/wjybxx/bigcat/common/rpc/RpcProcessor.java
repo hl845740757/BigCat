@@ -39,10 +39,10 @@ public interface RpcProcessor {
      * 如果你想支持其它类型的Future，比如JDK的{@link CompletableFuture}和Netty的Future，请在上层进行转换，同时确保回调执行在当前线程。
      * 工具方法：{@link FutureUtils#fromJDKFuture(CompletableFuture, Executor)}
      *
-     * @param context rpc执行的上下文，用于获取方法参数之外的一些信息
+     * @param request rpc请求信息
      * @return 方法执行结果，可能情况：1.null 2.{@link FluentFuture} 3.其它结果
      * @throws Exception 异常情况请抛出异常，暂不支持使用特殊的返回值表达失败。
      */
-    Object process(RpcProcessContext context) throws Exception;
+    Object process(RpcRequest request) throws Exception;
 
 }

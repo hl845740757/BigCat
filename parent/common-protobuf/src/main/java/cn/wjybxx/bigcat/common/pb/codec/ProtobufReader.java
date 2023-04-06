@@ -453,6 +453,7 @@ public class ProtobufReader implements BinaryReader {
         }
 
         context.state = State.WAIT_START;
+        context.waitDecodeTypeArg = typeArgInfo;
         context.codec = codec;
         this.context = context;
 
@@ -469,15 +470,20 @@ public class ProtobufReader implements BinaryReader {
 
         // 读取typeId
         byte nameSpace = readNameSpace(inputStream);
+        long typeId;
         if (nameSpace != TypeId.INVALID_NAMESPACE) {
             int classId = readClassId(inputStream);
-            context.typeId = TypeId.toGuid(nameSpace, classId);
+            typeId = TypeId.toGuid(nameSpace, classId);
         } else {
-            context.typeId = 0;
+            typeId = 0;
         }
+        context.typeId = typeId;
+        return findObjectDecoder(typeArgInfo, typeId);
+    }
 
+    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, long typeId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = findEncodedType(context.typeId);
+        final Class<?> encodedType = findEncodedType(typeId);
 
         // 尝试按真实类型读
         if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
@@ -507,7 +513,8 @@ public class ProtobufReader implements BinaryReader {
         // 上下文分两种：
         // 1.读当前对象，外部读取到接下来是一个Object，codec调用readStartObject走到这里 -- 此时context状态为waitStart，参数typeArg为当前对象的类型信息
         // 2.读嵌套对象，codec在读值的过程中直接调用readStartObject，通常是用户自行调用 -- 此时context的状态为reading，参数typeArg为新对象的类型信息
-        if (this.context.state == State.READING) {
+        Context context = this.context;
+        if (context.state == State.READING) {
             // 用户直接调用readStartObject
             try {
                 final BinaryValueType valueType = readTag(inputStream);
@@ -521,19 +528,24 @@ public class ProtobufReader implements BinaryReader {
                     throw ProtobufCodecException.recursionLimitExceeded();
                 }
 
-                Context context = newContext();
-                context.state = State.WAIT_START;
-                context.codec = readObjectDecoder(context, typeArgInfo); // 允许codec不存在
-                this.context = context;
+                Context newContext = newContext();
+                newContext.state = State.WAIT_START;
+                newContext.codec = readObjectDecoder(newContext, typeArgInfo); // 允许codec不存在
+                this.context = newContext;
+                context = newContext;
             } catch (Exception e) {
                 return ExceptionUtils.rethrow(e);
             }
-        } else if (this.context.state != State.WAIT_START) {
-            // 通过外层codec走到这
+        } else if (context.state == State.WAIT_START) {
+            // 通过外层codec走到这 -- 判断用户是否发起了读替换
+            if (context.waitDecodeTypeArg != typeArgInfo) {
+                context.codec = findObjectDecoder(typeArgInfo, 0);
+            }
+            context.waitDecodeTypeArg = null;
+        } else {
             throw ProtobufCodecException.contextError();
         }
 
-        Context context = this.context;
         context.state = State.READING;
         if (context.codec != null) {
             return context.codec.getEncoderClass();
@@ -582,13 +594,13 @@ public class ProtobufReader implements BinaryReader {
 
         Context parent;
         int recursionDepth;
+        TypeArgInfo<?> waitDecodeTypeArg;
         BinaryPojoCodec<?> codec;
-
-        /** 父节点的Limit */
-        int oldLimit = -1;
         /** 对方写入的类型id，0表示未写入 -- 可用于抛出异常打印详细信息 */
         long typeId = 0;
 
+        /** 父节点的Limit */
+        int oldLimit = -1;
         /** 当前状态 */
         State state = State.NEW;
 
@@ -603,6 +615,7 @@ public class ProtobufReader implements BinaryReader {
         void reset() {
             parent = null;
             recursionDepth = 0;
+            waitDecodeTypeArg = null;
             codec = null;
 
             oldLimit = -1;

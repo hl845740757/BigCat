@@ -43,12 +43,13 @@ import java.util.function.BiConsumer;
 
 /**
  * 提供Rpc调用支持的handler。
+ * 实现了{@link RpcClient}接口，但建议你仍进行代理封装
  *
  * @author wjybxx
  * date 2023/4/1
  */
 @NotThreadSafe
-public class RpcSupportHandler {
+public class RpcSupportHandler implements RpcClient {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcSupportHandler.class);
     private static final int INIT_REQUEST_GUID = 0;
@@ -128,6 +129,7 @@ public class RpcSupportHandler {
      * @param target     远程节点信息
      * @param methodSpec 要调用的方法信息
      */
+    @Override
     public void send(NodeSpec target, RpcMethodSpec<?> methodSpec) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
@@ -150,6 +152,7 @@ public class RpcSupportHandler {
      * @param scope      远程节点信息
      * @param methodSpec 要调用的方法信息
      */
+    @Override
     public void broadcast(ScopeSpec scope, RpcMethodSpec<?> methodSpec) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(methodSpec);
@@ -173,6 +176,7 @@ public class RpcSupportHandler {
      * @param methodSpec 要调用的方法信息
      * @return future，可以监听调用结果
      */
+    @Override
     public <V> FluentFuture<V> call(NodeSpec target, RpcMethodSpec<V> methodSpec) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
@@ -207,6 +211,7 @@ public class RpcSupportHandler {
      * @param methodSpec 要调用的方法信息
      * @return rpc调用结果
      */
+    @Override
     public <V> V syncCall(NodeSpec target, RpcMethodSpec<V> methodSpec) throws InterruptedException {
         return syncCall(target, methodSpec, timeoutMs);
     }
@@ -219,6 +224,7 @@ public class RpcSupportHandler {
      * @param timeoutMs  超时时间 - 毫秒
      * @return rpc调用结果
      */
+    @Override
     public <V> V syncCall(NodeSpec target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
@@ -233,13 +239,13 @@ public class RpcSupportHandler {
         // 必须先watch再发送，否则可能丢失信号
         RpcResponseWatcher watcher = new RpcResponseWatcher(processGuid, requestGuid);
         rpcReceiverHandler.watch(watcher);
-
-        // 执行发送(routerHandler的实现很关键)
-        if (!rpcRouterHandler.send(target, request)) {
-            logger.warn("rpc router call failure, target " + target);
-            throw RpcClientException.routeFailed(target);
-        }
         try {
+            // 执行发送(routerHandler的实现很关键)
+            if (!rpcRouterHandler.send(target, request)) {
+                logger.warn("rpc router call failure, target " + target);
+                throw RpcClientException.routeFailed(target);
+            }
+
             RpcResponse response = watcher.future.get(timeoutMs, TimeUnit.MILLISECONDS);
             if (rpcLogConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
                 logRcvResponseLog(response, request);
@@ -256,6 +262,8 @@ public class RpcSupportHandler {
             throw RpcClientException.blockingTimeout(e);
         } catch (ExecutionException e) {
             throw RpcClientException.executionException(e);
+        } finally {
+            rpcReceiverHandler.cancelWatch(watcher); // 及时取消watcher
         }
     }
 
@@ -268,18 +276,17 @@ public class RpcSupportHandler {
             logRcvRequestLog(request);
         }
 
-        final DefaultRpcProcessContext context = new DefaultRpcProcessContext(request);
         if (request.isOneWay()) {
             // 单向消息 - 不需要结果
             try {
-                rpcProcessor.process(context);
+                rpcProcessor.process(request);
             } catch (Exception e) {
                 ExceptionUtils.rethrow(e);
             }
         } else {
             // rpc
             try {
-                final Object result = rpcProcessor.process(context);
+                final Object result = rpcProcessor.process(request);
                 if (result instanceof FluentFuture<?> future) {
                     // 当前任务不能立即完成
                     future.addListener(new FutureListener<>(request, this));

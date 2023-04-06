@@ -30,11 +30,11 @@ import java.util.function.Supplier;
 @NotThreadSafe
 public class SingleObjectPool<T> implements ObjectPool<T> {
 
-    private final Supplier<T> factory;
-    private final ResetPolicy<T> resetPolicy;
+    private final Supplier<? extends T> factory;
+    private final ResetPolicy<? super T> resetPolicy;
     private T value;
 
-    public SingleObjectPool(Supplier<T> factory, ResetPolicy<T> resetPolicy) {
+    public SingleObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy) {
         this.factory = Objects.requireNonNull(factory, "factory");
         this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");
     }

@@ -61,11 +61,11 @@ public class RpcClientException extends RpcException {
     }
 
     public static RpcClientException blockingTimeout(TimeoutException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "blockingTimeout", e, true, false);
+        return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "blockingTimeout", e, true, true);
     }
 
     public static RpcClientException executionException(ExecutionException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "executionException", e, true, false);
+        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "executionException", e, true, true);
     }
 
 }

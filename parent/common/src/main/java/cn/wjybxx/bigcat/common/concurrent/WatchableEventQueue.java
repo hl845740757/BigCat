@@ -32,9 +32,14 @@ import java.util.concurrent.CompletableFuture;
  * 一些指导：
  * 1.监听器应该设定超时时间，不可无限阻塞，否则可能有死锁风险，或者总是超时失败 -- 如果任务队列是有界的。
  * 2.应当先watch再执行阻塞等操作，否则可能丢失信号
- * 3.在不需要使用的时候即使取消watch
- * 4.实现必须是线程安全的，因为事件的发布者通常是另一个线程 -- 通常可以通过{@link CompletableFuture}里实现跨线程数据传输
- * 5.监听和取消监听都是低频操作，因此可以简单实现为{@code synchronized}，但属性字段需要是{@code volatile}的（可参考测试用例实现）
+ * 3.在不需要使用的时候及时取消watch
+ * 4.实现必须是线程安全的，因为事件的发布者通常是另一个线程 -- 通常可以通过{@link CompletableFuture}实现跨线程数据传输
+ * 5.监听和取消监听都是低频操作，因此可以简单实现为{@code synchronized}写，{@code volatile}读。
+ *
+ * <h3>api设计</h3>
+ * 该接口没有继承{@link java.util.Queue}，也没有提供读写数据的方法，这是故意的。
+ * 1.对Watcher来讲，Watcher只期望目标队列能提供监听接口，而不要读写数据接口，只是知道目标应该是一个Queue。
+ * 2.由于不约定数据读写接口，因此你可以组合的方式集成Watcher和Queue的管理 -- 可用实现{@link SimpleWatcherMgr}。
  *
  * @author wjybxx
  * date 2023/4/5
@@ -55,13 +60,15 @@ public interface WatchableEventQueue<E> {
      * 取消监听
      *
      * @param watcher 用于判断是否是当前watcher
+     * @return 如果参数为null，则返回false；如果给定watcher是当前watcher则删除成功并返回true，否则不产生影响并返回false
      */
-    void cancelWatch(Watcher<?> watcher);
+    boolean cancelWatch(Watcher<?> watcher);
 
     /** 实现时要小心线程安全问题 */
     @ThreadSafe
     interface Watcher<E> {
 
+        /** 该方法禁止抛出异常 */
         boolean test(@Nonnull E event);
 
         void onEvent(@Nonnull E event);

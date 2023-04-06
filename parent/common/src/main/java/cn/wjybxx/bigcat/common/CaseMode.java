@@ -39,4 +39,12 @@ public enum CaseMode {
         return this == UPPER_CASE ? LOWER_CASE : UPPER_CASE;
     }
 
+    public String toCase(String value) {
+        if (this == UPPER_CASE) {
+            return value.toUpperCase();
+        } else {
+            return value.toLowerCase();
+        }
+    }
+
 }

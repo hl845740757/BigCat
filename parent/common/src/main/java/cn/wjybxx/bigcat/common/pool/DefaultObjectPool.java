@@ -29,22 +29,22 @@ import java.util.function.Supplier;
 @NotThreadSafe
 public class DefaultObjectPool<T> extends AbstractObjectPool<T> {
 
-    private final Supplier<T> factory;
-    private final ResetPolicy<T> resetPolicy;
+    private final Supplier<? extends T> factory;
+    private final ResetPolicy<? super T> resetPolicy;
 
-    public DefaultObjectPool(Supplier<T> factory, ResetPolicy<T> resetPolicy) {
+    public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy) {
         super();
         this.factory = Objects.requireNonNull(factory, "factory");
         this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");
     }
 
-    public DefaultObjectPool(Supplier<T> factory, ResetPolicy<T> resetPolicy, int initialCapacity) {
+    public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy, int initialCapacity) {
         super(initialCapacity);
         this.factory = Objects.requireNonNull(factory, "factory");
         this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");
     }
 
-    public DefaultObjectPool(Supplier<T> factory, ResetPolicy<T> resetPolicy, int initialCapacity, int maxCapacity) {
+    public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy, int initialCapacity, int maxCapacity) {
         super(initialCapacity, maxCapacity);
         this.factory = Objects.requireNonNull(factory, "factory");
         this.resetPolicy = Objects.requireNonNull(resetPolicy, "resetPolicy");

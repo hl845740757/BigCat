@@ -117,15 +117,4 @@ public class CommonMathUtils {
         return ((int) a) * b;
     }
 
-    /**
-     * 两个int相除，如果余数大于0，则进一
-     *
-     * @param a int
-     * @param b int
-     * @return int
-     */
-    public static int divideIntCeil(int a, int b) {
-        return IntMath.divide(a, b, RoundingMode.CEILING);
-    }
-
 }

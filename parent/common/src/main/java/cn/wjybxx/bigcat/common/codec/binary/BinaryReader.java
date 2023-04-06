@@ -89,6 +89,7 @@ public interface BinaryReader extends AutoCloseable {
 
     /**
      * 用于自定义读对象，自动判断是否是嵌套对象
+     * 用户切换{@code typeArgInfo}就可以发起读替换，前提是禁用{@link BinaryPojoCodecImpl#autoStartEnd()}
      *
      * @param typeArgInfo 对象的类型细腻
      * @return 写入的对象类型：

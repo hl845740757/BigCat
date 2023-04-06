@@ -59,7 +59,7 @@ import java.lang.annotation.*;
  *
  * <h3>扩展</h3>
  * Q: 是否可以不使用注解，也能序列化？
- * A: 如果不使用注解，需要手动实{@link DocumentPojoCodecImpl}，并将其添加到注册表中。
+ * A: 如果不使用注解，需要手动实现{@link DocumentPojoCodecImpl}，并将其添加到注册表中。
  * （也可以加入到Scanner的扫描路径）
  *
  * <h3>一些建议</h3>

@@ -104,6 +104,7 @@ public interface DocumentWriter extends AutoCloseable {
 
     /**
      * 开始写当前对象
+     * 用户切换{@code typeArgInfo}就可以发起写替换，前提是禁用{@link DocumentPojoCodecImpl#autoStartEnd()}
      *
      * @param value       对象的值
      * @param typeArgInfo 对象的类型信息

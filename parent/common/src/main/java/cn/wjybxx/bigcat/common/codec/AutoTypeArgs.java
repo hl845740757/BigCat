@@ -23,9 +23,9 @@ import java.lang.annotation.Target;
 
 /**
  * 用于为类的所有实例字段生成类型信息 -- {@link TypeArgInfo}
- *
- * <h3>辅助类类名</h3>
  * 生成的辅助类为{@code XXXTypeArgs}
+ * <p>
+ * 1.只处理类的实例字段，所有实例字段都被导出。
  *
  * @author wjybxx
  * date 2023/4/3

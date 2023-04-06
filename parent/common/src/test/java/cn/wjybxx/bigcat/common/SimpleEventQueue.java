@@ -16,7 +16,10 @@
 
 package cn.wjybxx.bigcat.common;
 
+import cn.wjybxx.bigcat.common.concurrent.SimpleWatcherMgr;
 import cn.wjybxx.bigcat.common.concurrent.WatchableEventQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
@@ -30,32 +33,28 @@ import java.util.concurrent.TimeUnit;
 @ThreadSafe
 class SimpleEventQueue<E> implements WatchableEventQueue<E> {
 
+    private static final Logger logger = LoggerFactory.getLogger(SimpleEventQueue.class);
+
     /** 无界队列，避免死锁 */
     private final LinkedBlockingQueue<E> blockingQueue = new LinkedBlockingQueue<>(10);
-    /** 常见方案：synchronized写，volatile读 */
-    private volatile Watcher<? super E> watcher;
+    private final SimpleWatcherMgr<E> watcherMgr = new SimpleWatcherMgr<>();
 
     @Override
-    public synchronized void watch(Watcher<? super E> watcher) {
-        this.watcher = Objects.requireNonNull(watcher);
+    public void watch(Watcher<? super E> watcher) {
+        watcherMgr.watch(watcher);
     }
 
     @Override
-    public synchronized void cancelWatch(Watcher<?> watcher) {
-        if (watcher == this.watcher) {
-            this.watcher = null;
-        }
+    public boolean cancelWatch(Watcher<?> watcher) {
+        return watcherMgr.cancelWatch(watcher);
     }
 
-    public boolean offer(E e) {
-        Objects.requireNonNull(e);
-        Watcher<? super E> watcher = this.watcher;
-        if (watcher != null && watcher.test(e)) {
-            cancelWatch(watcher); // 不要直接修改值，避免竞争错误
-            watcher.onEvent(e);
+    public boolean offer(E event) {
+        Objects.requireNonNull(event);
+        if (watcherMgr.onEvent(event)) {
             return true;
         }
-        return blockingQueue.offer(e);
+        return blockingQueue.offer(event);
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {

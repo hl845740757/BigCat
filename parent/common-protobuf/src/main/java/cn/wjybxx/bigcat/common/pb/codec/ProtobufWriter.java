@@ -276,6 +276,7 @@ public class ProtobufWriter implements BinaryWriter {
 
         Context context = newContext();
         context.state = State.WAIT_START;
+        context.waitEncodeTypeArg = typeArgInfo;
         context.codec = codec;
         this.context = context;
 
@@ -307,7 +308,8 @@ public class ProtobufWriter implements BinaryWriter {
         // 上下文分两种：
         // 1.写当前对象，外部确定了其codec，codec调用writeStartObject走到这里 -- 此时context状态为waitStart，参数typeArg为当前对象的类型信息
         // 2.写嵌套对象，codec在读值的过程中直接调用writeStartObject，通常是用户自行调用 -- 此时context的状态为writing，参数typeArg为新对象的类型信息
-        if (this.context.state == State.WRITING) {
+        Context context = this.context;
+        if (context.state == State.WRITING) {
             // 用户直接调用writeStartObject
             if (value == null) {
                 writeNull();
@@ -316,16 +318,21 @@ public class ProtobufWriter implements BinaryWriter {
             if (context.recursionDepth >= converter.recursionLimit) {
                 throw ProtobufCodecException.recursionLimitExceeded();
             }
-            Context context = newContext();
-            context.state = State.WAIT_START;
-            context.codec = findObjectEncoder(value, typeArgInfo); // 允许codec不存在
-            this.context = context;
-        } else if (this.context.state != State.WAIT_START) {
-            // 通过外层codec走到这
+            Context newContext = newContext();
+            newContext.state = State.WAIT_START;
+            newContext.codec = findObjectEncoder(value, typeArgInfo); // 允许codec不存在
+            this.context = newContext;
+            context = newContext;
+        } else if (context.state == State.WAIT_START) {
+            // 通过外层codec走到这 -- 判断用户是否发起了写替换（记录对象的引用固然可以更精确判断是否对象发生了变化，但这里不使用引用会更好）
+            if (context.waitEncodeTypeArg != typeArgInfo) {
+                context.codec = findObjectEncoder(value, typeArgInfo);
+            }
+            context.waitEncodeTypeArg = null;
+        } else {
             throw ProtobufCodecException.contextError();
         }
 
-        Context context = this.context;
         try {
             // tag + length(预填充)
             CodedDataOutputStream outputStream = this.outputStream;
@@ -389,6 +396,7 @@ public class ProtobufWriter implements BinaryWriter {
 
         Context parent;
         int recursionDepth;
+        TypeArgInfo<?> waitEncodeTypeArg;
         BinaryPojoCodec<?> codec;
 
         int preWritten = -1;
@@ -405,6 +413,7 @@ public class ProtobufWriter implements BinaryWriter {
         void reset() {
             parent = null;
             recursionDepth = 0;
+            waitEncodeTypeArg = null;
             codec = null;
 
             preWritten = -1;

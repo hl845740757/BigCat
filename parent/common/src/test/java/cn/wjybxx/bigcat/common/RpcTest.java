@@ -50,9 +50,7 @@ public class RpcTest {
     private SimpleEventQueue<RpcRequest> serverQueue;
     private SimpleEventQueue<RpcResponse> clientQueue;
 
-    /** 消息生产者 */
     private Thread serverThread;
-    /** 我们的逻辑线程 */
     private Thread clientThread;
 
     private final AtomicInteger counter = new AtomicInteger();
@@ -112,9 +110,11 @@ public class RpcTest {
 
     private class TestClient {
 
+        final TimeProvider timeProvider;
         final RpcSupportHandler rpcSupportHandler;
 
-        private TestClient(RpcSupportHandler rpcSupportHandler) {
+        private TestClient(TimeProvider timeProvider, RpcSupportHandler rpcSupportHandler) {
+            this.timeProvider = timeProvider;
             this.rpcSupportHandler = rpcSupportHandler;
         }
 
@@ -128,7 +128,7 @@ public class RpcTest {
 
         public void syncSayHello() throws InterruptedException {
             {
-                String msg1 = "local syncSayHello -- remote helloAsync";
+                String msg1 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
                 String response1 = rpcSupportHandler.syncCall(Role.SERVER, new DefaultRpcMethodSpec<>(
                         serviceId,
                         helloMethodId,
@@ -137,7 +137,7 @@ public class RpcTest {
                 assertResponse(msg1, response1);
             }
             {
-                String msg2 = "local syncSayHello -- remote helloAsync";
+                String msg2 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
                 String response2 = rpcSupportHandler.syncCall(Role.SERVER, new DefaultRpcMethodSpec<>(
                         serviceId,
                         helloAsyncMethodId,
@@ -149,7 +149,7 @@ public class RpcTest {
 
         public void sayHello() {
             {
-                String msg1 = "local sayHello -- remote helloAsync";
+                String msg1 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
                 rpcSupportHandler.call(Role.SERVER, new DefaultRpcMethodSpec<String>(
                         serviceId,
                         helloMethodId,
@@ -157,7 +157,7 @@ public class RpcTest {
                 )).thenApply(FutureUtils.toFunction(response -> assertResponse(msg1, response)));
             }
             {
-                String msg2 = "local sayHello -- remote helloAsync";
+                String msg2 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
                 rpcSupportHandler.call(Role.SERVER, new DefaultRpcMethodSpec<String>(
                         serviceId,
                         helloAsyncMethodId,
@@ -234,7 +234,7 @@ public class RpcTest {
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
-            TestClient testClient = new TestClient(rpcSupportHandler);
+            TestClient testClient = new TestClient(timeProvider, rpcSupportHandler);
             executor.scheduleFixedDelay(200, 300, testClient::sayHello);
             executor.scheduleFixedDelay(200, 500, () -> {
                 try {

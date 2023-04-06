@@ -38,7 +38,7 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
     }
 
     @Override
-    public final void register(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy) {
+    public void register(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy) {
         // rpc请求id不可以重复
         final int methodKey = calMethodKey(serviceId, methodId);
         if (proxyMap.containsKey(methodKey)) {
@@ -58,28 +58,29 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
         return serviceId * 10000 + methodId;
     }
 
-    /**
-     * 释放所有捕获的对象，避免内存泄漏
-     */
-    public final void clear() {
+    public void clear() {
         proxyMap.clear();
     }
 
     @Override
-    public final Object process(RpcProcessContext context) throws Exception {
-        @Nullable RpcMethodSpec<?> methodSpec = context.request().getRpcMethodSpec();
+    public Object process(RpcRequest request) throws Exception {
+        @Nullable RpcMethodSpec<?> methodSpec = request.getRpcMethodSpec();
         if (null == methodSpec) {
-            throw new IllegalArgumentException(context.request().getClientNode() + " send null methodSpec");
+            throw new IllegalArgumentException(request.getClientNode() + " send null methodSpec");
         }
 
         if (methodSpec instanceof DefaultRpcMethodSpec) {
-            return processImpl(context, (DefaultRpcMethodSpec<?>) methodSpec);
+            return processImpl(newContext(request), (DefaultRpcMethodSpec<?>) methodSpec);
         } else {
-            return process0(context, methodSpec);
+            return process0(request, methodSpec);
         }
     }
 
-    private Object processImpl(@Nonnull RpcProcessContext context, @Nonnull DefaultRpcMethodSpec<?> rpcMethodSpec) {
+    protected RpcProcessContext newContext(RpcRequest request) {
+        return new DefaultRpcProcessContext(request);
+    }
+
+    protected Object processImpl(@Nonnull RpcProcessContext context, @Nonnull DefaultRpcMethodSpec<?> rpcMethodSpec) {
         final int methodKey = calMethodKey(rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
         final RpcMethodProxy methodProxy = proxyMap.get(methodKey);
         if (null == methodProxy) {
@@ -101,9 +102,9 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
     /**
      * 如果rpc描述信息不是{@link DefaultRpcMethodSpec}对象，那么需要自己实现分发操作
      */
-    protected Object process0(RpcProcessContext context, RpcMethodSpec<?> request) {
+    protected Object process0(RpcRequest request, RpcMethodSpec<?> methodSpec) {
         final String msg = String.format("unknown requestType, node %s, requestType=%s",
-                context.request().getClientNode(), request.getClass().getName());
+                request.getClientNode(), methodSpec.getClass().getName());
         throw new UnsupportedOperationException(msg);
     }
 

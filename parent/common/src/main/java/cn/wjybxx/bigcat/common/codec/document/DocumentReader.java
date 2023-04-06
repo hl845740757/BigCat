@@ -92,6 +92,7 @@ public interface DocumentReader extends AutoCloseable {
 
     /**
      * 读当前对象开始
+     * 用户切换{@code typeArgInfo}就可以发起读替换，前提是禁用{@link DocumentPojoCodecImpl#autoStartEnd()}
      */
     void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
 
@@ -123,6 +124,8 @@ public interface DocumentReader extends AutoCloseable {
      * 获取下一个元素的名字
      * 如果当前是写数组，则返回一个合适的名字，以按照通用接口读数组内元素 -- 用户最好不要对该名字做任何假设。
      * 如果当前读的是一个文档，则返回下一个键值对的key。
+     * <p>
+     * PS:如果为数组元素分配了良好的名字，那么就可以把数组读取为普通对象。
      */
     String nextElementName();
 
