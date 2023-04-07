@@ -21,6 +21,8 @@ import javax.annotation.Nonnull;
 /**
  * 泛型化子键事件
  * 该接口约定子键必须是{@link Class}，这样注解处理器就可以在编译时捕获泛型参数类型，从而生成事件绑定方法，十分适合协议绑定这样的场景。
+ * <p>
+ * eg：让你的协议事件实现该类型，那么就可以通过泛型参数声明定义的协议，就可以避免不安全的类型转换。
  *
  * @author wjybxx
  * date 2023/4/6
@@ -29,6 +31,6 @@ public interface GenericEvent<T> extends DynamicEvent {
 
     @Nonnull
     @Override
-    Class<?> childKey();
+    Class<T> childKey();
 
 }

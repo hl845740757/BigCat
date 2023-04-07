@@ -82,8 +82,8 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<? extends Element> documentClassSet = roundEnv.getElementsAnnotatedWith(autoTypeElement);
-        for (Element element : documentClassSet) {
+        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(autoTypeElement);
+        for (Element element : annotatedClassSet) {
             if (element.getKind() != ElementKind.CLASS) {
                 continue; // 忽略正常类以外的东西，比如record
             }
@@ -180,7 +180,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
                         typeArgRawTypeName,
                         TypeName.get(typeUtils.erasure(typeArgMirrors.declared)));
             } else {
-                builder.initializer("$T.of($T.class, $T::new, null, null)",
+                builder.initializer("$T.of($T.class, $T::new)",
                         typeArgRawTypeName,
                         TypeName.get(typeUtils.erasure(typeArgMirrors.declared)),
                         TypeName.get(typeUtils.erasure(typeArgMirrors.impl)));
@@ -317,7 +317,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
         final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, variableElement, fieldImplMirror)
                 .orElse(null);
         if (annotationMirror != null) {
-            final Map<String, AnnotationValue> valueMap = AptUtils.getAnnotationValueMap(annotationMirror);
+            final Map<String, AnnotationValue> valueMap = AptUtils.getAnnotationValuesMap(annotationMirror);
             final AnnotationValue value = valueMap.get("value");
             final AnnotationValue writeProxy = valueMap.get("writeProxy");
             final AnnotationValue readProxy = valueMap.get("readProxy");

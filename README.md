@@ -11,6 +11,8 @@ A：期望项目各方面都能做得比较优秀，因此不使用具体某类�
 2. 进入support仓库，clean install 安装apt到本地maven仓库。
 3. 进入parent仓库，可正常开始编译 -- 如果之前出错导致无法编译，请先clean清理缓存。
 
+PS：我现在是在根目录下打开项目，编写apt时将support项目加载进来，安装apt以后卸载support项目(unlink)。
+
 Q：编译报生成的XXX文件不存在？  
 A：请先确保support项目安装成功，如果已安装成功，请仔细检查编译输出的错误信息，通常是忘记getter等方法，修改错误后先clean，然后再编译。
 

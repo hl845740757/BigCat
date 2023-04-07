@@ -22,7 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 该注解用于告知扫描器扫描codec实现时不进行忽略
+ * 该注解用于告知扫描器扫描codec实现时进行忽略
+ * 这使得生成的类不自动实例化，因此你可以自行实例化，以对其进行封装等。
  *
  * @author wjybxx
  * date 2023/4/2

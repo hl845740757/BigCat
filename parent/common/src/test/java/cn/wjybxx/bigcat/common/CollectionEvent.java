@@ -14,22 +14,34 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.codec.document;
+package cn.wjybxx.bigcat.common;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import cn.wjybxx.bigcat.common.eventbus.GenericEvent;
+
+import javax.annotation.Nonnull;
+import java.util.Collection;
 
 /**
- * 该注解用于告知扫描器扫描codec实现时进行忽略
- * 这使得生成的类不自动实例化，因此你可以自行实例化，以对其进行封装等。
- *
  * @author wjybxx
- * date 2023/4/2
+ * date 2023/4/7
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DocumentPojoCodecScanIgnore {
+class CollectionEvent<T extends Collection<?>> implements GenericEvent<T> {
+
+    private final T collection;
+
+    public CollectionEvent(T collection) {
+        this.collection = collection;
+    }
+
+    public T getCollection() {
+        return collection;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    @Override
+    public Class<T> childKey() {
+        return (Class<T>) collection.getClass();
+    }
 
 }

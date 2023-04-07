@@ -18,19 +18,24 @@ package cn.wjybxx.bigcat.common;
 
 import cn.wjybxx.bigcat.common.codec.AutoTypeArgs;
 import cn.wjybxx.bigcat.common.codec.FieldImpl;
+import cn.wjybxx.bigcat.common.codec.binary.BinaryReader;
 import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
+import cn.wjybxx.bigcat.common.codec.binary.BinaryWriter;
 import cn.wjybxx.bigcat.common.codec.document.AutoFields;
+import cn.wjybxx.bigcat.common.codec.document.DocumentReader;
 import cn.wjybxx.bigcat.common.codec.document.DocumentSerializable;
+import cn.wjybxx.bigcat.common.codec.document.DocumentWriter;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import javax.annotation.Nullable;
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 编译之后，将 parent/common/target/generated-test-sources/test-annotations 设置为 test-resource 目录，
  * 就可以看见生成的代码是什么样的。
+ * <p>
+ * 这里为了减少代码，字段都定义为了public，避免getter/setter影响阅读
  *
  * @author wjybxx
  * date 2023/4/7
@@ -41,15 +46,50 @@ import java.util.Map;
 @BinarySerializable
 public class CodecBeanExample {
 
-    private int age;
-    private String name;
+    public int age;
+    public String name;
 
-    private Map<Integer, String> age2NameMap;
-    private EnumMap<Sex, String> sex2NameMap;
+    public Map<Integer, String> age2NameMap;
+    public Map<Sex, String> sex2NameMap1;
+    public EnumMap<Sex, String> sex2NameMap2;
+    @FieldImpl(EnumMap.class)
+    public Map<Sex, String> sex2NameMap3;
 
+    public Set<Sex> sexSet1;
+    public EnumSet<Sex> sexSet2;
+    @FieldImpl(EnumSet.class)
+    public Set<Sex> sexSet3;
+
+    public List<String> stringList1;
+    public ArrayList<String> stringList2;
+    @FieldImpl(LinkedList.class)
+    public List<String> stringList3;
+
+    public Int2IntOpenHashMap currencyMap1;
     @FieldImpl(Int2IntOpenHashMap.class)
-    private Int2IntMap currencyMap;
+    public Int2IntMap currencyMap2;
 
+    @FieldImpl(writeProxy = "writeCustom", readProxy = "readCustom")
+    public Object custom;
+
+    //
+    public static void writeCustom(BinaryWriter writer, CodecBeanExample instance) {
+
+    }
+
+    public static void readCustom(BinaryReader reader, CodecBeanExample instance) {
+
+    }
+
+    public static void writeCustom(DocumentWriter writer, CodecBeanExample instance) {
+
+    }
+
+    public static void readCustom(DocumentReader reader, CodecBeanExample instance) {
+
+    }
+
+    //
     @BinarySerializable
     @DocumentSerializable
     public enum Sex implements IndexableEnum {
@@ -68,7 +108,7 @@ public class CodecBeanExample {
             return number;
         }
 
-        private static final IndexableEnumMapper<Sex> MAPPER = EnumUtils.mapping(values());
+        public static final IndexableEnumMapper<Sex> MAPPER = EnumUtils.mapping(values());
 
         @Nullable
         public static Sex forNumber(int number) {

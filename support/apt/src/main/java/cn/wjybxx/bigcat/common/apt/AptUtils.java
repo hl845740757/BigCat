@@ -323,21 +323,11 @@ public class AptUtils {
     }
 
     /** 将注解属性转换为 name -> AnnotationValue 的Map */
-    public static Map<String, AnnotationValue> getAnnotationValueMap(AnnotationMirror annotationMirror) {
+    public static Map<String, AnnotationValue> getAnnotationValuesMap(AnnotationMirror annotationMirror) {
         final HashMap<String, AnnotationValue> r = new HashMap<>();
         for (var entry : annotationMirror.getElementValues().entrySet()) {
             final String name = entry.getKey().getSimpleName().toString();
             final AnnotationValue value = entry.getValue();
-            r.put(name, value);
-        }
-        return r;
-    }
-
-    public static Map<String, Object> getAnnotationValueValueMap(AnnotationMirror annotationMirror) {
-        final HashMap<String, Object> r = new HashMap<>();
-        for (var entry : annotationMirror.getElementValues().entrySet()) {
-            final String name = entry.getKey().getSimpleName().toString();
-            final Object value = entry.getValue().getValue();
             r.put(name, value);
         }
         return r;

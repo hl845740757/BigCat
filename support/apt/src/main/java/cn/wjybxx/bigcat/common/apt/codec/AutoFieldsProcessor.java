@@ -74,8 +74,8 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<? extends Element> documentClassSet = roundEnv.getElementsAnnotatedWith(autoTypeElement);
-        for (Element element : documentClassSet) {
+        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(autoTypeElement);
+        for (Element element : annotatedClassSet) {
             try {
                 genFieldsClass((TypeElement) element);
             } catch (Throwable e) {

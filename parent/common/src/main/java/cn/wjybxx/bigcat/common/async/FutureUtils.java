@@ -212,26 +212,6 @@ public class FutureUtils {
 
     // region 适配和执行
 
-    public static <T> Callable<T> toCallable(Runnable task, T result) {
-        if (task == null) throw new NullPointerException();
-        return new RunnableAdapter<>(task, result);
-    }
-
-    public static Callable<Object> toCallable(Runnable task) {
-        if (task == null) throw new NullPointerException();
-        return new RunnableAdapter<>(task, null);
-    }
-
-    public static <T, R> Function<T, R> toFunction(Consumer<T> action, R result) {
-        if (action == null) throw new NullPointerException();
-        return new FunctionAdapter<>(action, result);
-    }
-
-    public static <T> Function<T, Object> toFunction(Consumer<T> action) {
-        if (action == null) throw new NullPointerException();
-        return new FunctionAdapter<>(action, null);
-    }
-
     /**
      * @param executor 用于在当前线程延迟执行任务的Executor
      * @return future
@@ -315,50 +295,6 @@ public class FutureUtils {
             } catch (Throwable ex) {
                 output.tryFailure(ex);
             }
-        }
-    }
-
-    private static class RunnableAdapter<T> implements Callable<T> {
-
-        final Runnable task;
-        final T result;
-
-        public RunnableAdapter(Runnable task, T result) {
-            this.task = task;
-            this.result = result;
-        }
-
-        @Override
-        public T call() throws Exception {
-            task.run();
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "RunnableAdapter1{" + "task=" + task + '}';
-        }
-    }
-
-    private static class FunctionAdapter<T, R> implements Function<T, R> {
-
-        final Consumer<T> action;
-        final R result;
-
-        private FunctionAdapter(Consumer<T> action, R result) {
-            this.action = action;
-            this.result = result;
-        }
-
-        @Override
-        public R apply(T t) {
-            action.accept(t);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "FunctionAdapter{" + "action=" + action + '}';
         }
     }
 

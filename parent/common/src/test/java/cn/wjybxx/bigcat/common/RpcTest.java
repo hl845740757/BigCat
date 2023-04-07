@@ -154,7 +154,7 @@ public class RpcTest {
                         serviceId,
                         helloMethodId,
                         List.of(msg1)
-                )).thenApply(FutureUtils.toFunction(response -> assertResponse(msg1, response)));
+                )).thenApply(FunctionUtils.toFunction(response -> assertResponse(msg1, response)));
             }
             {
                 String msg2 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
@@ -162,7 +162,7 @@ public class RpcTest {
                         serviceId,
                         helloAsyncMethodId,
                         List.of(msg2)
-                )).thenApply(FutureUtils.toFunction(response -> assertResponse(msg2, response)));
+                )).thenApply(FunctionUtils.toFunction(response -> assertResponse(msg2, response)));
             }
         }
     }

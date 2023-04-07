@@ -69,6 +69,12 @@ public interface BinaryPojoCodecImpl<T> {
      * {@link BinaryWriter#writeEndObject()}
      * {@link BinaryReader#readStartObject(TypeArgInfo)}
      * {@link BinaryReader#readEndObject()}
+     * <p>
+     * Q：禁用该属性有什么用？
+     * A:你可以通过修改传递给{@link BinaryWriter#writeStartObject(Object, TypeArgInfo)}的{@code typeArgInfo}的引用
+     * 实现writeReplace，即：将自己转换为另一个对象写入。
+     * 也可以通过修改传递个{@link BinaryReader#readStartObject(TypeArgInfo)}的{@code typeArgInfo}的引用
+     * 实现readReplace，即：将给定的类型信息读取为另一种类型。
      */
     default boolean autoStartEnd() {
         return true;
