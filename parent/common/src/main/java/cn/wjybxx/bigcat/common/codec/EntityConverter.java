@@ -61,6 +61,15 @@ public interface EntityConverter<T> {
     }
 
     /**
+     * 写一个对象，但不写入对象自身的类型信息
+     * 嵌套对象的信息会写入
+     */
+    @Nonnull
+    default T writeNoTypeKey(@Nonnull Object value) {
+        return write(value, TypeArgInfo.of(value.getClass()));
+    }
+
+    /**
      * 克隆一个对象。
      * 注意：返回值的类型不一定和原始对象相同，这通常发生在集合对象上。
      *
@@ -73,4 +82,5 @@ public interface EntityConverter<T> {
         final T out = write(value, typeArgInfo);
         return read(out, typeArgInfo);
     }
+
 }

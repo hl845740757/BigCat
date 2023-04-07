@@ -17,6 +17,7 @@
 package cn.wjybxx.bigcat.common.rpc;
 
 
+import cn.wjybxx.bigcat.common.codec.AutoTypeArgs;
 import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
 import cn.wjybxx.bigcat.common.log.DebugLogFriendlyObject;
 
@@ -28,6 +29,7 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/1
  */
+@AutoTypeArgs
 @BinarySerializable
 public class RpcRequest implements DebugLogFriendlyObject {
 

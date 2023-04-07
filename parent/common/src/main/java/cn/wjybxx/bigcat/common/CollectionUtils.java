@@ -16,6 +16,9 @@
 
 package cn.wjybxx.bigcat.common;
 
+import cn.wjybxx.bigcat.common.collect.DelayedCompressList;
+import cn.wjybxx.bigcat.common.collect.SealedCollections;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
@@ -35,6 +38,17 @@ public class CollectionUtils {
     private CollectionUtils() {
 
     }
+
+    // region 特殊工厂
+
+    public static <E> DelayedCompressList<E> newDelayedCompressList() {
+        return SealedCollections.newDelayedCompressList();
+    }
+
+    public static <E> DelayedCompressList<E> newDelayedCompressList(int initCapacity) {
+        return SealedCollections.newDelayedCompressList(initCapacity);
+    }
+    // endregion
 
     // region list扩展
 
@@ -157,12 +171,11 @@ public class CollectionUtils {
                 index++;
                 continue;
             }
-            int tailIndex = size - 1;
-            if (index < tailIndex) {
-                list.set(index, list.get(tailIndex));
+            size--; // tailIndex
+            if (index < size) {
+                list.set(index, list.get(size));
             }
-            list.remove(tailIndex);
-            size--;
+            list.remove(size);
         }
         return originSize - size;
     }
@@ -246,6 +259,9 @@ public class CollectionUtils {
     // region 使用“==”操作集合
     // 注意：对于拆装箱的对象慎用
 
+    /**
+     * 使用“==”判断元素是否存在
+     */
     public static boolean containsRef(List<?> list, Object element) {
         for (int i = 0, size = list.size(); i < size; i++) {
             if (list.get(i) == element) {
@@ -411,6 +427,10 @@ public class CollectionUtils {
 
     public static boolean isNotEmptyCollection(@Nullable Object obj) {
         return obj instanceof Collection<?> && ((Collection<?>) obj).size() > 0;
+    }
+
+    public static boolean isNotEmptyMap(@Nullable Object obj) {
+        return obj instanceof Map<?, ?> && ((Map<?, ?>) obj).size() > 0;
     }
 
     /** 如果两个集合存在公共元素，则返回true */
@@ -584,7 +604,7 @@ public class CollectionUtils {
 
     /** 检查集合里是否存在null，如果元素里存在null则抛出异常 */
     public static void checkNullElements(Collection<?> c) {
-        if (c instanceof RandomAccess && c instanceof List) {
+        if (c instanceof RandomAccess) {
             // produce less garbage
             List<?> list = (List<?>) c;
             int size = list.size();

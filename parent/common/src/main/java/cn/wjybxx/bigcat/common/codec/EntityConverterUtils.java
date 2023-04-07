@@ -20,7 +20,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -207,17 +206,5 @@ public class EntityConverterUtils {
         /** 引用类型 -- 可以为null */
         REFERENCE,
     }
-
-    // region 给生成的代码使用
-
-    public static <E extends Enum<E>> Supplier<EnumSet<E>> enumSetFactory(Class<E> type) {
-        return () -> EnumSet.noneOf(type);
-    }
-
-    public static <K extends Enum<K>, V> Supplier<EnumMap<K, V>> enumMapFactory(Class<K> type) {
-        return () -> new EnumMap<>(type);
-    }
-
-    // endregion
 
 }

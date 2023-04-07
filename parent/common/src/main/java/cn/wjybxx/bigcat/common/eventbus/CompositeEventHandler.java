@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.common.eventbus;
 
+import cn.wjybxx.bigcat.common.CollectionUtils;
 import cn.wjybxx.bigcat.common.collect.DelayedCompressList;
 
 import javax.annotation.Nonnull;
@@ -32,7 +33,7 @@ public class CompositeEventHandler<T> implements EventHandler<T> {
 
     public CompositeEventHandler(EventHandler<? super T> first,
                                  EventHandler<? super T> second) {
-        children = DelayedCompressList.newInstance();
+        children = CollectionUtils.newDelayedCompressList();
         children.add(first);
         children.add(second);
     }

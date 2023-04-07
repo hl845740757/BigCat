@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  * 1. 使用该注解的方法必须有且仅有一个参数，返回值无要求。<br>
  * 2. 方法参数不可以是基本类型，因为发布事件的时候会封装为Object，基本类型会被装箱，因此无法接收到基本类型的事件。<br>
  * 3. 方法不能是private - 至少是包级访问权限。<br>
- * 4. 如果期望订阅多个事件，请查看{@link #masterEvents()}{@link #subEvents()}和{@link #childKeys()}{@link #intChildKeys()}。
+ * 4. 如果期望订阅多个事件，请查看{@link #masterEvents()}{@link #childEvents()}和{@link #childKeys()}{@link #intChildKeys()}。
  * <p>
  * Q: 如果使用多个EventBus，如果避免订阅方法注册到不该注册的地方？
  * A: 有3种选择，
@@ -59,19 +59,13 @@ public @interface Subscribe {
     /**
      * 声明需要订阅子事件。
      * 1.如果{@link GenericEvent}的泛型参数为通配符{@code ?}，则该属性无效。
-     * 2.其它情况下，默认为泛型参数和这里声明的所有类型成注册方法，如果不需要为泛型参数生成注册方法，使用{@link #onlySubEvents()}禁用。
-     * 3.子事件须是泛型参数的子类，否则编译错误。
+     * 2.其它情况下，如果该属性不为空，则表示只订阅子事件，此时泛型参数应该子事件的超类，否则编译错误。
+     * 如果在订阅子事件的情况下，还需订阅泛型参数关联的事件，你可以声明两个订阅方法。
      * <p>
      * Q：有什么用途？
      * A：以协议监听为例，你可以在一个方法中监听多个协议。
      */
-    Class<?>[] subEvents() default {};
-
-    /**
-     * 是否只订阅子事件类型。
-     * 如果为true，则表示不为{@link GenericEvent}的泛型参数生成事件注册方法，只为{@link #subEvents()}中的事件生成注册方法。
-     */
-    boolean onlySubEvents() default false;
+    Class<?>[] childEvents() default {};
 
     // 普通事件类型
 
@@ -83,7 +77,7 @@ public @interface Subscribe {
      *
      * @see #childKeys()
      */
-    Class<?> declared() default Object.class;
+    Class<?> childDeclared() default Object.class;
 
     /**
      * 字符串或常量（含枚举）名字类型的子键

@@ -49,8 +49,14 @@ public final class DefaultObjectPool<T> implements ObjectPool<T> {
         this(factory, resetPolicy, initialCapacity, DEFAULT_MAX_CAPACITY);
     }
 
+    /**
+     * @param factory         对象创建工厂
+     * @param resetPolicy     重置方法
+     * @param initialCapacity 支持0 - 0表示默认不初始化
+     * @param maxCapacity     支持0 - 0表示不缓存对象
+     */
     public DefaultObjectPool(Supplier<? extends T> factory, ResetPolicy<? super T> resetPolicy, int initialCapacity, int maxCapacity) {
-        if (maxCapacity <= 0 || initialCapacity > maxCapacity) {
+        if (initialCapacity < 0 || maxCapacity < 0 || initialCapacity > maxCapacity) {
             throw new IllegalArgumentException("initialCapacity: " + initialCapacity + ", maxCapacity: " + maxCapacity);
         }
         this.freeObjects = new ArrayList<>(initialCapacity);

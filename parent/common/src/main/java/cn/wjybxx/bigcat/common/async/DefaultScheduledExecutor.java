@@ -40,7 +40,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
 
     private final TimeProvider timeProvider;
-    private final boolean strictlyScheduling;
+    private final NegativeChecker initialDelayChecker;
     private final IndexedPriorityQueue<ScheduledFutureTask<?>> taskQueue;
 
     /** 为任务分配唯一id，确保先入先出 */
@@ -54,21 +54,21 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         this(timeProvider, DEFAULT_INITIAL_CAPACITY);
     }
 
-    /**
-     * @param strictlyScheduling 如果该值为true，表示允许插入初始延迟为负值的任务，即允许新任务插入到当前要执行的任务前方；
-     *                           如果该值为false，表示禁止插入初始延迟为负值的任务，初始延迟为负值时抛出异常。
-     *                           （之所以不静默转换为0，是考虑到安全性问题，避免错误深藏 ）
-     */
-    public DefaultScheduledExecutor(TimeProvider timeProvider, boolean strictlyScheduling) {
-        this.timeProvider = Objects.requireNonNull(timeProvider, "timeProvider");
-        this.strictlyScheduling = strictlyScheduling;
-        this.taskQueue = new DefaultIndexedPriorityQueue<>(queueTaskComparator, DEFAULT_INITIAL_CAPACITY);
+    public DefaultScheduledExecutor(TimeProvider timeProvider, int initCapacity) {
+        this(timeProvider, initCapacity, null);
     }
 
-    public DefaultScheduledExecutor(TimeProvider timeProvider, int initCapacity) {
+    public DefaultScheduledExecutor(TimeProvider timeProvider, NegativeChecker initialDelayChecker) {
+        this(timeProvider, DEFAULT_INITIAL_CAPACITY, initialDelayChecker);
+    }
+
+    /**
+     * @param initialDelayChecker 初始延迟的兼容性；默认允许，保持强时序。
+     */
+    public DefaultScheduledExecutor(TimeProvider timeProvider, int initCapacity, NegativeChecker initialDelayChecker) {
         this.timeProvider = Objects.requireNonNull(timeProvider, "timeProvider");
-        this.strictlyScheduling = false;
         this.taskQueue = new DefaultIndexedPriorityQueue<>(queueTaskComparator, initCapacity);
+        this.initialDelayChecker = Objects.requireNonNullElse(initialDelayChecker, NegativeChecker.SUCCESS);
     }
 
     @Nonnull
@@ -97,7 +97,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     @Override
     public ScheduledFluentFuture<?> scheduleFixedDelay(long initialDelay, long period, @Nonnull Runnable task) {
         Objects.requireNonNull(task);
-        checkFirstDelay(initialDelay);
+        initialDelay = checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
 
         final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
@@ -111,7 +111,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     @Override
     public ScheduledFluentFuture<?> scheduleFixedRate(long initialDelay, long period, @Nonnull Runnable task) {
         Objects.requireNonNull(task);
-        checkFirstDelay(initialDelay);
+        initialDelay = checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
 
         final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
@@ -126,7 +126,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     public <V> ScheduledFluentFuture<V> timeSharingFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
                                                               long timeout) {
         Objects.requireNonNull(task);
-        checkFirstDelay(initialDelay);
+        initialDelay = checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
         checkTimeSharingTimeout(timeout);
 
@@ -143,7 +143,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     public <V> ScheduledFluentFuture<V> timeSharingFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
                                                              long timeout) {
         Objects.requireNonNull(task);
-        checkFirstDelay(initialDelay);
+        initialDelay = checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
         checkTimeSharingTimeout(timeout);
 
@@ -229,7 +229,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     private long nextTriggerTime(long delay) {
         final long r = timeProvider.getTime() + delay;
         if (delay > 0 && r < 0) { // 溢出
-            throw new IllegalArgumentException(String.format("nextTriggerTime: %d, delay: %d", r, delay));
+            throw new IllegalArgumentException(String.format("overflow, nextTriggerTime: %d, delay: %d", r, delay));
         }
         return r;
     }
@@ -241,8 +241,8 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         } else {
             taskQueue.add(queueTask);
             if (tickTime > 0 && queueTask.getNextTriggerTime() < tickTime) {
-                // 尝试插到既有要执行的timer的前面，记录调用方信息
-                logger.error("task.nextTriggerTime < curTickTime", new RuntimeException());
+                // 新任务插在既有要执行的任务前面，打印警告
+                logger.warn("the nextTriggerTime of newTask is less than curTickTime, taskInfo " + queueTask.task);
             }
         }
     }
@@ -255,11 +255,8 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         return timeProvider.getTime();
     }
 
-    private void checkFirstDelay(long firstDelay) {
-        // 允许首次延迟小于0会带来许多复杂度
-        if (!strictlyScheduling && firstDelay < 0) {
-            throw new IllegalArgumentException("initialDelay must be gte 0");
-        }
+    private long checkFirstDelay(long firstDelay) {
+        return initialDelayChecker.check(firstDelay);
     }
 
     private static void ensurePeriodGreaterThanZero(long period) {
@@ -275,9 +272,9 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         }
     }
 
-    static class ScheduledFutureTask<V> extends DefaultPromise<V> implements ScheduledFluentFuture<V>,
-            IndexedPriorityQueue.IndexedNode, Comparable<IndexedPriorityQueue.IndexedNode>,
-            Runnable {
+    static class ScheduledFutureTask<V> extends DefaultPromise<V> implements ScheduledFluentFuture<V>, Runnable,
+            IndexedPriorityQueue.IndexedNode,
+            Comparable<ScheduledFutureTask<?>> {
 
         private final DefaultScheduledExecutor executor;
         private final long taskId;
@@ -400,8 +397,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         }
 
         @Override
-        public int compareTo(@Nonnull IndexedPriorityQueue.IndexedNode o) {
-            final ScheduledFutureTask<?> that = (ScheduledFutureTask<?>) o;
+        public int compareTo(@Nonnull ScheduledFutureTask<?> that) {
             if (this == that) {
                 return 0;
             }
@@ -412,11 +408,6 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
             }
 
             return Long.compare(taskId, that.taskId);
-        }
-
-        @Override
-        protected <U> DefaultPromise<U> newIncompletePromise() {
-            return new DefaultPromise<>(); // 这里返回defaultPromise可行，返回当前类型是不必要的
         }
 
     }

@@ -69,7 +69,10 @@ public interface DelayedCompressList<E> {
 
     //
 
-    /** @return 如果添加元素成功则返回true */
+    /**
+     * @return 如果添加元素成功则返回true
+     * @throws NullPointerException 如果e为null
+     */
     boolean add(E e);
 
     /**
@@ -84,6 +87,7 @@ public interface DelayedCompressList<E> {
      * 将给定元素赋值到给定位置
      *
      * @return 该位置的前一个值
+     * @throws NullPointerException 如果e为null
      */
     E set(int index, E e);
 
@@ -132,28 +136,34 @@ public interface DelayedCompressList<E> {
     /**
      * 基于equals查找元素在List中的位置
      *
+     * @param e 如果null，表示查询第一个删除的的元素位置
      * @return 如果元素不在集合中，则返回-1
      */
-    int index(Object e);
+    int index(@Nullable Object e);
 
     /**
      * 基于equals逆向查找元素在List中的位置
+     *
+     * @param e 如果null，表示查询最后一个删除的的元素位置
+     * @return 如果元素不在集合中，则返回-1
      */
-    int lastIndex(Object e);
+    int lastIndex(@Nullable Object e);
 
     /**
      * 基于引用相等查找元素在List中的位置
      *
+     * @param e 如果null，表示查询第一个删除的的元素位置
      * @return 如果元素不在集合中，则返回-1
      */
-    int indexOfRef(Object e);
+    int indexOfRef(@Nullable Object e);
 
     /**
      * 基于引用相等逆向查找元素在List中的位置
      *
+     * @param e 如果null，表示查询最后一个删除的的元素位置
      * @return 如果元素不在集合中，则返回-1
      */
-    int lastIndexOfRef(Object e);
+    int lastIndexOfRef(@Nullable Object e);
 
     /** 基于equals查询一个元素是否在List中 */
     default boolean contains(Object e) {
@@ -171,22 +181,22 @@ public interface DelayedCompressList<E> {
      */
     int size();
 
+    default boolean isEmpty() {
+        return size() == 0;
+    }
+
     /**
      * 获取list的真实大小
      * 如果当前正在迭代，则可能产生遍历统计的情况，要注意开销问题。
      */
     int realSize();
 
-    default boolean isEmpty() {
-        return size() == 0;
-    }
-
     /**
      * 查询List是否真的为空
      * 如果当前正在迭代，则可能产生遍历统计的情况，要注意开销问题。
      */
     default boolean isRealEmpty() {
-        return realSize() == 0;
+        return indexOfRef(null) == INDEX_NOT_FOUND;
     }
 
     /** @apiNote 在迭代期间禁止排序 */
@@ -195,7 +205,7 @@ public interface DelayedCompressList<E> {
     // region 辅助方法
 
     /**
-     * 自定义index查询
+     * 自定义index查询；自定义查询时不支持查找null
      *
      * @param predicate 查询过程不可以修改当前List的状态
      */
@@ -279,7 +289,6 @@ public interface DelayedCompressList<E> {
     default boolean addAll(@Nonnull Collection<? extends E> c) {
         boolean r = false;
         for (E e : c) {
-            Objects.requireNonNull(e);
             r |= add(e);
         }
         return r;
@@ -309,13 +318,5 @@ public interface DelayedCompressList<E> {
     }
 
     // endregion
-
-    static <E> DelayedCompressList<E> newInstance() {
-        return SealedCollections.newDelayedCompressList();
-    }
-
-    static <E> DelayedCompressList<E> newInstance(int initCapacity) {
-        return SealedCollections.newDelayedCompressList(initCapacity);
-    }
 
 }

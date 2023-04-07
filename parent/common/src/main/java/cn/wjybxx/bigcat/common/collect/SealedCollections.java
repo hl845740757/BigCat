@@ -29,13 +29,14 @@ import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 
 /**
+ * 不建议外部直接使用，可使用{@link CollectionUtils}创建
+ *
  * @author wjybxx
  * date 2023/4/6
  */
 public class SealedCollections {
 
     private static final int INDEX_NOT_FOUND = ArrayUtils.INDEX_NOT_FOUND;
-
 
     public static <E> DelayedCompressList<E> newDelayedCompressList() {
         return new DelayedCompressListImpl<>();
@@ -46,7 +47,7 @@ public class SealedCollections {
     }
 
     @NotThreadSafe
-    private static class DelayedCompressListImpl<E> implements DelayedCompressList<E> {
+    private static final class DelayedCompressListImpl<E> implements DelayedCompressList<E> {
 
         private final ArrayList<E> children;
         private int recursionDepth;
@@ -118,6 +119,7 @@ public class SealedCollections {
 
         @Override
         public E set(int index, E e) {
+            Objects.requireNonNull(e);
             return children.set(index, e);
         }
 
@@ -160,24 +162,36 @@ public class SealedCollections {
         }
 
         @Override
-        public int index(Object e) {
+        public int index(@Nullable Object e) {
+            if (e == null) {
+                return firstIndex;
+            }
             //noinspection SuspiciousMethodCalls
             return children.indexOf(e);
         }
 
         @Override
-        public int lastIndex(Object e) {
+        public int lastIndex(@Nullable Object e) {
+            if (e == null) {
+                return lastIndex;
+            }
             //noinspection SuspiciousMethodCalls
             return children.lastIndexOf(e);
         }
 
         @Override
-        public int indexOfRef(Object e) {
+        public int indexOfRef(@Nullable Object e) {
+            if (e == null) {
+                return firstIndex;
+            }
             return CollectionUtils.indexOfRef(children, e);
         }
 
         @Override
-        public int lastIndexOfRef(Object e) {
+        public int lastIndexOfRef(@Nullable Object e) {
+            if (e == null) {
+                return lastIndex;
+            }
             return CollectionUtils.lastIndexOfRef(children, e);
         }
 
@@ -191,6 +205,11 @@ public class SealedCollections {
         @Override
         public int size() {
             return children.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return children.isEmpty();
         }
 
         @Override
@@ -213,16 +232,11 @@ public class SealedCollections {
         }
 
         @Override
-        public boolean isEmpty() {
-            return children.isEmpty();
-        }
-
-        @Override
         public boolean isRealEmpty() {
-            if (recursionDepth == 0 || firstIndex == INDEX_NOT_FOUND) { // 没有删除元素
-                return children.isEmpty();
+            if (children.isEmpty()) {
+                return true;
             }
-            return CollectionUtils.firstPresent(children) == null;
+            return firstIndex == INDEX_NOT_FOUND; // 没有删除元素
         }
 
         @Override

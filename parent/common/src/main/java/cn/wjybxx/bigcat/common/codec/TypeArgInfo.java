@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.common.codec;
 
 import cn.wjybxx.bigcat.common.annotation.NameIsStable;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -32,11 +33,12 @@ import java.util.function.Supplier;
  * @author wjybxx
  * date 2023/3/31
  */
+@Immutable
 public final class TypeArgInfo<T> {
 
     /** 类型的声明类型 */
     public final Class<T> declaredType;
-    /** 对象工厂 */
+    /** 对象工厂 -- 如果使用了特殊的缓存实现，需考虑线程安全问题 */
     public final Supplier<? extends T> factory;
 
     /** 集合的Element、Map的Key */
@@ -113,8 +115,8 @@ public final class TypeArgInfo<T> {
     }
 
     @NameIsStable(comment = "生成的代码会调用")
-    public static <T> TypeArgInfo<T> of(Class<T> declaredType, Class<?> typeArg1, Class<?> typeArg2) {
-        return new TypeArgInfo<>(declaredType, typeArg1, typeArg2);
+    public static <T> TypeArgInfo<T> of(Class<T> declaredType, Supplier<? extends T> factory) {
+        return new TypeArgInfo<>(declaredType, factory, null, null);
     }
 
     @NameIsStable(comment = "生成的代码会调用")
@@ -122,8 +124,14 @@ public final class TypeArgInfo<T> {
         return new TypeArgInfo<>(declaredType, factory, typeArg1, typeArg2);
     }
 
-    public static <T> TypeArgInfo<T> ofArray(Class<T> declaredType) {
-        return new TypeArgInfo<>(declaredType, null, null);
+    @NameIsStable(comment = "生成的代码会调用")
+    public static <E extends Enum<E>> Supplier<? extends EnumSet<E>> enumSetFactory(Class<E> type) {
+        return () -> EnumSet.noneOf(type);
+    }
+
+    @NameIsStable(comment = "生成的代码会调用")
+    public static <K extends Enum<K>, V> Supplier<? extends EnumMap<K, V>> enumMapFactory(Class<K> type) {
+        return () -> new EnumMap<>(type);
     }
 
     @SuppressWarnings("rawtypes")

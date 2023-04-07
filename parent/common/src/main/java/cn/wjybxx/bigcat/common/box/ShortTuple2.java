@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.common.box;
 
+import cn.wjybxx.bigcat.common.codec.AutoTypeArgs;
 import cn.wjybxx.bigcat.common.codec.binary.BinaryReader;
 import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
 
@@ -23,6 +24,7 @@ import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
  * @author wjybxx
  * date 2023/3/31
  */
+@AutoTypeArgs
 @BinarySerializable
 public class ShortTuple2 {
 

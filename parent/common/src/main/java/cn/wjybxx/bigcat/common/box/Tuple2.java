@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.common.box;
 
+import cn.wjybxx.bigcat.common.codec.AutoTypeArgs;
 import cn.wjybxx.bigcat.common.codec.binary.BinaryReader;
 import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
 
@@ -27,6 +28,7 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/3/31
  */
+@AutoTypeArgs
 @BinarySerializable
 public final class Tuple2<A, B> {
 

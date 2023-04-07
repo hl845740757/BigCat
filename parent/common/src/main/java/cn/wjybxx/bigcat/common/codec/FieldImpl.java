@@ -28,25 +28,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 该字段
- * <p>
- * 该注解用于控制字段
- * <p>
- * 用户精确控制字段的编解码，实现插入代码到编解码过程。
+ * 该注解用于用户精确控制字段的编解码，实现插入代码到编解码过程。
  * <p>
  * 该注解用于确定字段的实现类型，以实现精确解析。
  * <h3>什么时候需要？</h3>
- * 当一个字段需要序列化或持久化时，如果其声明类型是抽象的，且其运行时类型不在{@code CodecRegistry}中时，我们需要通过该属性获取如何安全的解析对象。
+ * 当一个字段需要序列化或持久化时，如果其声明类型是抽象的，我们需要通过该属性获取如何安全的解析对象。
+ * 注：非抽象字段也可以指定实现类，自定义类型也可以指定实现类（需提供无参构造方法）。
  *
  * <h3>为什么需要？</h3>
  * 它是由多态产生的，当我们在序列化或持久化一个对象时，如果对象的运行时类型不在{@code CodecRegistry}中，我们就无法精确的进行解析。
  * 举个栗子，当我们传输{@link java.util.LinkedList}时，假设它不在{@code CodecRegistry}中，我们就会当做普通集合序列化，
  * 但反序列化时，我们默认反序列化是{@link java.util.ArrayList}，就可以不兼容，这时候就需要用户告诉我们应该如何解析。
- *
- * <p>
- * Q: 那传输类的全限定名行吗？
- * A: 行不通，为什么呢？
- * 举个栗子：当对方发送一个不可变集合时，你即使有全限定名，也没有办法。所以，关键是接收方期望以什么类型接收，它对发送方并不提要求。
  *
  * <h3>{@link #value()} ()}一些限制</h3>
  * 1. 必须是具体类型
@@ -76,7 +68,8 @@ import java.lang.annotation.Target;
 public @interface FieldImpl {
 
     /**
-     * 字段的实现类
+     * 字段的实现类，用于生成{@link TypeArgInfo#factory}
+     * 自定义类型也可以指定实现类，但实现类需要包含无参构造参数
      */
     Class<?> value() default Object.class;
 
@@ -86,8 +79,7 @@ public @interface FieldImpl {
      * 2.两个参数，第一个参数为{@link BinaryWriter}或{@link DocumentWriter}，第二个参数为所属的对象实例
      * <p>
      * 示例：
-     * <pre>
-     * {@code
+     * <pre>{@code
      *      public static void writeName(BinaryWriter writer, MyClass instance) {
      *          writer.writeString(instance.name);
      *      }
@@ -103,8 +95,7 @@ public @interface FieldImpl {
      * 3.对于有特殊构造过程的字段是很有帮助的，也可以进行类型转换。
      * <p>
      * 示例：
-     * <pre>
-     * {@code
+     * <pre>{@code
      *      public static void readName(BinaryReader reader, MyClass instance) {
      *          instance.name = reader.readString();
      *      }

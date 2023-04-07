@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.common.codec.document;
 
 import cn.wjybxx.bigcat.common.codec.EntityConverter;
-import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
 
 import javax.annotation.Nonnull;
 
@@ -47,11 +46,5 @@ public interface DocumentConverter<T> extends EntityConverter<T> {
     DocumentCodecRegistry codecRegistry();
 
     TypeNameRegistry typeNameRegistry();
-
-    /** 写一个对象，但不写入对象的类型信息 */
-    @Nonnull
-    default T writeNoTypeKey(@Nonnull Object value) {
-        return write(value, TypeArgInfo.of(value.getClass()));
-    }
 
 }

@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.common.rpc;
 
+import cn.wjybxx.bigcat.common.codec.AutoTypeArgs;
 import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
 
 import javax.annotation.Nonnull;
@@ -28,6 +29,7 @@ import java.util.List;
  * @author wjybxx
  * date 2023/4/1
  */
+@AutoTypeArgs
 @BinarySerializable
 public class DefaultRpcMethodSpec<V> implements RpcMethodSpec<V> {
 
