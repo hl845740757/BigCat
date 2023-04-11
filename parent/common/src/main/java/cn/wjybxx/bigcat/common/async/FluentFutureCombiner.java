@@ -29,23 +29,23 @@ import java.util.Collection;
  * date 2023/4/3
  */
 @NotThreadSafe
-public interface FutureCombiner {
+public interface FluentFutureCombiner {
 
     /**
      * 添加一个要监听的future
      *
      * @return this
      */
-    FutureCombiner add(FluentFuture<?> future);
+    FluentFutureCombiner add(FluentFuture<?> future);
 
-    default FutureCombiner addAll(FluentFuture<?>... futures) {
+    default FluentFutureCombiner addAll(FluentFuture<?>... futures) {
         for (FluentFuture<?> future : futures) {
             this.add(future);
         }
         return this;
     }
 
-    default FutureCombiner addAll(Collection<? extends FluentFuture<?>> futures) {
+    default FluentFutureCombiner addAll(Collection<? extends FluentFuture<?>> futures) {
         for (FluentFuture<?> future : futures) {
             this.add(future);
         }

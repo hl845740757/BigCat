@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.concurrent.NoLogRequiredException;
+import cn.wjybxx.bigcat.common.concurrent.StacklessCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,9 +150,14 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
 
     @Override
     public V getNow() {
+        return getNow(null);
+    }
+
+    @Override
+    public V getNow(V valueIfAbsent) {
         final Object r = this.result;
         if (r == null) {
-            return null;
+            return valueIfAbsent;
         }
         if (r instanceof AltResult) {
             return rethrowGetNow(((AltResult) r).cause);
@@ -336,7 +343,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     /**
      * 使用依赖项的结果进入完成状态，通常表示当前{@link Completion}只是一个简单的中继。
      * 这里实现和{@link CompletableFuture}不同，这里保留原始结果，不强制将异常转换为{@link CompletionException}。
-     * TODO 到底应不应该封装，我个人觉得不封装更好
+     * （我个人觉得不封装更好 -- 不封装会丢失中间部分的堆栈）
      */
     final void completeRelay(Object r) {
         internalComplete(r);

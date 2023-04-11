@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.concurrent.NoLogRequiredException;
+
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
@@ -23,7 +25,7 @@ import java.util.function.BiConsumer;
  * @author wjybxx
  * date 2023/4/3
  */
-public class DefaultFutureCombiner implements FutureCombiner {
+public class DefaultFluentFutureCombiner implements FluentFutureCombiner {
 
     private final ChildListener childrenListener = new ChildListener();
     private AggregateOptions options;
@@ -38,12 +40,12 @@ public class DefaultFutureCombiner implements FutureCombiner {
     /** 异常信息，所有模式下都记录，但只记录一个 */
     private Throwable cause;
 
-    DefaultFutureCombiner() {
+    DefaultFluentFutureCombiner() {
     }
 
     //region
     @Override
-    public FutureCombiner add(FluentFuture<?> future) {
+    public FluentFutureCombiner add(FluentFuture<?> future) {
         Objects.requireNonNull(future);
         checkAddFutureAllowed();
         ++futureCount;
@@ -78,7 +80,7 @@ public class DefaultFutureCombiner implements FutureCombiner {
     private FluentPromise<Object> finish(AggregateOptions options) {
         checkFinishAllowed();
         this.options = options;
-        this.aggregatePromise = FutureUtils.newPromise();
+        this.aggregatePromise = SameThreads.newPromise();
         childrenListener.checkComplete();
         return aggregatePromise;
     }

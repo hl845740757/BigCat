@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.concurrent.StacklessCancellationException;
+
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -44,18 +46,18 @@ abstract class AbstractSameThreadExecutor implements SameThreadExecutor {
     public FluentFuture<?> submitRun(@Nonnull Runnable command) {
         Objects.requireNonNull(command);
         if (shutdown) { // 默认直接取消，暂不添加拒绝处理器
-            return FutureUtils.newFailedFuture(StacklessCancellationException.INSTANCE);
+            return SameThreads.newFailedFuture(StacklessCancellationException.INSTANCE);
         }
-        return FutureUtils.runAsync(this, command);
+        return SameThreads.runAsync(this, command);
     }
 
     @Override
     public <V> FluentFuture<V> submitCall(@Nonnull Callable<V> command) {
         Objects.requireNonNull(command);
         if (shutdown) {
-            return FutureUtils.newFailedFuture(StacklessCancellationException.INSTANCE);
+            return SameThreads.newFailedFuture(StacklessCancellationException.INSTANCE);
         }
-        return FutureUtils.callAsync(this, command);
+        return SameThreads.callAsync(this, command);
     }
 
     @Override

@@ -46,7 +46,7 @@ public class Regulator {
     /** 两次执行之间的间隔 */
     private long deltaTime;
     /** 已触发次数 */
-    private int count;
+    private int triggeredCount;
 
     private Regulator(int type, long firstDelay, long period, long lastUpdateTime) {
         this.type = type;
@@ -55,7 +55,7 @@ public class Regulator {
 
         this.lastUpdateTime = lastUpdateTime;
         this.deltaTime = 0;
-        this.count = 0;
+        this.triggeredCount = 0;
     }
 
     private static long checkFirstDelay(int type, long firstDelay) {
@@ -100,7 +100,7 @@ public class Regulator {
     public Regulator restart(long curTime) {
         lastUpdateTime = curTime;
         deltaTime = 0;
-        count = 0;
+        triggeredCount = 0;
         return this;
     }
 
@@ -120,7 +120,7 @@ public class Regulator {
      * @return 如果应该执行一次update或者tick，则返回true，否则返回false
      */
     public boolean isReady(long curTime) {
-        boolean ready = count == 0
+        boolean ready = triggeredCount == 0
                 ? curTime - lastUpdateTime >= firstDelay
                 : period > 0 && curTime - lastUpdateTime >= period;
         if (ready) {
@@ -137,7 +137,7 @@ public class Regulator {
             lastUpdateTime = curTime;
         } else {
             // 固定频率执行时，一切都是逻辑时间 -- 不过，也不应该超过当前时间
-            if (count == 0) {
+            if (triggeredCount == 0) {
                 deltaTime = firstDelay;
                 lastUpdateTime = Math.min(curTime, lastUpdateTime + firstDelay);
             } else {
@@ -145,12 +145,12 @@ public class Regulator {
                 lastUpdateTime = Math.min(curTime, lastUpdateTime + period);
             }
         }
-        count++;
+        triggeredCount++;
     }
 
     /** 获取下次执行的延迟 */
     public long getDelay(long curTime) {
-        if (count == 0) {
+        if (triggeredCount == 0) {
             return Math.max(0, curTime - lastUpdateTime - firstDelay);
         }
         return Math.max(0, curTime - lastUpdateTime - period);
@@ -198,8 +198,8 @@ public class Regulator {
     /**
      * 触发次数
      */
-    public int getCount() {
-        return count;
+    public int getTriggeredCount() {
+        return triggeredCount;
     }
 
 }

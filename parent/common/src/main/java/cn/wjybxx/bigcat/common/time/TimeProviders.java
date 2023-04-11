@@ -16,6 +16,9 @@
 
 package cn.wjybxx.bigcat.common.time;
 
+import cn.wjybxx.bigcat.common.concurrent.EventLoop;
+import cn.wjybxx.bigcat.common.concurrent.GuardedOperationException;
+
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -30,7 +33,7 @@ public class TimeProviders {
     }
 
     /**
-     * 获取实时时间提供器
+     * 获取[毫秒]实时时间提供器
      *
      * @return timeProvider - threadSafe
      */
@@ -38,42 +41,56 @@ public class TimeProviders {
         return SystemTimeProvider.INSTANCE;
     }
 
+    /***
+     * 获取[纳秒]实时时间提供器
+     *
+     * @return timeProvider - threadSafe
+     */
+    public static TimeProvider systemNanoTimeProvider() {
+        return SystemNanoTimeProvider.INSTANCE;
+    }
+
+    /**
+     * 创建一个支持缓存的时间提供器，且可以多线程安全访问。
+     * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值，且应该只有一个线程调用更新方法。
+     *
+     * @param eventLoop 负责更新时间的线程
+     * @param curTime   初始时间
+     * @return timeProvider - threadSafe
+     */
+    public static CachedTimeProvider newSharableTimeProvider(EventLoop eventLoop, long curTime) {
+        return new ThreadSafeCachedTimeProvider(eventLoop, curTime);
+    }
+    //
+
     /**
      * 创建一个支持缓存的时间提供器，但不是线程安全的。
      * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值。
      *
      * @param curTime 初始时间
-     * @return timeProvider
+     * @return timeProvider -- {@link NotThreadSafe}
      */
-    public static CachedTimeProvider newCachedTimeProvider(long curTime) {
+    public static CachedTimeProvider newTimeProvider(long curTime) {
         return new UnsharableCachedTimeProvider(curTime);
-    }
-
-    /**
-     * 创建一个支持缓存的时间提供器，且可以多线程安全访问。
-     * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值。
-     *
-     * @param curTime 初始时间
-     * @return timeProvider - threadSafe
-     */
-    public static CachedTimeProvider newThreadSafeCachedTimeProvider(long curTime) {
-        return new ThreadSafeCachedTimeProvider(curTime);
     }
 
     /**
      * 创建一个基于deltaTime更新的时间提供器，用在一些特殊的场合。
      * 你需要调用{@link Timepiece#update(long)}更新时间值。
      *
-     * @return timeProvider
+     * @return timeProvider -- {@link NotThreadSafe}
      */
     public static Timepiece newTimepiece() {
         return new UnsharableTimepiece();
     }
 
+
+    // region 多线程的
+
     @ThreadSafe
     private static class SystemTimeProvider implements TimeProvider {
 
-        public static final SystemTimeProvider INSTANCE = new SystemTimeProvider();
+        static final SystemTimeProvider INSTANCE = new SystemTimeProvider();
 
         private SystemTimeProvider() {
 
@@ -89,6 +106,59 @@ public class TimeProviders {
             return "SystemTimeProvider{}";
         }
     }
+
+    private static class SystemNanoTimeProvider implements TimeProvider {
+
+        static final SystemNanoTimeProvider INSTANCE = new SystemNanoTimeProvider();
+
+        @Override
+        public long getTime() {
+            return System.nanoTime();
+        }
+
+        @Override
+        public String toString() {
+            return "SystemNanoTimeProvider{}";
+        }
+    }
+
+    @ThreadSafe
+    private static class ThreadSafeCachedTimeProvider implements CachedTimeProvider {
+
+        private final EventLoop eventLoop;
+        private volatile long time;
+
+        private ThreadSafeCachedTimeProvider(EventLoop eventLoop, long time) {
+            this.eventLoop = eventLoop;
+            setTime(time);
+        }
+
+        public void setTime(long curTime) {
+            if (eventLoop.inEventLoop()) {
+                if (curTime < time) {
+                    throw new IllegalArgumentException("curTime < time");
+                }
+                this.time = curTime;
+            } else {
+                throw new GuardedOperationException("setTime from another thread");
+            }
+        }
+
+        @Override
+        public long getTime() {
+            return time;
+        }
+
+        @Override
+        public String toString() {
+            return "ThreadSafeCachedTimeProvider{" +
+                    "curTime=" + time +
+                    '}';
+        }
+    }
+    // endregion
+
+    // region 单线程的
 
     @NotThreadSafe
     private static class UnsharableCachedTimeProvider implements CachedTimeProvider {
@@ -111,36 +181,6 @@ public class TimeProviders {
         @Override
         public String toString() {
             return "UnsharableCachedTimeProvider{" +
-                    "curTime=" + time +
-                    '}';
-        }
-    }
-
-    @ThreadSafe
-    private static class ThreadSafeCachedTimeProvider implements CachedTimeProvider {
-
-        /**
-         * 缓存一个值而不是多个值，可以实现原子更新。
-         * 缓存多个值时，多个值之间具有联系，需要使用对象封装才能原子更新。
-         */
-        private volatile long time;
-
-        private ThreadSafeCachedTimeProvider(long time) {
-            setTime(time);
-        }
-
-        public void setTime(long curTime) {
-            this.time = curTime;
-        }
-
-        @Override
-        public long getTime() {
-            return time;
-        }
-
-        @Override
-        public String toString() {
-            return "ThreadSafeCachedTimeProvider{" +
                     "curTime=" + time +
                     '}';
         }
@@ -198,5 +238,6 @@ public class TimeProviders {
         }
 
     }
+    // endregion
 
 }

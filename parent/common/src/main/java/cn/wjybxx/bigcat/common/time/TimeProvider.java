@@ -17,6 +17,9 @@
 package cn.wjybxx.bigcat.common.time;
 
 /**
+ * 时间提供者，用户外部获取时间
+ * 线程安全性取决于具体实现
+ *
  * @author wjybxx
  * date 2023/4/3
  */

@@ -22,7 +22,11 @@ package cn.wjybxx.bigcat.common.async;
  */
 public interface ScheduledFluentFuture<E> extends FluentFuture<E> {
 
-    /** @return 任务距离下次被调度还有多少时间；时间单位与Executor有关，通常是毫秒 */
+    /**
+     * 任务距离下次被调度还有多少时间；时间单位与Executor有关，通常是毫秒
+     *
+     * @return 如果返回值小于等于0，表示已超过期望的执行时间
+     */
     long getDelay();
 
 }

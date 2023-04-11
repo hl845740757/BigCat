@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.concurrent;
 
-import java.util.concurrent.Callable;
+import javax.annotation.Nonnull;
 
 /**
- * 可分时运行的任务
- *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/7
  */
-public interface TimeSharingCallable<V> extends Callable<ResultHolder<V>> {
+public interface EventLoopChooserFactory {
 
-    /**
-     * null可能是一个合理的返回值，因此需要处理。
-     * 封装的代价并不高，因为此类任务并不常见。
-     *
-     * @return 如果返回值不为null，则表示已完成；返回null表示还需要运行。
-     */
-    ResultHolder<V> call() throws Exception;
+    /** @param children 一定不为空且不存在null元素 */
+    @Nonnull
+    EventLoopChooser newChooser(EventLoop[] children);
 
 }

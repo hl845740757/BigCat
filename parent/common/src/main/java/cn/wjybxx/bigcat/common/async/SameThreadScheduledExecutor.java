@@ -16,6 +16,9 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.concurrent.TimeSharingCallable;
+import cn.wjybxx.bigcat.common.concurrent.TimeSharingTimeoutException;
+
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.concurrent.Callable;
@@ -42,6 +45,18 @@ import java.util.concurrent.Executors;
  */
 @NotThreadSafe
 public interface SameThreadScheduledExecutor extends SameThreadExecutor {
+
+    /** 时序等同于{@code scheduleRun(0, command)} */
+    @Override
+    void execute(@Nonnull Runnable command);
+
+    /** 时序等同于{@code scheduleRun(0, command)} */
+    @Override
+    FluentFuture<?> submitRun(@Nonnull Runnable command);
+
+    /** 时序等同于{@code scheduleCall(0, command)} */
+    @Override
+    <V> FluentFuture<V> submitCall(@Nonnull Callable<V> command);
 
     /**
      * 创建一个在指定延迟之后执行一次的任务。
@@ -74,7 +89,7 @@ public interface SameThreadScheduledExecutor extends SameThreadExecutor {
      * @param task         定时执行的任务
      */
     @Nonnull
-    ScheduledFluentFuture<?> scheduleFixedDelay(long initialDelay, long period, @Nonnull Runnable task);
+    ScheduledFluentFuture<?> scheduleWithFixedDelay(long initialDelay, long period, @Nonnull Runnable task);
 
     /**
      * 创建一个以固定频率执行的任务。
@@ -85,27 +100,27 @@ public interface SameThreadScheduledExecutor extends SameThreadExecutor {
      * @param task         定时执行的任务
      */
     @Nonnull
-    ScheduledFluentFuture<?> scheduleFixedRate(long initialDelay, long period, @Nonnull Runnable task);
+    ScheduledFluentFuture<?> scheduleAtFixedRate(long initialDelay, long period, @Nonnull Runnable task);
 
     /**
      * 给定的任务将按照给定周期被调度，直到得到结果或超时。
      * 如果任务超时，将以{@link TimeSharingTimeoutException}异常结束
      *
      * @param timeout 超时时间
-     * @see #scheduleFixedDelay(long, long, Runnable)
+     * @see #scheduleWithFixedDelay(long, long, Runnable)
      */
     @Nonnull
-    <V> ScheduledFluentFuture<V> timeSharingFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                       long timeout);
+    <V> ScheduledFluentFuture<V> timeSharingWithFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                           long timeout);
 
     /**
      * 给定的任务将按照给定周期被调度，直到得到结果或超时。
      * 如果任务超时，将以{@link TimeSharingTimeoutException}异常结束.
      *
      * @param timeout 超时时间
-     * @see #scheduleFixedRate(long, long, Runnable)
+     * @see #scheduleAtFixedRate(long, long, Runnable)
      */
     @Nonnull
-    <V> ScheduledFluentFuture<V> timeSharingFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                      long timeout);
+    <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                        long timeout);
 }

@@ -28,16 +28,11 @@ import java.util.function.Supplier;
  * 可参考{@link CompletableFuture}
  * 只不过该接口是单线程的，非线程安全的，且不支持阻塞的。
  * <p>
- * Q: 为什么在底层自动记录异常日志？
- * A: 实际使用的时候发现，如果靠写业务的时候保证不丢失异常信息，十分危险，如果疏忽将导致异常信息丢失，异常信息十分重要，不可轻易丢失。
- * <p>
- * Q：为什么接口比{@link CompletableFuture}少？
- * A：一部分我们转移到了{@link FutureCombiner}，另一部分我们在{@link FutureUtils}提供了适配方法，这可以让我们的接口变得干净。
- * <p>
  * Q：为什么不实现JDK的{@link Future}接口？
  * A：因为{@link Future}要求是线程安全的，继承接口是不安全的。
  * <p>
- * {@link FutureUtils}提供了一些工具方法
+ * Q：为什么接口比{@link CompletableFuture}少？
+ * A：一部分我们转移到了{@link FluentFutureCombiner}，另一部分我们转移到了{@link SameThreads}的适配方法，这可以让我们的接口变得干净。
  *
  * @author wjybxx
  * date 2023/4/3
@@ -64,8 +59,9 @@ public interface FluentFuture<V> {
     boolean isFailed();
 
     /**
-     * 获取关联的计算结果。
+     * 获取关联的计算结果 -- 非阻塞。
      * 如果对应的计算失败，则抛出对应的异常。
+     * 如果计算成功，则返回计算结果。
      * 如果计算尚未完成，则返回null。
      * <p>
      * 如果future关联的task没有返回值(操作完成返回null)，对于这种情况，你可以使用{@link #isSucceeded()}作为判断任务是否成功执行的更好选择。
@@ -74,11 +70,21 @@ public interface FluentFuture<V> {
      * @throws CancellationException 如果任务被取消了，则抛出该异常
      * @throws CompletionException   如果在计算过程中出现了其它异常导致任务失败，则抛出该异常。
      */
-    V getNow();
+    default V getNow() {
+        return getNow(null);
+    }
+
+    /**
+     * 尝试获取计算结果 -- 非阻塞
+     * 如果对应的计算失败，则抛出对应的异常。
+     * 如果计算成功，则返回计算结果。
+     * 如果计算尚未完成，则返回给定值。
+     */
+    V getNow(V valueIfAbsent);
 
     /**
      * 获取导致计算失败的原因。
-     * 如果关联的计算失败，则返回对应的失败原因，否则返回null。
+     * 如果关联的任务已失败，则返回对应的失败原因，否则返回null。
      */
     Throwable cause();
 
@@ -117,10 +123,10 @@ public interface FluentFuture<V> {
      * <p>
      * {@link CompletionStage#thenCompose(Function)}
      */
-    <U> FluentFuture<U> thenCompose(Function<? super V, ? extends FluentFuture<U>> fn);
+    <U> FluentFuture<U> thenComposeApply(Function<? super V, ? extends FluentFuture<U>> fn);
 
     /**
-     * {@link #thenCompose(Function)}的特化版本，主要用于消除丑陋的void
+     * {@link #thenComposeApply(Function)}的特化版本，主要用于消除丑陋的void
      * <p>
      * 该方法返回一个新的{@code Future}，它的最终结果与指定的{@code Function}返回的{@code Future}结果相同。
      * 如果当前{@code Future}执行失败，则返回的{@code Future}将以相同的原因失败，且指定的动作不会执行。
@@ -128,7 +134,22 @@ public interface FluentFuture<V> {
      * <p>
      * 该方法在{@link CompletionStage}中也是不存在的。
      */
-    <U> FluentFuture<U> thenCompose(Callable<? extends FluentFuture<U>> fn);
+    <U> FluentFuture<U> thenComposeCall(Callable<? extends FluentFuture<U>> fn);
+
+    /**
+     * 它表示能从从特定的异常中恢复，并异步返回一个正常结果。
+     * <p>
+     * 该方法返回一个新的{@code Future}，它的结果由当前{@code Future}驱动。
+     * 如果当前{@code Future}正常完成，则给定的动作不会执行，且返回的{@code Future}使用相同的结果值进入完成状态。
+     * 如果当前{@code Future}执行失败，则其异常信息将作为指定操作的执行参数，返回的{@code Future}的结果取决于指定操作的执行结果。
+     */
+    <X extends Throwable>
+    FluentFuture<V> thenComposeCatching(Class<X> exceptionType, Function<? super X, ? extends FluentFuture<V>> fallback);
+
+    /**
+     * 它表示既能接收任务的正常结果，也可以接收任务异常结果，并异步返回一个运算结果。
+     */
+    <U> FluentFuture<U> thenComposeHandle(BiFunction<? super V, Throwable, ? extends FluentFuture<U>> fn);
 
     // ---------------------------------------- 链式回调  ----------------------------------------------------
 
@@ -176,7 +197,7 @@ public interface FluentFuture<V> {
      * <p>
      * {@link CompletionStage#handle(BiFunction)}
      */
-    <U> FluentFuture<U> thenHandle(BiFunction<? super V, ? super Throwable, ? extends U> fn);
+    <U> FluentFuture<U> thenHandle(BiFunction<? super V, Throwable, ? extends U> fn);
 
     /**
      * 该方法返回一个新的{@code Future}，无论当前{@code Future}执行成功还是失败，给定的操作都将执行，且返回的{@code Future}始终以相同的结果进入完成状态。

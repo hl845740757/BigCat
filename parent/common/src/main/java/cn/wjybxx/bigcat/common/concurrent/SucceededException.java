@@ -13,27 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.wjybxx.bigcat.common.async;
 
-import java.util.concurrent.CancellationException;
+package cn.wjybxx.bigcat.common.concurrent;
 
 /**
+ * 该异常用于周期性任务主动退出
+ * 这有利于我们封装周期性任务实现一些有用的功能
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/9
  */
-public class StacklessCancellationException extends CancellationException implements NoLogRequiredException {
+@SuppressWarnings("unused")
+public final class SucceededException extends RuntimeException implements NoLogRequiredException {
 
-    public static StacklessCancellationException INSTANCE = new StacklessCancellationException();
+    private static final SucceededException INSTANCE = new SucceededException(null);
 
-    public StacklessCancellationException() {
+    private final Object result;
+
+    public SucceededException() {
+        this.result = null;
     }
 
-    public StacklessCancellationException(String message) {
-        super(message);
+    private SucceededException(Object result) {
+        this.result = result;
     }
 
     public final Throwable fillInStackTrace() {
         return this;
     }
 
+    public Object getResult() {
+        return result;
+    }
 }

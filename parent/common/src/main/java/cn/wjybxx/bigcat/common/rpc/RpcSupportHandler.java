@@ -20,7 +20,7 @@ package cn.wjybxx.bigcat.common.rpc;
 import cn.wjybxx.bigcat.common.ThreadUtils;
 import cn.wjybxx.bigcat.common.async.FluentFuture;
 import cn.wjybxx.bigcat.common.async.FluentPromise;
-import cn.wjybxx.bigcat.common.async.FutureUtils;
+import cn.wjybxx.bigcat.common.async.SameThreads;
 import cn.wjybxx.bigcat.common.concurrent.WatchableEventQueue;
 import cn.wjybxx.bigcat.common.log.DebugLogLevel;
 import cn.wjybxx.bigcat.common.log.DebugLogUtils;
@@ -192,12 +192,12 @@ public class RpcSupportHandler implements RpcClient {
         if (!rpcRouterHandler.send(target, request)) {
             logger.warn("rpc router call failure, target " + target);
             if (immediateFailureWhenSendFailed) {
-                return FutureUtils.newFailedFuture(RpcClientException.routeFailed(target));
+                return SameThreads.newFailedFuture(RpcClientException.routeFailed(target));
             }
         }
 
         // 记录调用信息
-        final FluentPromise<V> promise = FutureUtils.newPromise();
+        final FluentPromise<V> promise = SameThreads.newPromise();
         final long deadline = timeProvider.getTime() + timeoutMs;
         final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, target, request);
         requestStubMap.put(requestGuid, requestStub);

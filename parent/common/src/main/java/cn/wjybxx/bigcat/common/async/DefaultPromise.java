@@ -37,7 +37,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
     // region 基础接口
 
     @Override
-    public <U> FluentFuture<U> thenCompose(Function<? super V, ? extends FluentFuture<U>> fn) {
+    public <U> FluentFuture<U> thenComposeApply(Function<? super V, ? extends FluentFuture<U>> fn) {
         Objects.requireNonNull(fn);
         final DefaultPromise<U> promise = newIncompletePromise();
         pushCompletionStack(new UniComposeApply<>(this, promise, fn));
@@ -45,10 +45,28 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
     }
 
     @Override
-    public <U> FluentFuture<U> thenCompose(Callable<? extends FluentFuture<U>> fn) {
+    public <U> FluentFuture<U> thenComposeCall(Callable<? extends FluentFuture<U>> fn) {
         Objects.requireNonNull(fn);
         final DefaultPromise<U> promise = newIncompletePromise();
         pushCompletionStack(new UniComposeCall<>(this, promise, fn));
+        return promise;
+    }
+
+    @Override
+    public <X extends Throwable> FluentFuture<V> thenComposeCatching(Class<X> exceptionType,
+                                                                     Function<? super X, ? extends FluentFuture<V>> fallback) {
+        Objects.requireNonNull(exceptionType);
+        Objects.requireNonNull(fallback);
+        final DefaultPromise<V> promise = newIncompletePromise();
+        pushCompletionStack(new UniComposeCatching<>(this, promise, exceptionType, fallback));
+        return promise;
+    }
+
+    @Override
+    public <U> FluentFuture<U> thenComposeHandle(BiFunction<? super V, Throwable, ? extends FluentFuture<U>> fn) {
+        Objects.requireNonNull(fn);
+        final DefaultPromise<U> promise = newIncompletePromise();
+        pushCompletionStack(new UniComposeHandle<>(this, promise, fn));
         return promise;
     }
 
@@ -77,7 +95,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
     }
 
     @Override
-    public <U> FluentFuture<U> thenHandle(BiFunction<? super V, ? super Throwable, ? extends U> fn) {
+    public <U> FluentFuture<U> thenHandle(BiFunction<? super V, Throwable, ? extends U> fn) {
         Objects.requireNonNull(fn);
         final DefaultPromise<U> promise = newIncompletePromise();
         pushCompletionStack(new UniHandle<>(this, promise, fn));
@@ -127,8 +145,8 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
      */
     private static abstract class UniCompletion<V, U> extends Completion {
 
-        final AbstractPromise<V> input;
-        final AbstractPromise<U> output;
+        AbstractPromise<V> input;
+        AbstractPromise<U> output;
 
         UniCompletion(AbstractPromise<V> input, AbstractPromise<U> output) {
             this.input = input;
@@ -139,7 +157,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniComposeApply<V, U> extends UniCompletion<V, U> {
 
-        final Function<? super V, ? extends FluentFuture<U>> fn;
+        Function<? super V, ? extends FluentFuture<U>> fn;
 
         UniComposeApply(AbstractPromise<V> input, AbstractPromise<U> output,
                         Function<? super V, ? extends FluentFuture<U>> fn) {
@@ -178,7 +196,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniComposeCall<V, U> extends UniCompletion<V, U> {
 
-        final Callable<? extends FluentFuture<U>> fn;
+        Callable<? extends FluentFuture<U>> fn;
 
         UniComposeCall(AbstractPromise<V> input, AbstractPromise<U> output,
                        Callable<? extends FluentFuture<U>> fn) {
@@ -213,10 +231,98 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
         }
     }
 
+    private static class UniComposeCatching<V, X> extends UniCompletion<V, V> {
+
+        Class<X> exceptionType;
+        Function<? super X, ? extends FluentFuture<V>> fallback;
+
+        public UniComposeCatching(AbstractPromise<V> input, AbstractPromise<V> output,
+                                  Class<X> exceptionType,
+                                  Function<? super X, ? extends FluentFuture<V>> fallback) {
+            super(input, output);
+            this.exceptionType = exceptionType;
+            this.fallback = fallback;
+        }
+
+        @Override
+        AbstractPromise<?> tryFire(boolean nested) {
+            if (output.isDone()) {
+                return null;
+            }
+
+            final Object r = input.result;
+            final Throwable cause;
+            if (r instanceof AltResult && exceptionType.isInstance((cause = ((AltResult) r).cause))) {
+                try {
+                    @SuppressWarnings("unchecked") final X castException = (X) cause;
+                    FluentFuture<V> relay = fallback.apply(castException);
+                    if (relay.isDone()) {
+                        // 返回的是一个已完成的Future
+                        UniRelay.completeRelay(output, relay);
+                    } else {
+                        relay.addListener(new UniRelay<>(relay, output));
+                        return null;
+                    }
+                } catch (Throwable ex) {
+                    output.completeThrowable(ex);
+                }
+            } else {
+                output.completeRelay(r);
+            }
+            return postFire(output, nested);
+        }
+
+    }
+
+    private static class UniComposeHandle<V, U> extends UniCompletion<V, U> {
+
+        BiFunction<? super V, Throwable, ? extends FluentFuture<U>> fn;
+
+        public UniComposeHandle(AbstractPromise<V> input, AbstractPromise<U> output,
+                                BiFunction<? super V, Throwable, ? extends FluentFuture<U>> fn) {
+            super(input, output);
+            this.fn = fn;
+        }
+
+        @Override
+        AbstractPromise<?> tryFire(boolean nested) {
+            if (output.isDone()) {
+                return null;
+            }
+
+            final Object r = input.result;
+            final V value;
+            final Throwable cause;
+            if (r instanceof AltResult) {
+                value = null;
+                cause = ((AltResult) r).cause;
+            } else {
+                value = input.decodeValue(r);
+                cause = null;
+            }
+
+            try {
+                final FluentFuture<U> relay = fn.apply(value, cause);
+                if (relay.isDone()) {
+                    // 返回的是一个已完成的Future
+                    UniRelay.completeRelay(output, relay);
+                } else {
+                    relay.addListener(new UniRelay<>(relay, output));
+                    return null;
+                }
+            } catch (Throwable e) {
+                output.completeThrowable(e);
+            }
+            return postFire(output, nested);
+        }
+
+    }
+
+
     private static class UniRelay<V> extends Completion implements BiConsumer<V, Throwable> {
 
-        final FluentFuture<V> input;
-        final AbstractPromise<V> output;
+        FluentFuture<V> input;
+        AbstractPromise<V> output;
 
         UniRelay(FluentFuture<V> input, AbstractPromise<V> output) {
             this.input = input;
@@ -260,7 +366,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniApply<V, U> extends UniCompletion<V, U> {
 
-        final Function<? super V, ? extends U> fn;
+        Function<? super V, ? extends U> fn;
 
         UniApply(AbstractPromise<V> input, AbstractPromise<U> output,
                  Function<? super V, ? extends U> fn) {
@@ -292,7 +398,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniCall<V, U> extends UniCompletion<V, U> {
 
-        final Callable<U> fn;
+        Callable<U> fn;
 
         UniCall(AbstractPromise<V> input, AbstractPromise<U> output, Callable<U> fn) {
             super(input, output);
@@ -321,8 +427,8 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniCaching<V, X> extends UniCompletion<V, V> {
 
-        final Class<X> exceptionType;
-        final Function<? super X, ? extends V> fallback;
+        Class<X> exceptionType;
+        Function<? super X, ? extends V> fallback;
 
         UniCaching(AbstractPromise<V> input, AbstractPromise<V> output,
                    Class<X> exceptionType, Function<? super X, ? extends V> fallback) {
@@ -355,7 +461,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniHandle<V, U> extends UniCompletion<V, U> {
 
-        final BiFunction<? super V, ? super Throwable, ? extends U> fn;
+        BiFunction<? super V, ? super Throwable, ? extends U> fn;
 
         UniHandle(AbstractPromise<V> input, AbstractPromise<U> output,
                   BiFunction<? super V, ? super Throwable, ? extends U> fn) {
@@ -372,7 +478,6 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
             final Object r = input.result;
             final V value;
             final Throwable cause;
-
             if (r instanceof AltResult) {
                 value = null;
                 cause = ((AltResult) r).cause;
@@ -392,7 +497,7 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class UniWhenComplete<V> extends UniCompletion<V, V> {
 
-        final BiConsumer<? super V, ? super Throwable> action;
+        BiConsumer<? super V, ? super Throwable> action;
 
         UniWhenComplete(AbstractPromise<V> input, AbstractPromise<V> output,
                         BiConsumer<? super V, ? super Throwable> action) {
@@ -409,7 +514,6 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
             final Object r = input.result;
             final V value;
             final Throwable cause;
-
             if (r instanceof AltResult) {
                 value = null;
                 cause = ((AltResult) r).cause;
@@ -435,8 +539,8 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     private static class ActionWhenComplete<V> extends Completion {
 
-        final AbstractPromise<V> input;
-        final BiConsumer<? super V, ? super Throwable> action;
+        AbstractPromise<V> input;
+        BiConsumer<? super V, ? super Throwable> action;
 
         ActionWhenComplete(AbstractPromise<V> input, BiConsumer<? super V, ? super Throwable> action) {
             this.input = input;
@@ -448,7 +552,6 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
             final Object r = input.result;
             final V value;
             final Throwable cause;
-
             if (r instanceof AltResult) {
                 value = null;
                 cause = ((AltResult) r).cause;

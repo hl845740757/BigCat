@@ -25,6 +25,7 @@ import java.util.concurrent.Executor;
 /**
  * 用于在当前线程延迟执行任务的Executor。
  * 即：该Executor仍然在当前线程（提交任务的线程）执行提交的任务，只是会延迟执行。
+ * PS：放弃了继承{@link Executor}接口，避免用户误用
  * <h3>时序要求</h3>
  * 我们限定逻辑是在当前线程执行的，必须保证先提交的任务先执行。
  *
@@ -38,9 +39,8 @@ import java.util.concurrent.Executor;
  * date 2023/4/3
  */
 @NotThreadSafe
-public interface SameThreadExecutor extends Executor {
+public interface SameThreadExecutor {
 
-    @Override
     void execute(@Nonnull Runnable command);
 
     FluentFuture<?> submitRun(@Nonnull Runnable command);
@@ -55,13 +55,13 @@ public interface SameThreadExecutor extends Executor {
     boolean tick();
 
     /**
-     * @return 如果Executor已关闭则返回true
-     */
-    boolean isShutdown();
-
-    /**
      * 关闭Executor
      */
     void shutdown();
+
+    /**
+     * @return 如果Executor已关闭则返回true
+     */
+    boolean isShutdown();
 
 }

@@ -46,7 +46,9 @@ import static org.apache.commons.lang3.ArrayUtils.INDEX_NOT_FOUND;
  *         list.endItr();
  *     }
  * </code></pre>
- * PS：该List主要用于事件监听器列表和对象列表等场景。
+ * PS：
+ * 1.该List主要用于事件监听器列表和对象列表等场景。
+ * 2.使用{@link #forEach(Consumer)}可能有更好的迭代速度。
  *
  * @author wjybxx
  * date 2023/4/6
@@ -195,9 +197,7 @@ public interface DelayedCompressList<E> {
      * 查询List是否真的为空
      * 如果当前正在迭代，则可能产生遍历统计的情况，要注意开销问题。
      */
-    default boolean isRealEmpty() {
-        return indexOfRef(null) == INDEX_NOT_FOUND;
-    }
+    boolean isRealEmpty();
 
     /** @apiNote 在迭代期间禁止排序 */
     void sort(@Nonnull Comparator<? super E> comparator);

@@ -568,6 +568,9 @@ public class CollectionUtils {
         if ((src == null || src.isEmpty())) {
             return Set.of();
         }
+        if (src instanceof EnumSet<?> enumSet) {  // EnumSet使用代理的方式更好，但要先拷贝保证不可变
+            return (Set<E>) Collections.unmodifiableSet(enumSet.clone());
+        }
         // 在Set的copy方法中会先调用new HashSet拷贝数据。
         // 我们进行一次判断并显式调用toArray可减少一次不必要的拷贝
         if (src.getClass() == HashSet.class) {
@@ -577,9 +580,16 @@ public class CollectionUtils {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Nonnull
     public static <K, V> Map<K, V> toImmutableMap(@Nullable Map<K, V> src) {
-        return (src == null || src.isEmpty()) ? Map.of() : Map.copyOf(src);
+        if ((src == null || src.isEmpty())) {
+            return Map.of();
+        }
+        if (src instanceof EnumMap<?, ?> enumMap) { // EnumMap使用代理的方式更好，但要先拷贝保证不可变
+            return (Map<K, V>) Collections.unmodifiableMap(enumMap.clone());
+        }
+        return Map.copyOf(src);
     }
 
     // endregion

@@ -218,25 +218,26 @@ public class SealedCollections {
             if (recursionDepth == 0 || firstIndex == INDEX_NOT_FOUND) { // 没有删除元素
                 return children.size();
             }
-            if (firstIndex == lastIndex) { // 删除了一个元素
-                return children.size() - 1;
-            }
 
-            int count = 0;
-            for (int i = 0, size = children.size(); i < size; i++) {
-                if (children.get(i) != null) {
-                    count++;
+            int removed = lastIndex - firstIndex + 1;
+            if (removed == 1) {
+                return children.size() - 1; // 删除了一个元素
+            }
+            if (removed == children.size()) { // 执行了clear
+                return 0;
+            }
+            // 统计区间内非null元素
+            for (int index = firstIndex, endIndex = lastIndex; index <= endIndex; index++) {
+                if (children.get(index) != null) {
+                    removed--;
                 }
             }
-            return count;
+            return children.size() - removed;
         }
 
         @Override
         public boolean isRealEmpty() {
-            if (children.isEmpty()) {
-                return true;
-            }
-            return firstIndex == INDEX_NOT_FOUND; // 没有删除元素
+            return children.isEmpty() || firstIndex == INDEX_NOT_FOUND;
         }
 
         @Override

@@ -59,20 +59,6 @@ public class ThreadUtils {
     }
 
     /**
-     * 恢复中断
-     *
-     * @param interrupted 是否出现了中断
-     */
-    public static void recoveryInterrupted(boolean interrupted) {
-        if (interrupted) {
-            try {
-                Thread.currentThread().interrupt();
-            } catch (SecurityException ignore) {
-            }
-        }
-    }
-
-    /**
      * 检查线程中断状态。
      *
      * @throws InterruptedException 如果线程被中断，则抛出中断异常
@@ -90,6 +76,21 @@ public class ThreadUtils {
      */
     public static void sleepQuietly(long sleepMillis) {
         LockSupport.parkNanos(sleepMillis * TimeUtils.NANOS_PER_MILLI);
+    }
+
+    public static void joinUninterruptedly(Thread thread) {
+        boolean interrupted = false;
+        while (true) {
+            try {
+                thread.join();
+                break;
+            } catch (InterruptedException ignore) {
+                interrupted = true;
+            }
+        }
+        if (interrupted) {
+            recoveryInterrupted();
+        }
     }
 
     /**

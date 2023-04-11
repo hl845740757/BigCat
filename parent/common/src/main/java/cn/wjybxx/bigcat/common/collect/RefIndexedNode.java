@@ -50,7 +50,7 @@ public final class RefIndexedNode<E> implements IndexedPriorityQueue.IndexedNode
     @Override
     public void priorityQueueIndex(IndexedPriorityQueue<?> queue, int index) {
         if (index >= 0) {
-            assert this.queue == null || this.queue == queue;
+            assert this.queue == queue || this.queue == null;
             this.queue = queue;
             this.index = index;
         } else {

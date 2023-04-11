@@ -16,12 +16,15 @@
 
 package cn.wjybxx.bigcat.common.time;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 /**
  * 增量式计时器，需要外部每帧调用{@link #update(long)}累积时间
  *
  * @author wjybxx
  * date 2023/4/4
  */
+@NotThreadSafe
 public interface Timepiece extends CachedTimeProvider {
 
     @Override

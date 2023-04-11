@@ -16,9 +16,14 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.concurrent.NoLogRequiredException;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
+ * Q: 为什么在底层自动记录异常日志？
+ * A: 实际使用的时候发现，如果靠写业务的时候保证不丢失异常信息，十分危险，如果疏忽将导致异常信息丢失，异常信息十分重要，不可轻易丢失。
+ *
  * @author wjybxx
  * date 2023/4/3
  */

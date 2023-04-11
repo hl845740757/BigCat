@@ -16,11 +16,14 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.ThreadUtils;
 import cn.wjybxx.bigcat.common.collect.DefaultIndexedPriorityQueue;
 import cn.wjybxx.bigcat.common.collect.IndexedPriorityQueue;
+import cn.wjybxx.bigcat.common.concurrent.ResultHolder;
+import cn.wjybxx.bigcat.common.concurrent.SucceededException;
+import cn.wjybxx.bigcat.common.concurrent.TimeSharingCallable;
+import cn.wjybxx.bigcat.common.concurrent.TimeSharingTimeoutException;
 import cn.wjybxx.bigcat.common.time.TimeProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
@@ -32,9 +35,7 @@ import java.util.concurrent.Executors;
  * @author wjybxx
  * date 2023/4/3
  */
-public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
-
-    private static final Logger logger = LoggerFactory.getLogger(DefaultScheduledExecutor.class);
+public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledExecutor {
 
     private static final Comparator<ScheduledFutureTask<?>> queueTaskComparator = ScheduledFutureTask::compareTo;
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
@@ -50,34 +51,35 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     /** 是否已关闭 */
     private boolean shutdown;
 
-    public DefaultScheduledExecutor(TimeProvider timeProvider) {
+    DefaultSameThreadScheduledExecutor(TimeProvider timeProvider) {
         this(timeProvider, DEFAULT_INITIAL_CAPACITY);
     }
 
-    public DefaultScheduledExecutor(TimeProvider timeProvider, int initCapacity) {
+    DefaultSameThreadScheduledExecutor(TimeProvider timeProvider, int initCapacity) {
         this(timeProvider, initCapacity, null);
     }
 
-    public DefaultScheduledExecutor(TimeProvider timeProvider, NegativeChecker initialDelayChecker) {
+    DefaultSameThreadScheduledExecutor(TimeProvider timeProvider, NegativeChecker initialDelayChecker) {
         this(timeProvider, DEFAULT_INITIAL_CAPACITY, initialDelayChecker);
     }
 
     /**
      * @param initialDelayChecker 初始延迟的兼容性；默认允许，保持强时序。
      */
-    public DefaultScheduledExecutor(TimeProvider timeProvider, int initCapacity, NegativeChecker initialDelayChecker) {
+    DefaultSameThreadScheduledExecutor(TimeProvider timeProvider, int initCapacity, NegativeChecker initialDelayChecker) {
         this.timeProvider = Objects.requireNonNull(timeProvider, "timeProvider");
         this.taskQueue = new DefaultIndexedPriorityQueue<>(queueTaskComparator, initCapacity);
-        this.initialDelayChecker = Objects.requireNonNullElse(initialDelayChecker, NegativeChecker.SUCCESS);
+        this.initialDelayChecker = Objects.requireNonNullElse(initialDelayChecker, NegativeChecker.ZERO);
     }
 
     @Nonnull
     @Override
     public ScheduledFluentFuture<?> scheduleRun(long timeout, @Nonnull Runnable task) {
         Objects.requireNonNull(task);
-        final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
-                Executors.callable(task), ScheduleType.ONCE, 0,
-                null, nextTriggerTime(timeout));
+        timeout = initialDelayChecker.check(timeout);
+
+        final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, Executors.callable(task),
+                ++sequencer, nextTriggerTime(timeout), 0);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
     }
@@ -86,71 +88,73 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     @Override
     public <V> ScheduledFluentFuture<V> scheduleCall(long timeout, @Nonnull Callable<V> task) {
         Objects.requireNonNull(task);
-        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
-                task, ScheduleType.ONCE, 0,
-                null, nextTriggerTime(timeout));
+        timeout = initialDelayChecker.check(timeout);
+
+        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, task,
+                ++sequencer, nextTriggerTime(timeout), 0);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
     }
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleFixedDelay(long initialDelay, long period, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleWithFixedDelay(long initialDelay, long period, @Nonnull Runnable task) {
         Objects.requireNonNull(task);
-        initialDelay = checkFirstDelay(initialDelay);
+        initialDelay = initialDelayChecker.check(initialDelay);
         ensurePeriodGreaterThanZero(period);
 
-        final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
-                Executors.callable(task), ScheduleType.FIXED_DELAY, period,
-                null, nextTriggerTime(initialDelay));
+        final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, Executors.callable(task),
+                ++sequencer, nextTriggerTime(initialDelay), -period);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
     }
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleFixedRate(long initialDelay, long period, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleAtFixedRate(long initialDelay, long period, @Nonnull Runnable task) {
+        if (initialDelay < 0) {
+            throw new IllegalArgumentException("fixedRate initialDelay < 0");
+        }
         Objects.requireNonNull(task);
-        initialDelay = checkFirstDelay(initialDelay);
         ensurePeriodGreaterThanZero(period);
 
-        final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
-                Executors.callable(task), ScheduleType.FIXED_RATE, period,
-                null, nextTriggerTime(initialDelay));
+        final ScheduledFutureTask<?> scheduledFutureTask = new ScheduledFutureTask<>(this, Executors.callable(task),
+                ++sequencer, nextTriggerTime(initialDelay), period);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
     }
 
     @Nonnull
     @Override
-    public <V> ScheduledFluentFuture<V> timeSharingFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                              long timeout) {
+    public <V> ScheduledFluentFuture<V> timeSharingWithFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                                  long timeout) {
         Objects.requireNonNull(task);
-        initialDelay = checkFirstDelay(initialDelay);
-        ensurePeriodGreaterThanZero(period);
-        checkTimeSharingTimeout(timeout);
-
-        final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.getTime());
-        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
-                task, ScheduleType.FIXED_DELAY, period,
-                timeSharingContext, nextTriggerTime(initialDelay));
-        delayExecute(scheduledFutureTask);
-        return scheduledFutureTask;
-    }
-
-    @Nonnull
-    @Override
-    public <V> ScheduledFluentFuture<V> timeSharingFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
-                                                             long timeout) {
-        Objects.requireNonNull(task);
-        initialDelay = checkFirstDelay(initialDelay);
+        initialDelay = initialDelayChecker.check(initialDelay);
         ensurePeriodGreaterThanZero(period);
         checkTimeSharingTimeout(timeout);
 
-        final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.getTime());
-        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, ++sequencer,
-                task, ScheduleType.FIXED_RATE, period,
-                timeSharingContext, nextTriggerTime(initialDelay));
+        final TimeSharingContext<V> timeSharingContext = new TimeSharingContext<>(task, timeout, timeProvider.getTime());
+        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, timeSharingContext,
+                ++sequencer, nextTriggerTime(initialDelay), -period);
+        delayExecute(scheduledFutureTask);
+        return scheduledFutureTask;
+    }
+
+    @Nonnull
+    @Override
+    public <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+                                                               long timeout) {
+        if (initialDelay < 0) {
+            throw new IllegalArgumentException("fixedRate initialDelay < 0");
+        }
+        Objects.requireNonNull(task);
+        ensurePeriodGreaterThanZero(period);
+        checkTimeSharingTimeout(timeout);
+
+        final TimeSharingContext<V> timeSharingContext = new TimeSharingContext<V>(task, timeout, timeProvider.getTime());
+        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, timeSharingContext,
+                ++sequencer, nextTriggerTime(initialDelay), period
+        );
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
     }
@@ -177,41 +181,37 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
             return false;
         }
 
-        // 需要缓存下来，以供新增任务的时候判断
+        // 需要缓存下来，一来用于task计算下次调度时间，一来避免优先级错乱
         final long curTime = timeProvider.getTime();
         tickTime = curTime;
 
         // 记录最后一个任务id，避免执行本次tick期间添加的任务
         long barrierTaskId = sequencer;
         ScheduledFutureTask<?> queueTask;
-        try {
-            while ((queueTask = taskQueue.peek()) != null) {
-                // 优先级最高的任务不需要执行，那么后面的也不需要执行
-                if (curTime < queueTask.getNextTriggerTime()) {
-                    return false;
-                }
-                // 本次tick期间新增的任务，不立即执行，避免死循环或占用过多cpu
-                if (queueTask.taskId > barrierTaskId) {
-                    return true;
-                }
 
-                taskQueue.poll();
-                queueTask.run();
+        while ((queueTask = taskQueue.peek()) != null) {
+            // 优先级最高的任务不需要执行，那么后面的也不需要执行
+            if (curTime < queueTask.getNextTriggerTime()) {
+                return false;
+            }
+            // 本次tick期间新增的任务，不立即执行，避免死循环或占用过多cpu
+            if (queueTask.taskId > barrierTaskId) {
+                return true;
+            }
 
-                if (queueTask.isPeriodic() && !queueTask.isDone()) {
-                    if (isShutdown()) { // 已请求关闭
-                        queueTask.cancel();
-                    } else {
-                        taskQueue.offer(queueTask);
-                    }
+            taskQueue.poll();
+            queueTask.run();
+
+            if (queueTask.isPeriodic() && !queueTask.isDone()) {
+                if (isShutdown()) { // 已请求关闭
+                    queueTask.cancel();
+                } else {
+                    taskQueue.offer(queueTask);
                 }
             }
-        } finally {
-            tickTime = 0;
         }
         return false;
     }
-
 
     @Override
     public boolean isShutdown() {
@@ -240,10 +240,6 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
             queueTask.cancel();
         } else {
             taskQueue.add(queueTask);
-            if (tickTime > 0 && queueTask.getNextTriggerTime() < tickTime) {
-                // 新任务插在既有要执行的任务前面，打印警告
-                logger.warn("the nextTriggerTime of newTask is less than curTickTime, taskInfo " + queueTask.task);
-            }
         }
     }
 
@@ -255,10 +251,6 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
         return timeProvider.getTime();
     }
 
-    private long checkFirstDelay(long firstDelay) {
-        return initialDelayChecker.check(firstDelay);
-    }
-
     private static void ensurePeriodGreaterThanZero(long period) {
         if (period <= 0) {
             throw new IllegalArgumentException("period must be greater than 0");
@@ -266,7 +258,6 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
     }
 
     private void checkTimeSharingTimeout(long timeout) {
-        // 允许首次延迟小于0会带来许多复杂度
         if (timeout <= 0) {
             throw new IllegalArgumentException("timeout must be gte 0");
         }
@@ -276,36 +267,25 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
             IndexedPriorityQueue.IndexedNode,
             Comparable<ScheduledFutureTask<?>> {
 
-        private final DefaultScheduledExecutor executor;
+        private final DefaultSameThreadScheduledExecutor executor;
+        private Callable<V> task;
         private final long taskId;
 
-        private Callable<?> task;
-        private ScheduleType scheduleType;
-        private long period;
-        private TimeSharingContext timeSharingContext;
-
-        /** 下次执行的时间 */
+        /** 提前计算的，逻辑上的下次触发时间 */
         private long nextTriggerTime;
-        /** 在队列中下标 */
+        /** 负数表示fixedDelay，正数表示fixedRate */
+        private final long period;
+        /** 队列中的下标缓存 */
         private int queueIndex = INDEX_NOT_IN_QUEUE;
 
-        ScheduledFutureTask(DefaultScheduledExecutor executor, long taskId,
-                            Callable<?> task, ScheduleType scheduleType, long period,
-                            TimeSharingContext timeSharingContext,
-                            long nextTriggerTime) {
+        ScheduledFutureTask(DefaultSameThreadScheduledExecutor executor, Callable<V> task,
+                            long taskId, long nextTriggerTime, long period) {
             this.executor = executor;
             this.taskId = taskId;
-
             this.task = task;
-            this.scheduleType = scheduleType;
-            this.period = period;
-            this.timeSharingContext = timeSharingContext;
 
             this.nextTriggerTime = nextTriggerTime;
-        }
-
-        public ScheduleType getScheduleType() {
-            return scheduleType;
+            this.period = period;
         }
 
         public long getPeriod() {
@@ -318,7 +298,7 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
         @Override
         public long getDelay() {
-            return Math.max(0, nextTriggerTime - executor.curTime());
+            return nextTriggerTime - executor.curTime();
         }
 
         @Override
@@ -345,22 +325,17 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
         @Override
         public final void run() {
-            assert !isDone();
+            assert !isDone(); // 单线程下不应该出现
             try {
                 if (period == 0) {
-                    @SuppressWarnings("unchecked") final V result = (V) task.call();
+                    final V result = task.call();
                     trySuccess(result);
                 } else {
-                    final TimeSharingContext timeSharingContext = this.timeSharingContext;
-                    if (timeSharingContext != null) {
-                        timeSharingContext.beforeCall(executor.tickTime, nextTriggerTime, scheduleType);
-                        final ResultHolder<V> holder;
-                        try {
-                            @SuppressWarnings("unchecked") final TimeSharingCallable<V> realTask = (TimeSharingCallable<V>) task;
-                            holder = realTask.call();
-                        } finally {
-                            timeSharingContext.afterCall(executor.tickTime, nextTriggerTime, scheduleType); // 在赋值结果前更新上下文
-                        }
+                    if (task instanceof TimeSharingContext<V> timeSharingContext) {
+                        timeSharingContext.beforeCall(executor.tickTime, nextTriggerTime, period);
+                        final ResultHolder<V> holder = timeSharingContext.task.call();
+                        timeSharingContext.afterCall(executor.tickTime, nextTriggerTime, period);
+
                         if (holder != null) { // 得到结果
                             trySuccess(holder.result);
                             return;
@@ -374,8 +349,12 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
                     }
                     updateNextTriggerTime();
                 }
-            } catch (Throwable e) {
-                tryFailure(e);
+            } catch (SucceededException ex) {
+                @SuppressWarnings("unchecked") V result = (V) ex.getResult();
+                trySuccess(result);
+            } catch (Throwable ex) {
+                ThreadUtils.recoveryInterrupted(ex);
+                tryFailure(ex);
             } finally {
                 if (isDone()) {
                     task = null;
@@ -389,10 +368,10 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
         /** 任务执行一次之后，更新状态下次执行时间。 */
         void updateNextTriggerTime() {
-            if (scheduleType == ScheduleType.FIXED_RATE) {
+            if (period > 0) {
                 nextTriggerTime += period;
             } else {
-                nextTriggerTime = executor.nextTriggerTime(period);
+                nextTriggerTime = executor.nextTriggerTime(-period);
             }
         }
 
@@ -401,27 +380,32 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
             if (this == that) {
                 return 0;
             }
-
             final int r1 = Long.compare(nextTriggerTime, that.nextTriggerTime);
             if (r1 != 0) {
                 return r1;
             }
-
             return Long.compare(taskId, that.taskId);
         }
 
     }
 
-    private static class TimeSharingContext {
+    private static class TimeSharingContext<V> implements Callable<V> {
 
+        Callable<ResultHolder<V>> task;
         /** 剩余时间 */
         long timeLeft;
         /** 上次触发时间，用于固定延迟下计算deltaTime */
         long lastTriggerTime;
 
-        TimeSharingContext(long timeout, long lastTriggerTime) {
+        TimeSharingContext(Callable<ResultHolder<V>> task, long timeout, long initTime) {
+            this.task = task;
             this.timeLeft = timeout;
-            this.lastTriggerTime = lastTriggerTime;
+            this.lastTriggerTime = initTime;
+        }
+
+        @Override
+        public V call() {
+            throw new AssertionError();
         }
 
         /**
@@ -429,18 +413,18 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
          * @param logicTriggerTime 逻辑触发时间 -- 调度前计算的应该被调度的时间
          * @see ScheduledFutureTask#updateNextTriggerTime()
          */
-        void beforeCall(long realTriggerTime, long logicTriggerTime, ScheduleType scheduleType) {
+        void beforeCall(long realTriggerTime, long logicTriggerTime, long period) {
             // 逻辑触发时间的更新是基于lastTriggerTime算的，所以一定大于
             assert logicTriggerTime >= lastTriggerTime;
-            if (scheduleType == ScheduleType.FIXED_RATE) {
+            if (period > 0) {
                 timeLeft -= Math.max(0, logicTriggerTime - lastTriggerTime);
             } else {
                 timeLeft -= Math.max(0, realTriggerTime - lastTriggerTime);
             }
         }
 
-        void afterCall(long realTriggerTime, long logicTriggerTime, ScheduleType scheduleType) {
-            if (scheduleType == ScheduleType.FIXED_RATE) {
+        void afterCall(long realTriggerTime, long logicTriggerTime, long period) {
+            if (period > 0) {
                 lastTriggerTime = logicTriggerTime;
             } else {
                 lastTriggerTime = realTriggerTime;
@@ -453,23 +437,4 @@ public class DefaultScheduledExecutor implements SameThreadScheduledExecutor {
 
     }
 
-    private enum ScheduleType {
-
-        ONCE(0),
-
-        FIXED_DELAY(1),
-
-        FIXED_RATE(2),
-        ;
-
-        private final int number;
-
-        ScheduleType(int number) {
-            this.number = number;
-        }
-
-        public int getNumber() {
-            return number;
-        }
-    }
 }

@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.common.collect;
 
+import cn.wjybxx.bigcat.common.collect.IndexedPriorityQueue.IndexedNode;
+
 import javax.annotation.Nonnull;
 import java.util.*;
 
@@ -25,7 +27,8 @@ import java.util.*;
  * @author wjybxx
  * date 2023/4/3
  */
-public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedNode> extends AbstractQueue<T> implements IndexedPriorityQueue<T> {
+public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends AbstractQueue<T>
+        implements IndexedPriorityQueue<T> {
 
     private static final IndexedNode[] EMPTY_ARRAY = new IndexedNode[0];
     private static final int DEFAULT_CAPACITY = 16;

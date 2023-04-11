@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
-
-import java.util.concurrent.TimeoutException;
+package cn.wjybxx.bigcat.common.concurrent;
 
 /**
- * 该异常表示一个可分时运行的任务超时了。
+ * 受保护的操作，与{@link BlockingOperationException}成一对。
+ * 一个只允许当前线程访问，一个不允许当前线程访问。
  *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/7
  */
-public class TimeSharingTimeoutException extends TimeoutException {
+public class GuardedOperationException extends RuntimeException {
 
-    public static final TimeSharingTimeoutException INSTANCE = new TimeSharingTimeoutException("task is timeout");
-
-    public TimeSharingTimeoutException() {
+    public GuardedOperationException() {
     }
 
-    public TimeSharingTimeoutException(String message) {
+    public GuardedOperationException(String message) {
         super(message);
     }
 
-    public final Throwable fillInStackTrace() {
-        return this;
+    public GuardedOperationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public GuardedOperationException(Throwable cause) {
+        super(cause);
     }
 
 }

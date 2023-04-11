@@ -24,7 +24,7 @@ package cn.wjybxx.bigcat.common.async;
  */
 public enum NegativeChecker {
 
-    /** 允许负数值 */
+    /** 允许负数值 -- 不建议使用 */
     SUCCESS,
     /** 失败 - 抛出异常 */
     FAILURE,

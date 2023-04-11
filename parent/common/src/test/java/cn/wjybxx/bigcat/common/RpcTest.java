@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.common;
 
 import cn.wjybxx.bigcat.common.async.FluentFuture;
-import cn.wjybxx.bigcat.common.async.FutureUtils;
+import cn.wjybxx.bigcat.common.async.SameThreads;
 import cn.wjybxx.bigcat.common.async.SameThreadScheduledExecutor;
 import cn.wjybxx.bigcat.common.concurrent.WatchableEventQueue;
 import cn.wjybxx.bigcat.common.rpc.*;
@@ -176,7 +176,7 @@ public class RpcTest {
 
         private ServerWorker() {
             this.timeProvider = TimeProviders.systemTimeProvider();
-            this.executor = FutureUtils.newScheduledExecutor(timeProvider);
+            this.executor = SameThreads.newScheduledExecutor(timeProvider);
         }
 
         @Override
@@ -221,7 +221,7 @@ public class RpcTest {
 
         private ClientWorker() {
             this.timeProvider = TimeProviders.systemTimeProvider();
-            this.executor = FutureUtils.newScheduledExecutor(timeProvider);
+            this.executor = SameThreads.newScheduledExecutor(timeProvider);
         }
 
         @Override
@@ -235,8 +235,8 @@ public class RpcTest {
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
             TestClient testClient = new TestClient(timeProvider, rpcSupportHandler);
-            executor.scheduleFixedDelay(200, 300, testClient::sayHello);
-            executor.scheduleFixedDelay(200, 500, () -> {
+            executor.scheduleWithFixedDelay(200, 300, testClient::sayHello);
+            executor.scheduleWithFixedDelay(200, 500, () -> {
                 try {
                     testClient.syncSayHello();
                 } catch (InterruptedException e) {

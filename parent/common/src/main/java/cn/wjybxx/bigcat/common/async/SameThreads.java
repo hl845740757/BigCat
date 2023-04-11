@@ -16,31 +16,25 @@
 
 package cn.wjybxx.bigcat.common.async;
 
+import cn.wjybxx.bigcat.common.concurrent.FutureUtils;
 import cn.wjybxx.bigcat.common.time.TimeProvider;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * @author wjybxx
  * date 2023/4/3
  */
-public class FutureUtils {
+public class SameThreads {
 
     private static final FluentFuture<?> EMPTY_FUTURE = newSucceedFuture(null);
-
-    private static final BiFunction<Object, Throwable, Object> FALLBACK_NULL_IF_FAILED = (o, throwable) -> {
-        if (throwable != null) {
-            return null;
-        } else {
-            return o;
-        }
-    };
 
     // region 异常处理
 
@@ -49,18 +43,9 @@ public class FutureUtils {
      */
     @SuppressWarnings("unchecked")
     public static <V> BiFunction<V, Throwable, V> fallbackNullIfFailed() {
-        return (BiFunction<V, Throwable, V>) FALLBACK_NULL_IF_FAILED;
+        return FutureUtils.fallbackNullIfFailed();
     }
 
-    /**
-     * {@link CompletableFuture}总是使用{@link CompletionException}包装异常，我们需要找到原始异常
-     */
-    public static Throwable unwrapCompletionException(Throwable t) {
-        while (t instanceof CompletionException && t.getCause() != null) {
-            t = t.getCause();
-        }
-        return t;
-    }
     // endregion
 
     // region future工厂
@@ -178,16 +163,16 @@ public class FutureUtils {
      *
      * @return futureCombiner
      */
-    public static FutureCombiner newCombiner() {
-        return new DefaultFutureCombiner();
+    public static FluentFutureCombiner newCombiner() {
+        return new DefaultFluentFutureCombiner();
     }
 
-    public static FutureCombiner newCombiner(Collection<? extends FluentFuture<?>> futures) {
-        return new DefaultFutureCombiner()
+    public static FluentFutureCombiner newCombiner(Collection<? extends FluentFuture<?>> futures) {
+        return new DefaultFluentFutureCombiner()
                 .addAll(futures);
     }
 
-    public static SameThreadExecutor newSameThreadExecutor() {
+    public static SameThreadExecutor newExecutor() {
         return new DefaultSameThreadExecutor();
     }
 
@@ -195,7 +180,7 @@ public class FutureUtils {
      * @param countLimit 每帧允许运行的最大任务数，-1表示不限制；不可以为0
      * @param timeLimit  每帧允许的最大时间，-1表示不限制；不可以为0
      */
-    public static SameThreadExecutor newSameThreadExecutor(int countLimit, long timeLimit, TimeUnit timeUnit) {
+    public static SameThreadExecutor newExecutor(int countLimit, long timeLimit, TimeUnit timeUnit) {
         return new DefaultSameThreadExecutor(countLimit, timeLimit, timeUnit);
     }
 
@@ -205,7 +190,15 @@ public class FutureUtils {
      * @param timeProvider 用于调度器获取当前时间
      */
     public static SameThreadScheduledExecutor newScheduledExecutor(TimeProvider timeProvider) {
-        return new DefaultScheduledExecutor(timeProvider);
+        return new DefaultSameThreadScheduledExecutor(timeProvider);
+    }
+
+    public static SameThreadScheduledExecutor newScheduledExecutor(TimeProvider timeProvider, int initCapacity) {
+        return new DefaultSameThreadScheduledExecutor(timeProvider, initCapacity);
+    }
+
+    public static SameThreadScheduledExecutor newScheduledExecutor(TimeProvider timeProvider, int initCapacity, NegativeChecker checker) {
+        return new DefaultSameThreadScheduledExecutor(timeProvider, initCapacity, checker);
     }
 
     // endregion
@@ -216,7 +209,7 @@ public class FutureUtils {
      * @param executor 用于在当前线程延迟执行任务的Executor
      * @return future
      */
-    public static FluentFuture<Void> runAsync(Executor executor, Runnable task) {
+    public static FluentFuture<Void> runAsync(SameThreadExecutor executor, Runnable task) {
         Objects.requireNonNull(executor, "executor");
         Objects.requireNonNull(task, "task");
         final FluentPromise<Void> promise = new DefaultPromise<>();
@@ -229,7 +222,7 @@ public class FutureUtils {
      * @param executor 用于在当前线程延迟执行任务的Executor
      * @return future
      */
-    public static <V> FluentFuture<V> callAsync(Executor executor, Callable<V> task) {
+    public static <V> FluentFuture<V> callAsync(SameThreadExecutor executor, Callable<V> task) {
         Objects.requireNonNull(executor, "executor");
         Objects.requireNonNull(task, "task");
         final FluentPromise<V> promise = new DefaultPromise<>();

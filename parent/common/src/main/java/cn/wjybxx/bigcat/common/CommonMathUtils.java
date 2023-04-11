@@ -115,4 +115,16 @@ public class CommonMathUtils {
         return ((int) a) * b;
     }
 
+    public static int clamp(int v, int min, int max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
+    }
+
+    public static long clamp(long v, long min, long max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
+    }
+
 }

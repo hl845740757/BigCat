@@ -14,29 +14,32 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.concurrent;
 
 /**
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/9
  */
-public final class ResultHolder<V> {
+public class EventLoopFutureContext implements FutureContext {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
+    protected final EventLoop eventLoop;
 
-    public final V result;
-
-    private ResultHolder(V result) {
-        this.result = result;
+    public EventLoopFutureContext() {
+        eventLoop = null;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
+    public EventLoopFutureContext(EventLoop eventLoop) {
+        this.eventLoop = eventLoop;
     }
 
-    public static <V> ResultHolder<V> succeeded(V result) {
-        return new ResultHolder<>(result);
+    public EventLoop getEventLoop() {
+        return eventLoop;
+    }
+
+    @Override
+    public boolean checkDeadlock(XCompletableFuture<?> future) {
+        EventLoop eventLoop = this.eventLoop;
+        return eventLoop != null && eventLoop.inEventLoop();
     }
 
 }

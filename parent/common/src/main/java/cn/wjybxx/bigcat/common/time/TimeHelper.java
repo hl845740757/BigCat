@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.common.time;
 
+import javax.annotation.concurrent.Immutable;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -27,6 +28,7 @@ import java.time.format.DateTimeFormatter;
  * @author wjybxx
  * date 2023/4/1
  */
+@Immutable
 public final class TimeHelper {
 
     /**

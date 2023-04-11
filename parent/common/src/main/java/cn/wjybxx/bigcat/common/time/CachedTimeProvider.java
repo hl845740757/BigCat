@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.common.time;
 
 /**
  * 该接口表示实现类的缓存了时间戳的，需要外部定时去更新
+ * 线程安全性取决于实现类
  *
  * @author wjybxx
  * date 2023/4/4

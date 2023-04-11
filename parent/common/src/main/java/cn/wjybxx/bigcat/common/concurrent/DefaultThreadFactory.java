@@ -94,6 +94,12 @@ public class DefaultThreadFactory implements ThreadFactory {
         return t;
     }
 
+    public static void checkUncaughtExceptionHandler(Thread thread) {
+        if (thread.getUncaughtExceptionHandler() == null) {
+            thread.setUncaughtExceptionHandler(DefaultUncaughtExceptionHandler.INSTANCE);
+        }
+    }
+
     private static class DefaultUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
         private static final DefaultUncaughtExceptionHandler INSTANCE = new DefaultUncaughtExceptionHandler();

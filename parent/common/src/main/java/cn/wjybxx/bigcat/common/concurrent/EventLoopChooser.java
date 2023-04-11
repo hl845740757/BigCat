@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
+package cn.wjybxx.bigcat.common.concurrent;
 
-import cn.wjybxx.bigcat.common.annotation.MarkInterface;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * 如果一个异常实现了该接口，那么当其被捕获时，我们并不为其自动记录日志。
- * 用于节省不必要的开销（抓取异常堆栈信息的开销较大）。
- * <p>
- * 注意：实现该接口的异常通常应该禁止填充堆栈，也不应包含额外数据。也就是说，实现该接口的异常通常应该是个单例。
+ * 事件循环选择器，用于负载均衡和确定选择。
  *
  * @author wjybxx
- * date 2023/4/2
+ * date 2023/4/7
  */
-@MarkInterface
-public interface NoLogRequiredException {
+@ThreadSafe
+public interface EventLoopChooser {
+
+    EventLoop next();
+
+    /**
+     * 给定一个键，分配一个{@link EventLoop}。
+     *
+     * @apiNote 同一个key的选择结果必须是相同的
+     */
+    EventLoop select(int key);
 
 }

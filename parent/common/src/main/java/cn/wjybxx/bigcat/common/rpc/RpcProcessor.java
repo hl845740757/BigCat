@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.common.rpc;
 
 import cn.wjybxx.bigcat.common.async.FluentFuture;
-import cn.wjybxx.bigcat.common.async.FutureUtils;
+import cn.wjybxx.bigcat.common.async.SameThreads;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +37,7 @@ public interface RpcProcessor {
      * <p>
      * 注意：接口默认只约定支持{@link FluentFuture}以确保逻辑在当前线程执行。
      * 如果你想支持其它类型的Future，比如JDK的{@link CompletableFuture}和Netty的Future，请在上层进行转换，同时确保回调执行在当前线程。
-     * 工具方法：{@link FutureUtils#fromJDKFuture(CompletableFuture, Executor)}
+     * 工具方法：{@link SameThreads#fromJDKFuture(CompletableFuture, Executor)}
      *
      * @param request rpc请求信息
      * @return 方法执行结果，可能情况：1.null 2.{@link FluentFuture} 3.其它结果
