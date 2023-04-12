@@ -17,6 +17,7 @@
 package cn.wjybxx.bigcat.common.apt.rpc;
 
 import cn.wjybxx.bigcat.common.apt.AptUtils;
+import cn.wjybxx.bigcat.common.apt.BeanUtils;
 import cn.wjybxx.bigcat.common.apt.MyAbstractProcessor;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
@@ -112,9 +113,8 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         Set<TypeElement> typeElementSet = (Set<TypeElement>) roundEnv.getElementsAnnotatedWith(rpcServiceElement);
         for (TypeElement typeElement : typeElementSet) {
             try {
-                checkBase(typeElement);
-
-                genProxyClass(typeElement);
+                List<ExecutableElement> rpcMethodList = checkBase(typeElement);
+                genProxyClass(typeElement, rpcMethodList);
             } catch (Throwable e) {
                 messager.printMessage(Diagnostic.Kind.ERROR, AptUtils.getStackTrace(e), typeElement);
             }
@@ -122,20 +122,20 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return true;
     }
 
-    private void checkBase(TypeElement typeElement) {
+    /** @return rpc方法 - 避免每次查找，开销较大 */
+    private List<ExecutableElement> checkBase(TypeElement typeElement) {
         final Short serviceId = getServiceId(typeElement);
         if (serviceId <= 0) {
             messager.printMessage(Diagnostic.Kind.ERROR, " serviceId " + serviceId + " must greater than 0!", typeElement);
-            return;
+            return List.of();
         }
 
-        final Set<Short> methodIdSet = new HashSet<>();
-        for (final Element element : typeElement.getEnclosedElements()) {
-            if (element.getKind() != ElementKind.METHOD) {
-                continue;
-            }
+        List<ExecutableElement> allMethodList = new ArrayList<>(BeanUtils.getAllMethodsWithInherit(typeElement));
+        allMethodList.addAll(findInterfaceMethods(typeElement));
 
-            final ExecutableElement method = (ExecutableElement) element;
+        final List<ExecutableElement> rpcMethodList = new ArrayList<>();
+        final Set<Short> methodIdSet = new HashSet<>();
+        for (final ExecutableElement method : allMethodList) {
             final Short methodId = getMethodId(method);
             if (methodId == null) { // 不是rpc方法
                 continue;
@@ -162,7 +162,25 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
             checkParameters(method);
             checkReturnType(method);
+            rpcMethodList.add(method);
         }
+        return rpcMethodList;
+    }
+
+    private List<ExecutableElement> findInterfaceMethods(TypeElement typeElement) {
+        List<ExecutableElement> interfaceMethodList = AptUtils.findAllInterfaces(typeUtils, elementUtils, typeElement).stream()
+                .map(RpcServiceProcessor::castTypeMirror2TypeElement)
+                .flatMap(e -> e.getEnclosedElements().stream())
+                .filter(e -> e.getKind() == ElementKind.METHOD)
+                .map(e -> (ExecutableElement) e)
+                .collect(Collectors.toList());
+        return interfaceMethodList;
+    }
+
+    private static TypeElement castTypeMirror2TypeElement(TypeMirror typeMirror) {
+        DeclaredType declaredType = (DeclaredType) typeMirror;
+        Element element = declaredType.asElement();
+        return (TypeElement) element;
     }
 
     private void checkParameters(ExecutableElement method) {
@@ -205,17 +223,12 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         }
     }
 
-    private void genProxyClass(TypeElement typeElement) {
+    private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
         final Short serviceId = getServiceId(typeElement);
-
-        // rpcMethods.size() == 0 也必须重新生成文件(必须刷新文件)
-        final List<ExecutableElement> rpcMethods = collectRpcMethods(typeElement);
-
         // 客户端代理
-        genClientProxy(typeElement, serviceId, rpcMethods);
-
+        genClientProxy(typeElement, serviceId, rpcMethodList);
         // 服务器代理
-        genServerProxy(typeElement, serviceId, rpcMethods);
+        genServerProxy(typeElement, serviceId, rpcMethodList);
     }
 
     private Short getServiceId(TypeElement typeElement) {
@@ -231,19 +244,11 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
                 .orElse(null);
     }
 
-    private List<ExecutableElement> collectRpcMethods(TypeElement typeElement) {
-        return typeElement.getEnclosedElements().stream()
-                .filter(e -> e.getKind() == ElementKind.METHOD)
-                .filter(method -> AptUtils.findAnnotation(typeUtils, method, rpcMethodDeclaredType).isPresent())
-                .map(e -> (ExecutableElement) e)
-                .collect(Collectors.toList());
-    }
-
     /**
      * 为客户端生成代理文件
      * XXXProxy
      */
-    private void genClientProxy(final TypeElement typeElement, final Short serviceId, final List<ExecutableElement> rpcMethods) {
+    private void genClientProxy(TypeElement typeElement, Short serviceId, List<ExecutableElement> rpcMethods) {
         new RpcProxyGenerator(this, typeElement, serviceId, rpcMethods)
                 .execute();
     }

@@ -47,7 +47,7 @@ import java.lang.annotation.Target;
  * @author wjybxx
  * date 2023/4/1
  */
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
 public @interface RpcMethod {
 

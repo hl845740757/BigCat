@@ -80,7 +80,6 @@ public class AptUtils {
                 .build();
     }
 
-
     /**
      * 筛选出java源文件 - 去除带有注解的class文件
      *
@@ -237,6 +236,41 @@ public class AptUtils {
         final List<TypeElement> result = flatInherit(typeElement);
         Collections.reverse(result);
         return result;
+    }
+
+    /** 注意：无法保证顺序 -- 这个方法还不太稳定 */
+    public static List<TypeMirror> findAllInterfaces(Types typeUtil, Elements elementUtil, TypeElement typeElement) {
+        // 避免每次都查找
+        TypeMirror objectTypeMirror = getTypeMirrorOfClass(elementUtil, Object.class);
+        List<TypeMirror> result = new ArrayList<>();
+        for (TypeMirror sup : typeElement.getInterfaces()) { // 这里不能遍历result，迭代的时候会变化
+            result.add(sup); // 直接接口一定是不重复的
+            recursiveFindInterfaces(typeUtil, objectTypeMirror, result, sup);
+        }
+        return result;
+    }
+
+    private static void recursiveFindInterfaces(Types typeUtil, TypeMirror objectMirror, List<TypeMirror> typeMirrors, TypeMirror current) {
+        // 这里要过滤Object
+        for (TypeMirror sup : typeUtil.directSupertypes(current)) {
+            if (isSameTypeIgnoreTypeParameter(typeUtil, objectMirror, sup)) {
+                continue;
+            }
+            if (containsTypeMirror(typeUtil, typeMirrors, sup)) {
+                continue;
+            }
+            typeMirrors.add(sup);
+            recursiveFindInterfaces(typeUtil, objectMirror, typeMirrors, sup);
+        }
+    }
+
+    private static boolean containsTypeMirror(Types typeUtil, List<TypeMirror> typeMirrors, TypeMirror typeMirror) {
+        for (TypeMirror exist : typeMirrors) {
+            if (isSameTypeIgnoreTypeParameter(typeUtil, typeMirror, exist)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ----------------------------------------------------- 分割线 -----------------------------------------------

@@ -19,11 +19,15 @@ package cn.wjybxx.bigcat.common;
 import cn.wjybxx.bigcat.common.async.FluentFuture;
 import cn.wjybxx.bigcat.common.async.SameThreads;
 import cn.wjybxx.bigcat.common.concurrent.FutureUtils;
+import cn.wjybxx.bigcat.common.rpc.ExtensibleService;
 import cn.wjybxx.bigcat.common.rpc.RpcMethod;
 import cn.wjybxx.bigcat.common.rpc.RpcService;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -31,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * date 2023/4/12
  */
 @RpcService(serviceId = 1)
-public class RpcServiceExample {
+public class RpcServiceExample implements ExtensibleService {
 
     @RpcMethod(methodId = 1)
     public String hello(String msg) {
@@ -71,6 +75,20 @@ public class RpcServiceExample {
     @RpcMethod(methodId = 7)
     public CompletableFuture<String> helloAsync2(String msg) {
         return FutureUtils.newSucceededFuture(msg);
+    }
+
+    // 测试从接口继承的方法
+    private Map<String, Object> extBlackboard = new HashMap<>();
+
+    @Nonnull
+    @Override
+    public Map<String, Object> getExtBlackboard() {
+        return extBlackboard;
+    }
+
+    @Override
+    public Object execute(@Nonnull String cmd, Object params) {
+        return null;
     }
 
 }
