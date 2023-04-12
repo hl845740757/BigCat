@@ -19,10 +19,7 @@ package cn.wjybxx.bigcat.common.async;
 import cn.wjybxx.bigcat.common.ThreadUtils;
 import cn.wjybxx.bigcat.common.collect.DefaultIndexedPriorityQueue;
 import cn.wjybxx.bigcat.common.collect.IndexedPriorityQueue;
-import cn.wjybxx.bigcat.common.concurrent.ResultHolder;
-import cn.wjybxx.bigcat.common.concurrent.SucceededException;
-import cn.wjybxx.bigcat.common.concurrent.TimeSharingCallable;
-import cn.wjybxx.bigcat.common.concurrent.TimeSharingTimeoutException;
+import cn.wjybxx.bigcat.common.concurrent.*;
 import cn.wjybxx.bigcat.common.time.TimeProvider;
 
 import javax.annotation.Nonnull;
@@ -74,7 +71,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleRun(long timeout, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleRun(@Nonnull Runnable task, long timeout) {
         Objects.requireNonNull(task);
         timeout = initialDelayChecker.check(timeout);
 
@@ -86,7 +83,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
 
     @Nonnull
     @Override
-    public <V> ScheduledFluentFuture<V> scheduleCall(long timeout, @Nonnull Callable<V> task) {
+    public <V> ScheduledFluentFuture<V> scheduleCall(@Nonnull Callable<V> task, long timeout) {
         Objects.requireNonNull(task);
         timeout = initialDelayChecker.check(timeout);
 
@@ -98,7 +95,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleWithFixedDelay(long initialDelay, long period, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleWithFixedDelay(@Nonnull Runnable task, long initialDelay, long period) {
         Objects.requireNonNull(task);
         initialDelay = initialDelayChecker.check(initialDelay);
         ensurePeriodGreaterThanZero(period);
@@ -111,7 +108,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
 
     @Nonnull
     @Override
-    public ScheduledFluentFuture<?> scheduleAtFixedRate(long initialDelay, long period, @Nonnull Runnable task) {
+    public ScheduledFluentFuture<?> scheduleAtFixedRate(@Nonnull Runnable task, long initialDelay, long period) {
         if (initialDelay < 0) {
             throw new IllegalArgumentException("fixedRate initialDelay < 0");
         }
@@ -126,7 +123,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
 
     @Nonnull
     @Override
-    public <V> ScheduledFluentFuture<V> timeSharingWithFixedDelay(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+    public <V> ScheduledFluentFuture<V> timeSharingWithFixedDelay(@Nonnull TimeSharingCallable<V> task, long initialDelay, long period,
                                                                   long timeout) {
         Objects.requireNonNull(task);
         initialDelay = initialDelayChecker.check(initialDelay);
@@ -142,7 +139,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
 
     @Nonnull
     @Override
-    public <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(long initialDelay, long period, @Nonnull TimeSharingCallable<V> task,
+    public <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(@Nonnull TimeSharingCallable<V> task, long initialDelay, long period,
                                                                long timeout) {
         if (initialDelay < 0) {
             throw new IllegalArgumentException("fixedRate initialDelay < 0");
@@ -151,27 +148,26 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         ensurePeriodGreaterThanZero(period);
         checkTimeSharingTimeout(timeout);
 
-        final TimeSharingContext<V> timeSharingContext = new TimeSharingContext<V>(task, timeout, timeProvider.getTime());
+        final TimeSharingContext<V> timeSharingContext = new TimeSharingContext<>(task, timeout, timeProvider.getTime());
         final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, timeSharingContext,
-                ++sequencer, nextTriggerTime(initialDelay), period
-        );
+                ++sequencer, nextTriggerTime(initialDelay), period);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
     }
 
     @Override
     public void execute(@Nonnull Runnable command) {
-        scheduleRun(0, command);
+        scheduleRun(command, 0);
     }
 
     @Override
     public FluentFuture<?> submitRun(@Nonnull Runnable command) {
-        return scheduleRun(0, command);
+        return scheduleRun(command, 0);
     }
 
     @Override
     public <V> FluentFuture<V> submitCall(@Nonnull Callable<V> command) {
-        return scheduleCall(0, command);
+        return scheduleCall(command, 0);
     }
 
     @Override
@@ -263,7 +259,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         }
     }
 
-    static class ScheduledFutureTask<V> extends DefaultPromise<V> implements ScheduledFluentFuture<V>, Runnable,
+    private static class ScheduledFutureTask<V> extends DefaultPromise<V> implements ScheduledFluentFuture<V>, Runnable,
             IndexedPriorityQueue.IndexedNode,
             Comparable<ScheduledFutureTask<?>> {
 
@@ -333,9 +329,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                 } else {
                     if (task instanceof TimeSharingContext<V> timeSharingContext) {
                         timeSharingContext.beforeCall(executor.tickTime, nextTriggerTime, period);
-                        final ResultHolder<V> holder = timeSharingContext.task.call();
-                        timeSharingContext.afterCall(executor.tickTime, nextTriggerTime, period);
-
+                        final ResultHolder<V> holder = timeSharingContext.getTask().call();
                         if (holder != null) { // 得到结果
                             trySuccess(holder.result);
                             return;
@@ -347,7 +341,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                     } else {
                         task.call();
                     }
-                    updateNextTriggerTime();
+                    setNextRunTime();
                 }
             } catch (SucceededException ex) {
                 @SuppressWarnings("unchecked") V result = (V) ex.getResult();
@@ -366,8 +360,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
             return nextTriggerTime;
         }
 
-        /** 任务执行一次之后，更新状态下次执行时间。 */
-        void updateNextTriggerTime() {
+        void setNextRunTime() {
             if (period > 0) {
                 nextTriggerTime += period;
             } else {
@@ -385,54 +378,6 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                 return r1;
             }
             return Long.compare(taskId, that.taskId);
-        }
-
-    }
-
-    private static class TimeSharingContext<V> implements Callable<V> {
-
-        Callable<ResultHolder<V>> task;
-        /** 剩余时间 */
-        long timeLeft;
-        /** 上次触发时间，用于固定延迟下计算deltaTime */
-        long lastTriggerTime;
-
-        TimeSharingContext(Callable<ResultHolder<V>> task, long timeout, long initTime) {
-            this.task = task;
-            this.timeLeft = timeout;
-            this.lastTriggerTime = initTime;
-        }
-
-        @Override
-        public V call() {
-            throw new AssertionError();
-        }
-
-        /**
-         * @param realTriggerTime  真实触发时间 -- 真正被调度的时间
-         * @param logicTriggerTime 逻辑触发时间 -- 调度前计算的应该被调度的时间
-         * @see ScheduledFutureTask#updateNextTriggerTime()
-         */
-        void beforeCall(long realTriggerTime, long logicTriggerTime, long period) {
-            // 逻辑触发时间的更新是基于lastTriggerTime算的，所以一定大于
-            assert logicTriggerTime >= lastTriggerTime;
-            if (period > 0) {
-                timeLeft -= Math.max(0, logicTriggerTime - lastTriggerTime);
-            } else {
-                timeLeft -= Math.max(0, realTriggerTime - lastTriggerTime);
-            }
-        }
-
-        void afterCall(long realTriggerTime, long logicTriggerTime, long period) {
-            if (period > 0) {
-                lastTriggerTime = logicTriggerTime;
-            } else {
-                lastTriggerTime = realTriggerTime;
-            }
-        }
-
-        boolean isTimeout() {
-            return timeLeft <= 0;
         }
 
     }

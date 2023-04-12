@@ -103,7 +103,7 @@ public class RpcTest {
         }
 
         public FluentFuture<String> helloAsync(String msg) {
-            return executor.scheduleCall(500, () -> hello(msg));
+            return executor.scheduleCall(() -> hello(msg), 500);
         }
 
     }
@@ -235,8 +235,8 @@ public class RpcTest {
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
             TestClient testClient = new TestClient(timeProvider, rpcSupportHandler);
-            executor.scheduleWithFixedDelay(200, 300, testClient::sayHello);
-            executor.scheduleWithFixedDelay(200, 500, () -> {
+            executor.scheduleWithFixedDelay(testClient::sayHello, 200, 300);
+            executor.scheduleWithFixedDelay(() -> {
                 try {
                     testClient.syncSayHello();
                 } catch (InterruptedException e) {
@@ -246,7 +246,7 @@ public class RpcTest {
                         logger.info("client caught exception", e);
                     }
                 }
-            });
+            }, 200, 500);
 
             // 准备好以后执行countdown
             latch.countDown();

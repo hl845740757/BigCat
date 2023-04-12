@@ -14,36 +14,36 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.async;
-
-import cn.wjybxx.bigcat.common.concurrent.AggregateOptions;
-import cn.wjybxx.bigcat.common.concurrent.TaskInsufficientException;
+package cn.wjybxx.bigcat.common.concurrent;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 /**
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/12
  */
-class DefaultFluentFutureCombiner implements FluentFutureCombiner {
+class DefaultFutureCombiner implements FutureCombiner {
 
     private ChildListener childrenListener = new ChildListener();
     private int futureCount;
 
-    DefaultFluentFutureCombiner() {
+    DefaultFutureCombiner() {
     }
 
     //region
     @Override
-    public FluentFutureCombiner add(FluentFuture<?> future) {
+    public FutureCombiner add(CompletionStage<?> future) {
         Objects.requireNonNull(future);
         ChildListener childrenListener = this.childrenListener;
         if (childrenListener == null) {
             throw new IllegalStateException("Adding futures is not allowed after finished adding");
         }
         ++futureCount;
-        future.addListener(childrenListener);
+        future.whenComplete(childrenListener);
         return this;
     }
 
@@ -56,16 +56,16 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
     // region
 
     @Override
-    public FluentPromise<Object> anyOf() {
+    public XCompletableFuture<Object> anyOf() {
         return finish(AggregateOptions.anyOf());
     }
 
     @Override
-    public FluentPromise<Object> selectN(int successRequire, boolean lazy) {
+    public XCompletableFuture<Object> selectN(int successRequire, boolean lazy) {
         return finish(AggregateOptions.selectN(successRequire, lazy));
     }
 
-    private FluentPromise<Object> finish(AggregateOptions options) {
+    private XCompletableFuture<Object> finish(AggregateOptions options) {
         Objects.requireNonNull(options);
         ChildListener childrenListener = this.childrenListener;
         if (childrenListener == null) {
@@ -73,41 +73,44 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
         }
         this.childrenListener = null;
 
-        FluentPromise<Object> aggregatePromise = SameThreads.newPromise();
-        childrenListener.futureCount = futureCount;
+        // 数据存储在ChildListener上有助于扩展
+        XCompletableFuture<Object> aggregatePromise = new XCompletableFuture<>(childrenListener);
+        childrenListener.futureCount = this.futureCount;
         childrenListener.options = options;
         childrenListener.aggregatePromise = aggregatePromise;
         childrenListener.checkComplete();
         return aggregatePromise;
     }
 
-    // endregion
-
     // region 内部实现
 
-    private static class ChildListener implements BiConsumer<Object, Throwable> {
+    private static class ChildListener implements FutureContext, BiConsumer<Object, Throwable> {
 
-        private int succeedCount;
-        private int doneCount;
+        private final AtomicInteger succeedCount = new AtomicInteger();
+        private final AtomicInteger doneCount = new AtomicInteger();
 
+        /** 非volatile，虽然存在竞争，但重复赋值是安全的，通过promise发布到其它线程 */
         private Object result;
         private Throwable cause;
 
+        /** 非volatile，其可见性由{@link #aggregatePromise}保证 */
         private int futureCount;
         private AggregateOptions options;
-        private FluentPromise<Object> aggregatePromise;
+        private volatile CompletableFuture<Object> aggregatePromise;
 
         @Override
         public void accept(Object r, Throwable throwable) {
+            // 我们先增加succeedCount，再增加doneCount，读取时先读取doneCount，再读取succeedCount，
+            // 就可以保证succeedCount是比doneCount更新的值，才可以提前判断是否立即失败
             if (throwable == null) {
                 result = encodeValue(r);
-                succeedCount++;
-            } else if (cause == null) { // 暂时保留第一个异常
+                succeedCount.incrementAndGet();
+            } else {
                 cause = throwable;
             }
-            doneCount++;
+            doneCount.incrementAndGet();
 
-            FluentPromise<Object> aggregatePromise = this.aggregatePromise;
+            CompletableFuture<Object> aggregatePromise = this.aggregatePromise;
             if (aggregatePromise != null && !aggregatePromise.isDone() && checkComplete()) {
                 result = null;
                 cause = null;
@@ -115,18 +118,25 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
         }
 
         boolean checkComplete() {
+            // 字段的读取顺序不可以调整
+            final int doneCount = this.doneCount.get();
+            final int succeedCount = this.succeedCount.get();
+            if (doneCount < succeedCount) { // 退出竞争，另一个线程来完成
+                return false;
+            }
+
             // 没有任务，立即完成
             if (futureCount == 0) {
-                return aggregatePromise.trySuccess(null);
+                return aggregatePromise.complete(null);
             }
             if (options.isAnyOf()) {
                 if (doneCount == 0) {
                     return false;
                 }
                 if (result != null) { // anyOf下尽量返回成功
-                    return aggregatePromise.trySuccess(decodeValue(result));
+                    return aggregatePromise.complete(decodeValue(result));
                 } else {
-                    return aggregatePromise.tryFailure(cause);
+                    return aggregatePromise.completeExceptionally(cause);
                 }
             }
 
@@ -137,14 +147,14 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
             // 包含了require小于等于0的情况
             final int successRequire = options.successRequire;
             if (succeedCount >= successRequire) {
-                return aggregatePromise.trySuccess(null);
+                return aggregatePromise.complete(null);
             }
             // 剩余的任务不足以达到成功，则立即失败；包含了require大于futureCount的情况
             if (succeedCount + (futureCount - doneCount) < successRequire) {
                 if (cause == null) {
                     cause = TaskInsufficientException.create(futureCount, successRequire);
                 }
-                return aggregatePromise.tryFailure(cause);
+                return aggregatePromise.completeExceptionally(cause);
             }
             return false;
         }

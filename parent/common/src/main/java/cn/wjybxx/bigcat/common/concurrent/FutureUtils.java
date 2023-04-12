@@ -175,6 +175,10 @@ public class FutureUtils {
         terminationFutureCtx.terminate(terminationFuture);
     }
 
+    public static FutureCombiner newCombiner() {
+        return new DefaultFutureCombiner();
+    }
+
     public static FutureContext getVobtrdeClosedFutureContext() {
         return VobtrudeClosedFutureContext.INSTANCE;
     }

@@ -62,12 +62,12 @@ public abstract class EventLoopBuilder {
 
     //
 
-    public static DisruptBuilder newDisruptBuilder() {
-        return new DisruptBuilder();
+    public static DisruptorBuilder newDisruptBuilder() {
+        return new DisruptorBuilder();
     }
     //
 
-    public static class DisruptBuilder extends EventLoopBuilder {
+    public static class DisruptorBuilder extends EventLoopBuilder {
 
         private EventLoopAgent<? super RingBufferEvent> agent;
         private int ringBufferSize = 8192;
@@ -77,18 +77,18 @@ public abstract class EventLoopBuilder {
         //
 
         @Override
-        public DisruptBuilder setParent(EventLoopGroup parent) {
-            return (DisruptBuilder) super.setParent(parent);
+        public DisruptorBuilder setParent(EventLoopGroup parent) {
+            return (DisruptorBuilder) super.setParent(parent);
         }
 
         @Override
-        public DisruptBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
-            return (DisruptBuilder) super.setRejectedExecutionHandler(rejectedExecutionHandler);
+        public DisruptorBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
+            return (DisruptorBuilder) super.setRejectedExecutionHandler(rejectedExecutionHandler);
         }
 
         @Override
-        public DisruptBuilder setThreadFactory(ThreadFactory threadFactory) {
-            return (DisruptBuilder) super.setThreadFactory(threadFactory);
+        public DisruptorBuilder setThreadFactory(ThreadFactory threadFactory) {
+            return (DisruptorBuilder) super.setThreadFactory(threadFactory);
         }
 
         @Override
@@ -102,7 +102,7 @@ public abstract class EventLoopBuilder {
             return agent;
         }
 
-        public DisruptBuilder setAgent(EventLoopAgent<? super RingBufferEvent> agent) {
+        public DisruptorBuilder setAgent(EventLoopAgent<? super RingBufferEvent> agent) {
             this.agent = agent;
             return this;
         }
@@ -111,7 +111,7 @@ public abstract class EventLoopBuilder {
             return ringBufferSize;
         }
 
-        public DisruptBuilder setRingBufferSize(int ringBufferSize) {
+        public DisruptorBuilder setRingBufferSize(int ringBufferSize) {
             this.ringBufferSize = ringBufferSize;
             return this;
         }
@@ -120,7 +120,7 @@ public abstract class EventLoopBuilder {
             return waitStrategy;
         }
 
-        public DisruptBuilder setWaitStrategy(WaitStrategy waitStrategy) {
+        public DisruptorBuilder setWaitStrategy(WaitStrategy waitStrategy) {
             this.waitStrategy = waitStrategy;
             return this;
         }
@@ -129,7 +129,7 @@ public abstract class EventLoopBuilder {
             return batchSize;
         }
 
-        public DisruptBuilder setBatchSize(int batchSize) {
+        public DisruptorBuilder setBatchSize(int batchSize) {
             this.batchSize = batchSize;
             return this;
         }

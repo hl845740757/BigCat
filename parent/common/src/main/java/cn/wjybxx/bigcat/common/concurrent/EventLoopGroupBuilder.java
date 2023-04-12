@@ -22,7 +22,7 @@ package cn.wjybxx.bigcat.common.concurrent;
  */
 public class EventLoopGroupBuilder {
 
-    private int numberChildren;
+    private int numberChildren = 1;
     private EventLoopFactory eventLoopFactory;
     private EventLoopChooserFactory chooserFactory;
 

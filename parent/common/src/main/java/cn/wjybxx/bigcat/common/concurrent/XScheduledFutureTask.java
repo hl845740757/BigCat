@@ -150,7 +150,21 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
                     internal_doComplete(result);
                 }
             } else if (!isDone()) {
-                runTask();
+                TimeSharingContext<V> timeSharingContext = asTimeSharingContext();
+                if (timeSharingContext != null) {
+                    timeSharingContext.beforeCall(tickTime, nextTriggerTime, period);
+                    ResultHolder<V> holder = timeSharingContext.getTask().call();
+                    if (holder != null) {
+                        internal_doComplete(holder.result);
+                        return false;
+                    }
+                    if (timeSharingContext.isTimeout()) {
+                        internal_doCompleteExceptionally(TimeSharingTimeoutException.INSTANCE);
+                        return false;
+                    }
+                } else {
+                    runTask();
+                }
                 if (!isDone()) {
                     setNextRunTime(tickTime);
                     return true;

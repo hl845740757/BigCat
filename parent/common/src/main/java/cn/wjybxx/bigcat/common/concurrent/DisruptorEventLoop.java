@@ -88,7 +88,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
     /** 用户自定义逻辑 */
     private final EventLoopAgent<? super RingBufferEvent> agent;
 
-    public DisruptorEventLoop(EventLoopBuilder.DisruptBuilder builder) {
+    public DisruptorEventLoop(EventLoopBuilder.DisruptorBuilder builder) {
         super(builder.getParent());
 
         WaitStrategy waitStrategy = Objects.requireNonNull(builder.getWaitStrategy(), "waitStrategy");

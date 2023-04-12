@@ -82,6 +82,15 @@ class XFutureTask<V> extends XCompletableFuture<V> implements RunnableFuture<V> 
         }
     }
 
+    @SuppressWarnings("unchecked")
+    final TimeSharingContext<V> asTimeSharingContext() {
+        Object task = this.task;
+        if (task instanceof TimeSharingContext<?>) {
+            return (TimeSharingContext<V>) task;
+        }
+        return null;
+    }
+
     private void clean() {
         task = null;
     }
