@@ -95,8 +95,7 @@ public class DisruptorEventLoopTest1 {
         @Override
         public void run() {
             if (sequence != nextSequence) {
-                String msg = String.format("nextSequence: %d (expected: = %d)", sequence, nextSequence);
-                errorMsgList.add(msg);
+                errorMsgList.add(String.format("nextSequence: %d (expected: = %d)", sequence, nextSequence));
             }
             nextSequence++;
         }

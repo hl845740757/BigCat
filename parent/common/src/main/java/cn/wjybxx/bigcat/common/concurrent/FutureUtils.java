@@ -158,21 +158,40 @@ public class FutureUtils {
         return new XCompletableFuture<>();
     }
 
-    public static <V> XCompletableFuture<V> newSucceededFuture(V reusult) {
-        XCompletableFuture<V> future = new XCompletableFuture<>();
-        future.obtrudeValue(reusult);
+    public static <V> XCompletableFuture<V> newSucceededFuture(V result) {
+        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.INSTANCE);
+        future.internal_doObtrudeValue(result);
         return future;
     }
 
     public static <V> XCompletableFuture<V> newFailedFuture(Throwable cause) {
-        XCompletableFuture<V> future = new XCompletableFuture<>();
-        future.obtrudeException(cause);
+        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.INSTANCE);
+        future.internal_doObtrudeException(cause);
         return future;
     }
 
     public static void completeTerminationFuture(XCompletableFuture<?> terminationFuture) {
         TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
         terminationFutureCtx.terminate(terminationFuture);
+    }
+
+    public static FutureContext getVobtrdeClosedFutureContext() {
+        return VobtrudeClosedFutureContext.INSTANCE;
+    }
+
+    private static class VobtrudeClosedFutureContext implements FutureContext {
+
+        private static final VobtrudeClosedFutureContext INSTANCE = new VobtrudeClosedFutureContext();
+
+        @Override
+        public <T> void obtrudeValue(XCompletableFuture<T> future, T value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void obtrudeException(XCompletableFuture<?> future, Throwable ex) {
+            throw new UnsupportedOperationException();
+        }
     }
 
 }

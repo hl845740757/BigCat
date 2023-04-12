@@ -64,7 +64,7 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
     /**
      * {@link EventLoop}的实现类在运行期间尽量将自己发布到该变量上，以供用户访问。
      */
-    ThreadLocal<EventLoop> current = new ThreadLocal<>();
+    ThreadLocal<EventLoop> CURRENT = new ThreadLocal<>();
 
     /**
      * @return this - 由于{@link EventLoop}表示单个线程，因此总是分配自己。
@@ -143,16 +143,12 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
      */
     <V> XCompletableFuture<V> newPromise();
 
-    default <V> XCompletableFuture<V> newSucceededFuture(V reusult) {
-        XCompletableFuture<V> future = new XCompletableFuture<>();
-        future.obtrudeValue(reusult);
-        return future;
+    default <V> XCompletableFuture<V> newSucceededFuture(V result) {
+        return FutureUtils.newSucceededFuture(result);
     }
 
     default <V> XCompletableFuture<V> newFailedFuture(Throwable cause) {
-        XCompletableFuture<V> future = new XCompletableFuture<>();
-        future.obtrudeException(cause);
-        return future;
+        return FutureUtils.newFailedFuture(cause);
     }
 
     // endregion

@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RejectedExecutionException;
 
 /**
  * 测试多生产者使用{@link DisruptorEventLoop#publish(long)}发布任务的时序
@@ -87,17 +86,16 @@ public class DisruptorEventLoopTest4 {
             DisruptorEventLoop consumer = DisruptorEventLoopTest4.this.consumer;
             long localSequence = 0;
             while (!alert && localSequence < 1000000) {
-                try {
-                    long sequence = consumer.nextSequence();
-                    try {
-                        RingBufferEvent event = consumer.getEvent(sequence);
-                        event.type = type;
-                        event.longVal1 = localSequence++;
-                    } finally {
-                        consumer.publish(sequence);
-                    }
-                } catch (RejectedExecutionException ignore) {
+                long sequence = consumer.nextSequence();
+                if (sequence < 0) {
                     break;
+                }
+                try {
+                    RingBufferEvent event = consumer.getEvent(sequence);
+                    event.setType(type);
+                    event.longVal1 = localSequence++;
+                } finally {
+                    consumer.publish(sequence);
                 }
             }
         }
@@ -115,18 +113,18 @@ public class DisruptorEventLoopTest4 {
 
         @Override
         public void onEvent(RingBufferEvent event) throws Exception {
-            if (event.type < 1) {
-                String msg = String.format("code1 event.type: %d (expected: > 0)", event.type);
-                errorMsgList.add(msg);
+            if (event.getType() < 1) {
+                errorMsgList.add(String.format("code1 event.type: %d (expected: > 0)",
+                        event.getType()));
                 return;
             }
 
-            long nextSequence = sequenceMap.get(event.type);
+            long nextSequence = sequenceMap.get(event.getType());
             if (event.longVal1 != nextSequence) {
-                String msg = String.format("code2 event.type: %d, nextSequence: %d (expected: = %d)", event.type, event.longVal1, nextSequence);
-                errorMsgList.add(msg);
+                errorMsgList.add(String.format("code2 event.type: %d, nextSequence: %d (expected: = %d)",
+                        event.getType(), event.longVal1, nextSequence));
             }
-            sequenceMap.put(event.type, nextSequence + 1);
+            sequenceMap.put(event.getType(), nextSequence + 1);
         }
 
         @Override

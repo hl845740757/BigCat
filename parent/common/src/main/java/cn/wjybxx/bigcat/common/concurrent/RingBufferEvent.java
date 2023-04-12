@@ -33,8 +33,7 @@ public final class RingBufferEvent implements Runnable {
     public static final int TYPE_INVALID = -1;
     public static final int TYPE_RUNNABLE = 0;
 
-    /** 任务类型 -- 用户自定义事件必须大于0 */
-    public int type = TYPE_INVALID;
+    private int type = TYPE_INVALID;
     public Runnable task;
 
     // 扩展字段
@@ -89,20 +88,47 @@ public final class RingBufferEvent implements Runnable {
         cleanPrimitives();
     }
 
+    public int getType() {
+        return type;
+    }
+
+    /**
+     * 用户不可以发布负类型的事件，否则可能影响事件循环的工作
+     * 如果用户发布 0 类型事件，则必须赋值{@link #task}
+     */
+    public void setType(int type) {
+        if (type < 0) {
+            throw new IllegalArgumentException("invalid type " + type);
+        }
+        this.type = type;
+    }
+
+    /**
+     * 开放给事件循环实现的接口，允许发布任意类型的事件
+     * 注意：虽然开放接口约定事件类型必须大于等于0，但由于clean的存在，用户忘记赋值的情况下仍然可能为 -1，事件循环的实现者需要注意。
+     * 使用两个接口虽不能彻底解决问题，但可以缩小问题的范围。
+     */
+    public void internal_setType(int type) {
+        this.type = type;
+    }
+
     @Override
     public void run() {
 
     }
 
-    // toString只打印简单信息
     @Override
     public String toString() {
         return "RingBufferEvent{" +
                 "type=" + type +
+                ", task=" + task +
                 ", intVal1=" + intVal1 +
                 ", intVal2=" + intVal2 +
                 ", longVal1=" + longVal1 +
                 ", longVal2=" + longVal2 +
+                ", obj1=" + obj1 +
+                ", obj2=" + obj2 +
+                ", obj3=" + obj3 +
                 '}';
     }
 

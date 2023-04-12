@@ -108,8 +108,8 @@ public class DisruptorEventLoopTest2 {
         public void run() {
             long nextSequence = sequenceMap.get(type);
             if (sequence != nextSequence) {
-                String msg = String.format("code2, event.type: %d, nextSequence: %d (expected: = %d)", type, sequence, nextSequence);
-                errorMsgList.add(msg);
+                errorMsgList.add(String.format("code2, event.type: %d, nextSequence: %d (expected: = %d)",
+                        type, sequence, nextSequence));
             }
             sequenceMap.put(type, nextSequence + 1);
         }

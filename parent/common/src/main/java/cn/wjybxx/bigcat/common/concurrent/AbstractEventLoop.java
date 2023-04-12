@@ -75,21 +75,6 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         return new XCompletableFuture<>(futureContext);
     }
 
-    /**
-     * 请求将当前任务重新压入队列
-     * 1.一定从当前线程调用
-     * 2.如果无法继续调度任务，则取消任务
-     *
-     * @param triggered 是否是执行之后压入队列
-     */
-    protected abstract void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered);
-
-    /**
-     * 请求删除给定的任务
-     * 1.可能从其它线程调用，需考虑线程安全问题
-     */
-    protected abstract void removeScheduled(XScheduledFutureTask<?> futureTask);
-
     // --------------------------------------- 任务提交 ----------------------------------------
 
     @Override
@@ -126,7 +111,7 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         Objects.requireNonNull(unit);
         delay = Math.max(0, delay);
 
-        return schedule(new XScheduledFutureTask<>(futureContext, command, null,
+        return schedule(XScheduledFutureTask.ofRunnable(futureContext, command, null,
                 0, triggerTime(delay, unit)));
     }
 
@@ -147,7 +132,7 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         initialDelay = Math.max(0, initialDelay);
         validatePeriod(delay);
 
-        return schedule(new XScheduledFutureTask<>(futureContext, command, null,
+        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command, null,
                 0, triggerTime(initialDelay, unit), -unit.toNanos(delay)));
     }
 
@@ -158,7 +143,7 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         validateInitialDelay(initialDelay); // fixedRate禁止负延迟输入
         validatePeriod(period);
 
-        return schedule(new XScheduledFutureTask<>(futureContext, command, null,
+        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command, null,
                 0, triggerTime(initialDelay, unit), unit.toNanos(period)));
     }
 
@@ -171,6 +156,21 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         execute(futureTask);
         return futureTask;
     }
+
+    /**
+     * 请求将当前任务重新压入队列
+     * 1.一定从当前线程调用
+     * 2.如果无法继续调度任务，则取消任务
+     *
+     * @param triggered 是否是执行之后压入队列
+     */
+    protected abstract void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered);
+
+    /**
+     * 请求删除给定的任务
+     * 1.可能从其它线程调用，需考虑线程安全问题
+     */
+    protected abstract void removeScheduled(XScheduledFutureTask<?> futureTask);
 
     /** 适用于禁止初始延迟小于0的情况 */
     protected static void validateInitialDelay(long initialDelay) {

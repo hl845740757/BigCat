@@ -73,9 +73,12 @@ public class DisruptorEventLoopTest3 {
             long sequence = -1;
             while (!alert && sequence < 1000000) {
                 sequence = consumer.nextSequence();
+                if (sequence < 0) {
+                    break;
+                }
                 try {
                     RingBufferEvent event = consumer.getEvent(sequence);
-                    event.type = 1;
+                    event.setType(1);
                     event.longVal1 = sequence;
                 } finally {
                     consumer.publish(sequence);
@@ -96,15 +99,15 @@ public class DisruptorEventLoopTest3 {
 
         @Override
         public void onEvent(RingBufferEvent event) throws Exception {
-            if (event.type < 1) {
-                String msg = String.format("code1 event.type: %d (expected: > 0)", event.type);
-                errorMsgList.add(msg);
+            if (event.getType() < 1) {
+                errorMsgList.add(String.format("code1 event.type: %d (expected: > 0)",
+                        event.getType()));
                 return;
             }
 
             if (event.longVal1 != nextSequence) {
-                String msg = String.format("code2, nextSequence: %d (expected: = %d)", event.longVal1, nextSequence);
-                errorMsgList.add(msg);
+                errorMsgList.add(String.format("code2, nextSequence: %d (expected: = %d)",
+                        event.longVal1, nextSequence));
             }
             nextSequence++;
         }

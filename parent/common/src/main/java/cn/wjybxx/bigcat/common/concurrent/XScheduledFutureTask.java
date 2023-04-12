@@ -46,28 +46,31 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     /** 所属的队列id */
     private int queueId;
 
-    public XScheduledFutureTask(EventLoopFutureContext ctx, Runnable task, V result,
-                                long id, long nanoTime) {
-        super(ctx, task, result);
-        this.id = id;
-        this.nextTriggerTime = nanoTime;
-        this.period = 0;
-    }
-
-    public XScheduledFutureTask(EventLoopFutureContext ctx, Runnable task, V result,
-                                long id, long nanoTime, long period) {
-        super(ctx, task, result);
-        this.id = id;
-        this.nextTriggerTime = nanoTime;
-        this.period = validatePeriod(period);
-    }
-
     public XScheduledFutureTask(EventLoopFutureContext ctx, Callable<V> task,
                                 long id, long nanoTime) {
         super(ctx, task);
         this.id = id;
         this.nextTriggerTime = nanoTime;
         this.period = 0;
+    }
+
+    private XScheduledFutureTask(EventLoopFutureContext ctx, Runnable task, V result,
+                                 long id, long nanoTime, long period) {
+        super(ctx, task, result);
+        this.id = id;
+        this.nextTriggerTime = nanoTime;
+        this.period = period;
+    }
+
+    public static <V> XScheduledFutureTask<V> ofRunnable(EventLoopFutureContext ctx, Runnable task, V result,
+                                                         long id, long nanoTime) {
+        return new XScheduledFutureTask<>(ctx, task, result, id, nanoTime, 0);
+    }
+
+
+    public static <V> XScheduledFutureTask<V> ofPeriodicRunnable(EventLoopFutureContext ctx, Runnable task, V result,
+                                                                 long id, long nanoTime, long period) {
+        return new XScheduledFutureTask<>(ctx, task, result, id, nanoTime, validatePeriod(period));
     }
 
     private static long validatePeriod(long period) {
@@ -124,32 +127,13 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
             eventLoop.removeScheduled(this);
             return;
         }
-
         long tickTime = eventLoop.getTime();
         if (tickTime < nextTriggerTime) { // 显式测试一次，适应多种EventLoop
             eventLoop.reSchedulePeriodic(this, false);
             return;
         }
-
-        try {
-            if (period == 0) {
-                if (internal_setUncancellable()) {
-                    V result = runTask();
-                    internal_doComplete(result);
-                }
-            } else {
-                runTask();
-                if (!isDone()) { // 未被取消
-                    setNextRunTime(tickTime);
-                    eventLoop.reSchedulePeriodic(this, true);
-                }
-            }
-        } catch (SucceededException ex) {
-            @SuppressWarnings("unchecked") V result = (V) ex.getResult();
-            internal_doComplete(result);
-        } catch (Throwable ex) {
-            ThreadUtils.recoveryInterrupted(ex);
-            internal_doCompleteExceptionally(ex);
+        if (trigger(tickTime)) {
+            eventLoop.reSchedulePeriodic(this, true);
         }
     }
 
@@ -161,7 +145,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     boolean trigger(long tickTime) {
         try {
             if (period == 0) {
-                if (internal_setUncancellable()) {
+                if (internal_setUncancellable()) { // 隐式测试isDone
                     V result = runTask();
                     internal_doComplete(result);
                 }

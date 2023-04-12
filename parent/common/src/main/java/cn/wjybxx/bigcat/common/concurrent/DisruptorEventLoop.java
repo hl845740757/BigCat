@@ -29,7 +29,6 @@ import java.lang.invoke.VarHandle;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -180,72 +179,9 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
 
     // region 任务提交
 
-    public final RingBufferEvent getEvent(long sequence) {
-        return ringBuffer.get(sequence);
-    }
-
-    /**
-     * 开放的特殊接口
-     * 1.按照规范，在调用该方法后，必须在finally块中进行发布。
-     * 2.更建议通过创建一个{@link RingBufferEvent}作为传输对象，调用{@link #execute(Runnable)}提交自定义事件
-     * <pre> {@code
-     *      long sequence = eventLoop.nextSequence();
-     *      try {
-     *          RingBufferEvent event = eventLoop.getEvent(sequence);
-     *          //...
-     *      } finally {
-     *          eventLoop.publish(sequence)
-     *      }
-     * }</pre>
-     *
-     * @throws RejectedExecutionException 空间不足或EventLoop已开始关闭
-     */
-    @Beta
-    public final long nextSequence() {
-        if (isShuttingDown()) {
-            throw new RejectedExecutionException("require nextSequence during shuttingDown");
-        }
-        long sequence;
-        if (inEventLoop()) {
-            try {
-                sequence = ringBuffer.tryNext(1);
-            } catch (InsufficientCapacityException ignore) {
-                throw new RejectedExecutionException("require nextSequence from current eventLoop");
-            }
-        } else {
-            sequence = ringBuffer.next(1);
-        }
-        if (isShuttingDown()) { // sequence不一定有效了
-            ringBuffer.publish(sequence);
-            throw new RejectedExecutionException("require nextSequence during shuttingDown");
-        }
-        return sequence;
-    }
-
-    @Beta
-    public final void publish(long sequence) {
-        RingBufferEvent event = ringBuffer.get(sequence);
-        if (event.type <= 0) {
-            // 覆盖为安全数据，发布后再抛异常
-            event.cleanAll();
-            event.type = 0;
-            event.task = _emptyRunnable;
-            ringBuffer.publish(sequence);
-            throw new IllegalArgumentException("invalid eventType " + event.type);
-        }
-        ringBuffer.publish(sequence);
-        if (sequence == 0 && !inEventLoop()) {
-            ensureThreadStarted();
-        }
-    }
-
     @Override
     public final void execute(@Nonnull Runnable task) {
         Objects.requireNonNull(task, "task");
-        if (task instanceof RingBufferEvent event && event.type <= 0) {
-            throw new IllegalArgumentException("invalid eventType " + event.type);
-        }
-
         if (isShuttingDown()) {
             rejectedExecutionHandler.rejected(task, this);
             return;
@@ -265,14 +201,13 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
 
     /**
      * Q: 如何保证算法的安全性的？
-     * A: 我们只需要保证申请到的sequence是有效的，且发布任务在{@link Worker#cleanRingBuffer()}之前即可。
+     * A: 我们只需要保证申请到的sequence是有效的，且发布任务在{@link Worker#removeFromGatingSequence()}之前即可。
+     * 因为{@link Worker#removeFromGatingSequence()}之前申请到的sequence一定是有效的，它考虑了EventLoop的消费进度。
+     * <p>
      * 关键时序：
      * 1. {@link #isShuttingDown()}为true一定在{@link Worker#cleanRingBuffer()}之前。
      * 2. {@link Worker#cleanRingBuffer()}必须等待在这之前申请到的sequence发布。
      * 3. {@link Worker#cleanRingBuffer()}在所有生产者发布数据之后才{@link Worker#removeFromGatingSequence()}
-     * <p>
-     * 关键条件：
-     * {@link Worker#removeFromGatingSequence()}之前申请到的sequence是有效的，它考虑了EventLoop的消费进度。
      * <p>
      * 因此，{@link Worker#cleanRingBuffer()}之前申请到的sequence是有效的；
      * 又因为{@link #isShuttingDown()}为true一定在{@link Worker#cleanRingBuffer()}之前，
@@ -285,28 +220,111 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
             rejectedExecutionHandler.rejected(task, this);
         } else {
             RingBufferEvent event = ringBuffer.get(sequence);
-            try {
-                if (task instanceof RingBufferEvent srcEvent) {
-                    event.copyFrom(srcEvent);
-                    if (event.type <= 0) { // 保护性检查
-                        event.type = 0;
-                        event.task = _emptyRunnable;
-                    }
-                } else {
-                    event.type = 0;
-                    event.task = task;
-                    if (task instanceof XScheduledFutureTask<?> futureTask) {
-                        futureTask.setId(sequence); // nice
-                    }
-                }
-            } finally {
-                ringBuffer.publish(sequence);
+            event.internal_setType(0);
+            event.task = task;
+            if (task instanceof XScheduledFutureTask<?> futureTask) {
+                futureTask.setId(sequence); // nice
             }
+            ringBuffer.publish(sequence);
 
             // 确保线程已启动 -- ringBuffer私有的情况下才可以测试 sequence == 0
             if (sequence == 0 && !inEventLoop()) {
                 ensureThreadStarted();
             }
+        }
+    }
+
+    public final RingBufferEvent getEvent(long sequence) {
+        checkSequence(sequence);
+        return ringBuffer.get(sequence);
+    }
+
+    private static void checkSequence(long sequence) {
+        if (sequence < 0) {
+            throw new IllegalArgumentException("invalid sequence " + sequence);
+        }
+    }
+
+    /**
+     * 开放的特殊接口
+     * 1.按照规范，在调用该方法后，必须在finally块中进行发布。
+     * 2.事件类型必须大于等于0，否则可能导致异常
+     * 3.返回值为-1时必须检查
+     * <pre> {@code
+     *      long sequence = eventLoop.nextSequence();
+     *      try {
+     *          RingBufferEvent event = eventLoop.getEvent(sequence);
+     *          // Do work.
+     *      } finally {
+     *          eventLoop.publish(sequence)
+     *      }
+     * }</pre>
+     *
+     * @return 如果申请成功，则返回对应的sequence，否则返回 -1
+     */
+    @Beta
+    public final long nextSequence() {
+        return nextSequence(1);
+    }
+
+    @Beta
+    public final void publish(long sequence) {
+        checkSequence(sequence);
+        ringBuffer.publish(sequence);
+        if (sequence == 0 && !inEventLoop()) {
+            ensureThreadStarted();
+        }
+    }
+
+    /**
+     * 1.按照规范，在调用该方法后，必须在finally块中进行发布。
+     * 2.事件类型必须大于等于0，否则可能导致异常
+     * 3.返回值为-1时必须检查
+     * <pre>{@code
+     *   int n = 10;
+     *   long hi = eventLoop.nextSequence(n);
+     *   try {
+     *      long lo = hi - (n - 1);
+     *      for (long sequence = lo; sequence <= hi; sequence++) {
+     *          RingBufferEvent event = eventLoop.getEvent(sequence);
+     *          // Do work.
+     *      }
+     *   } finally {
+     *      eventLoop.publish(lo, hi);
+     *   }
+     * }</pre>
+     *
+     * @param size 申请的空间大小
+     * @return 如果申请成功，则返回申请空间的最大序号，否则返回-1
+     */
+    @Beta
+    public final long nextSequence(int size) {
+        if (isShuttingDown()) {
+            return -1;
+        }
+        long sequence;
+        if (inEventLoop()) {
+            try {
+                sequence = ringBuffer.tryNext(size);
+            } catch (InsufficientCapacityException ignore) {
+                return -1;
+            }
+        } else {
+            sequence = ringBuffer.next(size);
+        }
+        if (isShuttingDown()) { // sequence不一定有效了
+            ringBuffer.publish(sequence);
+            return -1;
+        }
+        return sequence;
+    }
+
+    @Beta
+    public final void publish(long lo, long hi) {
+        checkSequence(lo);
+        ringBuffer.publish(lo, hi);
+        if (lo == 0 && !inEventLoop()) {
+            ensureThreadStarted();
         }
     }
 
@@ -348,13 +366,6 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
     @Override
     public final boolean inEventLoop(Thread thread) {
         return this.thread == thread;
-    }
-
-    @Override
-    public void wakeup() {
-        if (!inEventLoop()) {
-            thread.interrupt();
-        }
     }
 
     public EventLoopAgent<? super RingBufferEvent> getAgent() {
@@ -414,10 +425,6 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         agent.onStart(this);
     }
 
-    private void onShutdown() throws Exception {
-        agent.onShutdown();
-    }
-
     private void safeLoopOnce() {
         try {
             agent.update();
@@ -428,6 +435,18 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
                 logger.warn("loopOnce caught exception", t);
             }
         }
+    }
+
+    @Override
+    public void wakeup() {
+        if (!inEventLoop()) {
+            thread.interrupt();
+            agent.wakeup();
+        }
+    }
+
+    private void onShutdown() throws Exception {
+        agent.onShutdown();
     }
 
     /**
@@ -449,6 +468,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         public void run() {
             try {
                 tickTime = System.nanoTime();
+                CURRENT.set(DisruptorEventLoop.this);
                 init();
 
                 loop();
@@ -473,6 +493,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
                     } finally {
                         // 设置为终止状态
                         state = ST_TERMINATED;
+                        CURRENT.remove();
                         completeTerminationFuture();
                     }
                 }
@@ -505,7 +526,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
                         sequence.set(nextSequence - 1);
 
                         if (nextSequence != batchEndSequence + 1) { // 未消费完毕，应当是开始退出了
-                            assert isShuttingDown() : "nextSequence != batchEndSequence + 1, but isShuttingDown false";
+                            assert isShuttingDown();
                             break;
                         }
                         safeLoopOnce();
@@ -584,14 +605,15 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
             for (long curSequence = batchBeginSequence; curSequence <= batchEndSequence; curSequence++) {
                 event = ringBuffer.get(curSequence);
                 try {
-                    if (event.type == -1) { // 生产者在观察到关闭时发布了不连续的数据
-                        assert isShuttingDown() : "event.type == -1, but isShuttingDown false";
-                        return curSequence;
-                    }
-                    if (event.type == 0) { // 基础事件
+                    if (event.getType() > 0) {
+                        loopAgent.onEvent(event);
+                    } else if (event.getType() == 0) {
                         event.task.run();
                     } else {
-                        loopAgent.onEvent(event);
+                        if (isShuttingDown()) { // 生产者在观察到关闭时发布了不连续的数据
+                            return curSequence;
+                        }
+                        logger.warn("user published invalid event: " + event); // 用户发布了非法数据
                     }
                 } catch (Throwable t) {
                     logCause(t);
@@ -637,28 +659,29 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
             removeFromGatingSequence();
 
             // 由于所有的数据都是受保护的，不会被覆盖，因此可以继续消费
-            long nullTaskCount = 0;
+            long nullCount = 0;
             long taskCount = 0;
+            long discardCount = 0;
             for (; nextSequence <= lastSequence; nextSequence++) {
                 final RingBufferEvent event = ringBuffer.get(nextSequence);
-                if (event.type == TYPE_CLEAN_DEADLINE) { // 后面都是空白区
+                if (event.getType() == TYPE_CLEAN_DEADLINE) { // 后面都是空白区
                     break;
                 }
-                if (event.type == -1) { // 生产者在观察到关闭时发布了不连续的数据
-                    nullTaskCount++;
+                if (event.getType() < 0) { // 生产者在观察到关闭时发布了不连续的数据
+                    nullCount++;
                     continue;
                 }
                 taskCount++;
-                // 如果已进入shutdown阶段，则直接丢弃任务
-                if (isShutdown()) {
+                if (isShutdown()) { // 如果已进入shutdown阶段，则直接丢弃任务
+                    discardCount++;
                     event.cleanAll();
                     continue;
                 }
                 try {
-                    if (event.type == 0) {
-                        event.task.run();
-                    } else {
+                    if (event.getType() > 0) {
                         loopAgent.onEvent(event);
+                    } else {
+                        event.task.run();
                     }
                 } catch (Throwable t) {
                     logCause(t);
@@ -667,8 +690,8 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
                 }
             }
             sequence.set(lastSequence);
-            logger.info("cleanRingBuffer success! taskCount = {}, nullTaskCount = {},cost timeMillis = {}",
-                    taskCount, nullTaskCount, (System.currentTimeMillis() - startTimeMillis));
+            logger.info("cleanRingBuffer success!  nullCount = {}, taskCount = {}, discardCount {}, cost timeMillis = {}",
+                    nullCount, taskCount, discardCount, (System.currentTimeMillis() - startTimeMillis));
         }
 
         @SuppressWarnings("deprecation")
@@ -688,7 +711,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
                     // 消费者不再更新的情况下，申请成功就应该是全部
                     long seq = ringBuffer.tryNext(size);
                     RingBufferEvent event = ringBuffer.get(cursor + 1);
-                    event.type = TYPE_CLEAN_DEADLINE;
+                    event.internal_setType(TYPE_CLEAN_DEADLINE);
                     ringBuffer.publish(seq);
                     return;
                 } catch (InsufficientCapacityException ignore) {
