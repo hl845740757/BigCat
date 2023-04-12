@@ -135,9 +135,6 @@ public class TimeProviders {
 
         public void setTime(long curTime) {
             if (eventLoop.inEventLoop()) {
-                if (curTime < time) {
-                    throw new IllegalArgumentException("curTime < time");
-                }
                 this.time = curTime;
             } else {
                 throw new GuardedOperationException("setTime from another thread");

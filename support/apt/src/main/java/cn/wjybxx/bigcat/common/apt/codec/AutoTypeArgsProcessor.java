@@ -73,11 +73,11 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
 
         mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
         collectionTypeMirror = elementUtils.getTypeElement(Collection.class.getCanonicalName()).asType();
-        enumSetRawTypeMirror = typeUtils.erasure(AptUtils.getTypeElementOfClass(elementUtils, EnumSet.class));
-        enumMapRawTypeMirror = typeUtils.erasure(AptUtils.getTypeElementOfClass(elementUtils, EnumMap.class));
-        linkedHashMapTypeMirror = typeUtils.erasure(AptUtils.getTypeElementOfClass(elementUtils, LinkedHashMap.class));
-        linkedHashSetTypeMirror = typeUtils.erasure(AptUtils.getTypeElementOfClass(elementUtils, LinkedHashSet.class));
-        arrayListTypeMirror = typeUtils.erasure(AptUtils.getTypeElementOfClass(elementUtils, ArrayList.class));
+        enumSetRawTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, EnumSet.class));
+        enumMapRawTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, EnumMap.class));
+        linkedHashMapTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, LinkedHashMap.class));
+        linkedHashSetTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, LinkedHashSet.class));
+        arrayListTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, ArrayList.class));
     }
 
     @Override
@@ -103,6 +103,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
                 .addAnnotation(processorInfoAnnotation)
+                .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)))
                 .addFields(constantFields);
 
         // 写入文件

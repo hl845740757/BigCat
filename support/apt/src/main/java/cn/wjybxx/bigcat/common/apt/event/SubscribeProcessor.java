@@ -104,6 +104,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
                 .addAnnotation(processorInfoAnnotation)
+                .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)))
                 .addMethod(genRegisterMethod(typeElement, methodList));
 
         // 写入文件

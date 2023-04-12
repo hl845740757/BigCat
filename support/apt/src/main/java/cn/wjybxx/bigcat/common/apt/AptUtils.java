@@ -18,11 +18,11 @@ package cn.wjybxx.bigcat.common.apt;
 
 import com.squareup.javapoet.*;
 
-import javax.annotation.Generated;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Generated;
 import javax.annotation.processing.Messager;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
@@ -73,6 +73,13 @@ public class AptUtils {
                 .addMember("value", "$S", processorType.getCanonicalName())
                 .build();
     }
+
+    public static AnnotationSpec newSourceFileRefAnnotation(TypeName sourceFileTypeName) {
+        return AnnotationSpec.builder(SourceFieldRef.class)
+                .addMember("value", "$T.class", sourceFileTypeName)
+                .build();
+    }
+
 
     /**
      * 筛选出java源文件 - 去除带有注解的class文件
@@ -388,8 +395,11 @@ public class AptUtils {
         return (DeclaredType) tpeUtils.erasure(elementUtils.getTypeElement(clazz.getCanonicalName()).asType());
     }
 
+    public static TypeElement getTypeElementOfClass(Elements elementUtils, Class<?> clazz) {
+        return elementUtils.getTypeElement(clazz.getCanonicalName());
+    }
 
-    public static TypeMirror getTypeElementOfClass(Elements elementUtils, Class<?> clazz) {
+    public static TypeMirror getTypeMirrorOfClass(Elements elementUtils, Class<?> clazz) {
         return elementUtils.getTypeElement(clazz.getCanonicalName()).asType();
     }
 

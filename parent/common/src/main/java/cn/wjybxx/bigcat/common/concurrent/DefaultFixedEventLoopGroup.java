@@ -33,28 +33,17 @@ import java.util.function.Consumer;
 public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implements FixedEventLoopGroup {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultFixedEventLoopGroup.class);
-    /**
-     * 监听所有子节点关闭的Listener，当所有的子节点关闭时，会收到关闭成功事件
-     */
+
     private final XCompletableFuture<?> terminationFuture = new XCompletableFuture<>(new TerminateFutureContext());
 
-    /**
-     * 包含的子节点们，用数组，方便分配下一个EventExecutor(通过计算索引来分配)
-     */
     private final EventLoop[] children;
-    /**
-     * 只读的子节点集合，封装为一个集合，方便迭代，用于实现{@link Iterable}接口
-     */
     private final List<EventLoop> readonlyChildren;
-    /**
-     * 选择下一个EventExecutor的方式，策略模式的运用。将选择算法交给Chooser
-     * 目前看见两种： 与操作计算 和 取模操作计算。
-     */
     private final EventLoopChooser chooser;
+    private final Runnable terminationHook;
 
     public DefaultFixedEventLoopGroup(EventLoopGroupBuilder builder) {
         int numberChildren = builder.getNumberChildren();
-        if (numberChildren < 0) {
+        if (numberChildren < 1) {
             throw new IllegalArgumentException("numberChildren must greater than 0");
         }
         EventLoopFactory eventLoopFactory = builder.getEventLoopFactory();
@@ -78,6 +67,7 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
         for (EventLoop child : children) {
             child.terminationFuture().whenComplete(terminationListener);
         }
+        this.terminationHook = builder.getTerminationHook();
     }
 
     // -------------------------------------  子类生命周期管理 --------------------------------
@@ -127,7 +117,9 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
      * 通常用于执行一些清理工作
      */
     protected void terminateHook() {
-
+        if (terminationHook != null) {
+            terminationHook.run();
+        }
     }
 
     // ------------------------------------- 迭代 ----------------------------

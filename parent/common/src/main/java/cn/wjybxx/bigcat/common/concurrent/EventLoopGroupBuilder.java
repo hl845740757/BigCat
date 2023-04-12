@@ -25,6 +25,7 @@ public class EventLoopGroupBuilder {
     private int numberChildren = 1;
     private EventLoopFactory eventLoopFactory;
     private EventLoopChooserFactory chooserFactory;
+    private Runnable terminationHook;
 
     //
     public static EventLoopGroupBuilder newBuilder() {
@@ -60,6 +61,15 @@ public class EventLoopGroupBuilder {
 
     public EventLoopGroupBuilder setChooserFactory(EventLoopChooserFactory chooserFactory) {
         this.chooserFactory = chooserFactory;
+        return this;
+    }
+
+    public Runnable getTerminationHook() {
+        return terminationHook;
+    }
+
+    public EventLoopGroupBuilder setTerminationHook(Runnable terminationHook) {
+        this.terminationHook = terminationHook;
         return this;
     }
 }

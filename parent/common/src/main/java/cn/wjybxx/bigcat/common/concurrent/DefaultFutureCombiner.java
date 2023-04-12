@@ -74,7 +74,7 @@ class DefaultFutureCombiner implements FutureCombiner {
         this.childrenListener = null;
 
         // 数据存储在ChildListener上有助于扩展
-        XCompletableFuture<Object> aggregatePromise = new XCompletableFuture<>(childrenListener);
+        XCompletableFuture<Object> aggregatePromise = new XCompletableFuture<>();
         childrenListener.futureCount = this.futureCount;
         childrenListener.options = options;
         childrenListener.aggregatePromise = aggregatePromise;
@@ -84,7 +84,7 @@ class DefaultFutureCombiner implements FutureCombiner {
 
     // region 内部实现
 
-    private static class ChildListener implements FutureContext, BiConsumer<Object, Throwable> {
+    private static class ChildListener implements BiConsumer<Object, Throwable> {
 
         private final AtomicInteger succeedCount = new AtomicInteger();
         private final AtomicInteger doneCount = new AtomicInteger();

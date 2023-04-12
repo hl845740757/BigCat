@@ -94,6 +94,7 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
                 .addAnnotation(processorInfoAnnotation)
+                .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)))
                 .addFields(constantFields)
                 .addField(keySetField)
                 .addMethod(keySetMethod);

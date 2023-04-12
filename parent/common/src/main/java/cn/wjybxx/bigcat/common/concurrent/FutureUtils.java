@@ -159,13 +159,13 @@ public class FutureUtils {
     }
 
     public static <V> XCompletableFuture<V> newSucceededFuture(V result) {
-        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.INSTANCE);
+        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.ONLY_SELF);
         future.internal_doObtrudeValue(result);
         return future;
     }
 
     public static <V> XCompletableFuture<V> newFailedFuture(Throwable cause) {
-        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.INSTANCE);
+        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.ONLY_SELF);
         future.internal_doObtrudeException(cause);
         return future;
     }
@@ -179,13 +179,30 @@ public class FutureUtils {
         return new DefaultFutureCombiner();
     }
 
-    public static FutureContext getVobtrdeClosedFutureContext() {
-        return VobtrudeClosedFutureContext.INSTANCE;
+    /** @param downward 是否向下流动 */
+    public static FutureContext getVobtrdeClosedFutureContext(boolean downward) {
+        if (downward) {
+            return VobtrudeClosedFutureContext.DOWNWARD;
+        } else {
+            return VobtrudeClosedFutureContext.ONLY_SELF;
+        }
     }
 
     private static class VobtrudeClosedFutureContext implements FutureContext {
 
-        private static final VobtrudeClosedFutureContext INSTANCE = new VobtrudeClosedFutureContext();
+        private static final VobtrudeClosedFutureContext ONLY_SELF = new VobtrudeClosedFutureContext(false);
+        private static final VobtrudeClosedFutureContext DOWNWARD = new VobtrudeClosedFutureContext(true);
+
+        final boolean downward;
+
+        private VobtrudeClosedFutureContext(boolean downward) {
+            this.downward = downward;
+        }
+
+        @Override
+        public FutureContext downContext(XCompletableFuture<?> future) {
+            return downward ? this : null;
+        }
 
         @Override
         public <T> void obtrudeValue(XCompletableFuture<T> future, T value) {

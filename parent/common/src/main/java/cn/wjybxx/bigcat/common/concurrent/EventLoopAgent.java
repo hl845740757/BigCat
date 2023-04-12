@@ -34,7 +34,7 @@ public interface EventLoopAgent<T> {
 
     /***
      * 收到一个用户自定义事件或任务
-     * {@link RingBufferEvent#type}不为0的事件
+     * {@link RingBufferEvent#getType()}大于0的事件
      */
     void onEvent(T event) throws Exception;
 

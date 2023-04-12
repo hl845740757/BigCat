@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
  */
 public class SameThreads {
 
-    private static final FluentFuture<?> EMPTY_FUTURE = newSucceedFuture(null);
+    private static final FluentFuture<?> EMPTY_FUTURE = newSucceededFuture(null);
 
     // region 异常处理
 
@@ -67,7 +67,7 @@ public class SameThreads {
      * @param result 任务的执行结果
      * @return Future
      */
-    public static <V> FluentFuture<V> newSucceedFuture(V result) {
+    public static <V> FluentFuture<V> newSucceededFuture(V result) {
         final DefaultPromise<V> promise = new DefaultPromise<>();
         promise.trySuccess(result);
         return promise;

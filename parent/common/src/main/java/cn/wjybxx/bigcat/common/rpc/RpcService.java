@@ -16,7 +16,10 @@
 
 package cn.wjybxx.bigcat.common.rpc;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * 该注解表示该类是可以对外提供服务，只有拥有该标记，才会为该类生成对应的代理工具类。
@@ -24,6 +27,8 @@ import java.lang.annotation.*;
  * 其中：
  * Proxy用于客户端创建{@link RpcMethodSpec}，即：打包参数。
  * Exporter用于服务端暴露接口，向{@link RpcMethodProxyRegistry}中注册暴露的方法。
+ * 生成的文件会添加一个指向源文件的引用，方便你通过引用查找生成的文件
+ * <p>
  * 注意事项:
  * 1. service需要定义在公共模块，因为它为其它模块提供服务。
  * 2. 建议接口命名遵循统一的规范，比如{@code XXXService}。
@@ -41,10 +46,5 @@ public @interface RpcService {
      * @return short
      */
     short serviceId();
-
-    /**
-     * 为生成的文件添加的注解
-     */
-    Class<? extends Annotation>[] annotations() default {};
 
 }
