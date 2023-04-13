@@ -23,20 +23,21 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
- * 测试多生产者使用{@link DisruptorEventLoop#publish(long)}发布任务的时序
+ * 测试多生产者使用{@link DisruptorEventLoop#publish(long)}和{@link DisruptorEventLoop#execute(Runnable)}混合发布任务的时序
  *
  * @author wjybxx
  * date 2023/4/11
  */
-public class DisruptorEventLoopTest4 {
+public class DisruptorEventLoopTest5 {
 
     private static final int PRODUCER_COUNT = 4;
 
     private Counter counter;
     private DisruptorEventLoop consumer;
-    private List<Producer> producerList;
+    private List<Thread> producerList;
     private volatile boolean alert;
 
     @BeforeEach
@@ -46,12 +47,16 @@ public class DisruptorEventLoopTest4 {
 
         consumer = EventLoopBuilder.newDisruptBuilder()
                 .setThreadFactory(new DefaultThreadFactory("consumer"))
-                .setAgent(agent)
+                .setAgent(new CounterAgent())
                 .build();
 
         producerList = new ArrayList<>(PRODUCER_COUNT);
         for (int i = 1; i <= PRODUCER_COUNT; i++) {
-            producerList.add(new Producer(i));
+            if (i > PRODUCER_COUNT / 2) {
+                producerList.add(new Producer2(i));
+            } else {
+                producerList.add(new Producer(i));
+            }
         }
         producerList.forEach(Thread::start);
     }
@@ -84,7 +89,7 @@ public class DisruptorEventLoopTest4 {
 
         @Override
         public void run() {
-            DisruptorEventLoop consumer = DisruptorEventLoopTest4.this.consumer;
+            DisruptorEventLoop consumer = DisruptorEventLoopTest5.this.consumer;
             long localSequence = 0;
             while (!alert && localSequence < 1000000) {
                 long sequence = consumer.nextSequence();
@@ -97,6 +102,33 @@ public class DisruptorEventLoopTest4 {
                     event.longVal1 = localSequence++;
                 } finally {
                     consumer.publish(sequence);
+                }
+            }
+        }
+    }
+
+    private class Producer2 extends Thread {
+
+        private final int type;
+
+        public Producer2(int type) {
+            super("Producer-" + type);
+            this.type = type;
+            if (type <= 0) { // 0是系统任务
+                throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public void run() {
+            DisruptorEventLoop consumer = DisruptorEventLoopTest5.this.consumer;
+            long localSequence = 0;
+            while (!alert && localSequence < 1000000) {
+                try {
+                    consumer.execute(counter.newTask(type, localSequence++));
+                } catch (RejectedExecutionException ignore) {
+                    assert alert;
+                    break;
                 }
             }
         }

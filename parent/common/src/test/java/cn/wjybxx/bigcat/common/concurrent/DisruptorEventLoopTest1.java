@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -33,12 +31,14 @@ import java.util.concurrent.Executor;
  */
 public class DisruptorEventLoopTest1 {
 
+    private Counter counter;
     private DisruptorEventLoop consumer;
     private Producer producer;
     private volatile boolean alert;
 
     @BeforeEach
     void setUp() {
+        counter = new Counter();
         consumer = EventLoopBuilder.newDisruptBuilder()
                 .setThreadFactory(new DefaultThreadFactory("consumer"))
                 .build();
@@ -56,9 +56,8 @@ public class DisruptorEventLoopTest1 {
         consumer.shutdown();
         consumer.terminationFuture().join();
 
-        Assertions.assertTrue(Counter.nextSequence > 0, "Counter.nextSequence is 0");
-        List<String> errorMsgList = Counter.errorMsgList;
-        Assertions.assertTrue(errorMsgList.isEmpty(), errorMsgList::toString);
+        Assertions.assertTrue(counter.getSequenceMap().size() > 0, "Counter.sequenceMap.size == 0");
+        Assertions.assertTrue(counter.getErrorMsgList().isEmpty(), counter.getErrorMsgList()::toString);
     }
 
     private class Producer extends Thread {
@@ -75,29 +74,8 @@ public class DisruptorEventLoopTest1 {
             DisruptorEventLoop consumer = DisruptorEventLoopTest1.this.consumer;
             long sequencer = 0;
             while (!alert && sequencer < 1000000) {
-                consumer.execute(new Counter(sequencer++));
+                consumer.execute(counter.newTask(type, sequencer++));
             }
-        }
-    }
-
-    private static final class Counter implements Runnable {
-
-        private static long nextSequence = 0;
-        private static final List<String> errorMsgList = new ArrayList<>();
-
-        final long sequence;
-
-        private Counter(long sequence) {
-            this.sequence = sequence;
-        }
-
-        /** 运行在消费者线程下，数据私有 */
-        @Override
-        public void run() {
-            if (sequence != nextSequence) {
-                errorMsgList.add(String.format("nextSequence: %d (expected: = %d)", sequence, nextSequence));
-            }
-            nextSequence++;
         }
     }
 

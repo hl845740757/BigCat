@@ -54,7 +54,7 @@ public class FutureBlockingTest {
 
         @Override
         public void onStart(EventLoop eventLoop) throws Exception {
-            Assertions.assertTrue(EventLoop.CURRENT.get() == eventLoop, "EventLoop.CURRENT.get() != eventLoop");
+            Assertions.assertSame(EventLoop.CURRENT.get(), eventLoop, "EventLoop.CURRENT.get() != eventLoop");
             Assertions.assertThrowsExactly(BlockingOperationException.class, () -> {
                 eventLoop.newPromise().join();
             });

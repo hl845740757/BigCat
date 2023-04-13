@@ -44,6 +44,6 @@ public interface ExtensibleObject {
      * @param params 命令参数（依赖于具体的命令）
      * @return 执行结果
      */
-    Object execute(@Nonnull String cmd, Object params);
+    Object execute(@Nonnull String cmd, Object params) throws Exception;
 
 }

@@ -16,32 +16,21 @@
 
 package cn.wjybxx.bigcat.common;
 
-import cn.wjybxx.bigcat.common.eventbus.GenericEvent;
-
-import javax.annotation.Nonnull;
-import java.util.Collection;
+import cn.wjybxx.bigcat.common.rpc.NodeSpec;
 
 /**
  * @author wjybxx
- * date 2023/4/7
+ * date 2023/4/13
  */
-class CollectionEvent<T extends Collection<?>> implements GenericEvent<T> {
+enum SimpleNodeSpec implements NodeSpec {
 
-    private final T collection;
+    SERVER(1),
+    CLIENT(2);
 
-    public CollectionEvent(T collection) {
-        this.collection = collection;
-    }
+    final long id;
 
-    public T getCollection() {
-        return collection;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    @Override
-    public Class<T> childKey() {
-        return (Class<T>) collection.getClass();
+    SimpleNodeSpec(long id) {
+        this.id = id;
     }
 
 }

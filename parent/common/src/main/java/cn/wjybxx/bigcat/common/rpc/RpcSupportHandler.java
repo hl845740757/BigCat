@@ -35,10 +35,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 /**
@@ -288,8 +285,11 @@ public class RpcSupportHandler implements RpcClient {
             try {
                 final Object result = rpcProcessor.process(request);
                 if (result instanceof FluentFuture<?> future) {
-                    // 当前任务不能立即完成
+                    // 未完成，需要监听结果
                     future.addListener(new FutureListener<>(request, this));
+                } else if (result instanceof Future<?>) {
+                    // 多线程的future可能导致线程安全问题，需要用户在上层转换
+                    throw new IllegalStateException("unsupported future");
                 } else {
                     // 立即得到了结果
                     final RpcResponse response = RpcResponse.newSucceedResponse(request.getClientNodeGuid(), request.getRequestGuid(), result);

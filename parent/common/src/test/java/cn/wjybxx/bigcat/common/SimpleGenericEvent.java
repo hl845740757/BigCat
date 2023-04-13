@@ -14,24 +14,34 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.eventbus;
+package cn.wjybxx.bigcat.common;
+
+import cn.wjybxx.bigcat.common.eventbus.GenericEvent;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
- * 泛型化子键事件
- * 该接口约定子键必须是{@link Class}，这样注解处理器就可以在编译时捕获泛型参数类型，从而生成事件绑定方法，十分适合协议绑定这样的场景。
- * <p>
- * eg：让你的协议事件实现该类型，那么就可以通过泛型参数声明定义的协议，就可以避免不安全的类型转换。
- *
  * @author wjybxx
- * date 2023/4/6
+ * date 2023/4/13
  */
-public interface GenericEvent<T> extends DynamicEvent {
+public class SimpleGenericEvent<T> implements GenericEvent<T> {
 
-    /** @implNote 实现类通常需要强制类型转换，{@code xxx.class} 是没有泛型信息的 */
+    private final T value;
+
+    public SimpleGenericEvent(T value) {
+        this.value = Objects.requireNonNull(value);
+    }
+
+    public T getValue() {
+        return value;
+    }
+
+    @SuppressWarnings("unchecked")
     @Nonnull
     @Override
-    Class<T> childKey();
+    public Class<T> childKey() {
+        return (Class<T>) value.getClass();
+    }
 
 }

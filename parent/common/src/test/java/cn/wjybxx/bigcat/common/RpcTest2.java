@@ -16,7 +16,6 @@
 
 package cn.wjybxx.bigcat.common;
 
-import cn.wjybxx.bigcat.common.async.FluentFuture;
 import cn.wjybxx.bigcat.common.async.SameThreadScheduledExecutor;
 import cn.wjybxx.bigcat.common.async.SameThreads;
 import cn.wjybxx.bigcat.common.concurrent.WatchableEventQueue;
@@ -29,26 +28,19 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 手动绑定方法调试（项目中不建议使用）
- * 仅用于验证rpc的正确性
+ * 使用注解处理器生成的代码进行调试
  *
  * @author wjybxx
  * date 2023/4/5
  */
-public class RpcTest {
+public class RpcTest2 {
 
-    private static final Logger logger = LoggerFactory.getLogger("RpcTest");
-
-    private static final short serviceId = 1;
-    private static final short helloMethodId = 1;
-    private static final short helloAsyncMethodId = 2;
+    private static final Logger logger = LoggerFactory.getLogger("RpcTest2");
 
     private SimpleEventQueue<RpcRequest> serverQueue;
     private SimpleEventQueue<RpcResponse> clientQueue;
@@ -88,89 +80,6 @@ public class RpcTest {
         logger.info("succeeded rpc request " + counter.get());
     }
 
-    // 模拟业务双方
-    private static String reverseString(String msg) {
-        return new StringBuilder(msg).reverse().toString();
-    }
-
-    private static class TestService {
-
-        private final SameThreadScheduledExecutor executor;
-
-        private TestService(SameThreadScheduledExecutor executor) {
-            this.executor = executor;
-        }
-
-        public String hello(String msg) {
-            return reverseString(msg);
-        }
-
-        public FluentFuture<String> helloAsync(String msg) {
-            return executor.scheduleCall(() -> hello(msg), 500);
-        }
-
-    }
-
-    private class TestClient {
-
-        final TimeProvider timeProvider;
-        final RpcClient rpcClient;
-
-        private TestClient(TimeProvider timeProvider, RpcClient rpcClient) {
-            this.timeProvider = timeProvider;
-            this.rpcClient = rpcClient;
-        }
-
-        void assertResponse(String request, String response) {
-            if (Objects.equals(request, reverseString(response))) {
-                counter.incrementAndGet();
-            } else {
-                logger.warn("the request and response are not equal, request {}, response {}", request, response);
-            }
-        }
-
-        public void syncSayHello() throws InterruptedException {
-            {
-                String msg1 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                String response1 = rpcClient.syncCall(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<>(
-                        serviceId,
-                        helloMethodId,
-                        List.of(msg1)
-                ));
-                assertResponse(msg1, response1);
-            }
-            {
-                String msg2 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                String response2 = rpcClient.syncCall(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<>(
-                        serviceId,
-                        helloAsyncMethodId,
-                        List.of(msg2)
-                ));
-                assertResponse(msg2, response2);
-            }
-        }
-
-        public void sayHello() {
-            {
-                String msg1 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                rpcClient.call(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<String>(
-                        serviceId,
-                        helloMethodId,
-                        List.of(msg1)
-                )).thenApply(FunctionUtils.toFunction(response -> assertResponse(msg1, response)));
-            }
-            {
-                String msg2 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                rpcClient.call(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<String>(
-                        serviceId,
-                        helloAsyncMethodId,
-                        List.of(msg2)
-                )).thenApply(FunctionUtils.toFunction(response -> assertResponse(msg2, response)));
-            }
-        }
-    }
-    //
-
     // 模拟双端线程
     private class ServerWorker implements Runnable {
 
@@ -187,13 +96,7 @@ public class RpcTest {
             DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
             SimpleNodeSpec role = SimpleNodeSpec.SERVER;
             // 注册服务
-            TestService testService = new TestService(executor);
-            rpcProcessor.register(serviceId, helloMethodId, (context, methodSpec) -> {
-                return testService.hello(methodSpec.getString(0));
-            });
-            rpcProcessor.register(serviceId, helloAsyncMethodId, (context, methodSpec) -> {
-                return testService.helloAsync(methodSpec.getString(0));
-            });
+            RpcServiceExampleExporter.export(rpcProcessor, new RpcServiceExample());
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
             RpcSupportHandler rpcSupportHandler = new RpcSupportHandler(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
@@ -237,19 +140,8 @@ public class RpcTest {
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
-            TestClient testClient = new TestClient(timeProvider, rpcSupportHandler);
-            executor.scheduleWithFixedDelay(testClient::sayHello, 200, 300);
-            executor.scheduleWithFixedDelay(() -> {
-                try {
-                    testClient.syncSayHello();
-                } catch (InterruptedException e) {
-                    ThreadUtils.recoveryInterrupted();
-                } catch (RpcClientException e) {
-                    if (!alert) {
-                        logger.info("client caught exception", e);
-                    }
-                }
-            }, 200, 500);
+            RpcUserExample rpcUserExample = new RpcUserExample(rpcSupportHandler);
+            executor.scheduleWithFixedDelay(() -> rpcTest(rpcUserExample), 200, 500);
 
             // 准备好以后执行countdown
             latch.countDown();
@@ -266,9 +158,25 @@ public class RpcTest {
                 // 退出
             }
         }
+
+        private void rpcTest(RpcUserExample rpcUserExample) {
+            try {
+                rpcUserExample.rpcTest();
+                counter.incrementAndGet();
+            } catch (RpcClientException e) {
+                if (!alert) {
+                    logger.info("client caught exception", e);
+                }
+            } catch (InterruptedException e) {
+                ThreadUtils.recoveryInterrupted();
+            } catch (Exception e) {
+                logger.info("client caught exception", e);
+            }
+        }
     }
 
     // 模拟路由
+
     private class TestRpcRouterReceiver implements RpcRouterHandler, RpcReceiverHandler {
 
         private TestRpcRouterReceiver() {

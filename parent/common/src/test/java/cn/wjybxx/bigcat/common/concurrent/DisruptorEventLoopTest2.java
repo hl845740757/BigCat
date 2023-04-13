@@ -17,14 +17,13 @@
 package cn.wjybxx.bigcat.common.concurrent;
 
 import cn.wjybxx.bigcat.common.ThreadUtils;
-import it.unimi.dsi.fastutil.ints.Int2LongArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * 测试多生产者使用{@link DisruptorEventLoop#execute(Runnable)}发布任务的时序
@@ -36,12 +35,14 @@ public class DisruptorEventLoopTest2 {
 
     private static final int PRODUCER_COUNT = 4;
 
+    private Counter counter;
     private DisruptorEventLoop consumer;
     private List<Producer> producerList;
     private volatile boolean alert;
 
     @BeforeEach
     void setUp() {
+        counter = new Counter();
         consumer = EventLoopBuilder.newDisruptBuilder()
                 .setThreadFactory(new DefaultThreadFactory("consumer"))
                 .build();
@@ -63,9 +64,8 @@ public class DisruptorEventLoopTest2 {
         consumer.terminationFuture().join();
         producerList.forEach(ThreadUtils::joinUninterruptedly);
 
-        Assertions.assertTrue(Counter.sequenceMap.size() > 0, "Counter.sequenceMap.size is 0");
-        List<String> errorMsgList = Counter.errorMsgList;
-        Assertions.assertTrue(errorMsgList.isEmpty(), errorMsgList::toString);
+        Assertions.assertTrue(counter.getSequenceMap().size() > 0, "Counter.sequenceMap.size == 0");
+        Assertions.assertTrue(counter.getErrorMsgList().isEmpty(), counter.getErrorMsgList()::toString);
     }
 
     private class Producer extends Thread {
@@ -85,33 +85,13 @@ public class DisruptorEventLoopTest2 {
             DisruptorEventLoop consumer = DisruptorEventLoopTest2.this.consumer;
             long localSequence = 0;
             while (!alert && localSequence < 1000000) {
-                consumer.execute(new Counter(type, localSequence++));
+                try {
+                    consumer.execute(counter.newTask(type, localSequence++));
+                } catch (RejectedExecutionException ignore) {
+                    assert alert;
+                    break;
+                }
             }
-        }
-    }
-
-    private static final class Counter implements Runnable {
-
-        private static final Int2LongMap sequenceMap = new Int2LongArrayMap();
-        private static final List<String> errorMsgList = new ArrayList<>();
-
-        final int type;
-        final long sequence;
-
-        private Counter(int type, long sequence) {
-            this.type = type;
-            this.sequence = sequence;
-        }
-
-        /** 运行在消费者线程下，数据私有 */
-        @Override
-        public void run() {
-            long nextSequence = sequenceMap.get(type);
-            if (sequence != nextSequence) {
-                errorMsgList.add(String.format("code2, event.type: %d, nextSequence: %d (expected: = %d)",
-                        type, sequence, nextSequence));
-            }
-            sequenceMap.put(type, nextSequence + 1);
         }
     }
 

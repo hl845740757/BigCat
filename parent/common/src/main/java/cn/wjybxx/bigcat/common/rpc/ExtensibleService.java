@@ -37,6 +37,6 @@ public interface ExtensibleService extends ExtensibleObject {
 
     @Override
     @RpcMethod(methodId = 9999)
-    Object execute(@Nonnull String cmd, Object params);
+    Object execute(@Nonnull String cmd, Object params) throws Exception;
 
 }

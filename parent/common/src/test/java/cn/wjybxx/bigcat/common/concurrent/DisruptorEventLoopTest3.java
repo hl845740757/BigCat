@@ -21,9 +21,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * 测试单生产者使用{@link DisruptorEventLoop#publish(long)}的时序
  *
@@ -32,15 +29,19 @@ import java.util.List;
  */
 public class DisruptorEventLoopTest3 {
 
+    private Counter counter;
     private DisruptorEventLoop consumer;
     private Producer producer;
     private volatile boolean alert;
 
     @BeforeEach
     void setUp() {
+        CounterAgent agent = new CounterAgent();
+        counter = agent.getCounter();
+
         consumer = EventLoopBuilder.newDisruptBuilder()
                 .setThreadFactory(new DefaultThreadFactory("consumer"))
-                .setAgent(new Agent())
+                .setAgent(agent)
                 .build();
 
         producer = new Producer();
@@ -56,9 +57,8 @@ public class DisruptorEventLoopTest3 {
         consumer.shutdown();
         consumer.terminationFuture().join();
 
-        Agent agent = (Agent) consumer.getAgent();
-        Assertions.assertTrue(agent.nextSequence > 0, "agent.nextSequence == " + agent.nextSequence);
-        Assertions.assertTrue(agent.errorMsgList.isEmpty(), agent.errorMsgList::toString);
+        Assertions.assertTrue(counter.getSequenceMap().size() > 0, "Counter.sequenceMap.size == 0");
+        Assertions.assertTrue(counter.getErrorMsgList().isEmpty(), counter.getErrorMsgList()::toString);
     }
 
     private class Producer extends Thread {
@@ -87,39 +87,4 @@ public class DisruptorEventLoopTest3 {
         }
     }
 
-    private static class Agent implements EventLoopAgent<RingBufferEvent> {
-
-        private long nextSequence;
-        private final List<String> errorMsgList = new ArrayList<>();
-
-        @Override
-        public void onStart(EventLoop eventLoop) throws Exception {
-            nextSequence = 0;
-        }
-
-        @Override
-        public void onEvent(RingBufferEvent event) throws Exception {
-            if (event.getType() < 1) {
-                errorMsgList.add(String.format("code1 event.type: %d (expected: > 0)",
-                        event.getType()));
-                return;
-            }
-
-            if (event.longVal1 != nextSequence) {
-                errorMsgList.add(String.format("code2, nextSequence: %d (expected: = %d)",
-                        event.longVal1, nextSequence));
-            }
-            nextSequence++;
-        }
-
-        @Override
-        public void update() throws Exception {
-
-        }
-
-        @Override
-        public void onShutdown() throws Exception {
-
-        }
-    }
 }

@@ -16,11 +16,14 @@
 
 package cn.wjybxx.bigcat.common;
 
+import cn.wjybxx.bigcat.common.eventbus.DefaultEventBus;
 import cn.wjybxx.bigcat.common.eventbus.Subscribe;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 编译之后，将 parent/common/target/generated-test-sources/test-annotations 设置为 test-resource 目录，
@@ -31,24 +34,38 @@ import java.util.HashSet;
  */
 public class SubscribeExample {
 
-    @Subscribe
-    public void subscribeList(CollectionEvent<ArrayList<?>> listEvent) {
-
-    }
+    static final AtomicInteger counter = new AtomicInteger();
 
     @Subscribe
-    public void subscribeSet(CollectionEvent<HashSet<?>> hashSetEvent) {
-
+    public void subscribeList(SimpleGenericEvent<ArrayList<?>> listEvent) {
+        counter.incrementAndGet();
     }
 
-    @Subscribe(childEvents = {ArrayList.class, HashSet.class})
-    public void subscribeCollection(CollectionEvent<Collection<?>> hashSetEvent) {
-
+    @Subscribe
+    public void subscribeSet(SimpleGenericEvent<HashSet<?>> hashSetEvent) {
+        counter.incrementAndGet();
     }
 
-    @Subscribe(childEvents = {String.class, Integer.class})
-    public String subscribeObject(Object objEvent) {
-        return objEvent.toString();
+    @Subscribe
+    public void subscribeString(SimpleGenericEvent<String> stringEvent) {
+        counter.incrementAndGet();
     }
 
+    @Test
+    void subscribeTest() {
+        DefaultEventBus eventBus = new DefaultEventBus();
+        // 绑定监听
+        SubscribeExampleBusRegister.register(eventBus, new SubscribeExample());
+
+        final int eventCount = 300;
+        for (int i = 0; i < eventCount; i++) {
+            int mod = i % 3;
+            switch (mod) {
+                case 1 -> eventBus.post(new SimpleGenericEvent<>(new ArrayList<>()));
+                case 2 -> eventBus.post(new SimpleGenericEvent<>(new HashSet<>()));
+                default -> eventBus.post(new SimpleGenericEvent<>("test"));
+            }
+        }
+        Assertions.assertEquals(eventCount, counter.get());
+    }
 }

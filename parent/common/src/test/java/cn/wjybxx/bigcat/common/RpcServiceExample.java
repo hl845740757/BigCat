@@ -65,16 +65,16 @@ public class RpcServiceExample implements ExtensibleService {
         return Arrays.stream(value.split(",")).toList();
     }
 
-    /** 参数异步返回 -- 单线程Future */
+    /** 测试异步返回 -- JDK的Future */
     @RpcMethod(methodId = 6)
-    public FluentFuture<String> helloAsync(String msg) {
-        return SameThreads.newSucceededFuture(msg);
+    public CompletableFuture<String> helloAsync(String msg) {
+        return FutureUtils.newSucceededFuture(msg);
     }
 
-    /** 参数异步返回 -- JDK的Future */
+    /** 测试异步返回 -- 单线程Future */
     @RpcMethod(methodId = 7)
-    public CompletableFuture<String> helloAsync2(String msg) {
-        return FutureUtils.newSucceededFuture(msg);
+    public FluentFuture<String> helloAsync2(String msg) {
+        return SameThreads.newSucceededFuture(msg);
     }
 
     // 测试从接口继承的方法
@@ -87,8 +87,7 @@ public class RpcServiceExample implements ExtensibleService {
     }
 
     @Override
-    public Object execute(@Nonnull String cmd, Object params) {
+    public Object execute(@Nonnull String cmd, Object params) throws Exception {
         return null;
     }
-
 }
