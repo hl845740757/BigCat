@@ -67,7 +67,8 @@ public class BeanUtils {
         return typeElement.getEnclosedElements().stream()
                 .filter(e -> e.getKind() == ElementKind.CONSTRUCTOR)
                 .map(e -> (ExecutableElement) e)
-                .filter(e -> e.getParameters().size() == 1 && AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), argType))
+                .filter(e -> e.getParameters().size() == 1)
+                .filter(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), argType))
                 .findFirst()
                 .orElse(null);
     }
@@ -122,11 +123,8 @@ public class BeanUtils {
                 .filter(e -> e.getKind() == ElementKind.METHOD)
                 .map(e -> (ExecutableElement) e)
                 .filter(e -> e.getParameters().size() == 1)
-                .filter(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), variableElement.asType()))
-                .anyMatch(e -> {
-                    final String methodName = e.getSimpleName().toString();
-                    return methodName.equals(setterMethodName);
-                });
+                .filter(e -> e.getSimpleName().toString().equals(setterMethodName))
+                .anyMatch(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), variableElement.asType()));
     }
 
     /**
@@ -140,11 +138,8 @@ public class BeanUtils {
                 .filter(e -> e.getKind() == ElementKind.METHOD)
                 .map(e -> (ExecutableElement) e)
                 .filter(e -> e.getParameters().size() == 0)
-                .filter(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getReturnType(), variableElement.asType()))
-                .anyMatch(e -> {
-                    final String methodName = e.getSimpleName().toString();
-                    return methodName.equals(getterMethodName);
-                });
+                .filter(e -> e.getSimpleName().toString().equals(getterMethodName))
+                .anyMatch(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getReturnType(), variableElement.asType()));
     }
 
     /**

@@ -103,7 +103,6 @@ public class ClassScanner {
                                           Predicate<String> classNameFilter, Predicate<Class<?>> classFilter) {
         // 获取此包的目录 建立一个File
         File dir = new File(pkgPath);
-        // 如果不存在或者 也不是目录就直接返回
         if (!dir.exists() || !dir.isDirectory()) {
             return;
         }

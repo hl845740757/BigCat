@@ -348,6 +348,13 @@ public class AptUtils {
                 .orElse(null);
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T getAnnotationValueValue(AnnotationMirror annotationMirror, String propertyName, T def) {
+        return (T) Optional.ofNullable(getAnnotationValue(annotationMirror, propertyName))
+                .map(AnnotationValue::getValue)
+                .orElse(def);
+    }
+
     /**
      * 获取注解上的某一个属性的值，包含default值
      *

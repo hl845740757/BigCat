@@ -33,7 +33,7 @@ public abstract class AbstractBinaryPojoCodecImpl<T> implements BinaryPojoCodecI
         if (typeArgInfo.factory != null) {
             instance = (T) typeArgInfo.factory.get();
         } else {
-            instance = newInstance(typeArgInfo);
+            instance = newInstance(reader, typeArgInfo);
         }
         readFields(instance, reader, typeArgInfo);
         afterDecode(instance, reader, typeArgInfo);
@@ -43,7 +43,7 @@ public abstract class AbstractBinaryPojoCodecImpl<T> implements BinaryPojoCodecI
     /**
      * 创建一个对象，如果是一个抽象类，应该抛出异常
      */
-    protected abstract T newInstance(TypeArgInfo<?> typeArgInfo);
+    protected abstract T newInstance(BinaryReader reader, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 从输入流中读取所有序列化的字段到指定实例上。

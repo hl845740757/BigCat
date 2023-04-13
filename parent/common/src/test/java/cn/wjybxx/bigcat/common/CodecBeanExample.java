@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.common;
 
 import cn.wjybxx.bigcat.common.codec.AutoTypeArgs;
 import cn.wjybxx.bigcat.common.codec.FieldImpl;
+import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
 import cn.wjybxx.bigcat.common.codec.binary.BinaryReader;
 import cn.wjybxx.bigcat.common.codec.binary.BinarySerializable;
 import cn.wjybxx.bigcat.common.codec.binary.BinaryWriter;
@@ -73,19 +74,19 @@ public class CodecBeanExample {
     public Object custom;
 
     //
-    public static void writeCustom(BinaryWriter writer, CodecBeanExample instance) {
+    public void writeCustom(BinaryWriter writer) {
+        writer.writeObject(custom, TypeArgInfo.OBJECT);
+    }
+
+    public void readCustom(BinaryReader reader) {
+        this.custom = reader.readObject(TypeArgInfo.OBJECT);
+    }
+
+    public void writeCustom(DocumentWriter writer) {
 
     }
 
-    public static void readCustom(BinaryReader reader, CodecBeanExample instance) {
-
-    }
-
-    public static void writeCustom(DocumentWriter writer, CodecBeanExample instance) {
-
-    }
-
-    public static void readCustom(DocumentReader reader, CodecBeanExample instance) {
+    public void readCustom(DocumentReader reader) {
 
     }
 

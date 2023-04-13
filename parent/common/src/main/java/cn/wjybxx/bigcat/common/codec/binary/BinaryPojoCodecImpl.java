@@ -16,7 +16,6 @@
 
 package cn.wjybxx.bigcat.common.codec.binary;
 
-import cn.wjybxx.bigcat.common.annotation.NameIsStable;
 import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
 
 import javax.annotation.Nonnull;
@@ -54,7 +53,7 @@ public interface BinaryPojoCodecImpl<T> {
      *
      * @param typeArgInfo 类型描述信息，用于判断元素的类型是否写入，是一个上下文
      */
-    void writeObject(@NameIsStable T instance, BinaryWriter writer, TypeArgInfo<?> typeArgInfo);
+    void writeObject(T instance, BinaryWriter writer, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 从输入流中解析指定对象。

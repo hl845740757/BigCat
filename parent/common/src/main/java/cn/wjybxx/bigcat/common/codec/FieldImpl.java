@@ -69,13 +69,12 @@ public @interface FieldImpl {
 
     /**
      * 写代理：自定义写方法
-     * 1.必须是静态方法
-     * 2.两个参数，第一个参数为{@link BinaryWriter}或{@link DocumentWriter}，第二个参数为所属的对象实例
-     * <p>
+     * 1.必须是单参实例方法
+     * 2.参数限定为{@link BinaryWriter}或{@link DocumentWriter}
      * 示例：
      * <pre>{@code
-     *      public static void writeName(BinaryWriter writer, MyClass instance) {
-     *          writer.writeString(instance.name);
+     *      public void writeName(BinaryWriter writer) {
+     *          writer.writeString(this.name);
      *      }
      * }
      * </pre>
@@ -84,14 +83,14 @@ public @interface FieldImpl {
 
     /**
      * 读代理：自定义读方法
-     * 1.必须是静态方法
-     * 2.两个参数，第一个参数为{@link BinaryReader}或{@link DocumentReader}，第二个参数为所属的对象实例
+     * 1.必须是单参实例方法
+     * 2.参数限定为{@link BinaryReader}或{@link DocumentReader}
      * 3.对于有特殊构造过程的字段是很有帮助的，也可以进行类型转换。
      * <p>
      * 示例：
      * <pre>{@code
-     *      public static void readName(BinaryReader reader, MyClass instance) {
-     *          instance.name = reader.readString();
+     *      public void readName(BinaryReader reader) {
+     *          this.name = reader.readString();
      *      }
      * }
      * </pre>

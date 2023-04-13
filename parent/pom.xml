@@ -60,10 +60,15 @@
         <jsr305.version>3.0.2</jsr305.version>
         <fastutil.version>8.5.11</fastutil.version>
         <slf4j.version>2.0.7</slf4j.version>
+        <logback.version>1.4.6</logback.version>
         <junit.version>5.9.2</junit.version>
 
+        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>4.0.1</jctools.version>
+
+        <!-- 打算去除Guava依赖 -->
         <guava.version>31.1-jre</guava.version>
     </properties>
 
@@ -80,7 +85,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.6</version>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -96,7 +101,7 @@
         <dependency>
             <groupId>io.wjybxx.bigcat</groupId>
             <artifactId>apt</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 
@@ -106,7 +111,7 @@
             <artifactId>jsr305</artifactId>
             <version>${jsr305.version}</version>
         </dependency>
-        <!-- 基础类型集合库，主要用于支持long类型key -->
+        <!-- 基础类型集合 -->
         <dependency>
             <groupId>it.unimi.dsi</groupId>
             <artifactId>fastutil</artifactId>
@@ -118,14 +123,13 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
+            <version>${commons-lang3.version}</version>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.15</version>
+            <version>${commons-codec.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
@@ -134,9 +138,25 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- 指定参数-parameters，否则test目录下文件编译异常 -->
+            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <encoding>UTF8</encoding>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <!-- 以下操作较为耗时，仅在release模式下执行 -->

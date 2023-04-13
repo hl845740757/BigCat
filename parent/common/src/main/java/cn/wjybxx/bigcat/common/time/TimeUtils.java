@@ -113,12 +113,12 @@ public class TimeUtils {
      */
     public static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
 
-    /** {@link LocalTime}对应的毫秒时间 -- 常用API */
+    /** {@link LocalTime}对应的毫秒时间 */
     public static long toMilliOfDay(LocalTime time) {
         return time.toSecondOfDay() * 1000L + time.getNano() / NANOS_PER_MILLI;
     }
 
-    /** 获取月份的最后一天，总是忘记api... */
+    /** 获取月份的天数，总是忘记api... */
     public static int lengthOfMonth(LocalDateTime localDateTime) {
         return localDateTime.toLocalDate().lengthOfMonth();
     }

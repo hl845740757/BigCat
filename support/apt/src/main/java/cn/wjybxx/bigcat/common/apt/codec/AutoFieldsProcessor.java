@@ -48,8 +48,8 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
     private static final String KEY_SET_FIELD_NAME = "_KEY_SET";
     public static final String KEY_SET_METHOD_NAME = "keySet";
 
-    private TypeElement autoTypeElement;
-    private TypeElement aliasTypeElement;
+    private TypeElement anno_autoTypeElement;
+    private TypeElement anno_aliasTypeElement;
 
     private TypeName stringTypeName;
     private TypeName stringSetTypeName;
@@ -61,12 +61,12 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
 
     @Override
     protected void ensureInited() {
-        if (autoTypeElement != null) {
+        if (anno_autoTypeElement != null) {
             return;
         }
 
-        autoTypeElement = elementUtils.getTypeElement(AUTO_CANONICAL_NAME);
-        aliasTypeElement = elementUtils.getTypeElement(ALIAS_CANONICAL_NAME);
+        anno_autoTypeElement = elementUtils.getTypeElement(AUTO_CANONICAL_NAME);
+        anno_aliasTypeElement = elementUtils.getTypeElement(ALIAS_CANONICAL_NAME);
 
         stringTypeName = ClassName.get(String.class);
         stringSetTypeName = ParameterizedTypeName.get(Set.class, String.class);
@@ -74,7 +74,7 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(autoTypeElement);
+        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(anno_autoTypeElement);
         for (Element element : annotatedClassSet) {
             try {
                 genFieldsClass((TypeElement) element);
@@ -123,7 +123,7 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
                     .map(this::genFieldOfEnumConst)
                     .collect(Collectors.toList());
         } else {
-            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, autoTypeElement.asType())
+            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_autoTypeElement.asType())
                     .orElseThrow();
 
             final boolean skipStatic = AptUtils.getAnnotationValueValueWithDefaults(elementUtils, annotationMirror, PROPERTY_SKIP_STATIC);
@@ -143,7 +143,7 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
     }
 
     private FieldSpec genFieldOfClassField(VariableElement element) {
-        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, element, aliasTypeElement.asType())
+        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, element, anno_aliasTypeElement.asType())
                 .orElse(null);
 
         final String constantValue;

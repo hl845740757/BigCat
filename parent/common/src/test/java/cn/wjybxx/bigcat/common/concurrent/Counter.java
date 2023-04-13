@@ -65,10 +65,12 @@ public class Counter {
         return new CounterTask(type, sequence);
     }
 
+    /** 可能被添加为fixedRate之类 */
     private class CounterTask implements Runnable {
 
         final int type;
         final long sequence;
+        private boolean first = true;
 
         private CounterTask(int type, long sequence) {
             this.type = type;
@@ -77,7 +79,10 @@ public class Counter {
 
         @Override
         public void run() {
-            count(type, sequence);
+            if (first) {
+                first = false;
+                count(type, sequence);
+            }
         }
 
     }

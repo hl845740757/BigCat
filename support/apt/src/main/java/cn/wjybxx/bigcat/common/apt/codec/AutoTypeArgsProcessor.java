@@ -22,14 +22,12 @@ import cn.wjybxx.bigcat.common.apt.MyAbstractProcessor;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
 
-import javax.annotation.Nonnull;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,8 +43,8 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
     public static final String IMPL_CANONICAL_NAME = "cn.wjybxx.bigcat.common.codec.FieldImpl";
     public static final String TTPEARG_CANONICAL_NAME = "cn.wjybxx.bigcat.common.codec.TypeArgInfo";
 
-    private TypeElement autoTypeElement;
-    private TypeMirror impTypeMirror;
+    private TypeElement anno_autoTypeElement;
+    private TypeMirror anno_impTypeMirror;
     private ClassName typeArgRawTypeName;
 
     public TypeMirror mapTypeMirror;
@@ -64,11 +62,11 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
 
     @Override
     protected void ensureInited() {
-        if (autoTypeElement != null) {
+        if (anno_autoTypeElement != null) {
             return;
         }
-        autoTypeElement = elementUtils.getTypeElement(AUTO_CANONICAL_NAME);
-        impTypeMirror = elementUtils.getTypeElement(IMPL_CANONICAL_NAME).asType();
+        anno_autoTypeElement = elementUtils.getTypeElement(AUTO_CANONICAL_NAME);
+        anno_impTypeMirror = elementUtils.getTypeElement(IMPL_CANONICAL_NAME).asType();
         typeArgRawTypeName = ClassName.get(elementUtils.getTypeElement(TTPEARG_CANONICAL_NAME));
 
         mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
@@ -82,7 +80,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(autoTypeElement);
+        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(anno_autoTypeElement);
         for (Element element : annotatedClassSet) {
             if (element.getKind() != ElementKind.CLASS) {
                 continue; // 忽略正常类以外的东西，比如record
@@ -192,7 +190,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
     }
 
     private TypeArgMirrors parseTypeArgMirrors(VariableElement variableElement) {
-        FieldImplProperties properties = parseFiledImplProperties(typeUtils, variableElement, impTypeMirror);
+        FieldImplProperties properties = FieldImplProperties.parse(typeUtils, variableElement, anno_impTypeMirror);
         if (isMap(variableElement.asType())) {
             return parseMapTypeArgs(variableElement, properties);
         }
@@ -310,30 +308,6 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
         return AptUtils.getProxyClassName(elementUtils, typeElement, "TypeArgs");
     }
     //
-
-    /** 解析FieldImpl注解的属性 */
-    @Nonnull
-    public static FieldImplProperties parseFiledImplProperties(Types typeUtils, VariableElement variableElement, TypeMirror fieldImplMirror) {
-        final FieldImplProperties properties = new FieldImplProperties();
-        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, variableElement, fieldImplMirror)
-                .orElse(null);
-        if (annotationMirror != null) {
-            final Map<String, AnnotationValue> valueMap = AptUtils.getAnnotationValuesMap(annotationMirror);
-            final AnnotationValue value = valueMap.get("value");
-            final AnnotationValue writeProxy = valueMap.get("writeProxy");
-            final AnnotationValue readProxy = valueMap.get("readProxy");
-            if (value != null) {
-                properties.implMirror = AptUtils.getAnnotationValueTypeMirror(value);
-            }
-            if (writeProxy != null) {
-                properties.writeProxy = ((String) writeProxy.getValue()).trim();
-            }
-            if (readProxy != null) {
-                properties.writeProxy = ((String) readProxy.getValue()).trim();
-            }
-        }
-        return properties;
-    }
 
     private static class TypeArgMirrors {
 

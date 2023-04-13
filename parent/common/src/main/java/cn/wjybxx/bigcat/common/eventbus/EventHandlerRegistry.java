@@ -70,21 +70,21 @@ public interface EventHandlerRegistry {
         registerX(eventType, null, handler, customData);
     }
 
-    default <T> void register(@Nonnull Class<T> parentType, @Nullable Object childKey, @Nonnull EventHandler<? super T> handler) {
-        registerX(parentType, childKey, handler, null);
+    default <T> void register(@Nonnull Class<T> eventType, @Nullable Object childKey, @Nonnull EventHandler<? super T> handler) {
+        registerX(eventType, childKey, handler, null);
     }
 
-    default <T> void register(@Nonnull Class<T> parentType, @Nullable Object childKey, @Nonnull EventHandler<? super T> handler,
+    default <T> void register(@Nonnull Class<T> eventType, @Nullable Object childKey, @Nonnull EventHandler<? super T> handler,
                               @Nullable Object customData) {
-        registerX(parentType, childKey, handler, customData);
+        registerX(eventType, childKey, handler, customData);
     }
 
     default void remove(@Nonnull Class<?> eventType, @Nonnull EventHandler<?> handler) {
         removeX(eventType, null, handler);
     }
 
-    default void remove(@Nonnull Class<?> parentType, @Nonnull Object childKey, @Nonnull EventHandler<?> handler) {
-        removeX(parentType, childKey, handler);
+    default void remove(@Nonnull Class<?> eventType, @Nonnull Object childKey, @Nonnull EventHandler<?> handler) {
+        removeX(eventType, childKey, handler);
     }
 
     // endregion

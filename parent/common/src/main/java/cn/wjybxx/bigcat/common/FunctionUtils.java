@@ -142,6 +142,7 @@ public class FunctionUtils {
 
     // endregion
 
+    // region
     private static class Runnable2CallbackAdapter<T> implements Callable<T> {
 
         final Runnable task;
@@ -259,5 +260,6 @@ public class FunctionUtils {
                     '}';
         }
     }
+    // endregion
 
 }

@@ -16,7 +16,6 @@
 
 package cn.wjybxx.bigcat.common.codec;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.*;
@@ -194,17 +193,5 @@ public class EntityConverterUtils {
             return tempArray;
         }
     }
-
-    /** 是否是字节数组以外的数组 */
-    public static boolean isArrayExceptBytes(@Nonnull Object value) {
-        return value.getClass().isArray() && !(value instanceof byte[]);
-    }
-
-    public enum ValueKind {
-        /** 基本类型 -- 不可为null */
-        PRIMITIVE,
-        /** 引用类型 -- 可以为null */
-        REFERENCE,
-    }
-
+    
 }

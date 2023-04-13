@@ -21,7 +21,6 @@ import cn.wjybxx.bigcat.common.apt.BeanUtils;
 import cn.wjybxx.bigcat.common.apt.MyAbstractProcessor;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.TypeName;
 
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -49,21 +48,19 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.bigcat.common.rpc.RpcMethodSpec";
     private static final String DEFAULT_METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.bigcat.common.rpc.DefaultRpcMethodSpec";
     private static final String METHOD_REGISTRY_CANONICAL_NAME = "cn.wjybxx.bigcat.common.rpc.RpcMethodProxyRegistry";
-    private static final String EXTENSIBLE_SERVICE_CANONICAL_NAME = "cn.wjybxx.bigcat.common.rpc.ExtensibleService";
 
     private static final String CONTEXT_CANONICAL_NAME = "cn.wjybxx.bigcat.common.rpc.RpcProcessContext";
     private static final String FUTURE_CANONICAL_NAME = "cn.wjybxx.bigcat.common.async.FluentFuture";
 
-    private TypeElement rpcServiceElement;
-    private DeclaredType rpcServiceDeclaredType;
-    private DeclaredType rpcMethodDeclaredType;
+    private TypeElement anno_rpcServiceElement;
+    private TypeElement anno_rpcMethodElement;
 
     TypeElement methodSpecElement;
-    TypeName defaultMethodSpecRawTypeName;
+    ClassName defaultMethodSpecRawTypeName;
     ClassName methodRegistryTypeName;
 
-    private DeclaredType futureDeclaredType;
-    private DeclaredType jdkFutureDeclaredType;
+    private TypeMirror futureTypeMirror;
+    private TypeMirror jdkFutureTypeMirror;
 
     TypeMirror objectTypeMirror;
     private TypeMirror mapTypeMirror;
@@ -83,22 +80,21 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     @Override
     protected void ensureInited() {
-        if (rpcServiceElement != null) {
+        if (anno_rpcServiceElement != null) {
             // 已初始化
             return;
         }
-        rpcServiceElement = elementUtils.getTypeElement(RPC_SERVICE_CANONICAL_NAME);
-        rpcServiceDeclaredType = typeUtils.getDeclaredType(rpcServiceElement);
-        rpcMethodDeclaredType = typeUtils.getDeclaredType(elementUtils.getTypeElement(RPC_METHOD_CANONICAL_NAME));
-
-        futureDeclaredType = typeUtils.getDeclaredType(elementUtils.getTypeElement(FUTURE_CANONICAL_NAME));
-        jdkFutureDeclaredType = typeUtils.getDeclaredType(AptUtils.getTypeElementOfClass(elementUtils, Future.class));
-        objectTypeMirror = AptUtils.getTypeMirrorOfClass(elementUtils, Object.class);
+        anno_rpcServiceElement = elementUtils.getTypeElement(RPC_SERVICE_CANONICAL_NAME);
+        anno_rpcMethodElement = elementUtils.getTypeElement(RPC_METHOD_CANONICAL_NAME);
 
         methodSpecElement = elementUtils.getTypeElement(METHOD_SPEC_CANONICAL_NAME);
         defaultMethodSpecRawTypeName = ClassName.get(elementUtils.getTypeElement(DEFAULT_METHOD_SPEC_CANONICAL_NAME));
         methodRegistryTypeName = ClassName.get(elementUtils.getTypeElement(METHOD_REGISTRY_CANONICAL_NAME));
 
+        futureTypeMirror = elementUtils.getTypeElement(FUTURE_CANONICAL_NAME).asType();
+        jdkFutureTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Future.class).asType();
+
+        objectTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Object.class).asType();
         mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
         linkedHashMapTypeMirror = elementUtils.getTypeElement(LinkedHashMap.class.getCanonicalName()).asType();
         collectionTypeMirror = elementUtils.getTypeElement(Collection.class.getCanonicalName()).asType();
@@ -110,7 +106,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         @SuppressWarnings("unchecked")
-        Set<TypeElement> typeElementSet = (Set<TypeElement>) roundEnv.getElementsAnnotatedWith(rpcServiceElement);
+        Set<TypeElement> typeElementSet = (Set<TypeElement>) roundEnv.getElementsAnnotatedWith(anno_rpcServiceElement);
         for (TypeElement typeElement : typeElementSet) {
             try {
                 List<ExecutableElement> rpcMethodList = checkBase(typeElement);
@@ -233,13 +229,13 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private Short getServiceId(TypeElement typeElement) {
         // 基本类型会被包装，Object不能直接转short
-        return (Short) AptUtils.findAnnotation(typeUtils, typeElement, rpcServiceDeclaredType)
+        return (Short) AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType())
                 .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, SERVICE_ID_PROPERTY_NAME))
                 .orElseThrow();
     }
 
     Short getMethodId(ExecutableElement method) {
-        return (Short) AptUtils.findAnnotation(typeUtils, method, rpcMethodDeclaredType)
+        return (Short) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
                 .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, METHOD_ID_PROPERTY_NAME))
                 .orElse(null);
     }
@@ -281,8 +277,8 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     }
 
     boolean isFuture(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, futureDeclaredType)
-                || AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, jdkFutureDeclaredType);
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, futureTypeMirror)
+                || AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, jdkFutureTypeMirror);
     }
 
 }

@@ -53,9 +53,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
     private static final String CHILD_KEYS_PROPERTY_NAME = "childKeys";
     private static final String CUSTOM_DATA_PROPERTY_NAME = "customData";
 
-    private TypeElement subscribeTypeElement;
-    private TypeMirror subscribeTypeMirror;
-
+    private TypeElement anno_subscribeTypeElement;
     private TypeMirror genericEventTypeMirror;
     private TypeName handlerRegistryTypeName;
 
@@ -69,14 +67,12 @@ public class SubscribeProcessor extends MyAbstractProcessor {
      */
     @Override
     protected void ensureInited() {
-        if (subscribeTypeElement != null) {
+        if (anno_subscribeTypeElement != null) {
             // 已初始化
             return;
         }
 
-        subscribeTypeElement = elementUtils.getTypeElement(SUBSCRIBE_CANONICAL_NAME);
-        subscribeTypeMirror = subscribeTypeElement.asType();
-
+        anno_subscribeTypeElement = elementUtils.getTypeElement(SUBSCRIBE_CANONICAL_NAME);
         genericEventTypeMirror = typeUtils.getDeclaredType(elementUtils.getTypeElement(GENERIC_EVENT_CANONICAL_NAME));
         handlerRegistryTypeName = ClassName.get(elementUtils.getTypeElement(HANDLER_REGISTRY_CANONICAL_NAME));
     }
@@ -84,7 +80,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // 注解标记的是方法，因此筛选出来的是Method，需要按类归组再生成
-        Map<Element, List<Element>> class2MethodsMap = roundEnv.getElementsAnnotatedWith(subscribeTypeElement).stream()
+        Map<Element, List<Element>> class2MethodsMap = roundEnv.getElementsAnnotatedWith(anno_subscribeTypeElement).stream()
                 .collect(Collectors.groupingBy(Element::getEnclosingElement));
 
         for (Map.Entry<Element, List<Element>> entry : class2MethodsMap.entrySet()) {
@@ -145,7 +141,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
             }
 
             // 生成注册代码
-            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, method, subscribeTypeMirror).orElseThrow();
+            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, method, anno_subscribeTypeElement.asType()).orElseThrow();
             final List<TypeMirror> childEventTypeMirrors = getChildEventTypeMirrors(method, annotationMirror);
             if (isGenericEvent(eventParameter)) {
                 registerGenericChildHandlers(builder, method, annotationMirror, childEventTypeMirrors);
@@ -261,7 +257,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
     /** 获取所有的子事件类型 */
     @Nonnull
     private List<TypeMirror> getChildEventTypeMirrors(ExecutableElement method, AnnotationMirror annotationMirror) {
-        final List<? extends AnnotationValue> childEventsList = AptUtils.getAnnotationValueValue(annotationMirror, SubscribeProcessor.CHILD_EVENTS_PROPERTY_NAME);
+        final List<? extends AnnotationValue> childEventsList = AptUtils.getAnnotationValueValue(annotationMirror, CHILD_EVENTS_PROPERTY_NAME);
         if (childEventsList == null || childEventsList.isEmpty()) {
             return List.of();
         }

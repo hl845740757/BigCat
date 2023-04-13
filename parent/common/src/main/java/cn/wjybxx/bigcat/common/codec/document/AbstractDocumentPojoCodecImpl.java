@@ -29,7 +29,7 @@ public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCo
 
     @Override
     public final T readObject(DocumentReader reader, TypeArgInfo<?> typeArgInfo) {
-        final T instance = newInstance();
+        final T instance = newInstance(reader, typeArgInfo);
         readFields(instance, reader, typeArgInfo);
         afterDecode(instance, reader, typeArgInfo);
         return instance;
@@ -38,7 +38,7 @@ public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCo
     /**
      * 创建一个对象，如果是一个抽象类，应该抛出异常
      */
-    protected abstract T newInstance();
+    protected abstract T newInstance(DocumentReader reader, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 从输入流中读取所有序列化的字段到指定实例上。
