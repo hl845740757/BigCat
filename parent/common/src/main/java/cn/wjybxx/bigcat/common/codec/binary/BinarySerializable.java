@@ -37,10 +37,11 @@ import java.lang.annotation.*;
  * <p>
  * 普通类钩子方法：
  * 1. 如果类提供了非私有的{@link BinaryReader}的单参构造方法，将自动调用 -- 该方法可用于final和忽略字段。
- * 2. 如果类提供了非私有的{@code writeObject(BinaryWriter)}的序列化方法，将自动调用 -- 该方法可用于final和忽略字段。
- * 3. 如果类提供了非私有的{@code afterDecode}方法，将在反序列化后调用 -- 该方法用于解码后构建缓存字段。
- * 4. 如果字段通过{@link FieldImpl#readProxy()}指定了读代理，则不要求setter权限
- * 5. 如果字段通过{@link FieldImpl#writeProxy()}指定了写代理，则不要求getter权限
+ * 2. 如果类提供了非私有的{@code readObject(BinaryReader)}的反序列化方法，将自动调用 -- 该方法可用于忽略字段。
+ * 3. 如果类提供了非私有的{@code writeObject(BinaryWriter)}的序列化方法，将自动调用 -- 该方法可用于final和忽略字段。
+ * 4. 如果类提供了非私有的{@code afterDecode}方法，将在反序列化后调用 -- 该方法用于解码后构建缓存字段。
+ * 5. 如果字段通过{@link FieldImpl#readProxy()}指定了读代理，则不要求setter权限
+ * 6. 如果字段通过{@link FieldImpl#writeProxy()}指定了写代理，则不要求getter权限
  *
  * <h3>序列化的字段</h3>
  * 1. 默认所有字段都序列化。但如果有{@code transient}修饰或使用{@link BinaryIgnore}进行注解，则不序列化。
@@ -77,6 +78,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface BinarySerializable {
+
+    /**
+     * 该注解主要用户处理继承得来的不能直接序列化的字段
+     * 跳过这些字段检查后，你可以解析构造方法、readObject、writeObject方法中处理
+     */
+    String[] skipFields() default {};
 
     /**
      * 为生成的文件添加的注解

@@ -27,6 +27,7 @@ import com.squareup.javapoet.TypeSpec;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import java.util.List;
+import java.util.Set;
 
 import static cn.wjybxx.bigcat.common.apt.codec.CodecProcessor.MNAME_AFTER_DECODE;
 
@@ -39,7 +40,8 @@ public class PojoDocumentCodecGenerator extends AbstractCodecGenerator<DocumentC
     private TypeName rawTypeName;
     private List<? extends Element> allFieldsAndMethodWithInherit;
     private boolean containsReaderConstructor;
-    private boolean containsWriterMethod;
+    private boolean containsReadObjectMethod;
+    private boolean containsWriteObjectMethod;
     private String typeArgClassName;
     private String fieldsClassName;
 
@@ -66,7 +68,8 @@ public class PojoDocumentCodecGenerator extends AbstractCodecGenerator<DocumentC
         rawTypeName = TypeName.get(typeUtils.erasure(typeElement.asType()));
         allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
         containsReaderConstructor = processor.containsReaderConstructor(typeElement);
-        containsWriterMethod = processor.containsWriterMethod(allFieldsAndMethodWithInherit);
+        containsReadObjectMethod = processor.containsReadObjectMethod(allFieldsAndMethodWithInherit);
+        containsWriteObjectMethod = processor.containsWriteObjectMethod(allFieldsAndMethodWithInherit);
         typeArgClassName = AutoTypeArgsProcessor.getProxyClassName(typeElement, elementUtils);
         fieldsClassName = AutoFieldsProcessor.getProxyClassName(typeElement, elementUtils);
 
@@ -81,25 +84,30 @@ public class PojoDocumentCodecGenerator extends AbstractCodecGenerator<DocumentC
     }
 
     private void gen() {
-        genNewInstanceMethod(); // 先挂载自定义读
-        if (containsWriterMethod) {  // 先挂载自定义写
+        genNewInstanceMethod();
+        if (containsReadObjectMethod) {
+            readFieldsMethodBuilder.addStatement("instance.$L(reader)", BinaryCodecProcessor.MNAME_READ_OBJECT);
+        }
+        if (containsWriteObjectMethod) {
             writeObjectMethodBuilder.addStatement("instance.$L(writer)", BinaryCodecProcessor.MNAME_WRITE_OBJECT);
         }
 
+        Set<String> skipFields = processor.getSkipFields(typeElement);
         ClassImplProperties classImplProperties = processor.parseClassImpl(typeElement);
+
         for (Element element : allFieldsAndMethodWithInherit) {
             if (element.getKind() != ElementKind.FIELD) {
                 continue;
             }
             final VariableElement variableElement = (VariableElement) element;
-            if (!processor.isSerializableField(variableElement)) {
+            if (!processor.isSerializableField(skipFields, variableElement)) {
                 continue;
             }
             final FieldImplProperties fieldImplProperties = processor.parseFiledImpl(variableElement);
-            if (processor.isAutoWriteField(variableElement, containsWriterMethod, classImplProperties, fieldImplProperties)) {
+            if (processor.isAutoWriteField(variableElement, containsWriteObjectMethod, classImplProperties, fieldImplProperties)) {
                 addWriteStatement(variableElement, fieldImplProperties);
             }
-            if (processor.isAutoReadField(variableElement, containsReaderConstructor, classImplProperties, fieldImplProperties)) {
+            if (processor.isAutoReadField(variableElement, containsReaderConstructor, containsReadObjectMethod, classImplProperties, fieldImplProperties)) {
                 addReadStatement(variableElement, fieldImplProperties);
             }
         }

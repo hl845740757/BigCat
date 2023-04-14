@@ -5,7 +5,7 @@ BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大
 
 ### 如何编译该项目
 
-1. 该项目需要分为两个工程打开(建议两个窗口)，分别是support和parent -- Class热更新和Apt都需要以jar包的形式工作，因此需要独立编译打包。
+1. 该项目需要分为两个工程打开(建议两个窗口)，分别是support和parent -- Apt需要以jar包的形式工作，因此需要独立编译打包。
 2. 进入support仓库，clean install 安装apt到本地maven仓库。
 3. 进入parent仓库，可正常开始编译 -- 如果之前出错导致无法编译，请先clean清理缓存。
 
@@ -25,7 +25,7 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 
 ### 已实现
 1. Future和EventLoop - concurrent包
-2. Rpc + 注解处理器 - [关于Rpc的设计解释](https://github.com/hl845740757/BigCat/doc/rpc.md)
+2. Rpc + 注解处理器 - [关于Rpc的设计解释](https://github.com/hl845740757/BigCat/blob/dev/doc/Rpc.MD)
 3. EventBus + 注解处理器
 4. 序列化接口 + 二进制实现
 

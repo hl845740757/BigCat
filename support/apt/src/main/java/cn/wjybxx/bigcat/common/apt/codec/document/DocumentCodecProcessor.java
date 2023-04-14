@@ -148,8 +148,10 @@ public class DocumentCodecProcessor extends CodecProcessor {
         checkConstructor(typeElement);
 
         final List<? extends Element> allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
-        final boolean containsWriterMethod = containsWriterMethod(allFieldsAndMethodWithInherit);
+        final Set<String> skipFields = getSkipFields(typeElement);
         final boolean containsReaderConstructor = containsReaderConstructor(typeElement);
+        final boolean containsReadObjectMethod = containsReadObjectMethod(allFieldsAndMethodWithInherit);
+        final boolean containsWriteObjectMethod = containsWriteObjectMethod(allFieldsAndMethodWithInherit);
         final ClassImplProperties classImplProperties = parseClassImpl(typeElement);
 
         for (Element element : allFieldsAndMethodWithInherit) {
@@ -157,28 +159,32 @@ public class DocumentCodecProcessor extends CodecProcessor {
                 continue;
             }
             final VariableElement variableElement = (VariableElement) element;
-            if (!isSerializableField(variableElement)) {
+            if (!isSerializableField(skipFields, variableElement)) {
                 continue;
             }
 
             FieldImplProperties fieldImplProperties = parseFiledImpl(variableElement);
-            if (isAutoWriteField(variableElement, containsWriterMethod, classImplProperties, fieldImplProperties)) {
+            if (isAutoWriteField(variableElement, containsWriteObjectMethod, classImplProperties, fieldImplProperties)) {
                 if (hasWriteProxy(variableElement, fieldImplProperties)) {
                     continue;
                 }
                 // 工具写：需要提供可直接取值或包含非private的getter方法
                 if (!canGetDirectly(variableElement, typeElement) && !containsNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit)) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "serializable field must contains a not private getter or canGetDirectly", variableElement);
+                    messager.printMessage(Diagnostic.Kind.ERROR,
+                            String.format("serializable field (%s) must contains a not private getter or canGetDirectly", variableElement.getSimpleName().toString()),
+                            variableElement);
                     continue;
                 }
             }
-            if (isAutoReadField(variableElement, containsReaderConstructor, classImplProperties, fieldImplProperties)) {
+            if (isAutoReadField(variableElement, containsReaderConstructor, containsReadObjectMethod, classImplProperties, fieldImplProperties)) {
                 if (hasReadProxy(variableElement, fieldImplProperties)) {
                     continue;
                 }
                 // 工具读：需要提供可直接赋值或非private的setter方法
                 if (!canSetDirectly(variableElement, typeElement) && !containsNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit)) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "serializable field must contains a not private setter or canSetDirectly", variableElement);
+                    messager.printMessage(Diagnostic.Kind.ERROR,
+                            String.format("serializable field (%s) must contains a not private setter or canSetDirectly", variableElement.getSimpleName().toString()),
+                            variableElement);
                     continue;
                 }
             }
@@ -193,7 +199,11 @@ public class DocumentCodecProcessor extends CodecProcessor {
         return super.containsReaderConstructor(typeElement, readerTypeElement);
     }
 
-    boolean containsWriterMethod(List<? extends Element> allFieldsAndMethodWithInherit) {
+    boolean containsReadObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit) {
+        return super.containsReadObjectMethod(allFieldsAndMethodWithInherit, readerTypeElement);
+    }
+
+    boolean containsWriteObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit) {
         return super.containsWriteObjectMethod(allFieldsAndMethodWithInherit, writerTypeElement);
     }
 
@@ -213,8 +223,8 @@ public class DocumentCodecProcessor extends CodecProcessor {
         }
     }
 
-    boolean isSerializableField(VariableElement variableElement) {
-        return super.isSerializableField(variableElement, anno_ignoreTypeName);
+    boolean isSerializableField(Set<String> skipFields, VariableElement variableElement) {
+        return super.isSerializableField(skipFields, variableElement, anno_ignoreTypeName);
     }
 
     private String getTypeAlias(TypeElement typeElement) {
@@ -272,8 +282,12 @@ public class DocumentCodecProcessor extends CodecProcessor {
         return MethodSpec.overriding(readObjectMethod, superDeclaredType, typeUtils);
     }
 
+    Set<String> getSkipFields(TypeElement typeElement) {
+        return super.getSkipFields(typeElement, anno_documentTypeName);
+    }
+
     List<AnnotationSpec> getAdditionalAnnotations(TypeElement typeElement) {
-        return super.getAdditionalAnnotations(typeElement, anno_documentTypeName, "annotations");
+        return super.getAdditionalAnnotations(typeElement, anno_documentTypeName);
     }
 
     /**

@@ -20,6 +20,7 @@ import cn.wjybxx.bigcat.common.apt.AptUtils;
 import cn.wjybxx.bigcat.common.apt.BeanUtils;
 import cn.wjybxx.bigcat.common.apt.MyAbstractProcessor;
 import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.ClassName;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.ArrayType;
@@ -28,6 +29,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author wjybxx
@@ -227,6 +230,17 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
         return BeanUtils.containsOneArgsConstructor(typeUtils, typeElement, readerTypeElement.asType());
     }
 
+    /** 是否包含 readerObject 实例方法 */
+    protected boolean containsReadObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit, TypeElement readerTypeElement) {
+        return allFieldsAndMethodWithInherit.stream()
+                .filter(e -> e.getKind() == ElementKind.METHOD)
+                .map(e -> (ExecutableElement) e)
+                .filter(e -> !e.getModifiers().contains(Modifier.PRIVATE) && !e.getModifiers().contains(Modifier.STATIC))
+                .filter(e -> e.getParameters().size() == 1)
+                .filter(e -> e.getSimpleName().toString().equals(MNAME_READ_OBJECT))
+                .anyMatch(e -> AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), readerTypeElement.asType()));
+    }
+
     /** 是否包含 writeObject 实例方法 */
     protected boolean containsWriteObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit, TypeElement writerTypeElement) {
         return allFieldsAndMethodWithInherit.stream()
@@ -261,13 +275,16 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     /**
      * 是否是可序列化的字段
      *
+     * @param skipFields        跳过的字段
      * @param ignoreTypeElement 用户忽略或不忽略的注解
      */
-    protected boolean isSerializableField(VariableElement variableElement, TypeElement ignoreTypeElement) {
+    protected boolean isSerializableField(Set<String> skipFields, VariableElement variableElement, TypeElement ignoreTypeElement) {
         if (variableElement.getModifiers().contains(Modifier.STATIC)) {
             return false;
         }
-
+        if (skipFields.contains(variableElement.getSimpleName().toString())) {
+            return false;
+        }
         // 有注解的情况下，取决于注解的值
         AnnotationMirror ignoreMirror = AptUtils.findAnnotation(typeUtils, variableElement, ignoreTypeElement.asType())
                 .orElse(null);
@@ -300,7 +317,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     /** 是否是托管写的字段 */
-    public boolean isAutoReadField(VariableElement variableElement, boolean containsReaderConstructor,
+    public boolean isAutoReadField(VariableElement variableElement, boolean containsReaderConstructor, boolean containsReadObjectMethod,
                                    ClassImplProperties classImplProperties, FieldImplProperties fieldImplProperties) {
         // final必定或构造方法读
         if (variableElement.getModifiers().contains(Modifier.FINAL)) {
@@ -311,7 +328,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
             return true;
         }
         // 不包含解析构造方法，全部托管
-        if (!containsReaderConstructor) {
+        if (!containsReaderConstructor && !containsReadObjectMethod) {
             return true;
         }
         return classImplProperties.autoReadNonFinalFields;
@@ -327,19 +344,34 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
 
     //
 
-    protected List<AnnotationSpec> getAdditionalAnnotations(TypeElement typeElement, TypeElement annotationTypeElement, String propertyName) {
+    public Set<String> getSkipFields(TypeElement typeElement, TypeElement annotationTypeElement) {
         AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, annotationTypeElement.asType())
                 .orElseThrow();
 
-        final List<? extends AnnotationValue> annotationsList = AptUtils.getAnnotationValueValue(annotationMirror, propertyName);
+        final List<? extends AnnotationValue> annotationsList = AptUtils.getAnnotationValueValue(annotationMirror, "skipFields");
+        if (annotationsList == null || annotationsList.isEmpty()) {
+            return Set.of();
+        }
+        return annotationsList.stream()
+                .map(e -> (String) e.getValue())
+                .collect(Collectors.toSet());
+
+    }
+
+    protected List<AnnotationSpec> getAdditionalAnnotations(TypeElement typeElement, TypeElement annotationTypeElement) {
+        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, annotationTypeElement.asType())
+                .orElseThrow();
+
+        final List<? extends AnnotationValue> annotationsList = AptUtils.getAnnotationValueValue(annotationMirror, "annotations");
         if (annotationsList == null || annotationsList.isEmpty()) {
             return List.of();
         }
 
         List<AnnotationSpec> result = new ArrayList<>(annotationsList.size());
         for (final AnnotationValue annotationValue : annotationsList) {
-            final AnnotationMirror customAnnotationMirror = (AnnotationMirror) AptUtils.getAnnotationValueTypeMirror(annotationValue);
-            result.add(AnnotationSpec.get(customAnnotationMirror));
+            final TypeMirror typeMirror = AptUtils.getAnnotationValueTypeMirror(annotationValue);
+            result.add(AnnotationSpec.builder((ClassName) ClassName.get(typeMirror))
+                    .build());
         }
         return result;
     }
