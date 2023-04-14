@@ -72,6 +72,11 @@ public abstract class AbstractEventLoopGroup implements EventLoopGroup {
         return next().scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
+    @Override
+    public <V> IScheduledFuture<V> schedule(ScheduleBuilder<V> builder) {
+        return next().schedule(builder);
+    }
+
     // 以下API并不常用，因此不做优化
 
     @Nonnull

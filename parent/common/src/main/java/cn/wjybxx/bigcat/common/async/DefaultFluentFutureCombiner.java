@@ -115,6 +115,9 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
         }
 
         boolean checkComplete() {
+            int doneCount = this.doneCount;
+            int succeedCount = this.succeedCount;
+
             // 没有任务，立即完成
             if (futureCount == 0) {
                 return aggregatePromise.trySuccess(null);
@@ -142,7 +145,7 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
             // 剩余的任务不足以达到成功，则立即失败；包含了require大于futureCount的情况
             if (succeedCount + (futureCount - doneCount) < successRequire) {
                 if (cause == null) {
-                    cause = TaskInsufficientException.create(futureCount, successRequire);
+                    cause = TaskInsufficientException.create(futureCount, doneCount, succeedCount, successRequire);
                 }
                 return aggregatePromise.tryFailure(cause);
             }

@@ -111,7 +111,7 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         Objects.requireNonNull(unit);
         delay = Math.max(0, delay);
 
-        return schedule(XScheduledFutureTask.ofRunnable(futureContext, command, null,
+        return schedule(XScheduledFutureTask.ofRunnable(futureContext, command,
                 0, triggerTime(delay, unit)));
     }
 
@@ -121,7 +121,7 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         Objects.requireNonNull(unit);
         delay = Math.max(0, delay);
 
-        return schedule(new XScheduledFutureTask<>(futureContext, callable,
+        return schedule(XScheduledFutureTask.ofCallable(futureContext, callable,
                 0, triggerTime(delay, unit)));
     }
 
@@ -130,9 +130,9 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         Objects.requireNonNull(command);
         Objects.requireNonNull(unit);
         initialDelay = Math.max(0, initialDelay);
-        validatePeriod(delay);
+        ScheduleBuilder.validatePeriod(delay);
 
-        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command, null,
+        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command,
                 0, triggerTime(initialDelay, unit), -unit.toNanos(delay)));
     }
 
@@ -140,14 +140,21 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
     public IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         Objects.requireNonNull(command);
         Objects.requireNonNull(unit);
-        validateInitialDelay(initialDelay); // fixedRate禁止负延迟输入
-        validatePeriod(period);
+        ScheduleBuilder.validateInitialDelay(initialDelay); // fixedRate禁止负延迟输入
+        ScheduleBuilder.validatePeriod(period);
 
-        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command, null,
+        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command,
                 0, triggerTime(initialDelay, unit), unit.toNanos(period)));
     }
 
-    protected long triggerTime(long delay, TimeUnit unit) {
+    @Override
+    public <V> IScheduledFuture<V> schedule(ScheduleBuilder<V> builder) {
+        Objects.requireNonNull(builder);
+        return schedule(XScheduledFutureTask.ofBuilder(futureContext, builder,
+                0, getTime()));
+    }
+
+    protected final long triggerTime(long delay, TimeUnit unit) {
         return getTime() + unit.toNanos(delay);
     }
 
@@ -171,20 +178,6 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
      * 1.可能从其它线程调用，需考虑线程安全问题
      */
     protected abstract void removeScheduled(XScheduledFutureTask<?> futureTask);
-
-    /** 适用于禁止初始延迟小于0的情况 */
-    protected static void validateInitialDelay(long initialDelay) {
-        if (initialDelay < 0) {
-            throw new IllegalArgumentException(
-                    String.format("initialDelay: %d (expected: >= 0)", initialDelay));
-        }
-    }
-
-    protected static void validatePeriod(long period) {
-        if (period == 0) {
-            throw new IllegalArgumentException("period: 0 (expected: != 0)");
-        }
-    }
 
     // -------------------------------------- invoke阻塞调用检测 --------------------------------------
     @Nonnull

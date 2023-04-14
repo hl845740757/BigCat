@@ -127,4 +127,22 @@ public class CommonMathUtils {
         return v;
     }
 
+    public static int setEnable(int flags, int mask, boolean enable) {
+        if (enable) {
+            flags |= mask;
+        } else {
+            flags &= ~mask;
+        }
+        return flags;
+    }
+
+    public static long setEnable(long flags, long mask, boolean enable) {
+        if (enable) {
+            flags |= mask;
+        } else {
+            flags &= ~mask;
+        }
+        return flags;
+    }
+
 }

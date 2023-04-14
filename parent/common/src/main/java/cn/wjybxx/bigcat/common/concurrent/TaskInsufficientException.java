@@ -16,13 +16,12 @@
 
 package cn.wjybxx.bigcat.common.concurrent;
 
-import cn.wjybxx.bigcat.common.annotation.Internal;
-
 /**
+ * 该异常表示{@link FutureCombiner}监听的任务数不足以到达成功条件
+ *
  * @author wjybxx
  * date 2023/4/12
  */
-@Internal
 public class TaskInsufficientException extends RuntimeException implements NoLogRequiredException {
 
     public TaskInsufficientException() {
@@ -36,8 +35,9 @@ public class TaskInsufficientException extends RuntimeException implements NoLog
         return this;
     }
 
-    public static TaskInsufficientException create(int futureCount, int require) {
-        final String msg = String.format("futureCount :%d, successRequire :%d", futureCount, require);
+    public static TaskInsufficientException create(int futureCount, int doneCount, int succeedCount, int successRequire) {
+        final String msg = String.format("futureCount :%d, doneCount %d, succeedCount: %d, successRequire :%d",
+                futureCount, doneCount, succeedCount, successRequire);
         return new TaskInsufficientException(msg);
     }
 

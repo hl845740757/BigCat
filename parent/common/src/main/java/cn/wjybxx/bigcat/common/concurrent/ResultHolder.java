@@ -22,7 +22,7 @@ package cn.wjybxx.bigcat.common.concurrent;
  */
 public final class ResultHolder<V> {
 
-    private static final ResultHolder<?> NULL = new ResultHolder<>(null);
+    private static final ResultHolder<?> EMPTY = new ResultHolder<>(null);
 
     public final V result;
 
@@ -30,11 +30,21 @@ public final class ResultHolder<V> {
         this.result = result;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <V> ResultHolder<V> succeeded() {
-        return (ResultHolder<V>) NULL;
+    public V orElse(V def) {
+        return result == null ? def : result;
     }
 
+    /** 表示得到结果，但结果为null */
+    @SuppressWarnings("unchecked")
+    public static <V> ResultHolder<V> succeeded() {
+        return (ResultHolder<V>) EMPTY;
+    }
+
+    /**
+     * 表示得到结果
+     *
+     * @implNote 请保持创建新对象，避免使用缓存对象导致依赖问题
+     */
     public static <V> ResultHolder<V> succeeded(V result) {
         return new ResultHolder<>(result);
     }

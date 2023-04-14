@@ -152,7 +152,7 @@ class DefaultFutureCombiner implements FutureCombiner {
             // 剩余的任务不足以达到成功，则立即失败；包含了require大于futureCount的情况
             if (succeedCount + (futureCount - doneCount) < successRequire) {
                 if (cause == null) {
-                    cause = TaskInsufficientException.create(futureCount, successRequire);
+                    cause = TaskInsufficientException.create(futureCount, doneCount, succeedCount, successRequire);
                 }
                 return aggregatePromise.completeExceptionally(cause);
             }

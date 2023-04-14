@@ -179,7 +179,6 @@ public class FunctionUtils {
                 callable.call();
             } catch (Exception e) {
                 ExceptionUtils.rethrow(e);
-                ExceptionUtils.rethrow(e);
             }
         }
 

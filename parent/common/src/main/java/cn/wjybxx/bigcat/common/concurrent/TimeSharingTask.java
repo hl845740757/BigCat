@@ -16,22 +16,20 @@
 
 package cn.wjybxx.bigcat.common.concurrent;
 
-import java.util.concurrent.Callable;
-
 /**
  * 可分时运行的任务
  *
  * @author wjybxx
  * date 2023/4/3
  */
-public interface TimeSharingCallable<V> extends Callable<ResultHolder<V>> {
+public interface TimeSharingTask<V> {
 
     /**
      * null可能是一个合理的返回值，因此需要处理。
-     * 封装的代价并不高，因为此类任务并不常见。
+     * 封装的代价并不高，因为此类任务并不常见，而且只在完成时封装。
      *
      * @return 如果返回值不为null，则表示已完成；返回null表示还需要运行。
      */
-    ResultHolder<V> call() throws Exception;
+    ResultHolder<V> step() throws Exception;
 
 }

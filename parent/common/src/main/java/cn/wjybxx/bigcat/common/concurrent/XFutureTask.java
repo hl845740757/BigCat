@@ -39,29 +39,25 @@ class XFutureTask<V> extends XCompletableFuture<V> implements RunnableFuture<V> 
     private static final int STATE_UNCANCELLABLE = 1;
     private static final int STATE_WAIT_DONE = 2;
 
-    private Object task;
+    private Callable<V> task;
     @SuppressWarnings("unused")
     private volatile int state;
 
-    public XFutureTask(FutureContext ctx, Callable<V> task) {
+    XFutureTask(FutureContext ctx, Callable<V> task) {
         super(ctx);
         this.task = task;
     }
 
-    public XFutureTask(FutureContext ctx, Runnable task, V result) {
+    XFutureTask(FutureContext ctx, Runnable task, V result) {
         super(ctx);
-        if (result == null) {
-            this.task = task;
-        } else {
-            this.task = new RunnableAdapter<>(task, result);
-        }
+        this.task = Adapters.toCallable(task, result);
     }
 
     @Override
     public void run() {
         try {
             if (internal_setUncancellable()) {
-                V result = runTask();
+                V result = task.call();
                 internal_doComplete(result);
             }
         } catch (Throwable ex) {
@@ -70,25 +66,8 @@ class XFutureTask<V> extends XCompletableFuture<V> implements RunnableFuture<V> 
         }
     }
 
-    final V runTask() throws Exception {
-        final Object task = this.task;
-        if (task instanceof Callable<?>) {
-            @SuppressWarnings("unchecked") Callable<V> callable = (Callable<V>) task;
-            return callable.call();
-        } else {
-            Runnable runnable = (Runnable) task;
-            runnable.run();
-            return null;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    final TimeSharingContext<V> asTimeSharingContext() {
-        Object task = this.task;
-        if (task instanceof TimeSharingContext<?>) {
-            return (TimeSharingContext<V>) task;
-        }
-        return null;
+    final Callable<V> getTask() {
+        return task;
     }
 
     private void clean() {
@@ -173,38 +152,6 @@ class XFutureTask<V> extends XCompletableFuture<V> implements RunnableFuture<V> 
     @Override
     public final boolean equals(Object obj) {
         return this == obj;
-    }
-
-    //
-    private static Object unwrapTask(Object task) {
-        if (task == null) {
-            return null;
-        }
-        if (task instanceof XFutureTask.RunnableAdapter<?> adapter) {
-            return adapter.task;
-        } else {
-            return task;
-        }
-    }
-
-    private static final class RunnableAdapter<T> implements Callable<T> {
-
-        private final Runnable task;
-        private final T result;
-
-        RunnableAdapter(Runnable task, T result) {
-            this.task = task;
-            this.result = result;
-        }
-
-        public T call() {
-            task.run();
-            return result;
-        }
-
-        public String toString() {
-            return super.toString() + "[Wrapped task = " + task + "]";
-        }
     }
 
     // VarHandle mechanics

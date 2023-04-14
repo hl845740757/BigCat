@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.common.async;
 
-import cn.wjybxx.bigcat.common.concurrent.TimeSharingCallable;
+import cn.wjybxx.bigcat.common.concurrent.TimeSharingTask;
 import cn.wjybxx.bigcat.common.concurrent.TimeSharingTimeoutException;
 
 import javax.annotation.Nonnull;
@@ -110,7 +110,7 @@ public interface SameThreadScheduledExecutor extends SameThreadExecutor {
      * @see #scheduleWithFixedDelay(Runnable, long, long)
      */
     @Nonnull
-    <V> ScheduledFluentFuture<V> timeSharingWithFixedDelay(@Nonnull TimeSharingCallable<V> task, long initialDelay, long period,
+    <V> ScheduledFluentFuture<V> timeSharingWithFixedDelay(@Nonnull TimeSharingTask<V> task, long initialDelay, long period,
                                                            long timeout);
 
     /**
@@ -121,6 +121,6 @@ public interface SameThreadScheduledExecutor extends SameThreadExecutor {
      * @see #scheduleAtFixedRate(Runnable, long, long)
      */
     @Nonnull
-    <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(@Nonnull TimeSharingCallable<V> task, long initialDelay, long period,
+    <V> ScheduledFluentFuture<V> timeSharingAtFixedRate(@Nonnull TimeSharingTask<V> task, long initialDelay, long period,
                                                         long timeout);
 }

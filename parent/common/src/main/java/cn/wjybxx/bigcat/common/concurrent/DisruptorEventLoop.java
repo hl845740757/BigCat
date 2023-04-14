@@ -224,6 +224,9 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
             event.task = task;
             if (task instanceof XScheduledFutureTask<?> futureTask) {
                 futureTask.setId(sequence); // nice
+                if (futureTask.isEnable(ScheduleFeature.LOW_PRIORITY)) {
+                    futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
+                }
             }
             ringBuffer.publish(sequence);
 
@@ -334,9 +337,6 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         if (isShuttingDown()) {
             futureTask.cancel(false);
             return;
-        }
-        if (triggered) {
-            futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID); // 降低优先级
         }
         scheduledTaskQueue.add(futureTask);
     }
@@ -577,17 +577,15 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
 
                 int preQueueId = queueTask.getQueueId();
                 taskQueue.poll();
-
                 if (shuttingDownMode) {
-                    // 关闭模式下，不再重复执行任务
+                    // 关闭模式下，不执行低优先级任务，不再重复执行任务
                     if (preQueueId == LOWER_PRIORITY_QUEUE_ID || queueTask.trigger(tickTime)) {
                         queueTask.cancelWithoutRemove(false);
                     }
                 } else {
                     // 非关闭模式下，检测批处理限制 -- 这里暂不响应关闭
                     count++;
-                    if (queueTask.trigger(tickTime)) { // 已完成首次执行的周期任务降低优先级
-                        queueTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
+                    if (queueTask.trigger(tickTime)) {
                         taskQueue.offer(queueTask);
                     }
                     if (preQueueId == LOWER_PRIORITY_QUEUE_ID && (count >= limit)) {

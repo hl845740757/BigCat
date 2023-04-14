@@ -154,6 +154,9 @@ public interface EventLoopGroup extends ScheduledExecutorService {
     @Override
     IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
 
+    /** 通过builder执行更加灵活的任务 */
+    <V> IScheduledFuture<V> schedule(ScheduleBuilder<V> builder);
+
     // endregion
 
     // region 不情愿的api

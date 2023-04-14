@@ -18,34 +18,21 @@ package cn.wjybxx.bigcat.common.concurrent;
 
 import cn.wjybxx.bigcat.common.annotation.Internal;
 
-import java.util.concurrent.Callable;
-
 /**
  * @author wjybxx
  * date 2023/4/12
  */
 @Internal
-public class TimeSharingContext<V> implements Callable<V> {
+public final class TimeSharingContext {
 
-    private final Callable<ResultHolder<V>> task;
     /** 剩余时间 */
     private long timeLeft;
     /** 上次触发时间，用于固定延迟下计算deltaTime */
     private long lastTriggerTime;
 
-    public TimeSharingContext(Callable<ResultHolder<V>> task, long timeout, long timeCreate) {
-        this.task = task;
+    public TimeSharingContext(long timeout, long timeCreate) {
         this.timeLeft = timeout;
         this.lastTriggerTime = timeCreate;
-    }
-
-    @Override
-    public V call() throws Exception {
-        throw new AssertionError();
-    }
-
-    public Callable<ResultHolder<V>> getTask() {
-        return task;
     }
 
     /**
@@ -61,6 +48,10 @@ public class TimeSharingContext<V> implements Callable<V> {
             timeLeft -= realTriggerTime - lastTriggerTime;
             lastTriggerTime = realTriggerTime;
         }
+    }
+
+    public long getTimeLeft() {
+        return timeLeft;
     }
 
     public boolean isTimeout() {
