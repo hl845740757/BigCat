@@ -39,6 +39,5 @@
             <artifactId>jctools-core</artifactId>
             <version>${jctools.version}</version>
         </dependency>
-
     </dependencies>
 </project>

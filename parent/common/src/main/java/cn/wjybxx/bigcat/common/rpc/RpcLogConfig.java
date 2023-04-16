@@ -80,24 +80,14 @@ public class RpcLogConfig {
     }
 
     public static class Builder {
-        /**
-         * 发送的请求日志级别
-         */
+
+        /** 发送的请求日志级别 */
         private int sndRequestLogLevel = DebugLogLevel.NONE;
-
-        /**
-         * 发送的响应日志级别
-         */
+        /** 发送的响应日志级别 */
         private int sndResponseLogLevel = DebugLogLevel.NONE;
-
-        /**
-         * 接收到的请求的日志级别
-         */
+        /** 接收到的请求的日志级别 */
         private int rcvRequestLogLevel = DebugLogLevel.NONE;
-
-        /**
-         * 接收到的响应的日志级别
-         */
+        /** 接收到的响应的日志级别 */
         private int rcvResponseLogLevel = DebugLogLevel.NONE;
 
         public int getSndRequestLogLevel() {

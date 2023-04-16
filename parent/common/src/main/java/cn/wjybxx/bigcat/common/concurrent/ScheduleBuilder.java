@@ -130,10 +130,11 @@ public class ScheduleBuilder<V> {
         if (count < 0) {
             throw new IllegalArgumentException("invalid count " + count);
         }
+        // 这里需要max(0,)，否则可能使得timeout的值越界，initialDelay可能是小于0的
         if (count == 0) {
-            this.timeout = 0;
+            this.timeout = Math.max(0, initialDelay);
         } else {
-            this.timeout = initialDelay + (count - 1) * period;
+            this.timeout = Math.max(0, initialDelay + (count - 1) * period);
         }
         return this;
     }

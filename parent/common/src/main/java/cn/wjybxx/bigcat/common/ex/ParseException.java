@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.apt;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package cn.wjybxx.bigcat.common.ex;
 
 /**
- * 用于标注关联的源文件
- * 保留策略修改为Runtime，我们可以在运行时查找关联的类，从而进行动态绑定
+ * 用于表达解析错误
  *
  * @author wjybxx
- * date 2023/4/12
+ * date 2023/4/16
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface SourceFieldRef {
+public class ParseException extends RuntimeException {
 
-    Class<?> value();
+    public ParseException() {
+    }
 
+    public ParseException(String message) {
+        super(message);
+    }
+
+    public ParseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ParseException(Throwable cause) {
+        super(cause);
+    }
+
+    public ParseException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

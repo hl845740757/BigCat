@@ -29,13 +29,13 @@ public interface FutureContext {
 
     /**
      * 为新的下游任务分配一个context
-     * 1.默认情况下共享同一个context，返回自身时要小心线程安全问题
-     * 2.也可以返回null
+     * 1.默认返回Null，比较安全
+     * 2.如果期望返回自己或返回新的context，可以重写该实现 -- 返回自身时要小心线程安全问题。
      *
-     * @param future 当前future - 非新的future
+     * @param future 当前future
      */
     default FutureContext downContext(XCompletableFuture<?> future) {
-        return this;
+        return null;
     }
 
     /**

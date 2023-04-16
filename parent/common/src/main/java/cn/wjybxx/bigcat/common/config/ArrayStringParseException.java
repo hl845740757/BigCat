@@ -14,24 +14,31 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.apt;
+package cn.wjybxx.bigcat.common.config;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import cn.wjybxx.bigcat.common.ex.ParseException;
 
 /**
- * 用于标注关联的源文件
- * 保留策略修改为Runtime，我们可以在运行时查找关联的类，从而进行动态绑定
+ * 该异常用于表示用户给定的字符串不是一个合法的数组格式
  *
  * @author wjybxx
- * date 2023/4/12
+ * date 2023/4/16
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface SourceFieldRef {
+public class ArrayStringParseException extends ParseException {
 
-    Class<?> value();
+    public ArrayStringParseException() {
+    }
+
+    public ArrayStringParseException(String message) {
+        super(message);
+    }
+
+    public ArrayStringParseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ArrayStringParseException(Throwable cause) {
+        super(cause);
+    }
 
 }

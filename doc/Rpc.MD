@@ -43,6 +43,12 @@ class RpcServiceExample {
     public CompletableFuture<String> helloAsync1(String msg) {
         return FutureUtils.newSucceededFuture(msg);
     }
+    
+    /** 测试异步返回 -- 单线程Future */
+    @RpcMethod(methodId = 7)
+    public FluentFuture<String> helloAsync2(String msg) {
+        return SameThreads.newSucceededFuture(msg);
+    }
 }
 
 class RpcUserExample {
@@ -56,7 +62,7 @@ class RpcUserExample {
                 });
 
         String result = rpcClient.syncCall(ServerNodeSpec.GAME,
-                RpcServiceExampleProxy.helloAsync("这是一个同步调用，远程异步执行"));
+                RpcServiceExampleProxy.helloAsync2("这是一个同步调用，远程异步执行"));
         System.out.println(result);
     }
 

@@ -16,14 +16,15 @@
 
 package cn.wjybxx.bigcat.common.codec.document.base;
 
+import cn.wjybxx.bigcat.common.codec.EntityConverterUtils;
 import cn.wjybxx.bigcat.common.codec.TypeArgInfo;
 import cn.wjybxx.bigcat.common.codec.binary.BinaryPojoCodecScanIgnore;
 import cn.wjybxx.bigcat.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.bigcat.common.codec.document.DocumentReader;
 import cn.wjybxx.bigcat.common.codec.document.DocumentWriter;
-import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 
 /**
  * @author wjybxx
@@ -53,10 +54,10 @@ public class BooleanArrayCodec implements DocumentPojoCodecImpl<boolean[]> {
 
     @Override
     public boolean[] readObject(DocumentReader reader, TypeArgInfo<?> typeArgInfo) {
-        BooleanArrayList result = new BooleanArrayList();
+        ArrayList<Boolean> result = new ArrayList<>();
         while (!reader.isAtEndOfObject()) {
             result.add(reader.readBoolean(reader.nextElementName()));
         }
-        return result.toBooleanArray();
+        return EntityConverterUtils.convertList2Array(result, boolean[].class);
     }
 }

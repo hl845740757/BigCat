@@ -37,6 +37,11 @@ public class EventLoopFutureContext implements FutureContext {
     }
 
     @Override
+    public FutureContext downContext(XCompletableFuture<?> future) {
+        return this;
+    }
+
+    @Override
     public boolean checkDeadlock(XCompletableFuture<?> future) {
         EventLoop eventLoop = this.eventLoop;
         return eventLoop != null && eventLoop.inEventLoop();

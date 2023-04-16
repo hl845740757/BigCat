@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.apt;
+package cn.wjybxx.bigcat.common.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -22,16 +22,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 用于标注关联的源文件
- * 保留策略修改为Runtime，我们可以在运行时查找关联的类，从而进行动态绑定
+ * 用于标记一个类是无状态的，也就是线程安全的
  *
  * @author wjybxx
- * date 2023/4/12
+ * date 2023/4/15
  */
-@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface SourceFieldRef {
-
-    Class<?> value();
+@Target(ElementType.TYPE)
+public @interface Stateless {
 
 }

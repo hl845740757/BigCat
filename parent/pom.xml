@@ -65,6 +65,7 @@
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>
+        <jodd.version>5.3.0</jodd.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>4.0.1</jctools.version>
 
@@ -88,7 +89,6 @@
             <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -96,29 +96,26 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- 我们的APT工具 -->
-        <dependency>
-            <groupId>io.wjybxx.bigcat</groupId>
-            <artifactId>apt</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
         <!-- findbugs 个人比较喜欢用 -->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>${jsr305.version}</version>
         </dependency>
-        <!-- 基础类型集合 -->
+
+        <!-- 我们的APT工具 -->
         <dependency>
-            <groupId>it.unimi.dsi</groupId>
-            <artifactId>fastutil</artifactId>
-            <version>${fastutil.version}</version>
+            <groupId>io.wjybxx.bigcat</groupId>
+            <artifactId>apt</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- 常用开源工具 -->
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil-core</artifactId>
+            <version>${fastutil.version}</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -130,6 +127,12 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>${commons-codec.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.jodd/jodd-core -->
+        <dependency>
+            <groupId>org.jodd</groupId>
+            <artifactId>jodd-core</artifactId>
+            <version>${jodd.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->

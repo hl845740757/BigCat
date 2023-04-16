@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.common.apt;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package cn.wjybxx.bigcat.common.config;
 
 /**
- * 用于标注关联的源文件
- * 保留策略修改为Runtime，我们可以在运行时查找关联的类，从而进行动态绑定
- *
  * @author wjybxx
- * date 2023/4/12
+ * date 2023/4/15
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface SourceFieldRef {
+public interface CellProvider {
 
-    Class<?> value();
+    SheetCell getCell(String name);
 
 }

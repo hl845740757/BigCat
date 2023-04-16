@@ -592,8 +592,12 @@ public class CollectionUtils {
         return Map.copyOf(src);
     }
 
-    // endregion
+    /** 转换为不可变的{@link LinkedHashMap}，通常用于需要保留Key的顺序的场景 */
+    public static <K, V> Map<K, V> toImmutableLinkedHashMap(@Nullable Map<K, V> src) {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(src));
+    }
 
+    // endregion
 
     // region stream
 

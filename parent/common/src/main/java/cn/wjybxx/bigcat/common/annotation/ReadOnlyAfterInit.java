@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * @author wjybxx
  * date 2023/4/4
  */
-@Target({ElementType.FIELD})
+@Target({ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.SOURCE)
 public @interface ReadOnlyAfterInit {
 
