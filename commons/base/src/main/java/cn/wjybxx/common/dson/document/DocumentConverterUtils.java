@@ -16,15 +16,20 @@
 
 package cn.wjybxx.common.dson.document;
 
-import cn.wjybxx.common.dson.ConverterUtils;
+import cn.wjybxx.common.dson.DocClassId;
+import cn.wjybxx.common.dson.codec.ClassIdRegistries;
+import cn.wjybxx.common.dson.codec.ClassIdRegistry;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.document.codecs.*;
-import org.apache.commons.lang3.math.NumberUtils;
+import cn.wjybxx.common.props.IProperties;
+import cn.wjybxx.common.props.PropertiesLoader;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author wjybxx
@@ -36,32 +41,25 @@ public class DocumentConverterUtils extends ConverterUtils {
     public static final String NUMBER_KEY = "number";
 
     /** 数组下标名字缓存大小 */
-    private static final int NAME_CACHE_SIZE = NumberUtils.toInt(
-            System.getProperty("cn.wjybxx.common.codec.document.namecahesize"), 200);
+    private static final int NAME_CACHE_SIZE;
     /** 下标字符串缓存 */
-    private static final String[] arrayElementNameCache = new String[NAME_CACHE_SIZE];
+    private static final String[] arrayElementNameCache;
 
-    private static final DocumentPojoCodec<Object[]> OBJECT_ARRAY_CODEC = newCodec(new ObjectArrayCodec());
-    @SuppressWarnings("rawtypes")
-    private static final DocumentPojoCodec<Set> SET_CODEC = newCodec(new SetCodec());
-    @SuppressWarnings("rawtypes")
-    private static final DocumentPojoCodec<Collection> COLLECTION_CODEC = newCodec(new CollectionCodec());
-    @SuppressWarnings("rawtypes")
-    private static final DocumentPojoCodec<Map> MAP_CODEC = newCodec(new MapCodec());
-
-    /** 默认name注册表 */
-//    private static final TypeNameRegistry TYPE_NAME_REGISTRY;
-
+    /** 默认id注册表 */
+    private static final ClassIdRegistry<DocClassId> CLASS_ID_REGISTRY;
     /** 默认codec注册表 */
-//    private static final DocumentCodecRegistry CODEC_REGISTRY;
+    private static final DocumentCodecRegistry CODEC_REGISTRY;
 
     static {
-        String[] nameCache = arrayElementNameCache;
+        IProperties properties = PropertiesLoader.wrapProperties(System.getProperties());
+        NAME_CACHE_SIZE = properties.getAsInt("cn.wjybxx.common.codec.document.namecahesize", 200);
+
+        String[] nameCache = arrayElementNameCache = new String[NAME_CACHE_SIZE];
         for (int idx = 0; idx < nameCache.length; idx++) {
             nameCache[idx] = Integer.toString(idx).intern();
         }
 
-        List<DocumentPojoCodec<?>> DEFAULT_CODECS = List.of(
+        List<Map.Entry<DocumentPojoCodec<?>, DocClassId>> entryList = List.of(
                 // 基础类型的数组codec用于避免拆装箱，提高性能
                 newCodec(new IntArrayCodec()),
                 newCodec(new LongArrayCodec()),
@@ -72,19 +70,73 @@ public class DocumentConverterUtils extends ConverterUtils {
                 newCodec(new ShortArrayCodec()),
                 newCodec(new CharArrayCodec()),
 
-                OBJECT_ARRAY_CODEC,
-                SET_CODEC,
-                COLLECTION_CODEC,
-                MAP_CODEC
+                newCodec(new ObjectArrayCodec()),
+                newCodec(new SetCodec()),
+                newCodec(new CollectionCodec()),
+                newCodec(new MapCodec())
         );
-//        TYPE_NAME_REGISTRY = TypeNameRegistries.fromTypeNameMap(DEFAULT_CODECS.stream()
-//                .collect(Collectors.toMap(DocumentPojoCodec::getEncoderClass, DocumentPojoCodec::getTypeName)));
-//        CODEC_REGISTRY = DocumentCodecRegistries.fromPojoCodecs(DEFAULT_CODECS);
+        final Map<Class<?>, DocClassId> classIdMap = entryList.stream()
+                .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue));
+        CLASS_ID_REGISTRY = ClassIdRegistries.fromClassIdMap(classIdMap);
+
+        Map<Class<?>, DocumentPojoCodec<?>> codecMap = DocumentCodecRegistries.newCodecMap(entryList.stream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList()));
+        CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
     }
 
-    private static <T> DocumentPojoCodec<T> newCodec(DocumentPojoCodecImpl<T> codecImpl) {
-        return new DocumentPojoCodec<>(codecImpl);
+    private static Map.Entry<DocumentPojoCodec<?>, DocClassId> newCodec(DocumentPojoCodecImpl<?> codecImpl) {
+        return Map.entry(new DocumentPojoCodec<>(codecImpl), DocClassId.of(codecImpl.getTypeName()));
     }
+
+    public static ClassIdRegistry<DocClassId> getDefaultTypeIdRegistry() {
+        return CLASS_ID_REGISTRY;
+    }
+
+    public static DocumentCodecRegistry getDefaultCodecRegistry() {
+        return CODEC_REGISTRY;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static class DefaultCodecRegistry implements DocumentCodecRegistry {
+
+        final Map<Class<?>, DocumentPojoCodec<?>> codecMap;
+
+        final DocumentPojoCodec<Object[]> objectArrayCodec;
+        final DocumentPojoCodec<Set> setCodec;
+        final DocumentPojoCodec<Collection> collectionCodec;
+        final DocumentPojoCodec<Map> mapCodec;
+
+        private DefaultCodecRegistry(Map<Class<?>, DocumentPojoCodec<?>> codecMap) {
+            this.codecMap = codecMap;
+
+            this.objectArrayCodec = getCodec(codecMap, Object[].class);
+            this.setCodec = getCodec(codecMap, Set.class);
+            this.collectionCodec = getCodec(codecMap, Collection.class);
+            this.mapCodec = getCodec(codecMap, Map.class);
+        }
+
+        private static <T> DocumentPojoCodec<T> getCodec(Map<Class<?>, DocumentPojoCodec<?>> codecMap, Class<T> clazz) {
+            DocumentPojoCodec<T> codec = (DocumentPojoCodec<T>) codecMap.get(clazz);
+            if (codec == null) throw new IllegalArgumentException(clazz.getName());
+            return codec;
+        }
+
+        @Nullable
+        @Override
+        public <T> DocumentPojoCodec<T> get(Class<T> clazz) {
+            DocumentPojoCodec<?> codec = codecMap.get(clazz);
+            if (codec != null) return (DocumentPojoCodec<T>) codec;
+
+            if (clazz.isArray()) return (DocumentPojoCodec<T>) objectArrayCodec;
+            if (Set.class.isAssignableFrom(clazz)) return (DocumentPojoCodec<T>) setCodec;
+            if (Collection.class.isAssignableFrom(clazz)) return (DocumentPojoCodec<T>) collectionCodec;
+            if (Map.class.isAssignableFrom(clazz)) return (DocumentPojoCodec<T>) mapCodec;
+            return null;
+        }
+    }
+
+    // region
 
     /** 获取数组idx对于的字符串表示 */
     public static String arrayElementName(int idx) {
@@ -131,5 +183,6 @@ public class DocumentConverterUtils extends ConverterUtils {
         }
         return null;
     }
+    // endregion
 
 }

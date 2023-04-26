@@ -34,7 +34,7 @@ public interface DsonBinWriter extends AutoCloseable {
     void close();
 
     /**
-     * 编码的时候，用户总是习惯number(name) 和 value同时写入，
+     * 编码的时候，用户总是习惯 name和value同时写入，
      * 但在写Array或Object成员的时候，不能同时完成，需要先写入number再开始写值
      */
     void writeName(int name);
@@ -79,8 +79,10 @@ public interface DsonBinWriter extends AutoCloseable {
 
     /**
      * 开始写一个数组
+     * 1.数组内元素没有名字，因此传0即可
+     *
      * <pre>{@code
-     *      writer.writeStartArray(name, DocObjectHeader.OBJECT);
+     *      writer.writeStartArray(name, DocClassId.OBJECT);
      *      for (String coderName: coderNames) {
      *          writer.writeString(0, coderName);
      *      }
@@ -92,10 +94,6 @@ public interface DsonBinWriter extends AutoCloseable {
         writeStartArray(classId);
     }
 
-    /**
-     * 用于一个Codec开始写给定对象
-     * （其它方法用于写嵌套对象）
-     */
     void writeStartArray(BinClassId classId);
 
     void writeEndArray();
@@ -114,10 +112,6 @@ public interface DsonBinWriter extends AutoCloseable {
         writeStartObject(classId);
     }
 
-    /**
-     * 用于一个Codec开始写给定对象
-     * （其它方法用于写嵌套对象）
-     */
     void writeStartObject(BinClassId classId);
 
     void writeEndObject();

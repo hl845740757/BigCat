@@ -68,13 +68,13 @@ public interface DsonDocReader extends AutoCloseable {
     /**
      * 读取下一个值的name
      */
-    int readName();
+    String readName();
 
     /**
      * 读取下一个值的name
      * 如果下一个name不等于期望的值，则抛出异常
      */
-    void readName(String expected);
+    void readName(String name);
 
     /**
      * 获取当前的数据类型

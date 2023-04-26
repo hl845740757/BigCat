@@ -19,12 +19,21 @@ package cn.wjybxx.common.dson.document;
 import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wjybxx
  * date 2023/4/4
  */
 public class DocumentCodecRegistries {
+
+    public static Map<Class<?>, DocumentPojoCodec<?>> newCodecMap(List<DocumentPojoCodec<?>> pojoCodecs) {
+        IdentityHashMap<Class<?>, DocumentPojoCodec<?>> codecMap = new IdentityHashMap<>(pojoCodecs.size());
+        for (DocumentPojoCodec<?> codec : pojoCodecs) {
+            codecMap.put(codec.getEncoderClass(), codec);
+        }
+        return codecMap;
+    }
 
     public static DocumentCodecRegistry fromPojoCodecs(List<DocumentPojoCodec<?>> pojoCodecs) {
         final IdentityHashMap<Class<?>, DocumentPojoCodec<?>> identityHashMap = new IdentityHashMap<>(pojoCodecs.size());

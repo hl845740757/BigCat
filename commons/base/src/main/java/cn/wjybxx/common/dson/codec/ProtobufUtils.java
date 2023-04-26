@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.binary.codecs;
+package cn.wjybxx.common.dson.codec;
 
 import cn.wjybxx.common.ClassScanner;
 import com.google.protobuf.*;
@@ -33,13 +33,13 @@ import java.util.stream.Collectors;
  * @author wjybxx
  * date 2023/4/1
  */
-public class ProtoUtils {
+public class ProtobufUtils {
 
     public static Set<Class<?>> scan(Set<String> packages) {
         return packages.stream()
                 .map(scanPackage -> ClassScanner.findClasses(scanPackage,
                         name -> name.indexOf('$') >= 0, // 协议都是内部类
-                        ProtoUtils::isProtoBufferClass))
+                        ProtobufUtils::isProtoBufferClass))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toUnmodifiableSet());
     }

@@ -16,7 +16,12 @@
 
 package cn.wjybxx.common.dson.document;
 
-import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.EnumUtils;
+import cn.wjybxx.common.dson.AutoTypeArgs;
+import cn.wjybxx.common.dson.ClassImpl;
+import cn.wjybxx.common.dson.DsonEnum;
+import cn.wjybxx.common.dson.FieldImpl;
+import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 
 import java.lang.annotation.*;
 
@@ -25,7 +30,7 @@ import java.lang.annotation.*;
  *
  * <h3>注解处理器</h3>
  * 对于带有该注解的类：
- * 1. 如果是枚举，必须实现{@link DsonEnum}并提供静态非private的{@code forNumber(int)}方法 - {@link DsonEnums#mapping(DsonEnum[])}。
+ * 1. 如果是枚举，必须实现{@link DsonEnum}并提供静态非private的{@code forNumber(int)}方法 - {@link EnumUtils#mapping(DsonEnum[])}。
  * 2. 如果是普通类，必须提供<b>非私有无参构造方法</b>，或提供非私有的{@link DocumentObjectReader}的单参构造方法。
  * 3. 对于普通类，所有托管给生成代码读的字段，必须提供setter或直接写权限。
  * 4. 对于普通类，所有托管给生成代码写的字段，必须提供getter或直接读权限。
@@ -76,7 +81,7 @@ public @interface DocumentSerializable {
     /**
      * 类型别名。
      * 1.默认使用{@link Class#getSimpleName()}作为类型名。
-     * 2.真正编解码的类型别名取决于{@link TypeNameRegistry}
+     * 2.真正编解码的类型别名取决于{@link ClassIdRegistry}
      */
     String typeAlias() default "";
 

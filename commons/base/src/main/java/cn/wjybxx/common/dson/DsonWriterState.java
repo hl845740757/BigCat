@@ -34,7 +34,7 @@ public enum DsonWriterState {
     INITIAL,
 
     /**
-     * 等待写入name(fullNumber) -- Object循环 NAME-VALUE
+     * 等待写入name(fullNumber)
      */
     NAME,
     /**

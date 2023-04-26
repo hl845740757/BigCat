@@ -16,12 +16,12 @@
 
 package cn.wjybxx.common.dson.binary.codecs;
 
-import cn.wjybxx.common.dson.ConverterUtils;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
 import cn.wjybxx.common.dson.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.dson.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

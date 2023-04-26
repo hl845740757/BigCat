@@ -16,48 +16,54 @@
 
 package cn.wjybxx.common.dson.document.codecs;
 
+import cn.wjybxx.common.dson.DsonBinary;
 import cn.wjybxx.common.dson.TypeArgInfo;
-import cn.wjybxx.common.dson.binary.BinaryPojoCodecScanIgnore;
-import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;
 import cn.wjybxx.common.dson.document.DocumentPojoCodecImpl;
+import com.google.protobuf.MessageLite;
+import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 
 /**
+ * message会写为具有一个{@link DsonBinary}字段的Object
+ *
  * @author wjybxx
- * date 2023/4/4
+ * date 2023/4/2
  */
-@BinaryPojoCodecScanIgnore
-public class BooleanArrayCodec implements DocumentPojoCodecImpl<boolean[]> {
+public class MessageCodec<T extends MessageLite> implements DocumentPojoCodecImpl<T> {
+
+    private final Class<T> clazz;
+    private final Parser<T> parser;
+    private final String typeName;
+
+    public MessageCodec(Class<T> clazz, Parser<T> parser) {
+        this.clazz = clazz;
+        this.parser = parser;
+        this.typeName = "Protobuf." + clazz.getSimpleName();
+    }
 
     @Nonnull
     @Override
     public String getTypeName() {
-        return "boolean[]";
+        return typeName;
     }
 
     @Nonnull
     @Override
-    public Class<boolean[]> getEncoderClass() {
-        return boolean[].class;
+    public Class<T> getEncoderClass() {
+        return clazz;
     }
 
     @Override
-    public void writeObject(boolean[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
-        for (boolean e : instance) {
-            writer.writeBoolean(null, e);
-        }
+    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+        writer.writeMessage("value", instance);
     }
 
     @Override
-    public boolean[] readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        ArrayList<Boolean> result = new ArrayList<>();
-        while (!reader.isAtEndOfObject()) {
-            result.add(reader.readBoolean(null));
-        }
-        return ConverterUtils.convertList2Array(result, boolean[].class);
+    public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        return reader.readMessage("value", parser);
     }
+
 }

@@ -76,12 +76,6 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     DsonExtInt64 readExtInt64(int name);
 
-    /**
-     * 注意:
-     * 该方法和{@link #readObject(int)}并不相同，该方法只能从Binary类型中读取一个Message，
-     * 而{@link #readObject(int)}解码的是Object类型的Message对象。
-     */
-    <T> T readMessage(int name, @Nonnull Parser<T> parser);
     // endregion
 
     // region object封装
@@ -164,6 +158,13 @@ public interface BinaryObjectReader extends AutoCloseable {
     void skipValue();
 
     void skipToEndOfObject();
+
+    /**
+     * 注意:
+     * 该方法和{@link #readObject(int)}并不相同，该方法只能从Binary类型中读取一个Message，
+     * 而{@link #readObject(int)}解码的是Object类型的Message对象。
+     */
+    <T> T readMessage(int name, @Nonnull Parser<T> parser);
 
     byte[] readValueAsBytes(int name);
 

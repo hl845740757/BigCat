@@ -16,6 +16,9 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.props.IProperties;
+import cn.wjybxx.common.props.PropertiesLoader;
+
 import java.util.List;
 
 /**
@@ -157,10 +160,35 @@ public final class Dsons {
 
     // region 文档
 
+    /**
+     * 在文档数据解码中是否启用 字段字符串池化
+     * 启用池化在大量相同字段名时可能很好地降低内存占用，默认开启
+     * 字段名几乎都是常量，因此命中率几乎百分之百。
+     */
+    public static final boolean enableFieldIntern;
+    /**
+     * 在文档数据解码中是否启用 类型别名字符串池化
+     * 类型数通常不多，开启池化对编解码性能影响较小，默认开启
+     * 类型别名也基本是常量，因此命中率几乎百分之百
+     */
+    public static final boolean enableClassIntern;
+
+    static {
+        IProperties properties = PropertiesLoader.wrapProperties(System.getProperties());
+        enableFieldIntern = properties.getAsBool("cn.wjybxx.common.dson.enableFieldIntern", true);
+        enableClassIntern = properties.getAsBool("cn.wjybxx.common.dson.enableClassIntern", true);
+    }
+
     /** 文档型编码中，一个name最大字节数 */
     public static final int NAME_MAX_BYTES = 32767;
 
+    public static String internField(String fieldName) {
+        return enableFieldIntern ? fieldName.intern() : fieldName;
+    }
 
+    public static String internClass(String className) {
+        return enableClassIntern ? className.intern() : className;
+    }
     // endregion
 
 

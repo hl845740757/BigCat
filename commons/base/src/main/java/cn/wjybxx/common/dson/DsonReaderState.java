@@ -35,9 +35,8 @@ public enum DsonReaderState {
     INITIAL,
 
     /**
-     * 已确定是一个Array或Object，已读取Class，等待调用start方法
+     * 已确定是一个Array或Object，已读取ClassId，等待调用start方法
      * 之所以要支持这个中间状态，是考虑到input频繁peek和回滚的开销较大。
-     * 每多一个中间状态，复杂度就蹭蹭往上涨...
      */
     WAIT_START_OBJECT,
     /**

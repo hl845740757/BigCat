@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.codec;
+
+import cn.wjybxx.common.dson.TypeArgInfo;
+import cn.wjybxx.common.dson.io.Chunk;
 
 import javax.annotation.Nonnull;
 
@@ -22,14 +25,14 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/3/31
  */
-public interface Converter<T> {
+public interface Converter {
 
     /**
      * 将一个对象写入源
      * 如果对象的运行时类型和{@link TypeArgInfo#declaredType}一致，则会省去编码结果中的类型信息
      */
     @Nonnull
-    T write(Object value, @Nonnull TypeArgInfo<?> typeArgInfo);
+    byte[] write(Object value, @Nonnull TypeArgInfo<?> typeArgInfo);
 
     /**
      * 从数据源中读取一个对象
@@ -37,14 +40,37 @@ public interface Converter<T> {
      * @param source      数据源
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
-    <U> U read(T source, TypeArgInfo<U> typeArgInfo);
+    default <U> U read(byte[] source, TypeArgInfo<U> typeArgInfo) {
+        return read(new Chunk(source), typeArgInfo);
+    }
+
+    /**
+     * @param value       要写入的对象
+     * @param chunk       二进制块，写入的字节数设置到{@link Chunk}
+     * @param typeArgInfo 类型参数信息
+     */
+    void write(Object value, Chunk chunk, TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * @param chunk       二进制块，读取的字节数设置到{@link Chunk}
+     * @param typeArgInfo 类型参数信息
+     * @return 解码结果，顶层对象不应该是null
+     */
+    <U> U read(Chunk chunk, TypeArgInfo<U> typeArgInfo);
+
+    /** @return 写入的字节数 */
+    default int write(Object value, byte[] source, TypeArgInfo<?> typeArgInfo) {
+        Chunk chunk = new Chunk(source);
+        write(value, chunk, typeArgInfo);
+        return chunk.getUsed();
+    }
 
     @Nonnull
-    default T write(Object value) {
+    default byte[] write(Object value) {
         return write(value, TypeArgInfo.OBJECT);
     }
 
-    default Object read(@Nonnull T source) {
+    default Object read(@Nonnull byte[] source) {
         return read(source, TypeArgInfo.OBJECT);
     }
 
@@ -60,7 +86,7 @@ public interface Converter<T> {
         if (value == null) {
             return null;
         }
-        final T out = write(value, typeArgInfo);
+        final byte[] out = write(value, typeArgInfo);
         return read(out, typeArgInfo);
     }
 

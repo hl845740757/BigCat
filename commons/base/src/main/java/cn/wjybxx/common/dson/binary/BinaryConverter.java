@@ -16,11 +16,10 @@
 
 package cn.wjybxx.common.dson.binary;
 
-import cn.wjybxx.common.dson.Converter;
-import cn.wjybxx.common.dson.TypeArgInfo;
-import cn.wjybxx.common.dson.io.Chunk;
+import cn.wjybxx.common.dson.BinClassId;
+import cn.wjybxx.common.dson.codec.ClassIdRegistry;
+import cn.wjybxx.common.dson.codec.Converter;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
@@ -34,40 +33,10 @@ import javax.annotation.concurrent.ThreadSafe;
  * date 2023/3/31
  */
 @ThreadSafe
-public interface BinaryConverter extends Converter<byte[]> {
-
-    /**
-     * @param value       要写入的对象
-     * @param chunk       二进制块，写入的字节数设置到{@link Chunk}
-     * @param typeArgInfo 类型参数信息
-     */
-    void write(Object value, Chunk chunk, TypeArgInfo<?> typeArgInfo);
-
-    /**
-     * @param chunk       二进制块，读取的字节数设置到{@link Chunk}
-     * @param typeArgInfo 类型参数信息
-     * @return 解码结果，顶层对象不应该是null
-     */
-    <U> U read(Chunk chunk, TypeArgInfo<U> typeArgInfo);
-
-    @Nonnull
-    @Override
-    byte[] write(Object value, @Nonnull TypeArgInfo<?> typeArgInfo);
-
-    @Override
-    default <U> U read(byte[] source, TypeArgInfo<U> typeArgInfo) {
-        return read(new Chunk(source), typeArgInfo);
-    }
-
-    /** @return 写入的字节数 */
-    default int write(Object value, byte[] source, TypeArgInfo<?> typeArgInfo) {
-        Chunk chunk = new Chunk(source);
-        write(value, chunk, typeArgInfo);
-        return chunk.getUsed();
-    }
+public interface BinaryConverter extends Converter {
 
     BinaryCodecRegistry codecRegistry();
 
-    TypeIdRegistry typeIdRegistry();
+    ClassIdRegistry<BinClassId> classIdRegistry();
 
 }

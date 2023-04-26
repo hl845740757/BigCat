@@ -16,9 +16,10 @@
 
 package cn.wjybxx.common.dson.binary;
 
-import cn.wjybxx.common.dson.ConverterUtils;
 import cn.wjybxx.common.dson.TypeArgInfo;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
@@ -37,6 +38,7 @@ public class BinaryPojoCodec<T> {
     }
 
     /** 获取负责编解码的类对象 */
+    @Nonnull
     public Class<T> getEncoderClass() {
         return codecImpl.getEncoderClass();
     }

@@ -57,7 +57,7 @@ public class DsonArray extends DsonValue implements List<DsonValue>, RandomAcces
         return DsonType.ARRAY;
     }
 
-    // equals和hash不测试header，只要内容一致即可
+    // equals和hash不测试classId，只要内容一致即可
 
     @Override
     public boolean equals(Object o) {

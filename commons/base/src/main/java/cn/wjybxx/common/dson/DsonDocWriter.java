@@ -32,7 +32,7 @@ public interface DsonDocWriter extends AutoCloseable {
     void close();
 
     /**
-     * 编码的时候，用户总是习惯number(name) 和 value同时写入，
+     * 编码的时候，用户总是习惯 name和value同时写入，
      * 但在写Array或Object成员的时候，不能同时完成，需要先写入number再开始写值
      */
     void writeName(String name);
@@ -77,10 +77,12 @@ public interface DsonDocWriter extends AutoCloseable {
 
     /**
      * 开始写一个数组
+     * 1.数组内元素没有名字，因此传null即可
+     *
      * <pre>{@code
-     *      writer.writeStartArray(name, DocObjectHeader.OBJECT);
+     *      writer.writeStartArray(name, BinClassId.OBJECT);
      *      for (String coderName: coderNames) {
-     *          writer.writeString(0, coderName);
+     *          writer.writeString(null, coderName);
      *      }
      *      writer.writeEndArray();
      * }</pre>
@@ -90,10 +92,6 @@ public interface DsonDocWriter extends AutoCloseable {
         writeStartArray(classId);
     }
 
-    /**
-     * 用于一个Codec开始写给定对象
-     * （其它方法用于写嵌套对象）
-     */
     void writeStartArray(DocClassId classId);
 
     void writeEndArray();
@@ -112,10 +110,6 @@ public interface DsonDocWriter extends AutoCloseable {
         writeStartObject(classId);
     }
 
-    /**
-     * 用于一个Codec开始写给定对象
-     * （其它方法用于写嵌套对象）
-     */
     void writeStartObject(DocClassId classId);
 
     void writeEndObject();

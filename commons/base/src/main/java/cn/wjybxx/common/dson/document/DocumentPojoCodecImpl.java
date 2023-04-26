@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.dson.TypeArgInfo;
+import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 
 import javax.annotation.Nonnull;
 
@@ -44,7 +45,7 @@ public interface DocumentPojoCodecImpl<T> {
     /**
      * 编解码对象默认的类型名
      * 1.如果是数组对象，可以返回{@link #getEncoderClass()}的类型名
-     * 2.这只是对象的默认类型名，真正编解码时的类型名由{@link TypeNameRegistry}管理
+     * 2.这只是对象的默认类型名，真正编解码时的类型名由{@link ClassIdRegistry}管理
      */
     @Nonnull
     String getTypeName();

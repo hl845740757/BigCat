@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 
 /**
+ * 在文档型编解码中，可读性是比较重要的，因此字符串来映射类型
+ *
  * @author wjybxx
  * date - 2023/4/21
  */
@@ -65,7 +67,7 @@ public final class DocClassId implements ClassId {
 
     @Override
     public String toString() {
-        return "DocObjectHeader{" +
+        return "DocClassId{" +
                 "value='" + value + '\'' +
                 '}';
     }

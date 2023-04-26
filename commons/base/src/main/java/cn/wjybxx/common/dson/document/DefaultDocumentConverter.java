@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.binary;
+package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.dson.BinClassId;
+import cn.wjybxx.common.dson.DocClassId;
 import cn.wjybxx.common.dson.TypeArgInfo;
-import cn.wjybxx.common.dson.binary.codecs.MessageCodec;
-import cn.wjybxx.common.dson.binary.codecs.MessageEnumCodec;
 import cn.wjybxx.common.dson.codec.ClassIdMapper;
 import cn.wjybxx.common.dson.codec.ClassIdRegistries;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 import cn.wjybxx.common.dson.codec.ProtobufUtils;
+import cn.wjybxx.common.dson.document.codecs.MessageCodec;
+import cn.wjybxx.common.dson.document.codecs.MessageEnumCodec;
 import cn.wjybxx.common.dson.io.*;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
@@ -38,26 +38,26 @@ import java.util.stream.Collectors;
  * @author wjybxx
  * date 2023/4/2
  */
-public class DefaultBinaryConverter implements BinaryConverter {
+public class DefaultDocumentConverter implements DocumentConverter {
 
-    final ClassIdRegistry<BinClassId> classIdRegistry;
-    final BinaryCodecRegistry codecRegistry;
+    final ClassIdRegistry<DocClassId> typeIdRegistry;
+    final DocumentCodecRegistry codecRegistry;
     final int recursionLimit;
 
-    private DefaultBinaryConverter(ClassIdRegistry<BinClassId> classIdRegistry, BinaryCodecRegistry codecRegistry, int recursionLimit) {
+    private DefaultDocumentConverter(ClassIdRegistry<DocClassId> typeIdRegistry, DocumentCodecRegistry codecRegistry, int recursionLimit) {
         this.codecRegistry = codecRegistry;
-        this.classIdRegistry = classIdRegistry;
+        this.typeIdRegistry = typeIdRegistry;
         this.recursionLimit = recursionLimit;
     }
 
     @Override
-    public BinaryCodecRegistry codecRegistry() {
+    public DocumentCodecRegistry codecRegistry() {
         return codecRegistry;
     }
 
     @Override
-    public ClassIdRegistry<BinClassId> classIdRegistry() {
-        return classIdRegistry;
+    public ClassIdRegistry<DocClassId> classIdRegistry() {
+        return typeIdRegistry;
     }
 
     @Override
@@ -107,16 +107,16 @@ public class DefaultBinaryConverter implements BinaryConverter {
     }
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
-        try (BinaryObjectWriter wrapper = new DefaultBinaryObjectWriter(this,
-                new DefaultDsonBinWriter(outputStream, recursionLimit))) {
+        try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
+                new DefaultDsonDocWriter(outputStream, recursionLimit))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
     }
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
-        try (BinaryObjectReader wrapper = new DefaultBinaryObjectReader(this,
-                new DefaultDsonBinReader(inputStream, recursionLimit))) {
+        try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
+                new DefaultDsonDocReader(inputStream, recursionLimit))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
@@ -131,17 +131,17 @@ public class DefaultBinaryConverter implements BinaryConverter {
      * @param pojoPackages     自定义对象所在的包
      * @param classIdMapper    类型id映射策略
      */
-    public static DefaultBinaryConverter newInstance(final Set<String> protoBufPackages,
-                                                     final Set<String> pojoPackages,
-                                                     final ClassIdMapper<BinClassId> classIdMapper,
-                                                     final int recursionLimit) {
+    public static DefaultDocumentConverter newInstance(final Set<String> protoBufPackages,
+                                                       final Set<String> pojoPackages,
+                                                       final ClassIdMapper<DocClassId> classIdMapper,
+                                                       final int recursionLimit) {
         final Set<Class<?>> allProtoBufClasses = ProtobufUtils.scan(protoBufPackages);
 
         final HashSet<Class<?>> allClasses = new HashSet<>(allProtoBufClasses);
-        final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList = BinaryPojoCodecScanner.scan(pojoPackages);
+        final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList = DocumentPojoCodecScanner.scan(pojoPackages);
         pojoCodecImplList.forEach(e -> allClasses.add(e.getEncoderClass()));
 
-        final Map<Class<?>, BinClassId> classIdMap = allClasses.stream()
+        final Map<Class<?>, DocClassId> classIdMap = allClasses.stream()
                 .collect(Collectors.toMap(e -> e, classIdMapper::map));
 
         return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, recursionLimit);
@@ -154,55 +154,55 @@ public class DefaultBinaryConverter implements BinaryConverter {
      * @param recursionLimit     递归深度限制
      */
     @SuppressWarnings("unchecked")
-    public static DefaultBinaryConverter newInstance(final Set<Class<?>> allProtoBufClasses,
-                                                     final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
-                                                     final Map<Class<?>, BinClassId> typeIdMap, int recursionLimit) {
+    public static DefaultDocumentConverter newInstance(final Set<Class<?>> allProtoBufClasses,
+                                                       final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
+                                                       final Map<Class<?>, DocClassId> typeIdMap, int recursionLimit) {
         if (recursionLimit < 1) {
             throw new IllegalArgumentException("recursionLimit " + recursionLimit);
         }
         // 检查typeId是否存在，以及命名空间是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            BinClassId classId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
-            if (classId.isDefaultNameSpace()) {
+            DocClassId classId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
+            if (classId.isObjectClassId()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + clazz);
             }
         }
-        for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            BinClassId classId = CollectionUtils.checkGet(typeIdMap, codecImpl.getEncoderClass(), "class");
-            if (classId.isDefaultNameSpace()) {
+        for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
+            DocClassId classId = CollectionUtils.checkGet(typeIdMap, codecImpl.getEncoderClass(), "class");
+            if (classId.isObjectClassId()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + codecImpl.getEncoderClass());
             }
         }
 
-        final List<BinaryPojoCodec<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size() + pojoCodecImplList.size());
+        final List<DocumentPojoCodec<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size() + pojoCodecImplList.size());
         // 解析parser
         for (Class<?> messageClazz : allProtoBufClasses) {
             // protoBuf消息
             if (MessageLite.class.isAssignableFrom(messageClazz)) {
                 MessageCodec<?> messageCodec = parseMessageCodec((Class<? extends MessageLite>) messageClazz);
-                allPojoCodecList.add(new BinaryPojoCodec<>(messageCodec));
+                allPojoCodecList.add(new DocumentPojoCodec<>(messageCodec));
                 continue;
             }
             // protoBuf枚举
             if (ProtocolMessageEnum.class.isAssignableFrom(messageClazz)) {
                 MessageEnumCodec<?> enumCodec = parseMessageEnumCodec((Class<? extends ProtocolMessageEnum>) messageClazz);
-                allPojoCodecList.add(new BinaryPojoCodec<>(enumCodec));
+                allPojoCodecList.add(new DocumentPojoCodec<>(enumCodec));
                 continue;
             }
             throw new IllegalArgumentException("Unsupported class " + messageClazz);
         }
         // 转换codecImpl
-        for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            allPojoCodecList.add(new BinaryPojoCodec<>(codecImpl));
+        for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
+            allPojoCodecList.add(new DocumentPojoCodec<>(codecImpl));
         }
 
-        final ClassIdRegistry<BinClassId> classIdRegistry = ClassIdRegistries.fromRegistries(ClassIdRegistries.fromClassIdMap(typeIdMap),
-                BinaryConverterUtils.getDefaultTypeIdRegistry());
+        ClassIdRegistry<DocClassId> classIdRegistry = ClassIdRegistries.fromRegistries(ClassIdRegistries.fromClassIdMap(typeIdMap),
+                DocumentConverterUtils.getDefaultTypeIdRegistry());
 
-        final BinaryCodecRegistry codecRegistry = BinaryCodecRegistries.fromRegistries(BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList),
-                BinaryConverterUtils.getDefaultCodecRegistry());
+        final DocumentCodecRegistry codecRegistry = DocumentCodecRegistries.fromRegistries(DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
+                DocumentConverterUtils.getDefaultCodecRegistry());
 
-        return new DefaultBinaryConverter(classIdRegistry, codecRegistry, recursionLimit);
+        return new DefaultDocumentConverter(classIdRegistry, codecRegistry, recursionLimit);
     }
 
     private static <T extends MessageLite> MessageCodec<T> parseMessageCodec(Class<T> messageClazz) {

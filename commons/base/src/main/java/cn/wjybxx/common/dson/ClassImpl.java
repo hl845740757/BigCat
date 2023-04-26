@@ -48,7 +48,7 @@ public @interface ClassImpl {
     boolean autoStartEnd() default true;
 
     /**
-     * 该属性主要用户处理继承得来的不能直接序列化的字段
+     * 该属性主要用户处理继承得来的不能直接序列化的字段，以避免编译时检查不通过。
      * 跳过这些字段检查后，你可以在解析构造方法、readObject、writeObject方法中处理
      */
     String[] skipFields() default {};

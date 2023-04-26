@@ -73,7 +73,7 @@ public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValu
         return new IllegalArgumentException("name and value cant be null");
     }
 
-    // equals和hash不测试header，只要内容一致即可
+    // equals和hash不测试classId，只要内容一致即可
 
     @Override
     public boolean equals(Object o) {

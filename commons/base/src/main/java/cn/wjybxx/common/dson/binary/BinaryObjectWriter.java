@@ -52,10 +52,6 @@ public interface BinaryObjectWriter extends AutoCloseable {
         writeLong(name, value, WireType.VARINT);
     }
 
-    default void writeExtInt64(int name, DsonExtInt64Type type, int value) {
-        writeExtInt64(name, type, value, WireType.VARINT);
-    }
-
     void writeInt(int name, int value, WireType wireType);
 
     void writeLong(int name, long value, WireType wireType);
@@ -91,14 +87,14 @@ public interface BinaryObjectWriter extends AutoCloseable {
     void writeExtInt64(int name, DsonExtInt64 value, WireType wireType);
 
     void writeExtInt64(int name, DsonExtInt64Type type, long value, WireType wireType);
-    //
 
-    /**
-     * 注意：
-     * 该方法和{@link #writeObject(int, Object)}并不相同，直接调用该方法，message将写为一个普通的Binary，
-     * 而{@link #writeObject(int, Object)}会查找Message的Codec从而写为一个包含Binary字段的Object。
-     */
-    void writeMessage(int name, MessageLite messageLite);
+    default void writeExtInt32(int name, DsonExtInt32Type type, int value) {
+        writeExtInt32(name, type, value, WireType.VARINT);
+    }
+
+    default void writeExtInt64(int name, DsonExtInt64Type type, int value) {
+        writeExtInt64(name, type, value, WireType.VARINT);
+    }
 
     // endregion
 
@@ -137,6 +133,13 @@ public interface BinaryObjectWriter extends AutoCloseable {
     // region 代理
 
     void writeName(int name);
+
+    /**
+     * 注意：
+     * 该方法和{@link #writeObject(int, Object)}并不相同，直接调用该方法，message将写为一个普通的Binary，
+     * 而{@link #writeObject(int, Object)}会查找Message的Codec从而写为一个包含Binary字段的Object。
+     */
+    void writeMessage(int name, MessageLite messageLite);
 
     /** @see DsonBinWriter#writeValueBytes(int, DsonType, byte[]) */
     void writeValueBytes(int name, DsonType dsonType, byte[] data);

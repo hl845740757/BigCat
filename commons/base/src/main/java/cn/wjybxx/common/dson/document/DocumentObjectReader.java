@@ -63,6 +63,8 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     DsonExtString readExtString(String name);
 
+    DsonExtInt32 readExtInt32(String name);
+
     DsonExtInt64 readExtInt64(String name);
 
     /**
@@ -97,7 +99,7 @@ public interface DocumentObjectReader extends AutoCloseable {
     /** 读顶层对象 */
     <T> T readObject(TypeArgInfo<T> typeArgInfo);
 
-    default BinClassId readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default DocClassId readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
         return readStartObject(typeArgInfo);
     }
@@ -106,16 +108,16 @@ public interface DocumentObjectReader extends AutoCloseable {
      * @return 对方写入的类型信息，如果对方未写入，则返回传入的声明类型
      */
     @Nonnull
-    BinClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
+    DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndObject();
 
-    default BinClassId readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default DocClassId readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
         return readStartArray(typeArgInfo);
     }
 
-    BinClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
+    DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndArray();
 
@@ -137,16 +139,16 @@ public interface DocumentObjectReader extends AutoCloseable {
      */
     DsonType readDsonType();
 
-    int readName();
+    String readName();
 
     void readName(String name);
 
     DsonType getCurrentDsonType();
 
-    int getCurrentName();
+    String getCurrentName();
 
     @Nonnull
-    BinClassId getCurrentClassId();
+    DocClassId getCurrentClassId();
 
     void skipName();
 

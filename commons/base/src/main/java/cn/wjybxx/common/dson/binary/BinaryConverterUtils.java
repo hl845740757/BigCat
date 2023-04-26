@@ -17,8 +17,10 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.BinClassId;
-import cn.wjybxx.common.dson.ConverterUtils;
 import cn.wjybxx.common.dson.binary.codecs.*;
+import cn.wjybxx.common.dson.codec.ClassIdRegistries;
+import cn.wjybxx.common.dson.codec.ClassIdRegistry;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -34,7 +36,7 @@ import java.util.stream.Collectors;
 public class BinaryConverterUtils extends ConverterUtils {
 
     /** 默认id注册表 */
-    private static final TypeIdRegistry TYPE_ID_REGISTRY;
+    private static final ClassIdRegistry<BinClassId> CLASS_ID_REGISTRY;
     /** 默认codec注册表 */
     private static final BinaryCodecRegistry CODEC_REGISTRY;
 
@@ -55,8 +57,9 @@ public class BinaryConverterUtils extends ConverterUtils {
                 newCodec(new CollectionCodec(), 13),
                 newCodec(new MapCodec(), 14)
         );
-        TYPE_ID_REGISTRY = TypeIdRegistries.fromTypeIdMap(entryList.stream()
-                .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue)));
+        final Map<Class<?>, BinClassId> classIdMap = entryList.stream()
+                .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue));
+        CLASS_ID_REGISTRY = ClassIdRegistries.fromClassIdMap(classIdMap);
 
         Map<Class<?>, BinaryPojoCodec<?>> codecMap = BinaryCodecRegistries.newCodecMap(entryList.stream()
                 .map(Map.Entry::getKey)
@@ -64,13 +67,13 @@ public class BinaryConverterUtils extends ConverterUtils {
         CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
     }
 
-    private static <T> Map.Entry<BinaryPojoCodec<?>, BinClassId> newCodec(BinaryPojoCodecImpl<T> codecImpl, int classId) {
+    private static Map.Entry<BinaryPojoCodec<?>, BinClassId> newCodec(BinaryPojoCodecImpl<?> codecImpl, int classId) {
         assert classId > 0 : "classId must be positive";
         return Map.entry(new BinaryPojoCodec<>(codecImpl), new BinClassId(0, classId));
     }
 
-    public static TypeIdRegistry getDefaultTypeIdRegistry() {
-        return TYPE_ID_REGISTRY;
+    public static ClassIdRegistry<BinClassId> getDefaultTypeIdRegistry() {
+        return CLASS_ID_REGISTRY;
     }
 
     public static BinaryCodecRegistry getDefaultCodecRegistry() {

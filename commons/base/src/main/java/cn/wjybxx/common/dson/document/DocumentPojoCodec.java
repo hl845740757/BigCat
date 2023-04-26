@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common.dson.document;
 
-import cn.wjybxx.common.dson.ConverterUtils;
 import cn.wjybxx.common.dson.TypeArgInfo;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -35,11 +35,6 @@ public class DocumentPojoCodec<T> {
         Objects.requireNonNull(codecImpl.getEncoderClass());
         this.codecImpl = codecImpl;
         this.isArray = ConverterUtils.isEncodeAsArray(codecImpl.getEncoderClass());
-    }
-
-    @Nonnull
-    public String getTypeName() {
-        return codecImpl.getTypeName();
     }
 
     @Nonnull

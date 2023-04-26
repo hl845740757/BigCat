@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.codec;
 
 import cn.wjybxx.common.OptionalBool;
 

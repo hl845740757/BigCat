@@ -16,9 +16,9 @@
 
 package cn.wjybxx.common.dson.document;
 
-import cn.wjybxx.common.dson.Converter;
-
-import javax.annotation.Nonnull;
+import cn.wjybxx.common.dson.DocClassId;
+import cn.wjybxx.common.dson.codec.ClassIdRegistry;
+import cn.wjybxx.common.dson.codec.Converter;
 
 /**
  * 文档转换器
@@ -34,16 +34,10 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/4
  */
-public interface DocumentConverter<T> extends Converter<T> {
-
-    /**
-     * 写入pojo对象时的typeKey，最常见的情况是{@literal "_class"}
-     */
-    @Nonnull
-    String getTypeKey();
+public interface DocumentConverter extends Converter {
 
     DocumentCodecRegistry codecRegistry();
 
-    TypeNameRegistry typeNameRegistry();
+    ClassIdRegistry<DocClassId> classIdRegistry();
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.binary;
+package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
@@ -28,12 +28,12 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/4/23
  */
-public class DefaultBinaryObjectReader implements BinaryObjectReader {
+public class DefaultDocumentObjectReader implements DocumentObjectReader {
 
-    private final DefaultBinaryConverter converter;
-    private final DsonBinReader reader;
+    private final DefaultDocumentConverter converter;
+    private final DsonDocReader reader;
 
-    public DefaultBinaryObjectReader(DefaultBinaryConverter converter, DsonBinReader reader) {
+    public DefaultDocumentObjectReader(DefaultDocumentConverter converter, DsonDocReader reader) {
         this.converter = converter;
         this.reader = reader;
     }
@@ -56,7 +56,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public int readName() {
+    public String readName() {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
@@ -64,7 +64,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public void readName(int expected) {
+    public void readName(String expected) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
@@ -78,13 +78,13 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public int getCurrentName() {
+    public String getCurrentName() {
         return reader.getCurrentName();
     }
 
     @Override
     @Nonnull
-    public BinClassId getCurrentClassId() {
+    public DocClassId getCurrentClassId() {
         return reader.getCurrentClassId();
     }
 
@@ -104,12 +104,12 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public <T> T readMessage(int name, @Nonnull Parser<T> parser) {
+    public <T> T readMessage(String name, @Nonnull Parser<T> parser) {
         return reader.readMessage(name, parser);
     }
 
     @Override
-    public byte[] readValueAsBytes(int name) {
+    public byte[] readValueAsBytes(String name) {
         return reader.readValueAsBytes(name);
     }
 
@@ -118,57 +118,57 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     // region 简单值
 
     @Override
-    public int readInt(int name) {
+    public int readInt(String name) {
         return NumberCodecHelper.readInt(reader, name);
     }
 
     @Override
-    public long readLong(int name) {
+    public long readLong(String name) {
         return NumberCodecHelper.readLong(reader, name);
     }
 
     @Override
-    public float readFloat(int name) {
+    public float readFloat(String name) {
         return NumberCodecHelper.readFloat(reader, name);
     }
 
     @Override
-    public double readDouble(int name) {
+    public double readDouble(String name) {
         return NumberCodecHelper.readDouble(reader, name);
     }
 
     @Override
-    public boolean readBoolean(int name) {
+    public boolean readBoolean(String name) {
         return NumberCodecHelper.readBool(reader, name);
     }
 
     @Override
-    public String readString(int name) {
+    public String readString(String name) {
         return NumberCodecHelper.readString(reader, name);
     }
 
     @Override
-    public void readNull(int name) {
+    public void readNull(String name) {
         reader.readNull(name);
     }
 
     @Override
-    public DsonBinary readBinary(int name) {
+    public DsonBinary readBinary(String name) {
         return NumberCodecHelper.readBinary(reader, name);
     }
 
     @Override
-    public DsonExtString readExtString(int name) {
+    public DsonExtString readExtString(String name) {
         return NumberCodecHelper.readExtString(reader, name);
     }
 
     @Override
-    public DsonExtInt32 readExtInt32(int name) {
+    public DsonExtInt32 readExtInt32(String name) {
         return NumberCodecHelper.readExtInt32(reader, name);
     }
 
     @Override
-    public DsonExtInt64 readExtInt64(int name) {
+    public DsonExtInt64 readExtInt64(String name) {
         return NumberCodecHelper.readExtInt64(reader, name);
     }
 
@@ -180,6 +180,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
         DsonType dsonType = reader.readDsonType();
+        if (dsonType.isContainer()) throw DsonCodecException.contextErrorTopLevel();
         if (reader.isObjectContext()) {
             reader.readName();
         }
@@ -189,7 +190,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
-    public <T> T readObject(int name, TypeArgInfo<T> typeArgInfo) {
+    public <T> T readObject(String name, TypeArgInfo<T> typeArgInfo) {
         Class<T> declaredType = typeArgInfo.declaredType;
         // 基础类型不能返回null
         if (declaredType.isPrimitive()) {
@@ -223,20 +224,20 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
-        BinClassId classId;
+        DocClassId classId;
         if (dsonType == DsonType.ARRAY) {
             classId = reader.prestartArray();
         } else {
             classId = reader.prestartObject();
         }
-        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
         if (codec == null) {
             throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
         }
         return codec.readObject(this, typeArgInfo);
     }
 
-    private <T> T readAsDsonValue(DsonType dsonType, int name, Class<T> declaredType) {
+    private <T> T readAsDsonValue(DsonType dsonType, String name, Class<T> declaredType) {
         Object value = switch (dsonType) {
             case INT32 -> reader.readInt32(name);
             case INT64 -> reader.readInt64(name);
@@ -255,7 +256,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Nonnull
     @Override
-    public BinClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
         return reader.readStartObject();
     }
 
@@ -266,7 +267,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public BinClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
         return reader.readStartArray();
     }
 
@@ -278,12 +279,12 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     //
     @SuppressWarnings("unchecked")
-    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, BinClassId classId) {
+    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DocClassId classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
+        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.typeIdRegistry.ofId(classId);
         // 尝试按真实类型读 - 概率最大
         if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
-            return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);
+            return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);
         }
         // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)
         return converter.codecRegistry.get(declaredType);

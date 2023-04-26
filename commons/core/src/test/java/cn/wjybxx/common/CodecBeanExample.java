@@ -23,6 +23,7 @@ import cn.wjybxx.common.dson.binary.BinarySerializable;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;
 import cn.wjybxx.common.dson.document.DocumentSerializable;
+import cn.wjybxx.common.dson.DsonEnum;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
@@ -106,7 +107,7 @@ public class CodecBeanExample {
             return number;
         }
 
-        public static final DsonEnumMapper<Sex> MAPPER = DsonEnums.mapping(values());
+        public static final DsonEnumMapper<Sex> MAPPER = EnumUtils.mapping(values());
 
         @Nullable
         public static Sex forNumber(int number) {

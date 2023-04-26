@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.codec;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
@@ -25,9 +25,6 @@ import java.util.*;
  * date 2023/3/31
  */
 public class ConverterUtils {
-
-    /** 默认递归限制 */
-    public static final int RECURSION_LIMIT = 32;
 
     private static final Map<Class<?>, Class<?>> wrapperToPrimitiveTypeMap = new IdentityHashMap<>(9);
     private static final Map<Class<?>, Class<?>> primitiveTypeToWrapperMap = new IdentityHashMap<>(9);
@@ -88,14 +85,15 @@ public class ConverterUtils {
         return type.isPrimitive();
     }
 
+    // region
+
     /**
-     * Check if the right-hand side type may be assigned to the left-hand side
-     * type, assuming setting by reflection. Considers primitive wrapper
-     * classes as assignable to the corresponding primitive types.
+     * 测试右手边的类型是否可以赋值给左边的类型。
+     * 基本类型和其包装类型之间将认为是可赋值的。
      *
-     * @param lhsType the target type
-     * @param rhsType the value type that should be assigned to the target type
-     * @return if the target type is assignable from the value type
+     * @param lhsType 基类型
+     * @param rhsType 测试的类型
+     * @return 如果测试的类型可以赋值给基类型则返回true，否则返回false
      */
     public static boolean isAssignable(Class<?> lhsType, Class<?> rhsType) {
         Objects.requireNonNull(lhsType, "Left-hand side type must not be null");
@@ -114,29 +112,16 @@ public class ConverterUtils {
     }
 
     /**
-     * Determine if the given type is assignable from the given value,
-     * assuming setting by reflection. Considers primitive wrapper classes
-     * as assignable to the corresponding primitive types.
+     * 测试给定的值是否可以赋值给定的类型。
+     * 基本类型和其包装类型之间将认为是可赋值的，但null值不可以赋值给基本类型。
      *
-     * @param type  the target type
-     * @param value the value that should be assigned to the type
-     * @return if the type is assignable from the value
+     * @param type  目标类型
+     * @param value 测试的值
+     * @return 如果目标值可以赋值给目标类型则返回true
      */
     public static boolean isAssignableValue(Class<?> type, @Nullable Object value) {
         Objects.requireNonNull(type, "Type must not be null");
         return (value != null ? isAssignable(type, value.getClass()) : !type.isPrimitive());
-    }
-    //
-
-    /**
-     * 枚举实例可能是枚举类的子类，如果枚举实例声明了代码块{}，在编解码时需要转换为声明类
-     */
-    public static Class<?> getEncodeClass(Object value) {
-        if (value instanceof Enum) {
-            return ((Enum<?>) value).getDeclaringClass();
-        } else {
-            return value.getClass();
-        }
     }
 
     /**
@@ -161,18 +146,13 @@ public class ConverterUtils {
 
         final Class<?> componentType = arrayType.getComponentType();
         final int length = Array.getLength(arrayValue);
-        final T castArray = (T) Array.newInstance(componentType, length);
-        if (arrayType.isAssignableFrom(arrayValue.getClass())) {
-            //noinspection SuspiciousSystemArraycopy
-            System.arraycopy(arrayValue, 0, castArray, 0, length);
-        } else {
-            // System.arrayCopy并不支持对象数组到基础类型数组
-            for (int index = 0; index < length; index++) {
-                Object element = Array.get(arrayValue, index);
-                Array.set(castArray, index, element);
-            }
+        // System.arrayCopy并不支持对象数组到基础类型数组
+        final T tempArray = (T) Array.newInstance(componentType, length);
+        for (int index = 0; index < length; index++) {
+            Object element = Array.get(arrayValue, index);
+            Array.set(tempArray, index, element);
         }
-        return castArray;
+        return tempArray;
     }
 
     /** List转Array */
@@ -184,13 +164,27 @@ public class ConverterUtils {
         if (list.getClass() == ArrayList.class && !componentType.isPrimitive()) {
             final E[] tempArray = (E[]) Array.newInstance(componentType, length);
             return (T) list.toArray(tempArray);
+        }
+        // System.arrayCopy并不支持对象数组到基础类型数组
+        final T tempArray = (T) Array.newInstance(componentType, length);
+        for (int index = 0; index < length; index++) {
+            Object element = list.get(index);
+            Array.set(tempArray, index, element);
+        }
+        return tempArray;
+    }
+    // endregion
+
+    // region
+
+    /**
+     * 枚举实例可能是枚举类的子类，如果枚举实例声明了代码块{}，在编解码时需要转换为声明类
+     */
+    public static Class<?> getEncodeClass(Object value) {
+        if (value instanceof Enum) {
+            return ((Enum<?>) value).getDeclaringClass();
         } else {
-            final T tempArray = (T) Array.newInstance(componentType, length);
-            for (int index = 0; index < length; index++) {
-                Object element = list.get(index);
-                Array.set(tempArray, index, element);
-            }
-            return tempArray;
+            return value.getClass();
         }
     }
 
@@ -201,4 +195,6 @@ public class ConverterUtils {
         return encoderClass.isArray() || Collection.class.isAssignableFrom(encoderClass)
                 || Map.class.isAssignableFrom(encoderClass);
     }
+
+    // endregion
 }

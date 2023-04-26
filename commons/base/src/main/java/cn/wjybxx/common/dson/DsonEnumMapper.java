@@ -17,12 +17,16 @@
 package cn.wjybxx.common.dson;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 import java.util.List;
 
 /**
+ * 实现类应该保持为不可变
+ *
  * @author wjybxx
  * date 2023/4/1
  */
+@Immutable
 public interface DsonEnumMapper<T extends DsonEnum> {
 
     /**

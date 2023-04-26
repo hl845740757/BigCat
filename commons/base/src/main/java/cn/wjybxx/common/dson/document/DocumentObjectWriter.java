@@ -48,10 +48,6 @@ public interface DocumentObjectWriter extends AutoCloseable {
         writeLong(name, value, WireType.VARINT);
     }
 
-    default void writeExtInt64(String name, DsonExtInt64Type type, int value) {
-        writeExtInt64(name, type, value, WireType.VARINT);
-    }
-
     void writeInt(String name, int value, WireType wireType);
 
     void writeLong(String name, long value, WireType wireType);
@@ -71,7 +67,7 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     void writeBytes(String name, DsonBinaryType type, @Nonnull Chunk chunk);
 
-    void writeBinary(int name, DsonBinaryType type, byte[] value);
+    void writeBinary(String name, DsonBinaryType type, byte[] value);
 
     void writeBinary(String name, DsonBinary binary);
 
@@ -80,17 +76,21 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     void writeExtString(String name, DsonExtStringType type, String value);
 
+    void writeExtInt32(String name, DsonExtInt32 value, WireType wireType);
+
+    void writeExtInt32(String name, DsonExtInt32Type type, int value, WireType wireType);
+
     void writeExtInt64(String name, DsonExtInt64 value, WireType wireType);
 
     void writeExtInt64(String name, DsonExtInt64Type type, long value, WireType wireType);
-    //
 
-    /**
-     * 注意：
-     * 该方法和{@link #writeObject(String, Object)}并不相同，直接调用该方法，message将写为一个普通的Binary，
-     * 而{@link #writeObject(String, Object)}会查找Message的Codec从而写为一个包含Binary字段的Object。
-     */
-    void writeMessage(String name, MessageLite messageLite);
+    default void writeExtInt32(String name, DsonExtInt32Type type, int value) {
+        writeExtInt32(name, type, value, WireType.VARINT);
+    }
+
+    default void writeExtInt64(String name, DsonExtInt64Type type, int value) {
+        writeExtInt64(name, type, value, WireType.VARINT);
+    }
 
     // endregion
 
@@ -101,7 +101,6 @@ public interface DocumentObjectWriter extends AutoCloseable {
     default <T> void writeObject(String name, T value) {
         writeObject(name, value, TypeArgInfo.OBJECT);
     }
-    //
 
     /** 写顶层对象 */
     <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo);
@@ -132,6 +131,13 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     /** @see DsonBinWriter#writeValueBytes(int, DsonType, byte[]) */
     void writeValueBytes(String name, DsonType dsonType, byte[] data);
+
+    /**
+     * 注意：
+     * 该方法和{@link #writeObject(String, Object)}并不相同，直接调用该方法，message将写为一个普通的Binary，
+     * 而{@link #writeObject(String, Object)}会查找Message的Codec从而写为一个包含Binary字段的Object。
+     */
+    void writeMessage(String name, MessageLite messageLite);
 
     // endregion
 

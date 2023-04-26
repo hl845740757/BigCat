@@ -59,6 +59,7 @@ public class BinaryCodecRegistries {
             this.type2CodecMap = type2CodecMap;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public <T> BinaryPojoCodec<T> get(Class<T> clazz) {
             return (BinaryPojoCodec<T>) type2CodecMap.get(clazz);

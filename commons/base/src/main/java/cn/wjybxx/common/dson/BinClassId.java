@@ -17,6 +17,8 @@
 package cn.wjybxx.common.dson;
 
 /**
+ * 在二进制编码中，包体大小是比较重要的，因此使用数字来映射类型
+ *
  * @author wjybxx
  * date 2023/3/31
  */
@@ -72,6 +74,10 @@ public class BinClassId implements ClassId {
         return namespace == 0 && lclassId == 0;
     }
 
+    public boolean isDefaultNameSpace() {
+        return namespace == 0;
+    }
+
     public static BinClassId ofGuid(long guid) {
         int namespace = Dsons.namespaceOfClassGuid(guid);
         int lclassId = Dsons.lclassIdOfClassGuid(guid);
@@ -99,7 +105,7 @@ public class BinClassId implements ClassId {
 
     @Override
     public String toString() {
-        return "TypeId{" +
+        return "BinClassId{" +
                 "namespace=" + namespace +
                 ", classId=" + lclassId +
                 '}';

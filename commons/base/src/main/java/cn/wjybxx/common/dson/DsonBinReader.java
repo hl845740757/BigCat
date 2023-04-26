@@ -81,7 +81,7 @@ public interface DsonBinReader extends AutoCloseable {
      * 读取下一个值的name
      * 如果下一个name不等于期望的值，则抛出异常
      */
-    void readName(int expected);
+    void readName(int name);
 
     /**
      * 获取当前的数据类型

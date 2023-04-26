@@ -64,7 +64,11 @@ public class DsonCodecException extends RuntimeException {
     }
 
     public static DsonCodecException unexpectedName(int expected, int name) {
-        return new DsonCodecException(String.format("The full number of the field does not match, expected %d, but found %d", expected, name));
+        return new DsonCodecException(String.format("The number of the field does not match, expected %d, but found %d", expected, name));
+    }
+
+    public static DsonCodecException unexpectedName(String expected, String name) {
+        return new DsonCodecException(String.format("The name of the field does not match, expected %s, but found %s", expected, name));
     }
 
     public static DsonCodecException dsonTypeMismatch(DsonType expected, DsonType dsonType) {
@@ -99,19 +103,15 @@ public class DsonCodecException extends RuntimeException {
     //
 
     public static DsonCodecException unsupportedType(Class<?> type) {
-        return new DsonCodecException("Unsupported type " + type);
-    }
-
-    public static DsonCodecException replaceToNull() {
-        return new DsonCodecException("Cant replace an object with Null");
+        return new DsonCodecException("Can't find a codec for " + type);
     }
 
     public static DsonCodecException incompatible(DsonType expected, DsonType dsonType) {
         return new DsonCodecException(String.format("Incompatible data format, expected %s, but found %s", expected, dsonType));
     }
 
-    public static DsonCodecException incompatible(Class<?> declared, DsonType valueType) {
-        return new DsonCodecException(String.format("Incompatible data format, declaredType %s, tag %s", declared, valueType));
+    public static DsonCodecException incompatible(Class<?> declared, DsonType dsonType) {
+        return new DsonCodecException(String.format("Incompatible data format, declaredType %s, tag %s", declared, dsonType));
     }
 
     public static DsonCodecException incompatible(Class<?> declared, ClassId classId) {
