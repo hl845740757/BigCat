@@ -10,8 +10,21 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
+#Eclipse Project Files
+.classpath
+.project
+.settings/
+
+#IntelliJ IDEA Files
+*.idea/
+*target/
+*.iml
+*.ipr
+*.iws
+*.idea
+
 # Package Files #
-*.jar
+# *.jar # jar等可能是需要加入仓库的
 *.war
 *.nar
 *.ear
