@@ -38,6 +38,30 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         this.reader = reader;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T decodeKey(String keyString, Class<T> keyDeclared) {
+        if (keyDeclared == String.class || keyDeclared == Object.class) {
+            return (T) keyString;
+        }
+        if (keyDeclared == Integer.class) { // key一定是包装类型
+            return (T) Integer.valueOf(keyString);
+        }
+        if (keyDeclared == Long.class) {
+            return (T) Long.valueOf(keyString);
+        }
+        DocumentPojoCodec<T> pojoCodec = converter.codecRegistry.get(keyDeclared);
+        if (pojoCodec == null || !pojoCodec.isDsonEnumCodec()) {
+            throw DsonCodecException.unsupportedKeyType(keyDeclared);
+        }
+        int number = Integer.parseInt(keyString);
+        T dsonEnum = pojoCodec.forNumber(number);
+        if (dsonEnum == null) {
+            throw DsonCodecException.enumAbsent(keyDeclared, number);
+        }
+        return dsonEnum;
+    }
+
     // region 代理
 
     @Override
@@ -64,11 +88,11 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public void readName(String expected) {
+    public void readName(String name) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        reader.readName(expected);
+        reader.readName(name);
     }
 
     @Override
@@ -180,7 +204,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
         DsonType dsonType = reader.readDsonType();
-        if (dsonType.isContainer()) throw DsonCodecException.contextErrorTopLevel();
         if (reader.isObjectContext()) {
             reader.readName();
         }
@@ -281,7 +304,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     @SuppressWarnings("unchecked")
     private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DocClassId classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.typeIdRegistry.ofId(classId);
+        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
         // 尝试按真实类型读 - 概率最大
         if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
             return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);

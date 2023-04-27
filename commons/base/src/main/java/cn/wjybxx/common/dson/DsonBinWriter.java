@@ -33,8 +33,11 @@ public interface DsonBinWriter extends AutoCloseable {
     @Override
     void close();
 
+    /** 当前是否处于等待写入name的状态 */
+    boolean isAtName();
+
     /**
-     * 编码的时候，用户总是习惯 name和value同时写入，
+     * 编码的时候，用户总是习惯 name和value 同时写入，
      * 但在写Array或Object成员的时候，不能同时完成，需要先写入number再开始写值
      */
     void writeName(int name);
@@ -136,6 +139,12 @@ public interface DsonBinWriter extends AutoCloseable {
     void attachContext(Object value);
 
     Object attachContext();
+
+    /** 查询当前是否是数组上下文 */
+    boolean isArrayContext();
+
+    /** 查询当前是否是Object上下文 */
+    boolean isObjectContext();
 
     // endregion
 

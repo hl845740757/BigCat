@@ -17,7 +17,7 @@
 package cn.wjybxx.common.excel;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.CommonUtils;
+import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.config.Header;
 import cn.wjybxx.common.config.Sheet;
 import cn.wjybxx.common.config.SheetCell;
@@ -199,7 +199,7 @@ class SheetReader {
                 || cell.getCellType() == CellType.BLANK
                 || cell.getCellType() == CellType.FORMULA) {
             // 原生POI最扯淡的是数值不能直接读取为字符串，导致丢失精度等，StreamerReader则可以，一切都是字符串，这很好
-            return CommonUtils.presentOrElse(cell.getStringCellValue(), "");
+            return ObjectUtils.presentOrElse(cell.getStringCellValue(), "");
         }
         throw new IllegalArgumentException(String.format("unsupported cellType, rowNumber %d cellType %s",
                 getLineNumber(row), cell.getCellType()));

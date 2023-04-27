@@ -195,7 +195,7 @@ public interface DsonBinReader extends AutoCloseable {
 
     /**
      * 如果当前是数组上下文，则不产生影响；
-     * 如果当时Object上下文，且处于读取Name状态则跳过name，否则抛出状态异常
+     * 如果当前是Object上下文，且处于读取Name状态则跳过name，否则抛出状态异常
      */
     void skipName();
 
@@ -206,7 +206,7 @@ public interface DsonBinReader extends AutoCloseable {
 
     /**
      * 跳过Array或Object的剩余内容
-     * 调用该方法后，{@link #getCurrentDsonType()}将直返回{@link DsonType#END_OF_OBJECT}
+     * 调用该方法后，{@link #getCurrentDsonType()}将返回{@link DsonType#END_OF_OBJECT}
      */
     void skipToEndOfObject();
 

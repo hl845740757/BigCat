@@ -49,6 +49,10 @@ public class DsonEnumCodec<T extends DsonEnum> implements DocumentPojoCodecImpl<
         this.typeName = Objects.requireNonNull(typeName);
     }
 
+    public T forNumber(int number) {
+        return mapper.apply(number);
+    }
+
     @Nonnull
     @Override
     public String getTypeName() {

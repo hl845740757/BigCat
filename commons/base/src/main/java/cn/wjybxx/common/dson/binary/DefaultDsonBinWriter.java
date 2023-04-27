@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.binary;
 
+import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
@@ -72,14 +73,20 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     // region state
-    private void writeCurrentNumber(Context context) {
+    private void writeCurrentName(Context context) {
         if (context.contextType == DsonContextType.OBJECT) {
             output.writeUint32(context.name);
         }
     }
 
     @Override
+    public boolean isAtName() {
+        return context.state == DsonWriterState.NAME;
+    }
+
+    @Override
     public void writeName(int name) {
+        Preconditions.checkNonNegative(name, "name");
         Context context = this.context;
         if (context.state != DsonWriterState.NAME) {
             throw invalidState(List.of(DsonWriterState.NAME), context.state);
@@ -97,7 +104,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
         writeFullType(dsonType, wireType);
-        writeCurrentNumber(context);
+        writeCurrentName(context);
     }
 
     private void ensureValueState(Context context, DsonType dsonType) {
@@ -105,7 +112,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
         writeFullType(dsonType, null);
-        writeCurrentNumber(context);
+        writeCurrentName(context);
     }
 
     private void setNextState() {
@@ -356,6 +363,16 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     @Override
     public Object attachContext() {
         return context.attach;
+    }
+
+    @Override
+    public boolean isArrayContext() {
+        return context.contextType == DsonContextType.ARRAY;
+    }
+
+    @Override
+    public boolean isObjectContext() {
+        return context.contextType == DsonContextType.OBJECT;
     }
 
     // endregion

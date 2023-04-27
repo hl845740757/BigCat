@@ -17,7 +17,7 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.dson.TypeArgInfo;
-import cn.wjybxx.common.dson.codec.ConverterUtils;
+import cn.wjybxx.common.dson.document.codecs.DsonEnumCodec;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -34,7 +34,7 @@ public class DocumentPojoCodec<T> {
     public DocumentPojoCodec(DocumentPojoCodecImpl<T> codecImpl) {
         Objects.requireNonNull(codecImpl.getEncoderClass());
         this.codecImpl = codecImpl;
-        this.isArray = ConverterUtils.isEncodeAsArray(codecImpl.getEncoderClass());
+        this.isArray = codecImpl.isWriteAsArray();
     }
 
     @Nonnull
@@ -82,6 +82,18 @@ public class DocumentPojoCodec<T> {
         } else {
             codecImpl.writeObject(instance, writer, typeArgInfo);
         }
+    }
+
+    public boolean isDsonEnumCodec() {
+        return codecImpl instanceof DsonEnumCodec;
+    }
+
+    @SuppressWarnings("unchecked")
+    public T forNumber(int number) {
+        if (codecImpl instanceof DsonEnumCodec<?> dsonEnumCodec) {
+            return (T) dsonEnumCodec.forNumber(number);
+        }
+        throw new UnsupportedOperationException("unexpected forNumber method call");
     }
 
 }

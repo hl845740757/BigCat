@@ -58,6 +58,13 @@ public class DsonBinary extends DsonValue {
         return DsonType.BINARY;
     }
 
+    //
+
+    @Override
+    public DsonBinary clone() {
+        return new DsonBinary(type, data.clone());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

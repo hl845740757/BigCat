@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.concurrent;
 
-import cn.wjybxx.common.CommonMathUtils;
+import cn.wjybxx.common.MathUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -34,7 +34,7 @@ public class DefaultChooserFactory implements EventLoopChooserFactory {
         if (children.length == 1) {
             return new SingleEventLoopChooser(children[0]);
         }
-        if (CommonMathUtils.isPowerOfTwo(children.length)) {
+        if (MathUtils.isPowerOfTwo(children.length)) {
             return new PowerOfTwoEventLoopChooser(children);
         }
         return new RoundRobinEventLoopChooser(children);

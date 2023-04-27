@@ -20,6 +20,7 @@ import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
 import cn.wjybxx.common.dson.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.dson.binary.DefaultBinaryConverter;
+import cn.wjybxx.common.dson.codec.ConvertOptions;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,8 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.SOURCE)),
-                    Map.of(MyStruct.class, binClassId), 32);
+                    Map.of(MyStruct.class, binClassId),
+                    ConvertOptions.DEFAULT);
             bytesSource = converter.write(myStruct);
         }
 
@@ -61,7 +63,8 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.ROUTER)),
-                    Map.of(MyStruct.class, binClassId), 32);
+                    Map.of(MyStruct.class, binClassId),
+                    ConvertOptions.DEFAULT);
             routerBytes = converter.write(converter.read(bytesSource));
         }
 
@@ -70,7 +73,8 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.DESTINATION)),
-                    Map.of(MyStruct.class, binClassId), 32);
+                    Map.of(MyStruct.class, binClassId),
+                    ConvertOptions.DEFAULT);
             destStruct = (MyStruct) converter.read(routerBytes);
         }
         Assertions.assertEquals(myStruct, destStruct);

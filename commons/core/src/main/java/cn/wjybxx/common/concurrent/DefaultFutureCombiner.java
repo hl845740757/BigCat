@@ -78,7 +78,7 @@ class DefaultFutureCombiner implements FutureCombiner {
         childrenListener.futureCount = this.futureCount;
         childrenListener.options = options;
         childrenListener.aggregatePromise = aggregatePromise;
-        childrenListener.checkComplete();
+        childrenListener.checkComplete(-1);
         return aggregatePromise;
     }
 
@@ -108,18 +108,18 @@ class DefaultFutureCombiner implements FutureCombiner {
             } else {
                 cause = throwable;
             }
-            doneCount.incrementAndGet();
+            int doneCount = this.doneCount.incrementAndGet();
 
             CompletableFuture<Object> aggregatePromise = this.aggregatePromise;
-            if (aggregatePromise != null && !aggregatePromise.isDone() && checkComplete()) {
+            if (aggregatePromise != null && !aggregatePromise.isDone() && checkComplete(doneCount)) {
                 result = null;
                 cause = null;
             }
         }
 
-        boolean checkComplete() {
+        boolean checkComplete(int _doneCount) {
             // 字段的读取顺序不可以调整
-            final int doneCount = this.doneCount.get();
+            final int doneCount = _doneCount >= 0 ? _doneCount :this.doneCount.get();
             final int succeedCount = this.succeedCount.get();
             if (doneCount < succeedCount) { // 退出竞争，另一个线程来完成
                 return false;

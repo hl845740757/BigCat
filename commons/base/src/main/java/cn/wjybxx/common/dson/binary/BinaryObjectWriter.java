@@ -34,9 +34,6 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public interface BinaryObjectWriter extends AutoCloseable {
 
-    /**
-     * 如果存在缓冲区，则刷新缓冲区
-     */
     void flush();
 
     @Override

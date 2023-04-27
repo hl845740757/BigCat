@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.TypeArgInfo;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 
 import javax.annotation.Nonnull;
 
@@ -61,6 +62,14 @@ public interface BinaryPojoCodecImpl<T> {
      * @param typeArgInfo 类型描述信息，用于精确解析持有的元素，是一个上下文
      */
     T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * 当前对象是否按照数组格式编码
+     * 默认情况下，Map是被看做普通的数组的
+     */
+    default boolean isWriteAsArray() {
+        return ConverterUtils.isEncodeAsArray(getEncoderClass());
+    }
 
     /**
      * 该方法用于告知{@link BinaryPojoCodec}是否自动调用以下方法

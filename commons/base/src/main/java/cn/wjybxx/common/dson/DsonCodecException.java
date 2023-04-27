@@ -106,6 +106,14 @@ public class DsonCodecException extends RuntimeException {
         return new DsonCodecException("Can't find a codec for " + type);
     }
 
+    public static DsonCodecException unsupportedKeyType(Class<?> type) {
+        return new DsonCodecException("Can't find a codec for " + type + ", or key is not DsonEnum");
+    }
+
+    public static DsonCodecException enumAbsent(Class<?> declared, int number) {
+        return new DsonCodecException(String.format("DsonEnum is absent, declared: %s, number: %d", declared, number));
+    }
+
     public static DsonCodecException incompatible(DsonType expected, DsonType dsonType) {
         return new DsonCodecException(String.format("Incompatible data format, expected %s, but found %s", expected, dsonType));
     }

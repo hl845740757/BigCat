@@ -183,11 +183,12 @@ public final class Dsons {
     public static final int NAME_MAX_BYTES = 32767;
 
     public static String internField(String fieldName) {
-        return enableFieldIntern ? fieldName.intern() : fieldName;
+        return (fieldName.length() <= 32 && enableFieldIntern) ? fieldName.intern() : fieldName;
     }
 
     public static String internClass(String className) {
-        return enableClassIntern ? className.intern() : className;
+        // 长度异常的数据不池化
+        return (className.length() <= 128 && enableClassIntern) ? className.intern() : className;
     }
     // endregion
 

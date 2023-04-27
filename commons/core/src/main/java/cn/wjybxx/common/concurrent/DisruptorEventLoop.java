@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.concurrent;
 
-import cn.wjybxx.common.CommonMathUtils;
+import cn.wjybxx.common.MathUtils;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.annotation.Beta;
 import cn.wjybxx.common.collect.DefaultIndexedPriorityQueue;
@@ -99,7 +99,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         this.ringBuffer = RingBuffer.createMultiProducer(RingBufferEvent::new,
                 builder.getRingBufferSize(),
                 waitStrategy);
-        this.taskBatchSize = CommonMathUtils.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
+        this.taskBatchSize = MathUtils.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
         this.rejectedExecutionHandler = Objects.requireNonNull(builder.getRejectedExecutionHandler());
         this.agent = Objects.requireNonNullElse(builder.getAgent(), EmptyAgent.getInstance());
 

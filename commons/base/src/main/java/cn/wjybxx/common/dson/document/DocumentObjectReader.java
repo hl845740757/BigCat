@@ -32,6 +32,8 @@ import java.util.*;
 @SuppressWarnings("unused")
 public interface DocumentObjectReader extends AutoCloseable {
 
+    <T> T decodeKey(String keyString, Class<T> keyDeclared);
+
     @Override
     void close();
 
@@ -200,5 +202,6 @@ public interface DocumentObjectReader extends AutoCloseable {
         final Map<K, V> m = readObject(name, TypeArgInfo.ofMap(Map.class, HashMap::new, keyType, valueType));
         return CollectionUtils.toImmutableMap(m);
     }
+
     // endregion
 }

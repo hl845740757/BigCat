@@ -23,6 +23,7 @@ import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author wjybxx
@@ -71,14 +72,20 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
     }
 
     // region state
-    private void writeCurrentNumber(Context context) {
+    private void writeCurrentName(Context context) {
         if (context.contextType == DsonContextType.OBJECT) {
             output.writeString(context.name);
         }
     }
 
     @Override
+    public boolean isAtName() {
+        return context.state == DsonWriterState.NAME;
+    }
+
+    @Override
     public void writeName(String name) {
+        Objects.requireNonNull(name, "name");
         Context context = this.context;
         if (context.state != DsonWriterState.NAME) {
             throw invalidState(List.of(DsonWriterState.NAME), context.state);
@@ -96,7 +103,7 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
         writeFullType(dsonType, wireType);
-        writeCurrentNumber(context);
+        writeCurrentName(context);
     }
 
     private void ensureValueState(Context context, DsonType dsonType) {
@@ -104,7 +111,7 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
         writeFullType(dsonType, null);
-        writeCurrentNumber(context);
+        writeCurrentName(context);
     }
 
     private void setNextState() {
@@ -355,6 +362,16 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
     @Override
     public Object attachContext() {
         return context.attach;
+    }
+
+    @Override
+    public boolean isArrayContext() {
+        return context.contextType == DsonContextType.ARRAY;
+    }
+
+    @Override
+    public boolean isObjectContext() {
+        return context.contextType == DsonContextType.OBJECT;
     }
 
     // endregion

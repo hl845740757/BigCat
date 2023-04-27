@@ -27,12 +27,16 @@ import java.util.function.UnaryOperator;
  * @author wjybxx
  * date - 2023/4/19
  */
-public class DsonArray extends DsonValue implements List<DsonValue>, RandomAccess {
+public abstract class DsonArray extends DsonValue implements List<DsonValue>, RandomAccess {
 
     private final List<DsonValue> values;
 
     public DsonArray() {
         this(new ArrayList<>(), true);
+    }
+
+    public DsonArray(int initCapacity) {
+        this(new ArrayList<>(initCapacity), true);
     }
 
     public DsonArray(List<DsonValue> values) {

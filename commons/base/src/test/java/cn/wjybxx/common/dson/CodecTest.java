@@ -20,6 +20,7 @@ import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
 import cn.wjybxx.common.dson.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.dson.binary.DefaultBinaryConverter;
+import cn.wjybxx.common.dson.codec.ConvertOptions;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,7 +70,8 @@ public class CodecTest {
     void testStructCodec() {
         DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                 List.of(new MyStructCodec()),
-                Map.of(MyStruct.class, binClassId), 32);
+                Map.of(MyStruct.class, binClassId),
+                ConvertOptions.DEFAULT);
 
         MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(MyStruct.class));
         Assertions.assertEquals(myStruct, clonedObject);

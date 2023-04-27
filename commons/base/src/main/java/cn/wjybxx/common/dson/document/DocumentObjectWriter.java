@@ -24,15 +24,18 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
+ * 在文档编码中，默认情况下Writer不会写入自定义Object的Null字段，
+ * 如果用户期望强制写入null，需要先调用{@link #writeName(String)}，再调用{@link #writeNull(String)}，
+ * 这样我们就能知道用户确实需要写入该字段。
+ *
  * @author wjybxx
  * date 2023/4/3
  */
 @SuppressWarnings("unused")
 public interface DocumentObjectWriter extends AutoCloseable {
 
-    /**
-     * 如果存在缓冲区，则刷新缓冲区
-     */
+    String encodeKey(Object key);
+
     void flush();
 
     @Override

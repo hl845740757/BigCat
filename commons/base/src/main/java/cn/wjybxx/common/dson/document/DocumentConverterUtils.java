@@ -49,6 +49,8 @@ public class DocumentConverterUtils extends ConverterUtils {
     private static final ClassIdRegistry<DocClassId> CLASS_ID_REGISTRY;
     /** 默认codec注册表 */
     private static final DocumentCodecRegistry CODEC_REGISTRY;
+    /** Map看做普通Object编码的注册表 */
+    private static final DocumentCodecRegistry CODEC_REGISTRY2;
 
     static {
         IProperties properties = PropertiesLoader.wrapProperties(System.getProperties());
@@ -75,6 +77,7 @@ public class DocumentConverterUtils extends ConverterUtils {
                 newCodec(new CollectionCodec()),
                 newCodec(new MapCodec())
         );
+
         final Map<Class<?>, DocClassId> classIdMap = entryList.stream()
                 .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue));
         CLASS_ID_REGISTRY = ClassIdRegistries.fromClassIdMap(classIdMap);
@@ -83,18 +86,25 @@ public class DocumentConverterUtils extends ConverterUtils {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList()));
         CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
+
+        // 替换Map的Codec
+        codecMap.put(Map.class, new DocumentPojoCodec<>(new MapAsObjectCodec()));
+        CODEC_REGISTRY2 = new DefaultCodecRegistry(codecMap);
     }
 
     private static Map.Entry<DocumentPojoCodec<?>, DocClassId> newCodec(DocumentPojoCodecImpl<?> codecImpl) {
         return Map.entry(new DocumentPojoCodec<>(codecImpl), DocClassId.of(codecImpl.getTypeName()));
     }
 
-    public static ClassIdRegistry<DocClassId> getDefaultTypeIdRegistry() {
+    public static ClassIdRegistry<DocClassId> getDefaultClassIdRegistry() {
         return CLASS_ID_REGISTRY;
     }
 
-    public static DocumentCodecRegistry getDefaultCodecRegistry() {
-        return CODEC_REGISTRY;
+    /**
+     * @param encodeMapAsObject 是否将map看做普通的Object
+     */
+    public static DocumentCodecRegistry getDefaultCodecRegistry(boolean encodeMapAsObject) {
+        return encodeMapAsObject ? CODEC_REGISTRY2 : CODEC_REGISTRY;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -145,44 +155,6 @@ public class DocumentConverterUtils extends ConverterUtils {
         return Integer.toString(idx);
     }
 
-    /** @return 如果返回null，外部自行处理 */
-    @Nullable
-    public static String encodeName(Object objKey, Class<?> declaredType) {
-        if (objKey instanceof String) {
-            return (String) objKey;
-        }
-        Class<?> keyClass = objKey.getClass(); // 基本类型到这已是包装对象
-        if (keyClass == Integer.class || keyClass == Long.class || keyClass == Short.class) {
-            return objKey.toString(); // 整数
-        }
-        if (objKey instanceof Enum<?>) { // 枚举
-            return objKey.toString();
-        }
-        return null;
-    }
-
-    /** @return 如果返回null，外部自行处理 */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @Nullable
-    public static <T> T decodeName(String stringKey, Class<T> declaredType) {
-        if (declaredType == String.class || declaredType == Object.class) {
-            return (T) stringKey;
-        }
-        Class<?> keyClass = boxIfPrimitiveType(declaredType);
-        if (keyClass == Integer.class) {
-            return (T) Integer.valueOf(stringKey);
-        }
-        if (keyClass == Long.class) {
-            return (T) Long.valueOf(stringKey);
-        }
-        if (keyClass == Short.class) {
-            return (T) Short.valueOf(stringKey);
-        }
-        if (keyClass.isEnum()) {
-            return (T) Enum.valueOf((Class<Enum>) keyClass, stringKey);
-        }
-        return null;
-    }
     // endregion
 
 }

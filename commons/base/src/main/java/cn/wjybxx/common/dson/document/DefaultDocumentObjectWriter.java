@@ -39,6 +39,21 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         this.writer = writer;
     }
 
+    @Override
+    public String encodeKey(Object key) {
+        Objects.requireNonNull(key);
+        if (key instanceof String str) {
+            return str;
+        }
+        if ((key instanceof Integer) || (key instanceof Long)) {
+            return key.toString();
+        }
+        if (!(key instanceof DsonEnum dsonEnum)) {
+            throw DsonCodecException.unsupportedType(key.getClass());
+        }
+        return Integer.toString(dsonEnum.getNumber());
+    }
+
     // region 代理
     @Override
     public void flush() {
@@ -58,7 +73,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeMessage(String name, MessageLite messageLite) {
         if (messageLite == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeMessage(name, messageLite);
         }
@@ -101,7 +116,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeString(String name, @Nullable String value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeString(name, value);
         }
@@ -109,13 +124,16 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeNull(String name) {
-        writer.writeNull(name);
+        // 用户已写入name或convert开启了null写入
+        if (!writer.isAtName() || converter.options.appendNull) {
+            writer.writeNull(name);
+        }
     }
 
     @Override
     public void writeBytes(String name, @Nullable byte[] value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeBinary(name, (byte) 0, value);
         }
@@ -130,7 +148,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeBinary(String name, DsonBinaryType type, byte[] value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeBinary(name, type.getValue(), value);
         }
@@ -139,7 +157,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeBinary(String name, DsonBinary binary) {
         if (binary == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeBinary(name, binary);
         }
@@ -148,7 +166,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeExtString(String name, DsonExtString value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtString(name, value);
         }
@@ -157,7 +175,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeExtString(String name, DsonExtStringType type, String value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtString(name, type.getValue(), value);
         }
@@ -166,7 +184,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeExtInt32(String name, DsonExtInt32 value, WireType wireType) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtInt32(name, value, wireType);
         }
@@ -181,7 +199,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeExtInt64(String name, DsonExtInt64 value, WireType wireType) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtInt64(name, value, wireType);
         }
@@ -197,7 +215,6 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     // region object处理
 
-
     @Override
     public <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(value, "value is null");
@@ -212,7 +229,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     public <T> void writeObject(String name, T value, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo, "typeArgInfo");
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
             return;
         }
         // 由于基本类型通常会使用特定的read/write方法，因此最后测试基本类型和包装类型
@@ -290,11 +307,10 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     private DocClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举
-        if (encodeClass != typeArgInfo.declaredType) {
-            return converter.typeIdRegistry.ofType(encodeClass);
-        } else {
-            return null;
+        if (converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
+            return converter.classIdRegistry.ofType(encodeClass);
         }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

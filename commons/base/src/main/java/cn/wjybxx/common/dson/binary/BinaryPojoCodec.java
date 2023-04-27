@@ -34,7 +34,7 @@ public class BinaryPojoCodec<T> {
     public BinaryPojoCodec(BinaryPojoCodecImpl<T> codecImpl) {
         Objects.requireNonNull(codecImpl.getEncoderClass(), "codecImpl.encoderClass");
         this.codecImpl = codecImpl;
-        this.isArray = ConverterUtils.isEncodeAsArray(codecImpl.getEncoderClass());
+        this.isArray = codecImpl.isWriteAsArray();
     }
 
     /** 获取负责编解码的类对象 */

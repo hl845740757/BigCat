@@ -22,7 +22,7 @@ package cn.wjybxx.common;
  * @author wjybxx
  * date - 2023/4/17
  */
-public class CommonUtils {
+public class ObjectUtils {
 
     /**
      * 如果给定的参数存在（不为null），则返回参数本身，否则返回给定的默认值
@@ -31,4 +31,5 @@ public class CommonUtils {
     public static <V> V presentOrElse(V obj, V def) {
         return obj == null ? def : obj;
     }
+
 }

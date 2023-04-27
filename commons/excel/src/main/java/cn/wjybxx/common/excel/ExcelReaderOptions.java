@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.excel;
 
-import cn.wjybxx.common.CommonUtils;
+import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.FunctionUtils;
 import cn.wjybxx.common.config.DefaultValueParser;
 
@@ -46,10 +46,10 @@ public class ExcelReaderOptions {
     private ExcelReaderOptions(Builder builder) {
         this.supportedTypes = Set.copyOf(builder.supportedTypes);
         this.bufferSize = Math.max(8 * 1024, builder.bufferSize);
-        this.sheetNameParser = CommonUtils.presentOrElse(builder.sheetNameParser, ((fileName, sheetName) -> sheetName));
-        this.sheetNameFilter = CommonUtils.presentOrElse(builder.sheetNameFilter, FunctionUtils.alwaysTrue());
+        this.sheetNameParser = ObjectUtils.presentOrElse(builder.sheetNameParser, ((fileName, sheetName) -> sheetName));
+        this.sheetNameFilter = ObjectUtils.presentOrElse(builder.sheetNameFilter, FunctionUtils.alwaysTrue());
         this.skipRows = builder.skipRows;
-        this.mode = CommonUtils.presentOrElse(builder.mode, Mode.BOTH);
+        this.mode = ObjectUtils.presentOrElse(builder.mode, Mode.BOTH);
     }
 
     public static Builder newBuilder() {

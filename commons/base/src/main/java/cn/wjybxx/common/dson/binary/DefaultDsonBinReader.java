@@ -484,9 +484,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
             throw invalidState(List.of(DsonReaderState.TYPE, DsonReaderState.NAME, DsonReaderState.VALUE));
         }
         if (currentDsonType == DsonType.END_OF_OBJECT) {
-            if (context.state != DsonReaderState.WAIT_END_OBJECT) {
-                throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
-            }
+            assert context.state == DsonReaderState.WAIT_END_OBJECT;
             return;
         }
         int size = input.getBytesUntilLimit();

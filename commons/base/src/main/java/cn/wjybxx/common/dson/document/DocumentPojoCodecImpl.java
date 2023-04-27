@@ -18,6 +18,7 @@ package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
+import cn.wjybxx.common.dson.codec.ConverterUtils;
 
 import javax.annotation.Nonnull;
 
@@ -67,6 +68,14 @@ public interface DocumentPojoCodecImpl<T> {
      * 将对象及其所有超类定义的所有要序列化的字段写入输出流。
      */
     void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * 当前对象是否按照数组格式编码
+     * 默认情况下，Map是被看做普通的数组的
+     */
+    default boolean isWriteAsArray() {
+        return ConverterUtils.isEncodeAsArray(getEncoderClass());
+    }
 
     /**
      * 该方法用于告知{@link DocumentPojoCodec}是否自动调用以下方法

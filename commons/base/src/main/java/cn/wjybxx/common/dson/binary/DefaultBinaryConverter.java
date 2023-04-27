@@ -21,10 +21,7 @@ import cn.wjybxx.common.dson.BinClassId;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.binary.codecs.MessageCodec;
 import cn.wjybxx.common.dson.binary.codecs.MessageEnumCodec;
-import cn.wjybxx.common.dson.codec.ClassIdMapper;
-import cn.wjybxx.common.dson.codec.ClassIdRegistries;
-import cn.wjybxx.common.dson.codec.ClassIdRegistry;
-import cn.wjybxx.common.dson.codec.ProtobufUtils;
+import cn.wjybxx.common.dson.codec.*;
 import cn.wjybxx.common.dson.io.*;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
@@ -42,12 +39,14 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     final ClassIdRegistry<BinClassId> classIdRegistry;
     final BinaryCodecRegistry codecRegistry;
-    final int recursionLimit;
+    final ConvertOptions options;
 
-    private DefaultBinaryConverter(ClassIdRegistry<BinClassId> classIdRegistry, BinaryCodecRegistry codecRegistry, int recursionLimit) {
+    private DefaultBinaryConverter(ClassIdRegistry<BinClassId> classIdRegistry,
+                                   BinaryCodecRegistry codecRegistry,
+                                   ConvertOptions options) {
         this.codecRegistry = codecRegistry;
         this.classIdRegistry = classIdRegistry;
-        this.recursionLimit = recursionLimit;
+        this.options = options;
     }
 
     @Override
@@ -108,7 +107,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (BinaryObjectWriter wrapper = new DefaultBinaryObjectWriter(this,
-                new DefaultDsonBinWriter(outputStream, recursionLimit))) {
+                new DefaultDsonBinWriter(outputStream, options.recursionLimit))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
@@ -116,7 +115,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
         try (BinaryObjectReader wrapper = new DefaultBinaryObjectReader(this,
-                new DefaultDsonBinReader(inputStream, recursionLimit))) {
+                new DefaultDsonBinReader(inputStream, options.recursionLimit))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
@@ -134,7 +133,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
     public static DefaultBinaryConverter newInstance(final Set<String> protoBufPackages,
                                                      final Set<String> pojoPackages,
                                                      final ClassIdMapper<BinClassId> classIdMapper,
-                                                     final int recursionLimit) {
+                                                     final ConvertOptions options) {
         final Set<Class<?>> allProtoBufClasses = ProtobufUtils.scan(protoBufPackages);
 
         final HashSet<Class<?>> allClasses = new HashSet<>(allProtoBufClasses);
@@ -144,23 +143,22 @@ public class DefaultBinaryConverter implements BinaryConverter {
         final Map<Class<?>, BinClassId> classIdMap = allClasses.stream()
                 .collect(Collectors.toMap(e -> e, classIdMapper::map));
 
-        return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, recursionLimit);
+        return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, options);
     }
 
     /**
      * @param allProtoBufClasses 所有的protobuf类
      * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
      * @param typeIdMap          所有的类型id信息，包括protobuf的类
-     * @param recursionLimit     递归深度限制
+     * @param options            一些可选项
      */
     @SuppressWarnings("unchecked")
     public static DefaultBinaryConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                      final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
-                                                     final Map<Class<?>, BinClassId> typeIdMap, int recursionLimit) {
-        if (recursionLimit < 1) {
-            throw new IllegalArgumentException("recursionLimit " + recursionLimit);
-        }
-        // 检查typeId是否存在，以及命名空间是否非法
+                                                     final Map<Class<?>, BinClassId> typeIdMap,
+                                                     final ConvertOptions options) {
+        Objects.requireNonNull(options, "options");
+        // 检查classId是否存在，以及命名空间是否非法
         for (Class<?> clazz : allProtoBufClasses) {
             BinClassId classId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
             if (classId.isDefaultNameSpace()) {
@@ -197,12 +195,12 @@ public class DefaultBinaryConverter implements BinaryConverter {
         }
 
         final ClassIdRegistry<BinClassId> classIdRegistry = ClassIdRegistries.fromRegistries(ClassIdRegistries.fromClassIdMap(typeIdMap),
-                BinaryConverterUtils.getDefaultTypeIdRegistry());
+                BinaryConverterUtils.getDefaultClassIdRegistry());
 
         final BinaryCodecRegistry codecRegistry = BinaryCodecRegistries.fromRegistries(BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList),
                 BinaryConverterUtils.getDefaultCodecRegistry());
 
-        return new DefaultBinaryConverter(classIdRegistry, codecRegistry, recursionLimit);
+        return new DefaultBinaryConverter(classIdRegistry, codecRegistry, options);
     }
 
     private static <T extends MessageLite> MessageCodec<T> parseMessageCodec(Class<T> messageClazz) {

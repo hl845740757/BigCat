@@ -72,7 +72,7 @@ public class BinaryConverterUtils extends ConverterUtils {
         return Map.entry(new BinaryPojoCodec<>(codecImpl), new BinClassId(0, classId));
     }
 
-    public static ClassIdRegistry<BinClassId> getDefaultTypeIdRegistry() {
+    public static ClassIdRegistry<BinClassId> getDefaultClassIdRegistry() {
         return CLASS_ID_REGISTRY;
     }
 

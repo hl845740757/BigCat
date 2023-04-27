@@ -197,7 +197,6 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     // region object处理
 
-
     @Override
     public <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(value, "value is null");
@@ -290,11 +289,10 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     private BinClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举
-        if (encodeClass != typeArgInfo.declaredType) {
+        if (converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return converter.classIdRegistry.ofType(encodeClass);
-        } else {
-            return null;
         }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

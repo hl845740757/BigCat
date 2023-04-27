@@ -64,11 +64,11 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public void readName(int expected) {
+    public void readName(int name) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        reader.readName(expected);
+        reader.readName(name);
     }
 
     @Override

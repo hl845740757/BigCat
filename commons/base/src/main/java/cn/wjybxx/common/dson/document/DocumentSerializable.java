@@ -38,8 +38,8 @@ import java.lang.annotation.*;
  * <p>
  * 普通类钩子方法：
  * 1. 如果类提供了非私有的{@link DocumentObjectReader}的单参构造方法，将自动调用 -- 该方法可用于final和忽略字段。
- * 2. 如果类提供了非私有的{@code readObject(DocumentReader)}的反序列化方法，将自动调用 -- 该方法可用于忽略字段。
- * 3. 如果类提供了非私有的{@code writeObject(DocumentWriter)}的序列化方法，将自动调用 -- 该方法可用于final和忽略字段。
+ * 2. 如果类提供了非私有的{@code readObject(DocumentObjectReader)}的反序列化方法，将自动调用 -- 该方法可用于忽略字段。
+ * 3. 如果类提供了非私有的{@code writeObject(DocumentObjectWriter)}的序列化方法，将自动调用 -- 该方法可用于final和忽略字段。
  * 4. 如果类提供了非私有的{@code afterDecode}方法，将在反序列化后调用 -- 该方法用于解码后构建缓存字段。
  * 5. 如果字段通过{@link FieldImpl#readProxy()}指定了读代理，则不要求setter权限
  * 6. 如果字段通过{@link FieldImpl#writeProxy()}指定了写代理，则不要求getter权限

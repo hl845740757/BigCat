@@ -19,10 +19,7 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.dson.DocClassId;
 import cn.wjybxx.common.dson.TypeArgInfo;
-import cn.wjybxx.common.dson.codec.ClassIdMapper;
-import cn.wjybxx.common.dson.codec.ClassIdRegistries;
-import cn.wjybxx.common.dson.codec.ClassIdRegistry;
-import cn.wjybxx.common.dson.codec.ProtobufUtils;
+import cn.wjybxx.common.dson.codec.*;
 import cn.wjybxx.common.dson.document.codecs.MessageCodec;
 import cn.wjybxx.common.dson.document.codecs.MessageEnumCodec;
 import cn.wjybxx.common.dson.io.*;
@@ -40,14 +37,16 @@ import java.util.stream.Collectors;
  */
 public class DefaultDocumentConverter implements DocumentConverter {
 
-    final ClassIdRegistry<DocClassId> typeIdRegistry;
+    final ClassIdRegistry<DocClassId> classIdRegistry;
     final DocumentCodecRegistry codecRegistry;
-    final int recursionLimit;
+    final ConvertOptions options;
 
-    private DefaultDocumentConverter(ClassIdRegistry<DocClassId> typeIdRegistry, DocumentCodecRegistry codecRegistry, int recursionLimit) {
+    private DefaultDocumentConverter(ClassIdRegistry<DocClassId> classIdRegistry,
+                                     DocumentCodecRegistry codecRegistry,
+                                     ConvertOptions options) {
         this.codecRegistry = codecRegistry;
-        this.typeIdRegistry = typeIdRegistry;
-        this.recursionLimit = recursionLimit;
+        this.classIdRegistry = classIdRegistry;
+        this.options = options;
     }
 
     @Override
@@ -57,7 +56,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     @Override
     public ClassIdRegistry<DocClassId> classIdRegistry() {
-        return typeIdRegistry;
+        return classIdRegistry;
     }
 
     @Override
@@ -108,7 +107,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DefaultDsonDocWriter(outputStream, recursionLimit))) {
+                new DefaultDsonDocWriter(outputStream, options.recursionLimit))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
@@ -116,7 +115,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
         try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
-                new DefaultDsonDocReader(inputStream, recursionLimit))) {
+                new DefaultDsonDocReader(inputStream, options.recursionLimit))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
@@ -130,11 +129,12 @@ public class DefaultDocumentConverter implements DocumentConverter {
      * @param protoBufPackages protoBuf协议所在的包
      * @param pojoPackages     自定义对象所在的包
      * @param classIdMapper    类型id映射策略
+     * @param options          一些可选项
      */
     public static DefaultDocumentConverter newInstance(final Set<String> protoBufPackages,
                                                        final Set<String> pojoPackages,
                                                        final ClassIdMapper<DocClassId> classIdMapper,
-                                                       final int recursionLimit) {
+                                                       final ConvertOptions options) {
         final Set<Class<?>> allProtoBufClasses = ProtobufUtils.scan(protoBufPackages);
 
         final HashSet<Class<?>> allClasses = new HashSet<>(allProtoBufClasses);
@@ -144,23 +144,22 @@ public class DefaultDocumentConverter implements DocumentConverter {
         final Map<Class<?>, DocClassId> classIdMap = allClasses.stream()
                 .collect(Collectors.toMap(e -> e, classIdMapper::map));
 
-        return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, recursionLimit);
+        return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, options);
     }
 
     /**
      * @param allProtoBufClasses 所有的protobuf类
      * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
      * @param typeIdMap          所有的类型id信息，包括protobuf的类
-     * @param recursionLimit     递归深度限制
+     * @param options            一些可选项
      */
     @SuppressWarnings("unchecked")
     public static DefaultDocumentConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                        final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
-                                                       final Map<Class<?>, DocClassId> typeIdMap, int recursionLimit) {
-        if (recursionLimit < 1) {
-            throw new IllegalArgumentException("recursionLimit " + recursionLimit);
-        }
-        // 检查typeId是否存在，以及命名空间是否非法
+                                                       final Map<Class<?>, DocClassId> typeIdMap,
+                                                       final ConvertOptions options) {
+        Objects.requireNonNull(options, "options");
+        // 检查classId是否存在，以及命名是否非法
         for (Class<?> clazz : allProtoBufClasses) {
             DocClassId classId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
             if (classId.isObjectClassId()) {
@@ -197,12 +196,12 @@ public class DefaultDocumentConverter implements DocumentConverter {
         }
 
         ClassIdRegistry<DocClassId> classIdRegistry = ClassIdRegistries.fromRegistries(ClassIdRegistries.fromClassIdMap(typeIdMap),
-                DocumentConverterUtils.getDefaultTypeIdRegistry());
+                DocumentConverterUtils.getDefaultClassIdRegistry());
 
         final DocumentCodecRegistry codecRegistry = DocumentCodecRegistries.fromRegistries(DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
-                DocumentConverterUtils.getDefaultCodecRegistry());
+                DocumentConverterUtils.getDefaultCodecRegistry(false));
 
-        return new DefaultDocumentConverter(classIdRegistry, codecRegistry, recursionLimit);
+        return new DefaultDocumentConverter(classIdRegistry, codecRegistry, options);
     }
 
     private static <T extends MessageLite> MessageCodec<T> parseMessageCodec(Class<T> messageClazz) {
