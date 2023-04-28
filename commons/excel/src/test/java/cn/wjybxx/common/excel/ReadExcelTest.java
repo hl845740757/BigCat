@@ -17,10 +17,18 @@
 package cn.wjybxx.common.excel;
 
 import cn.wjybxx.common.config.Sheet;
+import cn.wjybxx.common.config.SheetCodec;
+import cn.wjybxx.common.dson.DocClassId;
+import cn.wjybxx.common.dson.TypeArgInfo;
+import cn.wjybxx.common.dson.codec.ConvertOptions;
+import cn.wjybxx.common.dson.document.DefaultDocumentConverter;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author wjybxx
@@ -32,6 +40,17 @@ public class ReadExcelTest {
     void name() {
         Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File("D:\\github-mine\\BigCat\\doc\\test.xlsx"),
                 ExcelReaderOptions.newBuilder().build());
-        System.out.println(sheetMap);
+
+        Sheet skillSheet = sheetMap.get("Skill");
+
+        DefaultDocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
+                List.of(new SheetCodec()),
+                Map.of(Sheet.class, new DocClassId("Sheet")),
+                ConvertOptions.DEFAULT);
+
+        Sheet clonedObject = converter.cloneObject(skillSheet, TypeArgInfo.of(Sheet.class));
+        Assertions.assertEquals(skillSheet, clonedObject);
+
+//        System.out.println(sheetMap);
     }
 }

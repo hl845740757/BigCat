@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.config;
 
+import java.util.Objects;
+
 /**
  * 一个表格单元由两部分构成：value + header，
  * header用于声明value的名字和类型等，不过为了节省空间，header是单独存储的，因为普通表格的header是共享的。
@@ -35,7 +37,7 @@ public class SheetCell {
 
     public SheetCell(String value, Header header) {
         this.value = value;
-        this.header = header;
+        this.header = Objects.requireNonNull(header);
     }
 
     public String getValue() {
@@ -69,6 +71,26 @@ public class SheetCell {
 
     public int getColIndex() {
         return header.getColIndex();
+    }
+
+    //
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SheetCell sheetCell = (SheetCell) o;
+
+        if (!value.equals(sheetCell.value)) return false;
+        return header.equals(sheetCell.header);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = value.hashCode();
+        result = 31 * result + header.hashCode();
+        return result;
     }
 
     @Override

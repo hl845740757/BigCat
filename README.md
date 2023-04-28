@@ -38,7 +38,7 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 1. Future和EventLoop - concurrent包
 2. Rpc + 注解处理器 - [关于Rpc的设计解释](https://github.com/hl845740757/BigCat/blob/dev/doc/Rpc.MD)
 3. EventBus + 注解处理器
-4. 序列化接口 + 二进制实现
+4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/BigCat/blob/dev/doc/Dson.MD)
 
 ### 资料
 

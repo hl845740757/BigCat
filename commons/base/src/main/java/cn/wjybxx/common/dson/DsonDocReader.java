@@ -22,6 +22,9 @@ import com.google.protobuf.Parser;
 import javax.annotation.Nonnull;
 
 /**
+ * 1.读取数组内普通成员时，name传null，读取嵌套对象时使用无name参数的方法
+ * 2.如果先调用了{@link #readName()}，name传null或之前读取的值
+ *
  * @author wjybxx
  * date - 2023/4/20
  */

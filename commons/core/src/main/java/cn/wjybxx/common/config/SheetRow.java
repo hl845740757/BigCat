@@ -17,6 +17,7 @@
 package cn.wjybxx.common.config;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 表格中的一行
@@ -33,7 +34,7 @@ public class SheetRow implements CellProvider {
 
     public SheetRow(int rowIndex, Map<String, SheetCell> name2CellMap) {
         this.rowIndex = rowIndex;
-        this.name2CellMap = name2CellMap;
+        this.name2CellMap = Objects.requireNonNull(name2CellMap);
     }
 
     /** 获取0开始的行索引 */
@@ -59,6 +60,26 @@ public class SheetRow implements CellProvider {
         SheetCell sheetCell = name2CellMap.get(name);
         if (sheetCell == null) throw new IllegalArgumentException("cell is absent, name " + name);
         return sheetCell;
+    }
+
+    //
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SheetRow sheetRow = (SheetRow) o;
+
+        if (rowIndex != sheetRow.rowIndex) return false;
+        return name2CellMap.equals(sheetRow.name2CellMap);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = rowIndex;
+        result = 31 * result + name2CellMap.hashCode();
+        return result;
     }
 
     @Override

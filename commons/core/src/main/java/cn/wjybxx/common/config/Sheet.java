@@ -19,6 +19,7 @@ package cn.wjybxx.common.config;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 一个表格页的抽象
@@ -50,8 +51,8 @@ public class Sheet {
         this.fileName = fileName;
         this.sheetName = sheetName;
         this.sheetIndex = sheetIndex;
-        this.headerMap = headerMap;
-        this.valueRowList = valueRowList;
+        this.headerMap = Objects.requireNonNull(headerMap);
+        this.valueRowList = Objects.requireNonNull(valueRowList);
     }
 
     public String getFileName() {
@@ -150,6 +151,31 @@ public class Sheet {
     }
 
     //
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Sheet sheet = (Sheet) o;
+
+        if (sheetIndex != sheet.sheetIndex) return false;
+        if (!fileName.equals(sheet.fileName)) return false;
+        if (!sheetName.equals(sheet.sheetName)) return false;
+        if (!headerMap.equals(sheet.headerMap)) return false;
+        return valueRowList.equals(sheet.valueRowList);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = fileName.hashCode();
+        result = 31 * result + sheetName.hashCode();
+        result = 31 * result + sheetIndex;
+        result = 31 * result + headerMap.hashCode();
+        result = 31 * result + valueRowList.hashCode();
+        return result;
+    }
 
     @Override
     public String toString() {

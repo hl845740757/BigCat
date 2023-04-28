@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  * 解码流程为：type -> name -> value
  *
  * <p>
- * 1.读取数组内成员时，name传0
+ * 1.读取数组内普通成员时，name传0，读取嵌套对象时使用无name参数的方法
  * 2.如果先调用了{@link #readName()}，name传0或之前读取的值
  *
  * @author wjybxx

@@ -72,6 +72,34 @@ public class Header {
         return colIndex;
     }
 
+    //
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Header header = (Header) o;
+
+        if (rowIndex != header.rowIndex) return false;
+        if (colIndex != header.colIndex) return false;
+        if (!args.equals(header.args)) return false;
+        if (!name.equals(header.name)) return false;
+        if (!type.equals(header.type)) return false;
+        return comment.equals(header.comment);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = args.hashCode();
+        result = 31 * result + name.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + comment.hashCode();
+        result = 31 * result + rowIndex;
+        result = 31 * result + colIndex;
+        return result;
+    }
+
     @Override
     public String toString() {
         return "Header{" +

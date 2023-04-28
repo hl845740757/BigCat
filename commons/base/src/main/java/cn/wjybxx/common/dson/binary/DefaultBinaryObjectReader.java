@@ -105,11 +105,17 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public <T> T readMessage(int name, @Nonnull Parser<T> parser) {
+        if (reader.isAtType()) {
+            reader.readDsonType();
+        }
         return reader.readMessage(name, parser);
     }
 
     @Override
     public byte[] readValueAsBytes(int name) {
+        if (reader.isAtType()) {
+            reader.readDsonType();
+        }
         return reader.readValueAsBytes(name);
     }
 
@@ -149,6 +155,9 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public void readNull(int name) {
+        if (reader.isAtType()) {
+            reader.readDsonType();
+        }
         reader.readNull(name);
     }
 
@@ -191,6 +200,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Override
     public <T> T readObject(int name, TypeArgInfo<T> typeArgInfo) {
         Class<T> declaredType = typeArgInfo.declaredType;
+        DsonBinReader reader = this.reader;
         // 基础类型不能返回null
         if (declaredType.isPrimitive()) {
             return (T) NumberCodecHelper.readPrimitive(reader, name, declaredType);
@@ -237,6 +247,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     private <T> T readAsDsonValue(DsonType dsonType, int name, Class<T> declaredType) {
+        final DsonBinReader reader = this.reader;
         Object value = switch (dsonType) {
             case INT32 -> reader.readInt32(name);
             case INT64 -> reader.readInt64(name);
@@ -256,6 +267,9 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Nonnull
     @Override
     public BinClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
+        if (reader.isAtType()) {
+            reader.readDsonType();
+        }
         return reader.readStartObject();
     }
 
@@ -267,6 +281,9 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public BinClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
+        if (reader.isAtType()) {
+            reader.readDsonType();
+        }
         return reader.readStartArray();
     }
 

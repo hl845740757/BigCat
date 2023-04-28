@@ -106,19 +106,18 @@ public interface DocumentObjectReader extends AutoCloseable {
         return readStartObject(typeArgInfo);
     }
 
-    /**
-     * @return 对方写入的类型信息，如果对方未写入，则返回传入的声明类型
-     */
-    @Nonnull
-    DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
-
-    void readEndObject();
-
     default DocClassId readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
         return readStartArray(typeArgInfo);
     }
 
+    /** 顶层对象或数组内元素 */
+    @Nonnull
+    DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
+
+    void readEndObject();
+
+    /** 顶层对象或数组内元素 */
     DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndArray();

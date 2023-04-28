@@ -20,7 +20,8 @@ import cn.wjybxx.common.dson.io.Chunk;
 import com.google.protobuf.MessageLite;
 
 /**
- * 写数组元素的时候，{@code name}传0，实在不想定义太多的方法
+ * 1.写数组普通元素的时候，{@code name}传0，写嵌套对象时使用无name参数的写方法
+ * （实在不想定义太多的方法）
  *
  * @author wjybxx
  * date - 2023/4/20

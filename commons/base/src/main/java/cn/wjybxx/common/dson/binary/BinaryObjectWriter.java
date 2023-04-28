@@ -112,15 +112,17 @@ public interface BinaryObjectWriter extends AutoCloseable {
         writeStartObject(value, typeArgInfo);
     }
 
-    void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo);
-
-    void writeEndObject();
-
     default void writeStartArray(int name, Object value, TypeArgInfo<?> typeArgInfo) {
         writeName(name);
         writeStartArray(value, typeArgInfo);
     }
 
+    /** 顶层对象或数组内元素 */
+    void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo);
+
+    void writeEndObject();
+
+    /** 顶层对象或数组内元素 */
     void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo);
 
     void writeEndArray();

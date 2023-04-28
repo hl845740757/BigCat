@@ -71,9 +71,9 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
 
     private static void writeHeaderMap(DocumentObjectWriter writer, Map<String, Header> headerMap) {
         // 只写values
-        writer.writeStartObject("headerMap", headerMap.values(), TypeArgInfo.ARRAYLIST);
+        writer.writeStartArray("headerMap", headerMap.values(), TypeArgInfo.ARRAYLIST);
         for (Header header : headerMap.values()) {
-            writer.writeStartObject(null, header, TypeArgInfo.OBJECT);
+            writer.writeStartObject(header, TypeArgInfo.OBJECT);
             writer.writeString("args", header.getArgs());
             writer.writeString("name", header.getName());
             writer.writeString("type", header.getType());
@@ -82,15 +82,15 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
             writer.writeInt("colIndex", header.getColIndex());
             writer.writeEndObject();
         }
-        writer.writeEndObject();
+        writer.writeEndArray();
     }
 
     private static Map<String, Header> readHeaderMap(DocumentObjectReader reader) {
         Map<String, Header> headerMap = new LinkedHashMap<>();
         // headerMap写的是数组格式
-        reader.readStartObject("headerMap", TypeArgInfo.ARRAYLIST);
+        reader.readStartArray("headerMap", TypeArgInfo.ARRAYLIST);
         while (!reader.isAtEndOfObject()) {
-            reader.readStartObject(null, TypeArgInfo.OBJECT);
+            reader.readStartObject(TypeArgInfo.OBJECT);
             Header header = new Header(reader.readString("args"),
                     reader.readString("name"),
                     reader.readString("type"),
@@ -100,46 +100,46 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
             headerMap.put(header.getName(), header);
             reader.readEndObject();
         }
-        reader.readEndObject();
+        reader.readEndArray();
         return headerMap;
     }
 
     //
     private static void writeValueRowList(DocumentObjectWriter writer, List<SheetRow> valueRowList) {
         // 其实将rowIndex看做key写成对象会更有效，但兼容性可能不好
-        writer.writeStartObject("valueRowList", valueRowList, TypeArgInfo.ARRAYLIST);
+        writer.writeStartArray("valueRowList", valueRowList, TypeArgInfo.ARRAYLIST);
         for (SheetRow valueRow : valueRowList) {
-            writer.writeStartObject(null, valueRow, TypeArgInfo.OBJECT);
+            writer.writeStartObject(valueRow, TypeArgInfo.OBJECT);
             writer.writeInt("rowIndex", valueRow.getRowIndex());
             {
                 // name2CellMap写成kv的pair数组
-                writer.writeStartObject("name2CellMap", valueRow.getName2CellMap(), TypeArgInfo.ARRAYLIST);
+                writer.writeStartArray("name2CellMap", valueRow.getName2CellMap(), TypeArgInfo.ARRAYLIST);
                 for (SheetCell cell : valueRow.getName2CellMap().values()) {
-                    writer.writeStartObject(null, cell, TypeArgInfo.OBJECT);
+                    writer.writeStartObject(cell, TypeArgInfo.OBJECT);
                     writer.writeString("name", cell.getName());
                     writer.writeString("value", cell.getValue());
                     writer.writeEndObject();
                 }
-                writer.writeEndObject();
+                writer.writeEndArray();
             }
             writer.writeEndObject();
         }
-        writer.writeEndObject();
+        writer.writeEndArray();
     }
 
     private static List<SheetRow> readValueRowList(DocumentObjectReader reader, Map<String, Header> headerMap) {
         // valueRowList写的是数组格式
         ArrayList<SheetRow> valueRowList = new ArrayList<>();
-        reader.readStartObject("valueRowList", TypeArgInfo.ARRAYLIST);
+        reader.readStartArray("valueRowList", TypeArgInfo.ARRAYLIST);
         while (!reader.isAtEndOfObject()) {
-            reader.readStartObject(null, TypeArgInfo.OBJECT);
+            reader.readStartObject(TypeArgInfo.OBJECT);
             int rowIndex = reader.readInt("rowIndex");
             Map<String, SheetCell> name2CellMap = new LinkedHashMap<>();
             {
                 // name2CellMap是一个嵌套数组
-                reader.readStartObject("name2CellMap", TypeArgInfo.ARRAYLIST);
+                reader.readStartArray("name2CellMap", TypeArgInfo.ARRAYLIST);
                 while (!reader.isAtEndOfObject()) {
-                    reader.readStartObject(null, TypeArgInfo.OBJECT);
+                    reader.readStartObject(TypeArgInfo.OBJECT);
                     String name = reader.readString("name");
                     String value = reader.readString("value");
                     reader.readEndObject();
@@ -147,12 +147,12 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
                     Header header = headerMap.get(name);
                     name2CellMap.put(name, new SheetCell(value, header));
                 }
-                reader.readEndObject();
+                reader.readEndArray();
             }
             reader.readEndObject();
             valueRowList.add(new SheetRow(rowIndex, name2CellMap));
         }
-        reader.readEndObject();
+        reader.readEndArray();
         valueRowList.trimToSize();
         return valueRowList;
     }
