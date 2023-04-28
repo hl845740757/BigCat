@@ -105,21 +105,6 @@ public class FunctionUtils {
 
     // region 适配
 
-    public static <T> Callable<T> toCallable(Runnable task, T result) {
-        if (task == null) throw new NullPointerException();
-        return new Runnable2CallbackAdapter<>(task, result);
-    }
-
-    public static Callable<Object> toCallable(Runnable task) {
-        if (task == null) throw new NullPointerException();
-        return new Runnable2CallbackAdapter<>(task, null);
-    }
-
-    public static Runnable toRunnable(Callable<?> task) {
-        if (task == null) throw new NullPointerException();
-        return new Callable2RunnableAdapter(task);
-    }
-
     public static <T, R> Function<T, R> toFunction(Consumer<T> action, R result) {
         if (action == null) throw new NullPointerException();
         return new Consumer2FunctionAdapter<>(action, result);
@@ -133,6 +118,21 @@ public class FunctionUtils {
     public static <T, R> Consumer<T> toConsumer(Function<T, R> action) {
         if (action == null) throw new NullPointerException();
         return new Function2ConsumerAdapter<>(action);
+    }
+
+    public static <T> Callable<T> toCallable(Runnable task, T result) {
+        if (task == null) throw new NullPointerException();
+        return new Runnable2CallbackAdapter<>(task, result);
+    }
+
+    public static Callable<Object> toCallable(Runnable task) {
+        if (task == null) throw new NullPointerException();
+        return new Runnable2CallbackAdapter<>(task, null);
+    }
+
+    public static Runnable toRunnable(Callable<?> task) {
+        if (task == null) throw new NullPointerException();
+        return new Callable2RunnableAdapter(task);
     }
 
     public static <T, R> Function<T, R> callableToFunction(Callable<R> callable) {

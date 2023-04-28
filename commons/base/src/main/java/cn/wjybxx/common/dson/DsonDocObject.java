@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.ObjectUtils;
+
 /**
  * 对象的文档版本
  *
@@ -38,7 +40,7 @@ public class DsonDocObject extends DsonObject<String> {
     }
 
     public DsonDocObject setClassId(DocClassId classId) {
-        this.classId = classId == null ? DocClassId.OBJECT : classId;
+        this.classId = ObjectUtils.nullToDef(classId, DocClassId.OBJECT);
         return this;
     }
 

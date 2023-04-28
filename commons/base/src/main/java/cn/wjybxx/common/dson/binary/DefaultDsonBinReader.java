@@ -139,7 +139,6 @@ public class DefaultDsonBinReader implements DsonBinReader {
 
     @Override
     public int readName() {
-        Context context = this.context;
         if (context.state != DsonReaderState.NAME) {
             throw invalidState(List.of(DsonReaderState.NAME));
         }
@@ -306,7 +305,9 @@ public class DefaultDsonBinReader implements DsonBinReader {
         }
         autoStartTopLevel(context);
         ensureValueState(context, DsonType.ARRAY);
-        return doReadStartContainer(context, DsonContextType.ARRAY);
+        doReadStartContainer(context, DsonContextType.ARRAY);
+        setNextState(); // 设置新上下文状态
+        return this.context.classId;
     }
 
     @Override
@@ -319,6 +320,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
             throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
         }
         doReadEndContainer(context);
+        setNextState(); // parent前进一个状态
     }
 
     @Nonnull
@@ -334,7 +336,9 @@ public class DefaultDsonBinReader implements DsonBinReader {
         }
         autoStartTopLevel(context);
         ensureValueState(context, DsonType.OBJECT);
-        return doReadStartContainer(context, DsonContextType.OBJECT);
+        doReadStartContainer(context, DsonContextType.OBJECT);
+        setNextState(); // 设置新上下文状态
+        return this.context.classId;
     }
 
     @Override
@@ -347,6 +351,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
             throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
         }
         doReadEndContainer(context);
+        setNextState(); // parent前进一个状态
     }
 
     @Override
@@ -363,24 +368,35 @@ public class DefaultDsonBinReader implements DsonBinReader {
         return classId;
     }
 
-    private void autoStartTopLevel(Context context) {
-        if (context.contextType == DsonContextType.TOP_LEVEL
-                && (context.state == DsonReaderState.INITIAL || context.state == DsonReaderState.DONE)) {
-            readDsonType();
-        }
-    }
-
-    private BinClassId doReadStartContainer(Context context, DsonContextType contextType) {
+    private void doReadStartContainer(Context context, DsonContextType contextType) {
         Context newContext = newContext(context, contextType);
         int length = input.readFixed32();
         newContext.oldLimit = input.pushLimit(length); // length包含classId
         newContext.classId = readClassId();
         newContext.name = currentName;
 
-        this.context = newContext;
         this.recursionDepth++;
-        setNextState(); // 设置初始状态
-        return newContext.classId;
+        this.context = newContext;
+    }
+
+    private void doReadEndContainer(Context context) {
+        if (!input.isAtEnd()) {
+            throw DsonCodecException.bytesRemain(input.getBytesUntilLimit());
+        }
+        input.popLimit(context.oldLimit);
+
+        // 恢复上下文
+        recoverDsonType(context);
+        this.recursionDepth--;
+        this.context = context.parent;
+        poolContext(context);
+    }
+
+    private void autoStartTopLevel(Context context) {
+        if (context.contextType == DsonContextType.TOP_LEVEL
+                && (context.state == DsonReaderState.INITIAL || context.state == DsonReaderState.DONE)) {
+            readDsonType();
+        }
     }
 
     private BinClassId readClassId() {
@@ -391,21 +407,10 @@ public class DefaultDsonBinReader implements DsonBinReader {
         return new BinClassId(namespace, input.readFixed32());
     }
 
-    private void doReadEndContainer(Context context) {
-        if (!input.isAtEnd()) {
-            throw DsonCodecException.bytesRemain(input.getBytesUntilLimit());
-        }
-        input.popLimit(context.oldLimit);
-
-        this.context = context.parent;
-        this.recursionDepth--;
-        // 恢复上下文
+    private void recoverDsonType(Context context) {
         this.currentDsonType = context.contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
         this.currentWireType = WireType.VARINT;
         this.currentName = context.name;
-        setNextState(); // parent前进一个状态
-
-        poolContext(context);
     }
     // endregion
 
@@ -432,6 +437,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     }
 
     private void doSkipValue() {
+        DsonInput input = this.input;
         int skip;
         switch (currentDsonType) {
             case FLOAT -> skip = 4;
@@ -477,6 +483,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
 
     @Override
     public void skipToEndOfObject() {
+        Context context = this.context;
         if (context.contextType == DsonContextType.TOP_LEVEL) {
             throw DsonCodecException.contextErrorTopLevel();
         }
@@ -500,6 +507,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
         if (context.state != DsonReaderState.VALUE) {
             throw invalidState(List.of(DsonReaderState.VALUE));
         }
+        DsonInput input = this.input;
         int prePosition = input.position();
         DsonType dsonType = currentDsonType;
         DsonValueSummary summary;
@@ -630,9 +638,8 @@ public class DefaultDsonBinReader implements DsonBinReader {
     // region context
 
     private Context newContext(Context parent, DsonContextType contextType) {
-        Context context;
-        if (this.pooledContext != null) {
-            context = this.pooledContext;
+        Context context = this.pooledContext;
+        if (context != null) {
             this.pooledContext = null;
         } else {
             context = new Context();

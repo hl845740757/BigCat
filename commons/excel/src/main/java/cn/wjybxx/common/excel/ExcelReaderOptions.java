@@ -46,10 +46,10 @@ public class ExcelReaderOptions {
     private ExcelReaderOptions(Builder builder) {
         this.supportedTypes = Set.copyOf(builder.supportedTypes);
         this.bufferSize = Math.max(8 * 1024, builder.bufferSize);
-        this.sheetNameParser = ObjectUtils.presentOrElse(builder.sheetNameParser, ((fileName, sheetName) -> sheetName));
-        this.sheetNameFilter = ObjectUtils.presentOrElse(builder.sheetNameFilter, FunctionUtils.alwaysTrue());
+        this.sheetNameParser = ObjectUtils.nullToDef(builder.sheetNameParser, ((fileName, sheetName) -> sheetName));
+        this.sheetNameFilter = ObjectUtils.nullToDef(builder.sheetNameFilter, FunctionUtils.alwaysTrue());
         this.skipRows = builder.skipRows;
-        this.mode = ObjectUtils.presentOrElse(builder.mode, Mode.BOTH);
+        this.mode = ObjectUtils.nullToDef(builder.mode, Mode.BOTH);
     }
 
     public static Builder newBuilder() {

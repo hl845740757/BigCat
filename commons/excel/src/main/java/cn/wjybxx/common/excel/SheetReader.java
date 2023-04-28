@@ -199,7 +199,7 @@ class SheetReader {
                 || cell.getCellType() == CellType.BLANK
                 || cell.getCellType() == CellType.FORMULA) {
             // 原生POI最扯淡的是数值不能直接读取为字符串，导致丢失精度等，StreamerReader则可以，一切都是字符串，这很好
-            return ObjectUtils.presentOrElse(cell.getStringCellValue(), "");
+            return ObjectUtils.nullToDef(cell.getStringCellValue(), "");
         }
         throw new IllegalArgumentException(String.format("unsupported cellType, rowNumber %d cellType %s",
                 getLineNumber(row), cell.getCellType()));
@@ -282,7 +282,7 @@ class SheetReader {
         private Map<String, Header> readHeaders() {
             final int totalColCount = getTotalColCount(nameRow);
             // 使用LinkedHashMap以保持读入顺序
-            final Map<String, Header> result = CollectionUtils.newLinkedHashMapWithExpectedSize(totalColCount);
+            final Map<String, Header> result = CollectionUtils.newLinkedHashMap(totalColCount);
             for (int colIndex = 0; colIndex < totalColCount; colIndex++) {
                 final String args = readCellValueNonNull(argsRow, colIndex).trim();
                 final String type = readCellValueNonNull(typeRow, colIndex).trim();
@@ -371,7 +371,7 @@ class SheetReader {
             final int valueColIndex = findIndex(colIndex2FixedNameMap, COL_VALUE);
             final int commentColIndex = findIndex(colIndex2FixedNameMap, COL_COMMENT);
 
-            final Map<String, Header> headerMap = CollectionUtils.newLinkedHashMapWithExpectedSize(totalRowCount - options.skipRows);
+            final Map<String, Header> headerMap = CollectionUtils.newLinkedHashMap(totalRowCount - options.skipRows);
             final List<SheetRow> valueRowList = new ArrayList<>(totalRowCount - options.skipRows);
             while (rowItr.hasNext()) {
                 final Row valueRow = rowItr.next();

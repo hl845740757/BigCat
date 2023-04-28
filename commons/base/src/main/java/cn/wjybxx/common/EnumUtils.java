@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  * @author wjybxx
  * date 2023/4/1
  */
+@SuppressWarnings("unused")
 public class EnumUtils {
 
     private EnumUtils() {
@@ -75,6 +76,7 @@ public class EnumUtils {
         return null;
     }
 
+    @SafeVarargs
     public static <T extends Enum<T>> BitSet toBitSet(T... values) {
         final BitSet bitSet = new BitSet(64); // 可以自动扩容
         for (Enum<?> e : values) {
@@ -92,15 +94,6 @@ public class EnumUtils {
     }
 
     // region 枚举集合检查
-
-    /**
-     * 检查枚举集合是否为空
-     */
-    public static void requireNotEmpty(List<?> values) {
-        if (values == null || values.isEmpty()) {
-            throw new IllegalArgumentException("values is empty");
-        }
-    }
 
     /**
      * 检查枚举中的number是否存在重复

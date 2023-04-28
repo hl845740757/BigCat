@@ -47,12 +47,12 @@ public enum RelationalOperator implements DsonEnum {
 
         @Override
         public boolean test(float a, float b) {
-            return a >= b;
+            return a > b || MathUtils.isEqual(a, b);
         }
 
         @Override
         public boolean test(double a, double b) {
-            return a >= b;
+            return a > b || MathUtils.isEqual(a, b);
         }
     },
 
@@ -90,12 +90,12 @@ public enum RelationalOperator implements DsonEnum {
 
         @Override
         public boolean test(float a, float b) {
-            return a <= b;
+            return a < b || MathUtils.isEqual(a, b);
         }
 
         @Override
         public boolean test(double a, double b) {
-            return a <= b;
+            return a < b || MathUtils.isEqual(a, b);
         }
     },
 

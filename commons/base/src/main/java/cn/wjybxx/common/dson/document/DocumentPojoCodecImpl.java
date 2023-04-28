@@ -58,16 +58,16 @@ public interface DocumentPojoCodecImpl<T> {
     Class<T> getEncoderClass();
 
     /**
-     * 从输入流中解析指定对象。
-     * 它应该创建对象，并反序列化该类及其所有超类定义的所有要序列化的字段。
-     */
-    T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo);
-
-    /**
      * 将对象写入输出流。
      * 将对象及其所有超类定义的所有要序列化的字段写入输出流。
      */
     void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * 从输入流中解析指定对象。
+     * 它应该创建对象，并反序列化该类及其所有超类定义的所有要序列化的字段。
+     */
+    T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 当前对象是否按照数组格式编码

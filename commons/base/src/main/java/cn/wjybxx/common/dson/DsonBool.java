@@ -33,7 +33,7 @@ public class DsonBool extends DsonValue implements Comparable<DsonBool> {
         this.value = value;
     }
 
-    public boolean isValue() {
+    public boolean getValue() {
         return value;
     }
 

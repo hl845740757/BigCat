@@ -161,13 +161,13 @@ public class DefaultDocumentConverter implements DocumentConverter {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            DocClassId classId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
+            DocClassId classId = CollectionUtils.checkedGet(typeIdMap, clazz, "class");
             if (classId.isObjectClassId()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + clazz);
             }
         }
         for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            DocClassId classId = CollectionUtils.checkGet(typeIdMap, codecImpl.getEncoderClass(), "class");
+            DocClassId classId = CollectionUtils.checkedGet(typeIdMap, codecImpl.getEncoderClass(), "class");
             if (classId.isObjectClassId()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + codecImpl.getEncoderClass());
             }
@@ -195,10 +195,12 @@ public class DefaultDocumentConverter implements DocumentConverter {
             allPojoCodecList.add(new DocumentPojoCodec<>(codecImpl));
         }
 
-        ClassIdRegistry<DocClassId> classIdRegistry = ClassIdRegistries.fromRegistries(ClassIdRegistries.fromClassIdMap(typeIdMap),
+        ClassIdRegistry<DocClassId> classIdRegistry = ClassIdRegistries.fromRegistries(
+                ClassIdRegistries.fromClassIdMap(typeIdMap),
                 DocumentConverterUtils.getDefaultClassIdRegistry());
 
-        final DocumentCodecRegistry codecRegistry = DocumentCodecRegistries.fromRegistries(DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
+        final DocumentCodecRegistry codecRegistry = DocumentCodecRegistries.fromRegistries(
+                DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
                 DocumentConverterUtils.getDefaultCodecRegistry(false));
 
         return new DefaultDocumentConverter(classIdRegistry, codecRegistry, options);

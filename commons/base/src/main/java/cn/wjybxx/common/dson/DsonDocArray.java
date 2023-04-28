@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.ObjectUtils;
+
 import java.util.List;
 
 /**
@@ -42,7 +44,7 @@ public class DsonDocArray extends DsonArray {
     }
 
     public DsonDocArray setClassId(DocClassId classId) {
-        this.classId = classId == null ? DocClassId.OBJECT : classId;
+        this.classId = ObjectUtils.nullToDef(classId, DocClassId.OBJECT);
         return this;
     }
 }

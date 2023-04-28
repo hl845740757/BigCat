@@ -1,6 +1,6 @@
 package cn.wjybxx.common.dson.codec;
 
-import cn.wjybxx.common.CollectionUtils;
+import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.dson.ClassId;
 import cn.wjybxx.common.dson.DocClassId;
 import cn.wjybxx.common.dson.document.DocumentPojoCodecImpl;
@@ -31,7 +31,7 @@ public class ClassIdRegistries {
 
         for (Class<?> type : typeSet) {
             final T classId = classIdMapper.map(type);
-            CollectionUtils.requireNotContains(name2TypeMap, classId, "classId");
+            Preconditions.checkNotContains(name2TypeMap, classId, "classId");
 
             type2NameMap.put(type, classId);
             name2TypeMap.put(classId, type);

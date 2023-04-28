@@ -23,11 +23,13 @@ import cn.wjybxx.common.box.ShortTuple2;
  * @author wjybxx
  * date 2023/3/31
  */
+@SuppressWarnings("unused")
 public class MathUtils {
 
     public static final int MAX_POWER_OF_TWO = 1 << 30;
-    public static final float FLOAT_ROUNDING_ERROR = 0.00001f;
-    public static final float DOUBLE_ROUNDING_ERROR = 0.000000001f;
+    public static final long LONG_MAX_POWER_OF_TWO = 1L << 62;
+    public static final float FLOAT_EPSILON = 0.00001f;
+    public static final float DOUBLE_EPSILON = 0.000000001f;
 
     protected MathUtils() {
     }
@@ -110,7 +112,6 @@ public class MathUtils {
 
     // region clamp
     public static int clamp(int value, int min, int max) {
-        assert max >= min;
         if (value < min) return min;
         if (value > max) return max;
         return value;
@@ -148,6 +149,54 @@ public class MathUtils {
 
     // endregion
 
+    // region min,max
+
+    public static int max(int a, int b, int c) {
+        if (a < b) a = b;
+        if (a < c) a = c;
+        return a;
+    }
+
+    public static int min(int a, int b, int c) {
+        if (a > b) a = b;
+        if (a > c) a = c;
+        return a;
+    }
+
+    public static long max(long a, long b, long c) {
+        if (a < b) a = b;
+        if (a < c) a = c;
+        return a;
+    }
+
+    public static long min(long a, long b, long c) {
+        if (a > b) a = b;
+        if (a > c) a = c;
+        return a;
+    }
+
+    public static float max(float a, float b, float c) {
+        float r = Math.max(a, b);
+        return Math.max(r, c);
+    }
+
+    public static float min(float a, float b, float c) {
+        float r = Math.min(a, b);
+        return Math.min(r, c);
+    }
+
+    public static double max(double a, double b, double c) {
+        double r = Math.max(a, b);
+        return Math.max(r, c);
+    }
+
+    public static double min(double a, double b, double c) {
+        double r = Math.min(a, b);
+        return Math.min(r, c);
+    }
+
+    // endregion
+
     // region 比较
     public static boolean isBetween(int value, int min, int max) {
         return value >= min && value <= max;
@@ -158,15 +207,16 @@ public class MathUtils {
     }
 
     public static boolean isBetween(float value, float min, float max) {
-        return value >= min && value <= max;
+        return value >= min && value <= max; // 这里不使用Equals比较，避免越界
     }
 
     public static boolean isBetween(double value, double min, double max) {
-        return value >= min && value <= max;
+        return value >= min && value <= max; // 这里不使用Equals比较，避免越界
     }
+    //
 
     public static boolean isZero(float value) {
-        return Math.abs(value) <= FLOAT_ROUNDING_ERROR;
+        return Math.abs(value) <= FLOAT_EPSILON;
     }
 
     public static boolean isZero(float value, float tolerance) {
@@ -174,15 +224,25 @@ public class MathUtils {
     }
 
     public static boolean isEqual(float a, float b) {
-        return Math.abs(a - b) <= FLOAT_ROUNDING_ERROR;
+        return Math.abs(a - b) <= FLOAT_EPSILON;
     }
 
     public static boolean isEqual(float a, float b, float tolerance) {
         return Math.abs(a - b) <= tolerance;
     }
 
+    //
+
+    public static boolean isZero(double value) {
+        return Math.abs(value) <= DOUBLE_EPSILON;
+    }
+
+    public static boolean isZero(double value, double tolerance) {
+        return Math.abs(value) <= tolerance;
+    }
+
     public static boolean isEqual(double a, double b) {
-        return Math.abs(a - b) <= DOUBLE_ROUNDING_ERROR;
+        return Math.abs(a - b) <= DOUBLE_EPSILON;
     }
 
     public static boolean isEqual(double a, double b, double tolerance) {

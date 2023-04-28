@@ -57,7 +57,7 @@ class ExcelReader implements AutoCloseable {
 
     Map<String, Sheet> readSheets() {
         final int numberOfSheets = workbook.getNumberOfSheets();
-        final Map<String, Sheet> result = CollectionUtils.newLinkedHashMapWithExpectedSize(numberOfSheets);
+        final Map<String, Sheet> result = CollectionUtils.newLinkedHashMap(numberOfSheets);
         for (int sheetIndex = 0; sheetIndex < numberOfSheets; sheetIndex++) {
             final org.apache.poi.ss.usermodel.Sheet poiSheet = workbook.getSheetAt(sheetIndex);
             final String rawSheetName = poiSheet.getSheetName();

@@ -55,29 +55,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         output.close();
     }
 
-    private void writeFullType(DsonType dsonType, @Nullable WireType wireType) {
-        if (wireType == null) {
-            output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), 0));
-        } else {
-            output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), wireType.getNumber()));
-        }
-    }
-
-    private void writeClassId(@Nullable BinClassId classId) {
-        if (classId == null || classId.isObjectClassId()) {
-            output.writeRawByte(BinClassId.INVALID_NAMESPACE);
-        } else {
-            output.writeRawByte(classId.getNamespace());
-            output.writeFixed32(classId.getLclassId());
-        }
-    }
-
     // region state
-    private void writeCurrentName(Context context) {
-        if (context.contextType == DsonContextType.OBJECT) {
-            output.writeUint32(context.name);
-        }
-    }
 
     @Override
     public boolean isAtName() {
@@ -95,7 +73,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         context.state = DsonWriterState.VALUE;
     }
 
-    private void advanceToValueState(int name, DsonType dsonType, WireType wireType) {
+    private void advanceToValueState(int name) {
         Context context = this.context;
         if (context.state == DsonWriterState.NAME) {
             writeName(name);
@@ -103,16 +81,23 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         if (context.state != DsonWriterState.VALUE) {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
-        writeFullType(dsonType, wireType);
-        writeCurrentName(context);
     }
 
-    private void ensureValueState(Context context, DsonType dsonType) {
+    private void writeFullTypeAndCurrentName(DsonOutput output, DsonType dsonType, WireType wireType) {
+        if (wireType == null) {
+            output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), 0));
+        } else {
+            output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), wireType.getNumber()));
+        }
+        if (context.contextType == DsonContextType.OBJECT) {
+            output.writeUint32(context.name);
+        }
+    }
+
+    private void ensureValueState(Context context) {
         if (context.state != DsonWriterState.VALUE) {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
-        writeFullType(dsonType, null);
-        writeCurrentName(context);
     }
 
     private void setNextState() {
@@ -131,49 +116,63 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     // region 简单值
     @Override
     public void writeInt32(int name, int value, WireType wireType) {
-        advanceToValueState(name, DsonType.INT32, wireType);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.INT32, wireType);
         wireType.writeInt32(output, value);
         setNextState();
     }
 
     @Override
     public void writeInt64(int name, long value, WireType wireType) {
-        advanceToValueState(name, DsonType.INT64, wireType);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.INT64, wireType);
         wireType.writeInt64(output, value);
         setNextState();
     }
 
     @Override
     public void writeFloat(int name, float value) {
-        advanceToValueState(name, DsonType.FLOAT, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.FLOAT, null);
         output.writeFloat(value);
         setNextState();
     }
 
     @Override
     public void writeDouble(int name, double value) {
-        advanceToValueState(name, DsonType.DOUBLE, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.DOUBLE, null);
         output.writeDouble(value);
         setNextState();
     }
 
     @Override
     public void writeBoolean(int name, boolean value) {
-        advanceToValueState(name, DsonType.BOOLEAN, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.BOOLEAN, null);
         output.writeBool(value);
         setNextState();
     }
 
     @Override
     public void writeString(int name, String value) {
-        advanceToValueState(name, DsonType.STRING, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.STRING, null);
         output.writeString(value);
         setNextState();
     }
 
     @Override
     public void writeNull(int name) {
-        advanceToValueState(name, DsonType.NULL, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.NULL, null);
         setNextState();
     }
 
@@ -184,7 +183,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeBinary(int name, byte type, byte[] data) {
-        advanceToValueState(name, DsonType.BINARY, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         {
             output.writeFixed32(1 + data.length);
             output.writeRawByte(type);
@@ -195,7 +196,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeBinary(int name, byte type, Chunk chunk) {
-        advanceToValueState(name, DsonType.BINARY, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         {
             output.writeFixed32(1 + chunk.getLength());
             output.writeRawByte(type);
@@ -211,7 +214,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeExtString(int name, byte type, String value) {
-        advanceToValueState(name, DsonType.EXT_STRING, null);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
         output.writeRawByte(type);
         output.writeString(value);
         setNextState();
@@ -224,7 +229,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeExtInt32(int name, byte type, int value, WireType wireType) {
-        advanceToValueState(name, DsonType.EXT_INT32, wireType);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
         output.writeRawByte(type);
         wireType.writeInt32(output, value);
         setNextState();
@@ -237,7 +244,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeExtInt64(int name, byte type, long value, WireType wireType) {
-        advanceToValueState(name, DsonType.EXT_INT64, wireType);
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
         output.writeRawByte(type);
         wireType.writeInt64(output, value);
         setNextState();
@@ -253,8 +262,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         }
         Context context = this.context;
         autoStartTopLevel(context);
-        ensureValueState(context, DsonType.ARRAY);
+        ensureValueState(context);
         doWriteStartContainer(context, DsonContextType.ARRAY, classId);
+        setNextState(); // 设置新上下文状态
     }
 
     @Override
@@ -267,6 +277,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
             throw invalidState(List.of(DsonWriterState.VALUE), context.state);
         }
         doWriteEndContainer(context);
+        setNextState(); // parent前进一个状态
     }
 
     @Override
@@ -276,8 +287,9 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         }
         Context context = this.context;
         autoStartTopLevel(context);
-        ensureValueState(context, DsonType.OBJECT);
+        ensureValueState(context);
         doWriteStartContainer(context, DsonContextType.OBJECT, classId);
+        setNextState(); // 设置新上下文状态
     }
 
     @Override
@@ -290,6 +302,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
             throw invalidState(List.of(DsonWriterState.NAME), context.state);
         }
         doWriteEndContainer(context);
+        setNextState(); // parent前进一个状态
     }
 
     private void autoStartTopLevel(Context context) {
@@ -300,14 +313,17 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     private void doWriteStartContainer(Context parent, DsonContextType contextType, BinClassId classId) {
+        DsonOutput output = this.output;
+        DsonType dsonType = contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
+        writeFullTypeAndCurrentName(output, dsonType, null);
+
         Context newContext = newContext(parent, contextType);
         newContext.preWritten = output.position();
-        this.context = newContext;
-        this.recursionDepth++;
-
         output.writeFixed32(0);
         writeClassId(classId);
-        setNextState(); // 设置初始状态
+
+        this.context = newContext;
+        this.recursionDepth++;
     }
 
     private void doWriteEndContainer(Context context) {
@@ -318,7 +334,15 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         this.recursionDepth--;
         this.context = context.parent;
         poolContext(context);
-        setNextState(); // parent前进一个状态
+    }
+
+    private void writeClassId(@Nullable BinClassId classId) {
+        if (classId == null || classId.isObjectClassId()) {
+            output.writeRawByte(BinClassId.INVALID_NAMESPACE);
+        } else {
+            output.writeRawByte(classId.getNamespace());
+            output.writeFixed32(classId.getLclassId());
+        }
     }
     // endregion
 
@@ -326,7 +350,8 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeMessage(int name, MessageLite messageLite) {
-        advanceToValueState(name, DsonType.BINARY, null);
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         {
             DsonOutput output = this.output;
             int preWritten = output.position();
@@ -343,7 +368,8 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         if (!Dsons.VALUE_BYTES_TYPES.contains(type)) {
             throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, type);
         }
-        advanceToValueState(name, type, null);
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, type, null);
         {
             if (type == DsonType.STRING) {
                 output.writeUint32(data.length);
@@ -380,9 +406,8 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     // region context
 
     private Context newContext(Context parent, DsonContextType contextType) {
-        Context context;
-        if (this.pooledContext != null) {
-            context = this.pooledContext;
+        Context context = this.pooledContext;
+        if (context != null) {
             this.pooledContext = null;
         } else {
             context = new Context();

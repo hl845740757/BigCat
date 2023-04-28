@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.dson.document;
 
-import cn.wjybxx.common.dson.DocClassId;
+import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ClassIdRegistries;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
@@ -25,10 +25,7 @@ import cn.wjybxx.common.props.IProperties;
 import cn.wjybxx.common.props.PropertiesLoader;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -87,7 +84,8 @@ public class DocumentConverterUtils extends ConverterUtils {
                 .collect(Collectors.toList()));
         CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
 
-        // 替换Map的Codec
+        // 替换Map的Codec，需要先拷贝
+        codecMap = new IdentityHashMap<>(codecMap);
         codecMap.put(Map.class, new DocumentPojoCodec<>(new MapAsObjectCodec()));
         CODEC_REGISTRY2 = new DefaultCodecRegistry(codecMap);
     }
@@ -146,8 +144,6 @@ public class DocumentConverterUtils extends ConverterUtils {
         }
     }
 
-    // region
-
     /** 获取数组idx对于的字符串表示 */
     public static String arrayElementName(int idx) {
         if (idx < 0) throw new IllegalArgumentException("invalid idx " + idx);
@@ -155,6 +151,76 @@ public class DocumentConverterUtils extends ConverterUtils {
         return Integer.toString(idx);
     }
 
+    // region 直接读取为DsonObject
+
+    public static DsonValue readTopDsonValue(DsonDocReader reader) {
+        DsonType dsonType = reader.readDsonType();
+        if (dsonType == DsonType.OBJECT) {
+            return readObject(reader);
+        } else {
+            return readArray(reader);
+        }
+    }
+
+    /** 外部需要先readName */
+    private static DsonDocObject readObject(DsonDocReader reader) {
+        DsonType dsonType;
+        String name;
+        DsonValue value;
+
+        DsonDocObject dsonObject = new DsonDocObject();
+        dsonObject.setClassId(reader.readStartObject());
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            name = reader.readName();
+            value = readAsDsonValue(reader, dsonType, name);
+            dsonObject.put(name, value);
+        }
+        reader.readEndObject();
+        return dsonObject;
+    }
+
+    /** 外部需要先readName */
+    private static DsonDocArray readArray(DsonDocReader reader) {
+        DsonType dsonType;
+        DsonValue value;
+
+        DsonDocArray dsonArray = new DsonDocArray();
+        dsonArray.setClassId(reader.readStartArray());
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            value = readAsDsonValue(reader, dsonType, null);
+            dsonArray.add(value);
+        }
+        reader.readEndArray();
+        return dsonArray;
+    }
+
+    private static DsonValue readAsDsonValue(DsonDocReader reader, DsonType dsonType, String name) {
+        return switch (dsonType) {
+            case INT32 -> new DsonInt32(reader.readInt32(name));
+            case INT64 -> new DsonInt64(reader.readInt64(name));
+            case FLOAT -> new DsonFloat(reader.readFloat(name));
+            case DOUBLE -> new DsonDouble(reader.readDouble(name));
+            case BOOLEAN -> new DsonBool(reader.readBoolean(name));
+            case STRING -> new DsonString(reader.readString(name));
+            case BINARY -> reader.readBinary(name);
+            case EXT_STRING -> reader.readExtString(name);
+            case EXT_INT32 -> reader.readExtInt32(name);
+            case EXT_INT64 -> reader.readExtInt64(name);
+            case NULL -> {
+                reader.readNull(name);
+                yield DsonNull.INSTANCE;
+            }
+            case OBJECT -> {
+                reader.readName(name);
+                yield readObject(reader);
+            }
+            case ARRAY -> {
+                reader.readName(name);
+                yield readArray(reader);
+            }
+            case END_OF_OBJECT -> throw new AssertionError();
+        };
+    }
     // endregion
 
 }

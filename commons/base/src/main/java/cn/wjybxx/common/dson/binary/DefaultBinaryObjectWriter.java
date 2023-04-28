@@ -58,7 +58,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeMessage(int name, MessageLite messageLite) {
         if (messageLite == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeMessage(name, messageLite);
         }
@@ -101,7 +101,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeString(int name, @Nullable String value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeString(name, value);
         }
@@ -115,7 +115,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeBytes(int name, @Nullable byte[] value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeBinary(name, (byte) 0, value);
         }
@@ -130,7 +130,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeBinary(int name, DsonBinaryType type, byte[] value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeBinary(name, type.getValue(), value);
         }
@@ -139,7 +139,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeBinary(int name, DsonBinary binary) {
         if (binary == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeBinary(name, binary);
         }
@@ -148,7 +148,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeExtString(int name, DsonExtString value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtString(name, value);
         }
@@ -157,7 +157,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeExtString(int name, DsonExtStringType type, String value) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtString(name, type.getValue(), value);
         }
@@ -166,7 +166,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeExtInt32(int name, DsonExtInt32 value, WireType wireType) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtInt32(name, value, wireType);
         }
@@ -181,7 +181,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     @Override
     public void writeExtInt64(int name, DsonExtInt64 value, WireType wireType) {
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
         } else {
             writer.writeExtInt64(name, value, wireType);
         }
@@ -211,7 +211,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     public <T> void writeObject(int name, T value, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo, "typeArgInfo");
         if (value == null) {
-            writer.writeNull(name);
+            writeNull(name);
             return;
         }
         // 由于基本类型通常会使用特定的read/write方法，因此最后测试基本类型和包装类型

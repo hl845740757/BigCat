@@ -46,7 +46,7 @@ class PropertiesImpl implements IProperties {
 
     static PropertiesImpl ofProperties(Properties properties) {
         final Set<String> nameSet = properties.stringPropertyNames(); // key本就无序
-        final Map<String, String> copied = CollectionUtils.newLinkedHashMapWithExpectedSize(nameSet.size());
+        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
         for (String name : nameSet) {
             copied.put(name, properties.getProperty(name));
         }
@@ -56,7 +56,7 @@ class PropertiesImpl implements IProperties {
     static PropertiesImpl partialOfProperties(Properties properties, String namespace) {
         final String filterKey = namespace + ".";
         final Set<String> nameSet = properties.stringPropertyNames();
-        final Map<String, String> copied = CollectionUtils.newLinkedHashMapWithExpectedSize(nameSet.size());
+        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
         nameSet.stream()
                 .filter(k -> k.startsWith(filterKey))
                 .forEach(k -> copied.put(k.substring(filterKey.length()), properties.getProperty(k)));
@@ -66,7 +66,7 @@ class PropertiesImpl implements IProperties {
     static PropertiesImpl partialOf(IProperties origin, String namespace) {
         final String filterKey = namespace + ".";
         final Set<String> nameSet = origin.keySet();
-        final Map<String, String> copied = CollectionUtils.newLinkedHashMapWithExpectedSize(nameSet.size());
+        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
         nameSet.stream()
                 .filter(k -> k.startsWith(filterKey))
                 .forEach(k -> copied.put(k.substring(filterKey.length()), origin.getAsString(k)));

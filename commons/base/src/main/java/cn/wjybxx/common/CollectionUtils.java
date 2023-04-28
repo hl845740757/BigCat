@@ -26,6 +26,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static cn.wjybxx.common.ObjectUtils.nullToDef;
+
 /**
  * @author wjybxx
  * date 2023/3/31
@@ -74,7 +76,7 @@ public class CollectionUtils {
     }
 
     /** 删除list的前n个元素 */
-    public static void removeTopN(List<?> list, int n) {
+    public static void removeFirstN(List<?> list, int n) {
         if (n <= 0) {
             return;
         }
@@ -92,11 +94,6 @@ public class CollectionUtils {
         }
         if (list.size() <= n) {
             list.clear();
-        } else if (n <= 8) {
-            int size = list.size();
-            for (; n > 0; n--, size--) {
-                list.remove(size - 1);
-            }
         } else {
             list.subList(list.size() - n, list.size()).clear();
         }
@@ -359,7 +356,7 @@ public class CollectionUtils {
 
     /** 连接多个列表 */
     @SafeVarargs
-    public static <E> List<E> concat(List<E> first, List<? extends E> second, List<E>... more) {
+    public static <E> List<E> union(List<E> first, List<? extends E> second, List<E>... more) {
         int size = first.size() + second.size();
         for (List<?> m : more) {
             size = Math.addExact(size, m.size());
@@ -393,22 +390,130 @@ public class CollectionUtils {
     }
     // endregion
 
+    // region set
+
+    public static <E> HashSet<E> newHashSet(int size) {
+        return new HashSet<>(capacity(size));
+    }
+
+    public static <E> LinkedHashSet<E> newLinkedHashSet(int size) {
+        return new LinkedHashSet<>(capacity(size));
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public static <E> Set<E> toImmutableSet(@Nullable Collection<E> src) {
+        if ((src == null || src.isEmpty())) {
+            return Set.of();
+        }
+        if (src instanceof EnumSet<?> enumSet) {
+            // EnumSet使用代理的方式更好，但要先拷贝保证不可变
+            return (Set<E>) Collections.unmodifiableSet(enumSet.clone());
+        }
+        // 在Set的copy方法中会先调用new HashSet拷贝数据。
+        // 我们进行一次判断并显式调用toArray可减少一次不必要的拷贝
+        if (src.getClass() == HashSet.class) {
+            return (Set<E>) Set.of(src.toArray());
+        } else {
+            return Set.copyOf(src);
+        }
+    }
+
+    /** 用于需要保持元素顺序的场景 */
+    public static <E> Set<E> toImmutableLinkedHashSet(@Nullable Set<E> src) {
+        if (src == null || src.isEmpty()) {
+            return Set.of();
+        }
+        return Collections.unmodifiableSet(new LinkedHashSet<>(src));
+    }
+    // endregion
+
+    // region map
+
+    /** 创建一个能存储指定元素数量的HashMap */
+    public static <K, V> HashMap<K, V> newHashMap(int size) {
+        return new HashMap<>(capacity(size));
+    }
+
+    /** 创建一个包含初始kv的HashMap */
+    public static <K, V> HashMap<K, V> newHashMap(K k, V v) {
+        HashMap<K, V> map = new HashMap<>(4);
+        map.put(k, v);
+        return map;
+    }
+
+    /** 创建一个能存储指定元素数量的LinkedHashMap */
+    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(int size) {
+        return new LinkedHashMap<>(capacity(size));
+    }
+
+    /** 创建一个包含初始kv的LinkedHashMap */
+    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(K k, V v) {
+        LinkedHashMap<K, V> map = new LinkedHashMap<>(4);
+        map.put(k, v);
+        return map;
+    }
+
+    /** 如果给定键不存在则抛出异常 */
+    public static <K, V> V checkedGet(Map<K, V> map, K key) {
+        V v = map.get(key);
+        if (v == null && !map.containsKey(key)) {
+            throw new IllegalArgumentException(String.format("key is absent, key %s", key));
+        }
+        return v;
+    }
+
+    public static <K, V> V checkedGet(Map<K, V> map, K key, String property) {
+        V v = map.get(key);
+        if (v == null && !map.containsKey(key)) {
+            throw new IllegalArgumentException(String.format("%s is absent, key %s", nullToDef(property, "key"), key));
+        }
+        return v;
+    }
+
+    /** @throws NoSuchElementException 如果map为空 */
+    public static <K> K firstKey(Map<K, ?> map) {
+        // JDK的LinkedHashMap真的有点气人，都知道是有序的，还不让查询第一个Key...
+        if (map instanceof SortedMap<K, ?> sortedMap) {
+            return sortedMap.firstKey();
+        } else {
+            return map.keySet().iterator().next();
+        }
+    }
+
+    public static <K, V> Map<V, K> inverseMap(Map<K, V> src) {
+        Map<V, K> out = newHashMap(src.size());
+        src.forEach((k, v) -> out.put(v, k));
+        return out;
+    }
+
+    public static <K, V> Map<V, K> inverseMap(Map<K, V> src, Map<V, K> out) {
+        src.forEach((k, v) -> out.put(v, k));
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public static <K, V> Map<K, V> toImmutableMap(@Nullable Map<K, V> src) {
+        if ((src == null || src.isEmpty())) {
+            return Map.of();
+        }
+        if (src instanceof EnumMap<?, ?> enumMap) { // EnumMap使用代理的方式更好，但要先拷贝保证不可变
+            return (Map<K, V>) Collections.unmodifiableMap(enumMap.clone());
+        }
+        return Map.copyOf(src);
+    }
+
+    /** 转换为不可变的{@link LinkedHashMap}，通常用于需要保留Key的顺序的场景 */
+    public static <K, V> Map<K, V> toImmutableLinkedHashMap(@Nullable Map<K, V> src) {
+        if ((src == null || src.isEmpty())) {
+            return Map.of();
+        }
+        return Collections.unmodifiableMap(new LinkedHashMap<>(src));
+    }
+    // endregion
 
     // region 通用扩展
-
-    @Nullable
-    public static <E> E firstOrDefault(Collection<E> collection, E def) {
-        if (collection == null || collection.isEmpty()) {
-            return def;
-        }
-        if (collection instanceof List) {
-            return ((List<E>) collection).get(0);
-        }
-        if (collection instanceof SortedSet) {
-            return ((SortedSet<E>) collection).first();
-        }
-        return collection.iterator().next();
-    }
 
     public static boolean isEmpty(Map<?, ?> map) {
         return map == null || map.isEmpty();
@@ -430,6 +535,14 @@ public class CollectionUtils {
         return obj instanceof Map<?, ?> && ((Map<?, ?>) obj).size() > 0;
     }
 
+    public static void clear(@Nullable Collection<?> collection) {
+        if (collection != null) collection.clear();
+    }
+
+    public static void clear(@Nullable Map<?, ?> map) {
+        if (map != null) map.clear();
+    }
+
     /** 如果两个集合存在公共元素，则返回true */
     public static boolean intersect(Collection<?> source, Collection<?> candidates) {
         if (isEmpty(source) || isEmpty(candidates)) {
@@ -444,6 +557,21 @@ public class CollectionUtils {
             return true;
         }
         return Collections.disjoint(source, candidates);
+    }
+
+    /** 如果集合不为空，则返回第一个元素，否则返回默认值 */
+    @Nullable
+    public static <E> E firstOrDefault(Collection<E> collection, E def) {
+        if (collection == null || collection.isEmpty()) {
+            return def;
+        }
+        if (collection instanceof List) {
+            return ((List<E>) collection).get(0);
+        }
+        if (collection instanceof SortedSet) {
+            return ((SortedSet<E>) collection).first();
+        }
+        return collection.iterator().next();
     }
 
     /**
@@ -472,7 +600,7 @@ public class CollectionUtils {
     }
 
     /**
-     * 使用“==”删除对象
+     * 使用“==”删除第一个匹配的元素
      */
     public static boolean removeRef(Collection<?> collection, Object element) {
         if (collection.isEmpty()) {
@@ -492,79 +620,6 @@ public class CollectionUtils {
         return false;
     }
 
-    @Nonnull
-    @SuppressWarnings("unchecked")
-    public static <E> Set<E> toImmutableSet(@Nullable Collection<E> src) {
-        if ((src == null || src.isEmpty())) {
-            return Set.of();
-        }
-        if (src instanceof EnumSet<?> enumSet) {  // EnumSet使用代理的方式更好，但要先拷贝保证不可变
-            return (Set<E>) Collections.unmodifiableSet(enumSet.clone());
-        }
-        // 在Set的copy方法中会先调用new HashSet拷贝数据。
-        // 我们进行一次判断并显式调用toArray可减少一次不必要的拷贝
-        if (src.getClass() == HashSet.class) {
-            return (Set<E>) Set.of(src.toArray());
-        } else {
-            return Set.copyOf(src);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    public static <K, V> Map<K, V> toImmutableMap(@Nullable Map<K, V> src) {
-        if ((src == null || src.isEmpty())) {
-            return Map.of();
-        }
-        if (src instanceof EnumMap<?, ?> enumMap) { // EnumMap使用代理的方式更好，但要先拷贝保证不可变
-            return (Map<K, V>) Collections.unmodifiableMap(enumMap.clone());
-        }
-        return Map.copyOf(src);
-    }
-
-    /** 转换为不可变的{@link LinkedHashMap}，通常用于需要保留Key的顺序的场景 */
-    public static <K, V> Map<K, V> toImmutableLinkedHashMap(@Nullable Map<K, V> src) {
-        return Collections.unmodifiableMap(new LinkedHashMap<>(src));
-    }
-
-    /** 创建一个包含初始kv的LinkedHashMap */
-    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(K k, V v) {
-        LinkedHashMap<K, V> map = new LinkedHashMap<>(4);
-        map.put(k, v);
-        return map;
-    }
-
-    /** 创建一个包含初始kv的LinkedHashMap */
-    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(K k, V v, K k2, V v2) {
-        LinkedHashMap<K, V> map = new LinkedHashMap<>(4);
-        map.put(k, v);
-        map.put(k2, v2);
-        return map;
-    }
-
-    // 以避免对guava的依赖
-    public static <K, V> HashMap<K, V> newHashMapWithExpectedSize(int size) {
-        return new HashMap<>(capacity(size));
-    }
-
-    public static <K, V> LinkedHashMap<K, V> newLinkedHashMapWithExpectedSize(int size) {
-        return new LinkedHashMap<>(capacity(size));
-    }
-
-    public static <E> HashSet<E> newHashSetWithExpectedSize(int size) {
-        return new HashSet<>(capacity(size));
-    }
-
-    public static <E> LinkedHashSet<E> newLinkedHashSetWithExpectedSize(int size) {
-        return new LinkedHashSet<>(capacity(size));
-    }
-    //
-
-    public static <K, V> Map<V, K> inverse(Map<K, V> src, Map<V, K> out) {
-        src.forEach((k, v) -> out.put(v, k));
-        return out;
-    }
-
     // endregion
 
     // region stream
@@ -582,79 +637,17 @@ public class CollectionUtils {
 
     // endregion
 
-    // region check
+    // region 减少库依赖的方法
 
-    /** 检查集合里是否存在null，如果元素里存在null则抛出异常 */
-    public static void checkNullElements(Collection<?> c) {
-        if (c instanceof RandomAccess) {
-            // produce less garbage
-            List<?> list = (List<?>) c;
-            int size = list.size();
-            for (int i = 0; i < size; i++) {
-                if (list.get(i) == null) {
-                    throw new IllegalArgumentException("c contains null values");
-                }
-            }
-        } else {
-            for (Object element : c) {
-                if (element == null) {
-                    throw new IllegalArgumentException("c contains null values");
-                }
-            }
-        }
-    }
-
-    public static <K, V> V checkGet(Map<K, V> map, K key, String property) {
-        V v = map.get(key);
-        if (v == null && !map.containsKey(key)) {
-            throwAbsentException(key, property);
-        }
-        return v;
-    }
-
-    public static <K, V> void requireNotContains(Map<K, V> map, K key, String property) {
-        if (map.containsKey(key)) {
-            throwDuplicateException(key, property);
-        }
-    }
-
-    public static <K, V> void requireContains(Map<K, V> map, K key, String property) {
-        if (!map.containsKey(key)) {
-            throwAbsentException(key, property);
-        }
-    }
-
-    private static <K> void throwDuplicateException(K key, String property) {
-        if (property == null) {
-            throw new IllegalArgumentException("key is duplicate: " + key);
-        } else {
-            throw new IllegalArgumentException(property + " is duplicate: " + key);
-        }
-    }
-
-    private static <K> void throwAbsentException(K key, String property) {
-        if (property == null) {
-            throw new IllegalArgumentException("key is absent: " + key);
-        } else {
-            throw new IllegalArgumentException(property + " is absent: " + key);
-        }
-    }
-
-    // endregion
-
-    // region 拷贝以避免依赖
     private static int capacity(int expectedSize) {
-        if (expectedSize <= 0) {
-            return 8;
-        }
+        Preconditions.checkPositive(expectedSize, "expectedSize");
         if (expectedSize < 3) {
-            return expectedSize + 1;
+            return 4;
         }
-        long capacity = (long) (expectedSize / 0.75D + 1.0F);
-        if (capacity >= Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
+        if (expectedSize < MathUtils.MAX_POWER_OF_TWO) {
+            return (int) ((float) expectedSize / 0.75F + 1.0F);
         }
-        return (int) capacity;
+        return Integer.MAX_VALUE;
     }
 
     // endregion

@@ -30,6 +30,10 @@ public class DsonDouble extends DsonNumber implements Comparable<DsonDouble> {
         this.value = value;
     }
 
+    public double getValue() {
+        return value;
+    }
+
     @Nonnull
     @Override
     public DsonType getDsonType() {

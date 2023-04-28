@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.CollectionUtils;
+
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -67,6 +69,13 @@ public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValu
         for (Map.Entry<? extends K, ? extends DsonValue> entry : m.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
+    }
+
+    /**
+     * @throws java.util.NoSuchElementException 如果对象为空
+     */
+    public K firstKey() {
+        return CollectionUtils.firstKey(map);
     }
 
     private static IllegalArgumentException nameOrValueIsNull() {

@@ -22,29 +22,32 @@ import cn.wjybxx.common.dson.io.DsonOutput;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * @author wjybxx
  * date - 2023/4/21
  */
-public class DefaultDsonDocWriter implements DsonDocWriter {
+public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
 
     private final DsonOutput output;
-    private final int recursionLimit;
-
-    private Context context;
-    private Context pooledContext; // 一个额外的缓存，用于写集合等减少上下文创建
-
-    private int recursionDepth;
 
     public DefaultDsonDocWriter(DsonOutput output, int recursionLimit) {
+        super(recursionLimit);
         this.output = output;
-        this.recursionLimit = recursionLimit;
-        this.context = new Context(null, DsonContextType.TOP_LEVEL);
+        setContext(new Context(null, DsonContextType.TOP_LEVEL));
     }
 
+    @Override
+    public Context getContext() {
+        return (Context) super.getContext();
+    }
+
+    @Override
+    public Context getPooledContext() {
+        return (Context) super.getPooledContext();
+    }
+
+    //
     @Override
     public void flush() {
         output.flush();
@@ -55,12 +58,146 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
         output.close();
     }
 
-    private void writeFullType(DsonType dsonType, @Nullable WireType wireType) {
+    // region state
+
+    private void writeFullTypeAndCurrentName(DsonOutput output, DsonType dsonType, @Nullable WireType wireType) {
         if (wireType == null) {
             output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), 0));
         } else {
             output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), wireType.getNumber()));
         }
+        Context context = getContext();
+        if (context.contextType == DsonContextType.OBJECT) {
+            output.writeString(context.name);
+        }
+    }
+    // endregion
+
+    // region 简单值
+
+    @Override
+    protected void doWriteInt32(int value, WireType wireType) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.INT32, wireType);
+        wireType.writeInt32(output, value);
+    }
+
+    @Override
+    protected void doWriteInt64(long value, WireType wireType) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.INT64, wireType);
+        wireType.writeInt64(output, value);
+    }
+
+    @Override
+    protected void doWriteFloat(float value) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.FLOAT, null);
+        output.writeFloat(value);
+    }
+
+    @Override
+    protected void doWriteDouble(double value) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.DOUBLE, null);
+        output.writeDouble(value);
+    }
+
+    @Override
+    protected void doWriteBool(boolean value) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.BOOLEAN, null);
+        output.writeBool(value);
+    }
+
+    @Override
+    protected void doWriteString(String value) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.STRING, null);
+        output.writeString(value);
+    }
+
+    @Override
+    protected void doWriteNull() {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.NULL, null);
+    }
+
+    @Override
+    protected void doWriteBinary(byte type, byte[] data) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
+        {
+            output.writeFixed32(1 + data.length);
+            output.writeRawByte(type);
+            output.writeRawBytes(data);
+        }
+    }
+
+    @Override
+    protected void doWriteBinary(byte type, Chunk chunk) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
+        {
+            output.writeFixed32(1 + chunk.getLength());
+            output.writeRawByte(type);
+            output.writeRawBytes(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
+        }
+    }
+
+    @Override
+    protected void doWriteExtString(byte type, String value) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
+        output.writeRawByte(type);
+        output.writeString(value);
+    }
+
+    @Override
+    protected void doWriteExtInt32(byte type, int value, WireType wireType) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
+        output.writeRawByte(type);
+        wireType.writeInt32(output, value);
+    }
+
+    @Override
+    protected void doWriteExtInt64(byte type, long value, WireType wireType) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
+        output.writeRawByte(type);
+        wireType.writeInt64(output, value);
+    }
+
+    // endregion
+
+    // region 容器
+
+    @Override
+    protected void doWriteStartContainer(DsonContextType contextType, DocClassId classId) {
+        DsonOutput output = this.output;
+        DsonType dsonType = contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
+        writeFullTypeAndCurrentName(output, dsonType, null);
+
+        Context newContext = newContext(getContext(), contextType);
+        newContext.preWritten = output.position();
+        output.writeFixed32(0);
+        writeClassId(classId);
+
+        setContext(newContext);
+        this.recursionDepth++;
+    }
+
+    @Override
+    protected void doWriteEndContainer() {
+        // 记录preWritten在写length之前，最后的size要减4
+        Context context = getContext();
+        int preWritten = context.preWritten;
+        output.setFixedInt32(preWritten, output.position() - preWritten - 4);
+
+        this.recursionDepth--;
+        setContext(context.parent);
+        poolContext(context);
     }
 
     private void writeClassId(@Nullable DocClassId classId) {
@@ -70,279 +207,27 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
             output.writeString(classId.getValue());
         }
     }
-
-    // region state
-    private void writeCurrentName(Context context) {
-        if (context.contextType == DsonContextType.OBJECT) {
-            output.writeString(context.name);
-        }
-    }
-
-    @Override
-    public boolean isAtName() {
-        return context.state == DsonWriterState.NAME;
-    }
-
-    @Override
-    public void writeName(String name) {
-        Objects.requireNonNull(name, "name");
-        Context context = this.context;
-        if (context.state != DsonWriterState.NAME) {
-            throw invalidState(List.of(DsonWriterState.NAME), context.state);
-        }
-        context.name = name;
-        context.state = DsonWriterState.VALUE;
-    }
-
-    private void advanceToValueState(String name, DsonType dsonType, WireType wireType) {
-        Context context = this.context;
-        if (context.state == DsonWriterState.NAME) {
-            writeName(name);
-        }
-        if (context.state != DsonWriterState.VALUE) {
-            throw invalidState(List.of(DsonWriterState.VALUE), context.state);
-        }
-        writeFullType(dsonType, wireType);
-        writeCurrentName(context);
-    }
-
-    private void ensureValueState(Context context, DsonType dsonType) {
-        if (context.state != DsonWriterState.VALUE) {
-            throw invalidState(List.of(DsonWriterState.VALUE), context.state);
-        }
-        writeFullType(dsonType, null);
-        writeCurrentName(context);
-    }
-
-    private void setNextState() {
-        switch (context.contextType) {
-            case TOP_LEVEL -> context.setState(DsonWriterState.DONE);
-            case OBJECT -> context.setState(DsonWriterState.NAME);
-            case ARRAY -> context.setState(DsonWriterState.VALUE);
-        }
-    }
-
-    private DsonCodecException invalidState(List<DsonWriterState> expected, DsonWriterState state) {
-        return DsonCodecException.invalidState(context.contextType, expected, state);
-    }
     // endregion
 
-    // region 简单值
-    @Override
-    public void writeInt32(String name, int value, WireType wireType) {
-        advanceToValueState(name, DsonType.INT32, wireType);
-        wireType.writeInt32(output, value);
-        setNextState();
-    }
+    // region 特殊接口
 
     @Override
-    public void writeInt64(String name, long value, WireType wireType) {
-        advanceToValueState(name, DsonType.INT64, wireType);
-        wireType.writeInt64(output, value);
-        setNextState();
-    }
-
-    @Override
-    public void writeFloat(String name, float value) {
-        advanceToValueState(name, DsonType.FLOAT, null);
-        output.writeFloat(value);
-        setNextState();
-    }
-
-    @Override
-    public void writeDouble(String name, double value) {
-        advanceToValueState(name, DsonType.DOUBLE, null);
-        output.writeDouble(value);
-        setNextState();
-    }
-
-    @Override
-    public void writeBoolean(String name, boolean value) {
-        advanceToValueState(name, DsonType.BOOLEAN, null);
-        output.writeBool(value);
-        setNextState();
-    }
-
-    @Override
-    public void writeString(String name, String value) {
-        advanceToValueState(name, DsonType.STRING, null);
-        output.writeString(value);
-        setNextState();
-    }
-
-    @Override
-    public void writeNull(String name) {
-        advanceToValueState(name, DsonType.NULL, null);
-        setNextState();
-    }
-
-    @Override
-    public void writeBinary(String name, DsonBinary dsonBinary) {
-        writeBinary(name, dsonBinary.getType(), dsonBinary.getData());
-    }
-
-    @Override
-    public void writeBinary(String name, byte type, byte[] data) {
-        advanceToValueState(name, DsonType.BINARY, null);
+    protected void doWriteMessage(MessageLite messageLite) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         {
-            output.writeFixed32(1 + data.length);
-            output.writeRawByte(type);
-            output.writeRawBytes(data);
-        }
-        setNextState();
-    }
-
-    @Override
-    public void writeBinary(String name, byte type, Chunk chunk) {
-        advanceToValueState(name, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + chunk.getLength());
-            output.writeRawByte(type);
-            output.writeRawBytes(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
-        }
-        setNextState();
-    }
-
-    @Override
-    public void writeExtString(String name, DsonExtString value) {
-        writeExtString(name, value.getType(), value.getValue());
-    }
-
-    @Override
-    public void writeExtString(String name, byte type, String value) {
-        advanceToValueState(name, DsonType.EXT_STRING, null);
-        output.writeRawByte(type);
-        output.writeString(value);
-        setNextState();
-    }
-
-    @Override
-    public void writeExtInt32(String name, DsonExtInt32 value, WireType wireType) {
-        writeExtInt32(name, value.getType(), value.getValue(), wireType);
-    }
-
-    @Override
-    public void writeExtInt32(String name, byte type, int value, WireType wireType) {
-        advanceToValueState(name, DsonType.EXT_INT32, wireType);
-        output.writeRawByte(type);
-        wireType.writeInt32(output, value);
-        setNextState();
-    }
-
-    @Override
-    public void writeExtInt64(String name, DsonExtInt64 value, WireType wireType) {
-        writeExtInt64(name, value.getType(), value.getValue(), wireType);
-    }
-
-    @Override
-    public void writeExtInt64(String name, byte type, long value, WireType wireType) {
-        advanceToValueState(name, DsonType.EXT_INT64, wireType);
-        output.writeRawByte(type);
-        wireType.writeInt64(output, value);
-        setNextState();
-    }
-
-    // endregion
-
-    // region 容器
-    @Override
-    public void writeStartArray(DocClassId classId) {
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        Context context = this.context;
-        autoStartTopLevel(context);
-        ensureValueState(context, DsonType.ARRAY);
-        doWriteStartContainer(context, DsonContextType.ARRAY, classId);
-    }
-
-    @Override
-    public void writeEndArray() {
-        Context context = this.context;
-        if (context.contextType != DsonContextType.ARRAY) {
-            throw DsonCodecException.contextError(DsonContextType.ARRAY, context.contextType);
-        }
-        if (context.state != DsonWriterState.VALUE) {
-            throw invalidState(List.of(DsonWriterState.VALUE), context.state);
-        }
-        doWriteEndContainer(context);
-    }
-
-    @Override
-    public void writeStartObject(DocClassId classId) {
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        Context context = this.context;
-        autoStartTopLevel(context);
-        ensureValueState(context, DsonType.OBJECT);
-        doWriteStartContainer(context, DsonContextType.OBJECT, classId);
-    }
-
-    @Override
-    public void writeEndObject() {
-        Context context = this.context;
-        if (context.contextType != DsonContextType.OBJECT) {
-            throw DsonCodecException.contextError(DsonContextType.OBJECT, context.contextType);
-        }
-        if (context.state != DsonWriterState.NAME) { // 下一个循环的开始
-            throw invalidState(List.of(DsonWriterState.NAME), context.state);
-        }
-        doWriteEndContainer(context);
-    }
-
-    private void autoStartTopLevel(Context context) {
-        if (context.contextType == DsonContextType.TOP_LEVEL
-                && (context.state == DsonWriterState.INITIAL || context.state == DsonWriterState.DONE)) {
-            context.setState(DsonWriterState.VALUE);
-        }
-    }
-
-    private void doWriteStartContainer(Context parent, DsonContextType contextType, DocClassId classId) {
-        Context newContext = newContext(parent, contextType);
-        newContext.preWritten = output.position();
-        this.context = newContext;
-        this.recursionDepth++;
-
-        output.writeFixed32(0);
-        writeClassId(classId);
-        setNextState(); // 设置初始状态
-    }
-
-    private void doWriteEndContainer(Context context) {
-        // 记录preWritten在写length之前，最后的size要减4
-        int preWritten = context.preWritten;
-        output.setFixedInt32(preWritten, output.position() - preWritten - 4);
-
-        this.recursionDepth--;
-        this.context = context.parent;
-        poolContext(context);
-        setNextState(); // parent前进一个状态
-    }
-    // endregion
-
-    // region sp
-
-    @Override
-    public void writeMessage(String name, MessageLite messageLite) {
-        advanceToValueState(name, DsonType.BINARY, null);
-        {
-            DsonOutput output = this.output;
             int preWritten = output.position();
             output.writeFixed32(0);
             output.writeRawByte(DsonBinaryType.PROTOBUF_MESSAGE.getValue());
             output.writeMessageNoSize(messageLite);
             output.setFixedInt32(preWritten, output.position() - preWritten - 4);
         }
-        setNextState();
     }
 
     @Override
-    public void writeValueBytes(String name, DsonType type, byte[] data) {
-        if (!Dsons.VALUE_BYTES_TYPES.contains(type)) {
-            throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, type);
-        }
-        advanceToValueState(name, type, null);
+    protected void doWriteValueBytes(DsonType type, byte[] data) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, type, null);
         {
             if (type == DsonType.STRING) {
                 output.writeUint32(data.length);
@@ -351,27 +236,6 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
             }
             output.writeRawBytes(data);
         }
-        setNextState();
-    }
-
-    @Override
-    public void attachContext(Object value) {
-        context.attach = value;
-    }
-
-    @Override
-    public Object attachContext() {
-        return context.attach;
-    }
-
-    @Override
-    public boolean isArrayContext() {
-        return context.contextType == DsonContextType.ARRAY;
-    }
-
-    @Override
-    public boolean isObjectContext() {
-        return context.contextType == DsonContextType.OBJECT;
     }
 
     // endregion
@@ -379,10 +243,9 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
     // region context
 
     private Context newContext(Context parent, DsonContextType contextType) {
-        Context context;
-        if (this.pooledContext != null) {
-            context = this.pooledContext;
-            this.pooledContext = null;
+        Context context = getPooledContext();
+        if (context != null) {
+            setPooledContext(null);
         } else {
             context = new Context();
         }
@@ -392,45 +255,23 @@ public class DefaultDsonDocWriter implements DsonDocWriter {
 
     private void poolContext(Context context) {
         context.reset();
-        this.pooledContext = context;
+        setPooledContext(context);
     }
 
-    private static class Context {
-
-        Context parent;
-        DsonContextType contextType;
-        DsonWriterState state = DsonWriterState.INITIAL;
-        Object attach;
+    private static class Context extends AbstractDsonDocWriter.Context {
 
         int preWritten = 0;
-        /** 需要先缓存下来，因为name和value可能分开写入，而name必须写在type后面 */
-        String name;
 
         public Context() {
         }
 
-        public Context(Context parent, DsonContextType contextType) {
-            this.parent = parent;
-            this.contextType = contextType;
-        }
-
-        void init(Context parent, DsonContextType contextType) {
-            this.parent = parent;
-            this.contextType = contextType;
-        }
-
-        void setState(DsonWriterState state) {
-            this.state = state;
+        public Context(AbstractDsonDocWriter.Context parent, DsonContextType contextType) {
+            super(parent, contextType);
         }
 
         void reset() {
-            parent = null;
-            contextType = null;
-            state = DsonWriterState.INITIAL;
-            attach = null;
-
+            super.reset();
             preWritten = 0;
-            name = null;
         }
     }
 

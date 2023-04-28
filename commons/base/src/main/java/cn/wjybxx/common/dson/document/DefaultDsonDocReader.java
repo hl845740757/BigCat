@@ -21,11 +21,6 @@ import cn.wjybxx.common.dson.io.BinaryUtils;
 import cn.wjybxx.common.dson.io.DsonInput;
 import com.google.protobuf.Parser;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
-
 /**
  * 与{@link cn.wjybxx.common.dson.binary.DefaultDsonBinReader}的主要区别：
  * 1.name和classId由Int变为String
@@ -38,25 +33,14 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/4/22
  */
-public class DefaultDsonDocReader implements DsonDocReader {
+public class DefaultDsonDocReader extends AbstractDsonDocReader {
 
     private final DsonInput input;
-    private final int recursionLimit;
-
-    private Context context;
-    private Context pooledContext; // 一个额外的缓存，用于写集合等减少上下文创建
-
-    // 这些值放外面，不需要上下文隔离
-    private int recursionDepth;
-    private DsonType currentDsonType;
-    private WireType currentWireType;
-    private String currentName = null;
 
     public DefaultDsonDocReader(DsonInput input, int recursionLimit) {
+        super(recursionLimit);
         this.input = input;
-        this.recursionLimit = recursionLimit;
-
-        this.context = new Context(null, DsonContextType.TOP_LEVEL);
+        setContext(new Context(null, DsonContextType.TOP_LEVEL));
     }
 
     @Override
@@ -64,35 +48,17 @@ public class DefaultDsonDocReader implements DsonDocReader {
         input.close();
     }
 
+    @Override
+    public Context getContext() {
+        return (Context) super.getContext();
+    }
+
+    @Override
+    public Context getPooledContext() {
+        return (Context) super.getPooledContext();
+    }
+
     // region state
-
-    @Nonnull
-    @Override
-    public DsonType getCurrentDsonType() {
-        if (currentDsonType == null) {
-            assert context.contextType == DsonContextType.TOP_LEVEL;
-            throw invalidState(List.of(DsonReaderState.NAME, DsonReaderState.VALUE));
-        }
-        return currentDsonType;
-    }
-
-    @Override
-    public String getCurrentName() {
-        if (context.state != DsonReaderState.VALUE) {
-            throw invalidState(List.of(DsonReaderState.VALUE));
-        }
-        return currentName;
-    }
-
-    @Nonnull
-    @Override
-    public DocClassId getCurrentClassId() {
-        DocClassId classId = context.classId;
-        if (classId == null) {
-            throw DsonCodecException.contextErrorTopLevel();
-        }
-        return classId;
-    }
 
     @Override
     public boolean isAtEndOfObject() {
@@ -100,24 +66,9 @@ public class DefaultDsonDocReader implements DsonDocReader {
     }
 
     @Override
-    public boolean isAtType() {
-        if (context.state == DsonReaderState.TYPE) {
-            return true;
-        }
-        return context.contextType == DsonContextType.TOP_LEVEL
-                && context.state != DsonReaderState.VALUE; // INIT or DONE
-    }
-
-    @Override
     public DsonType readDsonType() {
-        Context context = this.context;
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            if (context.state != DsonReaderState.INITIAL && context.state != DsonReaderState.DONE) {
-                throw invalidState(List.of(DsonReaderState.INITIAL, DsonReaderState.DONE));
-            }
-        } else if (context.state != DsonReaderState.TYPE) {
-            throw invalidState(List.of(DsonReaderState.TYPE));
-        }
+        Context context = this.getContext();
+        checkReadDsonTypeState(context);
 
         final int fullType = input.isAtEnd() ? 0 : BinaryUtils.toUint8(input.readRawByte());
         DsonType dsonType = DsonType.forNumber(Dsons.dsonTypeOfFullType(fullType));
@@ -145,250 +96,88 @@ public class DefaultDsonDocReader implements DsonDocReader {
         return dsonType;
     }
 
-    @Override
-    public String readName() {
-        Context context = this.context;
-        if (context.state != DsonReaderState.NAME) {
-            throw invalidState(List.of(DsonReaderState.NAME));
-        }
-        context.setState(DsonReaderState.VALUE);
-        return currentName;
-    }
-
-    @Override
-    public void readName(String expected) {
-        String name = readName();
-        if (!Objects.equals(name, expected)) {
-            throw DsonCodecException.unexpectedName(expected, name);
-        }
-    }
-
-    /** 前进到读值状态 */
-    private void advanceToValueState(String name, @Nullable DsonType requiredType) {
-        Context context = this.context;
-        if (context.state == DsonReaderState.TYPE) {
-            readDsonType();
-        }
-        if (context.state == DsonReaderState.NAME) {
-            readName(name);
-        }
-        if (context.state != DsonReaderState.VALUE) {
-            throw invalidState(List.of(DsonReaderState.VALUE));
-        }
-        if (requiredType != null && currentDsonType != requiredType) {
-            throw DsonCodecException.dsonTypeMismatch(requiredType, currentDsonType);
-        }
-    }
-
-    private void ensureValueState(Context context, DsonType requiredType) {
-        if (context.state != DsonReaderState.VALUE) {
-            throw invalidState(List.of(DsonReaderState.VALUE));
-        }
-        if (currentDsonType != requiredType) {
-            throw DsonCodecException.dsonTypeMismatch(requiredType, currentDsonType);
-        }
-    }
-
-    private void setNextState() {
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            context.setState(DsonReaderState.DONE);
-        } else {
-            context.setState(DsonReaderState.TYPE);
-        }
-    }
-
-    private DsonCodecException invalidState(List<DsonReaderState> expected) {
-        return DsonCodecException.invalidState(context.contextType, expected, context.state);
-    }
     // endregion
 
     // region 简单值
+
     @Override
-    public int readInt32(String name) {
-        advanceToValueState(name, DsonType.INT32);
-        int value = currentWireType.readInt32(input);
-        setNextState();
-        return value;
+    protected int doReadInt32() {
+        return currentWireType.readInt32(input);
     }
 
     @Override
-    public long readInt64(String name) {
-        advanceToValueState(name, DsonType.INT64);
-        long value = currentWireType.readInt64(input);
-        setNextState();
-        return value;
+    protected long doReadInt64() {
+        return currentWireType.readInt64(input);
     }
 
     @Override
-    public float readFloat(String name) {
-        advanceToValueState(name, DsonType.FLOAT);
-        float value = input.readFloat();
-        setNextState();
-        return value;
+    protected float doReadFloat() {
+        return input.readFloat();
     }
 
     @Override
-    public double readDouble(String name) {
-        advanceToValueState(name, DsonType.DOUBLE);
-        double value = input.readDouble();
-        setNextState();
-        return value;
+    protected double doReadDouble() {
+        return input.readDouble();
     }
 
     @Override
-    public boolean readBoolean(String name) {
-        advanceToValueState(name, DsonType.BOOLEAN);
-        boolean value = input.readBool();
-        setNextState();
-        return value;
+    protected boolean doReadBool() {
+        return input.readBool();
     }
 
     @Override
-    public String readString(String name) {
-        advanceToValueState(name, DsonType.STRING);
-        String value = input.readString();
-        setNextState();
-        return value;
+    protected String doReadString() {
+        return input.readString();
     }
 
     @Override
-    public void readNull(String name) {
-        advanceToValueState(name, DsonType.NULL);
-        setNextState();
+    protected void doReadNull() {
+
     }
 
     @Override
-    public DsonBinary readBinary(String name) {
-        advanceToValueState(name, DsonType.BINARY);
+    protected DsonBinary doReadBinary() {
         int size = input.readFixed32();
-        DsonBinary value = new DsonBinary(
+        return new DsonBinary(
                 input.readRawByte(),
                 input.readRawBytes(size - 1));
-        setNextState();
-        return value;
     }
 
     @Override
-    public DsonExtString readExtString(String name) {
-        advanceToValueState(name, DsonType.EXT_STRING);
-        DsonExtString value = new DsonExtString(
+    protected DsonExtString doReadExtString() {
+        return new DsonExtString(
                 input.readRawByte(),
                 input.readString());
-        setNextState();
-        return value;
     }
 
     @Override
-    public DsonExtInt32 readExtInt32(String name) {
-        advanceToValueState(name, DsonType.EXT_INT32);
-        DsonExtInt32 value = new DsonExtInt32(
+    protected DsonExtInt32 doReadExtInt32() {
+        return new DsonExtInt32(
                 input.readRawByte(),
                 currentWireType.readInt32(input));
-        setNextState();
-        return value;
     }
 
     @Override
-    public DsonExtInt64 readExtInt64(String name) {
-        advanceToValueState(name, DsonType.EXT_INT64);
-        DsonExtInt64 value = new DsonExtInt64(
+    protected DsonExtInt64 doReadExtInt64() {
+        return new DsonExtInt64(
                 input.readRawByte(),
                 currentWireType.readInt64(input));
-        setNextState();
-        return value;
     }
 
     // endregion
 
     // region 容器
-    @Nonnull
-    @Override
-    public DocClassId readStartArray() {
-        Context context = this.context;
-        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
-            setNextState();
-            return context.classId;
-        }
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        autoStartTopLevel(context);
-        ensureValueState(context, DsonType.ARRAY);
-        return doReadStartContainer(context, DsonContextType.ARRAY);
-    }
 
     @Override
-    public void readEndArray() {
-        Context context = this.context;
-        if (context.contextType != DsonContextType.ARRAY) {
-            throw DsonCodecException.contextError(DsonContextType.ARRAY, context.contextType);
-        }
-        if (context.state != DsonReaderState.WAIT_END_OBJECT) {
-            throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
-        }
-        doReadEndContainer(context);
-    }
-
-    @Nonnull
-    @Override
-    public DocClassId readStartObject() {
-        Context context = this.context;
-        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
-            setNextState();
-            return context.classId;
-        }
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        autoStartTopLevel(context);
-        ensureValueState(context, DsonType.OBJECT);
-        return doReadStartContainer(context, DsonContextType.OBJECT);
-    }
-
-    @Override
-    public void readEndObject() {
-        Context context = this.context;
-        if (context.contextType != DsonContextType.OBJECT) {
-            throw DsonCodecException.contextError(DsonContextType.OBJECT, context.contextType);
-        }
-        if (context.state != DsonReaderState.WAIT_END_OBJECT) {
-            throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
-        }
-        doReadEndContainer(context);
-    }
-
-    @Override
-    public DocClassId prestartArray() {
-        DocClassId classId = readStartArray();
-        context.setState(DsonReaderState.WAIT_START_OBJECT);
-        return classId;
-    }
-
-    @Override
-    public DocClassId prestartObject() {
-        DocClassId classId = readStartObject();
-        context.setState(DsonReaderState.WAIT_START_OBJECT);
-        return classId;
-    }
-
-    private void autoStartTopLevel(Context context) {
-        if (context.contextType == DsonContextType.TOP_LEVEL
-                && (context.state == DsonReaderState.INITIAL || context.state == DsonReaderState.DONE)) {
-            readDsonType();
-        }
-    }
-
-    private DocClassId doReadStartContainer(Context context, DsonContextType contextType) {
-        Context newContext = newContext(context, contextType);
+    protected void doReadStartContainer(DsonContextType contextType) {
+        Context newContext = newContext(getContext(), contextType);
         int length = input.readFixed32();
         newContext.oldLimit = input.pushLimit(length); // length包含classId
         newContext.classId = readClassId();
         newContext.name = currentName;
 
-        this.context = newContext;
         this.recursionDepth++;
-        setNextState(); // 设置初始状态
-        return newContext.classId;
+        setContext(newContext);
     }
 
     private DocClassId readClassId() {
@@ -396,52 +185,37 @@ public class DefaultDsonDocReader implements DsonDocReader {
         return DocClassId.of(classId);
     }
 
-    private void doReadEndContainer(Context context) {
+    @Override
+    protected void doReadEndContainer() {
         if (!input.isAtEnd()) {
             throw DsonCodecException.bytesRemain(input.getBytesUntilLimit());
         }
+        Context context = getContext();
         input.popLimit(context.oldLimit);
 
-        this.context = context.parent;
-        this.recursionDepth--;
         // 恢复上下文
-        this.currentDsonType = context.contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
-        this.currentWireType = WireType.VARINT;
-        this.currentName = context.name;
-        setNextState(); // parent前进一个状态
-
+        recoverDsonType(context);
+        this.recursionDepth--;
+        setContext(context.parent);
         poolContext(context);
     }
+
     // endregion
 
-    // region sp
+    // region 特殊接口
 
     @Override
-    public void skipName() {
-        if (context.state == DsonReaderState.VALUE) {
-            return;
-        }
-        if (context.state != DsonReaderState.NAME) {
-            throw invalidState(List.of(DsonReaderState.VALUE, DsonReaderState.NAME));
-        }
+    protected void doSkipName() {
         // 避免构建字符串
         int size = input.readUint32();
         if (size > 0) {
             input.skipRawBytes(size);
         }
-        context.setState(DsonReaderState.VALUE);
     }
 
     @Override
-    public void skipValue() {
-        if (context.state != DsonReaderState.VALUE) {
-            throw invalidState(List.of(DsonReaderState.VALUE));
-        }
-        doSkipValue();
-        setNextState();
-    }
-
-    private void doSkipValue() {
+    protected void doSkipValue() {
+        DsonInput input = this.input;
         int skip;
         switch (currentDsonType) {
             case FLOAT -> skip = 4;
@@ -478,7 +252,7 @@ public class DefaultDsonDocReader implements DsonDocReader {
             case BINARY, ARRAY, OBJECT -> {
                 skip = input.readFixed32();
             }
-            default -> throw DsonCodecException.invalidDsonType(context.contextType, currentDsonType);
+            default -> throw DsonCodecException.invalidDsonType(getContext().contextType, currentDsonType);
         }
         if (skip > 0) {
             input.skipRawBytes(skip);
@@ -486,30 +260,8 @@ public class DefaultDsonDocReader implements DsonDocReader {
     }
 
     @Override
-    public void skipToEndOfObject() {
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            throw DsonCodecException.contextErrorTopLevel();
-        }
-        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
-            throw invalidState(List.of(DsonReaderState.TYPE, DsonReaderState.NAME, DsonReaderState.VALUE));
-        }
-        if (currentDsonType == DsonType.END_OF_OBJECT) {
-            assert context.state == DsonReaderState.WAIT_END_OBJECT;
-            return;
-        }
-        int size = input.getBytesUntilLimit();
-        if (size > 0) {
-            input.skipRawBytes(size);
-        }
-        setNextState();
-        readDsonType(); // end of object
-    }
-
-    @Override
-    public DsonValueSummary peekValueSummary() {
-        if (context.state != DsonReaderState.VALUE) {
-            throw invalidState(List.of(DsonReaderState.VALUE));
-        }
+    protected DsonValueSummary doPeekValueSummary() {
+        DsonInput input = this.input;
         int prePosition = input.position();
         DsonType dsonType = currentDsonType;
         DsonValueSummary summary;
@@ -544,15 +296,15 @@ public class DefaultDsonDocReader implements DsonDocReader {
     }
 
     @Override
-    public <T> T readMessage(String name, @Nonnull Parser<T> parser) {
-        Objects.requireNonNull(parser, "parser");
-        advanceToValueState(name, DsonType.BINARY);
-        T value = doReadMessage(parser);
-        setNextState();
-        return value;
+    protected void doSkipToEndOfObject() {
+        int size = input.getBytesUntilLimit();
+        if (size > 0) {
+            input.skipRawBytes(size);
+        }
     }
 
-    private <T> T doReadMessage(Parser<T> parser) {
+    @Override
+    protected <T> T doReadMessage(Parser<T> parser) {
         DsonInput input = this.input;
         int size = input.readFixed32();
         int oldLimit = input.pushLimit(size);
@@ -563,24 +315,8 @@ public class DefaultDsonDocReader implements DsonDocReader {
         return value;
     }
 
-    private static void checkSubType(byte expected, byte subType) {
-        if (subType != expected) {
-            throw DsonCodecException.unexpectedSubType(expected, subType);
-        }
-    }
-
     @Override
-    public byte[] readValueAsBytes(String name) {
-        advanceToValueState(name, null);
-        if (!Dsons.VALUE_BYTES_TYPES.contains(currentDsonType)) {
-            throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, currentDsonType);
-        }
-        byte[] data = doReadValueAsBytes();
-        setNextState();
-        return data;
-    }
-
-    private byte[] doReadValueAsBytes() {
+    protected byte[] doReadValueAsBytes() {
         int size;
         if (currentDsonType == DsonType.STRING) {
             size = input.readUint32();
@@ -590,60 +326,14 @@ public class DefaultDsonDocReader implements DsonDocReader {
         return input.readRawBytes(size);
     }
 
-    @Override
-    public void attachContext(Object value) {
-        context.attach = value;
-    }
-
-    @Override
-    public Object attachContext() {
-        return context.attach;
-    }
-
-    @Override
-    public boolean isArrayContext() {
-        return context.contextType == DsonContextType.ARRAY;
-    }
-
-    @Override
-    public boolean isObjectContext() {
-        return context.contextType == DsonContextType.OBJECT;
-    }
-
-    @Override
-    public DsonReaderGuide whatShouldIDo() {
-        Context context = this.context;
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            if (input.isAtEnd()) {
-                return DsonReaderGuide.CLOSE;
-            }
-            if (context.state == DsonReaderState.VALUE) {
-                return DsonReaderGuide.READ_VALUE;
-            }
-            return DsonReaderGuide.READ_TYPE;
-        } else {
-            return switch (context.state) {
-                case TYPE -> DsonReaderGuide.READ_TYPE;
-                case VALUE -> DsonReaderGuide.READ_VALUE;
-                case NAME -> DsonReaderGuide.READ_NAME;
-                case WAIT_START_OBJECT ->
-                        context.contextType == DsonContextType.ARRAY ? DsonReaderGuide.START_ARRAY : DsonReaderGuide.START_OBJECT;
-                case WAIT_END_OBJECT ->
-                        context.contextType == DsonContextType.ARRAY ? DsonReaderGuide.END_ARRAY : DsonReaderGuide.END_OBJECT;
-                case INITIAL, DONE -> throw new AssertionError("invalid state " + context.state);
-            };
-        }
-    }
-
     // endregion
 
     // region context
 
     private Context newContext(Context parent, DsonContextType contextType) {
-        Context context;
-        if (this.pooledContext != null) {
-            context = this.pooledContext;
-            this.pooledContext = null;
+        Context context = getPooledContext();
+        if (context != null) {
+            setPooledContext(null);
         } else {
             context = new Context();
         }
@@ -653,46 +343,23 @@ public class DefaultDsonDocReader implements DsonDocReader {
 
     private void poolContext(Context context) {
         context.reset();
-        this.pooledContext = context;
+        setPooledContext(context);
     }
 
-    private static class Context {
-
-        Context parent;
-        DsonContextType contextType;
-        DsonReaderState state = DsonReaderState.INITIAL;
-        Object attach;
+    private static class Context extends AbstractDsonDocReader.Context {
 
         int oldLimit = -1;
-        String name;
-        DocClassId classId;
 
         public Context() {
         }
 
         public Context(Context parent, DsonContextType contextType) {
-            this.parent = parent;
-            this.contextType = contextType;
+            super(parent, contextType);
         }
 
-        void init(Context parent, DsonContextType contextType) {
-            this.parent = parent;
-            this.contextType = contextType;
-        }
-
-        void setState(DsonReaderState state) {
-            this.state = state;
-        }
-
-        void reset() {
-            parent = null;
-            contextType = null;
-            state = DsonReaderState.INITIAL;
-            attach = null;
-
+        public void reset() {
+            super.reset();
             oldLimit = -1;
-            name = null;
-            classId = null;
         }
     }
 

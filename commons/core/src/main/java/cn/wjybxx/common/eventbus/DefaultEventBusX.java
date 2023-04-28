@@ -46,7 +46,7 @@ public class DefaultEventBusX implements EventBus {
     }
 
     public DefaultEventBusX(int expectedSize) {
-        this.handlerMap = CollectionUtils.newHashMapWithExpectedSize(expectedSize);
+        this.handlerMap = CollectionUtils.newHashMap(expectedSize);
     }
 
     @Override

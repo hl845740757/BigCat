@@ -171,10 +171,6 @@ public interface DsonBinReader extends AutoCloseable {
 
     void readEndObject();
 
-    // endregion
-
-    // region 特殊支持
-
     /**
      * 该方法将使reader处于一个等待{@link #readStartArray()}调用的状态
      * 1.该方法会导致reader的上下文切换，会提前进入读数组上下文。
@@ -192,6 +188,10 @@ public interface DsonBinReader extends AutoCloseable {
      * @see #prestartArray()
      */
     BinClassId prestartObject();
+
+    // endregion
+
+    // region 特殊支持
 
     /**
      * 如果当前是数组上下文，则不产生影响；
@@ -214,6 +214,7 @@ public interface DsonBinReader extends AutoCloseable {
      * 查看value的概要信息
      * 1.如果当前不处于读值状态则抛出状态异常
      * 2.注意{@link DsonType#EXT_STRING}的length属性问题
+     * 3.只在二进制流下生效
      */
     DsonValueSummary peekValueSummary();
 
@@ -227,7 +228,9 @@ public interface DsonBinReader extends AutoCloseable {
      * 将value的值读取为字节数组
      * 1.支持类型：String、Binary、Array、Object
      * 2.返回的bytes中去除了value的length信息，
-     * 3.该方法主要用于避免中间编解码过程，eg：
+     * 3.只在二进制流下生效
+     * <p>
+     * 该方法主要用于避免中间编解码过程，eg：
      * <pre>
      * A端：             B端         C端
      * object->bytes  bytes->bytes bytes->object

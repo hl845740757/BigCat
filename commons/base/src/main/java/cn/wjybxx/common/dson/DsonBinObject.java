@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.ObjectUtils;
+
 /**
  * 对象的二进制版本，number代替name
  *
@@ -38,7 +40,7 @@ public class DsonBinObject extends DsonObject<FieldNumber> {
     }
 
     public DsonBinObject setClassId(BinClassId classId) {
-        this.classId = classId == null ? BinClassId.OBJECT : classId;
+        this.classId = ObjectUtils.nullToDef(classId, BinClassId.OBJECT);
         return this;
     }
 

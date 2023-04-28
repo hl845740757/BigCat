@@ -160,13 +160,13 @@ public class DefaultBinaryConverter implements BinaryConverter {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名空间是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            BinClassId classId = CollectionUtils.checkGet(typeIdMap, clazz, "class");
+            BinClassId classId = CollectionUtils.checkedGet(typeIdMap, clazz, "class");
             if (classId.isDefaultNameSpace()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + clazz);
             }
         }
         for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            BinClassId classId = CollectionUtils.checkGet(typeIdMap, codecImpl.getEncoderClass(), "class");
+            BinClassId classId = CollectionUtils.checkedGet(typeIdMap, codecImpl.getEncoderClass(), "class");
             if (classId.isDefaultNameSpace()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + codecImpl.getEncoderClass());
             }
@@ -194,10 +194,12 @@ public class DefaultBinaryConverter implements BinaryConverter {
             allPojoCodecList.add(new BinaryPojoCodec<>(codecImpl));
         }
 
-        final ClassIdRegistry<BinClassId> classIdRegistry = ClassIdRegistries.fromRegistries(ClassIdRegistries.fromClassIdMap(typeIdMap),
+        final ClassIdRegistry<BinClassId> classIdRegistry = ClassIdRegistries.fromRegistries(
+                ClassIdRegistries.fromClassIdMap(typeIdMap),
                 BinaryConverterUtils.getDefaultClassIdRegistry());
 
-        final BinaryCodecRegistry codecRegistry = BinaryCodecRegistries.fromRegistries(BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList),
+        final BinaryCodecRegistry codecRegistry = BinaryCodecRegistries.fromRegistries(
+                BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList),
                 BinaryConverterUtils.getDefaultCodecRegistry());
 
         return new DefaultBinaryConverter(classIdRegistry, codecRegistry, options);

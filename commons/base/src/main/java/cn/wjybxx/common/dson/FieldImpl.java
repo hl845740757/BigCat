@@ -102,6 +102,9 @@ public @interface FieldImpl {
      */
     DsonType dsonType() default DsonType.END_OF_OBJECT;
 
+    /** 二进制的类型 */
+    DsonBinaryType binaryType() default DsonBinaryType.NORMAL;
+
     /** int值的特殊释义 */
     DsonExtInt32Type extInt32Type() default DsonExtInt32Type.NORMAL;
 
@@ -110,9 +113,6 @@ public @interface FieldImpl {
 
     /** String值的特殊释义 */
     DsonExtStringType extStringType() default DsonExtStringType.NORMAL;
-
-    /** 二进制的类型 */
-    DsonBinaryType binaryType() default DsonBinaryType.NORMAL;
 
     // endregion
 

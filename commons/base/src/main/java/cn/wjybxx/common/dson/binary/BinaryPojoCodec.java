@@ -17,7 +17,6 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.TypeArgInfo;
-import cn.wjybxx.common.dson.codec.ConverterUtils;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
