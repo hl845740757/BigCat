@@ -28,7 +28,7 @@ import java.util.Objects;
  */
 public final class DocClassId implements ClassId {
 
-    public static final DocClassId OBJECT = new DocClassId(null);
+    public static final DocClassId OBJECT = new DocClassId((String) null);
 
     private final String value;
 
@@ -40,16 +40,11 @@ public final class DocClassId implements ClassId {
         return value;
     }
 
-    public static DocClassId of(String clsName) {
-        return StringUtils.isBlank(clsName) ? OBJECT : new DocClassId(clsName);
-    }
-
     public boolean isObjectClassId() {
         return this == OBJECT || StringUtils.isBlank(value);
     }
 
     //
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -71,4 +66,10 @@ public final class DocClassId implements ClassId {
                 "value='" + value + '\'' +
                 '}';
     }
+
+    //
+    public static DocClassId of(String clsName) {
+        return StringUtils.isBlank(clsName) ? OBJECT : new DocClassId(clsName);
+    }
+
 }

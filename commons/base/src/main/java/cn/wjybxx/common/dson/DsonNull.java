@@ -26,7 +26,7 @@ public class DsonNull extends DsonValue implements Comparable<DsonNull> {
 
     public static final DsonNull INSTANCE = new DsonNull();
 
-    public DsonNull() {
+    private DsonNull() {
     }
 
     @Nonnull

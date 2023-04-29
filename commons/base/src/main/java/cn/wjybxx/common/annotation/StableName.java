@@ -27,7 +27,7 @@ import java.lang.annotation.RetentionPolicy;
  * date 2023/4/2
  */
 @Retention(RetentionPolicy.SOURCE)
-public @interface NameIsStable {
+public @interface StableName {
 
     /** 自定义注释 */
     String comment() default "";

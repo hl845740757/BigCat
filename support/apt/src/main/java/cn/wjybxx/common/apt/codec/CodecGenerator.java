@@ -236,7 +236,9 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
 
         // 优先用getter，否则直接访问
         String access;
-        if (processor.containsNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit)) {
+        if (!AptUtils.isBlank(properties.getter)) {
+            access = properties.getter + "()";
+        } else if (processor.containsNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit)) {
             access = getGetterName(variableElement) + "()";
         } else {
             access = fieldName;
@@ -313,8 +315,10 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         final String fieldName = variableElement.getSimpleName().toString();
         final String readMethodName = getReadMethodName(variableElement);
         // 优先用setter，否则直接赋值 -- 不好简化
-        if (processor.containsNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit)) {
-            final String setterName = getSetterName(variableElement);
+
+        if (!AptUtils.isBlank(properties.setter)
+                || processor.containsNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit)) {
+            final String setterName = AptUtils.isBlank(properties.setter) ? getSetterName(variableElement) : properties.setter;
             if (readMethodName.equals(MNAME_READ_OBJECT)) { // 读对象时传入类型信息
                 // instance.setName(reader.readObject(XXFields.name, XXTypeArgs.name))
                 builder.addStatement("instance.$L(reader.$L($L.$L, $L.$L))",

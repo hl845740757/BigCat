@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.annotation.NameIsStable;
+import cn.wjybxx.common.annotation.StableName;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -105,7 +105,7 @@ public final class TypeArgInfo<T> {
     // 工厂方法
 
     @SuppressWarnings("unchecked")
-    @NameIsStable(comment = "生成的代码会调用")
+    @StableName(comment = "生成的代码会调用")
     public static <T> TypeArgInfo<T> of(Class<T> declaredType) {
         if (declaredType == Object.class) {
             return (TypeArgInfo<T>) OBJECT;
@@ -113,22 +113,22 @@ public final class TypeArgInfo<T> {
         return new TypeArgInfo<>(declaredType);
     }
 
-    @NameIsStable(comment = "生成的代码会调用")
+    @StableName(comment = "生成的代码会调用")
     public static <T> TypeArgInfo<T> of(Class<T> declaredType, Supplier<? extends T> factory) {
         return new TypeArgInfo<>(declaredType, factory, null, null);
     }
 
-    @NameIsStable(comment = "生成的代码会调用")
+    @StableName(comment = "生成的代码会调用")
     public static <T> TypeArgInfo<T> of(Class<T> declaredType, Supplier<? extends T> factory, Class<?> typeArg1, Class<?> typeArg2) {
         return new TypeArgInfo<>(declaredType, factory, typeArg1, typeArg2);
     }
 
-    @NameIsStable(comment = "生成的代码会调用")
+    @StableName(comment = "生成的代码会调用")
     public static <E extends Enum<E>> Supplier<? extends EnumSet<E>> enumSetFactory(Class<E> type) {
         return () -> EnumSet.noneOf(type);
     }
 
-    @NameIsStable(comment = "生成的代码会调用")
+    @StableName(comment = "生成的代码会调用")
     public static <K extends Enum<K>, V> Supplier<? extends EnumMap<K, V>> enumMapFactory(Class<K> type) {
         return () -> new EnumMap<>(type);
     }

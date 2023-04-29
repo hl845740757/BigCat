@@ -51,6 +51,10 @@ public class AptFieldImpl {
     public boolean isAnnotationPresent = false;
     /** 实现类 */
     public TypeMirror implMirror;
+    /** 取值方法 */
+    public String getter = "";
+    /** 赋值方法 */
+    public String setter = "";
     /** 写代理方法名 */
     public String writeProxy = "";
     /** 读代理方法名 */
@@ -74,29 +78,18 @@ public class AptFieldImpl {
             properties.isAnnotationPresent = true;
 
             final Map<String, AnnotationValue> valueMap = AptUtils.getAnnotationValuesMap(annotationMirror);
+
             final AnnotationValue impl = valueMap.get("value");
-            final AnnotationValue writeProxy = valueMap.get("writeProxy");
-            final AnnotationValue readProxy = valueMap.get("readProxy");
             if (impl != null) {
                 properties.implMirror = AptUtils.getAnnotationValueTypeMirror(impl);
             }
-            if (writeProxy != null) {
-                properties.writeProxy = ((String) writeProxy.getValue()).trim();
-            }
-            if (readProxy != null) {
-                properties.readProxy = ((String) readProxy.getValue()).trim();
-            }
+            properties.getter = getStringValue(valueMap, "getter", properties.getter).trim();
+            properties.setter = getStringValue(valueMap, "setter", properties.setter).trim();
+            properties.writeProxy = getStringValue(valueMap, "writeProxy", properties.writeProxy).trim();
+            properties.readProxy = getStringValue(valueMap, "readProxy", properties.readProxy).trim();
 
-            //
-            AnnotationValue idep = valueMap.get("idep");
-            if (idep != null) {
-                properties.idep = (Integer) idep.getValue();
-            }
-            AnnotationValue number = valueMap.get("number");
-            if (number != null) {
-                properties.number = (Integer) number.getValue();
-            }
-
+            properties.idep = getIntValue(valueMap,"idep", properties.idep);
+            properties.number = getIntValue(valueMap,"number", properties.number);
             properties.dsonType = getEnumConstantName(valueMap, PNAME_dsonType, null);
             properties.extInt32Type = getEnumConstantName(valueMap, PNAME_extInt32Type, properties.extInt32Type);
             properties.extInt64Type = getEnumConstantName(valueMap, PNAME_extInt64Type, properties.extInt64Type);
@@ -105,6 +98,18 @@ public class AptFieldImpl {
             properties.wireType = getEnumConstantName(valueMap, PNAME_wireType, properties.wireType);
         }
         return properties;
+    }
+
+    private static String getStringValue(Map<String, AnnotationValue> valueMap, String pname, String def) {
+        AnnotationValue value = valueMap.get(pname);
+        if (value == null) return def;
+        return (String) value.getValue();
+    }
+
+    private static int getIntValue(Map<String, AnnotationValue> valueMap, String pname, int def) {
+        AnnotationValue value = valueMap.get(pname);
+        if (value == null) return def;
+        return (Integer) value.getValue();
     }
 
     private static String getEnumConstantName(Map<String, AnnotationValue> valueMap, String pname, String def) {

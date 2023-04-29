@@ -56,6 +56,10 @@ public abstract class DsonValue implements DsonValueLite {
         return (DsonNull) this;
     }
 
+    public DsonNumber asNumber() {
+        return (DsonNumber) this;
+    }
+
     public DsonExtString asExtString() {
         return (DsonExtString) this;
     }

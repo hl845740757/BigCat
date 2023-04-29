@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.rpc;
 
-import cn.wjybxx.common.annotation.NameIsStable;
+import cn.wjybxx.common.annotation.StableName;
 
 /**
  * rpc方法代理
@@ -36,7 +36,7 @@ public interface RpcMethodProxy {
      * @param methodSpec 方法的参数
      * @throws Exception 由于用户的代码可能存在抛出异常的情况，这里声明异常对lambda更友好
      */
-    Object invoke(@NameIsStable RpcProcessContext context,
-                  @NameIsStable RpcMethodSpec<?> methodSpec) throws Exception;
+    Object invoke(@StableName RpcProcessContext context,
+                  @StableName RpcMethodSpec<?> methodSpec) throws Exception;
 
 }

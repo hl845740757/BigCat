@@ -56,6 +56,16 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 public @interface FieldImpl {
 
+    // region 命名
+
+    /** 指定字段的getter方法，避免由于字段名特殊或特殊封装情况下无法自动序列化的问题 */
+    String getter() default "";
+
+    /** 指定字段的setter方法 */
+    String setter() default "";
+
+    // endregion
+
     // region tag
 
     /**

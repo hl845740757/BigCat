@@ -17,7 +17,7 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.annotation.NameIsStable;
+import cn.wjybxx.common.annotation.StableName;
 import cn.wjybxx.common.dson.*;
 import com.google.protobuf.Parser;
 
@@ -166,17 +166,17 @@ public interface DocumentObjectReader extends AutoCloseable {
     /**
      * 应当减少 short/byte/char 的使用，尤其应当避免使用其包装类型，使用的越多越难以扩展，越难以支持跨语言等。
      */
-    @NameIsStable
+    @StableName
     default short readShort(String name) {
         return (short) readInt(name);
     }
 
-    @NameIsStable
+    @StableName
     default byte readByte(String name) {
         return (byte) readInt(name);
     }
 
-    @NameIsStable
+    @StableName
     default char readChar(String name) {
         return (char) readInt(name);
     }

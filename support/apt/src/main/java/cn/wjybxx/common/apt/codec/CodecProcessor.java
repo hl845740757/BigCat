@@ -228,7 +228,9 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
                     continue;
                 }
                 // 工具写：需要提供可直接取值或包含非private的getter方法
-                if (!canGetDirectly(variableElement, typeElement) && !containsNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit)) {
+                if (AptUtils.isBlank(aptFieldImpl.getter)
+                        && !canGetDirectly(variableElement, typeElement)
+                        && !containsNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit)) {
                     messager.printMessage(Diagnostic.Kind.ERROR,
                             String.format("serializable field (%s) must contains a not private getter or canGetDirectly", variableElement.getSimpleName()),
                             typeElement); // 可能无法定位到超类字段，因此打印到Type
@@ -240,7 +242,9 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
                     continue;
                 }
                 // 工具读：需要提供可直接赋值或非private的setter方法
-                if (!canSetDirectly(variableElement, typeElement) && !containsNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit)) {
+                if (AptUtils.isBlank(aptFieldImpl.setter) &&
+                        !canSetDirectly(variableElement, typeElement)
+                        && !containsNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit)) {
                     messager.printMessage(Diagnostic.Kind.ERROR,
                             String.format("serializable field (%s) must contains a not private setter or canSetDirectly", variableElement.getSimpleName()),
                             typeElement);

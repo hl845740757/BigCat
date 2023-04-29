@@ -27,6 +27,7 @@ public class DsonBool extends DsonValue implements Comparable<DsonBool> {
     public static final DsonBool TRUE = new DsonBool(true);
     public static final DsonBool FALSE = new DsonBool(false);
 
+    @FieldImpl(getter = "getValue")
     private final boolean value;
 
     public DsonBool(boolean value) {
