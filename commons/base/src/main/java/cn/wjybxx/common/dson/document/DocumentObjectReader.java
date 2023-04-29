@@ -71,13 +71,19 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     /**
      * 注意:
-     * 该方法和{@link #readObject(String)}并不相同，该方法只能从Binary类型中读取一个Message，
-     * 而{@link #readObject(String)}解码的是Object类型的Message对象。
+     * 该方法和{@link #readObject(String, TypeArgInfo)}并不相同，该方法只能从Binary类型中读取一个Message，
+     * 而{@link #readObject(String, TypeArgInfo)}解码的是Object类型的Message对象。
      */
     <T> T readMessage(String name, @Nonnull Parser<T> parser);
     // endregion
 
     // region object封装
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    default <T> T readObject(String name) {
+        return (T) readObject(name, TypeArgInfo.OBJECT);
+    }
 
     /**
      * 从输入流中读取一个对象
@@ -90,16 +96,10 @@ public interface DocumentObjectReader extends AutoCloseable {
     @Nullable
     <T> T readObject(String name, TypeArgInfo<T> typeArgInfo);
 
-    @SuppressWarnings("unchecked")
-    @Nullable
-    default <T> T readObject(String name) {
-        return (T) readObject(name, TypeArgInfo.OBJECT);
-    }
-
-    //
-
     /** 读顶层对象 */
     <T> T readObject(TypeArgInfo<T> typeArgInfo);
+
+    //
 
     default DocClassId readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);

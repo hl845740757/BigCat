@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.EnumUtils;
+import cn.wjybxx.common.dson.AutoFields;
 import cn.wjybxx.common.dson.AutoTypeArgs;
 import cn.wjybxx.common.dson.ClassImpl;
 import cn.wjybxx.common.dson.DsonEnum;
@@ -34,7 +35,7 @@ import java.lang.annotation.*;
  * 2. 如果是普通类，必须提供<b>非私有无参构造方法</b>，或提供非私有的{@link DocumentObjectReader}的单参构造方法。
  * 3. 对于普通类，所有托管给生成代码读的字段，必须提供setter或直接写权限。
  * 4. 对于普通类，所有托管给生成代码写的字段，必须提供getter或直接读权限。
- * 5. 对于普通类，必须同时使用{@link AutoTypeArgs}注解。
+ * 5. 对于普通类，必须同时使用{@link AutoTypeArgs}和{@link AutoFields}注解。
  * <p>
  * 普通类钩子方法：
  * 1. 如果类提供了非私有的{@link DocumentObjectReader}的单参构造方法，将自动调用 -- 该方法可用于final和忽略字段。

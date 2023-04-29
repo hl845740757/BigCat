@@ -80,6 +80,12 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     // region object封装
 
+    @SuppressWarnings("unchecked")
+    @Nullable
+    default <T> T readObject(int name) {
+        return (T) readObject(name, TypeArgInfo.OBJECT);
+    }
+
     /**
      * 从输入流中读取一个对象
      * 注意：
@@ -91,16 +97,10 @@ public interface BinaryObjectReader extends AutoCloseable {
     @Nullable
     <T> T readObject(int name, TypeArgInfo<T> typeArgInfo);
 
-    @SuppressWarnings("unchecked")
-    @Nullable
-    default <T> T readObject(int name) {
-        return (T) readObject(name, TypeArgInfo.OBJECT);
-    }
-
-    //
-
     /** 读顶层对象 */
     <T> T readObject(TypeArgInfo<T> typeArgInfo);
+
+    //
 
     default BinClassId readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
@@ -160,8 +160,8 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     /**
      * 注意:
-     * 该方法和{@link #readObject(int)}并不相同，该方法只能从Binary类型中读取一个Message，
-     * 而{@link #readObject(int)}解码的是Object类型的Message对象。
+     * 该方法和{@link #readObject(int, TypeArgInfo)}并不相同，该方法只能从Binary类型中读取一个Message，
+     * 而{@link #readObject(int, TypeArgInfo)}解码的是Object类型的Message对象。
      */
     <T> T readMessage(int name, @Nonnull Parser<T> parser);
 

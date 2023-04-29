@@ -23,7 +23,6 @@ import cn.wjybxx.common.dson.binary.BinarySerializable;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;
 import cn.wjybxx.common.dson.document.DocumentSerializable;
-import cn.wjybxx.common.dson.DsonEnum;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
@@ -45,8 +44,12 @@ import java.util.*;
 @BinarySerializable
 public class CodecBeanExample {
 
+    @FieldImpl(wireType = WireType.UINT)
     public int age;
     public String name;
+
+    @FieldImpl(dsonType = DsonType.EXT_STRING, extStringType = DsonExtStringType.REGULAR_EXPRESSION)
+    public String reg;
 
     public Map<Integer, String> age2NameMap;
     public Map<Sex, String> sex2NameMap1;
@@ -86,6 +89,10 @@ public class CodecBeanExample {
 
     public void readCustom(DocumentObjectReader reader) {
 
+    }
+
+    public void afterDecode() {
+        if (age < 1) throw new IllegalStateException();
     }
 
     //

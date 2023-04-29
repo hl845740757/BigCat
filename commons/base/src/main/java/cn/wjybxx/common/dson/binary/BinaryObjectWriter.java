@@ -97,16 +97,16 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     // region object封装
 
-    <T> void writeObject(int name, T value, TypeArgInfo<?> typeArgInfo);
-
     default <T> void writeObject(int name, T value) {
         writeObject(name, value, TypeArgInfo.OBJECT);
     }
-    //
+
+    <T> void writeObject(int name, T value, TypeArgInfo<?> typeArgInfo);
 
     /** 写顶层对象 */
     <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo);
 
+    //
     default void writeStartObject(int name, Object value, TypeArgInfo<?> typeArgInfo) {
         writeName(name);
         writeStartObject(value, typeArgInfo);
@@ -135,8 +135,8 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     /**
      * 注意：
-     * 该方法和{@link #writeObject(int, Object)}并不相同，直接调用该方法，message将写为一个普通的Binary，
-     * 而{@link #writeObject(int, Object)}会查找Message的Codec从而写为一个包含Binary字段的Object。
+     * 该方法和{@link #writeObject(int, Object, TypeArgInfo)}并不相同，直接调用该方法，message将写为一个普通的Binary，
+     * 而{@link #writeObject(int, Object, TypeArgInfo)}会查找Message的Codec从而写为一个包含Binary字段的Object。
      */
     void writeMessage(int name, MessageLite messageLite);
 
