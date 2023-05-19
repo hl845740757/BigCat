@@ -169,12 +169,12 @@ public interface DelayedCompressList<E> {
 
     /** 基于equals查询一个元素是否在List中 */
     default boolean contains(Object e) {
-        return e != null && index(e) >= 0;
+        return index(e) >= 0;
     }
 
     /** 基于引用相等查询一个元素是否在List中 */
     default boolean containsRef(Object e) {
-        return e != null && indexOfRef(e) >= 0;
+        return indexOfRef(e) >= 0;
     }
 
     /**
@@ -199,7 +199,9 @@ public interface DelayedCompressList<E> {
      */
     boolean isRealEmpty();
 
-    /** @apiNote 在迭代期间禁止排序 */
+    /**
+     * @throws IllegalStateException 如果当前正在迭代
+     */
     void sort(@Nonnull Comparator<? super E> comparator);
 
     // region 辅助方法

@@ -653,7 +653,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
             // 当生产者获取到新的sequence后，将观察到线程处于关闭状态，从而避免破坏数据
             long nextSequence = sequence.get() + 1;
             long lastSequence = sequence.get() + ringBuffer.getBufferSize();
-            waitAllSequencePublished(ringBuffer, lastSequence);
+            waitAllSequencePublished(ringBuffer, nextSequence, lastSequence);
             removeFromGatingSequence();
 
             // 由于所有的数据都是受保护的，不会被覆盖，因此可以继续消费
@@ -693,16 +693,26 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         }
 
         @SuppressWarnings("deprecation")
-        private void waitAllSequencePublished(RingBuffer<RingBufferEvent> ringBuffer, long lastSequence) {
+        private void waitAllSequencePublished(RingBuffer<RingBufferEvent> ringBuffer, long nextSequence, long lastSequence) {
+            long highestPublishedSequence = nextSequence - 1;
             while (true) {
+                // 必须保证发布的连续性
+                while (ringBuffer.isPublished(highestPublishedSequence + 1)) {
+                    highestPublishedSequence++;
+                }
                 // 真实的生产者发布了该序号
-                if (ringBuffer.isPublished(lastSequence)) {
+                if (highestPublishedSequence == lastSequence) {
                     return;
                 }
+
                 long cursor = ringBuffer.getCursor();
+                if (highestPublishedSequence != cursor) { // 已发布区间不连续
+                    ThreadUtils.sleepQuietly(1);
+                    continue;
+                }
                 int size = Math.toIntExact(lastSequence - cursor);
-                if (size < 1) {
-                    ThreadUtils.sleepQuietly(1); // 其它生产者将填充
+                if (size < 1) { // 其它生产者将填充
+                    ThreadUtils.sleepQuietly(1);
                     continue;
                 }
                 try {

@@ -28,8 +28,8 @@ public class MathUtils {
 
     public static final int MAX_POWER_OF_TWO = 1 << 30;
     public static final long LONG_MAX_POWER_OF_TWO = 1L << 62;
-    public static final float FLOAT_EPSILON = 0.00001f;
-    public static final float DOUBLE_EPSILON = 0.000000001f;
+    public static final float FLOAT_ROUNDING_ERROR = 0.00001f;
+    public static final float DOUBLE_ROUNDING_ERROR = 0.000000001f;
 
     protected MathUtils() {
     }
@@ -207,16 +207,16 @@ public class MathUtils {
     }
 
     public static boolean isBetween(float value, float min, float max) {
-        return value >= min && value <= max; // 这里不使用Equals比较，避免越界
+        return value >= min && value <= max; // 这里不使用isEqual比较，避免越界
     }
 
     public static boolean isBetween(double value, double min, double max) {
-        return value >= min && value <= max; // 这里不使用Equals比较，避免越界
+        return value >= min && value <= max; // 这里不使用isEqual比较，避免越界
     }
     //
 
     public static boolean isZero(float value) {
-        return Math.abs(value) <= FLOAT_EPSILON;
+        return Math.abs(value) <= FLOAT_ROUNDING_ERROR;
     }
 
     public static boolean isZero(float value, float tolerance) {
@@ -224,7 +224,7 @@ public class MathUtils {
     }
 
     public static boolean isEqual(float a, float b) {
-        return Math.abs(a - b) <= FLOAT_EPSILON;
+        return Math.abs(a - b) <= FLOAT_ROUNDING_ERROR;
     }
 
     public static boolean isEqual(float a, float b, float tolerance) {
@@ -234,7 +234,7 @@ public class MathUtils {
     //
 
     public static boolean isZero(double value) {
-        return Math.abs(value) <= DOUBLE_EPSILON;
+        return Math.abs(value) <= DOUBLE_ROUNDING_ERROR;
     }
 
     public static boolean isZero(double value, double tolerance) {
@@ -242,7 +242,7 @@ public class MathUtils {
     }
 
     public static boolean isEqual(double a, double b) {
-        return Math.abs(a - b) <= DOUBLE_EPSILON;
+        return Math.abs(a - b) <= DOUBLE_ROUNDING_ERROR;
     }
 
     public static boolean isEqual(double a, double b, double tolerance) {

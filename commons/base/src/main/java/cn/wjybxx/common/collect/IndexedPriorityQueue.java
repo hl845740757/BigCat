@@ -23,8 +23,7 @@ import java.util.Queue;
  * 由于{@link java.util.Collection}中的API是基于Object的，不利于查询性能，添加了一些限定类型的方法。
  * <p>
  * 将Node在队列中的索引存储在元素上，其目的提高查询效率，但该设计是危险的。
- * 另一种折中方式是让用户像{@link java.lang.ref.Reference}一样使用自己的对象，
- * 这种方式的话就可以提供一个受信任的Node实现，提高安全性，不过用户的使用体验上会差一些。
+ * 另一种折中方式是让用户像{@link java.lang.ref.Reference}一样使用自己的对象，这种方式的话用户的使用体验上会差一些。
  * 现在做了个简单实现：{@link RefIndexedNode}
  *
  * @author wjybxx

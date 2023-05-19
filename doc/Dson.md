@@ -86,7 +86,7 @@ Dson支持两套序列化格式，一套以number表示字段id和classId，一�
 
 ### Dson的特性
 
-Dson有许多强大的特性，你如果只是简单是使用Dson，那和普通的序列化组件差不多，可能还没那么方便，因为要做点准备工作；
+Dson有许多强大的特性，你如果只是简单使用Dson，那和普通的序列化组件差不多，可能还没那么方便，因为要做点准备工作；
 如果与Dson深度集成，Dson将提供许多强大的功能。
 
 提示：
@@ -104,7 +104,6 @@ Dson集成了Protobuf的组件，支持数字的*varint、unit、sint、fixed*4�
     // 生成的编码代码
     writer.writeInt(CodecBeanExampleTypeArgs.Numbers.age, instance.age, WireType.UINT);
     writer.writeString(CodecBeanExampleTypeArgs.Numbers.name, instance.name);
-    writer.writeExtString(CodecBeanExampleTypeArgs.Numbers.reg, DsonExtStringType.REGULAR_EXPRESSION, instance.reg);
 ```
 示例中的int类型的age字段，在编码时将使用uint格式编码。
 
@@ -128,7 +127,7 @@ Dson集成了Protobuf的组件，支持数字的*varint、unit、sint、fixed*4�
 
 上面都是FieldImpl的简单用法，FieldImpl的最强大之处就在于字段级别的读写代理。  
 Dson的理念是：**能托管的逻辑就让生成的代码负责，用户只处理特殊编解码的部分**。  
-一个很好的编码指导是：我们写的代码越少，代码就越干净了，项目代码质量就越有保证，维护成本就越低。
+一个很好的编码指导是：我们写的代码越少，代码就越干净了，维护成本就越低，项目代码质量就越有保证。
 
 与一般的序列化工具不同，Dson支持生成的代码调用用户的自定义代码，从而实现在编解码过程中用户只处理特殊字段逻辑。  
 举个栗子，假设一个Class有100个字段，有一个字段需要特殊解码，那么用户就可以只处理这一个字段的编解码，其余的仍然由生成的代码负责，
@@ -190,6 +189,18 @@ Dson除了基本的值类型外，还提供了ExtInt32（带标签的Int32）、
 
 简单说，Dson为用户提供大量的可选标签，尽量让序列化后的数据**记录字段的业务目的，而不仅仅是字段类型**
 ，因此Dson的数据就更容易转换为其它数据格式。
+
+```
+    @FieldImpl(dsonType = DsonType.EXT_STRING, extStringType = DsonExtStringType.REGULAR_EXPRESSION)
+    public String reg;
+    
+    // 生成的编码代码
+    writer.writeExtString(CodecBeanExampleTypeArgs.Numbers.reg, DsonExtStringType.REGULAR_EXPRESSION, instance.reg);
+    // 生成的解码代码
+    instance.reg = reader.readString(CodecBeanExampleFields.reg);
+```
+仍然是CodecBeanExample中的代码，我们将一个String标记为了正则表达式，序列化时就会序列化为带标签的字符串；
+解码通常不需要特殊处理，因为我们的字段是字符串类型，可以读取ExtString类型。
 
 ### Dson为什么要做数据格式转换
 

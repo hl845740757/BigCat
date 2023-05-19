@@ -62,12 +62,13 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
         }
         readonlyChildren = List.of(children);
         chooser = chooserFactory.newChooser(children);
+        terminationHook = builder.getTerminationHook();
 
+        // 最后再监听，否则可能状态错误
         final ChildrenTerminateListener terminationListener = new ChildrenTerminateListener();
         for (EventLoop child : children) {
             child.terminationFuture().whenComplete(terminationListener);
         }
-        this.terminationHook = builder.getTerminationHook();
     }
 
     // -------------------------------------  子类生命周期管理 --------------------------------
