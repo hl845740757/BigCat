@@ -34,3 +34,7 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+
+# 测试目录下的特定文件
+commons/core/testres/HelloWorld.txt

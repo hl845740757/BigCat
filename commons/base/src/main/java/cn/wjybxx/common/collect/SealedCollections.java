@@ -17,12 +17,12 @@
 package cn.wjybxx.common.collect;
 
 import cn.wjybxx.common.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -36,14 +36,20 @@ import java.util.function.ObjIntConsumer;
  */
 public class SealedCollections {
 
-    private static final int INDEX_NOT_FOUND = ArrayUtils.INDEX_NOT_FOUND;
-
     public static <E> DelayedCompressList<E> newDelayedCompressList() {
         return new DelayedCompressListImpl<>();
     }
 
     public static <E> DelayedCompressList<E> newDelayedCompressList(int capacity) {
         return new DelayedCompressListImpl<>(capacity);
+    }
+
+    public static <E> DelayedCompressList<E> newDelayedCompressList(Collection<? extends E> src) {
+        DelayedCompressList<E> r = new DelayedCompressListImpl<>(src.size());
+        for (E e : src) {
+            r.add(e);
+        }
+        return r;
     }
 
     @NotThreadSafe
@@ -76,6 +82,7 @@ public class SealedCollections {
             }
             recursionDepth--;
             if (recursionDepth == 0 && firstIndex != INDEX_NOT_FOUND) {
+                ArrayList<E> children = this.children;
                 int removed = lastIndex - firstIndex + 1;
                 if (removed == 1) {
                     // 很少在迭代期间删除多个元素，因此我们测试是否删除了单个

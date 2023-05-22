@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.common.reload;
 
 /**
+ * 文件数据验证器
+ * 通常用于校验文件数据之间的一致性
+ * <p>
+ * Q: 它的调用时机？
+ * A: 在调用{@link FileDataMgr#assignFrom(FileDataProvider)}之后。4
+ *
  * @author wjybxx
- * date - 2023/5/22
+ * date - 2023/5/19
  */
-public class ConstantPreconditions {
+public interface FileDataValidator {
 
-    public static String checkName(String name) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("name is empty ");
-        }
-        return name;
-    }
+    void validate(FileDataMgr fileDataMgr);
 
 }

@@ -47,6 +47,10 @@ public class CollectionUtils {
     public static <E> DelayedCompressList<E> newDelayedCompressList(int initCapacity) {
         return SealedCollections.newDelayedCompressList(initCapacity);
     }
+
+    public static <E> DelayedCompressList<E> newDelayedCompressList(Collection<? extends E> src) {
+        return SealedCollections.newDelayedCompressList(src);
+    }
     // endregion
 
     // region list扩展

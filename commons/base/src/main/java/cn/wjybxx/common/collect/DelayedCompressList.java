@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.collect;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -24,8 +26,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
-
-import static org.apache.commons.lang3.ArrayUtils.INDEX_NOT_FOUND;
 
 /**
  * 迭代期间延迟压缩空间的List，在迭代期间删除元素只会清理元素，不会减少size，而插入元素会添加到List末尾并增加size
@@ -54,6 +54,8 @@ import static org.apache.commons.lang3.ArrayUtils.INDEX_NOT_FOUND;
  * date 2023/4/6
  */
 public interface DelayedCompressList<E> {
+
+    int INDEX_NOT_FOUND = ArrayUtils.INDEX_NOT_FOUND;
 
     // 迭代api
 

@@ -119,7 +119,7 @@ class DefaultFutureCombiner implements FutureCombiner {
 
         boolean checkComplete(int _doneCount) {
             // 字段的读取顺序不可以调整
-            final int doneCount = _doneCount >= 0 ? _doneCount :this.doneCount.get();
+            final int doneCount = _doneCount >= 0 ? _doneCount : this.doneCount.get();
             final int succeedCount = this.succeedCount.get();
             if (doneCount < succeedCount) { // 退出竞争，另一个线程来完成
                 return false;

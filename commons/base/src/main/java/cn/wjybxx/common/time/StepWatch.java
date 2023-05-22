@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.time;
 
+import cn.wjybxx.common.annotation.Beta;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.util.ArrayList;
@@ -78,6 +79,10 @@ public class StepWatch {
         return delegate.isStarted();
     }
 
+    public boolean isSuspended() {
+        return delegate.isSuspended();
+    }
+
     public boolean isStopped() {
         return delegate.isStopped();
     }
@@ -105,6 +110,16 @@ public class StepWatch {
             itemList.add(new Item(stepName, delegate.getTime() - delegate.getSplitTime()));
         }
         delegate.split();
+    }
+
+    /** 暂停计时 */
+    public void suspend() {
+        delegate.suspend();
+    }
+
+    /** 恢复计时 */
+    public void resume() {
+        delegate.resume();
     }
 
     /**
@@ -150,6 +165,15 @@ public class StepWatch {
      */
     public long getCostTime() {
         return delegate.getTime();
+    }
+
+    /**
+     * 合并另一个步进表记录的步骤耗时信息
+     */
+    @Beta
+    public StepWatch mergeSteps(StepWatch src) {
+        itemList.addAll(src.itemList);
+        return this;
     }
 
     /**

@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.common.reload;
+
+import java.util.Set;
 
 /**
+ * 文件数据变化监听器
+ * 项目可以提供一个新的抽象进行适配，以将{@link FileDataMgr}转换为目标类型
+ *
  * @author wjybxx
- * date - 2023/5/22
+ * date - 2023/5/21
  */
-public class ConstantPreconditions {
+public interface FileReloadListener {
 
-    public static String checkName(String name) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("name is empty ");
-        }
-        return name;
-    }
+    /**
+     * 当关注的任一文件修改时，该方法将被调用。
+     *
+     * @param fileDataMgr        所有的文件数据
+     * @param changedFilePathSet 监听的文件中变化的文件路径集合
+     */
+    void afterReload(FileDataMgr fileDataMgr, Set<FilePath<?>> changedFilePathSet) throws Exception;
 
 }
