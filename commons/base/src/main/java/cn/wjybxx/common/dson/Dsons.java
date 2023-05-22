@@ -94,6 +94,21 @@ public final class Dsons {
 
     // fieldNumber
 
+    /** 计算一个类的继承深度 */
+    public static int calIdep(Class<?> clazz) {
+        if (clazz.isInterface() || clazz.isPrimitive()) {
+            throw new IllegalArgumentException();
+        }
+        if (clazz == Object.class) {
+            return 0;
+        }
+        int r = -1; // 去除Object；简单说：Object和Object的直接子类的idep都记为0，这很有意义。
+        while ((clazz = clazz.getSuperclass()) != null) {
+            r++;
+        }
+        return r;
+    }
+
     /**
      * @param idep    继承深度[0~7]
      * @param lnumber 字段在类本地的编号

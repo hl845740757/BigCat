@@ -395,8 +395,12 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
     }
 
     private static int calIdep(TypeElement typeElement) {
+        List<TypeElement> typeElementList = AptUtils.flatInherit(typeElement);
+        if (typeElementList.size() == 1) { // Object
+            return 0;
+        }
         // 需要去掉自身和Object
-        return AptUtils.flatInherit(typeElement).size() - 2;
+        return typeElementList.size() - 2;
     }
 
     private static int makeFullNumber(int idep, int lnumber) {

@@ -129,11 +129,7 @@ public abstract class CellProviderReader {
     }
 
     private static boolean isBlank(SheetCell cell) {
-        if (cell == null) {
-            return true;
-        } else {
-            return StringUtils.isBlank(cell.getValue());
-        }
+        return cell == null || StringUtils.isBlank(cell.getValue());
     }
     // endregion
 }

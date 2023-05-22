@@ -16,20 +16,18 @@
 
 package cn.wjybxx.common;
 
-import javax.annotation.Nonnull;
-
 /**
+ *
  * @author wjybxx
- * date 2023/4/1
+ * date - 2023/5/22
  */
-public interface ExtConstantFactory<T> {
-    /**
-     * @param id      常量的数字id
-     * @param name    常量的名字
-     * @param extInfo 扩展信息。
-     *                请注意，如果使用该特性，请确保创建的常量对象仍然是不可变的
-     * @return 具体的常量对象
-     */
-    @Nonnull
-    T newConstant(int id, String name, Object extInfo);
+public class ConstantPreconditions {
+
+    public static String checkName(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("name is empty ");
+        }
+        return name;
+    }
+
 }

@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common;
 
+import java.util.Objects;
+
 /**
  * 常量抽象，主要参考Netty实现，但又有所不同。
  * <p>
@@ -47,5 +49,47 @@ public interface Constant<T extends Constant<T>> extends Comparable<T> {
      * @return 常量的名字。
      */
     String name();
+
+    // region builder
+
+    abstract class Builder<T> {
+
+        private Integer id;
+        private final String name;
+
+        public Builder(String name) {
+            this.name = ConstantPreconditions.checkName(name);
+        }
+
+        /** id通常由管理常量的常量池分配 */
+        public Builder<T> setId(Integer id) {
+            Objects.requireNonNull(id, "id");
+            if (this.id != null) {
+                throw new IllegalStateException("id cannot be initialized repeatedly");
+            }
+            this.id = id;
+            return this;
+        }
+
+        public int checkedGetId() {
+            if (this.id == null) {
+                throw new IllegalStateException("id has not been initialized");
+            }
+            return id;
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public abstract T build();
+
+    }
+
+    // endregion
 
 }

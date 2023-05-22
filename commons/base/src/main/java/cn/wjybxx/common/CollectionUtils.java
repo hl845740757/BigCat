@@ -400,6 +400,10 @@ public class CollectionUtils {
         return new LinkedHashSet<>(capacity(size));
     }
 
+    public static <E> Set<E> newIdentityHashSet(int size) {
+        return Collections.newSetFromMap(new IdentityHashMap<>(size));
+    }
+
     @Nonnull
     @SuppressWarnings("unchecked")
     public static <E> Set<E> toImmutableSet(@Nullable Collection<E> src) {
@@ -452,6 +456,10 @@ public class CollectionUtils {
         LinkedHashMap<K, V> map = new LinkedHashMap<>(4);
         map.put(k, v);
         return map;
+    }
+
+    public static <K, V> IdentityHashMap<K, V> newIdentityHashMap(int size) {
+        return new IdentityHashMap<>(size);
     }
 
     /** 如果给定键不存在则抛出异常 */
@@ -544,7 +552,7 @@ public class CollectionUtils {
     }
 
     /** 如果两个集合存在公共元素，则返回true */
-    public static boolean intersect(Collection<?> source, Collection<?> candidates) {
+    public static boolean joint(Collection<?> source, Collection<?> candidates) {
         if (isEmpty(source) || isEmpty(candidates)) {
             return false;
         }

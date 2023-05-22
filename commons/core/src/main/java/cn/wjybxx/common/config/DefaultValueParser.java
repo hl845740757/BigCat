@@ -136,9 +136,7 @@ public class DefaultValueParser implements ValueParser {
 
     private static boolean parseBool(String value) {
         return value.equals("1") ||
-                value.equalsIgnoreCase("true") ||
-                value.equalsIgnoreCase("yes") ||
-                value.equalsIgnoreCase("y");
+                value.equalsIgnoreCase("true");
     }
 
     @Override

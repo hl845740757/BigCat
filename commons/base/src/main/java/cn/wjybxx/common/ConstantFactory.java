@@ -19,15 +19,14 @@ package cn.wjybxx.common;
 import javax.annotation.Nonnull;
 
 /**
+ * 可通过基础的Builder构建的常量
+ *
  * @author wjybxx
  * date 2023/4/1
  */
 public interface ConstantFactory<T> {
-    /**
-     * @param id   常量的数字id
-     * @param name 常量的名字
-     * @return 具体的常量对象
-     */
+
     @Nonnull
-    T newConstant(int id, String name);
+    T newConstant(Constant.Builder<T> builder);
+
 }

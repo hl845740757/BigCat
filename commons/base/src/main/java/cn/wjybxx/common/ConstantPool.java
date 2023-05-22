@@ -18,7 +18,6 @@ package cn.wjybxx.common;
 
 import cn.wjybxx.common.ex.BadImplementationException;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 常量池
- * <p>
- * 注意：如果使用{@code extInfo}创建常量对象，请确保你使用的是{@link #ofExtConstantFactory(ExtConstantFactory)}创建的常量池。
  *
  * <h3>一些技巧</h3>
  * Q: 如何不影响性能的情况下获得size? <br>
@@ -52,103 +49,71 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConstantPool<T extends Constant<T>> {
 
     private final ConcurrentMap<String, T> constants = new ConcurrentHashMap<>();
-    private final FactoryWrapper<T> factory;
+    private final ConstantFactory<? extends T> factory;
+    private final AtomicInteger idGenerator;
 
-    private ConstantPool(@Nonnull FactoryWrapper<T> factory) {
+    private ConstantPool(int firstId, ConstantFactory<? extends T> factory) {
         this.factory = factory;
+        this.idGenerator = new AtomicInteger(firstId);
     }
 
     // JAVA什么时候出方法参数默认值啊.,.
-    public static <T extends Constant<T>> ConstantPool<T> ofConstantFactory(ConstantFactory<? extends T> factory) {
-        return ofConstantFactory(factory, 0);
+    public static <T extends Constant<T>> ConstantPool<T> newPool() {
+        return newPool(0, null);
     }
 
-    public static <T extends Constant<T>> ConstantPool<T> ofExtConstantFactory(ExtConstantFactory<? extends T> factory) {
-        return ofExtConstantFactory(factory, 0);
+    public static <T extends Constant<T>> ConstantPool<T> newPool(ConstantFactory<? extends T> factory) {
+        return newPool(0, factory);
     }
 
     /**
-     * @param factory 创建常量的工厂方法，通常是绑定构造方法
      * @param firstId 第一个常量的id，如果常量的创建是无竞争的，那么id将是连续的
+     * @param factory 可通过基础的Builder构建常量的工厂，通常是无额外数据的简单常量对象，factory通常是构造方法引用
      */
-    public static <T extends Constant<T>> ConstantPool<T> ofConstantFactory(ConstantFactory<? extends T> factory, int firstId) {
-        Objects.requireNonNull(factory, "factory");
-        final FactoryWrapper<T> wrapper = new FactoryWrapper<>(new ExtConstantFactoryAdapter<>(factory), firstId);
-        return new ConstantPool<>(wrapper);
-    }
-
-    /**
-     * 使用静态方法，可以使用不同的方法名，避免使用lambda或方法引用时造成的混乱。
-     *
-     * @param factory 可使用外部信息创建常量的工厂
-     * @param firstId 第一个常量的id，如果常量的创建是无竞争的，那么id将是连续的
-     */
-    public static <T extends Constant<T>> ConstantPool<T> ofExtConstantFactory(ExtConstantFactory<? extends T> factory, int firstId) {
-        Objects.requireNonNull(factory, "factory");
-        return new ConstantPool<>(new FactoryWrapper<>(factory, firstId));
-    }
-
-    /**
-     * Shortcut of {@link #valueOf(String) valueOf(firstNameComponent.getName() + "#" + secondNameComponent)}.
-     *
-     * @param firstNameComponent  充当命名空间
-     * @param secondNameComponent 命名空间内的名字
-     */
-    public final T valueOf(Class<?> firstNameComponent, String secondNameComponent) {
-        final String nameSpace = Objects.requireNonNull(firstNameComponent, "firstNameComponent").getName();
-        final String name = checkNotNullAndNotEmpty(secondNameComponent, "secondNameComponent");
-        return valueOf(nameSpace + "#" + name);
+    public static <T extends Constant<T>> ConstantPool<T> newPool(int firstId, ConstantFactory<? extends T> factory) {
+        return new ConstantPool<>(firstId, factory);
     }
 
     /**
      * 获取给定名字对应的常量。
-     * 如果关联的常量上不存在，则创建一个新的常量并返回。
-     * 一旦创建成功，则接下来的调用，则总是返回先前创建的常量。
+     * 1.如果给定的常量存在，则返回存在的常量。
+     * 2.如果关联的常量不存在，但可以默认创建，则创建一个新的常量并返回，否则抛出异常。
      */
     public final T valueOf(String name) {
-        checkNotNullAndNotEmpty(name, "name");
-        return getOrCreate(name, null);
-    }
-
-    /**
-     * 获取给定名字对应的常量。
-     * 如果关联的常量上不存在，则创建一个新的常量并返回。
-     * 一旦创建成功，则接下来的调用，则总是返回先前创建的常量。
-     *
-     * @param name    常量的名字
-     * @param extInfo 外部扩展信息。
-     *                请注意：如果使用外部信息创建对象，请确保创建的对象仍然是不可变的。
-     */
-    public final T valueOf(String name, Object extInfo) {
-        checkNotNullAndNotEmpty(name, "name");
-        return getOrCreate(name, extInfo);
+        ConstantPreconditions.checkName(name);
+        if (factory == null) {
+            return getOrThrow(name);
+        } else {
+            return getOrCreate(name);
+        }
     }
 
     /**
      * 创建一个常量，如果已存在关联的常量，则抛出异常。
      */
     public final T newInstance(String name) {
-        checkNotNullAndNotEmpty(name, "name");
-        return createOrThrow(name, null);
+        ConstantPreconditions.checkName(name);
+        if (factory == null) {
+            throw new IllegalStateException("builder required");
+        }
+        return createOrThrow(new SimpleBuilder<>(name, factory));
     }
 
     /**
      * 创建一个常量，如果已存在关联的常量，则抛出异常。
      *
-     * @param name    常量的名字
-     * @param extInfo 外部扩展信息。
-     *                请注意：如果使用外部信息创建对象，请确保创建的对象仍然是不可变的。
+     * @param builder 构建常量需要的数据--请确保创建的对象仍然是不可变的。
      */
-    public final T newInstance(String name, Object extInfo) {
-        checkNotNullAndNotEmpty(name, "name");
-        return createOrThrow(name, extInfo);
+    public final T newInstance(Constant.Builder<T> builder) {
+        Objects.requireNonNull(builder, "builder");
+        return createOrThrow(builder);
     }
 
     /**
      * @return 如果给定名字存在关联的常量，则返回true
      */
     public final boolean exists(String name) {
-        checkNotNullAndNotEmpty(name, "name");
+        ConstantPreconditions.checkName(name);
         return constants.containsKey(name);
     }
 
@@ -159,7 +124,7 @@ public class ConstantPool<T extends Constant<T>> {
      */
     @Nullable
     public final T get(String name) {
-        checkNotNullAndNotEmpty(name, "name");
+        ConstantPreconditions.checkName(name);
         return constants.get(name);
     }
 
@@ -171,7 +136,7 @@ public class ConstantPool<T extends Constant<T>> {
      * @throws IllegalArgumentException 如果不存在对应的常量
      */
     public final T getOrThrow(String name) {
-        checkNotNullAndNotEmpty(name, "name");
+        ConstantPreconditions.checkName(name);
         final T constant = constants.get(name);
         if (null == constant) {
             throw new IllegalArgumentException(name + " does not exist");
@@ -201,94 +166,64 @@ public class ConstantPool<T extends Constant<T>> {
         return new ConstantPoolSnapshot<>(this);
     }
 
-    private static String checkNotNullAndNotEmpty(String value, String name) {
-        Objects.requireNonNull(value, name);
-        if (value.isEmpty()) {
-            throw new IllegalArgumentException(name + " is empty ");
-        }
-        return value;
-    }
-
     /**
-     * 通过名字获取已存在的常量，或者当其不存在时创建新的常量。
-     *
-     * @param name    常量的名字
-     * @param extInfo 外部扩展信息
+     * x
+     * 通过名字获取已存在的常量，或者当其不存在时创建新的常量，仅支持简单常量。
      */
-    private T getOrCreate(String name, Object extInfo) {
+    private T getOrCreate(String name) {
+        assert factory != null;
         T constant = constants.get(name);
         if (constant == null) {
-            final T tempConstant = factory.apply(name, extInfo);
+            final T tempConstant = newConstant(new SimpleBuilder<>(name, factory));
             constant = constants.putIfAbsent(name, tempConstant);
             if (constant == null) {
                 return tempConstant;
             }
         }
-
         return constant;
     }
 
     /**
      * 创建一个常量，或者已存在关联的常量时则抛出异常
-     *
-     * @param name 常量的名字
      */
-    private T createOrThrow(String name, Object extInfo) {
+    private T createOrThrow(Constant.Builder<? extends T> builder) {
+        String name = builder.getName();
         T constant = constants.get(name);
         if (constant == null) {
-            final T tempConstant = factory.apply(name, extInfo);
+            final T tempConstant = newConstant(builder);
             constant = constants.putIfAbsent(name, tempConstant);
             if (constant == null) {
                 return tempConstant;
             }
         }
-
         throw new IllegalArgumentException(name + " is already in use");
     }
 
-    private static class ExtConstantFactoryAdapter<T> implements ExtConstantFactory<T> {
+    private T newConstant(Constant.Builder<? extends T> builder) {
+        final int id = idGenerator.getAndIncrement();
+        final T result = builder.setId(id)
+                .build();
+        // 校验实现
+        Objects.requireNonNull(result, "result");
+        if (result.id() != id || !Objects.equals(result.name(), builder.getName())) {
+            throw new BadImplementationException(String.format("expected id: %d, name: %s, but found id: %d, name: %s",
+                    id, builder.getName(), result.id(), result.name()));
+        }
+        return result;
+    }
 
-        private final ConstantFactory<? extends T> delegated;
+    private static class SimpleBuilder<T> extends Constant.Builder<T> {
 
-        private ExtConstantFactoryAdapter(ConstantFactory<? extends T> delegated) {
-            this.delegated = delegated;
+        private final ConstantFactory<T> factory;
+
+        SimpleBuilder(String name, ConstantFactory<T> factory) {
+            super(name);
+            this.factory = Objects.requireNonNull(factory);
         }
 
-        @Nonnull
         @Override
-        public T newConstant(int id, String name, Object extInfo) {
-            if (null != extInfo) {
-                throw new IllegalArgumentException("ExtInfo is not supported in your pool");
-            }
-            return delegated.newConstant(id, name);
+        public T build() {
+            return factory.newConstant(this);
         }
     }
-
-    private static class FactoryWrapper<T extends Constant<T>> {
-
-        private final ExtConstantFactory<? extends T> delegate;
-        private final AtomicInteger idGenerator;
-
-        FactoryWrapper(ExtConstantFactory<? extends T> delegate, int firstId) {
-            this.delegate = delegate;
-            this.idGenerator = new AtomicInteger(firstId);
-        }
-
-        private int nextId() {
-            return idGenerator.getAndIncrement();
-        }
-
-        T apply(String name, Object extInfo) {
-            final int id = nextId();
-            final T result = delegate.newConstant(id, name, extInfo);
-            Objects.requireNonNull(result, "result");
-            if (result.id() == id && Objects.equals(result.name(), name)) {
-                // 校验实现
-                return result;
-            }
-            final String msg = String.format("expected id: %d, name: %s, found id: %d, name: %s", id, name, result.id(), result.name());
-            throw new BadImplementationException(msg);
-        }
-    }
-
 }

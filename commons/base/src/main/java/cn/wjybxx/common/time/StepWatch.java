@@ -74,6 +74,14 @@ public class StepWatch {
         return sw;
     }
 
+    public boolean isStarted() {
+        return delegate.isStarted();
+    }
+
+    public boolean isStopped() {
+        return delegate.isStopped();
+    }
+
     /**
      * 开始计时。
      * 重复调用start之前，必须调用{@link #reset()}
