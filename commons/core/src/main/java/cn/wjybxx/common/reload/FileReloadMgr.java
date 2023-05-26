@@ -48,6 +48,7 @@ public class FileReloadMgr {
     private final Executor executor;
 
     private final Map<FilePath<?>, FileMetadata<?>> metadataMap = new IdentityHashMap<>(200);
+    private final Set<FileDataLinker> linkerSet = CollectionUtils.newIdentityHashSet(20);
     private final Set<FileDataValidator> validatorSet = CollectionUtils.newIdentityHashSet(20);
 
     private final FileDataContainer fileDataContainer = new FileDataContainer();
@@ -102,6 +103,15 @@ public class FileReloadMgr {
             }
             metadataMap.remove(filePath);
         }
+    }
+
+    public void registerLinkers(Collection<? extends FileDataLinker> linkers) {
+        Preconditions.checkNullElements(linkers);
+        linkerSet.addAll(linkers);
+    }
+
+    public void unregisterLinkers(Collection<? extends FileDataLinker> linkers) {
+        linkerSet.removeAll(linkers);
     }
 
     public void registerValidators(Collection<? extends FileDataValidator> validators) {
@@ -205,7 +215,7 @@ public class FileReloadMgr {
      * @param timeoutReadFiles        读取文件内容的超时时间(毫秒)，设定超时时间有助于提前发现问题
      */
     public void reloadAll(long timeoutFindChangedFiles, long timeoutReadFiles) {
-        reloadScope(metadataMap.keySet(), timeoutFindChangedFiles, timeoutReadFiles);
+        reloadScopeImpl(metadataMap.keySet(), timeoutFindChangedFiles, timeoutReadFiles);
     }
 
     /**
@@ -217,10 +227,11 @@ public class FileReloadMgr {
      */
     public void reloadScope(Set<FilePath<?>> scope, long timeoutFindChangedFiles, long timeoutReadFiles) {
         Objects.requireNonNull(scope, "scope");
-        if (scope != metadataMap.keySet()) {
-            ensureFileReaderExist(scope);
-        }
+        ensureFileReaderExist(scope);
+        reloadScopeImpl(scope, timeoutFindChangedFiles, timeoutReadFiles);
+    }
 
+    private void reloadScopeImpl(Set<FilePath<?>> scope, long timeoutFindChangedFiles, long timeoutReadFiles) {
         logger.info("reloadScope started");
         final StepWatch stepWatch = StepWatch.createStarted("FileReloadMgr:reloadScope");
         try {
@@ -252,18 +263,29 @@ public class FileReloadMgr {
         Set<FilePath<?>> affectedFiles = helper.readAffectedFiles();
         stepWatch.logStep("readAffectedFiles");
 
-        // 初始化沙箱环境的DataMgr
+        // 初始化沙箱环境的FileDataMgr
         FileDataContainer sandBoxDataContainer = helper.getSandboxDataContainer();
         FileDataMgr sandboxDateMgr = createSandboxDateMgr();
         sandboxDateMgr.assignFrom(sandBoxDataContainer);
-        // 验证数据合法性
-        validate(sandboxDateMgr);
-        stepWatch.logStep("validate");
+        try {
+            link(sandboxDateMgr);
+            // 验证数据合法性
+            validate(sandboxDateMgr);
+            stepWatch.logStep("validate");
+        } catch (Throwable e) {
+            // 错误恢复，由于linker会导致外部data链接到沙箱数据，我们通过再次执行link来纠正错误
+            // 构建完全的沙盒开销极大，因此我们选择纠正错误的方式实现原子性
+            if (!fileDataContainer.isEmpty()) {
+                link(fileDataMgr);
+            }
+            ExceptionUtils.rethrow(e);
+        }
 
         // 赋值到真实环境
         fileDataContainer.clear();
         fileDataContainer.putAll(sandBoxDataContainer);
         fileDataMgr.assignFrom(fileDataContainer);
+        link(fileDataMgr);
 
         // 执行回调逻辑（这里可能产生异常）
         if (notifyListener) {
@@ -358,7 +380,13 @@ public class FileReloadMgr {
         return sandboxFileDataMgr;
     }
 
-    private void validate(FileDataMgr fileDataMgr) {
+    private void link(FileDataMgr fileDataMgr) {
+        for (FileDataLinker linker : linkerSet) {
+            linker.link(fileDataMgr);
+        }
+    }
+
+    private void validate(FileDataMgr fileDataMgr) throws Exception {
         // validate通常不会有太大开销，因此总是全部执行
         for (FileDataValidator validator : validatorSet) {
             validator.validate(fileDataMgr);

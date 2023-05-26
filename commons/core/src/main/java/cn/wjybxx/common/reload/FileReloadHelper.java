@@ -109,9 +109,8 @@ class FileReloadHelper {
         } catch (Exception e) {
             // 取消可能未执行的任务
             cancelAllFuture(allFutureList);
-            ExceptionUtils.rethrow(e);
+            return ExceptionUtils.rethrow(e);
         }
-        return null;
     }
 
     private void cancelAllFuture(List<CompletableFuture<?>> allFutureList) {
@@ -160,7 +159,7 @@ class FileReloadHelper {
         List<ReadFileDataTask> taskList = new ArrayList<>(affectedFiles.size());
         for (FileMetadata<?> fileMetadata : affectedFiles) {
             if (fileMetadata.allDependents.size() > 0) {
-                continue;
+                break; // 后续都是有依赖的文件
             }
             ReadFileDataTask readTask = new ReadFileDataTask(fileMetadata.reader, fileMetadata.file, FileDataProviders.empty());
             CompletableFuture<Void> future = CompletableFuture.runAsync(readTask, reloadMgr.getExecutor());

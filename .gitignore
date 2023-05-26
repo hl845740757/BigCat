@@ -36,5 +36,5 @@
 hs_err_pid*
 
 
-# 测试目录下的特定文件
-commons/core/testres/HelloWorld.txt
+# 临时文件
+temp-*

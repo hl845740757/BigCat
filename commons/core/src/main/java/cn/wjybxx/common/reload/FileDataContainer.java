@@ -44,6 +44,10 @@ public final class FileDataContainer implements FileDataProvider {
         fileDataMap = new IdentityHashMap<>(src.getAll());
     }
 
+    public boolean isEmpty() {
+        return fileDataMap.isEmpty();
+    }
+
     public FileDataContainer clear() {
         fileDataMap.clear();
         return this;

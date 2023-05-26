@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 public class FileReloadTest {
 
     private static final FilePathPool POOL = FilePathPool.newPool();
-    private static final FilePath<List<String>> HelloWorld = POOL.newPath("HelloWorld.txt");
+    private static final FilePath<List<String>> HelloWorld = POOL.newPath("temp-HelloWorld.txt");
     private static final FilePath<String> HelloWorldCache = POOL.newVirtualPath("HelloWorldCache.txt");
 
     private static final String resDir = "testres/";
@@ -80,7 +80,7 @@ public class FileReloadTest {
             if (i != 0) {
                 builder.append("\n");
             }
-            builder.append(RandomStringUtils.random(16));
+            builder.append(RandomStringUtils.random(16, true, true));
         }
         FileUtil.writeString(file, builder.toString());
     }

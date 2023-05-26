@@ -17,17 +17,20 @@
 package cn.wjybxx.common.reload;
 
 /**
- * 文件数据验证器
- * 通常用于校验文件数据之间的一致性
- * <p>
- * Q: 它的调用时机？
- * A: 在调用{@link FileDataMgr#assignFrom(FileDataProvider)}之后。4
+ * 用于延迟链接文件之间的数据依赖
+ * 1. 在读表期间完成表格之间的数据连接，可提高运行时速度，且业务代码更加干净。
+ * 2. 使用延迟链接可提高读表速度，因为减少了必须串行读取的文件，而链接数据是很快的。
+ * 3. 使用延迟链接会导致引用是可变的，存在一定程度的不安全性，业务通常应该小心。
  *
  * @author wjybxx
- * date - 2023/5/19
+ * date - 2023/5/25
+ * @see FileDataRef
  */
-public interface FileDataValidator {
+public interface FileDataLinker {
 
-    void validate(FileDataMgr fileDataMgr) throws Exception;
+    /**
+     * @implNote 该实现应该保持幂等性，对于同样的数据，应该总是成功或总是失败
+     */
+    void link(FileDataMgr fileDataMgr);
 
 }

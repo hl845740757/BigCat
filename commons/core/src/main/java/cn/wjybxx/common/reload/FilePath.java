@@ -18,13 +18,13 @@ package cn.wjybxx.common.reload;
 
 import cn.wjybxx.common.AbstractConstant;
 import cn.wjybxx.common.Constant;
-import cn.wjybxx.common.ConstantPool;
 import jodd.io.FileNameUtil;
 
 /**
  * 1. path的含义取决于应用自身，可能是绝对路径，也可能是相对路径，也可能是其它的格式。
  * 2. 不直接使用String，可提供额外的扩展。
  *
+ * @param <T> 文件关联的数据的类型
  * @author wjybxx
  * date - 2023/5/19
  */
