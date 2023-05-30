@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import java.lang.annotation.Target;
  * date 2023/4/12
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface SourceFieldRef {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SourceFileRef {
 
     Class<?> value();
 

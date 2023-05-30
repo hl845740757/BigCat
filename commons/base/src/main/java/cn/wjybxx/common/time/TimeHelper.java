@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
 package cn.wjybxx.common.time;
 
 import javax.annotation.concurrent.Immutable;
-import java.time.DayOfWeek;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -307,4 +305,72 @@ public final class TimeHelper {
         return (int) Math.abs(deltaTime / TimeUtils.WEEK);
     }
 
+    /**
+     * 组合下来4中格式：
+     * yyyy-MM-ddTHH:mm:ssZ
+     * yyyy-MM-ddTHH:mm:ss.SSSZ
+     * yyyy-MM-ddTHH:mm:ss±HH:mm
+     * yyyy-MM-ddTHH:mm:ss.SSS±HH:mm
+     */
+    public String toString(LocalDateTime localDateTime) {
+        return toString(localDateTime.toLocalDate()) + "T" + toString(localDateTime.toLocalTime())
+                + zoneOffset.toString();
+    }
+
+    /**
+     * 固定格式：
+     * yyyy-MM-dd
+     */
+    public static String toString(LocalDate localDate) {
+        return localDate.toString();
+    }
+
+    /**
+     * 两种格式
+     * HH:mm:ss
+     * HH:mm:ss.SSS 毫秒数不为0时
+     */
+    public static String toString(LocalTime localTime) {
+        int hourValue = localTime.getHour();
+        int minuteValue = localTime.getMinute();
+        int secondValue = localTime.getSecond();
+        int nanoValue = localTime.getNano();
+        StringBuilder buf = new StringBuilder(18)
+                .append(hourValue < 10 ? "0" : "").append(hourValue)
+                .append(minuteValue < 10 ? ":0" : ":").append(minuteValue)
+                .append(secondValue < 10 ? ":0" : ":").append(secondValue);
+        int milliValue = (int) (nanoValue / TimeUtils.NANOS_PER_MILLI);
+        if (milliValue > 0) {
+            buf.append('.');
+            if (milliValue < 10) {
+                buf.append("00").append(milliValue);
+            } else if (milliValue < 100) {
+                buf.append("0").append(milliValue);
+            } else {
+                buf.append(milliValue);
+            }
+        }
+        return buf.toString();
+    }
+
+    /**
+     * 两种格式
+     * Z
+     * ±HH:mm
+     */
+    public static String toString(ZoneOffset zoneOffset) {
+        int totalSeconds = zoneOffset.getTotalSeconds();
+        if (totalSeconds == 0) {
+            return "Z";
+        } else {
+            int absTotalSeconds = Math.abs(totalSeconds);
+            int absHours = absTotalSeconds / TimeUtils.SECONDS_PER_HOUR;
+            int absMinutes = (absTotalSeconds / TimeUtils.SECONDS_PER_MINUTE) % TimeUtils.MINUTES_PER_HOUR;
+            StringBuilder buf = new StringBuilder()
+                    .append(totalSeconds < 0 ? "-" : "+")
+                    .append(absHours < 10 ? "0" : "").append(absHours)
+                    .append(absMinutes < 10 ? ":0" : ":").append(absMinutes);
+            return buf.toString();
+        }
+    }
 }

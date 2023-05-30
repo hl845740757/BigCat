@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date - 2023/4/19
  */
-public abstract class DsonValue implements DsonValueLite {
+public abstract class DsonValue {
 
-    @Override
     @Nonnull
     public abstract DsonType getDsonType();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,54 +33,43 @@ public class TimeUtils {
 
     }
 
-    /**
-     * 中国时区
-     */
+    /** 中国时区 */
     public static final ZoneOffset ZONE_OFFSET_CST = ZoneOffset.ofHours(8);
-
-    /**
-     * UTC时间
-     */
+    /** UTC时区 */
     public static final ZoneOffset ZONE_OFFSET_UTC = ZoneOffset.UTC;
-
-    /**
-     * 系统时区
-     */
+    /** 系统时区 */
     public static final ZoneOffset ZONE_OFFSET_SYSTEM = ZoneOffset.systemDefault().getRules().getOffset(LocalDateTime.now());
 
-    /**
-     * 一秒的毫秒数
-     */
+    /** 一秒的毫秒数 */
     public static final long SEC = 1000;
-    /**
-     * 一分的毫秒数
-     */
+    /** 一分的毫秒数 */
     public static final long MIN = 60 * SEC;
-    /**
-     * 一小时的毫秒数
-     */
+    /** 一小时的毫秒数 */
     public static final long HOUR = 60 * MIN;
-    /**
-     * 一天的毫秒数
-     */
+    /** 一天的毫秒数 */
     public static final long DAY = 24 * HOUR;
-    /**
-     * 一周的毫秒数
-     */
+    /** 一周的毫秒数 */
     public static final long WEEK = 7 * DAY;
 
-    /**
-     * 一天的秒数
-     */
-    public static final int SECONDS_PER_DAY = 86400;
-    /**
-     * 1毫秒多少纳秒
-     */
+    // 基础单位
+    public static final int MILLIS_PER_SECOND = 1000;
+    public static final int SECONDS_PER_MINUTE = 60;
+    public static final int MINUTES_PER_HOUR = 60;
+    public static final int HOURS_PER_DAY = 24;
+    public static final int DAYS_PER_WEEK = 7;
+
     public static final long NANOS_PER_MILLI = 1000_000L;
-    /**
-     * 1秒多少纳秒
-     */
     public static final long NANOS_PER_SECOND = 1000_000_000L;
+    public static final long NANOS_PER_MINUTES = NANOS_PER_SECOND * 60L;
+    public static final long NANOS_PER_HOURS = NANOS_PER_MINUTES * 60L;
+    public static final long NANOS_PER_DAY = NANOS_PER_HOURS * 24L;
+
+    public static final int SECONDS_PER_HOUR = 3600;
+    public static final int SECONDS_PER_DAY = 3600 * 24;
+    public static final int SECONDS_PER_WEEK = SECONDS_PER_DAY * 7;
+
+    public static final int MINUTES_PER_DAY = 60 * 24;
+    public static final int MINUTES_PER_WEEK = 60 * 24 * 7;
 
     /**
      * 一天的开始：午夜 00:00:00
@@ -92,25 +81,15 @@ public class TimeUtils {
      */
     public static final LocalTime END_OF_DAY = LocalTime.MAX;
 
-    /**
-     * 默认的时间格式
-     */
+    /** 默认的时间格式 */
     public static final String DEFAULT_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    /**
-     * 默认时间格式器
-     */
+    /** 默认时间格式器 */
     public static final DateTimeFormatter DEFAULT_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_PATTERN);
-    /**
-     * 年月日的格式化器
-     */
+    /** 年月日的格式化器 */
     public static final DateTimeFormatter YYYY_MM_DD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    /**
-     * 时分秒的格式化器
-     */
+    /** 时分秒的格式化器 */
     public static final DateTimeFormatter HH_MM_SS = DateTimeFormatter.ofPattern("HH:mm:ss");
-    /**
-     * 时分的格式化器
-     */
+    /** 时分的格式化器 */
     public static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
 
     /** {@link LocalTime}对应的毫秒时间 */

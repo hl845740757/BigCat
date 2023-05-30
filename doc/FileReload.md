@@ -23,7 +23,7 @@
 1. 并发读取无依赖文件
 2. 串行读取有依赖的文件
 
-构建FileData又由两个步骤构成：
+构建FileDataMgr又由两个步骤构成：
 
 1. 将表格数据发布到FileDataMgr - Assign
 2. 链接文件数据 - Link

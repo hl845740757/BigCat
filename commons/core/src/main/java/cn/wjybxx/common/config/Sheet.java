@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.config;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -95,12 +94,16 @@ public class Sheet {
 
     /** 是否是参数表 */
     public boolean isParamSheet() {
-        // 至少有name/type/value三个header，且不在同一行；header同一行的是普通表
-        if (headerMap.size() < 3) {
+        // 只有普通表可以只有表头没有内容
+        if (valueRowList.isEmpty()) {
             return false;
         }
-        final Iterator<Header> itr = headerMap.values().iterator();
-        return itr.next().getRowIndex() != itr.next().getRowIndex();
+        assert headerMap.size() > 0;
+        // 由于不同项目的起始行号可能不同，因此这里不测试第一行的编号
+        // header和value在同一行是的param表
+        SheetRow firstValueRow = valueRowList.iterator().next();
+        String name = firstValueRow.getNameSet().iterator().next();
+        return headerMap.get(name).getRowIndex() == firstValueRow.getRowIndex();
     }
 
     /**
