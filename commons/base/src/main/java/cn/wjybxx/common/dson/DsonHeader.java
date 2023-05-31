@@ -16,53 +16,46 @@
 
 package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.annotation.Internal;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 不再采用二进制和Doc再衍生两个子类的方式，对性能的影响不大，因为直接使用DsonObject的情况较少，但带来的维护成本巨高。
+ * 1.Header不可以再持有header，否则陷入死循环
+ * 2.Header的结构应该是简单清晰的，可简单编解码
  *
  * @author wjybxx
- * date - 2023/4/21
+ * date - 2023/5/27
  */
 @Internal
-public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValue> {
+public abstract class DsonHeader<K> extends DsonValue implements Map<K, DsonValue> {
 
-    final Map<K, DsonValue> valueMap;
+    protected final Map<K, DsonValue> valueMap;
 
-    DsonObject(Map<K, DsonValue> valueMap) {
+    protected DsonHeader(Map<K, DsonValue> valueMap) {
         this.valueMap = valueMap;
     }
 
+    public static <K> DsonHeader<K> toImmutable(DsonHeader<K> src) {
+        return ImmutableDsons.header(src);
+    }
+
+    public static <K> DsonHeader<K> empty() {
+        return ImmutableDsons.header();
+    }
+
     //
-
-    /**
-     * 创建一个禁止修改的DsonObject
-     * 暂时未实现为深度的不可变，存在一些困难，主要是相互引用的问题
-     */
-    public static <K> DsonObject<K> toImmutable(DsonObject<K> src) {
-        return ImmutableDsons.dsonObject(src);
-    }
-
-    public static <K> DsonObject<K> empty() {
-        return ImmutableDsons.dsonObject();
-    }
-
-    @Nonnull
-    public abstract DsonHeader<K> getHeader();
-
-    public abstract DsonObject<K> setHeader(DsonHeader<K> header);
-
-    /**
-     * 返回对象的第一个键
-     *
-     * @throws NoSuchElementException 如果对象为空
-     */
-    public K firstKey() {
-        return CollectionUtils.firstKey(valueMap);
+    static <K> void checkKeyValue(K key, DsonValue value) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cant be null");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value cant be null");
+        }
     }
 
     public Map<K, DsonValue> getValueMap() {
@@ -70,7 +63,7 @@ public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValu
     }
 
     /** @return this */
-    public DsonObject<K> append(K key, DsonValue value) {
+    public DsonHeader<K> append(K key, DsonValue value) {
         checkKeyValue(key, value);
         valueMap.put(key, value);
         return this;
@@ -93,25 +86,15 @@ public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValu
     @Nonnull
     @Override
     public final DsonType getDsonType() {
-        return DsonType.OBJECT;
+        return DsonType.HEADER;
     }
 
-    static <K> void checkKeyValue(K key, DsonValue value) {
-        if (key == null) {
-            throw new IllegalArgumentException("key cant be null");
-        }
-        if (value == null) {
-            throw new IllegalArgumentException("value cant be null");
-        }
-    }
-
-    // region equals
-    // 默认只比较value，不比较header和类型
+    // 默认只比较value，不判断类型
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        return o instanceof DsonObject<?> that && valueMap.equals(that.valueMap);
+        return o instanceof DsonHeader<?> that && valueMap.equals(that.valueMap);
     }
 
     @Override
@@ -123,13 +106,10 @@ public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValu
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 "valueMap=" + valueMap +
-                ", header=" + getHeader() +
                 '}';
     }
-    // endregion
 
     // region 代理实现
-
     @Override
     public int size() {
         return valueMap.size();
@@ -179,7 +159,6 @@ public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValu
     public Set<Entry<K, DsonValue>> entrySet() {
         return valueMap.entrySet();
     }
-
     // endregion
 
 }

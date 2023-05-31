@@ -163,12 +163,12 @@ public class DocumentConverterUtils extends ConverterUtils {
     }
 
     /** 外部需要先readName */
-    private static DsonDocObject readObject(DsonDocReader reader) {
+    private static MutableDsonObject<String> readObject(DsonDocReader reader) {
         DsonType dsonType;
         String name;
         DsonValue value;
 
-        DsonDocObject dsonObject = new DsonDocObject();
+        MutableDsonObject<String> dsonObject = new MutableDsonObject<>();
         dsonObject.setClassId(reader.readStartObject());
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
             name = reader.readName();
@@ -180,11 +180,11 @@ public class DocumentConverterUtils extends ConverterUtils {
     }
 
     /** 外部需要先readName */
-    private static DsonDocArray readArray(DsonDocReader reader) {
+    private static MutableDsonArray<String> readArray(DsonDocReader reader) {
         DsonType dsonType;
         DsonValue value;
 
-        DsonDocArray dsonArray = new DsonDocArray();
+        MutableDsonArray<String> dsonArray = new MutableDsonArray<>();
         dsonArray.setClassId(reader.readStartArray());
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
             value = readAsDsonValue(reader, dsonType, null);

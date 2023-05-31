@@ -194,9 +194,6 @@ public final class Dsons {
         enableClassIntern = properties.getAsBool("cn.wjybxx.common.dson.enableClassIntern", true);
     }
 
-    /** 文档型编码中，一个name最大字节数 */
-    public static final int NAME_MAX_BYTES = 32767;
-
     public static String internField(String fieldName) {
         return (fieldName.length() <= 32 && enableFieldIntern) ? fieldName.intern() : fieldName;
     }

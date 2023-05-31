@@ -287,7 +287,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartObject(findEncodeClassId(value, typeArgInfo));
+        writer.writeStartObject();
     }
 
     @Override
@@ -297,7 +297,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartArray(findEncodeClassId(value, typeArgInfo));
+        writer.writeStartArray();
     }
 
     @Override

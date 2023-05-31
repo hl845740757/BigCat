@@ -189,7 +189,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
         DsonType dsonType = reader.readDsonType();
-        if (reader.isObjectContext()) {
+        if (reader.getContextType() == DsonContextType.OBJECT) {
             reader.readName();
         }
         return readContainer(typeArgInfo, dsonType);
@@ -213,7 +213,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         }
         // 对象类型--需要先读取写入的类型，才可以解码
         DsonType dsonType = NumberCodecHelper.readOrGetDsonType(reader);
-        if (reader.isObjectContext()) {
+        if (reader.getContextType() == DsonContextType.OBJECT) {
             reader.readName(name);
         }
         if (dsonType == DsonType.NULL) {

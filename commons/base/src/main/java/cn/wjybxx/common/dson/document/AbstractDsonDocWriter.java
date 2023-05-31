@@ -18,6 +18,7 @@ package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
 import java.util.List;
@@ -56,6 +57,11 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     }
 
     // region state
+
+    @Override
+    public DsonContextType getContextType() {
+        return context.contextType;
+    }
 
     @Override
     public boolean isAtName() {
@@ -98,7 +104,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     protected void setNextState() {
         switch (context.contextType) {
             case TOP_LEVEL -> context.setState(DsonWriterState.DONE);
-            case OBJECT -> context.setState(DsonWriterState.NAME);
+            case OBJECT, HEADER -> context.setState(DsonWriterState.NAME);
             case ARRAY -> context.setState(DsonWriterState.VALUE);
         }
     }
@@ -213,6 +219,13 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
         setNextState();
     }
 
+    @Override
+    public void writeRef(String name, ObjectRef objectRef) {
+        advanceToValueState(name);
+        doWriteRef(objectRef);
+        setNextState();
+    }
+
     protected abstract void doWriteInt32(int value, WireType wireType);
 
     protected abstract void doWriteInt64(long value, WireType wireType);
@@ -237,55 +250,67 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     protected abstract void doWriteExtInt64(byte type, long value, WireType wireType);
 
+    protected abstract void doWriteRef(ObjectRef objectRef);
+
     // endregion
 
     // region 容器
     @Override
-    public void writeStartArray(DocClassId classId) {
+    public void writeStartArray() {
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
         }
         Context context = this.context;
         autoStartTopLevel(context);
         ensureValueState(context);
-        doWriteStartContainer(DsonContextType.ARRAY, classId);
+        doWriteStartContainer(DsonContextType.ARRAY);
         setNextState(); // 设置新上下文状态
     }
 
     @Override
     public void writeEndArray() {
         Context context = this.context;
-        if (context.contextType != DsonContextType.ARRAY) {
-            throw DsonCodecException.contextError(DsonContextType.ARRAY, context.contextType);
-        }
-        if (context.state != DsonWriterState.VALUE) {
-            throw invalidState(List.of(DsonWriterState.VALUE), context.state);
-        }
+        checkEndContext(context, DsonContextType.ARRAY, DsonWriterState.VALUE);
         doWriteEndContainer();
         setNextState(); // parent前进一个状态
     }
 
     @Override
-    public void writeStartObject(DocClassId classId) {
+    public void writeStartObject() {
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
         }
         Context context = this.context;
         autoStartTopLevel(context);
         ensureValueState(context);
-        doWriteStartContainer(DsonContextType.OBJECT, classId);
+        doWriteStartContainer(DsonContextType.OBJECT);
         setNextState(); // 设置新上下文状态
     }
 
     @Override
     public void writeEndObject() {
         Context context = this.context;
-        if (context.contextType != DsonContextType.OBJECT) {
-            throw DsonCodecException.contextError(DsonContextType.OBJECT, context.contextType);
+        checkEndContext(context, DsonContextType.OBJECT, DsonWriterState.NAME);
+        doWriteEndContainer();
+        setNextState(); // parent前进一个状态
+    }
+
+    @Override
+    public void writeStartHeader() {
+        if (recursionDepth >= recursionLimit) {
+            throw DsonCodecException.recursionLimitExceeded();
         }
-        if (context.state != DsonWriterState.NAME) { // 下一个循环的开始
-            throw invalidState(List.of(DsonWriterState.NAME), context.state);
-        }
+        Context context = this.context;
+//        autoStartTopLevel(context); // header不能是顶层对象
+        ensureValueState(context);
+        doWriteStartContainer(DsonContextType.HEADER);
+        setNextState(); // 设置新上下文状态
+    }
+
+    @Override
+    public void writeEndHeader() {
+        Context context = this.context;
+        checkEndContext(context, DsonContextType.HEADER, DsonWriterState.NAME);
         doWriteEndContainer();
         setNextState(); // parent前进一个状态
     }
@@ -297,15 +322,24 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
         }
     }
 
+    private void checkEndContext(Context context, DsonContextType contextType, DsonWriterState state) {
+        if (context.contextType != contextType) {
+            throw DsonCodecException.contextError(contextType, context.contextType);
+        }
+        if (context.state != state) {
+            throw invalidState(List.of(state), context.state);
+        }
+    }
+
     /** 写入类型信息，创建新上下文，压入上下文 */
-    protected abstract void doWriteStartContainer(DsonContextType contextType, DocClassId classId);
+    protected abstract void doWriteStartContainer(DsonContextType contextType);
 
     /** 弹出上下文 */
     protected abstract void doWriteEndContainer();
 
     // endregion
-
     // region sp
+
 
     @Override
     public void writeMessage(String name, MessageLite messageLite) {
@@ -328,26 +362,6 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     protected abstract void doWriteValueBytes(DsonType type, byte[] data);
 
-    @Override
-    public void attachContext(Object value) {
-        context.attach = value;
-    }
-
-    @Override
-    public Object attachContext() {
-        return context.attach;
-    }
-
-    @Override
-    public boolean isArrayContext() {
-        return context.contextType == DsonContextType.ARRAY;
-    }
-
-    @Override
-    public boolean isObjectContext() {
-        return context.contextType == DsonContextType.OBJECT;
-    }
-
     // endregion
 
     // region context
@@ -357,8 +371,6 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
         Context parent;
         DsonContextType contextType;
         DsonWriterState state = DsonWriterState.INITIAL;
-        Object attach;
-
         /** 需要先缓存下来，因为name和value可能分开写入，而name必须写在type后面 */
         String name;
 
@@ -384,8 +396,6 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
             parent = null;
             contextType = null;
             state = DsonWriterState.INITIAL;
-            attach = null;
-
             name = null;
         }
     }

@@ -63,10 +63,6 @@ public class BinClassId implements ClassId {
         return lclassId;
     }
 
-    public long getGuid() {
-        return Dsons.makeClassGuid(namespace, lclassId);
-    }
-
     public boolean isObjectClassId() {
         if (this == OBJECT) {
             return true;
@@ -78,6 +74,10 @@ public class BinClassId implements ClassId {
         return namespace == 0;
     }
 
+    public long getGuid() {
+        return Dsons.makeClassGuid(namespace, lclassId);
+    }
+
     public static BinClassId ofGuid(long guid) {
         int namespace = Dsons.namespaceOfClassGuid(guid);
         int lclassId = Dsons.lclassIdOfClassGuid(guid);
@@ -86,13 +86,8 @@ public class BinClassId implements ClassId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         BinClassId that = (BinClassId) o;
         return namespace == that.namespace && lclassId == that.lclassId;

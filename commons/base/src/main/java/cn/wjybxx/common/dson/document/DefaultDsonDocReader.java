@@ -19,6 +19,7 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.BinaryUtils;
 import cn.wjybxx.common.dson.io.DsonInput;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.Parser;
 
 /**
@@ -87,8 +88,13 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
         } else {
             // name/name总是和type同时解析
             if (context.contextType == DsonContextType.OBJECT) {
-                currentName = Dsons.internField(input.readString());
-                context.setState(DsonReaderState.NAME);
+                // 如果是header则直接进入VALUE状态
+                if (dsonType == DsonType.HEADER) {
+                    context.setState(DsonReaderState.VALUE);
+                } else {
+                    currentName = Dsons.internField(input.readString());
+                    context.setState(DsonReaderState.NAME);
+                }
             } else {
                 context.setState(DsonReaderState.VALUE);
             }
@@ -164,6 +170,16 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
                 currentWireType.readInt64(input));
     }
 
+    @Override
+    protected ObjectRef doReadRef() {
+        DsonInput input = this.input;
+        return new ObjectRef(
+                input.readUint64(),
+                input.readString(),
+                input.readUint32(),
+                input.readUint32());
+    }
+
     // endregion
 
     // region 容器
@@ -173,16 +189,10 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
         Context newContext = newContext(getContext(), contextType);
         int length = input.readFixed32();
         newContext.oldLimit = input.pushLimit(length); // length包含classId
-        newContext.classId = readClassId();
         newContext.name = currentName;
 
         this.recursionDepth++;
         setContext(newContext);
-    }
-
-    private DocClassId readClassId() {
-        String classId = Dsons.internClass(input.readString());
-        return DocClassId.of(classId);
     }
 
     @Override
@@ -260,42 +270,6 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
     }
 
     @Override
-    protected DsonValueSummary doPeekValueSummary() {
-        DsonInput input = this.input;
-        int prePosition = input.position();
-        DsonType dsonType = currentDsonType;
-        DsonValueSummary summary;
-        switch (dsonType) {
-            case STRING -> {
-                summary = new DsonValueSummary(dsonType, input.readUint32(), (byte) 0, null);
-            }
-            case EXT_INT32, EXT_INT64 -> {
-                byte subType = input.readRawByte();
-                summary = new DsonValueSummary(dsonType, 0, subType, null);
-            }
-            case EXT_STRING -> {
-                byte subType = input.readRawByte();
-                summary = new DsonValueSummary(dsonType, input.readUint32(), subType, null);
-            }
-            case BINARY -> {
-                int length = input.readFixed32();
-                byte subType = input.readRawByte();
-                summary = new DsonValueSummary(dsonType, length, subType, null);
-            }
-            case ARRAY, OBJECT -> {
-                int length = input.readFixed32();
-                DocClassId classId = readClassId();
-                summary = new DsonValueSummary(dsonType, length, (byte) 0, classId);
-            }
-            default -> {
-                summary = new DsonValueSummary(dsonType, 0, (byte) 0, null);
-            }
-        }
-        input.setPosition(prePosition);
-        return summary;
-    }
-
-    @Override
     protected void doSkipToEndOfObject() {
         int size = input.getBytesUntilLimit();
         if (size > 0) {
@@ -308,8 +282,7 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
         DsonInput input = this.input;
         int size = input.readFixed32();
         int oldLimit = input.pushLimit(size);
-        byte subType = input.readRawByte();
-        checkSubType(DsonBinaryType.PROTOBUF_MESSAGE.getValue(), subType);
+        byte subType = input.readRawByte(); // 不再校验子类型
         T value = input.readMessageNoSize(parser);
         input.popLimit(oldLimit);
         return value;

@@ -20,10 +20,11 @@ import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
-import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author wjybxx
@@ -56,6 +57,11 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     // region state
+
+    @Override
+    public DsonContextType getContextType() {
+        return context.contextType;
+    }
 
     @Override
     public boolean isAtName() {
@@ -103,7 +109,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     private void setNextState() {
         switch (context.contextType) {
             case TOP_LEVEL -> context.setState(DsonWriterState.DONE);
-            case OBJECT -> context.setState(DsonWriterState.NAME);
+            case OBJECT, HEADER -> context.setState(DsonWriterState.NAME);
             case ARRAY -> context.setState(DsonWriterState.VALUE);
         }
     }
@@ -252,55 +258,76 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         setNextState();
     }
 
+    @Override
+    public void writeRef(int name, ObjectRef objectRef) {
+        DsonOutput output = this.output;
+        advanceToValueState(name);
+        writeFullTypeAndCurrentName(output, DsonType.REFERENCE, null);
+        output.writeUint64(objectRef.getLocalId());
+        output.writeString(objectRef.getGuid());
+        output.writeUint32(objectRef.getType());
+        output.writeUint32(objectRef.getPolicy());
+    }
+
     // endregion
 
     // region 容器
     @Override
-    public void writeStartArray(BinClassId classId) {
+    public void writeStartArray() {
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
         }
         Context context = this.context;
         autoStartTopLevel(context);
         ensureValueState(context);
-        doWriteStartContainer(context, DsonContextType.ARRAY, classId);
+        doWriteStartContainer(context, DsonContextType.ARRAY);
         setNextState(); // 设置新上下文状态
     }
 
     @Override
     public void writeEndArray() {
         Context context = this.context;
-        if (context.contextType != DsonContextType.ARRAY) {
-            throw DsonCodecException.contextError(DsonContextType.ARRAY, context.contextType);
-        }
-        if (context.state != DsonWriterState.VALUE) {
-            throw invalidState(List.of(DsonWriterState.VALUE), context.state);
-        }
+        checkEndContext(context, DsonContextType.ARRAY, DsonWriterState.VALUE);
         doWriteEndContainer(context);
         setNextState(); // parent前进一个状态
     }
 
     @Override
-    public void writeStartObject(BinClassId classId) {
+    public void writeStartObject() {
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
         }
         Context context = this.context;
         autoStartTopLevel(context);
         ensureValueState(context);
-        doWriteStartContainer(context, DsonContextType.OBJECT, classId);
+        doWriteStartContainer(context, DsonContextType.OBJECT);
         setNextState(); // 设置新上下文状态
     }
 
     @Override
     public void writeEndObject() {
         Context context = this.context;
-        if (context.contextType != DsonContextType.OBJECT) {
-            throw DsonCodecException.contextError(DsonContextType.OBJECT, context.contextType);
+        checkEndContext(context, DsonContextType.OBJECT, DsonWriterState.NAME);
+        doWriteEndContainer(context);
+        setNextState(); // parent前进一个状态
+    }
+
+    @Override
+    public void writeStartHeader() {
+        if (recursionDepth >= recursionLimit) {
+            throw DsonCodecException.recursionLimitExceeded();
         }
-        if (context.state != DsonWriterState.NAME) { // 下一个循环的开始
-            throw invalidState(List.of(DsonWriterState.NAME), context.state);
-        }
+        Context context = this.context;
+//        autoStartTopLevel(context); // header不能是顶层对象
+        ensureValueState(context);
+        doWriteStartContainer(context, DsonContextType.HEADER);
+        setNextState(); // 设置新上下文状态
+    }
+
+    @Override
+    public void writeEndHeader() {
+        Context context = this.context;
+        checkEndContext(context, DsonContextType.HEADER, DsonWriterState.NAME);
         doWriteEndContainer(context);
         setNextState(); // parent前进一个状态
     }
@@ -312,15 +339,14 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         }
     }
 
-    private void doWriteStartContainer(Context parent, DsonContextType contextType, BinClassId classId) {
+    private void doWriteStartContainer(Context parent, DsonContextType contextType) {
         DsonOutput output = this.output;
-        DsonType dsonType = contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
+        DsonType dsonType = Objects.requireNonNull(contextType.dsonType);
         writeFullTypeAndCurrentName(output, dsonType, null);
 
         Context newContext = newContext(parent, contextType);
         newContext.preWritten = output.position();
         output.writeFixed32(0);
-        writeClassId(classId);
 
         this.context = newContext;
         this.recursionDepth++;
@@ -336,14 +362,15 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         poolContext(context);
     }
 
-    private void writeClassId(@Nullable BinClassId classId) {
-        if (classId == null || classId.isObjectClassId()) {
-            output.writeRawByte(BinClassId.INVALID_NAMESPACE);
-        } else {
-            output.writeRawByte(classId.getNamespace());
-            output.writeFixed32(classId.getLclassId());
+    private void checkEndContext(Context context, DsonContextType contextType, DsonWriterState state) {
+        if (context.contextType != contextType) {
+            throw DsonCodecException.contextError(contextType, context.contextType);
+        }
+        if (context.state != state) {
+            throw invalidState(List.of(state), context.state);
         }
     }
+
     // endregion
 
     // region sp
@@ -381,26 +408,6 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         setNextState();
     }
 
-    @Override
-    public void attachContext(Object value) {
-        context.attach = value;
-    }
-
-    @Override
-    public Object attachContext() {
-        return context.attach;
-    }
-
-    @Override
-    public boolean isArrayContext() {
-        return context.contextType == DsonContextType.ARRAY;
-    }
-
-    @Override
-    public boolean isObjectContext() {
-        return context.contextType == DsonContextType.OBJECT;
-    }
-
     // endregion
 
     // region context
@@ -426,8 +433,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         Context parent;
         DsonContextType contextType;
         DsonWriterState state = DsonWriterState.INITIAL;
-        Object attach;
-
+        /** 对象开始索引 */
         int preWritten = 0;
         /** 需要先缓存下来，因为name和value可能分开写入，而name必须写在type后面 */
         int name;
@@ -453,8 +459,6 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
             parent = null;
             contextType = null;
             state = DsonWriterState.INITIAL;
-            attach = null;
-
             preWritten = 0;
             name = 0;
         }

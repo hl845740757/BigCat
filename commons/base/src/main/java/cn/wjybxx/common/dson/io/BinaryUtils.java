@@ -54,19 +54,6 @@ public class BinaryUtils {
         return (value & 0XFF);
     }
 
-    /**
-     * @param lower  读取的第一个字节
-     * @param higher 读取的第二个字节
-     */
-    public static int toUint16(byte lower, byte higher) {
-        return (lower & 0XFF)
-                | (higher << 8);
-    }
-
-    public static int toUint16(int value) {
-        return (value & 0XFFFF);
-    }
-
     // region 大端编码
 
     public static byte getByte(byte[] buffer, int index) {

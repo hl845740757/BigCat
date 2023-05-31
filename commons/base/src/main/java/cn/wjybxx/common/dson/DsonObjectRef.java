@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,31 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.dson.types.ObjectRef;
+
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
  * @author wjybxx
- * date - 2023/4/19
+ * date - 2023/5/27
  */
-public class DsonBinElement {
+public class DsonObjectRef extends DsonValue {
 
-    private final FieldNumber number;
-    private final DsonValue value;
+    private final ObjectRef value;
 
-    public DsonBinElement(FieldNumber number, DsonValue value) {
-        this.number = Objects.requireNonNull(number);
+    public DsonObjectRef(ObjectRef value) {
         this.value = Objects.requireNonNull(value);
     }
 
-    public FieldNumber getNumber() {
-        return number;
+    public ObjectRef getValue() {
+        return value;
     }
 
-    public DsonValue getValue() {
-        return value;
+    @Nonnull
+    @Override
+    public DsonType getDsonType() {
+        return DsonType.REFERENCE;
     }
 
     @Override
@@ -45,24 +48,20 @@ public class DsonBinElement {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DsonBinElement that = (DsonBinElement) o;
+        DsonObjectRef that = (DsonObjectRef) o;
 
-        if (!number.equals(that.number)) return false;
         return value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = number.hashCode();
-        result = 31 * result + value.hashCode();
-        return result;
+        return value.hashCode();
     }
 
     @Override
     public String toString() {
-        return "DsonBinElement{" +
-                "number=" + number +
-                ", value=" + value +
+        return "DsonObjectRef{" +
+                "value=" + value +
                 '}';
     }
 

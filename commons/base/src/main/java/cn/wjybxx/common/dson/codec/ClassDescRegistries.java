@@ -14,30 +14,13 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.codec;
 
 /**
  * @author wjybxx
- * date 2023/4/4
+ * date - 2023/5/28
  */
-public enum DsonContextType {
+public class ClassDescRegistries {
 
-    /** 当前在最顶层，尚未开始读写（topLevel相当于一个数组） */
-    TOP_LEVEL(null),
-
-    /** 当前是一个普通对象结构（文档结构） */
-    OBJECT(DsonType.OBJECT),
-
-    /** 当前是一个数组结构 */
-    ARRAY(DsonType.ARRAY),
-
-    /** 当前是一个Header结构 - 类Object */
-    HEADER(DsonType.HEADER);
-
-    public final DsonType dsonType;
-
-    DsonContextType(DsonType dsonType) {
-        this.dsonType = dsonType;
-    }
 
 }

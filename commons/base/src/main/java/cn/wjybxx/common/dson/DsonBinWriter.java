@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.dson.io.Chunk;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
 /**
@@ -42,6 +43,11 @@ public interface DsonBinWriter extends AutoCloseable {
      * 但在写Array或Object成员的时候，不能同时完成，需要先写入number再开始写值
      */
     void writeName(int name);
+
+    /**
+     * 获取当前上下文的类型
+     */
+    DsonContextType getContextType();
 
     // region 简单值
     void writeInt32(int name, int value, WireType wireType);
@@ -77,33 +83,46 @@ public interface DsonBinWriter extends AutoCloseable {
 
     void writeExtInt64(int name, byte type, long value, WireType wireType);
 
+    void writeRef(int name, ObjectRef objectRef);
+
     // endregion
 
     // region 容器
 
+    void writeStartArray();
+
+    void writeEndArray();
+
+    void writeStartObject();
+
+    void writeEndObject();
+
+    void writeStartHeader();
+
+    void writeEndHeader();
+
     /**
      * 开始写一个数组
-     * 1.数组内元素没有名字，因此传0即可
+     * 1.可以写入header
+     * 2.数组内元素没有名字，因此name传 0 即可
      *
      * <pre>{@code
-     *      writer.writeStartArray(name, DocClassId.OBJECT);
+     *      writer.writeStartArray(name);
      *      for (String coderName: coderNames) {
      *          writer.writeString(0, coderName);
      *      }
      *      writer.writeEndArray();
      * }</pre>
      */
-    default void writeStartArray(int name, BinClassId classId) {
+    default void writeStartArray(int name) {
         writeName(name);
-        writeStartArray(classId);
+        writeStartArray();
     }
-
-    void writeStartArray(BinClassId classId);
-
-    void writeEndArray();
 
     /**
      * 开始写一个普通对象
+     * 1.可以写入header
+     *
      * <pre>{@code
      *      writer.writeStartObject(name);
      *      writer.writeString("name", "wjybxx")
@@ -111,14 +130,10 @@ public interface DsonBinWriter extends AutoCloseable {
      *      writer.writeEndObject();
      * }</pre>
      */
-    default void writeStartObject(int name, BinClassId classId) {
+    default void writeStartObject(int name) {
         writeName(name);
-        writeStartObject(classId);
+        writeStartObject();
     }
-
-    void writeStartObject(BinClassId classId);
-
-    void writeEndObject();
     // endregion
 
     // region 特殊支持
@@ -136,16 +151,6 @@ public interface DsonBinWriter extends AutoCloseable {
      * @param data {@link DsonBinReader#readValueAsBytes(int)}读取的数据
      */
     void writeValueBytes(int name, DsonType type, byte[] data);
-
-    void attachContext(Object value);
-
-    Object attachContext();
-
-    /** 查询当前是否是数组上下文 */
-    boolean isArrayContext();
-
-    /** 查询当前是否是Object上下文 */
-    boolean isObjectContext();
 
     // endregion
 

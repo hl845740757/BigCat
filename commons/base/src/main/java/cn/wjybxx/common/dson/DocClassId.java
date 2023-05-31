@@ -28,7 +28,7 @@ import java.util.Objects;
  */
 public final class DocClassId implements ClassId {
 
-    public static final DocClassId OBJECT = new DocClassId((String) null);
+    public static final DocClassId OBJECT = new DocClassId(null);
 
     private final String value;
 
@@ -51,7 +51,6 @@ public final class DocClassId implements ClassId {
         if (o == null || getClass() != o.getClass()) return false;
 
         DocClassId that = (DocClassId) o;
-
         return Objects.equals(value, that.value);
     }
 

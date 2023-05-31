@@ -19,9 +19,11 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * @author wjybxx
@@ -169,20 +171,29 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
         wireType.writeInt64(output, value);
     }
 
+    @Override
+    protected void doWriteRef(ObjectRef objectRef) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.REFERENCE, null);
+        output.writeUint64(objectRef.getLocalId());
+        output.writeString(objectRef.getGuid());
+        output.writeUint32(objectRef.getType());
+        output.writeUint32(objectRef.getPolicy());
+    }
+
     // endregion
 
     // region 容器
 
     @Override
-    protected void doWriteStartContainer(DsonContextType contextType, DocClassId classId) {
+    protected void doWriteStartContainer(DsonContextType contextType) {
         DsonOutput output = this.output;
-        DsonType dsonType = contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
+        DsonType dsonType = Objects.requireNonNull(contextType.dsonType);
         writeFullTypeAndCurrentName(output, dsonType, null);
 
         Context newContext = newContext(getContext(), contextType);
         newContext.preWritten = output.position();
         output.writeFixed32(0);
-        writeClassId(classId);
 
         setContext(newContext);
         this.recursionDepth++;
@@ -200,13 +211,6 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
         poolContext(context);
     }
 
-    private void writeClassId(@Nullable DocClassId classId) {
-        if (classId == null || classId.isObjectClassId()) {
-            output.writeString("");
-        } else {
-            output.writeString(classId.getValue());
-        }
-    }
     // endregion
 
     // region 特殊接口

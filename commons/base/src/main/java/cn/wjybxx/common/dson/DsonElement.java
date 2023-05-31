@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import java.util.Objects;
 
 /**
  * @author wjybxx
- * date - 2023/4/19
+ * date - 2023/5/27
  */
-public class DsonDocElement {
+public class DsonElement<K> {
 
-    private final String name;
+    private final K name;
     private final DsonValue value;
 
-    public DsonDocElement(String name, DsonValue value) {
+    public DsonElement(K name, DsonValue value) {
         this.name = Objects.requireNonNull(name);
         this.value = Objects.requireNonNull(value);
     }
 
-    public String getName() {
+    public K getName() {
         return name;
     }
 
@@ -40,12 +40,14 @@ public class DsonDocElement {
         return value;
     }
 
+    //
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DsonDocElement that = (DsonDocElement) o;
+        DsonElement<?> that = (DsonElement<?>) o;
 
         if (!name.equals(that.name)) return false;
         return value.equals(that.value);
@@ -61,7 +63,7 @@ public class DsonDocElement {
     @Override
     public String toString() {
         return "DsonElement{" +
-                "name='" + name + '\'' +
+                "name=" + name +
                 ", value=" + value +
                 '}';
     }

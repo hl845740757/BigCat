@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
@@ -82,14 +83,9 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         return currentName;
     }
 
-    @Nonnull
     @Override
-    public DocClassId getCurrentClassId() {
-        DocClassId classId = context.classId;
-        if (classId == null) {
-            throw DsonCodecException.contextErrorTopLevel();
-        }
-        return classId;
+    public DsonContextType getContextType() {
+        return context.contextType;
     }
 
     @Override
@@ -256,6 +252,14 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         return value;
     }
 
+    @Override
+    public ObjectRef readObjectRef(String name) {
+        advanceToValueState(name, DsonType.REFERENCE);
+        ObjectRef value = doReadRef();
+        setNextState();
+        return value;
+    }
+
     protected abstract int doReadInt32();
 
     protected abstract long doReadInt64();
@@ -278,15 +282,16 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     protected abstract DsonExtInt64 doReadExtInt64();
 
+    protected abstract ObjectRef doReadRef();
+
     // region 容器
 
-    @Nonnull
     @Override
-    public DocClassId readStartArray() {
+    public void readStartArray() {
         Context context = this.context;
         if (context.state == DsonReaderState.WAIT_START_OBJECT) {
             setNextState();
-            return context.classId;
+            return;
         }
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
@@ -295,29 +300,22 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         ensureValueState(context, DsonType.ARRAY);
         doReadStartContainer(DsonContextType.ARRAY);
         setNextState(); // 设置新上下文状态
-        return this.context.classId;
     }
 
     @Override
     public void readEndArray() {
         Context context = this.context;
-        if (context.contextType != DsonContextType.ARRAY) {
-            throw DsonCodecException.contextError(DsonContextType.ARRAY, context.contextType);
-        }
-        if (context.state != DsonReaderState.WAIT_END_OBJECT) {
-            throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
-        }
+        checkEndContext(context, DsonContextType.ARRAY);
         doReadEndContainer();
         setNextState(); // parent前进一个状态
     }
 
-    @Nonnull
     @Override
-    public DocClassId readStartObject() {
+    public void readStartObject() {
         Context context = this.context;
         if (context.state == DsonReaderState.WAIT_START_OBJECT) {
             setNextState();
-            return context.classId;
+            return;
         }
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
@@ -326,34 +324,50 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         ensureValueState(context, DsonType.OBJECT);
         doReadStartContainer(DsonContextType.OBJECT);
         setNextState(); // 设置新上下文状态
-        return this.context.classId;
     }
 
     @Override
     public void readEndObject() {
         Context context = this.context;
-        if (context.contextType != DsonContextType.OBJECT) {
-            throw DsonCodecException.contextError(DsonContextType.OBJECT, context.contextType);
-        }
-        if (context.state != DsonReaderState.WAIT_END_OBJECT) {
-            throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
-        }
+        checkEndContext(context, DsonContextType.OBJECT);
         doReadEndContainer();
         setNextState(); // parent前进一个状态
     }
 
     @Override
-    public DocClassId prestartArray() {
-        DocClassId classId = readStartArray();
-        context.setState(DsonReaderState.WAIT_START_OBJECT);
-        return classId;
+    public void readStartHeader() {
+        Context context = this.context;
+        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
+            setNextState();
+            return;
+        }
+        if (recursionDepth >= recursionLimit) {
+            throw DsonCodecException.recursionLimitExceeded();
+        }
+//        autoStartTopLevel(context); // header不能是顶层对象
+        ensureValueState(context, DsonType.HEADER);
+        doReadStartContainer(DsonContextType.HEADER);
+        setNextState(); // 设置新上下文状态
     }
 
     @Override
-    public DocClassId prestartObject() {
-        DocClassId classId = readStartObject();
+    public void readEndHeader() {
+        Context context = this.context;
+        checkEndContext(context, DsonContextType.HEADER);
+        doReadEndContainer();
+        setNextState(); // parent前进一个状态
+    }
+
+    @Override
+    public void backToWaitStart() {
+        Context context = this.context;
+        if (context.contextType == DsonContextType.TOP_LEVEL) {
+            throw DsonCodecException.contextErrorTopLevel();
+        }
+        if (context.state != DsonReaderState.TYPE) {
+            throw invalidState(List.of(DsonReaderState.TYPE));
+        }
         context.setState(DsonReaderState.WAIT_START_OBJECT);
-        return classId;
     }
 
     private void autoStartTopLevel(Context context) {
@@ -364,9 +378,18 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     }
 
     protected void recoverDsonType(Context context) {
-        this.currentDsonType = context.contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
+        this.currentDsonType = Objects.requireNonNull(context.contextType.dsonType);
         this.currentWireType = WireType.VARINT;
         this.currentName = context.name;
+    }
+
+    private void checkEndContext(Context context, DsonContextType contextType) {
+        if (context.contextType != contextType) {
+            throw DsonCodecException.contextError(DsonContextType.OBJECT, context.contextType);
+        }
+        if (context.state != DsonReaderState.WAIT_END_OBJECT) {
+            throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
+        }
     }
 
     /**
@@ -403,14 +426,6 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         }
         doSkipValue();
         setNextState();
-    }
-
-    @Override
-    public DsonValueSummary peekValueSummary() {
-        if (context.state != DsonReaderState.VALUE) {
-            throw invalidState(List.of(DsonReaderState.VALUE));
-        }
-        return doPeekValueSummary();
     }
 
     @Override
@@ -455,33 +470,11 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     protected abstract void doSkipValue();
 
-    protected abstract DsonValueSummary doPeekValueSummary();
-
     protected abstract void doSkipToEndOfObject();
 
     protected abstract <T> T doReadMessage(Parser<T> parser);
 
     protected abstract byte[] doReadValueAsBytes();
-
-    @Override
-    public void attachContext(Object value) {
-        context.attach = value;
-    }
-
-    @Override
-    public Object attachContext() {
-        return context.attach;
-    }
-
-    @Override
-    public boolean isArrayContext() {
-        return context.contextType == DsonContextType.ARRAY;
-    }
-
-    @Override
-    public boolean isObjectContext() {
-        return context.contextType == DsonContextType.OBJECT;
-    }
 
     @Override
     public DsonReaderGuide whatShouldIDo() {
@@ -508,12 +501,6 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         }
     }
 
-    protected static void checkSubType(byte expected, byte subType) {
-        if (subType != expected) {
-            throw DsonCodecException.unexpectedSubType(expected, subType);
-        }
-    }
-
     // endregion
 
     // region context
@@ -523,10 +510,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         Context parent;
         DsonContextType contextType;
         DsonReaderState state = DsonReaderState.INITIAL;
-        Object attach;
-
         String name;
-        DocClassId classId;
 
         public Context() {
         }
@@ -545,10 +529,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
             parent = null;
             contextType = null;
             state = DsonReaderState.INITIAL;
-            attach = null;
-
             name = null;
-            classId = null;
         }
 
         /** 方便查看赋值的调用 */

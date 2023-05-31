@@ -134,7 +134,6 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
 
     // region codec
 
-
     @Override
     public void execute() {
         init();
@@ -248,30 +247,26 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         if (properties.dsonType != null) {
             switch (properties.dsonType) {
                 case AptFieldImpl.TYPE_EXT_INT32 -> {
-                    builder.addStatement("writer.$L($L.$L, $T.$L, instance.$L, $T.$L)",
+                    builder.addStatement("writer.$L($L.$L, $L, instance.$L, $T.$L)",
                             MNAME_WRITE_EXTINt32, fieldsClassName, fieldName,
-                            processor.typeNameExtInt32SubType, properties.extInt32Type,
-                            access,
+                            properties.dsonSubType, access,
                             processor.typeNameWireType, wireType);
                 }
                 case AptFieldImpl.TYPE_EXT_INT64 -> {
-                    builder.addStatement("writer.$L($L.$L, $T.$L, instance.$L, $T.$L)",
+                    builder.addStatement("writer.$L($L.$L, $L, instance.$L, $T.$L)",
                             MNAME_WRITE_EXTINT64, fieldsClassName, fieldName,
-                            processor.typeNameExtInt64SubType, properties.extInt64Type,
-                            access,
+                            properties.dsonSubType, access,
                             processor.typeNameWireType, wireType);
                 }
                 case AptFieldImpl.TYPE_EXT_STRING -> {
-                    builder.addStatement("writer.$L($L.$L, $T.$L, instance.$L)",
+                    builder.addStatement("writer.$L($L.$L, $L, instance.$L)",
                             MNAME_WRITE_EXTSTRING, fieldsClassName, fieldName,
-                            processor.typeNameExtStringSubType, properties.extStringType,
-                            access);
+                            properties.dsonSubType, access);
                 }
                 case AptFieldImpl.TYPE_BINARY -> {
-                    builder.addStatement("writer.$L($L.$L, $T.$L, instance.$L)",
+                    builder.addStatement("writer.$L($L.$L, $L, instance.$L)",
                             MNAME_WRITE_BINARY, fieldsClassName, fieldName,
-                            processor.typeNameBinarySubType, properties.binaryType,
-                            access);
+                            properties.dsonSubType, access);
                 }
                 default -> {
                     messager.printMessage(Diagnostic.Kind.ERROR, "bad dsonType ", variableElement);

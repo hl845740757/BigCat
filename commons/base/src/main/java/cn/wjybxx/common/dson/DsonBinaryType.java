@@ -39,13 +39,13 @@ public enum DsonBinaryType {
     PROTOBUF_MESSAGE(10),
 
     ;
-    private final byte value;
+    private final int value;
 
     DsonBinaryType(int value) {
-        this.value = (byte) value;
+        this.value = value;
     }
 
-    public byte getValue() {
+    public int getValue() {
         return value;
     }
 

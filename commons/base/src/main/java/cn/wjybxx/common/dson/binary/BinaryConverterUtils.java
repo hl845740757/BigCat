@@ -131,35 +131,45 @@ public class BinaryConverterUtils extends ConverterUtils {
     }
 
     /** 外部需要先readName */
-    private static DsonBinObject readObject(DsonBinReader reader) {
+    private static MutableDsonObject<FieldNumber> readObject(DsonBinReader reader) {
         DsonType dsonType;
         int name;
         DsonValue value;
 
-        DsonBinObject dsonObject = new DsonBinObject();
-        dsonObject.setClassId(reader.readStartObject());
+        MutableDsonObject<FieldNumber> dsonObject = new MutableDsonObject<>();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            name = reader.readName();
-            value = readAsDsonValue(reader, dsonType, name);
-            dsonObject.put(FieldNumber.ofFullNumber(name), value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(dsonObject.getHeader());
+            } else {
+                name = reader.readName();
+                value = readAsDsonValue(reader, dsonType, name);
+                dsonObject.put(FieldNumber.ofFullNumber(name), value);
+            }
         }
         reader.readEndObject();
         return dsonObject;
     }
 
     /** 外部需要先readName */
-    private static DsonBinArray readArray(DsonBinReader reader) {
+    private static MutableDsonArray<FieldNumber> readArray(DsonBinReader reader) {
         DsonType dsonType;
         DsonValue value;
 
-        DsonBinArray dsonArray = new DsonBinArray();
-        dsonArray.setClassId(reader.readStartArray());
+        MutableDsonArray<FieldNumber> dsonArray = new MutableDsonArray<>(8);
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            value = readAsDsonValue(reader, dsonType, 0);
-            dsonArray.add(value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(dsonArray.getHeader());
+            } else {
+                value = readAsDsonValue(reader, dsonType, 0);
+                dsonArray.add(value);
+            }
         }
         reader.readEndArray();
         return dsonArray;
+    }
+
+    private static void readHeader(DsonHeader<FieldNumber> header) {
+
     }
 
     private static DsonValue readAsDsonValue(DsonBinReader reader, DsonType dsonType, int name) {
@@ -178,14 +188,16 @@ public class BinaryConverterUtils extends ConverterUtils {
                 reader.readNull(name);
                 yield DsonNull.INSTANCE;
             }
-            case OBJECT -> {
-                reader.readName(name);
-                yield readObject(reader);
+            case REFERENCE -> {
+                reader.read
             }
-            case ARRAY -> {
-                reader.readName(name);
-                yield readArray(reader);
+            case HEADER -> {
+                MutableDsonHeader<FieldNumber> header = new MutableDsonHeader<>();
+                readHeader(header);
+                yield header;
             }
+            case OBJECT -> readObject(reader);
+            case ARRAY -> readArray(reader);
             case END_OF_OBJECT -> throw new AssertionError();
         };
     }
