@@ -152,21 +152,21 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
     @Override
     protected DsonExtString doReadExtString() {
         return new DsonExtString(
-                input.readRawByte(),
+                input.readUint32(),
                 input.readString());
     }
 
     @Override
     protected DsonExtInt32 doReadExtInt32() {
         return new DsonExtInt32(
-                input.readRawByte(),
+                input.readUint32(),
                 currentWireType.readInt32(input));
     }
 
     @Override
     protected DsonExtInt64 doReadExtInt64() {
         return new DsonExtInt64(
-                input.readRawByte(),
+                input.readUint32(),
                 currentWireType.readInt64(input));
     }
 
@@ -278,11 +278,14 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
     }
 
     @Override
-    protected <T> T doReadMessage(Parser<T> parser) {
+    protected <T> T doReadMessage(int binaryType, Parser<T> parser) {
         DsonInput input = this.input;
         int size = input.readFixed32();
         int oldLimit = input.pushLimit(size);
-        byte subType = input.readRawByte(); // 不再校验子类型
+        byte subType = input.readRawByte();
+        if (subType != binaryType) {
+            throw DsonCodecException.unexpectedSubType(binaryType, subType);
+        }
         T value = input.readMessageNoSize(parser);
         input.popLimit(oldLimit);
         return value;

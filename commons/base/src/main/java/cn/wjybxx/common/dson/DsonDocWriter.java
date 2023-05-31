@@ -66,22 +66,22 @@ public interface DsonDocWriter extends AutoCloseable {
 
     void writeBinary(String name, DsonBinary dsonBinary);
 
-    void writeBinary(String name, byte type, byte[] data);
+    void writeBinary(String name, int type, byte[] data);
 
     /** @param chunk 写入chunk的length区域 */
-    void writeBinary(String name, byte type, Chunk chunk);
+    void writeBinary(String name, int type, Chunk chunk);
 
     void writeExtString(String name, DsonExtString value);
 
-    void writeExtString(String name, byte type, String value);
+    void writeExtString(String name, int type, String value);
 
     void writeExtInt32(String name, DsonExtInt32 value, WireType wireType);
 
-    void writeExtInt32(String name, byte type, int value, WireType wireType);
+    void writeExtInt32(String name, int type, int value, WireType wireType);
 
     void writeExtInt64(String name, DsonExtInt64 value, WireType wireType);
 
-    void writeExtInt64(String name, byte type, long value, WireType wireType);
+    void writeExtInt64(String name, int type, long value, WireType wireType);
 
     void writeRef(String name, ObjectRef objectRef);
 
@@ -138,7 +138,7 @@ public interface DsonDocWriter extends AutoCloseable {
     /**
      * Message最终会写为Binary，子类型为{@link DsonBinaryType#PROTOBUF_MESSAGE}
      */
-    void writeMessage(String name, MessageLite messageLite);
+    void writeMessage(String name, int binaryType, MessageLite messageLite);
 
     /**
      * 直接写入一个已编码的字节数组

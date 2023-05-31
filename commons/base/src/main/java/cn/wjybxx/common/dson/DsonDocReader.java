@@ -189,7 +189,7 @@ public interface DsonDocReader extends AutoCloseable {
      * 读取一个protobuf消息
      * 只有当前数据是Binary的时候才合法
      */
-    <T> T readMessage(String name, @Nonnull Parser<T> parser);
+    <T> T readMessage(String name, int binaryType, @Nonnull Parser<T> parser);
 
     /**
      * 将value的值读取为字节数组

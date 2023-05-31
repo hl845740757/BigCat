@@ -83,7 +83,7 @@ public class DsonCodecException extends RuntimeException {
         return new DsonCodecException(String.format("The dson type is invalid in context, context: %s, type: %s", contextType, dsonType));
     }
 
-    public static DsonCodecException unexpectedSubType(byte expected, byte subType) {
+    public static DsonCodecException unexpectedSubType(int expected, int subType) {
         return new DsonCodecException(String.format("Unexpected subType, expected %d, but found %d", expected, subType));
     }
 

@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.binary;
 
+import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.BinaryUtils;
 import cn.wjybxx.common.dson.io.DsonInput;
@@ -264,7 +265,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     public DsonExtString readExtString(int name) {
         advanceToValueState(name, DsonType.EXT_STRING);
         DsonExtString value = new DsonExtString(
-                input.readRawByte(),
+                input.readUint32(),
                 input.readString());
         setNextState();
         return value;
@@ -274,7 +275,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     public DsonExtInt32 readExtInt32(int name) {
         advanceToValueState(name, DsonType.EXT_INT32);
         DsonExtInt32 value = new DsonExtInt32(
-                input.readRawByte(),
+                input.readUint32(),
                 currentWireType.readInt32(input));
         setNextState();
         return value;
@@ -284,7 +285,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     public DsonExtInt64 readExtInt64(int name) {
         advanceToValueState(name, DsonType.EXT_INT64);
         DsonExtInt64 value = new DsonExtInt64(
-                input.readRawByte(),
+                input.readUint32(),
                 currentWireType.readInt64(input));
         setNextState();
         return value;
@@ -524,19 +525,22 @@ public class DefaultDsonBinReader implements DsonBinReader {
     }
 
     @Override
-    public <T> T readMessage(int name, @Nonnull Parser<T> parser) {
+    public <T> T readMessage(int name, int binaryType, @Nonnull Parser<T> parser) {
         Objects.requireNonNull(parser, "parser");
         advanceToValueState(name, DsonType.BINARY);
-        T value = doReadMessage(parser);
+        T value = doReadMessage(binaryType, parser);
         setNextState();
         return value;
     }
 
-    private <T> T doReadMessage(Parser<T> parser) {
+    private <T> T doReadMessage(int binaryType, Parser<T> parser) {
         DsonInput input = this.input;
         int size = input.readFixed32();
         int oldLimit = input.pushLimit(size);
-        byte subType = input.readRawByte(); // 不再校验子类型
+        byte subType = input.readRawByte();
+        if (subType != binaryType) {
+            throw DsonCodecException.unexpectedSubType(binaryType, subType);
+        }
         T value = input.readMessageNoSize(parser);
         input.popLimit(oldLimit);
         return value;

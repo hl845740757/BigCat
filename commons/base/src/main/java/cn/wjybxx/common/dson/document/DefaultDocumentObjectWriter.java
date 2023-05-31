@@ -75,7 +75,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name, messageLite);
+            writer.writeMessage(name, , messageLite);
         }
     }
 

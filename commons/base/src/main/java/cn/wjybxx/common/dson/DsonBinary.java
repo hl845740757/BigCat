@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.Preconditions;
+
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Objects;
@@ -41,8 +43,11 @@ public class DsonBinary extends DsonValue {
         this((byte) 0, data);
     }
 
+    /**
+     * @param type 为避免开销和降低编解码复杂度，暂限定为单个字节范围 [0, 255]
+     */
     public DsonBinary(int type, byte[] data) {
-        if (type < 0) throw new IllegalArgumentException("invalid type " + type);
+        Preconditions.checkBetween(type, 0, 255);
         this.type = type;
         this.data = Objects.requireNonNull(data);
     }

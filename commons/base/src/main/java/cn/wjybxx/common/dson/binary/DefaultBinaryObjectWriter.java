@@ -60,7 +60,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name, messageLite);
+            writer.writeMessage(name, , messageLite);
         }
     }
 

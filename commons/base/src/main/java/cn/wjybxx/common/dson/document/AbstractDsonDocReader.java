@@ -447,10 +447,10 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     }
 
     @Override
-    public <T> T readMessage(String name, @Nonnull Parser<T> parser) {
+    public <T> T readMessage(String name, int binaryType, @Nonnull Parser<T> parser) {
         Objects.requireNonNull(parser, "parser");
         advanceToValueState(name, DsonType.BINARY);
-        T value = doReadMessage(parser);
+        T value = doReadMessage(binaryType, parser);
         setNextState();
         return value;
     }
@@ -472,7 +472,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     protected abstract void doSkipToEndOfObject();
 
-    protected abstract <T> T doReadMessage(Parser<T> parser);
+    protected abstract <T> T doReadMessage(int binaryType, Parser<T> parser);
 
     protected abstract byte[] doReadValueAsBytes();
 

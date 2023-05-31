@@ -108,7 +108,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readMessage(name, parser);
+        return reader.readMessage(name, , parser);
     }
 
     @Override

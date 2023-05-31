@@ -170,14 +170,14 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     }
 
     @Override
-    public void writeBinary(String name, byte type, byte[] data) {
+    public void writeBinary(String name, int type, byte[] data) {
         advanceToValueState(name);
         doWriteBinary(type, data);
         setNextState();
     }
 
     @Override
-    public void writeBinary(String name, byte type, Chunk chunk) {
+    public void writeBinary(String name, int type, Chunk chunk) {
         advanceToValueState(name);
         doWriteBinary(type, chunk);
         setNextState();
@@ -189,7 +189,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     }
 
     @Override
-    public void writeExtString(String name, byte type, String value) {
+    public void writeExtString(String name, int type, String value) {
         advanceToValueState(name);
         doWriteExtString(type, value);
         setNextState();
@@ -201,7 +201,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     }
 
     @Override
-    public void writeExtInt32(String name, byte type, int value, WireType wireType) {
+    public void writeExtInt32(String name, int type, int value, WireType wireType) {
         advanceToValueState(name);
         doWriteExtInt32(type, value, wireType);
         setNextState();
@@ -213,7 +213,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     }
 
     @Override
-    public void writeExtInt64(String name, byte type, long value, WireType wireType) {
+    public void writeExtInt64(String name, int type, long value, WireType wireType) {
         advanceToValueState(name);
         doWriteExtInt64(type, value, wireType);
         setNextState();
@@ -342,9 +342,9 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
 
     @Override
-    public void writeMessage(String name, MessageLite messageLite) {
+    public void writeMessage(String name, int binaryType, MessageLite messageLite) {
         advanceToValueState(name);
-        doWriteMessage(messageLite);
+        doWriteMessage(binaryType, messageLite);
         setNextState();
     }
 
@@ -358,7 +358,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
         setNextState();
     }
 
-    protected abstract void doWriteMessage(MessageLite messageLite);
+    protected abstract void doWriteMessage(int binaryType, MessageLite messageLite);
 
     protected abstract void doWriteValueBytes(DsonType type, byte[] data);
 

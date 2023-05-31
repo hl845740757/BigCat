@@ -151,7 +151,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     protected void doWriteExtString(byte type, String value) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        output.writeRawByte(type);
+        output.writeUint32(type);
         output.writeString(value);
     }
 
@@ -159,7 +159,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     protected void doWriteExtInt32(byte type, int value, WireType wireType) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
-        output.writeRawByte(type);
+        output.writeUint32(type);
         wireType.writeInt32(output, value);
     }
 
@@ -167,7 +167,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     protected void doWriteExtInt64(byte type, long value, WireType wireType) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
-        output.writeRawByte(type);
+        output.writeUint32(type);
         wireType.writeInt64(output, value);
     }
 
@@ -216,13 +216,13 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     // region 特殊接口
 
     @Override
-    protected void doWriteMessage(MessageLite messageLite) {
+    protected void doWriteMessage(int binaryType, MessageLite messageLite) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         {
             int preWritten = output.position();
             output.writeFixed32(0);
-            output.writeRawByte(DsonBinaryType.PROTOBUF_MESSAGE.getValue());
+            output.writeRawByte(binaryType);
             output.writeMessageNoSize(messageLite);
             output.setFixedInt32(preWritten, output.position() - preWritten - 4);
         }

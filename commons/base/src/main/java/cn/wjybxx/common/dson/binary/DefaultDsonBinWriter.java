@@ -188,7 +188,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     @Override
-    public void writeBinary(int name, byte type, byte[] data) {
+    public void writeBinary(int name, int type, byte[] data) {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
@@ -201,7 +201,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     @Override
-    public void writeBinary(int name, byte type, Chunk chunk) {
+    public void writeBinary(int name, int type, Chunk chunk) {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
@@ -219,11 +219,11 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     @Override
-    public void writeExtString(int name, byte type, String value) {
+    public void writeExtString(int name, int type, String value) {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        output.writeRawByte(type);
+        output.writeUint32(type);
         output.writeString(value);
         setNextState();
     }
@@ -234,11 +234,11 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     @Override
-    public void writeExtInt32(int name, byte type, int value, WireType wireType) {
+    public void writeExtInt32(int name, int type, int value, WireType wireType) {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
-        output.writeRawByte(type);
+        output.writeUint32(type);
         wireType.writeInt32(output, value);
         setNextState();
     }
@@ -249,11 +249,11 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     }
 
     @Override
-    public void writeExtInt64(int name, byte type, long value, WireType wireType) {
+    public void writeExtInt64(int name, int type, long value, WireType wireType) {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
-        output.writeRawByte(type);
+        output.writeUint32(type);
         wireType.writeInt64(output, value);
         setNextState();
     }
@@ -376,14 +376,14 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     // region sp
 
     @Override
-    public void writeMessage(int name, MessageLite messageLite) {
+    public void writeMessage(int name, int binaryType, MessageLite messageLite) {
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         {
             DsonOutput output = this.output;
             int preWritten = output.position();
             output.writeFixed32(0);
-            output.writeRawByte(DsonBinaryType.PROTOBUF_MESSAGE.getValue());
+            output.writeRawByte(binaryType);
             output.writeMessageNoSize(messageLite);
             output.setFixedInt32(preWritten, output.position() - preWritten - 4);
         }
