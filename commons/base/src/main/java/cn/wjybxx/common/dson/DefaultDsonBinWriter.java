@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.document;
+package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
 import cn.wjybxx.common.dson.types.ObjectRef;
@@ -29,11 +28,11 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/4/21
  */
-public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
+public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
 
-    private final DsonOutput output;
+    private DsonOutput output;
 
-    public DefaultDsonDocWriter(DsonOutput output, int recursionLimit) {
+    public DefaultDsonBinWriter(DsonOutput output, int recursionLimit) {
         super(recursionLimit);
         this.output = output;
         setContext(new Context(null, DsonContextType.TOP_LEVEL));
@@ -57,7 +56,11 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
 
     @Override
     public void close() {
-        output.close();
+        super.close();
+        if (output != null) {
+            output.close();
+            output = null;
+        }
     }
 
     // region state
@@ -69,8 +72,9 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
             output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), wireType.getNumber()));
         }
         Context context = getContext();
-        if (context.contextType == DsonContextType.OBJECT) {
-            output.writeString(context.name);
+        if (context.contextType == DsonContextType.OBJECT ||
+                context.contextType == DsonContextType.HEADER) {
+            output.writeUint32(context.name);
         }
     }
     // endregion
@@ -235,14 +239,14 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
         setPooledContext(context);
     }
 
-    private static class Context extends AbstractDsonDocWriter.Context {
+    private static class Context extends AbstractDsonBinWriter.Context {
 
         int preWritten = 0;
 
         public Context() {
         }
 
-        public Context(AbstractDsonDocWriter.Context parent, DsonContextType contextType) {
+        public Context(Context parent, DsonContextType contextType) {
             super(parent, contextType);
         }
 

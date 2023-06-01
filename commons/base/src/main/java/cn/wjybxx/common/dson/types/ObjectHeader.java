@@ -19,7 +19,6 @@ package cn.wjybxx.common.dson.types;
 import cn.wjybxx.common.CollectionUtils;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

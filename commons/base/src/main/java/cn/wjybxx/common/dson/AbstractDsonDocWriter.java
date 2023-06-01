@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.document;
+package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
@@ -54,6 +53,12 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     public void setPooledContext(Context pooledContext) {
         this.pooledContext = pooledContext;
+    }
+
+    @Override
+    public void close() {
+        context = null;
+        pooledContext = null;
     }
 
     // region state

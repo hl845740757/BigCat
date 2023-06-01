@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.document;
+package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.BinaryUtils;
 import cn.wjybxx.common.dson.io.DsonInput;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.Parser;
 
 /**
- * 与{@link cn.wjybxx.common.dson.binary.DefaultDsonBinReader}的主要区别：
+ * 与{@link DefaultDsonBinReader}的主要区别：
  * 1.name和classId由Int变为String
  * 2.没有className时，写入的是空字符串(会写入长度，但不会被编码)
  * 3.skipName不是通过读取name跳过，而是真实跳过
@@ -36,7 +35,7 @@ import com.google.protobuf.Parser;
  */
 public class DefaultDsonDocReader extends AbstractDsonDocReader {
 
-    private final DsonInput input;
+    private DsonInput input;
 
     public DefaultDsonDocReader(DsonInput input, int recursionLimit) {
         super(recursionLimit);
@@ -46,7 +45,11 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
 
     @Override
     public void close() {
-        input.close();
+        super.close();
+        if (input != null) {
+            input.close();
+            input = null;
+        }
     }
 
     @Override
@@ -76,7 +79,7 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
         WireType wireType = WireType.forNumber(Dsons.wireTypeOfFullType(fullType));
         this.currentDsonType = dsonType;
         this.currentWireType = wireType;
-        this.currentName = null;
+        this.currentName = INVALID_NAME;
 
         // topLevel只可是容器对象
         if (context.contextType == DsonContextType.TOP_LEVEL && !dsonType.isContainer()) {
@@ -92,7 +95,6 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
                 if (dsonType == DsonType.HEADER) {
                     context.setState(DsonReaderState.VALUE);
                 } else {
-                    currentName = Dsons.internField(input.readString());
                     context.setState(DsonReaderState.NAME);
                 }
             } else {
@@ -100,6 +102,11 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
             }
         }
         return dsonType;
+    }
+
+    @Override
+    protected void doReadName() {
+        currentName = Dsons.internField(input.readString());
     }
 
     // endregion
@@ -174,7 +181,7 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
     protected void doReadStartContainer(DsonContextType contextType) {
         Context newContext = newContext(getContext(), contextType);
         int length = input.readFixed32();
-        newContext.oldLimit = input.pushLimit(length); // length包含classId
+        newContext.oldLimit = input.pushLimit(length);
         newContext.name = currentName;
 
         this.recursionDepth++;
