@@ -75,7 +75,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name, , messageLite);
+            writer.writeMessage(name, DsonBinaryType.PROTOBUF_MESSAGE.getValue(), messageLite);
         }
     }
 
@@ -140,17 +140,17 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeBytes(String name, DsonBinaryType type, @Nonnull Chunk chunk) {
+    public void writeBytes(String name, int type, @Nonnull Chunk chunk) {
         Objects.requireNonNull(chunk);
-        writer.writeBinary(name, type.getValue(), chunk);
+        writer.writeBinary(name, type, chunk);
     }
 
     @Override
-    public void writeBinary(String name, DsonBinaryType type, byte[] value) {
+    public void writeBinary(String name, int type, byte[] value) {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, type.getValue(), value);
+            writer.writeBinary(name, type, value);
         }
     }
 
@@ -173,11 +173,11 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeExtString(String name, DsonExtStringType type, String value) {
+    public void writeExtString(String name, int type, String value) {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeExtString(name, type.getValue(), value);
+            writer.writeExtString(name, type, value);
         }
     }
 
@@ -191,9 +191,8 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeExtInt32(String name, DsonExtInt32Type type, int value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt32(name, type.getValue(), value, wireType);
+    public void writeExtInt32(String name, int type, int value, WireType wireType) {
+        writer.writeExtInt32(name, type, value, wireType);
     }
 
     @Override
@@ -206,9 +205,8 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeExtInt64(String name, DsonExtInt64Type type, long value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt64(name, type.getValue(), value, wireType);
+    public void writeExtInt64(String name, int type, long value, WireType wireType) {
+        writer.writeExtInt64(name, type, value, wireType);
     }
 
     // endregion
@@ -288,6 +286,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
         writer.writeStartObject();
+        DocClassId classId = findEncodeClassId(value, typeArgInfo);
     }
 
     @Override
@@ -298,6 +297,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
         writer.writeStartArray();
+        DocClassId classId = findEncodeClassId(value, typeArgInfo);
     }
 
     @Override

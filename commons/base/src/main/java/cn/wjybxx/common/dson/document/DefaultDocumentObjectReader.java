@@ -107,12 +107,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    @Nonnull
-    public DocClassId getCurrentClassId() {
-        return reader.getCurrentClassId();
-    }
-
-    @Override
     public void skipName() {
         reader.skipName();
     }
@@ -132,7 +126,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readMessage(name, , parser);
+        return reader.readMessage(name, DsonBinaryType.PROTOBUF_MESSAGE.getValue(), parser);
     }
 
     @Override
@@ -288,13 +282,12 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         return declaredType.cast(value);
     }
 
-    @Nonnull
     @Override
-    public DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readStartObject();
+        reader.readStartObject();
     }
 
     @Override
@@ -304,11 +297,11 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readStartArray();
+        reader.readStartArray();
     }
 
     @Override

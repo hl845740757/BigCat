@@ -101,24 +101,24 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     //
 
-    default DocClassId readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartObject(typeArgInfo);
+        readStartObject(typeArgInfo);
     }
 
-    default DocClassId readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartArray(typeArgInfo);
+        readStartArray(typeArgInfo);
     }
 
     /** 顶层对象或数组内元素 */
     @Nonnull
-    DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndObject();
 
     /** 顶层对象或数组内元素 */
-    DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndArray();
 
@@ -147,9 +147,6 @@ public interface DocumentObjectReader extends AutoCloseable {
     DsonType getCurrentDsonType();
 
     String getCurrentName();
-
-    @Nonnull
-    DocClassId getCurrentClassId();
 
     void skipName();
 

@@ -169,11 +169,14 @@ public class DocumentConverterUtils extends ConverterUtils {
         DsonValue value;
 
         MutableDsonObject<String> dsonObject = new MutableDsonObject<>();
-        dsonObject.setClassId(reader.readStartObject());
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            name = reader.readName();
-            value = readAsDsonValue(reader, dsonType, name);
-            dsonObject.put(name, value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(dsonObject.getHeader());
+            } else {
+                name = reader.readName();
+                value = readAsDsonValue(reader, dsonType, name);
+                dsonObject.put(name, value);
+            }
         }
         reader.readEndObject();
         return dsonObject;
@@ -184,14 +187,21 @@ public class DocumentConverterUtils extends ConverterUtils {
         DsonType dsonType;
         DsonValue value;
 
-        MutableDsonArray<String> dsonArray = new MutableDsonArray<>();
-        dsonArray.setClassId(reader.readStartArray());
+        MutableDsonArray<String> dsonArray = new MutableDsonArray<>(8);
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            value = readAsDsonValue(reader, dsonType, null);
-            dsonArray.add(value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(dsonArray.getHeader());
+            } else {
+                value = readAsDsonValue(reader, dsonType, null);
+                dsonArray.add(value);
+            }
         }
         reader.readEndArray();
         return dsonArray;
+    }
+
+    private static void readHeader(DsonHeader<String> header) {
+
     }
 
     private static DsonValue readAsDsonValue(DsonDocReader reader, DsonType dsonType, String name) {
@@ -214,6 +224,11 @@ public class DocumentConverterUtils extends ConverterUtils {
             case OBJECT -> {
                 reader.readName(name);
                 yield readObject(reader);
+            }
+            case HEADER -> {
+                MutableDsonHeader<String> header = new MutableDsonHeader<>();
+                readHeader(header);
+                yield header;
             }
             case ARRAY -> {
                 reader.readName(name);

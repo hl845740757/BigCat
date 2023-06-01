@@ -60,7 +60,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name, , messageLite);
+            writer.writeMessage(name,  DsonBinaryType.PROTOBUF_MESSAGE.getValue(), messageLite);
         }
     }
 
@@ -122,17 +122,16 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeBytes(int name, DsonBinaryType type, @Nonnull Chunk chunk) {
-        Objects.requireNonNull(chunk);
-        writer.writeBinary(name, type.getValue(), chunk);
+    public void writeBytes(int name, int type, @Nonnull Chunk chunk) {
+        writer.writeBinary(name, type, chunk);
     }
 
     @Override
-    public void writeBinary(int name, DsonBinaryType type, byte[] value) {
+    public void writeBinary(int name, int type, byte[] value) {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, type.getValue(), value);
+            writer.writeBinary(name, type, value);
         }
     }
 
@@ -155,11 +154,11 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeExtString(int name, DsonExtStringType type, String value) {
+    public void writeExtString(int name, int type, String value) {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeExtString(name, type.getValue(), value);
+            writer.writeExtString(name, type, value);
         }
     }
 
@@ -173,9 +172,8 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeExtInt32(int name, DsonExtInt32Type type, int value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt32(name, type.getValue(), value, wireType);
+    public void writeExtInt32(int name, int type, int value, WireType wireType) {
+        writer.writeExtInt32(name, type, value, wireType);
     }
 
     @Override
@@ -188,9 +186,8 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeExtInt64(int name, DsonExtInt64Type type, long value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt64(name, type.getValue(), value, wireType);
+    public void writeExtInt64(int name, int type, long value, WireType wireType) {
+        writer.writeExtInt64(name, type, value, wireType);
     }
 
     // endregion

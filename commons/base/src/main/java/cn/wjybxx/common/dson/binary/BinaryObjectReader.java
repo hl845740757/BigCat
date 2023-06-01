@@ -102,24 +102,23 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     //
 
-    default BinClassId readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartObject(typeArgInfo);
+        readStartObject(typeArgInfo);
     }
 
-    default BinClassId readStartArray(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartArray(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartArray(typeArgInfo);
+        readStartArray(typeArgInfo);
     }
 
     /** 顶层对象或数组内元素 */
-    @Nonnull
-    BinClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndObject();
 
     /** 顶层对象或数组内元素 */
-    BinClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndArray();
 
@@ -148,9 +147,6 @@ public interface BinaryObjectReader extends AutoCloseable {
     DsonType getCurrentDsonType();
 
     int getCurrentName();
-
-    @Nonnull
-    BinClassId getCurrentClassId();
 
     void skipName();
 

@@ -83,12 +83,6 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    @Nonnull
-    public BinClassId getCurrentClassId() {
-        return reader.getCurrentClassId();
-    }
-
-    @Override
     public void skipName() {
         reader.skipName();
     }
@@ -108,7 +102,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readMessage(name, , parser);
+        return reader.readMessage(name, DsonBinaryType.PROTOBUF_MESSAGE.getValue(), parser);
     }
 
     @Override
@@ -266,11 +260,11 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Nonnull
     @Override
-    public BinClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readStartObject();
+        reader.readStartObject();
     }
 
     @Override
@@ -280,11 +274,11 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public BinClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readStartArray();
+        reader.readStartArray();
     }
 
     @Override
