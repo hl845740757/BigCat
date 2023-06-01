@@ -206,6 +206,7 @@ public class DocumentConverterUtils extends ConverterUtils {
             case EXT_STRING -> reader.readExtString(name);
             case EXT_INT32 -> reader.readExtInt32(name);
             case EXT_INT64 -> reader.readExtInt64(name);
+            case REFERENCE -> new DsonObjectRef(reader.readObjectRef(name));
             case NULL -> {
                 reader.readNull(name);
                 yield DsonNull.INSTANCE;

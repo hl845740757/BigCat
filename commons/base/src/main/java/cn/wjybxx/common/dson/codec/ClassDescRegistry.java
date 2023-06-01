@@ -32,13 +32,19 @@ public interface ClassDescRegistry {
     @Nullable
     ClassDesc ofType(Class<?> type);
 
-    /** 通过数字id查找类型 */
+    /** 通过数字id查找类型描述 */
     @Nullable
-    Class<?> ofId(long classId);
+    ClassDesc ofId(long classId);
 
-    /** 通过字符串名字找到类型信息 */
+    /** 通过字符串名字找到类型描述 */
     @Nullable
-    Class<?> ofName(String name);
+    ClassDesc ofName(String name);
+
+    @Nullable
+    Class<?> typeOfId(long classId);
+
+    @Nullable
+    Class<?> typeOfName(String name);
 
     default ClassDesc checkedOfType(Class<?> type) {
         ClassDesc r = ofType(type);
@@ -48,16 +54,32 @@ public interface ClassDescRegistry {
         return r;
     }
 
-    default Class<?> checkedOfId(long classId) {
-        Class<?> r = ofId(classId);
+    default ClassDesc checkedOfId(long classId) {
+        ClassDesc r = ofId(classId);
         if (r == null) {
             throw new DsonCodecException("type is absent, classId " + classId);
         }
         return r;
     }
 
-    default Class<?> checkedOfName(String name) {
-        Class<?> r = ofName(name);
+    default ClassDesc checkedOfName(String name) {
+        ClassDesc r = ofName(name);
+        if (r == null) {
+            throw new DsonCodecException("type is absent, name " + name);
+        }
+        return r;
+    }
+
+    default Class<?> checkedTypeOfId(int classId) {
+        Class<?> r = typeOfId(classId);
+        if (r == null) {
+            throw new DsonCodecException("type is absent, classId " + classId);
+        }
+        return r;
+    }
+
+    default Class<?> checkedTypeOfName(String name) {
+        Class<?> r = typeOfName(name);
         if (r == null) {
             throw new DsonCodecException("type is absent, name " + name);
         }
