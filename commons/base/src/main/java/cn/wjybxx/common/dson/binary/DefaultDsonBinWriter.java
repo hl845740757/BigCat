@@ -192,11 +192,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + data.length);
-            output.writeRawByte(type);
-            output.writeRawBytes(data);
-        }
+        DsonReaderUtils.writeBinary(output, type, data);
         setNextState();
     }
 
@@ -205,11 +201,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + chunk.getLength());
-            output.writeRawByte(type);
-            output.writeRawBytes(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
-        }
+        DsonReaderUtils.writeBinary(output, type, chunk);
         setNextState();
     }
 
@@ -223,8 +215,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        output.writeUint32(type);
-        output.writeString(value);
+        DsonReaderUtils.writeExtString(output, type, value);
         setNextState();
     }
 
@@ -238,8 +229,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
-        output.writeUint32(type);
-        wireType.writeInt32(output, value);
+        DsonReaderUtils.writeExtInt32(output, type, value, wireType);
         setNextState();
     }
 
@@ -253,8 +243,7 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
-        output.writeUint32(type);
-        wireType.writeInt64(output, value);
+        DsonReaderUtils.writeExtInt64(output, type, value, wireType);
         setNextState();
     }
 
@@ -263,10 +252,8 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
         DsonOutput output = this.output;
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.REFERENCE, null);
-        output.writeUint64(objectRef.getLocalId());
-        output.writeString(objectRef.getGuid());
-        output.writeUint32(objectRef.getType());
-        output.writeUint32(objectRef.getPolicy());
+        DsonReaderUtils.writeRef(output, objectRef);
+        setNextState();
     }
 
     // endregion
@@ -379,32 +366,16 @@ public class DefaultDsonBinWriter implements DsonBinWriter {
     public void writeMessage(int name, int binaryType, MessageLite messageLite) {
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            DsonOutput output = this.output;
-            int preWritten = output.position();
-            output.writeFixed32(0);
-            output.writeRawByte(binaryType);
-            output.writeMessageNoSize(messageLite);
-            output.setFixedInt32(preWritten, output.position() - preWritten - 4);
-        }
+        DsonReaderUtils.writeMessage(output, binaryType, messageLite);
         setNextState();
     }
 
     @Override
     public void writeValueBytes(int name, DsonType type, byte[] data) {
-        if (!Dsons.VALUE_BYTES_TYPES.contains(type)) {
-            throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, type);
-        }
+        DsonReaderUtils.checkWriteValueAsBytes(type);
         advanceToValueState(name);
         writeFullTypeAndCurrentName(output, type, null);
-        {
-            if (type == DsonType.STRING) {
-                output.writeUint32(data.length);
-            } else {
-                output.writeFixed32(data.length);
-            }
-            output.writeRawBytes(data);
-        }
+        DsonReaderUtils.writeValueBytes(output, type, data);
         setNextState();
     }
 

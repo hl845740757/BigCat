@@ -40,7 +40,7 @@ public interface DsonBinWriter extends AutoCloseable {
 
     /**
      * 编码的时候，用户总是习惯 name和value 同时写入，
-     * 但在写Array或Object成员的时候，不能同时完成，需要先写入number再开始写值
+     * 但在写Array或Object容器的时候，不能同时完成，需要先写入number再开始写值
      */
     void writeName(int name);
 

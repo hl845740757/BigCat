@@ -240,15 +240,15 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     protected abstract void doWriteNull();
 
-    protected abstract void doWriteBinary(byte type, byte[] data);
+    protected abstract void doWriteBinary(int type, byte[] data);
 
-    protected abstract void doWriteBinary(byte type, Chunk chunk);
+    protected abstract void doWriteBinary(int type, Chunk chunk);
 
-    protected abstract void doWriteExtString(byte type, String value);
+    protected abstract void doWriteExtString(int type, String value);
 
-    protected abstract void doWriteExtInt32(byte type, int value, WireType wireType);
+    protected abstract void doWriteExtInt32(int type, int value, WireType wireType);
 
-    protected abstract void doWriteExtInt64(byte type, long value, WireType wireType);
+    protected abstract void doWriteExtInt64(int type, long value, WireType wireType);
 
     protected abstract void doWriteRef(ObjectRef objectRef);
 
@@ -340,7 +340,6 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
     // endregion
     // region sp
 
-
     @Override
     public void writeMessage(String name, int binaryType, MessageLite messageLite) {
         advanceToValueState(name);
@@ -350,9 +349,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeValueBytes(String name, DsonType type, byte[] data) {
-        if (!Dsons.VALUE_BYTES_TYPES.contains(type)) {
-            throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, type);
-        }
+        DsonReaderUtils.checkWriteValueAsBytes(type);
         advanceToValueState(name);
         doWriteValueBytes(type, data);
         setNextState();

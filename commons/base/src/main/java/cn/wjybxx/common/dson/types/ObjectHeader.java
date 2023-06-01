@@ -16,56 +16,43 @@
 
 package cn.wjybxx.common.dson.types;
 
-import cn.wjybxx.common.ObjectUtils;
+import cn.wjybxx.common.CollectionUtils;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 对象头的默认结构体，可继承
- * 默认的实现是不可变对象，子类则不一定
+ * 对象头的默认结构体
  *
  * @author wjybxx
  * date - 2023/5/27
  */
-public class ObjectHeader {
+@Immutable
+public final class ObjectHeader {
 
-    /** 对象的类型信息 - 在编码时建议平铺，避免不必要的嵌套 */
-    private final ClassDesc classDesc;
+    private final String className;
     /** 对象的本地id  - 如果为0则不编码 */
     private final long localId;
-
-    /** 对象的标记 */
-    private int flags;
     /** 字符串自定义标签 */
     private final List<String> tags;
 
-    public ObjectHeader(ClassDesc classDesc) {
-        this(classDesc, 0);
+    public ObjectHeader(String className) {
+        this(className, 0);
     }
 
-    public ObjectHeader(ClassDesc classDesc, long localId) {
-        this.classDesc = ObjectUtils.nullToDef(classDesc, ClassDesc.OBJECT);
+    public ObjectHeader(String className, long localId) {
+        this.className = className;
         this.localId = localId;
-        this.flags = 0;
-        this.tags = new ArrayList<>();
+        this.tags = CollectionUtils.newSmallArrayList();
     }
 
-    public ClassDesc getClassDesc() {
-        return classDesc;
+    public String getClassName() {
+        return className;
     }
 
     public long getLocalId() {
         return localId;
-    }
-
-    public int getFlags() {
-        return flags;
-    }
-
-    public ObjectHeader setFlags(int flags) {
-        this.flags = flags;
-        return this;
     }
 
     public List<String> getTags() {
@@ -82,24 +69,24 @@ public class ObjectHeader {
         ObjectHeader that = (ObjectHeader) o;
 
         if (localId != that.localId) return false;
-        if (flags != that.flags) return false;
-        return classDesc.equals(that.classDesc);
+        if (!className.equals(that.className)) return false;
+        return tags.equals(that.tags);
     }
 
     @Override
     public int hashCode() {
-        int result = classDesc.hashCode();
+        int result = className.hashCode();
         result = 31 * result + (int) (localId ^ (localId >>> 32));
-        result = 31 * result + flags;
+        result = 31 * result + tags.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
         return "ObjectHeader{" +
-                "classDesc=" + classDesc +
+                "className='" + className + '\'' +
                 ", localId=" + localId +
-                ", flags=" + flags +
+                ", tags=" + tags +
                 '}';
     }
 }

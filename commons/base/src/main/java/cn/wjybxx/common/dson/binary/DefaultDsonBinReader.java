@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.dson.binary;
 
-import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.BinaryUtils;
 import cn.wjybxx.common.dson.io.DsonInput;
@@ -125,7 +124,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
         } else {
             // name/name总是和type同时解析
             if (context.contextType == DsonContextType.OBJECT) {
-                // 如果是header则直接进入VALUE状态
+                // 如果是header则直接进入VALUE状态 - header匿名属性
                 if (dsonType == DsonType.HEADER) {
                     context.setState(DsonReaderState.VALUE);
                 } else {
@@ -253,10 +252,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     @Override
     public DsonBinary readBinary(int name) {
         advanceToValueState(name, DsonType.BINARY);
-        int size = input.readFixed32();
-        DsonBinary value = new DsonBinary(
-                input.readRawByte(),
-                input.readRawBytes(size - 1));
+        DsonBinary value = DsonReaderUtils.readDsonBinary(input);
         setNextState();
         return value;
     }
@@ -264,9 +260,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     @Override
     public DsonExtString readExtString(int name) {
         advanceToValueState(name, DsonType.EXT_STRING);
-        DsonExtString value = new DsonExtString(
-                input.readUint32(),
-                input.readString());
+        DsonExtString value = DsonReaderUtils.readDsonExtString(input);
         setNextState();
         return value;
     }
@@ -274,9 +268,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     @Override
     public DsonExtInt32 readExtInt32(int name) {
         advanceToValueState(name, DsonType.EXT_INT32);
-        DsonExtInt32 value = new DsonExtInt32(
-                input.readUint32(),
-                currentWireType.readInt32(input));
+        DsonExtInt32 value = DsonReaderUtils.readDsonExtInt32(input, currentWireType);
         setNextState();
         return value;
     }
@@ -284,9 +276,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     @Override
     public DsonExtInt64 readExtInt64(int name) {
         advanceToValueState(name, DsonType.EXT_INT64);
-        DsonExtInt64 value = new DsonExtInt64(
-                input.readUint32(),
-                currentWireType.readInt64(input));
+        DsonExtInt64 value = DsonReaderUtils.readDsonExtInt64(input, currentWireType);
         setNextState();
         return value;
     }
@@ -294,11 +284,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     @Override
     public ObjectRef readObjectRef(int name) {
         advanceToValueState(name, DsonType.REFERENCE);
-        ObjectRef value = new ObjectRef(
-                input.readUint64(),
-                input.readString(),
-                input.readUint32(),
-                input.readUint32());
+        ObjectRef value = DsonReaderUtils.readObjectRef(input);
         setNextState();
         return value;
     }
@@ -459,48 +445,7 @@ public class DefaultDsonBinReader implements DsonBinReader {
     }
 
     private void doSkipValue() {
-        DsonInput input = this.input;
-        int skip;
-        switch (currentDsonType) {
-            case FLOAT -> skip = 4;
-            case DOUBLE -> skip = 8;
-            case BOOLEAN -> skip = 1;
-            case NULL -> skip = 0;
-
-            case INT32 -> {
-                currentWireType.readInt32(input);
-                return;
-            }
-            case INT64 -> {
-                currentWireType.readInt64(input);
-                return;
-            }
-            case STRING -> {
-                skip = input.readUint32();
-            }
-            case EXT_INT32 -> {
-                input.readRawByte();
-                currentWireType.readInt32(input);
-                return;
-            }
-            case EXT_INT64 -> {
-                input.readRawByte();
-                currentWireType.readInt64(input);
-                return;
-            }
-            case EXT_STRING -> {
-                input.readRawByte();
-                skip = input.readUint32();
-            }
-
-            case BINARY, ARRAY, OBJECT, HEADER -> {
-                skip = input.readFixed32();
-            }
-            default -> throw DsonCodecException.invalidDsonType(context.contextType, currentDsonType);
-        }
-        if (skip > 0) {
-            input.skipRawBytes(skip);
-        }
+        DsonReaderUtils.skipValue(input, getContextType(), currentDsonType, currentWireType);
     }
 
     @Override
@@ -516,12 +461,13 @@ public class DefaultDsonBinReader implements DsonBinReader {
             assert context.state == DsonReaderState.WAIT_END_OBJECT;
             return;
         }
-        int size = input.getBytesUntilLimit();
-        if (size > 0) {
-            input.skipRawBytes(size);
-        }
+        doSkipToEndOfObject();
         setNextState();
         readDsonType(); // end of object
+    }
+
+    private void doSkipToEndOfObject() {
+        DsonReaderUtils.skipToEndOfObject(input);
     }
 
     @Override
@@ -534,62 +480,25 @@ public class DefaultDsonBinReader implements DsonBinReader {
     }
 
     private <T> T doReadMessage(int binaryType, Parser<T> parser) {
-        DsonInput input = this.input;
-        int size = input.readFixed32();
-        int oldLimit = input.pushLimit(size);
-        byte subType = input.readRawByte();
-        if (subType != binaryType) {
-            throw DsonCodecException.unexpectedSubType(binaryType, subType);
-        }
-        T value = input.readMessageNoSize(parser);
-        input.popLimit(oldLimit);
-        return value;
+        return DsonReaderUtils.readMessage(input, binaryType, parser);
     }
 
     @Override
     public byte[] readValueAsBytes(int name) {
         advanceToValueState(name, null);
-        if (!Dsons.VALUE_BYTES_TYPES.contains(currentDsonType)) {
-            throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, currentDsonType);
-        }
+        DsonReaderUtils.checkReadValueAsBytes(currentDsonType);
         byte[] data = doReadValueAsBytes();
         setNextState();
         return data;
     }
 
     private byte[] doReadValueAsBytes() {
-        int size;
-        if (currentDsonType == DsonType.STRING) {
-            size = input.readUint32();
-        } else {
-            size = input.readFixed32();
-        }
-        return input.readRawBytes(size);
+        return DsonReaderUtils.readValueAsBytes(input, currentDsonType);
     }
 
     @Override
     public DsonReaderGuide whatShouldIDo() {
-        Context context = this.context;
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            if (input.isAtEnd()) {
-                return DsonReaderGuide.CLOSE;
-            }
-            if (context.state == DsonReaderState.VALUE) {
-                return DsonReaderGuide.READ_VALUE;
-            }
-            return DsonReaderGuide.READ_TYPE;
-        } else {
-            return switch (context.state) {
-                case TYPE -> DsonReaderGuide.READ_TYPE;
-                case VALUE -> DsonReaderGuide.READ_VALUE;
-                case NAME -> DsonReaderGuide.READ_NAME;
-                case WAIT_START_OBJECT ->
-                        context.contextType == DsonContextType.ARRAY ? DsonReaderGuide.START_ARRAY : DsonReaderGuide.START_OBJECT;
-                case WAIT_END_OBJECT ->
-                        context.contextType == DsonContextType.ARRAY ? DsonReaderGuide.END_ARRAY : DsonReaderGuide.END_OBJECT;
-                case INITIAL, DONE -> throw new AssertionError("invalid state " + context.state);
-            };
-        }
+        return DsonReaderUtils.whatShouldIDo(isAtEndOfObject(), context.contextType, context.state);
     }
 
     // endregion

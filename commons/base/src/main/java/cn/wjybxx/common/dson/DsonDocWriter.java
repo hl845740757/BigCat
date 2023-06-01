@@ -40,7 +40,7 @@ public interface DsonDocWriter extends AutoCloseable {
 
     /**
      * 编码的时候，用户总是习惯 name和value 同时写入，
-     * 但在写Array或Object成员的时候，不能同时完成，需要先写入number再开始写值
+     * 但在写Array或Object容器的时候，不能同时完成，需要先写入number再开始写值
      */
     void writeName(String name);
 
@@ -145,7 +145,7 @@ public interface DsonDocWriter extends AutoCloseable {
      * 1.请确保合法性
      * 2.支持的类型与读方法相同
      *
-     * @param data {@link DsonBinReader#readValueAsBytes(int)}读取的数据
+     * @param data {@link DsonDocReader#readValueAsBytes(String)}读取的数据
      */
     void writeValueBytes(String name, DsonType type, byte[] data);
 

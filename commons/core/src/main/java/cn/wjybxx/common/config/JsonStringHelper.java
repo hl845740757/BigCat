@@ -87,6 +87,7 @@ public class JsonStringHelper {
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> {
+                        // unicode字符
                         char u1 = next(charArray, ++index);
                         char u2 = next(charArray, ++index);
                         char u3 = next(charArray, ++index);

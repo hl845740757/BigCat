@@ -42,7 +42,7 @@ public enum DsonExtInt32Type {
     private final int number;
 
     DsonExtInt32Type(int number) {
-        this.number =  number;
+        this.number = number;
     }
 
     public int getValue() {

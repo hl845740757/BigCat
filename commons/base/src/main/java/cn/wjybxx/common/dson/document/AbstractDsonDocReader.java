@@ -458,12 +458,15 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     @Override
     public byte[] readValueAsBytes(String name) {
         advanceToValueState(name, null);
-        if (!Dsons.VALUE_BYTES_TYPES.contains(currentDsonType)) {
-            throw DsonCodecException.invalidDsonType(Dsons.VALUE_BYTES_TYPES, currentDsonType);
-        }
+        DsonReaderUtils.checkReadValueAsBytes(currentDsonType);
         byte[] data = doReadValueAsBytes();
         setNextState();
         return data;
+    }
+
+    @Override
+    public DsonReaderGuide whatShouldIDo() {
+        return DsonReaderUtils.whatShouldIDo(isAtEndOfObject(), context.contextType, context.state);
     }
 
     protected abstract void doSkipName();
@@ -475,31 +478,6 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     protected abstract <T> T doReadMessage(int binaryType, Parser<T> parser);
 
     protected abstract byte[] doReadValueAsBytes();
-
-    @Override
-    public DsonReaderGuide whatShouldIDo() {
-        Context context = this.context;
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            if (isAtEndOfObject()) {
-                return DsonReaderGuide.CLOSE;
-            }
-            if (context.state == DsonReaderState.VALUE) {
-                return DsonReaderGuide.READ_VALUE;
-            }
-            return DsonReaderGuide.READ_TYPE;
-        } else {
-            return switch (context.state) {
-                case TYPE -> DsonReaderGuide.READ_TYPE;
-                case VALUE -> DsonReaderGuide.READ_VALUE;
-                case NAME -> DsonReaderGuide.READ_NAME;
-                case WAIT_START_OBJECT ->
-                        context.contextType == DsonContextType.ARRAY ? DsonReaderGuide.START_ARRAY : DsonReaderGuide.START_OBJECT;
-                case WAIT_END_OBJECT ->
-                        context.contextType == DsonContextType.ARRAY ? DsonReaderGuide.END_ARRAY : DsonReaderGuide.END_OBJECT;
-                case INITIAL, DONE -> throw new AssertionError("invalid state " + context.state);
-            };
-        }
-    }
 
     // endregion
 

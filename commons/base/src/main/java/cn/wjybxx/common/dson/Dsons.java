@@ -19,8 +19,6 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.props.IProperties;
 import cn.wjybxx.common.props.PropertiesLoader;
 
-import java.util.List;
-
 /**
  * Dson数据结构的一些常量
  *
@@ -87,10 +85,6 @@ public final class Dsons {
     /** 完整类型信息占用的比特位数 */
     private static final int FULL_TYPE_BITS = DSON_TYPE_BITES + WIRETYPE_BITS;
     private static final int FULL_TYPE_MASK = (1 << FULL_TYPE_BITS) - 1;
-
-    /** 支持读取为bytes和直接写入bytes的数据类型 */
-    public static final List<DsonType> VALUE_BYTES_TYPES = List.of(DsonType.STRING,
-            DsonType.BINARY, DsonType.ARRAY, DsonType.OBJECT);
 
     // fieldNumber
 

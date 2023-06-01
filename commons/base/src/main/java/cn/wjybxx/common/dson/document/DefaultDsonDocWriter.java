@@ -126,59 +126,45 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteBinary(byte type, byte[] data) {
+    protected void doWriteBinary(int type, byte[] data) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + data.length);
-            output.writeRawByte(type);
-            output.writeRawBytes(data);
-        }
+        DsonReaderUtils.writeBinary(output, type, data);
     }
 
     @Override
-    protected void doWriteBinary(byte type, Chunk chunk) {
+    protected void doWriteBinary(int type, Chunk chunk) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + chunk.getLength());
-            output.writeRawByte(type);
-            output.writeRawBytes(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
-        }
+        DsonReaderUtils.writeBinary(output, type, chunk);
     }
 
     @Override
-    protected void doWriteExtString(byte type, String value) {
+    protected void doWriteExtString(int type, String value) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        output.writeUint32(type);
-        output.writeString(value);
+        DsonReaderUtils.writeExtString(output, type, value);
     }
 
     @Override
-    protected void doWriteExtInt32(byte type, int value, WireType wireType) {
+    protected void doWriteExtInt32(int type, int value, WireType wireType) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
-        output.writeUint32(type);
-        wireType.writeInt32(output, value);
+        DsonReaderUtils.writeExtInt32(output, type, value, wireType);
     }
 
     @Override
-    protected void doWriteExtInt64(byte type, long value, WireType wireType) {
+    protected void doWriteExtInt64(int type, long value, WireType wireType) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
-        output.writeUint32(type);
-        wireType.writeInt64(output, value);
+        DsonReaderUtils.writeExtInt64(output, type, value, wireType);
     }
 
     @Override
     protected void doWriteRef(ObjectRef objectRef) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.REFERENCE, null);
-        output.writeUint64(objectRef.getLocalId());
-        output.writeString(objectRef.getGuid());
-        output.writeUint32(objectRef.getType());
-        output.writeUint32(objectRef.getPolicy());
+        DsonReaderUtils.writeRef(output, objectRef);
     }
 
     // endregion
@@ -219,27 +205,14 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     protected void doWriteMessage(int binaryType, MessageLite messageLite) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            int preWritten = output.position();
-            output.writeFixed32(0);
-            output.writeRawByte(binaryType);
-            output.writeMessageNoSize(messageLite);
-            output.setFixedInt32(preWritten, output.position() - preWritten - 4);
-        }
+        DsonReaderUtils.writeMessage(output, binaryType, messageLite);
     }
 
     @Override
     protected void doWriteValueBytes(DsonType type, byte[] data) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, type, null);
-        {
-            if (type == DsonType.STRING) {
-                output.writeUint32(data.length);
-            } else {
-                output.writeFixed32(data.length);
-            }
-            output.writeRawBytes(data);
-        }
+        DsonReaderUtils.writeValueBytes(output, type, data);
     }
 
     // endregion

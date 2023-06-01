@@ -20,17 +20,18 @@ import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 /**
- * 对象引用的默认结构体，可继承
- * 基础实现是不可变对象，子类则不一定
+ * 对象引用的默认结构体
  * 注意：相等性比较时只比较 guid 和 localId，只要指向的是同一个对象就认为相等
  *
  * @author wjybxx
  * date - 2023/5/26
  */
-public class ObjectRef {
+@Immutable
+public final class ObjectRef {
 
     /** 引用对象的本地id - 如果目标对象是容器中的一员，该值是其容器内编号 */
     private final long localId;
