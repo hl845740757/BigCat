@@ -18,13 +18,11 @@ package cn.wjybxx.common.dson.text;
 
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.BinaryUtils;
-import cn.wjybxx.common.dson.io.DsonInput;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.Parser;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author wjybxx
@@ -32,20 +30,28 @@ import java.util.stream.Collectors;
  */
 public class DsonTextReader extends AbstractDsonDocReader {
 
-    private DsonInput input;
+    private DsonScanner scanner;
+    private final ArrayDeque<DsonToken> pushedToken = new ArrayDeque<>(4);
 
-    public DsonTextReader(DsonInput input, int recursionLimit) {
+    public DsonTextReader(int recursionLimit, String dson) {
+        this(recursionLimit, new DsonScanner(new DsonStringBuffer(dson)));
+    }
+
+    public DsonTextReader(int recursionLimit, List<String> dsonLines) {
+        this(recursionLimit, new DsonScanner(new DsonLinesBuffer(dsonLines)));
+    }
+
+    public DsonTextReader(int recursionLimit, DsonScanner scanner) {
         super(recursionLimit);
-        this.input = input;
-        setContext(new Context(null, DsonContextType.TOP_LEVEL));
+        this.scanner = scanner;
     }
 
     @Override
     public void close() {
         super.close();
-        if (input != null) {
-            input.close();
-            input = null;
+        if (scanner != null) {
+            scanner.close();
+            scanner = null;
         }
     }
 
@@ -272,92 +278,5 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
     // endregion
 
-    /** 文件行是指原始的输入行，尚未处理行的合并问题 */
-    public static DsonValue parseOfFileLines(List<String> lines) {
-        return parseOfFileLines(mergeLines(lines));
-    }
-
-    /** 逻辑行是指合并行之后的行 */
-    public static DsonValue parseOfLogicLines(List<String> lines) {
-        return null;
-    }
-
-    /**
-     * 解析行首
-     * 1. 空白行 和 #开头的行 都认为是注释行，返回 #
-     * 2. 如果是约定的内容行行首，则返回行首标识
-     * 3. 其它情况下返回null
-     */
-    private static String parseLhead(final String line) {
-        if (line.isBlank() || line.startsWith("#")) {
-            return "#"; // 空白行也当做注释行
-        }
-        // 减少不必要的字符串切割
-        int startIndex = 0;
-        while (startIndex < line.length() && Character.isWhitespace(line.charAt(startIndex))) {
-            startIndex++;
-        }
-        int endIndex = line.indexOf(' ');
-        String lhead;
-        if (endIndex == -1) { // 可能没有空格直接换行
-            lhead = line.substring(startIndex);
-        } else {
-            lhead = line.substring(startIndex, endIndex);
-        }
-        if (DsonTexts.CONTENT_LHEAD_SET.contains(lhead)) {
-            return lhead;
-        }
-        return null;
-    }
-
-    private static List<String> mergeLines(List<String> lines) {
-        ArrayList<String> mergedLines = new ArrayList<>(lines.size());
-        for (String line : lines) {
-            line = line.stripLeading(); // 去掉首部空格-大概率返回当前字符串
-
-            String lhead = parseLhead(line);
-            if (lhead == null) {
-                throw new DsonParseException("invalid line " + line);
-            }
-            switch (lhead) {
-                case DsonTexts.LHEAD_APPEND_LINE, DsonTexts.LHEAD_TEXT_APPEND_LINE -> {
-                    // 独立行，字符串段落的行不能提前合并
-                    mergedLines.add(line);
-                }
-                case DsonTexts.LHEAD_APPEND -> {
-                    // 合并到前一行
-                    mergeToPreline(mergedLines, line, DsonTexts.LHEAD_APPEND.length() + 1);
-                }
-                default -> throw new DsonParseException("unhandled line head " + lhead);
-            }
-        }
-        return mergedLines;
-    }
-
-    private static void mergeToPreline(List<String> mergedLines, String line, int beginIndex) {
-        if (beginIndex < line.length()) {
-            int lastLineIndex = mergedLines.size() - 1;
-            String lastLine = mergedLines.get(lastLineIndex);
-            String newLine = lastLine + line.substring(beginIndex);
-            mergedLines.set(lastLineIndex, newLine);
-        }
-    }
-
-    public static void main(String[] args) {
-        String x = "-- pos: {@Vector3 x: 0.5, y: 0.5, z: 0.5}\n" +
-                "-- posArray: [@Vector3 {x: 0.1, y: 0.1, z: 0.1}, {x: 0.2, y: 0.2, z: 0.2}]\n" +
-                "--\n" +
-                "--\n" +
-                "-- @ss name:\n" +
-                "-|     salkjlxaaslkhalkhsal,anxksjah\\n\n" +
-                "-| xalsjalkjlkalhjalskhalhslahlsanlkanclxa\n" +
-                "-| salkhaslkanlnlkhsjlanx,nalkxanla\n" +
-                "-> lsaljsaljsalsaajsal\n" +
-                "-> saklhskalhlsajlxlsamlkjalj\n" +
-                "-> salkhjsaljsljldjaslna\n" +
-                "--";
-        List<String> logicLines = mergeLines(x.lines().collect(Collectors.toList()));
-        logicLines.forEach(System.out::println);
-    }
 
 }

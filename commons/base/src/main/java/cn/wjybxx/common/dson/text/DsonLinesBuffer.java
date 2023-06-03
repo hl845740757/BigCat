@@ -49,6 +49,11 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
         originLines = null;
     }
 
+    @Override
+    public void close()  {
+
+    }
+
     static class LocalLineInfo extends LineInfo {
 
         final String line;

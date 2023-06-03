@@ -90,4 +90,8 @@ public class DsonStringBuffer extends AbstractDsonBuffer<LineInfo> {
         }
     }
 
+    @Override
+    public void close() {
+
+    }
 }

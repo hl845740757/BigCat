@@ -44,6 +44,7 @@ public class DsonToken {
         return (String) value;
     }
 
+    //
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

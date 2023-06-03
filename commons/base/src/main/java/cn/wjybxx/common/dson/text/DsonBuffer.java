@@ -25,7 +25,7 @@ package cn.wjybxx.common.dson.text;
  * @author wjybxx
  * date - 2023/6/2
  */
-public interface DsonBuffer {
+public interface DsonBuffer extends AutoCloseable {
 
     /**
      * read只返回内容部分的char，获取行首请调用{@link #lhead()}
@@ -88,6 +88,9 @@ public interface DsonBuffer {
     default LnCol getLnCol() {
         return new LnCol(getLn(), getCol());
     }
+
+    @Override
+    void close();
 
     interface Marker {
 

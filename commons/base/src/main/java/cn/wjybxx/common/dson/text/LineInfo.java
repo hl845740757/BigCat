@@ -25,12 +25,18 @@ import cn.wjybxx.common.annotation.Internal;
 @Internal
 class LineInfo {
 
-    final int startPos; // 行全局起始位置，包含行首，与上一行只差包含换行符
-    final int endPos; // 行全局结束位置，包含换行符 - 空行是不存在的
-    final int contentStartPos; // 内容全局起始位置，可能 -1
+    /** 行全局起始位置，包含行首，与上一行只差包含换行符 */
+    final int startPos;
+    /** 行全局结束位置，包含换行符 */
+    final int endPos;
+    /** 内容全局起始位置，可能 -1 */
+    final int contentStartPos;
+    /** 行首类型 */
     final DsonLheadType lheadType;
 
+    /** 行号 */
     final int ln;
+    /** 行信息在数组中索引 */
     final int index;
 
     public LineInfo(int startPos, int endPos, int contentStartPos, DsonLheadType lheadType,

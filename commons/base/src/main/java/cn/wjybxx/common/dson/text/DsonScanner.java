@@ -28,7 +28,7 @@ import java.util.List;
  * @author wjybxx
  * date - 2023/6/2
  */
-public class DsonScanner {
+public class DsonScanner implements AutoCloseable {
 
     private static final List<DsonTokenType> STRING_TOKEN_LIST = List.of(DsonTokenType.STRING, DsonTokenType.UNQUOTE_STRING);
 
@@ -40,15 +40,36 @@ public class DsonScanner {
         this.buffer = buffer;
     }
 
+    @Override
+    public void close() {
+        buffer.close();
+    }
+
     public DsonToken nextToken() {
         int c = skipWhitespace();
         if (c == -1) {
             return new DsonToken(DsonTokenType.EOF, "<eof>");
         }
         return switch (c) {
-            case '{' -> new DsonToken(DsonTokenType.BEGIN_OBJECT, "{");
+            case '{' -> {
+                int nextChar = buffer.read();
+                buffer.unread();
+                if (nextChar == '@') { // 告诉外部，这个@是修饰object/array自身的
+                    yield new DsonToken(DsonTokenType.BEGIN_OBJECT, "{@");
+                } else {
+                    yield new DsonToken(DsonTokenType.BEGIN_OBJECT, "{");
+                }
+            }
+            case '[' -> {
+                int nextChar = buffer.read();
+                buffer.unread();
+                if (nextChar == '@') {
+                    yield new DsonToken(DsonTokenType.BEGIN_ARRAY, "[@");
+                } else {
+                    yield new DsonToken(DsonTokenType.BEGIN_ARRAY, "[");
+                }
+            }
             case '}' -> new DsonToken(DsonTokenType.END_OBJECT, "}");
-            case '[' -> new DsonToken(DsonTokenType.BEGIN_ARRAY, "[");
             case ']' -> new DsonToken(DsonTokenType.END_ARRAY, "]");
             case ':' -> new DsonToken(DsonTokenType.COLON, ":");
             case ',' -> new DsonToken(DsonTokenType.COMMA, ",");
@@ -131,7 +152,7 @@ public class DsonScanner {
         int firstChar = buffer.read();
         checkEof(firstChar);
         // header是结构体，需要等待上层 beginObject
-        if (firstChar == '{') {
+        if (firstChar == '{' || firstChar == '[') {
             buffer.unread();
             return "{";
         }
@@ -341,7 +362,8 @@ public class DsonScanner {
             if (c == -2) { // 产生换行
                 if (buffer.lhead() == DsonLheadType.APPEND_LINE) { // 读取结束
                     break;
-                } else if (buffer.lhead() == DsonLheadType.TEXT_APPEND_LINE) { // 开启新行
+                }
+                if (buffer.lhead() == DsonLheadType.TEXT_APPEND_LINE) { // 开启新行
                     sb.append('\n');
                 }// else 行合并
             } else {
