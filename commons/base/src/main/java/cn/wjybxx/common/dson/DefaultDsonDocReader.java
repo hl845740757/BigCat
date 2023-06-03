@@ -76,14 +76,18 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
         this.currentWireType = wireType;
         this.currentName = INVALID_NAME;
 
-        // topLevel只可是容器对象
-        if (context.contextType == DsonContextType.TOP_LEVEL && !dsonType.isContainer()) {
-            throw DsonCodecException.invalidDsonType(context.contextType, dsonType);
-        }
-
         if (dsonType == DsonType.END_OF_OBJECT) {
-            context.setState(DsonReaderState.WAIT_END_OBJECT);
+            // 顶层读取到 END_OF_OBJECT 表示到达文件尾
+            if (context.contextType == DsonContextType.TOP_LEVEL) {
+                context.setState(DsonReaderState.END_OF_FILE);
+            } else {
+                context.setState(DsonReaderState.WAIT_END_OBJECT);
+            }
         } else {
+            // topLevel只可是容器对象 -- readEndXXX都是子上下文中执行的
+            if (context.contextType == DsonContextType.TOP_LEVEL && !dsonType.isContainer()) {
+                throw DsonCodecException.invalidDsonType(context.contextType, dsonType);
+            }
             // name/name总是和type同时解析
             if (context.contextType == DsonContextType.OBJECT) {
                 // 如果是header则直接进入VALUE状态 - header匿名属性

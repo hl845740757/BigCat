@@ -50,7 +50,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
         if (eof) {
             throw new DsonParseException("Trying to read past eof");
         }
-        final T curLine = this.curLine;
+        T curLine = this.curLine;
         if (position == -1) {
             position = 0;
             // 由于存在unread，因此要检查，避免重复解析
@@ -61,7 +61,9 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
                 eof = true;
                 return -1;
             } else {
-                setCurLine(lines.get(0));
+                curLine =lines.get(0);
+                setCurLine(curLine);
+                position = curLine.startPos;
                 return -2;
             }
         } else if (position == curLine.endPos) {

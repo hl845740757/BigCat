@@ -28,10 +28,11 @@ package cn.wjybxx.common.dson.text;
 public interface DsonBuffer extends AutoCloseable {
 
     /**
-     * read只返回内容部分的char，获取行首请调用{@link #lhead()}
-     * 1.position不一定是加 1
+     * 1.只返回内容部分的char.忽略换行事件
+     * 2.空行和注释行会被跳过
+     * 3.position不一定是加 1
      *
-     * @return 如果到达文件尾部，则返回 -1
+     * @return 1.如果到达文件尾部，则返回 -1
      */
     default int read() {
         int c;
@@ -41,11 +42,12 @@ public interface DsonBuffer extends AutoCloseable {
     }
 
     /**
-     * @return 如果到达文件尾部，则返回 -1；
-     * 1.position不一定是加 1
+     * 1.首次读也会产生换行，换行时当前位置处于行首。
+     * 2.空行和注释行会被跳过
+     * 3.position不一定是加 1
+     *
+     * @return 1.如果到达文件尾部，则返回 -1；
      * 2.如果产生换行，则返回 -2
-     * 3.首次读也会产生换行，换行时当前位置处于行首。
-     * 4.空行和注释行会被跳过
      */
     int readSlowly();
 
@@ -63,6 +65,7 @@ public interface DsonBuffer extends AutoCloseable {
 
     /**
      * 初始位置-1，表示尚未开始
+     * 有效行的起始位置不一定是0
      */
     int getPosition();
 

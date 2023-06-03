@@ -153,8 +153,12 @@ public class DocumentConverterUtils extends ConverterUtils {
 
     // region 直接读取为DsonObject
 
+    /** @return 如果到达文件尾部，则返回null */
     public static DsonValue readTopDsonValue(DsonDocReader reader) {
         DsonType dsonType = reader.readDsonType();
+        if (dsonType == DsonType.END_OF_OBJECT) {
+            return null;
+        }
         if (dsonType == DsonType.OBJECT) {
             return readObject(reader);
         } else {
@@ -169,9 +173,10 @@ public class DocumentConverterUtils extends ConverterUtils {
         DsonValue value;
 
         MutableDsonObject<String> dsonObject = new MutableDsonObject<>();
+        reader.readStartObject();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
             if (dsonType == DsonType.HEADER) {
-                readHeader(dsonObject.getHeader());
+                readHeader(reader, dsonObject.getHeader());
             } else {
                 name = reader.readName();
                 value = readAsDsonValue(reader, dsonType, name);
@@ -182,15 +187,29 @@ public class DocumentConverterUtils extends ConverterUtils {
         return dsonObject;
     }
 
+    private static void readHeader(DsonDocReader reader, DsonHeader<String> header) {
+        DsonType dsonType;
+        String name;
+        DsonValue value;
+        reader.readStartHeader();
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            name = reader.readName();
+            value = readAsDsonValue(reader, dsonType, name);
+            header.put(name, value);
+        }
+        reader.readEndHeader();
+    }
+
     /** 外部需要先readName */
     private static MutableDsonArray<String> readArray(DsonDocReader reader) {
         DsonType dsonType;
         DsonValue value;
 
         MutableDsonArray<String> dsonArray = new MutableDsonArray<>(8);
+        reader.readStartArray();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
             if (dsonType == DsonType.HEADER) {
-                readHeader(dsonArray.getHeader());
+                readHeader(reader, dsonArray.getHeader());
             } else {
                 value = readAsDsonValue(reader, dsonType, null);
                 dsonArray.add(value);
@@ -198,10 +217,6 @@ public class DocumentConverterUtils extends ConverterUtils {
         }
         reader.readEndArray();
         return dsonArray;
-    }
-
-    private static void readHeader(DsonHeader<String> header) {
-
     }
 
     private static DsonValue readAsDsonValue(DsonDocReader reader, DsonType dsonType, String name) {
@@ -227,7 +242,7 @@ public class DocumentConverterUtils extends ConverterUtils {
             }
             case HEADER -> {
                 MutableDsonHeader<String> header = new MutableDsonHeader<>();
-                readHeader(header);
+                readHeader(reader, header);
                 yield header;
             }
             case ARRAY -> {
