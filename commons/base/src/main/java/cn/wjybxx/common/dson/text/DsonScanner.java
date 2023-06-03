@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class DsonScanner implements AutoCloseable {
 
-    private static final List<DsonTokenType> STRING_TOKEN_LIST = List.of(DsonTokenType.STRING, DsonTokenType.UNQUOTE_STRING);
+    private static final List<TokenType> STRING_TOKEN_LIST = List.of(TokenType.STRING, TokenType.UNQUOTE_STRING);
 
     private final DsonBuffer buffer;
     private final char[] unicodeCharBuffer = new char[4];
@@ -48,34 +48,34 @@ public class DsonScanner implements AutoCloseable {
     public DsonToken nextToken() {
         int c = skipWhitespace();
         if (c == -1) {
-            return new DsonToken(DsonTokenType.EOF, "<eof>");
+            return new DsonToken(TokenType.EOF, "<eof>");
         }
         return switch (c) {
             case '{' -> {
                 int nextChar = buffer.read();
                 buffer.unread();
                 if (nextChar == '@') { // 告诉外部，这个@是修饰object/array自身的
-                    yield new DsonToken(DsonTokenType.BEGIN_OBJECT, "{@");
+                    yield new DsonToken(TokenType.BEGIN_OBJECT, "{@");
                 } else {
-                    yield new DsonToken(DsonTokenType.BEGIN_OBJECT, "{");
+                    yield new DsonToken(TokenType.BEGIN_OBJECT, "{");
                 }
             }
             case '[' -> {
                 int nextChar = buffer.read();
                 buffer.unread();
                 if (nextChar == '@') {
-                    yield new DsonToken(DsonTokenType.BEGIN_ARRAY, "[@");
+                    yield new DsonToken(TokenType.BEGIN_ARRAY, "[@");
                 } else {
-                    yield new DsonToken(DsonTokenType.BEGIN_ARRAY, "[");
+                    yield new DsonToken(TokenType.BEGIN_ARRAY, "[");
                 }
             }
-            case '}' -> new DsonToken(DsonTokenType.END_OBJECT, "}");
-            case ']' -> new DsonToken(DsonTokenType.END_ARRAY, "]");
-            case ':' -> new DsonToken(DsonTokenType.COLON, ":");
-            case ',' -> new DsonToken(DsonTokenType.COMMA, ",");
-            case '"' -> new DsonToken(DsonTokenType.STRING, scanString((char) c));
+            case '}' -> new DsonToken(TokenType.END_OBJECT, "}");
+            case ']' -> new DsonToken(TokenType.END_ARRAY, "]");
+            case ':' -> new DsonToken(TokenType.COLON, ":");
+            case ',' -> new DsonToken(TokenType.COMMA, ",");
+            case '"' -> new DsonToken(TokenType.STRING, scanString((char) c));
             case '@' -> parseHeaderToken();
-            default -> new DsonToken(DsonTokenType.UNQUOTE_STRING, scanUnquotedString((char) c));
+            default -> new DsonToken(TokenType.UNQUOTE_STRING, scanUnquotedString((char) c));
         };
     }
 
@@ -96,20 +96,20 @@ public class DsonScanner implements AutoCloseable {
         }
     }
 
-    private static void checkToken(List<DsonTokenType> expected, DsonTokenType tokenType, int position) {
+    private static void checkToken(List<TokenType> expected, TokenType tokenType, int position) {
         if (!expected.contains(tokenType)) {
             throw new DsonParseException(String.format("Invalid Dson Token. Position: %d. Expected: %s. Found: '%s'.",
                     position, expected, tokenType));
         }
     }
 
-    private static void checkToken(DsonTokenType expected, DsonTokenType tokenType, int position) {
+    private static void checkToken(TokenType expected, TokenType tokenType, int position) {
         if (tokenType != expected) {
             throw invalidTokenType(List.of(expected), tokenType, position);
         }
     }
 
-    private static DsonParseException invalidTokenType(List<DsonTokenType> expected, DsonTokenType tokenType, int position) {
+    private static DsonParseException invalidTokenType(List<TokenType> expected, TokenType tokenType, int position) {
         throw new DsonParseException(String.format("Invalid Dson Token. Position: %d. Expected: %s. Found: '%s'.",
                 position, expected, tokenType));
     }
@@ -170,38 +170,38 @@ public class DsonScanner implements AutoCloseable {
             case DsonTexts.LABEL_INT32 -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
-                return new DsonToken(DsonTokenType.INT32, Integer.parseInt(nextToken.castAsString()));
+                return new DsonToken(TokenType.INT32, Integer.parseInt(nextToken.castAsString()));
             }
             case DsonTexts.LABEL_INT64 -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
-                return new DsonToken(DsonTokenType.INT64, Long.parseLong(nextToken.castAsString()));
+                return new DsonToken(TokenType.INT64, Long.parseLong(nextToken.castAsString()));
             }
             case DsonTexts.LABEL_FLOAT -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
-                return new DsonToken(DsonTokenType.FLOAT, Float.parseFloat(nextToken.castAsString()));
+                return new DsonToken(TokenType.FLOAT, Float.parseFloat(nextToken.castAsString()));
             }
             case DsonTexts.LABEL_DOUBLE -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
-                return new DsonToken(DsonTokenType.DOUBLE, Double.parseDouble(nextToken.castAsString()));
+                return new DsonToken(TokenType.DOUBLE, Double.parseDouble(nextToken.castAsString()));
             }
             case DsonTexts.LABEL_STRING -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
-                return new DsonToken(DsonTokenType.STRING, nextToken.getValue());
+                return new DsonToken(TokenType.STRING, nextToken.getValue());
             }
             case DsonTexts.LABEL_BOOL -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
-                return new DsonToken(DsonTokenType.BOOL, parseBool(nextToken.castAsString()));
+                return new DsonToken(TokenType.BOOL, parseBool(nextToken.castAsString()));
             }
             case DsonTexts.LABEL_NULL -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_LIST, nextToken.getType(), position);
                 checkNullString(nextToken.castAsString());
-                return new DsonToken(DsonTokenType.NULL, null);
+                return new DsonToken(TokenType.NULL, null);
             }
             case DsonTexts.LABEL_BINARY -> {
                 return scanBinary();
@@ -216,52 +216,52 @@ public class DsonScanner implements AutoCloseable {
                 return scanExtString();
             }
             case DsonTexts.LABEL_TEXT -> {
-                return new DsonToken(DsonTokenType.STRING, scanText());
+                return new DsonToken(TokenType.STRING, scanText());
             }
         }
-        return new DsonToken(DsonTokenType.HEADER, className);
+        return new DsonToken(TokenType.HEADER, className);
     }
 
     private DsonToken scanExtString() {
         TuplePair tuplePair = scanTupleImpl();
-        return new DsonToken(DsonTokenType.EXTSTRING, new DsonExtString(tuplePair.type, tuplePair.value));
+        return new DsonToken(TokenType.EXTSTRING, new DsonExtString(tuplePair.type, tuplePair.value));
     }
 
     private DsonToken scanExtInt64() {
         TuplePair tuplePair = scanTupleImpl();
         long value = Long.parseLong(tuplePair.value);
-        return new DsonToken(DsonTokenType.EXTINT32, new DsonExtInt64(tuplePair.type, value));
+        return new DsonToken(TokenType.EXTINT32, new DsonExtInt64(tuplePair.type, value));
     }
 
     private DsonToken scanExtInt32() {
         TuplePair tuplePair = scanTupleImpl();
         int value = Integer.parseInt(tuplePair.value);
-        return new DsonToken(DsonTokenType.EXTINT32, new DsonExtInt32(tuplePair.type, value));
+        return new DsonToken(TokenType.EXTINT32, new DsonExtInt32(tuplePair.type, value));
     }
 
     private DsonToken scanBinary() {
         TuplePair tuplePair = scanTupleImpl();
         byte[] data = DsonTexts.decodeHex(tuplePair.value.toCharArray());
-        return new DsonToken(DsonTokenType.BINARY, new DsonBinary(tuplePair.type, data));
+        return new DsonToken(TokenType.BINARY, new DsonBinary(tuplePair.type, data));
     }
 
     private TuplePair scanTupleImpl() {
         DsonToken nextToken = nextToken();
-        checkToken(DsonTokenType.BEGIN_OBJECT, nextToken.getType(), getPosition());
+        checkToken(TokenType.BEGIN_OBJECT, nextToken.getType(), getPosition());
 
         nextToken = nextToken();
-        checkToken(DsonTokenType.UNQUOTE_STRING, nextToken.getType(), getPosition());
+        checkToken(TokenType.UNQUOTE_STRING, nextToken.getType(), getPosition());
         int type = Integer.parseInt(nextToken.castAsString());
 
         nextToken = nextToken();
-        checkToken(DsonTokenType.COMMA, nextToken.getType(), getPosition());
+        checkToken(TokenType.COMMA, nextToken.getType(), getPosition());
 
         nextToken = nextToken();
         checkToken(STRING_TOKEN_LIST, nextToken.getType(), getPosition());
         String value = nextToken.castAsString();
 
         nextToken = nextToken();
-        checkToken(DsonTokenType.END_OBJECT, nextToken.getType(), getPosition());
+        checkToken(TokenType.END_OBJECT, nextToken.getType(), getPosition());
         return new TuplePair(type, value);
     }
 
@@ -360,10 +360,10 @@ public class DsonScanner implements AutoCloseable {
         int c;
         while ((c = buffer.readSlowly()) != -1) {
             if (c == -2) { // 产生换行
-                if (buffer.lhead() == DsonLheadType.APPEND_LINE) { // 读取结束
+                if (buffer.lhead() == LheadType.APPEND_LINE) { // 读取结束
                     break;
                 }
-                if (buffer.lhead() == DsonLheadType.TEXT_APPEND_LINE) { // 开启新行
+                if (buffer.lhead() == LheadType.TEXT_APPEND_LINE) { // 开启新行
                     sb.append('\n');
                 }// else 行合并
             } else {

@@ -61,7 +61,7 @@ public interface DsonBuffer extends AutoCloseable {
     /**
      * 获取当前的行首标记
      */
-    DsonLheadType lhead();
+    LheadType lhead();
 
     /**
      * 初始位置-1，表示尚未开始

@@ -20,7 +20,7 @@ package cn.wjybxx.common.dson.text;
  * @author wjybxx
  * date - 2023/6/2
  */
-public enum DsonLheadType {
+public enum LheadType {
 
     /** 注释 */
     COMMENT(DsonTexts.LHEAD_COMMENT),
@@ -36,11 +36,11 @@ public enum DsonLheadType {
 
     public final String label;
 
-    DsonLheadType(String label) {
+    LheadType(String label) {
         this.label = label;
     }
 
-    public static DsonLheadType ofLabel(String label) {
+    public static LheadType ofLabel(String label) {
         return switch (label) {
             case DsonTexts.LHEAD_COMMENT -> COMMENT;
             case DsonTexts.LHEAD_APPEND_LINE -> APPEND_LINE;

@@ -24,15 +24,15 @@ import java.util.Objects;
  */
 public class DsonToken {
 
-    private final DsonTokenType type;
+    private final TokenType type;
     private final Object value;
 
-    public DsonToken(DsonTokenType type, Object value) {
+    public DsonToken(TokenType type, Object value) {
         this.type = Objects.requireNonNull(type);
         this.value = value;
     }
 
-    public DsonTokenType getType() {
+    public TokenType getType() {
         return type;
     }
 

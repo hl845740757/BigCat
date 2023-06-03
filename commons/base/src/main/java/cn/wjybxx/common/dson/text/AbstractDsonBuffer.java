@@ -131,7 +131,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
     }
 
     @Override
-    public DsonLheadType lhead() {
+    public LheadType lhead() {
         return curLine.lheadType;
     }
 
@@ -161,14 +161,14 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
      * @param startPos inclusive 0-based
      * @param endPos   exclusive 0-based
      */
-    static DsonLheadType parseLhead(final String line, int startPos, int endPos, int ln) {
+    static LheadType parseLhead(final String line, int startPos, int endPos, int ln) {
         // 减少不必要的字符串切割
         int startIndex = startPos;
         while (startIndex < endPos && Character.isWhitespace(line.charAt(startIndex))) {
             startIndex++;
         }
         if (startIndex >= endPos || line.charAt(startIndex) == '#') {
-            return DsonLheadType.COMMENT; // 空白行或注释行都看做注释行
+            return LheadType.COMMENT; // 空白行或注释行都看做注释行
         }
 
         int endIndex = startIndex;
@@ -181,7 +181,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
         }
         String lhead = line.substring(startIndex, endIndex);
         if (DsonTexts.CONTENT_LHEAD_SET.contains(lhead)) {
-            return DsonLheadType.ofLabel(lhead);
+            return LheadType.ofLabel(lhead);
         }
         throw new DsonParseException("Unknown head " + lhead);
     }

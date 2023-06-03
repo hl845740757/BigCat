@@ -58,7 +58,7 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
 
         final String line;
 
-        public LocalLineInfo(int startPos, int endPos, int contentStartPos, DsonLheadType lheadType,
+        public LocalLineInfo(int startPos, int endPos, int contentStartPos, LheadType lheadType,
                              int ln, int index, String line) {
             super(startPos, endPos, contentStartPos, lheadType, ln, index);
             this.line = line;
@@ -92,8 +92,8 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
             }
 
             lineIndex++;
-            DsonLheadType lheadType = parseLhead(line, 0, line.length(), ln);
-            if (lheadType == DsonLheadType.COMMENT) {
+            LheadType lheadType = parseLhead(line, 0, line.length(), ln);
+            if (lheadType == LheadType.COMMENT) {
                 continue;
             }
             int contentStartPos;

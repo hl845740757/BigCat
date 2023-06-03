@@ -20,7 +20,7 @@ package cn.wjybxx.common.dson.text;
  * @author wjybxx
  * date - 2023/6/2
  */
-public enum DsonTokenType {
+public enum TokenType {
 
     /** 到达文件尾部 */
     EOF,

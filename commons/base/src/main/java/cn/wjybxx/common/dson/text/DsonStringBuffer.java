@@ -69,8 +69,8 @@ public class DsonStringBuffer extends AbstractDsonBuffer<LineInfo> {
                 if (endPos == bufferLength - 1) { // eof
                     endPos = bufferLength;
                 }
-                DsonLheadType lheadType = parseLhead(buffer, startPos, endPos, ln);
-                if (lheadType == DsonLheadType.COMMENT) {
+                LheadType lheadType = parseLhead(buffer, startPos, endPos, ln);
+                if (lheadType == LheadType.COMMENT) {
                     if (endPos == bufferLength) { // eof
                         break;
                     }

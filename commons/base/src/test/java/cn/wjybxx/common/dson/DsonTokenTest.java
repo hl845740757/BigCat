@@ -59,7 +59,7 @@ public class DsonTokenTest {
     private static void pullToList(DsonScanner scanner, List<DsonToken> outList) {
         while (true) {
             DsonToken nextToken = scanner.nextToken();
-            if (nextToken.getType() == DsonTokenType.EOF) {
+            if (nextToken.getType() == TokenType.EOF) {
                 break;
             }
             outList.add(nextToken);

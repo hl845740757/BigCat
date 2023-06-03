@@ -32,14 +32,14 @@ class LineInfo {
     /** 内容全局起始位置，可能 -1 */
     final int contentStartPos;
     /** 行首类型 */
-    final DsonLheadType lheadType;
+    final LheadType lheadType;
 
     /** 行号 */
     final int ln;
     /** 行信息在数组中索引 */
     final int index;
 
-    public LineInfo(int startPos, int endPos, int contentStartPos, DsonLheadType lheadType,
+    public LineInfo(int startPos, int endPos, int contentStartPos, LheadType lheadType,
                     int ln, int index) {
         this.startPos = startPos;
         this.endPos = endPos;
