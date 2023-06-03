@@ -39,7 +39,7 @@ public final class ObjectRef {
     private final String guid;
     /** 引用的对象的大类型 - 给业务使用的，用于快速引用分析 */
     private final int type;
-    /** 引用的解析策略 -  0：不解析 1：解析为引用 2：内联复制 */
+    /** 引用的解析策略 -  0：默认 1：解析为引用 2：内联复制，3：不解析 */
     private final int policy;
 
     public ObjectRef(long localId) {

@@ -496,10 +496,10 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     protected static class Context {
 
-        Context parent;
-        DsonContextType contextType;
-        DsonReaderState state = DsonReaderState.INITIAL;
-        String name = INVALID_NAME;
+        public Context parent;
+        public DsonContextType contextType;
+        public DsonReaderState state = DsonReaderState.INITIAL;
+        public String name = INVALID_NAME;
 
         public Context() {
         }

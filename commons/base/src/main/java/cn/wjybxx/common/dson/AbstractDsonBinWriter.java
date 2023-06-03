@@ -370,11 +370,10 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     protected static class Context {
 
-        Context parent;
-        DsonContextType contextType;
-        DsonWriterState state = DsonWriterState.INITIAL;
-        /** 需要先缓存下来，因为name和value可能分开写入，而name必须写在type后面 */
-        int name;
+        public Context parent;
+        public DsonContextType contextType;
+        public DsonWriterState state = DsonWriterState.INITIAL;
+        public int name;
 
         public Context() {
         }

@@ -80,14 +80,13 @@ public class JsonStringHelper {
                     case '\'' -> sb.append('\'');
                     case '"' -> sb.append('"');
                     case '\\' -> sb.append('\\');
-                    case '/' -> sb.append('/');
                     case 'b' -> sb.append('\b');
                     case 'f' -> sb.append('\f');
                     case 'n' -> sb.append('\n');
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> {
-                        // unicode字符
+                        // unicode码元，char是2字节，4个16进制数，从高到底
                         char u1 = next(charArray, ++index);
                         char u2 = next(charArray, ++index);
                         char u3 = next(charArray, ++index);

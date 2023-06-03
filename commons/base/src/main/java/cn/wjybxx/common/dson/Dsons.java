@@ -18,12 +18,6 @@ package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.props.IProperties;
 import cn.wjybxx.common.props.PropertiesLoader;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import org.apache.commons.lang3.math.NumberUtils;
-
-import java.util.Set;
 
 /**
  * Dson数据结构的一些常量
@@ -202,82 +196,6 @@ public final class Dsons {
         // 长度异常的数据不池化
         return (className.length() <= 128 && enableClassIntern) ? className.intern() : className;
     }
-    // endregion
-
-    // region 文本格式
-
-    public static final String LABEL_INT32 = "i";
-    public static final String LABEL_INT64 = "L";
-    public static final String LABEL_FLOAT = "f";
-    public static final String LABEL_DOUBLE = "d";
-    public static final String LABEL_BOOL = "b";
-    public static final String LABEL_STRING = "s";
-    public static final String LABEL_NULL = "N";
-
-    public static final String LABEL_BINARY = "bin";
-    public static final String LABEL_EXTINT32 = "ei";
-    public static final String LABEL_EXTINT64 = "eL";
-    public static final String LABEL_EXTSTRING = "es";
-    public static final String LABEL_REFERENCE = "ref";
-
-    public static final String LABEL_HEADER = "@";
-    public static final String LABEL_ARRAY = "[";
-    public static final String LABEL_OBJECT = "{";
-
-    /** 长文本，字符串不需要加引号，不对内容进行转义，可直接换行 */
-    public static final String LABEL_TEXT = "ss";
-    /** 合并当前行到上一行，可重复多个以 保持缩进 */
-    public static final String LABEL_MERGE = "<";
-    /** 结束当前输入，可重复多个以 醒目 */
-    public static final String LABEL_END = ">";
-    /** 缩进标签，可重复 */
-    public static final String LABEL_INDENT = "-";
-
-    public static final char CHAR_LABEL_INDENT = '-';
-    public static final char CHAR_LABEL_MERGE = '<';
-    public static final char CHAR_LABEL_END = '>';
-
-    public static final Set<String> LABEL_SET = Set.of(
-            LABEL_INT32, LABEL_INT64, LABEL_FLOAT, LABEL_DOUBLE,
-            LABEL_BOOL, LABEL_STRING, LABEL_NULL, LABEL_BINARY,
-            LABEL_EXTINT32, LABEL_EXTINT64, LABEL_EXTSTRING, LABEL_REFERENCE,
-            LABEL_HEADER, LABEL_ARRAY, LABEL_OBJECT,
-            LABEL_MERGE, LABEL_END, LABEL_TEXT);
-
-    private static final Set<String> PARSABLE_STRINGS = Set.of("true", "false", "null", "undefine");
-    private static final IntSet safeCharSet;
-
-    static {
-        IntOpenHashSet tempCharSet = new IntOpenHashSet(64);
-        tempCharSet.addAll(IntList.of("abcdefghijkmlnopqrstuvwxyz".codePoints().toArray()));
-        tempCharSet.addAll(IntList.of("ABCDEFGHIJKMLNOPQRSTUVWXYZ".codePoints().toArray()));
-        tempCharSet.addAll(IntList.of("0123456789".codePoints().toArray()));
-        tempCharSet.addAll(IntList.of("_-".codePoints().toArray()));
-        safeCharSet = tempCharSet; // 这里不封装一层，因为不对外
-    }
-
-    /**
-     * 是否可省略字符串的引号
-     * 其实并不建议底层默认判断是否可以不加引号，用户可以根据自己的数据决定是否加引号，比如；guid可能就是可以不加引号的
-     */
-    public static boolean canOmitQuote(String value) {
-        if (PARSABLE_STRINGS.contains(value)) {
-            return false;
-        }
-        // 我们保守一些不容易出错，因为情况太多，既难以保证正确性，性能也差
-        if (NumberUtils.isParsable(value)) {
-            return false;
-        }
-        // 这遍历的不是unicode码点，但不影响
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (!safeCharSet.contains(c)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     // endregion
 
 }

@@ -496,10 +496,10 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
 
     protected static class Context {
 
-        Context parent;
-        DsonContextType contextType;
-        DsonReaderState state = DsonReaderState.INITIAL;
-        int name = INVALID_NAME;
+        public Context parent;
+        public DsonContextType contextType;
+        public DsonReaderState state = DsonReaderState.INITIAL;
+        public int name = INVALID_NAME;
 
         public Context() {
         }

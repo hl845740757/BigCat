@@ -29,12 +29,7 @@ public class DsonExtInt64 extends DsonValue implements Comparable<DsonExtInt64> 
     private final int type;
     private final long value;
 
-    public DsonExtInt64(DsonExtInt64Type type, long value) {
-        this(type.getValue(), value);
-    }
-
     public DsonExtInt64(int type, long value) {
-        if (type < 0) throw new IllegalArgumentException("invalid type " + type);
         this.type = type;
         this.value = value;
     }

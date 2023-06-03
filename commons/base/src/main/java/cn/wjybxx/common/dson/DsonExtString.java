@@ -30,12 +30,7 @@ public class DsonExtString extends DsonValue implements Comparable<DsonExtString
     private final int type;
     private final String value;
 
-    public DsonExtString(DsonExtStringType type, String value) {
-        this(type.getValue(), value);
-    }
-
     public DsonExtString(int type, String value) {
-        if (type < 0) throw new IllegalArgumentException("invalid type " + type);
         this.type = type;
         this.value = Objects.requireNonNull(value);
     }
