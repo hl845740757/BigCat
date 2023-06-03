@@ -108,9 +108,8 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     protected void setNextState() {
         switch (context.contextType) {
-            case TOP_LEVEL -> context.setState(DsonWriterState.DONE);
             case OBJECT, HEADER -> context.setState(DsonWriterState.NAME);
-            case ARRAY -> context.setState(DsonWriterState.VALUE);
+            case TOP_LEVEL, ARRAY -> context.setState(DsonWriterState.VALUE);
         }
     }
 
@@ -322,7 +321,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     private void autoStartTopLevel(Context context) {
         if (context.contextType == DsonContextType.TOP_LEVEL
-                && (context.state == DsonWriterState.INITIAL || context.state == DsonWriterState.DONE)) {
+                && context.state == DsonWriterState.INITIAL) {
             context.setState(DsonWriterState.VALUE);
         }
     }

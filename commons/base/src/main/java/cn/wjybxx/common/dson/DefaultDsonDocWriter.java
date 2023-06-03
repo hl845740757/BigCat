@@ -56,11 +56,11 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
 
     @Override
     public void close() {
-        super.close();
         if (output != null) {
             output.close();
             output = null;
         }
+        super.close();
     }
 
     // region state

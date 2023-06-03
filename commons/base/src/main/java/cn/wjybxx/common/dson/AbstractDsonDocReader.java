@@ -127,8 +127,8 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     /** 检查是否可以执行{@link #readDsonType()} */
     protected void checkReadDsonTypeState(Context context) {
         if (context.contextType == DsonContextType.TOP_LEVEL) {
-            if (context.state != DsonReaderState.INITIAL && context.state != DsonReaderState.DONE) {
-                throw invalidState(List.of(DsonReaderState.INITIAL, DsonReaderState.DONE));
+            if (context.state != DsonReaderState.INITIAL && context.state != DsonReaderState.TYPE) {
+                throw invalidState(List.of(DsonReaderState.INITIAL, DsonReaderState.TYPE));
             }
         } else if (context.state != DsonReaderState.TYPE) {
             throw invalidState(List.of(DsonReaderState.TYPE));
@@ -162,11 +162,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     }
 
     protected void setNextState() {
-        if (context.contextType == DsonContextType.TOP_LEVEL) {
-            context.setState(DsonReaderState.DONE);
-        } else {
-            context.setState(DsonReaderState.TYPE);
-        }
+        context.setState(DsonReaderState.TYPE);
     }
 
     protected DsonCodecException invalidState(List<DsonReaderState> expected) {
@@ -382,7 +378,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     private void autoStartTopLevel(Context context) {
         if (context.contextType == DsonContextType.TOP_LEVEL
-                && (context.state == DsonReaderState.INITIAL || context.state == DsonReaderState.DONE)) {
+                && (context.state == DsonReaderState.INITIAL || context.state == DsonReaderState.TYPE)) {
             readDsonType();
         }
     }

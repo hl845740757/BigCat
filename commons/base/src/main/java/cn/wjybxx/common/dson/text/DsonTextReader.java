@@ -48,11 +48,11 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
     @Override
     public void close() {
-        super.close();
         if (scanner != null) {
             scanner.close();
             scanner = null;
         }
+        super.close();
     }
 
     @Override

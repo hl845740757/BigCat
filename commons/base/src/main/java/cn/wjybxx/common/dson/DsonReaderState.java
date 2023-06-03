@@ -19,9 +19,8 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.annotation.Internal;
 
 /**
- * Object/Header循环 TYPE-NAME-VALUE
- * Array循环 TYPE-VALUE
- * 顶层上下文循环 VALUE-DONE
+ * Object、Header循环 TYPE-NAME-VALUE
+ * 顶层上下文、Array循环 TYPE-VALUE
  * <p>
  * 由于type必须先读取，因此type需要独立的状态；又由于name可以单独读取，因此name也需要单独的转态，因此需要type-name-value三个状态。
  *
@@ -59,7 +58,7 @@ public enum DsonReaderState {
      */
     WAIT_END_OBJECT,
 
-    /** 顶层上下文的读取一个对象完毕 */
-    DONE,
+    /** 到达输入的尾部 */
+    END_OF_FILE,
 
 }

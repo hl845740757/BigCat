@@ -45,11 +45,11 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
 
     @Override
     public void close() {
-        super.close();
         if (input != null) {
             input.close();
             input = null;
         }
+        super.close();
     }
 
     @Override

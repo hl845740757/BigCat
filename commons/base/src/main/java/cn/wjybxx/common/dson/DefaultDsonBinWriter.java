@@ -56,11 +56,11 @@ public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
 
     @Override
     public void close() {
-        super.close();
         if (output != null) {
             output.close();
             output = null;
         }
+        super.close();
     }
 
     // region state

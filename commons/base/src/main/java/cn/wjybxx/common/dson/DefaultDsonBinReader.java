@@ -37,11 +37,11 @@ public class DefaultDsonBinReader extends AbstractDsonBinReader {
 
     @Override
     public void close() {
-        super.close();
         if (input != null) {
             input.close();
             input = null;
         }
+        super.close();
     }
 
     @Override
@@ -55,11 +55,6 @@ public class DefaultDsonBinReader extends AbstractDsonBinReader {
     }
 
     // region state
-
-    @Override
-    public boolean isAtEndOfObject() {
-        return input.isAtEnd();
-    }
 
     @Override
     public DsonType readDsonType() {

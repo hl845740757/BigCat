@@ -220,6 +220,9 @@ public class DsonReaderUtils {
 
     public static DsonReaderGuide whatShouldIDo(DsonContextType contextType, DsonReaderState state) {
         if (contextType == DsonContextType.TOP_LEVEL) {
+            if (state == DsonReaderState.END_OF_FILE) {
+                return DsonReaderGuide.CLOSE;
+            }
             if (state == DsonReaderState.VALUE) {
                 return DsonReaderGuide.READ_VALUE;
             }
@@ -233,7 +236,7 @@ public class DsonReaderUtils {
                         contextType == DsonContextType.ARRAY ? DsonReaderGuide.START_ARRAY : DsonReaderGuide.START_OBJECT;
                 case WAIT_END_OBJECT ->
                         contextType == DsonContextType.ARRAY ? DsonReaderGuide.END_ARRAY : DsonReaderGuide.END_OBJECT;
-                case INITIAL, DONE -> throw new AssertionError("invalid state " + state);
+                case INITIAL, END_OF_FILE -> throw new AssertionError("invalid state " + state);
             };
         }
     }
