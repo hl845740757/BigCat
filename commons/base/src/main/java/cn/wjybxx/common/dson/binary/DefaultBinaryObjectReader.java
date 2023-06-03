@@ -227,17 +227,18 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
-        BinClassId classId;
-        if (dsonType == DsonType.ARRAY) {
-            classId = reader.prestartArray();
-        } else {
-            classId = reader.prestartObject();
-        }
-        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
-        if (codec == null) {
-            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
-        }
-        return codec.readObject(this, typeArgInfo);
+//        BinClassId classId;
+//        if (dsonType == DsonType.ARRAY) {
+//            classId = reader.prestartArray();
+//        } else {
+//            classId = reader.prestartObject();
+//        }
+//        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+//        if (codec == null) {
+//            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
+//        }
+//        return codec.readObject(this, typeArgInfo);
+        return null;
     }
 
     private <T> T readAsDsonValue(DsonType dsonType, int name, Class<T> declaredType) {

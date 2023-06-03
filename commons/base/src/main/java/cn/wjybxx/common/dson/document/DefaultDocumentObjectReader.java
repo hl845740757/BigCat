@@ -251,17 +251,18 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
-        DocClassId classId;
-        if (dsonType == DsonType.ARRAY) {
-            classId = reader.prestartArray();
-        } else {
-            classId = reader.prestartObject();
-        }
-        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
-        if (codec == null) {
-            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
-        }
-        return codec.readObject(this, typeArgInfo);
+//        DocClassId classId;
+//        if (dsonType == DsonType.ARRAY) {
+//            classId = reader.prestartArray();
+//        } else {
+//            classId = reader.prestartObject();
+//        }
+//        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+//        if (codec == null) {
+//            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
+//        }
+//        return codec.readObject(this, typeArgInfo);
+        return null;
     }
 
     private <T> T readAsDsonValue(DsonType dsonType, String name, Class<T> declaredType) {

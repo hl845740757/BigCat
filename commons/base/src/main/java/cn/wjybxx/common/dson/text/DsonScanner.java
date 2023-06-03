@@ -32,11 +32,11 @@ public class DsonScanner {
 
     private static final List<DsonTokenType> STRING_TOKEN_LIST = List.of(DsonTokenType.STRING, DsonTokenType.UNQUOTE_STRING);
 
-    private final DsonLineBuffer buffer;
+    private final DsonBuffer buffer;
     private final char[] unicodeCharBuffer = new char[4];
     private final StringBuilder sbBuffer = new StringBuilder(64);
 
-    public DsonScanner(DsonLineBuffer buffer) {
+    public DsonScanner(DsonBuffer buffer) {
         this.buffer = buffer;
     }
 
@@ -109,7 +109,7 @@ public class DsonScanner {
         return buffer.getPosition();
     }
 
-    private int getPositionAndUnread(int c) {
+    private int getPositionAndUnread() {
         int position = buffer.getPosition();
         buffer.unread();
         return position;
@@ -294,7 +294,7 @@ public class DsonScanner {
                             sb.append((char) Integer.parseInt(hex, 16));
                         }
                     }
-                    default -> throw invalidEscapeSequence(c, getPositionAndUnread(c));
+                    default -> throw invalidEscapeSequence(c, getPositionAndUnread());
 
                 }
             } else {

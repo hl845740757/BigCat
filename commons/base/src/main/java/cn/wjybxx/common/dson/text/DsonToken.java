@@ -45,6 +45,24 @@ public class DsonToken {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DsonToken dsonToken = (DsonToken) o;
+
+        if (type != dsonToken.type) return false;
+        return Objects.equals(value, dsonToken.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "DsonToken[ " +
                 "type= " + type +
