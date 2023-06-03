@@ -83,9 +83,9 @@ public class DsonScanner implements AutoCloseable {
 
     /** @return 如果调到文件尾则返回 -1 */
     private int skipWhitespace() {
-        int c = buffer.read();
-        while (c != -1 && Character.isWhitespace(c)) {
-            c = buffer.read();
+        int c;
+        while ((c = buffer.read()) != -1 && Character.isWhitespace(c)) {
+
         }
         return c;
     }
@@ -155,6 +155,9 @@ public class DsonScanner implements AutoCloseable {
         if (firstChar == '{' || firstChar == '[') {
             buffer.unread();
             return "{";
+        }
+        if (Character.isWhitespace(firstChar)) {
+            throw invalidInput(firstChar, getPosition());
         }
         String className = firstChar == '"' ? scanString((char) firstChar) : scanUnquotedString((char) firstChar);
         if (StringUtils.isBlank(className)) {
@@ -331,17 +334,25 @@ public class DsonScanner implements AutoCloseable {
     }
 
     /**
-     * 扫描无引号字符串
+     * 扫描无引号字符串，无引号字符串不支持切换到独立行
      *
      * @param firstChar 第一个非空白字符
      */
     private String scanUnquotedString(final char firstChar) {
         StringBuilder sb = alloStringBuilder();
         sb.append((char) firstChar);
-        int c = buffer.read();
-        while (c != -1 && DsonTexts.isSafeStringChar((char) c)) {
+        int c;
+        while ((c = buffer.readSlowly()) != -1) {
+            if (c == -2) { // 产生换行，无引号字符串不可以切换到独立行
+                if (buffer.lhead() != LheadType.APPEND) {
+                    break;
+                }
+                continue;
+            }
+            if (!DsonTexts.isSafeStringChar((char) c)) {
+                break;
+            }
             sb.append((char) c);
-            c = buffer.read();
         }
         buffer.unread();
         return sb.toString();
