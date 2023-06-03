@@ -65,11 +65,6 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
     // region state
 
     @Override
-    public boolean isAtEndOfObject() {
-        return input.isAtEnd();
-    }
-
-    @Override
     public DsonType readDsonType() {
         Context context = this.getContext();
         checkReadDsonTypeState(context);

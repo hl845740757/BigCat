@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.document.codecs;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;
@@ -54,7 +55,7 @@ public class IntArrayCodec implements DocumentPojoCodecImpl<int[]> {
     @Override
     public int[] readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         IntArrayList result = new IntArrayList();
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readInt(null));
         }
         return result.toIntArray();

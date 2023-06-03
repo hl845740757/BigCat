@@ -218,11 +218,8 @@ public class DsonReaderUtils {
         }
     }
 
-    public static DsonReaderGuide whatShouldIDo(boolean isAtEndOfObject, DsonContextType contextType, DsonReaderState state) {
+    public static DsonReaderGuide whatShouldIDo(DsonContextType contextType, DsonReaderState state) {
         if (contextType == DsonContextType.TOP_LEVEL) {
-            if (isAtEndOfObject) {
-                return DsonReaderGuide.CLOSE;
-            }
             if (state == DsonReaderState.VALUE) {
                 return DsonReaderGuide.READ_VALUE;
             }

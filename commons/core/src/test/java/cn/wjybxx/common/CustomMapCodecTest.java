@@ -47,7 +47,7 @@ public class CustomMapCodecTest<K, V> extends IdentityHashMap<K, V> {
     }
 
     public void readObject(BinaryObjectReader reader) {
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             K k = reader.readObject(0);
             V v = reader.readObject(0);
             put(k, v);

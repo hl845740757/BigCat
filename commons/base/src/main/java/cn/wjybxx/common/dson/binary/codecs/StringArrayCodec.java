@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.binary.codecs;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
@@ -49,7 +50,7 @@ public class StringArrayCodec implements BinaryPojoCodecImpl<String[]> {
     @Override
     public String[] readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         ArrayList<String> result = new ArrayList<>();
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readString(0));
         }
         return result.toArray(ArrayUtils.EMPTY_STRING_ARRAY);

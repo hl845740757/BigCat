@@ -477,7 +477,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     @Override
     public DsonReaderGuide whatShouldIDo() {
-        return DsonReaderUtils.whatShouldIDo(isAtEndOfObject(), context.contextType, context.state);
+        return DsonReaderUtils.whatShouldIDo(context.contextType, context.state);
     }
 
     protected abstract void doSkipName();

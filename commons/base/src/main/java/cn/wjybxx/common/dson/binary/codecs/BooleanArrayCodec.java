@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.binary.codecs;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
@@ -49,7 +50,7 @@ public class BooleanArrayCodec implements BinaryPojoCodecImpl<boolean[]> {
     @Override
     public boolean[] readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         ArrayList<Boolean> result = new ArrayList<>();
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readBoolean(0));
         }
         return ConverterUtils.convertList2Array(result, boolean[].class);

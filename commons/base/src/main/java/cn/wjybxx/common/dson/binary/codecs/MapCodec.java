@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.binary.codecs;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
@@ -63,7 +64,7 @@ public class MapCodec implements BinaryPojoCodecImpl<Map> {
 
         TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             Object key = reader.readObject(0, ketArgInfo);
             Object value = reader.readObject(0, valueArgInfo);
             result.put(key, value);

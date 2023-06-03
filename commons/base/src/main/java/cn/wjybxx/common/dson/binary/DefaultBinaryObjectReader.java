@@ -46,11 +46,6 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public boolean isAtEndOfObject() {
-        return reader.isAtEndOfObject();
-    }
-
-    @Override
     public DsonType readDsonType() {
         return reader.readDsonType();
     }

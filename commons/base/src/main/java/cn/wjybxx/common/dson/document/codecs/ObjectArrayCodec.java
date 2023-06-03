@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.document.codecs;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
@@ -69,7 +70,7 @@ public class ObjectArrayCodec implements DocumentPojoCodecImpl<Object[]> {
         ArrayList<Object> result = new ArrayList<>();
 
         TypeArgInfo<?> componentArgInfo = findComponentTypeArg(typeArgInfo.declaredType);
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readObject(null, componentArgInfo));
         }
 

@@ -127,13 +127,6 @@ public interface BinaryObjectReader extends AutoCloseable {
     // region 代理
 
     /**
-     * 查询是否到达了对象的末尾
-     *
-     * @see DsonBinReader#isAtEndOfObject()
-     */
-    boolean isAtEndOfObject();
-
-    /**
      * 读取下一个数据类型
      *
      * @see DsonBinReader#readDsonType()

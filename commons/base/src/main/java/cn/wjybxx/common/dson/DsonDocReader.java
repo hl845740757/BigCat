@@ -35,22 +35,6 @@ public interface DsonDocReader extends AutoCloseable {
     @Override
     void close();
 
-    /**
-     * 是否到达当前Array/Object的末尾；
-     * 1.该查询不会产生状态切换
-     * 2.如果该方法返回true，接下来的{@link #readDsonType()}必将返回{@link DsonType#END_OF_OBJECT}
-     * <p>
-     * 循环的基本写法：
-     * <pre>{@code
-     *  while(!isAtEndOfObject()) {
-     *     readDsonType();
-     *     readName();
-     *     readValue();
-     *  }
-     * }</pre>
-     */
-    boolean isAtEndOfObject();
-
     /** 当前是否处于应该读取type状态 */
     boolean isAtType();
 

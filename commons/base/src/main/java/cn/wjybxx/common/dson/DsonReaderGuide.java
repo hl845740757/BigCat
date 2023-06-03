@@ -42,7 +42,7 @@ public enum DsonReaderGuide {
     /** 当前应该结束读Object */
     END_OBJECT,
 
-    /** 当前应该关闭Reader */
+    /** 当前应该关闭Reader - 不一定准确 */
     CLOSE,
 
 }

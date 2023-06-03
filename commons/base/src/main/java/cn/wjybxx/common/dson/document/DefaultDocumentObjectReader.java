@@ -70,11 +70,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public boolean isAtEndOfObject() {
-        return reader.isAtEndOfObject();
-    }
-
-    @Override
     public DsonType readDsonType() {
         return reader.readDsonType();
     }
