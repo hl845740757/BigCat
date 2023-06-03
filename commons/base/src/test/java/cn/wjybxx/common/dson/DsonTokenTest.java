@@ -33,25 +33,25 @@ public class DsonTokenTest {
     @Test
     void test() {
         String x = "-- pos: {@Vector3 x: 0.5, y: 0.5, z: 0.5}\n" +
-                "-- posArray: [@Vector3 {x: 0.1, y: 0.1, z: 0.1}, {x: 0.2, y: 0.2, z: 0.2}]\n" +
-                "--\n" +
-                "--\n" +
-                "-- @bin {1, FFFA}\n" +
-                "-- @ei {1, 10010}\n" +
-                "-- @eL {1, 10010}\n" +
-                "-- @es {1, 10010}\n" +
-                "-- @ss intro:\n" +
-                "->   salkjlxaaslkhalkhsal,anxksjah\\n\n" +
-                "-| xalsjalkjlkalhjalskhalhslahlsanlkanclxa\n" +
-                "-| salkhaslkanlnlkhsjlanx,nalkxanla\n" +
-                "-> lsaljsaljsalsaajsal\n" +
-                "-> saklhskalhlsajlxlsamlkjalj\n" +
-                "-> salkhjsaljsljldjaslna\n" +
-                "--";
+                        "-- posArray: [@Vector3 {x: 0.1, y: 0.1, z: 0.1}, {x: 0.2, y: 0.2, z: 0.2}]\n" +
+                        "--\n" +
+                        "--\n" +
+                        "-- @bin {1, FFFA}\n" +
+                        "-- @ei {1, 10010}\n" +
+                        "-- @eL {1, 10010}\n" +
+                        "-- @es {1, 10010}\n" +
+                        "-- @ss intro:\n" +
+                        "->   salkjlxaaslkhalkhsal,anxksjah\\n\n" +
+                        "-| xalsjalkjlkalhjalskhalhslahlsanlkanclxa\n" +
+                        "-| salkhaslkanlnlkhsjlanx,nalkxanla\n" +
+                        "-> lsaljsaljsalsaajsal\n" +
+                        "-> saklhskalhlsajlxlsamlkjalj\n" +
+                        "-> salkhjsaljsljldjaslna\n" +
+                        "--";
 
         List<DsonToken> tokenList1 = new ArrayList<>(64);
         List<DsonToken> tokenList2 = new ArrayList<>(64);
-        pullToList(new DsonScanner(new DsonLineBuffer(x.lines().collect(Collectors.toList()))), tokenList1);
+        pullToList(new DsonScanner(new DsonLinesBuffer(x.lines().collect(Collectors.toList()))), tokenList1);
         pullToList(new DsonScanner(new DsonStringBuffer(x)), tokenList2);
         Assertions.assertEquals(tokenList1, tokenList2);
     }
