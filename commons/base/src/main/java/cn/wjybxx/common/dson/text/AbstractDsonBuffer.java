@@ -61,7 +61,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
                 eof = true;
                 return -1;
             } else {
-                curLine =lines.get(0);
+                curLine = lines.get(0);
                 setCurLine(curLine);
                 position = curLine.startPos;
                 return -2;

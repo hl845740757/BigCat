@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.config;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;

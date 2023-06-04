@@ -44,6 +44,16 @@ public class DsonToken {
         return (String) value;
     }
 
+    public char firstChar() {
+        String value = (String) this.value;
+        return value.charAt(0);
+    }
+
+    public char lastChar() {
+        String value = (String) this.value;
+        return value.charAt(value.length() - 1);
+    }
+
     //
     @Override
     public boolean equals(Object o) {
@@ -65,9 +75,9 @@ public class DsonToken {
 
     @Override
     public String toString() {
-        return "DsonToken[ " +
+        return "DsonToken{ " +
                 "type= " + type +
                 ", value= " + value +
-                " ]";
+                " }";
     }
 }

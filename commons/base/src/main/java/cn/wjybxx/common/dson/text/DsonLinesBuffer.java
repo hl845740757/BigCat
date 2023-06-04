@@ -50,7 +50,7 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
     }
 
     @Override
-    public void close()  {
+    public void close() {
 
     }
 

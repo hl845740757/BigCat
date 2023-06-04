@@ -16,6 +16,9 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.dson.text.DsonToken;
+import cn.wjybxx.common.dson.text.TokenType;
+
 import java.util.List;
 
 /**
@@ -50,7 +53,7 @@ public class DsonCodecException extends RuntimeException {
         return new DsonCodecException(e);
     }
 
-    //
+    // reader/writer
     public static DsonCodecException recursionLimitExceeded() {
         return new DsonCodecException("Object had too many levels of nesting.");
     }
@@ -100,6 +103,19 @@ public class DsonCodecException extends RuntimeException {
     public static DsonCodecException bytesRemain(int bytesUntilLimit) {
         return new DsonCodecException("bytes remain " + bytesUntilLimit);
     }
+
+    public static DsonCodecException invalidTokenType(DsonContextType contextType, DsonToken token) {
+        return new DsonCodecException(String.format("invalid token, contextType %s, token %s.", contextType, token));
+    }
+
+    public static DsonCodecException invalidTokenType(DsonContextType contextType, DsonToken token, List<TokenType> expected) {
+        return new DsonCodecException(String.format("invalid token, contextType %s, expected %s, but found %s.",
+                contextType, expected, token));
+    }
+
+    // endregion
+
+
     //
 
     public static DsonCodecException unsupportedType(Class<?> type) {

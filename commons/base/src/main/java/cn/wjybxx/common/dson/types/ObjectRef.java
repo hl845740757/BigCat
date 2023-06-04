@@ -42,8 +42,8 @@ public final class ObjectRef {
     /** 引用的解析策略 -  0：默认 1：解析为引用 2：内联复制，3：不解析 */
     private final int policy;
 
-    public ObjectRef(long localId) {
-        this(localId, null, 0, 0);
+    public ObjectRef(long localId, String guid) {
+        this(localId, guid, 0, 0);
     }
 
     public ObjectRef(long localId, String guid, int type, int policy) {

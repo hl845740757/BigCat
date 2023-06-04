@@ -40,4 +40,12 @@ public enum DsonContextType {
         this.dsonType = dsonType;
     }
 
+    public boolean isLikeArray() {
+        return this == ARRAY || this == TOP_LEVEL;
+    }
+
+    public boolean isLikeObject() {
+        return this == OBJECT || this == HEADER;
+    }
+
 }

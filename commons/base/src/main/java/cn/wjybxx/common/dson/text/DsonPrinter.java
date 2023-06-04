@@ -22,4 +22,29 @@ package cn.wjybxx.common.dson.text;
  */
 public interface DsonPrinter {
 
+    void writeName(String name);
+
+    void writeBoolean(String name, boolean value);
+
+    void writeInt32(String name, boolean value);
+
+    void writeNumber(String name, String value);
+
+    void writeString(String name, String value);
+
+    void writeRaw(String name, String value);
+
+    void writeNull(String name);
+
+    void writeStartArray(String name);
+
+    void writeStartArray();
+
+    void writeEndArray();
+
+    void writeStartObject(String name);
+
+    void writeStartObject();
+
+    void writeEndObject();
 }

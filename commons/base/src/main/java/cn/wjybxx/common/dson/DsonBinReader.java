@@ -109,11 +109,11 @@ public interface DsonBinReader extends AutoCloseable {
 
     DsonBinary readBinary(int name);
 
-    DsonExtString readExtString(int name);
-
     DsonExtInt32 readExtInt32(int name);
 
     DsonExtInt64 readExtInt64(int name);
+
+    DsonExtString readExtString(int name);
 
     ObjectRef readObjectRef(int name);
 

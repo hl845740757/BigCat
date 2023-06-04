@@ -60,7 +60,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name,  DsonBinaryType.PROTOBUF_MESSAGE.getValue(), messageLite);
+            writer.writeMessage(name, DsonBinaryType.PROTOBUF_MESSAGE.getValue(), messageLite);
         }
     }
 

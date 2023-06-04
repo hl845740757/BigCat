@@ -70,13 +70,19 @@ public class DsonTexts {
     public static final Set<String> CONTENT_LHEAD_SET = Set.of(LHEAD_APPEND_LINE, LHEAD_APPEND, LHEAD_TEXT_APPEND_LINE);
 
     // 默认header名字
-    public static final String CLASS_NAME = "className";
-    public static final String CLASS_ID = "classId";
-    public static final String COMP_NAME = "compName";
+    public static final String CLASS_NAME = "clsName";
+    public static final String CLASS_ID = "clsId";
+    public static final String COMP_NAME = "compClsName";
+    public static final String COMP_CLASS_ID = "compClsId";
     public static final String IS_COMP_TEXT = "isCompText";
     public static final String LOCAL_ID = "localId";
     public static final String GUID = "guid";
     public static final String TAGS = "tags";
+
+    public static final String REF_FIELDS_LOCAL_ID = "localId";
+    public static final String REF_FIELDS_GUID = "guid";
+    public static final String REF_FIELDS_TYPE = "type";
+    public static final String REF_FIELDS_POLICY = "policy";
 
     // 特殊字符串
     private static final Set<String> PARSABLE_STRINGS = Set.of("true", "false", "null", "undefine");

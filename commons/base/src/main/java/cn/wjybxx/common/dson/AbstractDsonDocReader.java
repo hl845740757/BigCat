@@ -165,6 +165,12 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         context.setState(DsonReaderState.TYPE);
     }
 
+    protected static void verifyState(Context context, DsonReaderState expected) {
+        if (context.state != expected) {
+            throw DsonCodecException.invalidState(context.contextType, List.of(expected), context.state);
+        }
+    }
+
     protected DsonCodecException invalidState(List<DsonReaderState> expected) {
         return DsonCodecException.invalidState(context.contextType, expected, context.state);
     }
@@ -235,14 +241,6 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     }
 
     @Override
-    public DsonExtString readExtString(String name) {
-        advanceToValueState(name, DsonType.EXT_STRING);
-        DsonExtString value = doReadExtString();
-        setNextState();
-        return value;
-    }
-
-    @Override
     public DsonExtInt32 readExtInt32(String name) {
         advanceToValueState(name, DsonType.EXT_INT32);
         DsonExtInt32 value = doReadExtInt32();
@@ -254,6 +252,14 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     public DsonExtInt64 readExtInt64(String name) {
         advanceToValueState(name, DsonType.EXT_INT64);
         DsonExtInt64 value = doReadExtInt64();
+        setNextState();
+        return value;
+    }
+
+    @Override
+    public DsonExtString readExtString(String name) {
+        advanceToValueState(name, DsonType.EXT_STRING);
+        DsonExtString value = doReadExtString();
         setNextState();
         return value;
     }
@@ -282,11 +288,11 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
 
     protected abstract DsonBinary doReadBinary();
 
-    protected abstract DsonExtString doReadExtString();
-
     protected abstract DsonExtInt32 doReadExtInt32();
 
     protected abstract DsonExtInt64 doReadExtInt64();
+
+    protected abstract DsonExtString doReadExtString();
 
     protected abstract ObjectRef doReadRef();
 

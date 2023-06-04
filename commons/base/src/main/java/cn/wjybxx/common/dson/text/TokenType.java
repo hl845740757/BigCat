@@ -39,10 +39,6 @@ public enum TokenType {
     COLON,
     /** 元素分隔符，英文逗号 ',' */
     COMMA,
-    /** 字符串， 显式声明 '@s' 或存在双引号 */
-    STRING,
-    /** 对象的头信息，'@className' 或 '@{' */
-    HEADER,
 
     /** 显式声明 '@i' */
     INT32,
@@ -54,18 +50,13 @@ public enum TokenType {
     DOUBLE,
     /** 显式声明 '@b' */
     BOOL,
+    /** 字符串， 显式声明 '@s' 或存在双引号 */
+    STRING,
     /** 显式声明 '@N' */
     NULL,
 
-    /** 显式声明 @bin */
-    BINARY,
-    /** 显式声明 @ei */
-    EXTINT32,
-    /** 显式声明 @eL */
-    EXTINT64,
-    /** 显式声明 @es */
-    EXTSTRING,
-
+    /** 对象的头信息，'@clsName' 或 '@{...}' */
+    HEADER,
     /** 无引号字符串，scan的时候不解析，使得返回后可以根据上下文推断其类型 */
     UNQUOTE_STRING,
 
