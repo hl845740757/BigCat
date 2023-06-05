@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 默认的
+ * 抽象实现，提供基于Dson语法的字符串解析目标
  *
  * @author wjybxx
  * date - 2023/6/3
@@ -62,20 +62,21 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
                 return -1;
             } else {
                 curLine = lines.get(0);
-                setCurLine(curLine);
-                position = curLine.startPos;
+                onReadNextLine(curLine);
                 return -2;
             }
         } else if (position == curLine.endPos) {
             return onReadEndOfLine();
         } else {
-            if (curLine.contentStartPos < 0
-                    || position + 1 == curLine.endPos) { // 无可读内容
+            if (curLine.contentStartPos < 0) { // 无可读内容
                 position = curLine.endPos;
                 return onReadEndOfLine();
             }
             if (position < curLine.contentStartPos) { // 初始读
                 position = curLine.contentStartPos;
+            } else if (position + 1 == curLine.endPos) { // 读完
+                position = curLine.endPos;
+                return onReadEndOfLine();
             } else {
                 position++;
             }
@@ -87,6 +88,11 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
 
     protected abstract void scanNextLine();
 
+    private void onReadNextLine(T curLine) {
+        setCurLine(curLine);
+        position = curLine.startPos;
+    }
+
     private int onReadEndOfLine() {
         // 由于存在unread，因此要检查，避免过早解析
         T curLine = this.curLine;
@@ -95,8 +101,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
         }
         if (curLine.index + 1 < lines.size()) {
             curLine = lines.get(curLine.index + 1);
-            setCurLine(curLine);
-            position = curLine.startPos;
+            onReadNextLine(curLine);
             return -2;
         } else {
             eof = true;
@@ -116,7 +121,9 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
             position--;
         } else if (position == curLine.contentStartPos) {
             position = curLine.startPos;
-        } else if (position == curLine.startPos) {
+        } else {
+            assert position == curLine.startPos;
+            // 回退上一行
             if (curLine.index > 0) {
                 curLine = lines.get(curLine.index - 1);
                 setCurLine(curLine);
@@ -125,8 +132,6 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
                 setCurLine(null);
                 position = -1;
             }
-        } else {
-            throw new IllegalStateException("???");
         }
     }
 
@@ -162,7 +167,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
      * @param startPos inclusive 0-based
      * @param endPos   exclusive 0-based
      */
-    static LheadType parseLhead(final String line, int startPos, int endPos, int ln) {
+    static LheadType parseLhead(final CharSequence line, int startPos, int endPos, int ln) {
         // 减少不必要的字符串切割
         int startIndex = startPos;
         while (startIndex < endPos && Character.isWhitespace(line.charAt(startIndex))) {
@@ -180,7 +185,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
         if (endIndex < endPos && line.charAt(endIndex) != ' ') {
             throw new DsonParseException(String.format("The first indent char must be a space, ln: %d, char: '%c' ", ln, line.charAt(endIndex)));
         }
-        String lhead = line.substring(startIndex, endIndex);
+        String lhead = line.subSequence(startIndex, endIndex).toString();
         if (DsonTexts.CONTENT_LHEAD_SET.contains(lhead)) {
             return LheadType.ofLabel(lhead);
         }
@@ -191,14 +196,28 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
      * @param startPos inclusive 0-based
      * @param endPos   exclusive 0-based
      */
-    static int indexContentStart(String line, int startPos, int endPos) {
+    static int indexContentStart(CharSequence line, int startPos, int endPos) {
         // 我们的内容label都是两个字符，都是 - 开头，且和内容之间一个空白字符
-        final int startIndex = line.indexOf('-', startPos);
+        int startIndex = startPos;
+        while (line.charAt(startIndex) != '-') {
+            startIndex++;
+        }
         final int targetIndex = startIndex + DsonTexts.CONTENT_LHEAD_LENGTH + 1;
         if (targetIndex < endPos) {
             return targetIndex;
         }
         return -1;
+    }
+
+    /**
+     * @param startPos inclusive 0-based
+     * @param endPos   exclusive 0-based
+     */
+    static boolean isCommentLine(CharSequence line, int startPos, int endPos) {
+        while (startPos < endPos && Character.isWhitespace(line.charAt(startPos))) {
+            startPos++;
+        }
+        return startPos >= endPos || line.charAt(startPos) == '#';
     }
 
 }

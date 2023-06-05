@@ -20,6 +20,7 @@ import cn.wjybxx.common.dson.document.DocumentConverterUtils;
 import cn.wjybxx.common.dson.text.DsonLinesBuffer;
 import cn.wjybxx.common.dson.text.DsonScanner;
 import cn.wjybxx.common.dson.text.DsonTextReader;
+import cn.wjybxx.common.dson.text.JsonBuffer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,8 +39,17 @@ public class Json2DsonTest {
 
     @Test
     void test() {
-        DsonTextReader reader = new DsonTextReader(16, new DsonScanner(DsonLinesBuffer.ofJson(jsonString)));
-        DsonValue dsonValue = DocumentConverterUtils.readTopDsonValue(reader);
-        Assertions.assertInstanceOf(DsonObject.class, dsonValue);
+        DsonValue dsonValue;
+        try (DsonTextReader reader = new DsonTextReader(16, new DsonScanner(DsonLinesBuffer.ofJson(jsonString)))) {
+            dsonValue = DocumentConverterUtils.readTopDsonValue(reader);
+            Assertions.assertInstanceOf(DsonObject.class, dsonValue);
+        }
+
+        DsonValue dsonValue2;
+        try (DsonTextReader reader = new DsonTextReader(16, new DsonScanner(new JsonBuffer(jsonString)))) {
+            dsonValue2 = DocumentConverterUtils.readTopDsonValue(reader);
+            Assertions.assertInstanceOf(DsonObject.class, dsonValue);
+        }
+        Assertions.assertEquals(dsonValue, dsonValue2);
     }
 }

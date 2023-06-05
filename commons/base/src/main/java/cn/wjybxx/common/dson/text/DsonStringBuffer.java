@@ -25,9 +25,9 @@ import java.util.Objects;
  */
 public class DsonStringBuffer extends AbstractDsonBuffer<LineInfo> {
 
-    private final String buffer;
+    private final CharSequence buffer;
 
-    public DsonStringBuffer(String buffer) {
+    public DsonStringBuffer(CharSequence buffer) {
         this.buffer = Objects.requireNonNull(buffer);
     }
 
@@ -38,47 +38,27 @@ public class DsonStringBuffer extends AbstractDsonBuffer<LineInfo> {
 
     @Override
     protected void scanNextLine() {
-        String buffer = this.buffer;
+        CharSequence buffer = this.buffer;
         List<LineInfo> lines = this.lines;
         int bufferLength = buffer.length();
 
-        int startPos = 0;
-        int ln = 1;
-        if (lines.size() > 0) {
-            LineInfo lastLine = lines.get(lines.size() - 1);
-            startPos = lastLine.endPos;
-            // 先跳过当前行换行符，如果不是最后一行
-            while (startPos < bufferLength && buffer.charAt(startPos) != '\n') {
-                startPos++;
-            }
-            startPos++;
-            ln = lastLine.ln + 1;
-        }
-
+        int startPos = indexNextLineStartPos(buffer, lines, bufferLength);
+        int ln = getNextLn(lines);
         int endPos = startPos;
         while (endPos < bufferLength) {
             char c = buffer.charAt(endPos);
-            // 现在操作系统的换行符只有: \r\n (windows) 和 \n (unix, mac)
-            // 检查中途是否出现单独的 \r
             if (c == '\n' || c == '\r' || endPos == bufferLength - 1) {
-                if (c == '\r') {
-                    if (endPos + 1 != bufferLength && buffer.charAt(endPos + 1) != '\n') {
-                        throw new DsonParseException("invalid input. A separate \\r, \\r\\n or \\n is require, Position: " + endPos);
-                    }
+                checkLRLF(buffer, bufferLength, endPos, c);
+                if (startPos == endPos) { // 空行
+                    endPos += lengthLRLF(c);
+                    continue;
                 }
-                if (endPos == bufferLength - 1) { // eof
+                if (endPos == bufferLength - 1) { // eof - parse需要扫描到该位置
                     endPos = bufferLength;
                 }
                 LheadType lheadType = parseLhead(buffer, startPos, endPos, ln);
-                if (lheadType == LheadType.COMMENT) {
-                    if (endPos == bufferLength) { // eof
-                        break;
-                    }
-                    if (c == '\r') { // \r\n
-                        endPos += 2;
-                    } else {
-                        endPos += 1;
-                    }
+                if (lheadType == LheadType.COMMENT) { // 注释行
+                    endPos += lengthLRLF(c);
                     continue;
                 }
                 int contentStartPos = indexContentStart(buffer, startPos, endPos);
@@ -88,6 +68,44 @@ public class DsonStringBuffer extends AbstractDsonBuffer<LineInfo> {
             }
             endPos++;
         }
+    }
+
+    /**
+     * 现在操作系统的换行符只有: \r\n (windows) 和 \n (unix, mac)
+     * 检查中途是否出现单独的 \r
+     */
+    static void checkLRLF(CharSequence buffer, int bufferLength, int endPos, char c) {
+        if (c == '\r') {
+            if (endPos + 1 != bufferLength && buffer.charAt(endPos + 1) != '\n') {
+                throw new DsonParseException("invalid input. A separate \\r, \\r\\n or \\n is require, Position: " + endPos);
+            }
+        }
+    }
+
+    static int lengthLRLF(char c) {
+        // \r\n
+        return c == '\r' ? 2 : 1;
+    }
+
+    static int getNextLn(List<LineInfo> lines) {
+        if (lines.size() == 0) return 1;
+        return lines.get(lines.size() - 1).ln + 1;
+    }
+
+    static int indexNextLineStartPos(CharSequence buffer, List<LineInfo> lines, int bufferLength) {
+        int startPos = 0;
+        if (lines.size() > 0) {
+            LineInfo lastLine = lines.get(lines.size() - 1);
+            startPos = lastLine.endPos;
+            // 先跳过当前行换行符，如果不是最后一行
+            while (startPos < bufferLength && buffer.charAt(startPos) != '\n') {
+                startPos++;
+            }
+            if (startPos < bufferLength) {
+                startPos++;
+            }
+        }
+        return startPos;
     }
 
     @Override

@@ -27,7 +27,7 @@ class LineInfo {
 
     /** 行全局起始位置，包含行首，与上一行只差包含换行符 */
     final int startPos;
-    /** 行全局结束位置，包含换行符 */
+    /** 行全局结束位置，包含换行符 -- start和end相等时表示空行 */
     final int endPos;
     /** 内容全局起始位置，可能 -1 */
     final int contentStartPos;
