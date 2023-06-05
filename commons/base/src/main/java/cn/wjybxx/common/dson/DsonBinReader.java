@@ -115,7 +115,7 @@ public interface DsonBinReader extends AutoCloseable {
 
     DsonExtString readExtString(int name);
 
-    ObjectRef readObjectRef(int name);
+    ObjectRef readRef(int name);
 
     // endregion
 

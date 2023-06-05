@@ -32,23 +32,37 @@ public final class ObjectHeader {
 
     /** 对象的类型名 */
     private final String className;
+    /** 数组成员/Object-Value的类型名 */
+    private final String compClassName;
+    /** 对象的唯一id */
+    private final String guid;
     /** 对象的本地id  - 如果为0则不编码 */
     private final long localId;
     /** 字符串自定义标签 */
     private final List<String> tags;
 
     public ObjectHeader(String className) {
-        this(className, 0);
+        this(className, null, null, 0);
     }
 
-    public ObjectHeader(String className, long localId) {
+    public ObjectHeader(String className, String compClassName, String guid, long localId) {
         this.className = className;
+        this.compClassName = compClassName;
+        this.guid = guid;
         this.localId = localId;
         this.tags = CollectionUtils.newSmallArrayList();
     }
 
     public String getClassName() {
         return className;
+    }
+
+    public String getCompClassName() {
+        return compClassName;
+    }
+
+    public String getGuid() {
+        return guid;
     }
 
     public long getLocalId() {

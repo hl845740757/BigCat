@@ -201,7 +201,7 @@ public class BinaryConverterUtils extends ConverterUtils {
             case EXT_STRING -> reader.readExtString(name);
             case EXT_INT32 -> reader.readExtInt32(name);
             case EXT_INT64 -> reader.readExtInt64(name);
-            case REFERENCE -> new DsonObjectRef(reader.readObjectRef(name));
+            case REFERENCE -> new DsonObjectRef(reader.readRef(name));
             case NULL -> {
                 reader.readNull(name);
                 yield DsonNull.INSTANCE;

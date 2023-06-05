@@ -37,21 +37,9 @@ public class MutableDsonObject<K> extends DsonObject<K> {
         this(expectedSize, new MutableDsonHeader<>());
     }
 
-    public MutableDsonObject(int expectedSize, MutableDsonHeader<K> header) {
+    public MutableDsonObject(int expectedSize, DsonHeader<K> header) {
         super(CollectionUtils.newLinkedHashMap(expectedSize));
         this.header = Objects.requireNonNull(header);
-    }
-
-    public static MutableDsonObject<FieldNumber> newBinObject(int expectedSize) {
-        return new MutableDsonObject<>(expectedSize);
-    }
-
-    public static MutableDsonObject<String> newDocObject(int expectedSize) {
-        return new MutableDsonObject<>(expectedSize);
-    }
-
-    static IllegalArgumentException nameOrValueIsNull() {
-        return new IllegalArgumentException("name and value cant be null");
     }
 
     @Nonnull

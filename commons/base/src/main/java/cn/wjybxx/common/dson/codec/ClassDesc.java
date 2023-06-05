@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.types;
+package cn.wjybxx.common.dson.codec;
 
 import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.Preconditions;

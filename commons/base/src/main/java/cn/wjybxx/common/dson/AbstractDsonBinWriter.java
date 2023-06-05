@@ -170,13 +170,8 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeBinary(int name, DsonBinary dsonBinary) {
-        writeBinary(name, dsonBinary.getType(), dsonBinary.getData());
-    }
-
-    @Override
-    public void writeBinary(int name, int type, byte[] data) {
         advanceToValueState(name);
-        doWriteBinary(type, data);
+        doWriteBinary(dsonBinary);
         setNextState();
     }
 
@@ -188,38 +183,23 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
     }
 
     @Override
-    public void writeExtString(int name, DsonExtString value) {
-        writeExtString(name, value.getType(), value.getValue());
-    }
-
-    @Override
-    public void writeExtString(int name, int type, String value) {
-        advanceToValueState(name);
-        doWriteExtString(type, value);
-        setNextState();
-    }
-
-    @Override
     public void writeExtInt32(int name, DsonExtInt32 value, WireType wireType) {
-        writeExtInt32(name, value.getType(), value.getValue(), wireType);
-    }
-
-    @Override
-    public void writeExtInt32(int name, int type, int value, WireType wireType) {
         advanceToValueState(name);
-        doWriteExtInt32(type, value, wireType);
+        doWriteExtInt32(value, wireType);
         setNextState();
     }
 
     @Override
     public void writeExtInt64(int name, DsonExtInt64 value, WireType wireType) {
-        writeExtInt64(name, value.getType(), value.getValue(), wireType);
+        advanceToValueState(name);
+        doWriteExtInt64(value, wireType);
+        setNextState();
     }
 
     @Override
-    public void writeExtInt64(int name, int type, long value, WireType wireType) {
+    public void writeExtString(int name, DsonExtString value) {
         advanceToValueState(name);
-        doWriteExtInt64(type, value, wireType);
+        doWriteExtString(value);
         setNextState();
     }
 
@@ -244,15 +224,15 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     protected abstract void doWriteNull();
 
-    protected abstract void doWriteBinary(int type, byte[] data);
+    protected abstract void doWriteBinary(DsonBinary binary);
 
     protected abstract void doWriteBinary(int type, Chunk chunk);
 
-    protected abstract void doWriteExtString(int type, String value);
+    protected abstract void doWriteExtInt32(DsonExtInt32 value, WireType wireType);
 
-    protected abstract void doWriteExtInt32(int type, int value, WireType wireType);
+    protected abstract void doWriteExtInt64(DsonExtInt64 value, WireType wireType);
 
-    protected abstract void doWriteExtInt64(int type, long value, WireType wireType);
+    protected abstract void doWriteExtString(DsonExtString value);
 
     protected abstract void doWriteRef(ObjectRef objectRef);
 

@@ -79,21 +79,21 @@ public abstract class DsonValue {
         return (DsonObjectRef) this;
     }
 
-    //
     @SuppressWarnings("unchecked")
-    public MutableDsonHeader<String> asDocHeader() {
+    public MutableDsonHeader<String> asHeader() {
         return (MutableDsonHeader<String>) this;
     }
 
     @SuppressWarnings("unchecked")
-    public MutableDsonArray<String> asDocArray() {
+    public MutableDsonArray<String> asArray() {
         return (MutableDsonArray<String>) this;
     }
 
     @SuppressWarnings("unchecked")
-    public MutableDsonObject<String> asDocObject() {
+    public MutableDsonObject<String> asObject() {
         return (MutableDsonObject<String>) this;
     }
+    //
 
     @SuppressWarnings("unchecked")
     public MutableDsonHeader<FieldNumber> asBinHeader() {

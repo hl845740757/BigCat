@@ -104,25 +104,20 @@ public @interface FieldImpl {
     WireType wireType() default WireType.VARINT;
 
     /**
-     * 数据关联的{@link DsonType}，通常不需要声明该属性，需要特殊序列化的字段才需要。
-     * 1.可将一个int值声明为特殊的类型，使用{@link DsonType#EXT_INT32}时需同时指定{@link #extInt32Type()}
-     * 2.可将一个long值声明为特殊的类型，使用{@link DsonType#EXT_INT64}时需同时指定{@link #extInt64Type()}
-     * 3.可将一个String值声明为特殊的类型，使用{@link DsonType#EXT_STRING}时需同时指定{@link #extStringType()}
-     * 4.可将一个byte[]值声明为特殊的类型，使用{@link DsonType#BINARY}时需同时指定{@link #binaryType()}
+     * 数据关联的{@link DsonType}，配合{@link #dsonSubType()}使用
+     * 1.可声明 byte[] 的子类型
+     * 2.可将普通的int32/int64/string声明为带标签的对应结构
      */
     DsonType dsonType() default DsonType.END_OF_OBJECT;
 
-    /** 二进制的类型 */
-    DsonBinaryType binaryType() default DsonBinaryType.NORMAL;
-
-    /** int值的特殊释义 */
-    DsonExtInt32Type extInt32Type() default DsonExtInt32Type.NORMAL;
-
-    /** long值的特殊释义 */
-    DsonExtInt64Type extInt64Type() default DsonExtInt64Type.NORMAL;
-
-    /** String值的特殊释义 */
-    DsonExtStringType extStringType() default DsonExtStringType.NORMAL;
+    /**
+     * 用于声明子类型
+     * {@link DsonType#BINARY}
+     * {@link DsonType#EXT_INT32}
+     * {@link DsonType#EXT_INT64}
+     * {@link DsonType#EXT_STRING}
+     */
+    int dsonSubType() default 0;
 
     // endregion
 

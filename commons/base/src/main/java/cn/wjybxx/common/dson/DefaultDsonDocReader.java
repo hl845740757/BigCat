@@ -171,7 +171,7 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
 
     @Override
     protected ObjectRef doReadRef() {
-        return DsonReaderUtils.readObjectRef(input);
+        return DsonReaderUtils.readRef(input);
     }
 
     // endregion

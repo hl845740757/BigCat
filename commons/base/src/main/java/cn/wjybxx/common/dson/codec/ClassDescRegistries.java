@@ -18,7 +18,6 @@ package cn.wjybxx.common.dson.codec;
 
 import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.Preconditions;
-import cn.wjybxx.common.dson.types.ClassDesc;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 

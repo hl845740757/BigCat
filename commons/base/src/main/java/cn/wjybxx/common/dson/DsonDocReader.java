@@ -111,7 +111,7 @@ public interface DsonDocReader extends AutoCloseable {
 
     DsonExtString readExtString(String name);
 
-    ObjectRef readObjectRef(String name);
+    ObjectRef readRef(String name);
 
     // endregion
 

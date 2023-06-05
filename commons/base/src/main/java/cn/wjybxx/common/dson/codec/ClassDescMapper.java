@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.dson.codec;
 
-import cn.wjybxx.common.dson.types.ClassDesc;
-
 import javax.annotation.Nonnull;
 
 /**

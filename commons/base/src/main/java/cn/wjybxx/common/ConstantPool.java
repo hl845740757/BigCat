@@ -80,7 +80,7 @@ public class ConstantPool<T extends Constant<T>> {
      * 2.如果关联的常量不存在，但可以默认创建，则创建一个新的常量并返回，否则抛出异常。
      */
     public final T valueOf(String name) {
-        ConstantPreconditions.checkName(name);
+        Constant.Preconditions.checkName(name);
         if (factory == null) {
             return getOrThrow(name);
         } else {
@@ -92,7 +92,7 @@ public class ConstantPool<T extends Constant<T>> {
      * 创建一个常量，如果已存在关联的常量，则抛出异常。
      */
     public final T newInstance(String name) {
-        ConstantPreconditions.checkName(name);
+        Constant.Preconditions.checkName(name);
         if (factory == null) {
             throw new IllegalStateException("builder required");
         }
@@ -113,7 +113,7 @@ public class ConstantPool<T extends Constant<T>> {
      * @return 如果给定名字存在关联的常量，则返回true
      */
     public final boolean exists(String name) {
-        ConstantPreconditions.checkName(name);
+        Constant.Preconditions.checkName(name);
         return constants.containsKey(name);
     }
 
@@ -124,7 +124,7 @@ public class ConstantPool<T extends Constant<T>> {
      */
     @Nullable
     public final T get(String name) {
-        ConstantPreconditions.checkName(name);
+        Constant.Preconditions.checkName(name);
         return constants.get(name);
     }
 
@@ -136,7 +136,7 @@ public class ConstantPool<T extends Constant<T>> {
      * @throws IllegalArgumentException 如果不存在对应的常量
      */
     public final T getOrThrow(String name) {
-        ConstantPreconditions.checkName(name);
+        Constant.Preconditions.checkName(name);
         final T constant = constants.get(name);
         if (null == constant) {
             throw new IllegalArgumentException(name + " does not exist");

@@ -163,7 +163,7 @@ public class DefaultDsonBinReader extends AbstractDsonBinReader {
 
     @Override
     protected ObjectRef doReadRef() {
-        return DsonReaderUtils.readObjectRef(input);
+        return DsonReaderUtils.readRef(input);
     }
 
     // endregion

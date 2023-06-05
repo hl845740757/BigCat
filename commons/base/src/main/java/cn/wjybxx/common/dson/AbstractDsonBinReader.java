@@ -265,7 +265,7 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
     }
 
     @Override
-    public ObjectRef readObjectRef(int name) {
+    public ObjectRef readRef(int name) {
         advanceToValueState(name, DsonType.REFERENCE);
         ObjectRef value = doReadRef();
         setNextState();

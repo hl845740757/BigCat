@@ -72,7 +72,7 @@ public class DsonReaderWriterTest {
             DsonDocReader reader = new DefaultDsonDocReader(dsonInput, 16);
             DsonValue dsonValue;
             while ((dsonValue = DocumentConverterUtils.readTopDsonValue(reader)) != null) {
-                copiedList.add(dsonValue.asDocObject());
+                copiedList.add(dsonValue.asObject());
             }
         }
 

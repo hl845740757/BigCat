@@ -81,7 +81,6 @@ public class DsonFloat extends DsonNumber implements Comparable<DsonFloat> {
         return (value != 0.0f ? Float.floatToIntBits(value) : 0);
     }
 
-
     @Override
     public String toString() {
         return "DsonFloat{" +

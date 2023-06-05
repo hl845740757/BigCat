@@ -38,9 +38,11 @@ public interface DsonPrinter {
 
     void writeNull(String name);
 
+    /** 无类型数字 */
     void writeNumber(String name, double value);
 
-    void writeRaw(String name, String value);
+    /** 可指定字符串写入模式 */
+    void writeString(String name, String value, StringMode mode);
 
     void writeStartArray(String name);
 

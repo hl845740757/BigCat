@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.common.dson.text;
 
 /**
  * @author wjybxx
- * date - 2023/5/22
+ * date - 2023/6/5
  */
-public class ConstantPreconditions {
+public enum StringMode {
 
-    public static String checkName(String name) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("name is empty ");
-        }
-        return name;
-    }
+    /** 自动判别 */
+    AUTO,
+
+    /** 加引号 */
+    QUOTE,
+
+    /** 不加引号 */
+    UNQUOTE,
+
+    /** 文本模式 - 无引号升级版 */
+    TEXT,
 
 }

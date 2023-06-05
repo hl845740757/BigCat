@@ -36,7 +36,7 @@ public class MutableDsonArray<K> extends DsonArray<K> {
         this(initCapacity, new MutableDsonHeader<>());
     }
 
-    public MutableDsonArray(int initCapacity, MutableDsonHeader<K> header) {
+    public MutableDsonArray(int initCapacity, DsonHeader<K> header) {
         super(new ArrayList<>(initCapacity));
         this.header = Objects.requireNonNull(header);
     }

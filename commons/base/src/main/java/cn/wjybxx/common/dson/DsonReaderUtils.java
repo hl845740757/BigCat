@@ -39,10 +39,10 @@ public class DsonReaderUtils {
 
     // region 字节流
 
-    public static void writeBinary(DsonOutput output, int type, byte[] data) {
-        output.writeFixed32(1 + data.length);
-        output.writeRawByte(type);
-        output.writeRawBytes(data);
+    public static void writeBinary(DsonOutput output, DsonBinary binary) {
+        output.writeFixed32(1 + binary.getData().length);
+        output.writeRawByte(binary.getType());
+        output.writeRawBytes(binary.getData());
     }
 
     public static void writeBinary(DsonOutput output, int type, Chunk chunk) {
@@ -58,20 +58,9 @@ public class DsonReaderUtils {
                 input.readRawBytes(size - 1));
     }
 
-    public static void writeExtString(DsonOutput output, int type, String value) {
-        output.writeUint32(type);
-        output.writeString(value);
-    }
-
-    public static DsonExtString readDsonExtString(DsonInput input) {
-        return new DsonExtString(
-                input.readUint32(),
-                input.readString());
-    }
-
-    public static void writeExtInt32(DsonOutput output, int type, int value, WireType wireType) {
-        output.writeUint32(type);
-        wireType.writeInt32(output, value);
+    public static void writeExtInt32(DsonOutput output, DsonExtInt32 extInt32, WireType wireType) {
+        output.writeUint32(extInt32.getType());
+        wireType.writeInt32(output, extInt32.getValue());
     }
 
     public static DsonExtInt32 readDsonExtInt32(DsonInput input, WireType wireType) {
@@ -80,15 +69,26 @@ public class DsonReaderUtils {
                 wireType.readInt32(input));
     }
 
-    public static void writeExtInt64(DsonOutput output, int type, long value, WireType wireType) {
-        output.writeUint32(type);
-        wireType.writeInt64(output, value);
+    public static void writeExtInt64(DsonOutput output, DsonExtInt64 extInt64, WireType wireType) {
+        output.writeUint32(extInt64.getType());
+        wireType.writeInt64(output, extInt64.getValue());
     }
 
     public static DsonExtInt64 readDsonExtInt64(DsonInput input, WireType wireType) {
         return new DsonExtInt64(
                 input.readUint32(),
                 wireType.readInt64(input));
+    }
+
+    public static void writeExtString(DsonOutput output, DsonExtString extString) {
+        output.writeUint32(extString.getType());
+        output.writeString(extString.getValue());
+    }
+
+    public static DsonExtString readDsonExtString(DsonInput input) {
+        return new DsonExtString(
+                input.readUint32(),
+                input.readString());
     }
 
     public static void writeRef(DsonOutput output, ObjectRef objectRef) {
@@ -98,7 +98,7 @@ public class DsonReaderUtils {
         output.writeUint32(objectRef.getPolicy());
     }
 
-    public static ObjectRef readObjectRef(DsonInput input) {
+    public static ObjectRef readRef(DsonInput input) {
         return new ObjectRef(
                 input.readUint64(),
                 input.readString(),

@@ -265,7 +265,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
     }
 
     @Override
-    public ObjectRef readObjectRef(String name) {
+    public ObjectRef readRef(String name) {
         advanceToValueState(name, DsonType.REFERENCE);
         ObjectRef value = doReadRef();
         setNextState();
