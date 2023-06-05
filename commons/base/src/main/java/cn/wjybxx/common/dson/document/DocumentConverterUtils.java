@@ -236,19 +236,13 @@ public class DocumentConverterUtils extends ConverterUtils {
                 reader.readNull(name);
                 yield DsonNull.INSTANCE;
             }
-            case OBJECT -> {
-                reader.readName(name);
-                yield readObject(reader);
-            }
             case HEADER -> {
                 MutableDsonHeader<String> header = new MutableDsonHeader<>();
                 readHeader(reader, header);
                 yield header;
             }
-            case ARRAY -> {
-                reader.readName(name);
-                yield readArray(reader);
-            }
+            case OBJECT -> readObject(reader);
+            case ARRAY -> readArray(reader);
             case END_OF_OBJECT -> throw new AssertionError();
         };
     }

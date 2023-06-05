@@ -132,6 +132,7 @@ public abstract class AbstractDsonBuffer<T extends LineInfo> implements DsonBuff
 
     @Override
     public LheadType lhead() {
+        if (curLine == null) throw new IllegalStateException("read must be called before lhead");
         return curLine.lheadType;
     }
 

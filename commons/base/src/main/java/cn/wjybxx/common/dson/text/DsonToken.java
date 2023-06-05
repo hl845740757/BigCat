@@ -24,6 +24,21 @@ import java.util.Objects;
  */
 public class DsonToken {
 
+    public static final DsonToken EOF = new DsonToken(TokenType.EOF, "eof");
+
+    public static final DsonToken BEGIN_OBJECT_WITH_HEADER = new DsonToken(TokenType.BEGIN_OBJECT, "{@");
+    public static final DsonToken BEGIN_OBJECT = new DsonToken(TokenType.BEGIN_OBJECT, "{");
+    public static final DsonToken END_OBJECT = new DsonToken(TokenType.END_OBJECT, "}");
+
+    public static final DsonToken BEGIN_ARRAY_WITH_HEADER = new DsonToken(TokenType.BEGIN_ARRAY, "[@");
+    public static final DsonToken BEGIN_ARRAY = new DsonToken(TokenType.BEGIN_ARRAY, "[");
+    public static final DsonToken END_ARRAY = new DsonToken(TokenType.END_ARRAY, "]");
+
+    public static final DsonToken COLON = new DsonToken(TokenType.COLON, ":");
+    public static final DsonToken COMMA = new DsonToken(TokenType.COMMA, ",");
+    public static final DsonToken NULL = new DsonToken(TokenType.NULL, null);
+    public static final DsonToken HEADER_OBJECT = new DsonToken(TokenType.HEADER, "@{");
+
     private final TokenType type;
     private final Object value;
 

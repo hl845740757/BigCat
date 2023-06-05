@@ -24,17 +24,23 @@ public interface DsonPrinter {
 
     void writeName(String name);
 
+    void writeInt32(String name, int value);
+
+    void writeInt64(String name, long value);
+
+    void writeFloat(String name, float value);
+
+    void writeDouble(String name, double value);
+
     void writeBoolean(String name, boolean value);
-
-    void writeInt32(String name, boolean value);
-
-    void writeNumber(String name, String value);
 
     void writeString(String name, String value);
 
-    void writeRaw(String name, String value);
-
     void writeNull(String name);
+
+    void writeNumber(String name, double value);
+
+    void writeRaw(String name, String value);
 
     void writeStartArray(String name);
 
@@ -47,4 +53,5 @@ public interface DsonPrinter {
     void writeStartObject();
 
     void writeEndObject();
+
 }

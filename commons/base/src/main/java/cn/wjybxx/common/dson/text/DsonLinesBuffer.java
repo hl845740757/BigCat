@@ -18,6 +18,7 @@ package cn.wjybxx.common.dson.text;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author wjybxx
@@ -32,6 +33,12 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
      */
     public DsonLinesBuffer(List<String> originLines) {
         this.originLines = Objects.requireNonNull(originLines);
+    }
+
+    public static DsonLinesBuffer ofJson(String json) {
+        List<String> lines = json.lines().map(e -> "-- " + e)
+                .collect(Collectors.toList());
+        return new DsonLinesBuffer(lines);
     }
 
     @Override

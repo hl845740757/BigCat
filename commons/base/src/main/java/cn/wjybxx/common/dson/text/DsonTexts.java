@@ -72,19 +72,15 @@ public class DsonTexts {
     // 默认header名字
     public static final String CLASS_NAME = "clsName";
     public static final String CLASS_ID = "clsId";
-    public static final String COMP_NAME = "compClsName";
+    public static final String COMP_CLASS_NAME = "compClsName";
     public static final String COMP_CLASS_ID = "compClsId";
     public static final String IS_COMP_TEXT = "isCompText";
     public static final String LOCAL_ID = "localId";
     public static final String GUID = "guid";
     public static final String TAGS = "tags";
 
-    public static final String REF_FIELDS_LOCAL_ID = "localId";
-    public static final String REF_FIELDS_GUID = "guid";
-    public static final String REF_FIELDS_TYPE = "type";
-    public static final String REF_FIELDS_POLICY = "policy";
-
     // 特殊字符串
+    /** 可解析为特定值的字符串 */
     private static final Set<String> PARSABLE_STRINGS = Set.of("true", "false", "null", "undefine");
     /** 规定哪些不安全较为容易，规定哪些安全反而不容易 */
     private static final IntSet unsafeCharSet;
@@ -125,7 +121,7 @@ public class DsonTexts {
      * 这里的计算是保守的，保守一些不容易出错，因为情况太多，既难以保证正确性，性能也差
      */
     public static boolean canUnquoteString(String value) {
-        if (value.isEmpty() || value.length() > 64) { // 长字符串都加引号，避免不必要的计算
+        if (value.isEmpty() || value.length() > 32) { // 长字符串都加引号，避免不必要的计算
             return false;
         }
         if (PARSABLE_STRINGS.contains(value)) { // 特殊字符串值
@@ -156,6 +152,45 @@ public class DsonTexts {
         } catch (Exception e) {
             return ExceptionUtils.rethrow(e);
         }
+    }
+
+    static Object checkNullString(String str) {
+        if ("null".equals(str)) return null;
+        throw new IllegalArgumentException("invalid null str: " + str);
+    }
+
+    static Object parseBool(String str) {
+        if ("true".equals(str)) return Boolean.TRUE;
+        if ("false".equals(str)) return Boolean.FALSE;
+        throw new IllegalArgumentException("invalid bool str: " + str);
+    }
+
+    static int parseInt(String str) {
+        if (str.startsWith("0x")) {
+            return Integer.parseInt(str, 2, str.length(), 16);
+        }
+        if (str.startsWith("-0x")) {
+            return Integer.parseInt(str, 3, str.length(), 16);
+        }
+        return Integer.parseInt(str);
+    }
+
+    static long parseLong(String str) {
+        if (str.startsWith("0x")) {
+            return Long.parseLong(str, 2, str.length(), 16);
+        }
+        if (str.startsWith("-0x")) {
+            return Long.parseLong(str, 3, str.length(), 16);
+        }
+        return Long.parseLong(str);
+    }
+
+    static float parseFloat(String str) {
+        return Float.parseFloat(str);
+    }
+
+    static double parseDouble(String str) {
+        return Double.parseDouble(str);
     }
 
 }

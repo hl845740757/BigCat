@@ -33,6 +33,11 @@ import java.util.Objects;
 @Immutable
 public final class ObjectRef {
 
+    public static final String FIELDS_LOCAL_ID = "localId";
+    public static final String FIELDS_GUID = "guid";
+    public static final String FIELDS_TYPE = "type";
+    public static final String FIELDS_POLICY = "policy";
+
     /** 引用对象的本地id - 如果目标对象是容器中的一员，该值是其容器内编号 */
     private final long localId;
     /** 引用文件的guid - 也可能是目标对象的Guid */
@@ -95,4 +100,13 @@ public final class ObjectRef {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "ObjectRef{" +
+                "localId=" + localId +
+                ", guid='" + guid + '\'' +
+                ", type=" + type +
+                ", policy=" + policy +
+                '}';
+    }
 }

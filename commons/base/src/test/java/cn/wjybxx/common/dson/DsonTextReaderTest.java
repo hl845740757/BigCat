@@ -39,17 +39,24 @@ public class DsonTextReaderTest {
             -- }
             --
             -- {@MyStruct\s
-            -- \tname: wjybxx,
-            -- \tintro :"hello world",
-            -- \tref : {@ref localId: 10001, guid: 9521saklsabnl},
-            -- \trefX: abcdefg854781
+            -- \tname : wjybxx,
+            -- \tintro: "hello world",
+            -- \tref1 : {@ref localId: 10001, guid: 16148b3b4e7b8923d398},
+            -- \tref2 : @ref 17630eb4f916148b
             --  }
             --
             -- [
-            --      [@bin 1, FFFA],
-            --      [@ei 1, 10010],
-            --      [@eL 1, 10010],
-            --      [@es 1, 10010],
+            --  [@bin 1, FFFA],
+            --  [@ei 1, 10010],
+            --  [@eL 1, 10010],
+            --  [@es 1, 10010],
+            -- ]
+            --
+            -- [@{compClsName : ei}
+            --  [ 1, 0xFFFA],
+            --  [ 2, 10010],
+            --  [ 3, 10010],
+            --  [ 4, 10010],
             -- ]
             """;
 

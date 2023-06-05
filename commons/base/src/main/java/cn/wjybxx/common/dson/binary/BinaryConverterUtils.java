@@ -208,7 +208,6 @@ public class BinaryConverterUtils extends ConverterUtils {
             }
             case HEADER -> {
                 MutableDsonHeader<FieldNumber> header = new MutableDsonHeader<>();
-                reader.readName(name);
                 readHeader(reader, header);
                 yield header;
             }

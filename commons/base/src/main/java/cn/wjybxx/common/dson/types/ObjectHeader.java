@@ -30,6 +30,7 @@ import java.util.List;
 @Immutable
 public final class ObjectHeader {
 
+    /** 对象的类型名 */
     private final String className;
     /** 对象的本地id  - 如果为0则不编码 */
     private final long localId;

@@ -43,6 +43,7 @@ import java.util.Objects;
 public class DsonTextReader extends AbstractDsonDocReader {
 
     private static final List<TokenType> VALUE_SEPARATOR_TOKENS = List.of(TokenType.COMMA, TokenType.END_OBJECT, TokenType.END_ARRAY);
+    private static final DsonToken TOKEN_CLASSNAME = new DsonToken(TokenType.UNQUOTE_STRING, DsonTexts.CLASS_NAME);
 
     private DsonScanner scanner;
     private final ArrayDeque<DsonToken> pushedTokenQueue = new ArrayDeque<>(6);
@@ -187,10 +188,12 @@ public class DsonTextReader extends AbstractDsonDocReader {
             return DsonType.HEADER;
         }
 
-        // 统一处理 逗号 分隔符
-        if (context.count > 0 && context.contextType != DsonContextType.TOP_LEVEL) {
+        // 统一处理 逗号 分隔符，顶层对象之间可不写分隔符
+        if (context.count > 0) {
             DsonToken nextToken = popToken();
-            verifyTokenType(context, nextToken, VALUE_SEPARATOR_TOKENS);
+            if (context.contextType != DsonContextType.TOP_LEVEL) {
+                verifyTokenType(context, nextToken, VALUE_SEPARATOR_TOKENS);
+            }
             if (nextToken.getType() != TokenType.COMMA) {
                 pushToken(nextToken);
             }
@@ -269,11 +272,39 @@ public class DsonTextReader extends AbstractDsonDocReader {
         };
     }
 
-    /** 字符串默认解析规则 */
+    /** 字符串默认解析规则 -- TODO 获取数组的元素类型，进行类型推断 */
     private DsonType parseUnquoteStringToken(Context context, DsonToken valueToken) {
         String unquotedString = valueToken.castAsString();
+        if (context.compClsNameToken != null) {
+            switch (context.compClsNameToken.castAsString()) {
+                case DsonTexts.LABEL_INT32 -> {
+                    pushNextValue(DsonTexts.parseInt(unquotedString));
+                    return DsonType.INT32;
+                }
+                case DsonTexts.LABEL_INT64 -> {
+                    pushNextValue(DsonTexts.parseLong(unquotedString));
+                    return DsonType.INT64;
+                }
+                case DsonTexts.LABEL_FLOAT -> {
+                    pushNextValue(DsonTexts.parseFloat(unquotedString));
+                    return DsonType.FLOAT;
+                }
+                case DsonTexts.LABEL_DOUBLE -> {
+                    pushNextValue(DsonTexts.parseDouble(unquotedString));
+                    return DsonType.DOUBLE;
+                }
+                case DsonTexts.LABEL_BOOL -> {
+                    pushNextValue(DsonTexts.parseBool(unquotedString));
+                    return DsonType.BOOLEAN;
+                }
+                case DsonTexts.LABEL_STRING -> {
+                    pushNextValue(unquotedString);
+                    return DsonType.STRING;
+                }
+            }
+        }
         if ("true".equals(unquotedString) || "false".equals(unquotedString)) {
-            pushNextValue(Boolean.parseBoolean(unquotedString));
+            pushNextValue(Boolean.valueOf(unquotedString));
             return DsonType.BOOLEAN;
         }
         if ("null".equals(unquotedString)) {
@@ -314,12 +345,17 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
     /** 处理内置结构体的语法糖 */
     private DsonType parseBeginObjectToken(Context context, final DsonToken valueToken) {
-        if (valueToken.lastChar() != '@') {
+        DsonToken headerToken;
+        if (valueToken.lastChar() == '@') {
+            headerToken = popToken();
+            verifyTokenType(getContext(), headerToken, TokenType.HEADER);
+        } else {
+            headerToken = context.compClsNameToken;
+        }
+        if (headerToken == null) {
             pushNextValue(valueToken);
             return DsonType.OBJECT;
         }
-        DsonToken headerToken = popToken();
-        verifyTokenType(getContext(), headerToken, TokenType.HEADER);
 
         if (DsonTexts.LABEL_REFERENCE.equals(headerToken.castAsString())) {
             pushNextValue(scanRef(context));
@@ -333,34 +369,40 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
     /** 需要处理内置二元组 */
     private DsonType parseBeginArrayToken(Context context, final DsonToken valueToken) {
-        if (valueToken.lastChar() != '@') {
+        DsonToken headerToken;
+        if (valueToken.lastChar() == '@') {
+            headerToken = popToken();
+            verifyTokenType(getContext(), headerToken, TokenType.HEADER);
+        } else {
+            headerToken = context.compClsNameToken;
+        }
+        if (headerToken == null) {
             pushNextValue(valueToken);
             return DsonType.ARRAY;
         }
-        DsonToken headerToken = popToken();
-        verifyTokenType(getContext(), headerToken, TokenType.HEADER);
+
         return switch (headerToken.castAsString()) {
             case DsonTexts.LABEL_BINARY -> {
-                TuplePair tuplePair = scanTuple2(context);
-                byte[] data = DsonTexts.decodeHex(tuplePair.value.toCharArray());
-                pushNextValue(new DsonBinary(tuplePair.type, data));
+                Tuple2 tuple2 = scanTuple2(context);
+                byte[] data = DsonTexts.decodeHex(tuple2.value.toCharArray());
+                pushNextValue(new DsonBinary(tuple2.type, data));
                 yield DsonType.BINARY;
             }
             case DsonTexts.LABEL_EXTINT32 -> {
-                TuplePair tuplePair = scanTuple2(context);
-                int value = Integer.parseInt(tuplePair.value);
-                pushNextValue(new DsonExtInt32(tuplePair.type, value));
+                Tuple2 tuple2 = scanTuple2(context);
+                int value = DsonTexts.parseInt(tuple2.value);
+                pushNextValue(new DsonExtInt32(tuple2.type, value));
                 yield DsonType.EXT_INT32;
             }
             case DsonTexts.LABEL_EXTINT64 -> {
-                TuplePair tuplePair = scanTuple2(context);
-                long value = Long.parseLong(tuplePair.value);
-                pushNextValue(new DsonExtInt64(tuplePair.type, value));
+                Tuple2 tuple2 = scanTuple2(context);
+                long value = DsonTexts.parseLong(tuple2.value);
+                pushNextValue(new DsonExtInt64(tuple2.type, value));
                 yield DsonType.EXT_INT64;
             }
             case DsonTexts.LABEL_EXTSTRING -> {
-                TuplePair tuplePair = scanTuple2(context);
-                pushNextValue(new DsonExtString(tuplePair.type, tuplePair.value));
+                Tuple2 tuple2 = scanTuple2(context);
+                pushNextValue(new DsonExtString(tuple2.type, tuple2.value));
                 yield DsonType.EXT_STRING;
             }
             default -> {
@@ -378,15 +420,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
         int policy = 0;
 
         DsonToken keyToken;
-        int count = 0;
         while ((keyToken = popToken()).getType() != TokenType.END_OBJECT) {
-            if (count > 0 && keyToken.getType() == TokenType.COMMA) {
-                keyToken = popToken();
-                if (keyToken.getType() == TokenType.END_OBJECT) {
-                    break;
-                }
-            }
-            count++;
             // key必须是字符串
             verifyStringsToken(context, keyToken);
 
@@ -397,35 +431,42 @@ public class DsonTextReader extends AbstractDsonDocReader {
             // 根据name校验
             DsonToken valueToken = popToken();
             switch (keyToken.castAsString()) {
-                case DsonTexts.REF_FIELDS_GUID -> {
+                case ObjectRef.FIELDS_GUID -> {
                     verifyStringsToken(context, valueToken);
                     guid = valueToken.castAsString();
                 }
-                case DsonTexts.REF_FIELDS_LOCAL_ID -> {
+                case ObjectRef.FIELDS_LOCAL_ID -> {
                     verifyTokenType(context, valueToken, TokenType.UNQUOTE_STRING);
-                    localId = Long.parseLong(valueToken.castAsString());
+                    localId = DsonTexts.parseLong(valueToken.castAsString());
                 }
-                case DsonTexts.REF_FIELDS_TYPE -> {
+                case ObjectRef.FIELDS_TYPE -> {
                     verifyTokenType(context, valueToken, TokenType.UNQUOTE_STRING);
-                    type = Integer.parseInt(valueToken.castAsString());
+                    type = DsonTexts.parseInt(valueToken.castAsString());
                 }
-                case DsonTexts.REF_FIELDS_POLICY -> {
+                case ObjectRef.FIELDS_POLICY -> {
                     verifyTokenType(context, valueToken, TokenType.UNQUOTE_STRING);
-                    policy = Integer.parseInt(valueToken.castAsString());
+                    policy = DsonTexts.parseInt(valueToken.castAsString());
                 }
                 default -> {
                     throw new DsonCodecException("invalid ref fieldName: " + keyToken.castAsString());
                 }
             }
+            // 每读取一个值，判断下分隔符，尾部最多只允许一个逗号 -- 这里在尾部更容易处理
+            if ((keyToken = popToken()) == DsonToken.COMMA
+                    && (keyToken = popToken()) == DsonToken.COMMA) {
+                throw DsonCodecException.invalidTokenType(context.contextType, keyToken);
+            } else {
+                pushToken(keyToken);
+            }
         }
         return new ObjectRef(localId, guid, type, policy);
     }
 
-    private TuplePair scanTuple2(Context context) {
+    private Tuple2 scanTuple2(Context context) {
         // beginArray已读取
         DsonToken nextToken = popToken();
         verifyTokenType(context, nextToken, TokenType.UNQUOTE_STRING);
-        int type = Integer.parseInt(nextToken.castAsString());
+        int type = DsonTexts.parseInt(nextToken.castAsString());
 
         nextToken = popToken();
         verifyTokenType(context, nextToken, TokenType.COMMA);
@@ -436,28 +477,28 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
         nextToken = popToken();
         verifyTokenType(context, nextToken, TokenType.END_ARRAY);
-        return new TuplePair(type, value);
+        return new Tuple2(type, value);
     }
 
-    private static class TuplePair {
+    private static class Tuple2 {
 
         int type;
         String value;
 
-        public TuplePair(int type, String value) {
+        public Tuple2(int type, String value) {
             this.type = type;
             this.value = value;
         }
     }
 
     private void escapeHeaderAndPush(DsonToken headerToken) {
-        // 如果header不是结构体，则封装为结构体，注意...是反序
+        // 如果header不是结构体，则封装为结构体，注意...要反序压栈
         if (headerToken.firstChar() != '{') {
-            pushToken(new DsonToken(TokenType.END_OBJECT, "}"));
+            pushToken(DsonToken.END_OBJECT);
             pushToken(new DsonToken(TokenType.STRING, headerToken.castAsString()));
-            pushToken(new DsonToken(TokenType.COLON, ":"));
-            pushToken(new DsonToken(TokenType.UNQUOTE_STRING, DsonTexts.CLASS_NAME));
-            pushToken(new DsonToken(TokenType.HEADER, "@{"));
+            pushToken(DsonToken.COLON);
+            pushToken(TOKEN_CLASSNAME);
+            pushToken(DsonToken.HEADER_OBJECT);
         } else {
             pushToken(headerToken);
         }
@@ -484,6 +525,13 @@ public class DsonTextReader extends AbstractDsonDocReader {
     @Override
     protected void doReadName() {
         currentName = Objects.requireNonNull(popNextName());
+        Context context = getContext();
+        if (context.contextType == DsonContextType.HEADER) {
+            if (context.compClsNameToken == null && DsonTexts.COMP_CLASS_NAME.equals(currentName)) {
+                context.compClsNameToken = new DsonToken(TokenType.HEADER, nextValue);
+            }
+            // 其它属性
+        }
     }
 
     @Override
@@ -585,6 +633,10 @@ public class DsonTextReader extends AbstractDsonDocReader {
     @Override
     protected void doReadEndContainer() {
         Context context = getContext();
+        // header中的信息是修饰外层对象的
+        if (context.contextType == DsonContextType.HEADER) {
+            context.getParent().compClsNameToken = context.compClsNameToken;
+        }
 
         // 恢复上下文
         recoverDsonType(context);
@@ -628,7 +680,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
             switch (token.getType()) {
                 case BEGIN_ARRAY, BEGIN_OBJECT -> stack++;
                 case HEADER -> {
-                    if(token.lastChar() == '{') {
+                    if (token.lastChar() == '{') {
                         stack++;
                     }
                 }
@@ -702,6 +754,8 @@ public class DsonTextReader extends AbstractDsonDocReader {
         boolean headerRead;
         /** 元素计数，判断冒号 */
         int count;
+        /** 数组/Object成员的类型 - token类型可直接复用 */
+        DsonToken compClsNameToken;
 
         public Context() {
         }
@@ -715,6 +769,11 @@ public class DsonTextReader extends AbstractDsonDocReader {
             beginToken = null;
             headerRead = false;
             count = 0;
+            compClsNameToken = null;
+        }
+
+        public Context getParent() {
+            return (Context) parent;
         }
 
     }
