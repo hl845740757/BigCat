@@ -75,10 +75,6 @@ public interface DocumentObjectWriter extends AutoCloseable {
     void writeBinary(String name, DsonBinary binary);
 
     //
-    void writeExtString(String name, DsonExtString value);
-
-    void writeExtString(String name, int type, String value);
-
     void writeExtInt32(String name, DsonExtInt32 value, WireType wireType);
 
     void writeExtInt32(String name, int type, int value, WireType wireType);
@@ -86,6 +82,10 @@ public interface DocumentObjectWriter extends AutoCloseable {
     void writeExtInt64(String name, DsonExtInt64 value, WireType wireType);
 
     void writeExtInt64(String name, int type, long value, WireType wireType);
+
+    void writeExtString(String name, DsonExtString value);
+
+    void writeExtString(String name, int type, String value);
 
     default void writeExtInt32(String name, int type, int value) {
         writeExtInt32(name, type, value, WireType.VARINT);

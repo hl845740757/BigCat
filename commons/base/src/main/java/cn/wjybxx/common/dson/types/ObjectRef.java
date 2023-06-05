@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.dson.types;
 
-import cn.wjybxx.common.ObjectUtils;
-import cn.wjybxx.common.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.concurrent.Immutable;
@@ -38,22 +36,22 @@ public final class ObjectRef {
     public static final String FIELDS_TYPE = "type";
     public static final String FIELDS_POLICY = "policy";
 
-    /** 引用对象的本地id - 如果目标对象是容器中的一员，该值是其容器内编号 */
-    private final long localId;
     /** 引用文件的guid - 也可能是目标对象的Guid */
     private final String guid;
+    /** 引用对象的本地id - 如果目标对象是容器中的一员，该值是其容器内编号 */
+    private final String localId;
     /** 引用的对象的大类型 - 给业务使用的，用于快速引用分析 */
     private final int type;
     /** 引用的解析策略 - 0：默认 1：解析为引用 2：内联复制，3：不解析 */
     private final int policy;
 
-    public ObjectRef(long localId, String guid) {
-        this(localId, guid, 0, 0);
+    public ObjectRef(String guid, String localId) {
+        this(guid, localId, 0, 0);
     }
 
-    public ObjectRef(long localId, String guid, int type, int policy) {
+    public ObjectRef(String guid, String localId, int type, int policy) {
         this.localId = localId;
-        this.guid = ObjectUtils.nullToEmpty(Preconditions.checkNotContainsWhiteSpace(guid, null));
+        this.guid = guid;
         this.type = type;
         this.policy = policy;
     }
@@ -66,7 +64,7 @@ public final class ObjectRef {
         return !StringUtils.isEmpty(guid);
     }
 
-    public long getLocalId() {
+    public String getLocalId() {
         return localId;
     }
 
@@ -83,27 +81,33 @@ public final class ObjectRef {
     }
 
     //
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         ObjectRef objectRef = (ObjectRef) o;
-        return localId == objectRef.localId
-                && Objects.equals(guid, objectRef.guid);
+
+        if (type != objectRef.type) return false;
+        if (policy != objectRef.policy) return false;
+        if (!Objects.equals(localId, objectRef.localId)) return false;
+        return Objects.equals(guid, objectRef.guid);
     }
 
     @Override
     public int hashCode() {
-        int result = (int) (localId ^ (localId >>> 32));
+        int result = localId != null ? localId.hashCode() : 0;
         result = 31 * result + (guid != null ? guid.hashCode() : 0);
+        result = 31 * result + type;
+        result = 31 * result + policy;
         return result;
     }
 
     @Override
     public String toString() {
         return "ObjectRef{" +
-                "localId=" + localId +
+                "localId='" + localId + '\'' +
                 ", guid='" + guid + '\'' +
                 ", type=" + type +
                 ", policy=" + policy +

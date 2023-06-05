@@ -63,11 +63,11 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     DsonBinary readBinary(String name);
 
-    DsonExtString readExtString(String name);
-
     DsonExtInt32 readExtInt32(String name);
 
     DsonExtInt64 readExtInt64(String name);
+
+    DsonExtString readExtString(String name);
 
     /**
      * 注意:

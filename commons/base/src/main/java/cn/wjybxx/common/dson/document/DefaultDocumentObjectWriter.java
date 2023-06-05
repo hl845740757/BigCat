@@ -135,7 +135,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, (byte) 0, value);
+            writer.writeBinary(name, new DsonBinary(0, value));
         }
     }
 
@@ -150,7 +150,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, type, value);
+            writer.writeBinary(name, new DsonBinary(type, value));
         }
     }
 
@@ -160,24 +160,6 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
             writeNull(name);
         } else {
             writer.writeBinary(name, binary);
-        }
-    }
-
-    @Override
-    public void writeExtString(String name, DsonExtString value) {
-        if (value == null) {
-            writeNull(name);
-        } else {
-            writer.writeExtString(name, value);
-        }
-    }
-
-    @Override
-    public void writeExtString(String name, int type, String value) {
-        if (value == null) {
-            writeNull(name);
-        } else {
-            writer.writeExtString(name, type, value);
         }
     }
 
@@ -192,7 +174,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeExtInt32(String name, int type, int value, WireType wireType) {
-        writer.writeExtInt32(name, type, value, wireType);
+        writer.writeExtInt32(name, new DsonExtInt32(type, value), wireType);
     }
 
     @Override
@@ -206,9 +188,25 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeExtInt64(String name, int type, long value, WireType wireType) {
-        writer.writeExtInt64(name, type, value, wireType);
+        writer.writeExtInt64(name, new DsonExtInt64(type, value), wireType);
     }
 
+    @Override
+    public void writeExtString(String name, DsonExtString value) {
+        if (value == null) {
+            writeNull(name);
+        } else {
+            writer.writeExtString(name, value);
+        }
+    }
+
+    @Override
+    public void writeExtString(String name, int type, String value) {
+        // 这里为Null不安全
+        Objects.requireNonNull(value);
+        writer.writeExtString(name, new DsonExtString(type, value));
+
+    }
     // endregion
 
     // region object处理

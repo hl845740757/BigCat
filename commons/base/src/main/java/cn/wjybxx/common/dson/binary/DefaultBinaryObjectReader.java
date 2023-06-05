@@ -156,11 +156,6 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public DsonExtString readExtString(int name) {
-        return NumberCodecHelper.readExtString(reader, name);
-    }
-
-    @Override
     public DsonExtInt32 readExtInt32(int name) {
         return NumberCodecHelper.readExtInt32(reader, name);
     }
@@ -168,6 +163,11 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Override
     public DsonExtInt64 readExtInt64(int name) {
         return NumberCodecHelper.readExtInt64(reader, name);
+    }
+
+    @Override
+    public DsonExtString readExtString(int name) {
+        return NumberCodecHelper.readExtString(reader, name);
     }
 
     // endregion

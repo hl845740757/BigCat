@@ -180,11 +180,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public DsonExtString readExtString(String name) {
-        return NumberCodecHelper.readExtString(reader, name);
-    }
-
-    @Override
     public DsonExtInt32 readExtInt32(String name) {
         return NumberCodecHelper.readExtInt32(reader, name);
     }
@@ -192,6 +187,11 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     @Override
     public DsonExtInt64 readExtInt64(String name) {
         return NumberCodecHelper.readExtInt64(reader, name);
+    }
+
+    @Override
+    public DsonExtString readExtString(String name) {
+        return NumberCodecHelper.readExtString(reader, name);
     }
 
     // endregion

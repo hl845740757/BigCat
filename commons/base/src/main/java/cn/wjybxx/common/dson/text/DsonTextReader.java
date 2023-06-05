@@ -328,7 +328,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
                 // @ref guid
                 DsonToken nextToken = popToken();
                 verifyStringsToken(context, nextToken);
-                pushNextValue(new ObjectRef(0, nextToken.castAsString()));
+                pushNextValue(new ObjectRef(nextToken.castAsString(), null));
                 return DsonType.REFERENCE;
             }
             case DsonTexts.LABEL_BINARY,
@@ -415,7 +415,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
     private ObjectRef scanRef(Context context) {
         String guid = null;
-        long localId = 0;
+        String localId = null;
         int type = 0;
         int policy = 0;
 
@@ -436,8 +436,8 @@ public class DsonTextReader extends AbstractDsonDocReader {
                     guid = valueToken.castAsString();
                 }
                 case ObjectRef.FIELDS_LOCAL_ID -> {
-                    verifyTokenType(context, valueToken, TokenType.UNQUOTE_STRING);
-                    localId = DsonTexts.parseLong(valueToken.castAsString());
+                    verifyStringsToken(context, valueToken);
+                    localId =valueToken.castAsString();
                 }
                 case ObjectRef.FIELDS_TYPE -> {
                     verifyTokenType(context, valueToken, TokenType.UNQUOTE_STRING);
@@ -459,7 +459,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
                 pushToken(keyToken);
             }
         }
-        return new ObjectRef(localId, guid, type, policy);
+        return new ObjectRef(guid, localId, type, policy);
     }
 
     private Tuple2 scanTuple2(Context context) {

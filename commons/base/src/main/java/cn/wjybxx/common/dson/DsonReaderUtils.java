@@ -92,15 +92,15 @@ public class DsonReaderUtils {
     }
 
     public static void writeRef(DsonOutput output, ObjectRef objectRef) {
-        output.writeUint64(objectRef.getLocalId());
         output.writeString(objectRef.getGuid());
+        output.writeString(objectRef.getLocalId());
         output.writeUint32(objectRef.getType());
         output.writeUint32(objectRef.getPolicy());
     }
 
     public static ObjectRef readRef(DsonInput input) {
         return new ObjectRef(
-                input.readUint64(),
+                input.readString(),
                 input.readString(),
                 input.readUint32(),
                 input.readUint32());
