@@ -79,9 +79,11 @@ public class DsonTexts {
     public static final String GUID = "guid";
     public static final String TAGS = "tags";
 
-    // 特殊字符串
-    /** 可解析为特定值的字符串 */
-    private static final Set<String> PARSABLE_STRINGS = Set.of("true", "false", "null", "undefine");
+    /** 有特殊含义的字符串 */
+    private static final Set<String> PARSABLE_STRINGS = Set.of("true", "false",
+            "null", "undefine",
+            "NaN", "Infinity", "-Infinity");
+
     /** 规定哪些不安全较为容易，规定哪些安全反而不容易 */
     private static final IntSet unsafeCharSet;
 
@@ -127,9 +129,6 @@ public class DsonTexts {
         if (PARSABLE_STRINGS.contains(value)) { // 特殊字符串值
             return false;
         }
-        if (NumberUtils.isCreatable(value)) { // 可解析的数字类型
-            return false;
-        }
         // 这遍历的不是unicode码点，但不影响
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
@@ -137,11 +136,15 @@ public class DsonTexts {
                 return false;
             }
         }
+        if (NumberUtils.isCreatable(value)) { // 可解析的数字类型，这个开销大放最后检测
+            return false;
+        }
         return true;
     }
 
     // 封装一下，方便以后切换实现
 
+    /** 其实最快的方式就是将每一个byte的值缓存下来，一共也就256个字符串，开销不算大 */
     public static char[] encodeHex(byte[] data) {
         return Hex.encodeHex(data, false);
     }

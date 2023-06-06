@@ -50,6 +50,9 @@ public final class ObjectRef {
     }
 
     public ObjectRef(String guid, String localId, int type, int policy) {
+        if (StringUtils.isBlank(guid) && StringUtils.isBlank(localId)) {
+            throw new IllegalArgumentException();
+        }
         this.localId = localId;
         this.guid = guid;
         this.type = type;

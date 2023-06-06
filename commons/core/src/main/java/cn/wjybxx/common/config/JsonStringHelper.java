@@ -77,7 +77,6 @@ public class JsonStringHelper {
             if (c == '\\') {
                 c = next(charArray, ++index);
                 switch (c) {
-                    case '\'' -> sb.append('\'');
                     case '"' -> sb.append('"');
                     case '\\' -> sb.append('\\');
                     case 'b' -> sb.append('\b');

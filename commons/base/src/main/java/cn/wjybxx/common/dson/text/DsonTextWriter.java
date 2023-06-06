@@ -18,11 +18,10 @@ package cn.wjybxx.common.dson.text;
 
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
-import cn.wjybxx.common.dson.io.DsonOutput;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
-import javax.annotation.Nullable;
+import java.io.Writer;
 import java.util.Objects;
 
 /**
@@ -32,10 +31,12 @@ import java.util.Objects;
 public class DsonTextWriter extends AbstractDsonDocWriter {
 
     private DsonPrinter printer;
+    private final DsonTextWriterSettings settings;
 
-    public DsonTextWriter(int recursionLimit, DsonPrinter printer) {
+    public DsonTextWriter(int recursionLimit, Writer writer, DsonTextWriterSettings settings) {
         super(recursionLimit);
-        this.printer = printer;
+        this.settings = settings;
+        this.printer = new DsonPrinter(writer, settings.lineSeparator);
         setContext(new Context(null, DsonContextType.TOP_LEVEL));
     }
 
@@ -66,22 +67,75 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     // region state
 
-    private void writeFullTypeAndCurrentName(DsonPrinter output, DsonType dsonType, @Nullable WireType wireType) {
-        if (wireType == null) {
-            output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), 0));
-        } else {
-            output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), wireType.getNumber()));
-        }
+    private void writeCurrentName(DsonPrinter printer) {
         Context context = getContext();
+        if (context.count > 0) {
+            printer.print(",");
+        }
+        if (context.style == ObjectStyle.INDENT || printer.getColumn() >= settings.softLineLength) {
+            printer.println();
+            printer.printLhead(LheadType.APPEND_LINE);
+            if (context.style == ObjectStyle.INDENT) {
+                printer.printIndent();
+            }
+        } else {
+            printer.print(' ');
+        }
         if (context.contextType == DsonContextType.OBJECT ||
                 context.contextType == DsonContextType.HEADER) {
-            output.writeString(context.name, );
+            printStringNonSS(printer, context.name);
+            printer.print(": ");
         }
     }
 
-    @Override
-    protected void doWriteName(String name) {
-        printer.writeString(name, StringStyle.AUTO);
+    /**
+     * 不能无引号的情况下只回退为双引号模式；通常用于打印短字符串
+     */
+    private void printStringNonSS(DsonPrinter printer, String text) {
+        if (DsonTexts.canUnquoteString(text)) {
+            printer.print(text);
+        } else {
+            printEscaped(text);
+        }
+    }
+
+    private void printString(DsonPrinter printer, String value, StringStyle style) {
+
+    }
+
+    /** 打印双引号String */
+    private void printEscaped(String text) {
+        DsonPrinter printer = this.printer;
+        boolean unicodeChar = settings.unicodeChar;
+        printer.print('"');
+        for (int i = 0, length = text.length(); i < length; i++) {
+            printEscaped(text.charAt(i), printer, unicodeChar);
+        }
+        printer.print('"');
+    }
+
+    private static void printEscaped(char c, DsonPrinter printer, boolean unicodeChar) {
+        switch (c) {
+            case '\"' -> printer.print("\\\"");
+            case '\\' -> printer.print("\\\\");
+            case '\b' -> printer.print("\\b");
+            case '\f' -> printer.print("\\f");
+            case '\n' -> printer.print("\\n");
+            case '\r' -> printer.print("\\r");
+            case '\t' -> printer.print("\\t");
+            default -> {
+                if (c < 32 || (c > 0x7F && unicodeChar)) {
+                    printer.print("\\u");
+                    printer.print(Integer.toHexString(0x10000 + (int) c), 1, 4);
+                    return;
+                }
+                printer.print(c);
+            }
+        }
+    }
+
+    private void printBinary(byte[] buffer, int offset, int length) {
+
     }
 
     // endregion
@@ -90,83 +144,147 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     @Override
     protected void doWriteInt32(int value, WireType wireType, boolean stronglyTyped) {
-        printer.writeInt32(value, );
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        if (stronglyTyped) {
+            printer.print("@i ");
+        }
+        printer.print(Integer.toString(value));
     }
 
     @Override
     protected void doWriteInt64(long value, WireType wireType, boolean stronglyTyped) {
-        printer.writeInt64(value, );
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        if (stronglyTyped) {
+            printer.print("@L ");
+        }
+        printer.print(Long.toString(value));
     }
 
     @Override
     protected void doWriteFloat(float value, boolean stronglyTyped) {
-        printer.writeFloat(value, );
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        if (stronglyTyped) {
+            printer.print("@f ");
+        }
+        printer.print(Float.toString(value));
     }
 
     @Override
     protected void doWriteDouble(double value) {
-        printer.writeDouble(value, );
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print(Double.toString(value));
     }
 
     @Override
     protected void doWriteBool(boolean value) {
-        printer.writeBoolean(value, );
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print(value ? "true" : "false");
     }
 
     @Override
     protected void doWriteString(String value, StringStyle style) {
-        printer.writeString(value, StringStyle.AUTO);
+        printString(printer, value, style);
     }
 
     @Override
     protected void doWriteNull() {
-        printer.writeNull();
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("null");
     }
 
     @Override
     protected void doWriteBinary(DsonBinary binary) {
-        printer.writeStartObject();
-        printer.writeType(DsonTexts.LABEL_BINARY);
-        printer.writeInt32();
-
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        DsonReaderUtils.writeBinary(output, binary);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("{@bin ");
+        printer.print(Integer.toString(binary.getType()));
+        printer.print(", ");
+        // 打印16进制字符串...
+        printBinary(binary.getData(), 0, binary.getData().length);
+        printer.print('}');
     }
 
     @Override
     protected void doWriteBinary(int type, Chunk chunk) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        DsonReaderUtils.writeBinary(output, type, chunk);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("{@bin ");
+        printer.print(Integer.toString(type));
+        printer.print(", ");
+        printBinary(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
+        printer.print('}');
     }
 
     @Override
     protected void doWriteExtInt32(DsonExtInt32 value, WireType wireType) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
-        DsonReaderUtils.writeExtInt32(output, value, wireType);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("{@ei ");
+        printer.print(Integer.toString(value.getType()));
+        printer.print(", ");
+        printer.print(Integer.toString(value.getValue()));
+        printer.print('}');
     }
 
     @Override
     protected void doWriteExtInt64(DsonExtInt64 value, WireType wireType) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
-        DsonReaderUtils.writeExtInt64(output, value, wireType);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("{@eL ");
+        printer.print(Integer.toString(value.getType()));
+        printer.print(", ");
+        printer.print(Long.toString(value.getValue()));
+        printer.print('}');
     }
 
     @Override
     protected void doWriteExtString(DsonExtString value, StringStyle style) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        DsonReaderUtils.writeExtString(output, value);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("{@es ");
+        printer.print(Integer.toString(value.getType()));
+        printer.print(", ");
+        printString(printer, value.getValue(), style);
+        printer.print('}');
     }
 
     @Override
     protected void doWriteRef(ObjectRef objectRef) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.REFERENCE, null);
-        DsonReaderUtils.writeRef(output, objectRef);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        printer.print("{@ref ");
+        int count = 0;
+        if (objectRef.getGuid() != null) {
+            count++;
+            printer.print(ObjectRef.FIELDS_GUID);
+            printer.print(": ");
+            printStringNonSS(printer, objectRef.getGuid());
+        }
+        if (objectRef.getLocalId() != null) {
+            if (count++ > 0) printer.print(", ");
+            printer.print(ObjectRef.FIELDS_LOCAL_ID);
+            printer.print(": ");
+            printStringNonSS(printer, objectRef.getLocalId());
+        }
+        if (objectRef.getType() != 0) {
+            if (count++ > 0) printer.print(", ");
+            printer.print(ObjectRef.FIELDS_TYPE);
+            printer.print(": ");
+            printer.print(Integer.toString(objectRef.getType()));
+        }
+        if (objectRef.getPolicy() != 0) {
+            if (count > 0) printer.print(", ");
+            printer.print(ObjectRef.FIELDS_POLICY);
+            printer.print(": ");
+            printer.print(Integer.toString(objectRef.getPolicy()));
+        }
+        printer.print('}');
     }
 
     // endregion
@@ -175,9 +293,10 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     @Override
     protected void doWriteStartContainer(DsonContextType contextType, ObjectStyle style) {
-        DsonOutput output = this.output;
-        DsonType dsonType = Objects.requireNonNull(contextType.dsonType);
-        writeFullTypeAndCurrentName(output, dsonType, null);
+        DsonPrinter printer = this.printer;
+        writeCurrentName(printer);
+        // todo
+        printer.print('{');
 
         Context newContext = newContext(getContext(), contextType);
         newContext.style = Objects.requireNonNull(style);
@@ -205,16 +324,12 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     @Override
     protected void doWriteMessage(int binaryType, MessageLite messageLite) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        DsonReaderUtils.writeMessage(output, binaryType, messageLite);
+        doWriteBinary(new DsonBinary(binaryType, messageLite.toByteArray()));
     }
 
     @Override
     protected void doWriteValueBytes(DsonType type, byte[] data) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, type, null);
-        DsonReaderUtils.writeValueBytes(output, type, data);
+        throw new UnsupportedOperationException();
     }
 
     // endregion

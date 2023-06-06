@@ -16,10 +16,12 @@
 
 package cn.wjybxx.common.dson.text;
 
+import cn.wjybxx.common.annotation.Internal;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * 该接口与{@link DsonScanner}对应
@@ -30,237 +32,57 @@ import java.util.Arrays;
  * @author wjybxx
  * date - 2023/6/5
  */
-public class DsonPrinter {
+@Internal
+public final class DsonPrinter implements AutoCloseable {
 
     private final Writer writer;
-    private final DsonTextWriterSettings settings;
-
+    private final String lineSeparator;
     private char[] indentionArray = new char[0];
     private int indent = 0;
     private int column;
 
-    public DsonPrinter(Writer writer, DsonTextWriterSettings settings) {
-        this.writer = writer;
-        this.settings = settings;
+    public DsonPrinter(Writer writer, String lineSeparator) {
+        this.writer = Objects.requireNonNull(writer);
+        this.lineSeparator = Objects.requireNonNull(lineSeparator);
     }
 
-    // region
-
-    public void writeInt32(int value) {
-        try {
-            writer.write("@i ");
-            writer.write(Integer.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
+    public int getColumn() {
+        return column;
     }
 
-    public void writeInt64(long value) {
-        try {
-            writer.write("@L ");
-            writer.write(Long.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeFloat(float value) {
-        try {
-            writer.write("@f ");
-            writer.write(Float.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeDouble(double value) {
-        try {
-            writer.write("@d ");
-            writer.write(Double.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeBoolean(boolean value) {
-        try {
-            writer.write("@b ");
-            writer.write(value ? "true" : "false");
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeString(String value, StringStyle mode) {
-        try {
-            // TODO 处理与Mode的冲突
-            writer.write("@s ");
-            writer.write(value);
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeNull() {
-        try {
-            writer.write("@N null");
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeStartArray() {
-        try {
-            writer.write('[');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeEndArray() {
-        try {
-            writer.write(']');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeStartObject() {
-        try {
-            writer.write('{');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeEndObject() {
-        try {
-            writer.write('}');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeStartHeader() {
-        try {
-            writer.write("@{");
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeEndHeader() {
-        try {
-            writer.write('}');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeColon() {
-        try {
-            writer.write(':');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeComma() {
-        try {
-            writer.write(',');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-    // endregion
-
-    public void writeType(String value) {
-        try {
-            writer.write(value);
-            writer.write(' ');
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeInt32NoType(int value) {
-        try {
-            writer.write(Integer.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeInt64NoType(long value) {
-        try {
-            writer.write(Long.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeFloatNoType(float value) {
-        try {
-            writer.write(Float.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeDoubleNoType(double value) {
-        try {
-            writer.write(Double.toString(value));
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeBooleanNoType(boolean value) {
-        try {
-            writer.write(value ? "true" : "false");
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeStringNoType(String value, StringStyle mode) {
-        try {
-            // todo 处理mode的冲突
-            writer.write(value);
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void writeNullNoType() {
-        try {
-            writer.write("null");
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
-    public void flush() {
-
-    }
-
-    public void close() {
-
-    }
-
-    //
-
-    private void indent() {
+    public void indent() {
         indent += 2;
         updateIndent();
     }
 
-    private void retract() {
+    public void retract() {
+        if (indent < 2) {
+            throw new IllegalArgumentException("indent must be called before retract");
+        }
         indent -= 2;
         updateIndent();
     }
 
-    private void printIndent() {
+    public void println() {
+        try {
+            writer.append(lineSeparator);
+            column = 0;
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    public void printLhead(LheadType lheadType) {
+        try {
+            writer.append(lheadType.label);
+            writer.append(' ');
+            column += lheadType.label.length() + 1;
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    public void printIndent() {
         try {
             writer.write(indentionArray, 0, indent);
             column += indent;
@@ -269,10 +91,64 @@ public class DsonPrinter {
         }
     }
 
-    private void println() {
+    public void print(char c) {
         try {
-            writer.append(settings.lineSeparator);
-            column = 0;
+            writer.write(c);
+            column += 1;
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    public void print(char[] cBuffer) {
+        try {
+            writer.write(cBuffer);
+            column += 1;
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /** @param text 纯文本 */
+    public void print(String text) {
+        try {
+            writer.write(text);
+            column += text.length();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    /**
+     * @param offset Offset from which to start writing characters
+     * @param length 写入的长度，jdk这个api的风格和其它的不一样啊...
+     */
+    public void print(String text, int offset, int length) {
+        try {
+            writer.write(text, offset, length);
+            column += length;
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    public void println(String text) {
+        print(text);
+        println();
+    }
+
+    public void flush() {
+        try {
+            writer.flush();
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            writer.close();
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
         }
@@ -284,4 +160,5 @@ public class DsonPrinter {
             Arrays.fill(indentionArray, ' ');
         }
     }
+    // endregion
 }

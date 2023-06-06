@@ -26,13 +26,11 @@ public class DsonTextWriterSettings {
 
     public final String lineSeparator;
     public final int softLineLength;
-    public final int maxLineLength;
     public final boolean unicodeChar;
 
     private DsonTextWriterSettings(Builder builder) {
         this.lineSeparator = Objects.requireNonNull(builder.lineSeparator);
         this.softLineLength = builder.softLineLength;
-        this.maxLineLength = builder.maxLineLength;
         this.unicodeChar = builder.unicodeChar;
     }
 
@@ -45,15 +43,11 @@ public class DsonTextWriterSettings {
         /** 行分隔符 */
         private String lineSeparator = System.lineSeparator();
         /**
-         * 软行长度
-         * 在写一个值的过程中不检查该值，在写入新值前检查行长度，如果行长度达到该值，则触发换行。
+         * 行长度，该值是一个换行参考值
+         * 精确控制行长度较为复杂，那样我们需要考虑每一种值toString后长度超出的问题；
+         * 另外在美观性上也不好，比如：一个integer写到一半换行。
          */
         private int softLineLength = 120;
-        /**
-         * 最大行长度
-         * 当行长度达到该值时立即换行
-         */
-        private int maxLineLength = 150;
         /**
          * 非单字节字符是否转unicode字符
          * (ascii码32~127以外的字符)
@@ -82,15 +76,6 @@ public class DsonTextWriterSettings {
 
         public Builder setSoftLineLength(int softLineLength) {
             this.softLineLength = softLineLength;
-            return this;
-        }
-
-        public int getMaxLineLength() {
-            return maxLineLength;
-        }
-
-        public Builder setMaxLineLength(int maxLineLength) {
-            this.maxLineLength = maxLineLength;
             return this;
         }
 

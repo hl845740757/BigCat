@@ -19,6 +19,8 @@ package cn.wjybxx.common.dson.text;
 import java.util.Objects;
 
 /**
+ * token可能记录位置更有助于排查问题
+ *
  * @author wjybxx
  * date - 2023/6/2
  */

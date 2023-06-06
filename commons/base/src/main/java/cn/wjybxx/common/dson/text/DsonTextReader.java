@@ -23,7 +23,6 @@ import com.google.protobuf.Parser;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Objects;
@@ -707,20 +706,8 @@ public class DsonTextReader extends AbstractDsonDocReader {
 
     @Override
     protected byte[] doReadValueAsBytes() {
-        // 这个难以很好的支持
-        Object nextValue = popNextValue();
-        Objects.requireNonNull(nextValue);
-        switch (currentDsonType) {
-            case BINARY -> {
-                return ((DsonBinary) nextValue).getData();
-            }
-            case STRING -> {
-                return ((String) nextValue).getBytes(StandardCharsets.UTF_8);
-            }
-            default -> {
-                throw DsonCodecException.invalidDsonType(List.of(DsonType.BINARY, DsonType.STRING), currentDsonType);
-            }
-        }
+        // Text的Reader和Writer实现最好相同，要么都不支持，要么都支持
+        throw new UnsupportedOperationException();
     }
 
     // endregion

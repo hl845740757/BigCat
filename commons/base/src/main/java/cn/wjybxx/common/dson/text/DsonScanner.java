@@ -242,7 +242,7 @@ public class DsonScanner implements AutoCloseable {
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> {
-                        // unicode码元，char是2字节，固定编码为4个16进制数，从高到底
+                        // unicode字符，char是2字节，固定编码为4个16进制数，从高到底
                         int u1 = buffer.read();
                         int u2 = buffer.read();
                         int u3 = buffer.read();
