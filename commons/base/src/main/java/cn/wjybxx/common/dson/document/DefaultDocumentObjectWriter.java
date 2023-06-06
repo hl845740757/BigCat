@@ -284,7 +284,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
         writer.writeStartObject();
-        DocClassId classId = findEncodeClassId(value, typeArgInfo);
+        String classId = findEncodeClassId(value, typeArgInfo);
     }
 
     @Override
@@ -295,7 +295,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
         writer.writeStartArray();
-        DocClassId classId = findEncodeClassId(value, typeArgInfo);
+        String classId = findEncodeClassId(value, typeArgInfo);
     }
 
     @Override
@@ -303,7 +303,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         writer.writeEndArray();
     }
 
-    private DocClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
+    private String findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举
         if (converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return converter.classIdRegistry.ofType(encodeClass);

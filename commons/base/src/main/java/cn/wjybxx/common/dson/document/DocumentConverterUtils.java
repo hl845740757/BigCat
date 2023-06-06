@@ -43,7 +43,7 @@ public class DocumentConverterUtils extends ConverterUtils {
     private static final String[] arrayElementNameCache;
 
     /** 默认id注册表 */
-    private static final ClassIdRegistry<DocClassId> CLASS_ID_REGISTRY;
+    private static final ClassIdRegistry<String> CLASS_ID_REGISTRY;
     /** 默认codec注册表 */
     private static final DocumentCodecRegistry CODEC_REGISTRY;
     /** Map看做普通Object编码的注册表 */
@@ -58,7 +58,7 @@ public class DocumentConverterUtils extends ConverterUtils {
             nameCache[idx] = Integer.toString(idx).intern();
         }
 
-        List<Map.Entry<DocumentPojoCodec<?>, DocClassId>> entryList = List.of(
+        List<Map.Entry<DocumentPojoCodec<?>, String>> entryList = List.of(
                 // 基础类型的数组codec用于避免拆装箱，提高性能
                 newCodec(new IntArrayCodec()),
                 newCodec(new LongArrayCodec()),
@@ -75,7 +75,7 @@ public class DocumentConverterUtils extends ConverterUtils {
                 newCodec(new MapCodec())
         );
 
-        final Map<Class<?>, DocClassId> classIdMap = entryList.stream()
+        final Map<Class<?>, String> classIdMap = entryList.stream()
                 .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue));
         CLASS_ID_REGISTRY = ClassIdRegistries.fromClassIdMap(classIdMap);
 
@@ -90,11 +90,11 @@ public class DocumentConverterUtils extends ConverterUtils {
         CODEC_REGISTRY2 = new DefaultCodecRegistry(codecMap);
     }
 
-    private static Map.Entry<DocumentPojoCodec<?>, DocClassId> newCodec(DocumentPojoCodecImpl<?> codecImpl) {
-        return Map.entry(new DocumentPojoCodec<>(codecImpl), DocClassId.of(codecImpl.getTypeName()));
+    private static Map.Entry<DocumentPojoCodec<?>, String> newCodec(DocumentPojoCodecImpl<?> codecImpl) {
+        return Map.entry(new DocumentPojoCodec<>(codecImpl), codecImpl.getTypeName());
     }
 
-    public static ClassIdRegistry<DocClassId> getDefaultClassIdRegistry() {
+    public static ClassIdRegistry<String> getDefaultClassIdRegistry() {
         return CLASS_ID_REGISTRY;
     }
 

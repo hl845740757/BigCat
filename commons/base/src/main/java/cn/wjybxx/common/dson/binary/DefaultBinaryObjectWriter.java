@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.io.Chunk;
 import com.google.protobuf.MessageLite;
@@ -282,7 +283,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         writer.writeEndArray();
     }
 
-    private BinClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
+    private ClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举
         if (converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return converter.classIdRegistry.ofType(encodeClass);

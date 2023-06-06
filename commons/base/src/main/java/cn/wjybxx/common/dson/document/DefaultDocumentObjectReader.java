@@ -19,6 +19,7 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import com.google.protobuf.Parser;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -308,9 +309,9 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
 
     //
     @SuppressWarnings("unchecked")
-    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DocClassId classId) {
+    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, String classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
+        final Class<?> encodedType = StringUtils.isBlank(classId) ? null : converter.classIdRegistry.ofId(classId);
         // 尝试按真实类型读 - 概率最大
         if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
             return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);

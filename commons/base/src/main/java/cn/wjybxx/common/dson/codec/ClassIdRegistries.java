@@ -17,8 +17,6 @@
 package cn.wjybxx.common.dson.codec;
 
 import cn.wjybxx.common.Preconditions;
-import cn.wjybxx.common.dson.ClassId;
-import cn.wjybxx.common.dson.DocClassId;
 import cn.wjybxx.common.dson.document.DocumentPojoCodecImpl;
 
 import javax.annotation.Nullable;
@@ -31,17 +29,17 @@ import java.util.stream.Collectors;
  */
 public class ClassIdRegistries {
 
-    public static ClassIdRegistry<DocClassId> fromPojoCodecImpl(final List<? extends DocumentPojoCodecImpl<?>> codecImplList) {
-        final Map<Class<?>, DocClassId> typeNameMap = codecImplList.stream()
-                .collect(Collectors.toMap(DocumentPojoCodecImpl::getEncoderClass, e -> new DocClassId(e.getTypeName())));
+    public static ClassIdRegistry<String> fromPojoCodecImpl(final List<? extends DocumentPojoCodecImpl<?>> codecImplList) {
+        final Map<Class<?>, String> typeNameMap = codecImplList.stream()
+                .collect(Collectors.toMap(DocumentPojoCodecImpl::getEncoderClass, DocumentPojoCodecImpl::getTypeName));
         return fromMapper(typeNameMap.keySet(), typeNameMap::get);
     }
 
-    public static <T extends ClassId> ClassIdRegistry<T> fromClassIdMap(final Map<Class<?>, T> typeNameMap) {
+    public static <T> ClassIdRegistry<T> fromClassIdMap(final Map<Class<?>, T> typeNameMap) {
         return fromMapper(typeNameMap.keySet(), typeNameMap::get);
     }
 
-    public static <T extends ClassId> ClassIdRegistry<T> fromMapper(final Set<Class<?>> typeSet, ClassIdMapper<T> classIdMapper) {
+    public static <T> ClassIdRegistry<T> fromMapper(final Set<Class<?>> typeSet, ClassIdMapper<T> classIdMapper) {
         final IdentityHashMap<Class<?>, T> type2NameMap = new IdentityHashMap<>(typeSet.size());
         final HashMap<T, Class<?>> name2TypeMap = new HashMap<>(typeSet.size());
 
@@ -56,7 +54,7 @@ public class ClassIdRegistries {
     }
 
     @SafeVarargs
-    public static <T extends ClassId> ClassIdRegistry<T> fromRegistries(ClassIdRegistry<T>... registries) {
+    public static <T> ClassIdRegistry<T> fromRegistries(ClassIdRegistry<T>... registries) {
         final IdentityHashMap<Class<?>, T> type2NameMap = new IdentityHashMap<>();
         final HashMap<T, Class<?>> name2TypeMap = new HashMap<>();
         for (ClassIdRegistry<T> registry : registries) {
@@ -71,7 +69,7 @@ public class ClassIdRegistries {
         return new ClassIdRegistryImpl<>(type2NameMap, name2TypeMap);
     }
 
-    private static class ClassIdRegistryImpl<T extends ClassId> implements ClassIdRegistry<T> {
+    private static class ClassIdRegistryImpl<T> implements ClassIdRegistry<T> {
 
         private final Map<Class<?>, T> class2NameMap;
         private final Map<T, Class<?>> name2ClassMap;

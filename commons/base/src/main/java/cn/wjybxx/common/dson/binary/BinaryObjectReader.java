@@ -19,6 +19,7 @@ package cn.wjybxx.common.dson.binary;
 import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.annotation.StableName;
 import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.dson.codec.ClassId;
 import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
@@ -28,7 +29,7 @@ import java.util.*;
 /**
  * 对{@link DsonBinReader}的封装，主要提供类型管理和兼容性支持
  * Dson的元素数据是严格读写，业务层通常不需要如此；
- * Dson的类型信息是{@link BinClassId}，业务层其实面对的{@link Class}
+ * Dson的类型信息是{@link ClassId}，业务层其实面对的{@link Class}
  * 不过，暂时还是不打算提供随机读取支持，会大幅增加开销。
  * <p>
  * 1.代理api可参考{@link DsonBinReader}的文档

@@ -138,7 +138,7 @@ public class DsonCodecException extends RuntimeException {
         return new DsonCodecException(String.format("Incompatible data format, declaredType %s, tag %s", declared, dsonType));
     }
 
-    public static DsonCodecException incompatible(Class<?> declared, ClassId classId) {
+    public static <T> DsonCodecException incompatible(Class<?> declared, T classId) {
         return new DsonCodecException(String.format("Incompatible data format, declaredType %s, classId %s", declared, classId));
     }
 }

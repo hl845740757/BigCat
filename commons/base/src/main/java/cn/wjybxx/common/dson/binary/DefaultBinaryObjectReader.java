@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import com.google.protobuf.Parser;
 
@@ -285,7 +286,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     //
     @SuppressWarnings("unchecked")
-    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, BinClassId classId) {
+    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, ClassId classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
         final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
         // 尝试按真实类型读 - 概率最大

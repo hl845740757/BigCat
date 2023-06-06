@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.dson.document;
 
-import cn.wjybxx.common.dson.DocClassId;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 import cn.wjybxx.common.dson.codec.Converter;
 
@@ -38,6 +37,6 @@ public interface DocumentConverter extends Converter {
 
     DocumentCodecRegistry codecRegistry();
 
-    ClassIdRegistry<DocClassId> classIdRegistry();
+    ClassIdRegistry<String> classIdRegistry();
 
 }

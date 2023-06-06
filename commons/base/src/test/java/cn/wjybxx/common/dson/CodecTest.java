@@ -19,6 +19,7 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.dson.CodecStructs.MyStruct;
 import cn.wjybxx.common.dson.CodecStructs.NestStruct;
 import cn.wjybxx.common.dson.binary.DefaultBinaryConverter;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ConvertOptions;
 import cn.wjybxx.common.dson.document.DefaultDocumentConverter;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -67,7 +68,7 @@ public class CodecTest {
     void binCodecTest() {
         DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                 List.of(new CodecStructs.MyStructCodec()),
-                Map.of(MyStruct.class, new BinClassId(1, 1)),
+                Map.of(MyStruct.class, new ClassId(1, 1)),
                 ConvertOptions.DEFAULT);
 
         MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(MyStruct.class));
@@ -78,7 +79,7 @@ public class CodecTest {
     void docCodecTest() {
         DefaultDocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
                 List.of(new CodecStructs.MyStructCodec()),
-                Map.of(MyStruct.class, new DocClassId("MyStruct")),
+                Map.of(MyStruct.class, "MyStruct"),
                 ConvertOptions.DEFAULT);
 
         MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(MyStruct.class));

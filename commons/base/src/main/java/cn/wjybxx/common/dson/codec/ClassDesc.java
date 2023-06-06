@@ -18,7 +18,6 @@ package cn.wjybxx.common.dson.codec;
 
 import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.Preconditions;
-import cn.wjybxx.common.dson.BinClassId;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
@@ -37,10 +36,10 @@ public final class ClassDesc {
 
     /** 对象的类型名，可以使用点号(.)表达不同的命名空间 */
     private final String className;
-    /** 对象的类型id -- {@link BinClassId} */
+    /** 对象的类型id -- {@link ClassId} */
     private final long classId;
 
-    public ClassDesc(String className, BinClassId classId) {
+    public ClassDesc(String className, ClassId classId) {
         this(className, classId.getGuid());
     }
 

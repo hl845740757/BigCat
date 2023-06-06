@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.dson.codec;
 
-import cn.wjybxx.common.dson.ClassId;
-
 import javax.annotation.Nonnull;
 
 /**
@@ -31,7 +29,7 @@ import javax.annotation.Nonnull;
  * date - 2023/4/26
  */
 @FunctionalInterface
-public interface ClassIdMapper<T extends ClassId> {
+public interface ClassIdMapper<T> {
 
     @Nonnull
     T map(Class<?> type);
