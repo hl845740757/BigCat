@@ -39,6 +39,7 @@ public class DsonTexts {
     public static final String LABEL_FLOAT = "f";
     public static final String LABEL_DOUBLE = "d";
     public static final String LABEL_BOOL = "b";
+    public static final String LABEL_STRING = "s";
     public static final String LABEL_NULL = "N";
 
     public static final String LABEL_BINARY = "bin";

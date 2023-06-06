@@ -29,7 +29,7 @@ public class DefaultDsonBinReader extends AbstractDsonBinReader {
 
     private DsonInput input;
 
-    public DefaultDsonBinReader(DsonInput input, int recursionLimit) {
+    public DefaultDsonBinReader(int recursionLimit, DsonInput input) {
         super(recursionLimit);
         this.input = input;
         setContext(new Context(null, DsonContextType.TOP_LEVEL));

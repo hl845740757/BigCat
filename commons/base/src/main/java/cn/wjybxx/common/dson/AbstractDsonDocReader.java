@@ -457,6 +457,7 @@ public abstract class AbstractDsonDocReader implements DsonDocReader {
         doSkipToEndOfObject();
         setNextState();
         readDsonType(); // end of object
+        assert currentDsonType == DsonType.END_OF_OBJECT;
     }
 
     @Override

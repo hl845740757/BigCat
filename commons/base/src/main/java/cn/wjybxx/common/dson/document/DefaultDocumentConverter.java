@@ -109,7 +109,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DefaultDsonDocWriter(outputStream, options.recursionLimit))) {
+                new DefaultDsonDocWriter(options.recursionLimit, outputStream))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
@@ -117,7 +117,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
         try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
-                new DefaultDsonDocReader(inputStream, options.recursionLimit))) {
+                new DefaultDsonDocReader(options.recursionLimit, inputStream))) {
             return wrapper.readObject(typeArgInfo);
         }
     }

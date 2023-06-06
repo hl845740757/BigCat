@@ -45,7 +45,7 @@ public class DsonReaderWriterTest {
 
         int totalBytesWritten;
         try (DsonOutput dsonOutput = DsonOutputs.newInstance(buffer)) {
-            DsonDocWriter writer = new DefaultDsonDocWriter(dsonOutput, 16);
+            DsonDocWriter writer = new DefaultDsonDocWriter(16, dsonOutput);
             for (int i = 0; i < loop; i++) {
                 DsonObject<String> obj1 = new MutableDsonObject<>(6);
                 obj1.append("name", new DsonString("wjybxx"))
@@ -69,7 +69,7 @@ public class DsonReaderWriterTest {
         }
 
         try (DsonInput dsonInput = DsonInputs.newInstance(buffer, 0, totalBytesWritten)) {
-            DsonDocReader reader = new DefaultDsonDocReader(dsonInput, 16);
+            DsonDocReader reader = new DefaultDsonDocReader(16, dsonInput);
             DsonValue dsonValue;
             while ((dsonValue = DocumentConverterUtils.readTopDsonValue(reader)) != null) {
                 copiedList.add(dsonValue.asObject());
@@ -89,7 +89,7 @@ public class DsonReaderWriterTest {
 
         int totalBytesWritten;
         try (DsonOutput dsonOutput = DsonOutputs.newInstance(buffer)) {
-            DsonBinWriter writer = new DefaultDsonBinWriter(dsonOutput, 16);
+            DsonBinWriter writer = new DefaultDsonBinWriter(16, dsonOutput);
             for (int i = 0; i < loop; i++) {
                 DsonObject<FieldNumber> obj1 = new MutableDsonObject<>(6);
                 obj1.append(FieldNumber.of(0, 0), new DsonString("wjybxx"))
@@ -115,7 +115,7 @@ public class DsonReaderWriterTest {
         }
 
         try (DsonInput dsonInput = DsonInputs.newInstance(buffer, 0, totalBytesWritten)) {
-            DsonBinReader reader = new DefaultDsonBinReader(dsonInput, 16);
+            DsonBinReader reader = new DefaultDsonBinReader(16, dsonInput);
             DsonValue dsonValue;
             while ((dsonValue = BinaryConverterUtils.readTopDsonValue(reader)) != null) {
                 copiedList.add(dsonValue.asBinObject());

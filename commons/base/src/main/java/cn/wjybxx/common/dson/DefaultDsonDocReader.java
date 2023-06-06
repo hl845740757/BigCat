@@ -37,7 +37,7 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
 
     private DsonInput input;
 
-    public DefaultDsonDocReader(DsonInput input, int recursionLimit) {
+    public DefaultDsonDocReader(int recursionLimit, DsonInput input) {
         super(recursionLimit);
         this.input = input;
         setContext(new Context(null, DsonContextType.TOP_LEVEL));

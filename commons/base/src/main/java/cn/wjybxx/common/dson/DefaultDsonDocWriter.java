@@ -32,7 +32,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
 
     private DsonOutput output;
 
-    public DefaultDsonDocWriter(DsonOutput output, int recursionLimit) {
+    public DefaultDsonDocWriter(int recursionLimit, DsonOutput output) {
         super(recursionLimit);
         this.output = output;
         setContext(new Context(null, DsonContextType.TOP_LEVEL));

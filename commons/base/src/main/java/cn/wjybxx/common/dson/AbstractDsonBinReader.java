@@ -457,6 +457,7 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
         doSkipToEndOfObject();
         setNextState();
         readDsonType(); // end of object
+        assert currentDsonType == DsonType.END_OF_OBJECT;
     }
 
     @Override
