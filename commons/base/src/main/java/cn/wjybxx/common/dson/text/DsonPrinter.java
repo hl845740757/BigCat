@@ -91,7 +91,7 @@ public class DsonPrinter {
         }
     }
 
-    public void writeString(String value, StringMode mode) {
+    public void writeString(String value, StringStyle mode) {
         try {
             // TODO 处理与Mode的冲突
             writer.write("@s ");
@@ -223,7 +223,7 @@ public class DsonPrinter {
         }
     }
 
-    public void writeStringNoType(String value, StringMode mode) {
+    public void writeStringNoType(String value, StringStyle mode) {
         try {
             // todo 处理mode的冲突
             writer.write(value);

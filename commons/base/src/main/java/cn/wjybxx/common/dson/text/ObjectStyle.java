@@ -18,25 +18,14 @@ package cn.wjybxx.common.dson.text;
 
 /**
  * @author wjybxx
- * date - 2023/6/5
+ * date - 2023/6/6
  */
-public enum StringMode {
+public enum ObjectStyle {
 
-    /**
-     * 自动判别
-     * 1.当内容较短且无特殊字符，且不是特殊值（tre/false/数字）时不加引号
-     * 2.当内容长度中等时，打印为双引号字符串
-     * 3.当内容较长时，打印为文本模式
-     */
-    AUTO,
+    /** 缩进模式 */
+    INDENT,
 
-    /** 加引号 -- 内容可能包含特殊字符，且想保持流式输入；不需要 */
-    QUOTE,
-
-    /** 不加引号 -- 内容不包含特殊字符，且内容较短；要小心使用 */
-    UNQUOTE,
-
-    /** 不加引号 -- 内容可能包含特殊字符，或内容较长 */
-    TEXT,
+    /** 流模式 - 线性模式 */
+    FLOW,
 
 }

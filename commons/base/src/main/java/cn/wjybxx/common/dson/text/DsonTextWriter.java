@@ -81,7 +81,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     @Override
     protected void doWriteName(String name) {
-        printer.writeString(name, StringMode.AUTO);
+        printer.writeString(name, StringStyle.AUTO);
     }
 
     // endregion
@@ -89,17 +89,17 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     // region 简单值
 
     @Override
-    protected void doWriteInt32(int value, WireType wireType) {
+    protected void doWriteInt32(int value, WireType wireType, boolean stronglyTyped) {
         printer.writeInt32(value, );
     }
 
     @Override
-    protected void doWriteInt64(long value, WireType wireType) {
+    protected void doWriteInt64(long value, WireType wireType, boolean stronglyTyped) {
         printer.writeInt64(value, );
     }
 
     @Override
-    protected void doWriteFloat(float value) {
+    protected void doWriteFloat(float value, boolean stronglyTyped) {
         printer.writeFloat(value, );
     }
 
@@ -114,8 +114,8 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteString(String value) {
-        printer.writeString(value, StringMode.AUTO);
+    protected void doWriteString(String value, StringStyle style) {
+        printer.writeString(value, StringStyle.AUTO);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteExtString(DsonExtString value) {
+    protected void doWriteExtString(DsonExtString value, StringStyle style) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
         DsonReaderUtils.writeExtString(output, value);
@@ -174,13 +174,13 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     // region 容器
 
     @Override
-    protected void doWriteStartContainer(DsonContextType contextType) {
+    protected void doWriteStartContainer(DsonContextType contextType, ObjectStyle style) {
         DsonOutput output = this.output;
         DsonType dsonType = Objects.requireNonNull(contextType.dsonType);
         writeFullTypeAndCurrentName(output, dsonType, null);
 
         Context newContext = newContext(getContext(), contextType);
-        newContext.preWritten = output.position();
+        newContext.style = Objects.requireNonNull(style);
         output.writeFixed32(0);
 
         setContext(newContext);
@@ -239,7 +239,9 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     private static class Context extends AbstractDsonDocWriter.Context {
 
-        int preWritten = 0;
+        ObjectStyle style = ObjectStyle.INDENT;
+        boolean headerWrited = false;
+        int count;
 
         public Context() {
         }
@@ -250,7 +252,8 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
         public void reset() {
             super.reset();
-            preWritten = 0;
+            style = ObjectStyle.INDENT;
+            headerWrited = false;
         }
     }
 

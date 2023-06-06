@@ -19,6 +19,8 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.io.Chunk;
+import cn.wjybxx.common.dson.text.ObjectStyle;
+import cn.wjybxx.common.dson.text.StringStyle;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
@@ -90,17 +92,17 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeInt(String name, int value, WireType wireType) {
-        writer.writeInt32(name, value, wireType);
+        writer.writeInt32(name, value, wireType, false);
     }
 
     @Override
     public void writeLong(String name, long value, WireType wireType) {
-        writer.writeInt64(name, value, wireType);
+        writer.writeInt64(name, value, wireType, false);
     }
 
     @Override
     public void writeFloat(String name, float value) {
-        writer.writeFloat(name, value);
+        writer.writeFloat(name, value, false);
     }
 
     @Override
@@ -118,7 +120,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeString(name, value);
+            writer.writeString(name, value, StringStyle.AUTO);
         }
     }
 
@@ -196,7 +198,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeExtString(name, value);
+            writer.writeExtString(name, value, StringStyle.AUTO);
         }
     }
 
@@ -204,7 +206,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     public void writeExtString(String name, int type, String value) {
         // 这里为Null不安全
         Objects.requireNonNull(value);
-        writer.writeExtString(name, new DsonExtString(type, value));
+        writer.writeExtString(name, new DsonExtString(type, value), StringStyle.AUTO);
 
     }
     // endregion
@@ -283,7 +285,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartObject();
+        writer.writeStartObject(ObjectStyle.INDENT);
         String classId = findEncodeClassId(value, typeArgInfo);
     }
 
@@ -294,7 +296,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartArray();
+        writer.writeStartArray(ObjectStyle.INDENT);
         String classId = findEncodeClassId(value, typeArgInfo);
     }
 

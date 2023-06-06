@@ -127,7 +127,7 @@ public class DsonTexts {
         if (PARSABLE_STRINGS.contains(value)) { // 特殊字符串值
             return false;
         }
-        if (NumberUtils.isParsable(value)) { // 可解析的数字类型
+        if (NumberUtils.isCreatable(value)) { // 可解析的数字类型
             return false;
         }
         // 这遍历的不是unicode码点，但不影响

@@ -22,6 +22,8 @@ import cn.wjybxx.common.dson.io.DsonInput;
 import cn.wjybxx.common.dson.io.DsonInputs;
 import cn.wjybxx.common.dson.io.DsonOutput;
 import cn.wjybxx.common.dson.io.DsonOutputs;
+import cn.wjybxx.common.dson.text.ObjectStyle;
+import cn.wjybxx.common.dson.text.StringStyle;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -54,12 +56,12 @@ public class DsonReaderWriterTest {
                         .append("time", new DsonInt64(System.currentTimeMillis()));
                 srcList.add(obj1);
 
-                writer.writeStartObject();
+                writer.writeStartObject(ObjectStyle.INDENT);
                 obj1.forEach((name, value) -> {
                     switch (value.getDsonType()) {
-                        case INT32 -> writer.writeInt32(name, value.asInt32().getValue(), WireType.VARINT);
-                        case INT64 -> writer.writeInt64(name, value.asInt64().getValue(), WireType.VARINT);
-                        case STRING -> writer.writeString(name, value.asString().getValue());
+                        case INT32 -> writer.writeInt32(name, value.asInt32().getValue(), WireType.VARINT, false);
+                        case INT64 -> writer.writeInt64(name, value.asInt64().getValue(), WireType.VARINT, false);
+                        case STRING -> writer.writeString(name, value.asString().getValue(), StringStyle.AUTO);
                     }
                 });
                 writer.writeEndObject();
@@ -98,14 +100,14 @@ public class DsonReaderWriterTest {
                         .append(FieldNumber.of(0, 3), new DsonInt64(System.currentTimeMillis()));
                 srcList.add(obj1);
 
-                writer.writeStartObject();
+                writer.writeStartObject(ObjectStyle.INDENT);
                 obj1.forEach((name, value) -> {
                     switch (value.getDsonType()) {
                         case INT32 ->
-                                writer.writeInt32(name.getFullNumber(), value.asInt32().getValue(), WireType.VARINT);
+                                writer.writeInt32(name.getFullNumber(), value.asInt32().getValue(), WireType.VARINT, false);
                         case INT64 ->
-                                writer.writeInt64(name.getFullNumber(), value.asInt64().getValue(), WireType.VARINT);
-                        case STRING -> writer.writeString(name.getFullNumber(), value.asString().getValue());
+                                writer.writeInt64(name.getFullNumber(), value.asInt64().getValue(), WireType.VARINT, false);
+                        case STRING -> writer.writeString(name.getFullNumber(), value.asString().getValue(), StringStyle.AUTO);
                     }
                 });
                 writer.writeEndObject();

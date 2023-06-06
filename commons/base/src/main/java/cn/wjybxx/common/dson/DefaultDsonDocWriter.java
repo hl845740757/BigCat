@@ -18,6 +18,8 @@ package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
+import cn.wjybxx.common.dson.text.ObjectStyle;
+import cn.wjybxx.common.dson.text.StringStyle;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
@@ -82,21 +84,21 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     // region 简单值
 
     @Override
-    protected void doWriteInt32(int value, WireType wireType) {
+    protected void doWriteInt32(int value, WireType wireType, boolean stronglyTyped) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.INT32, wireType);
         wireType.writeInt32(output, value);
     }
 
     @Override
-    protected void doWriteInt64(long value, WireType wireType) {
+    protected void doWriteInt64(long value, WireType wireType, boolean stronglyTyped) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.INT64, wireType);
         wireType.writeInt64(output, value);
     }
 
     @Override
-    protected void doWriteFloat(float value) {
+    protected void doWriteFloat(float value, boolean stronglyTyped) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.FLOAT, null);
         output.writeFloat(value);
@@ -117,7 +119,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteString(String value) {
+    protected void doWriteString(String value, StringStyle style) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.STRING, null);
         output.writeString(value);
@@ -158,7 +160,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteExtString(DsonExtString value) {
+    protected void doWriteExtString(DsonExtString value, StringStyle style) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
         DsonReaderUtils.writeExtString(output, value);
@@ -176,7 +178,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     // region 容器
 
     @Override
-    protected void doWriteStartContainer(DsonContextType contextType) {
+    protected void doWriteStartContainer(DsonContextType contextType, ObjectStyle style) {
         DsonOutput output = this.output;
         DsonType dsonType = Objects.requireNonNull(contextType.dsonType);
         writeFullTypeAndCurrentName(output, dsonType, null);
