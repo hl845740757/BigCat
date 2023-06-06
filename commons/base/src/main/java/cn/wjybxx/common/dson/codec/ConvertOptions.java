@@ -51,12 +51,17 @@ public class ConvertOptions {
      * 3.即使不开启该选项，用户也可以通过定义字段的writeProxy实现将Map写为普通Object - 可参考{@link MapAsObjectCodec}
      */
     public final boolean encodeMapAsObject;
+    /**
+     * protoBuf对应的二进制子类型
+     */
+    public final int pbBinaryType;
 
     public ConvertOptions(Builder builder) {
         this.recursionLimit = builder.recursionLimit;
         this.classIdPolicy = builder.classIdPolicy;
         this.appendNull = builder.appendNull.orElse(false);
         this.encodeMapAsObject = builder.encodeMapAsObject.orElse(false);
+        this.pbBinaryType = builder.pbBinaryType;
     }
 
     public static ConvertOptions DEFAULT = newBuilder().build();
@@ -71,6 +76,7 @@ public class ConvertOptions {
         private OptionalBool encodeMapAsObject = OptionalBool.FALSE;
         private ClassIdPolicy classIdPolicy = ClassIdPolicy.OPTIMIZED;
         private int recursionLimit = 32;
+        private int pbBinaryType = 10;
 
         public OptionalBool getAppendNull() {
             return appendNull;
@@ -106,6 +112,15 @@ public class ConvertOptions {
         public Builder setRecursionLimit(int recursionLimit) {
             if (recursionLimit < 1) throw new IllegalArgumentException("invalid limit " + recursionLimit);
             this.recursionLimit = recursionLimit;
+            return this;
+        }
+
+        public int getPbBinaryType() {
+            return pbBinaryType;
+        }
+
+        public Builder setPbBinaryType(int pbBinaryType) {
+            this.pbBinaryType = pbBinaryType;
             return this;
         }
 

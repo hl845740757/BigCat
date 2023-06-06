@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
@@ -326,6 +327,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeMessage(String name, int binaryType, MessageLite messageLite) {
+        DsonBinary.checksSubType(binaryType);
         advanceToValueState(name);
         doWriteMessage(binaryType, messageLite);
         setNextState();

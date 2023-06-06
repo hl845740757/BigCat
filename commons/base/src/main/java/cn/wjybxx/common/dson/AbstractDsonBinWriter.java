@@ -326,6 +326,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeMessage(int name, int binaryType, MessageLite messageLite) {
+        DsonBinary.checksSubType(binaryType);
         advanceToValueState(name);
         doWriteMessage(binaryType, messageLite);
         setNextState();

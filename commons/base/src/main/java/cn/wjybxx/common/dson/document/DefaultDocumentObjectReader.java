@@ -122,7 +122,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readMessage(name, DsonBinaryType.PROTOBUF_MESSAGE.getValue(), parser);
+        return reader.readMessage(name, converter.options.pbBinaryType, parser);
     }
 
     @Override

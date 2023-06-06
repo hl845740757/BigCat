@@ -35,21 +35,21 @@ public class DsonBinary extends DsonValue {
     private final int type;
     private final byte[] data;
 
-    public DsonBinary(DsonBinaryType type, byte[] data) {
-        this(type.getValue(), data);
-    }
-
     public DsonBinary(byte[] data) {
-        this((byte) 0, data);
+        this(0, data);
     }
 
     /**
      * @param type 为避免开销和降低编解码复杂度，暂限定为单个字节范围 [0, 255]
      */
     public DsonBinary(int type, byte[] data) {
-        Preconditions.checkBetween(type, 0, 255);
+        checksSubType(type);
         this.type = type;
         this.data = Objects.requireNonNull(data);
+    }
+
+    public static void checksSubType(int type) {
+        Preconditions.checkBetween(type, 0, 255);
     }
 
     public int getType() {
