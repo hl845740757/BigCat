@@ -128,7 +128,7 @@ public interface DsonDocWriter extends AutoCloseable {
     // region 特殊支持
 
     /**
-     * Message最终会写为Binary，子类型为{@link DsonBinaryType#PROTOBUF_MESSAGE}
+     * Message最终会写为Binary
      */
     void writeMessage(String name, int binaryType, MessageLite messageLite);
 

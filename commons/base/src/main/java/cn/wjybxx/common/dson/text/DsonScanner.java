@@ -200,11 +200,6 @@ public class DsonScanner implements AutoCloseable {
                 checkToken(STRING_TOKEN_TYPES, nextToken.getType(), position);
                 return new DsonToken(TokenType.DOUBLE, DsonTexts.parseDouble(nextToken.castAsString()));
             }
-            case DsonTexts.LABEL_STRING -> {
-                DsonToken nextToken = nextToken();
-                checkToken(STRING_TOKEN_TYPES, nextToken.getType(), position);
-                return new DsonToken(TokenType.STRING, nextToken.getValue());
-            }
             case DsonTexts.LABEL_BOOL -> {
                 DsonToken nextToken = nextToken();
                 checkToken(STRING_TOKEN_TYPES, nextToken.getType(), position);

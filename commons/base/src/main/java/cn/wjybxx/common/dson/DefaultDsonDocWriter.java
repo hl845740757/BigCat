@@ -250,7 +250,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
             super(parent, contextType);
         }
 
-        void reset() {
+        public void reset() {
             super.reset();
             preWritten = 0;
         }

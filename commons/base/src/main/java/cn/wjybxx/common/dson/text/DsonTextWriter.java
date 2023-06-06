@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.text;
 
+import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
 import cn.wjybxx.common.dson.types.ObjectRef;
@@ -28,13 +29,13 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/4/21
  */
-public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
+public class DsonTextWriter extends AbstractDsonDocWriter {
 
-    private DsonOutput output;
+    private DsonPrinter printer;
 
-    public DefaultDsonBinWriter(DsonOutput output, int recursionLimit) {
+    public DsonTextWriter(int recursionLimit, DsonPrinter printer) {
         super(recursionLimit);
-        this.output = output;
+        this.printer = printer;
         setContext(new Context(null, DsonContextType.TOP_LEVEL));
     }
 
@@ -51,21 +52,21 @@ public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
     //
     @Override
     public void flush() {
-        output.flush();
+        printer.flush();
     }
 
     @Override
     public void close() {
-        if (output != null) {
-            output.close();
-            output = null;
+        if (printer != null) {
+            printer.close();
+            printer = null;
         }
         super.close();
     }
 
     // region state
 
-    private void writeFullTypeAndCurrentName(DsonOutput output, DsonType dsonType, @Nullable WireType wireType) {
+    private void writeFullTypeAndCurrentName(DsonPrinter output, DsonType dsonType, @Nullable WireType wireType) {
         if (wireType == null) {
             output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), 0));
         } else {
@@ -74,63 +75,60 @@ public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
         Context context = getContext();
         if (context.contextType == DsonContextType.OBJECT ||
                 context.contextType == DsonContextType.HEADER) {
-            output.writeUint32(context.name);
+            output.writeString(context.name, );
         }
     }
+
+    @Override
+    protected void doWriteName(String name) {
+        printer.writeString(name, StringMode.AUTO);
+    }
+
     // endregion
 
     // region 简单值
 
     @Override
     protected void doWriteInt32(int value, WireType wireType) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.INT32, wireType);
-        wireType.writeInt32(output, value);
+        printer.writeInt32(value, );
     }
 
     @Override
     protected void doWriteInt64(long value, WireType wireType) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.INT64, wireType);
-        wireType.writeInt64(output, value);
+        printer.writeInt64(value, );
     }
 
     @Override
     protected void doWriteFloat(float value) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.FLOAT, null);
-        output.writeFloat(value);
+        printer.writeFloat(value, );
     }
 
     @Override
     protected void doWriteDouble(double value) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.DOUBLE, null);
-        output.writeDouble(value);
+        printer.writeDouble(value, );
     }
 
     @Override
     protected void doWriteBool(boolean value) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.BOOLEAN, null);
-        output.writeBool(value);
+        printer.writeBoolean(value, );
     }
 
     @Override
     protected void doWriteString(String value) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.STRING, null);
-        output.writeString(value);
+        printer.writeString(value, StringMode.AUTO);
     }
 
     @Override
     protected void doWriteNull() {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.NULL, null);
+        printer.writeNull();
     }
 
     @Override
     protected void doWriteBinary(DsonBinary binary) {
+        printer.writeStartObject();
+        printer.writeType(DsonTexts.LABEL_BINARY);
+        printer.writeInt32();
+
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         DsonReaderUtils.writeBinary(output, binary);
@@ -141,13 +139,6 @@ public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
         DsonReaderUtils.writeBinary(output, type, chunk);
-    }
-
-    @Override
-    protected void doWriteExtString(DsonExtString value) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        DsonReaderUtils.writeExtString(output, value);
     }
 
     @Override
@@ -162,6 +153,13 @@ public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
         DsonReaderUtils.writeExtInt64(output, value, wireType);
+    }
+
+    @Override
+    protected void doWriteExtString(DsonExtString value) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
+        DsonReaderUtils.writeExtString(output, value);
     }
 
     @Override
@@ -239,7 +237,7 @@ public class DefaultDsonBinWriter extends AbstractDsonBinWriter {
         setPooledContext(context);
     }
 
-    private static class Context extends AbstractDsonBinWriter.Context {
+    private static class Context extends AbstractDsonDocWriter.Context {
 
         int preWritten = 0;
 

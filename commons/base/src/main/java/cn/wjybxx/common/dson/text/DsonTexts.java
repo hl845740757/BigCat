@@ -39,7 +39,6 @@ public class DsonTexts {
     public static final String LABEL_FLOAT = "f";
     public static final String LABEL_DOUBLE = "d";
     public static final String LABEL_BOOL = "b";
-    public static final String LABEL_STRING = "s";
     public static final String LABEL_NULL = "N";
 
     public static final String LABEL_BINARY = "bin";
@@ -55,7 +54,7 @@ public class DsonTexts {
 
     public static final Set<String> LABEL_SET = Set.of(
             LABEL_INT32, LABEL_INT64, LABEL_FLOAT, LABEL_DOUBLE,
-            LABEL_BOOL, LABEL_STRING, LABEL_NULL, LABEL_BINARY,
+            LABEL_BOOL, LABEL_NULL, LABEL_BINARY,
             LABEL_EXTINT32, LABEL_EXTINT64, LABEL_EXTSTRING, LABEL_REFERENCE,
             LABEL_TEXT, LABEL_ARRAY, LABEL_OBJECT);
 

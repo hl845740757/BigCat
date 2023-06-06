@@ -55,6 +55,14 @@ public enum OptionalBool {
         return _value;
     }
 
+    public boolean isTrue() {
+        return this == TRUE;
+    }
+
+    public boolean isFalse() {
+        return this == FALSE;
+    }
+
     public boolean isPresent() {
         return this != EMPTY;
     }

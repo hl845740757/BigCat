@@ -82,11 +82,11 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
         }
         context.name = name;
         context.state = DsonWriterState.VALUE;
-        doWriteName();
+        doWriteName(name);
     }
 
     /** 执行{@link #writeName(int)}时调用 */
-    protected void doWriteName() {
+    protected void doWriteName(int name) {
 
     }
 
@@ -372,7 +372,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
             this.state = state;
         }
 
-        void reset() {
+        public void reset() {
             parent = null;
             contextType = null;
             state = DsonWriterState.INITIAL;

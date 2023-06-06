@@ -297,10 +297,6 @@ public class DsonTextReader extends AbstractDsonDocReader {
                     pushNextValue(DsonTexts.parseBool(unquotedString));
                     return DsonType.BOOLEAN;
                 }
-                case DsonTexts.LABEL_STRING -> {
-                    pushNextValue(unquotedString);
-                    return DsonType.STRING;
-                }
             }
         }
         if ("true".equals(unquotedString) || "false".equals(unquotedString)) {
@@ -437,7 +433,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
                 }
                 case ObjectRef.FIELDS_LOCAL_ID -> {
                     verifyStringsToken(context, valueToken);
-                    localId =valueToken.castAsString();
+                    localId = valueToken.castAsString();
                 }
                 case ObjectRef.FIELDS_TYPE -> {
                     verifyTokenType(context, valueToken, TokenType.UNQUOTE_STRING);
