@@ -252,7 +252,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
             case HEADER -> parseHeaderToken(context, valueToken);
             case UNQUOTE_STRING -> parseUnquoteStringToken(context, valueToken);
             case END_ARRAY -> {
-                // '[' endArray 必须在读取下一个值的时候结束；而 '{' endObject 必须在下次读取name的时候结束
+                // Array必须在读取下一个值的时候结束；而Object必须在下次读取name的时候结束
                 if (context.contextType == DsonContextType.ARRAY) {
                     yield DsonType.END_OF_OBJECT;
                 }
@@ -271,7 +271,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
         };
     }
 
-    /** 字符串默认解析规则 -- TODO 获取数组的元素类型，进行类型推断 */
+    /** 字符串默认解析规则 */
     private DsonType parseUnquoteStringToken(Context context, DsonToken valueToken) {
         String unquotedString = valueToken.castAsString();
         if (context.compClsNameToken != null) {

@@ -17,11 +17,10 @@
 package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.dson.document.DocumentConverterUtils;
-import cn.wjybxx.common.dson.text.DsonScanner;
-import cn.wjybxx.common.dson.text.DsonStringBuffer;
-import cn.wjybxx.common.dson.text.DsonTextReader;
+import cn.wjybxx.common.dson.text.*;
 import org.junit.jupiter.api.Test;
 
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +35,10 @@ public class DsonTextReaderTest {
             -- {@MyStruct\s
             -- \tname : wjybxx,
             -- \tage:28,
+            -- \t介绍: 这是一段中文 ,
+            -- \tintro: "hello world",
+            -- \tref1 : {@ref localId: 10001, guid: 16148b3b4e7b8923d398},
+            -- \tref2 : @ref 17630eb4f916148b
             -- }
             --
             -- {@MyStruct\s
@@ -72,5 +75,37 @@ public class DsonTextReaderTest {
             }
         }
         topObjects.forEach(System.out::println);
+
+        StringWriter stringWriter = new StringWriter();
+        DsonTextWriterSettings settings = DsonTextWriterSettings.newBuilder()
+                .setUnicodeChar(true)
+                .build();
+
+        DsonValue topObj = topObjects.get(0);
+        try (DsonTextWriter writer = new DsonTextWriter(16, stringWriter, settings)) {
+            if (topObj instanceof DsonObject) {
+                @SuppressWarnings("unchecked") DsonObject<String> dsonObject = (DsonObject<String>) topObj;
+                writer.writeStartObject(ObjectStyle.INDENT);
+                dsonObject.forEach((name, value) -> {
+                    switch (value.getDsonType()) {
+                        case INT32 -> writer.writeInt64(name, value.asInt32().getValue(), WireType.VARINT, true);
+                        case INT64 -> writer.writeInt64(name, value.asInt64().getValue(), WireType.VARINT, true);
+                        case FLOAT -> writer.writeFloat(name, value.asFloat().getValue(), true);
+                        case DOUBLE -> writer.writeDouble(name, value.asDouble().getValue());
+                        case BOOLEAN -> writer.writeBoolean(name, value.asBoolean().getValue());
+                        case NULL -> writer.writeNull(name);
+                        case STRING -> writer.writeString(name, value.asString().getValue(), StringStyle.AUTO);
+                        case BINARY -> writer.writeBinary(name, value.asBinary());
+                        case EXT_INT32 -> writer.writeExtInt32(name, value.asExtInt32(), WireType.VARINT);
+                        case EXT_INT64 -> writer.writeExtInt64(name, value.asExtInt64(), WireType.VARINT);
+                        case EXT_STRING -> writer.writeExtString(name, value.asExtString(), StringStyle.AUTO);
+                        case REFERENCE -> writer.writeRef(name, value.asReference().getValue());
+                    }
+                });
+                writer.writeEndObject();
+            }
+            System.out.println(stringWriter.toString());
+        }
+
     }
 }

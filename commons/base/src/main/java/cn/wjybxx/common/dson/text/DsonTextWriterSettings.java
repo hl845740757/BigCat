@@ -49,7 +49,7 @@ public class DsonTextWriterSettings {
          */
         private int softLineLength = 120;
         /**
-         * 非单字节字符是否转unicode字符
+         * 非ascii字符是否转unicode码元字符
          * (ascii码32~127以外的字符)
          */
         private boolean unicodeChar = false;

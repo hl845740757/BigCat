@@ -23,21 +23,25 @@ package cn.wjybxx.common.dson;
 public enum DsonContextType {
 
     /** 当前在最顶层，尚未开始读写（topLevel相当于一个数组） */
-    TOP_LEVEL(null),
+    TOP_LEVEL(null, null, null),
 
     /** 当前是一个普通对象结构（文档结构） */
-    OBJECT(DsonType.OBJECT),
+    OBJECT(DsonType.OBJECT, "{", "}"),
 
     /** 当前是一个数组结构 */
-    ARRAY(DsonType.ARRAY),
+    ARRAY(DsonType.ARRAY,"[", "]"),
 
     /** 当前是一个Header结构 - 类Object */
-    HEADER(DsonType.HEADER);
+    HEADER(DsonType.HEADER, "@{", "}");
 
     public final DsonType dsonType;
+    public final String startSymbol;
+    public final String endSymbol;
 
-    DsonContextType(DsonType dsonType) {
+    DsonContextType(DsonType dsonType, String startSymbol, String endSymbol) {
         this.dsonType = dsonType;
+        this.startSymbol = startSymbol;
+        this.endSymbol = endSymbol;
     }
 
     public boolean isLikeArray() {

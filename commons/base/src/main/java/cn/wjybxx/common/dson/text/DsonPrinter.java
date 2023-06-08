@@ -50,19 +50,7 @@ public final class DsonPrinter implements AutoCloseable {
         return column;
     }
 
-    public void indent() {
-        indent += 2;
-        updateIndent();
-    }
-
-    public void retract() {
-        if (indent < 2) {
-            throw new IllegalArgumentException("indent must be called before retract");
-        }
-        indent -= 2;
-        updateIndent();
-    }
-
+    /** 换行 */
     public void println() {
         try {
             writer.append(lineSeparator);
@@ -72,6 +60,7 @@ public final class DsonPrinter implements AutoCloseable {
         }
     }
 
+    /** 打印行首 */
     public void printLhead(LheadType lheadType) {
         try {
             writer.append(lheadType.label);
@@ -82,6 +71,7 @@ public final class DsonPrinter implements AutoCloseable {
         }
     }
 
+    /** 打印缩进 */
     public void printIndent() {
         try {
             writer.write(indentionArray, 0, indent);
@@ -104,6 +94,15 @@ public final class DsonPrinter implements AutoCloseable {
         try {
             writer.write(cBuffer);
             column += 1;
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
+    }
+
+    public void print(char[] cBuffer, int offset, int len) {
+        try {
+            writer.write(cBuffer, offset, len);
+            column += len;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
         }
@@ -152,6 +151,19 @@ public final class DsonPrinter implements AutoCloseable {
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
         }
+    }
+
+    public void indent() {
+        indent += 2;
+        updateIndent();
+    }
+
+    public void retract() {
+        if (indent < 2) {
+            throw new IllegalArgumentException("indent must be called before retract");
+        }
+        indent -= 2;
+        updateIndent();
     }
 
     private void updateIndent() {

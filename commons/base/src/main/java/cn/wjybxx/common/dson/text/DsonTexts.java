@@ -144,7 +144,6 @@ public class DsonTexts {
 
     // 封装一下，方便以后切换实现
 
-    /** 其实最快的方式就是将每一个byte的值缓存下来，一共也就256个字符串，开销不算大 */
     public static char[] encodeHex(byte[] data) {
         return Hex.encodeHex(data, false);
     }
