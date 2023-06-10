@@ -44,6 +44,10 @@ public enum DsonContextType {
         this.endSymbol = endSymbol;
     }
 
+    public boolean isContainer() {
+        return dsonType.isContainer();
+    }
+
     public boolean isLikeArray() {
         return this == ARRAY || this == TOP_LEVEL;
     }

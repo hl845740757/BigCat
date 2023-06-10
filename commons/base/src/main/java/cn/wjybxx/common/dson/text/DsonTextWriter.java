@@ -21,6 +21,7 @@ import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Writer;
 import java.util.Objects;
@@ -99,7 +100,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
      * 不能无引号的情况下只回退为双引号模式；通常用于打印短字符串
      */
     private void printStringNonSS(DsonPrinter printer, String text) {
-        if (DsonTexts.canUnquoteString(text) && isASCIIText(text)) {
+        if (DsonTexts.canUnquoteString(text) && DsonTexts.isASCIIText(text)) {
             printer.print(text);
         } else {
             printEscaped(text);
@@ -109,7 +110,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     private void printString(DsonPrinter printer, String value, StringStyle style) {
         switch (style) {
             case AUTO -> {
-                if (DsonTexts.canUnquoteString(value) && isASCIIText(value)) {
+                if (DsonTexts.canUnquoteString(value) && DsonTexts.isASCIIText(value)) {
                     printer.print(value);
                 } else if (value.length() < settings.softLineLength * 2) {
                     printEscaped(value);
@@ -121,15 +122,6 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
             case UNQUOTE -> printer.print(value);
             case TEXT -> printText(value);
         }
-    }
-
-    private boolean isASCIIText(String text) {
-        for (int i = 0, len = text.length(); i < len; i++) {
-            if (text.charAt(i) < 32 || text.charAt(i) > 0x7F) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /** 打印双引号String */
@@ -153,7 +145,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
             case '\r' -> printer.print("\\r");
             case '\t' -> printer.print("\\t");
             default -> {
-                if (c < 32 || (c > 0x7F && unicodeChar)) {
+                if ((c < 32 || c > 126) && unicodeChar) {
                     printer.print("\\u");
                     printer.print(Integer.toHexString(0x10000 + (int) c), 1, 4);
                     return;
@@ -163,7 +155,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
         }
     }
 
-    /** 纯文本模式打印 */
+    /** 纯文本模式打印，要执行换行符 */
     private void printText(String value) {
         DsonPrinter printer = this.printer;
         int softLineLength = settings.softLineLength;
@@ -331,15 +323,22 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     protected void doWriteRef(ObjectRef objectRef) {
         DsonPrinter printer = this.printer;
         writeCurrentName(printer, DsonType.REFERENCE);
+        if (StringUtils.isBlank(objectRef.getNamespace())
+                && objectRef.getType() == 0 && objectRef.getPolicy() == 0) {
+            printer.print("@ref ");
+            printStringNonSS(printer, objectRef.getLocalId());
+            return;
+        }
+
         printer.print("{@ref ");
         int count = 0;
-        if (objectRef.getGuid() != null) {
+        if (objectRef.hasNamespace()) {
             count++;
-            printer.print(ObjectRef.FIELDS_GUID);
+            printer.print(ObjectRef.FIELDS_NAMESPACE);
             printer.print(": ");
-            printStringNonSS(printer, objectRef.getGuid());
+            printStringNonSS(printer, objectRef.getNamespace());
         }
-        if (objectRef.getLocalId() != null) {
+        if (objectRef.hasLocalId()) {
             if (count++ > 0) printer.print(", ");
             checkLineLength(LheadType.APPEND_LINE);
             printer.print(ObjectRef.FIELDS_LOCAL_ID);

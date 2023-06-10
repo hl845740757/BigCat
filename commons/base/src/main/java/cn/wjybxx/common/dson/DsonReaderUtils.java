@@ -92,8 +92,8 @@ public class DsonReaderUtils {
     }
 
     public static void writeRef(DsonOutput output, ObjectRef objectRef) {
-        output.writeString(objectRef.getGuid());
-        output.writeString(objectRef.getLocalId());
+        output.writeString(objectRef.hasNamespace() ? objectRef.getNamespace() : "");
+        output.writeString(objectRef.hasLocalId() ? objectRef.getLocalId() : "");
         output.writeUint32(objectRef.getType());
         output.writeUint32(objectRef.getPolicy());
     }

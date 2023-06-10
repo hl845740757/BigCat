@@ -158,6 +158,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeString(String name, String value, StringStyle style) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteString(value, style);
         setNextState();
@@ -172,6 +173,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeBinary(String name, DsonBinary dsonBinary) {
+        Objects.requireNonNull(dsonBinary);
         advanceToValueState(name);
         doWriteBinary(dsonBinary);
         setNextState();
@@ -179,6 +181,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeBinary(String name, int type, Chunk chunk) {
+        Objects.requireNonNull(chunk);
         advanceToValueState(name);
         doWriteBinary(type, chunk);
         setNextState();
@@ -186,6 +189,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeExtInt32(String name, DsonExtInt32 value, WireType wireType) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteExtInt32(value, wireType);
         setNextState();
@@ -193,6 +197,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeExtInt64(String name, DsonExtInt64 value, WireType wireType) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteExtInt64(value, wireType);
         setNextState();
@@ -200,6 +205,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeExtString(String name, DsonExtString value, StringStyle style) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteExtString(value, style);
         setNextState();
@@ -207,6 +213,7 @@ public abstract class AbstractDsonDocWriter implements DsonDocWriter {
 
     @Override
     public void writeRef(String name, ObjectRef objectRef) {
+        Objects.requireNonNull(objectRef);
         advanceToValueState(name);
         doWriteRef(objectRef);
         setNextState();

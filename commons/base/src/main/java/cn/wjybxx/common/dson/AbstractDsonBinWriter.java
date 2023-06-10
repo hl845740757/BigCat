@@ -24,6 +24,7 @@ import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author wjybxx
@@ -158,6 +159,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeString(int name, String value, StringStyle style) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteString(value, style);
         setNextState();
@@ -172,6 +174,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeBinary(int name, DsonBinary dsonBinary) {
+        Objects.requireNonNull(dsonBinary);
         advanceToValueState(name);
         doWriteBinary(dsonBinary);
         setNextState();
@@ -179,6 +182,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeBinary(int name, int type, Chunk chunk) {
+        Objects.requireNonNull(chunk);
         advanceToValueState(name);
         doWriteBinary(type, chunk);
         setNextState();
@@ -186,6 +190,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeExtInt32(int name, DsonExtInt32 value, WireType wireType) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteExtInt32(value, wireType);
         setNextState();
@@ -193,6 +198,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeExtInt64(int name, DsonExtInt64 value, WireType wireType) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteExtInt64(value, wireType);
         setNextState();
@@ -200,6 +206,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeExtString(int name, DsonExtString value, StringStyle style) {
+        Objects.requireNonNull(value);
         advanceToValueState(name);
         doWriteExtString(value, style);
         setNextState();
@@ -207,6 +214,7 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
 
     @Override
     public void writeRef(int name, ObjectRef objectRef) {
+        Objects.requireNonNull(objectRef);
         advanceToValueState(name);
         doWriteRef(objectRef);
         setNextState();

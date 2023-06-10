@@ -104,7 +104,7 @@ public class DsonTexts {
     }
 
     /** 是否是不安全的字符，不能省略引号的字符 */
-    public static boolean isUnsafeChar(int c) {
+    public static boolean isUnsafeStringChar(int c) {
         return Character.isWhitespace(c) || unsafeCharSet.contains(c);
     }
 
@@ -132,12 +132,22 @@ public class DsonTexts {
         // 这遍历的不是unicode码点，但不影响
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
-            if (!isSafeStringChar(c)) {
+            if (isUnsafeStringChar(c)) {
                 return false;
             }
         }
         if (NumberUtils.isCreatable(value)) { // 可解析的数字类型，这个开销大放最后检测
             return false;
+        }
+        return true;
+    }
+
+    /** 是否是ASCII码中的可打印字符构成的文本 */
+    public static boolean isASCIIText(String text) {
+        for (int i = 0, len = text.length(); i < len; i++) {
+            if (text.charAt(i) < 32 || text.charAt(i) > 126) {
+                return false;
+            }
         }
         return true;
     }

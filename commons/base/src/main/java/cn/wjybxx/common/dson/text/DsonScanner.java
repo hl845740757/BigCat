@@ -89,7 +89,7 @@ public class DsonScanner implements AutoCloseable {
 
     // region common
 
-    /** @return 如果调到文件尾则返回 -1 */
+    /** @return 如果跳到文件尾则返回 -1 */
     private int skipWhitespace() {
         int c;
         while ((c = buffer.read()) != -1 && Character.isWhitespace(c)) {
@@ -119,16 +119,16 @@ public class DsonScanner implements AutoCloseable {
         return new DsonParseException(String.format("Invalid Dson input. Position: %d. Character: '%c'.", position, c));
     }
 
-    private static DsonParseException spaceRequired(int c, int position) {
-        return new DsonParseException(String.format("Space is required. Position: %d. Character: '%c'.", position, c));
-    }
-
     private static DsonParseException invalidClassName(String c, int position) {
         return new DsonParseException(String.format("Invalid className. Position: %d. ClassName: '%s'.", position, c));
     }
 
-    private DsonParseException invalidEscapeSequence(int c, int position) {
+    private static DsonParseException invalidEscapeSequence(int c, int position) {
         return new DsonParseException(String.format("Invalid escape sequence. Position: %d. Character: '\\%c'.", position, c));
+    }
+
+    private static DsonParseException spaceRequired(int c, int position) {
+        return new DsonParseException(String.format("Space is required. Position: %d. Character: '%c'.", position, c));
     }
 
     private StringBuilder allocStringBuilder() {
@@ -166,7 +166,7 @@ public class DsonScanner implements AutoCloseable {
             return "{";
         }
         // 首字符要么是引号，要是是安全字符
-        if (firstChar != '"' && DsonTexts.isUnsafeChar(firstChar)) {
+        if (firstChar != '"' && DsonTexts.isUnsafeStringChar(firstChar)) {
             throw invalidInput(firstChar, getPosition());
         }
         String className = firstChar == '"' ? scanString((char) firstChar) : scanUnquotedString((char) firstChar);

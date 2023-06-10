@@ -31,13 +31,13 @@ import java.util.Objects;
 @Immutable
 public final class ObjectRef {
 
+    public static final String FIELDS_NAMESPACE = "namespace";
     public static final String FIELDS_LOCAL_ID = "localId";
-    public static final String FIELDS_GUID = "guid";
     public static final String FIELDS_TYPE = "type";
     public static final String FIELDS_POLICY = "policy";
 
-    /** 引用文件的guid - 也可能是目标对象的Guid */
-    private final String guid;
+    /** 引用对象所属的命名空间 - 也可能就是对象的id */
+    private final String namespace;
     /** 引用对象的本地id - 如果目标对象是容器中的一员，该值是其容器内编号 */
     private final String localId;
     /** 引用的对象的大类型 - 给业务使用的，用于快速引用分析 */
@@ -45,34 +45,34 @@ public final class ObjectRef {
     /** 引用的解析策略 - 0：默认 1：解析为引用 2：内联复制，3：不解析 */
     private final int policy;
 
-    public ObjectRef(String guid, String localId) {
-        this(guid, localId, 0, 0);
+    public ObjectRef(String namespace, String localId) {
+        this(namespace, localId, 0, 0);
     }
 
-    public ObjectRef(String guid, String localId, int type, int policy) {
-        if (StringUtils.isBlank(guid) && StringUtils.isBlank(localId)) {
-            throw new IllegalArgumentException();
+    public ObjectRef(String namespace, String localId, int type, int policy) {
+        if (StringUtils.isBlank(namespace) && StringUtils.isBlank(localId)) {
+            throw new IllegalArgumentException("both namespace and localId are blank");
         }
         this.localId = localId;
-        this.guid = guid;
+        this.namespace = namespace;
         this.type = type;
         this.policy = policy;
     }
 
-    public boolean isLocalRef() {
-        return StringUtils.isEmpty(guid);
+    public boolean hasNamespace() {
+        return !StringUtils.isBlank(namespace);
     }
 
-    public boolean isGlobalRef() {
-        return !StringUtils.isEmpty(guid);
+    public boolean hasLocalId() {
+        return !StringUtils.isBlank(localId);
     }
 
     public String getLocalId() {
         return localId;
     }
 
-    public String getGuid() {
-        return guid;
+    public String getNamespace() {
+        return namespace;
     }
 
     public int getPolicy() {
@@ -94,14 +94,14 @@ public final class ObjectRef {
 
         if (type != objectRef.type) return false;
         if (policy != objectRef.policy) return false;
-        if (!Objects.equals(localId, objectRef.localId)) return false;
-        return Objects.equals(guid, objectRef.guid);
+        if (!Objects.equals(namespace, objectRef.namespace)) return false;
+        return Objects.equals(localId, objectRef.localId);
     }
 
     @Override
     public int hashCode() {
-        int result = localId != null ? localId.hashCode() : 0;
-        result = 31 * result + (guid != null ? guid.hashCode() : 0);
+        int result = namespace != null ? namespace.hashCode() : 0;
+        result = 31 * result + (localId != null ? localId.hashCode() : 0);
         result = 31 * result + type;
         result = 31 * result + policy;
         return result;
@@ -110,8 +110,8 @@ public final class ObjectRef {
     @Override
     public String toString() {
         return "ObjectRef{" +
-                "localId='" + localId + '\'' +
-                ", guid='" + guid + '\'' +
+                "namespace='" + namespace + '\'' +
+                ", localId='" + localId + '\'' +
                 ", type=" + type +
                 ", policy=" + policy +
                 '}';

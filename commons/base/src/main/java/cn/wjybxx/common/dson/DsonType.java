@@ -97,6 +97,7 @@ public enum DsonType {
         return number;
     }
 
+    /** header不属于普通意义上的容器 */
     public boolean isContainer() {
         return this == OBJECT || this == ARRAY;
     }

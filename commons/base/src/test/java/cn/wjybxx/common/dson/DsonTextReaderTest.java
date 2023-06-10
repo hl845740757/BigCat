@@ -37,14 +37,14 @@ public class DsonTextReaderTest {
             -- \tage:28,
             -- \t介绍: 这是一段中文 ,
             -- \tintro: "hello world",
-            -- \tref1 : {@ref localId: 10001, guid: 16148b3b4e7b8923d398},
+            -- \tref1 : {@ref localId: 10001, namespace: 16148b3b4e7b8923d398},
             -- \tref2 : @ref 17630eb4f916148b
             -- }
             --
             -- {@MyStruct\s
             -- \tname : wjybxx,
             -- \tintro: "hello world",
-            -- \tref1 : {@ref localId: 10001, guid: 16148b3b4e7b8923d398},
+            -- \tref1 : {@ref localId: 10001, namespace: 16148b3b4e7b8923d398},
             -- \tref2 : @ref 17630eb4f916148b
             --  }
             --

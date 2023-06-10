@@ -323,10 +323,10 @@ public class DsonTextReader extends AbstractDsonDocReader {
         String clsName = valueToken.castAsString();
         switch (clsName) {
             case DsonTexts.LABEL_REFERENCE -> {
-                // @ref guid
+                // @ref localId
                 DsonToken nextToken = popToken();
-                verifyStringsToken(context, nextToken);
-                pushNextValue(new ObjectRef(nextToken.castAsString(), null));
+                ensureStringsToken(context, nextToken);
+                pushNextValue(new ObjectRef(null, nextToken.castAsString()));
                 return DsonType.REFERENCE;
             }
             case DsonTexts.LABEL_BINARY,
@@ -412,7 +412,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
     }
 
     private ObjectRef scanRef(Context context) {
-        String guid = null;
+        String namespace = null;
         String localId = null;
         int type = 0;
         int policy = 0;
@@ -420,7 +420,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
         DsonToken keyToken;
         while ((keyToken = popToken()).getType() != TokenType.END_OBJECT) {
             // key必须是字符串
-            verifyStringsToken(context, keyToken);
+            ensureStringsToken(context, keyToken);
 
             // 下一个应该是冒号
             DsonToken colonToken = popToken();
@@ -429,12 +429,12 @@ public class DsonTextReader extends AbstractDsonDocReader {
             // 根据name校验
             DsonToken valueToken = popToken();
             switch (keyToken.castAsString()) {
-                case ObjectRef.FIELDS_GUID -> {
-                    verifyStringsToken(context, valueToken);
-                    guid = valueToken.castAsString();
+                case ObjectRef.FIELDS_NAMESPACE -> {
+                    ensureStringsToken(context, valueToken);
+                    namespace = valueToken.castAsString();
                 }
                 case ObjectRef.FIELDS_LOCAL_ID -> {
-                    verifyStringsToken(context, valueToken);
+                    ensureStringsToken(context, valueToken);
                     localId = valueToken.castAsString();
                 }
                 case ObjectRef.FIELDS_TYPE -> {
@@ -457,7 +457,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
                 pushToken(keyToken);
             }
         }
-        return new ObjectRef(guid, localId, type, policy);
+        return new ObjectRef(namespace, localId, type, policy);
     }
 
     private Tuple2 scanTuple2(Context context) {
@@ -470,7 +470,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
         verifyTokenType(context, nextToken, TokenType.COMMA);
 
         nextToken = popToken();
-        verifyStringsToken(context, nextToken);
+        ensureStringsToken(context, nextToken);
         String value = nextToken.castAsString();
 
         nextToken = popToken();
@@ -502,7 +502,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
         }
     }
 
-    private static void verifyStringsToken(Context context, DsonToken token) {
+    private static void ensureStringsToken(Context context, DsonToken token) {
         if (token.getType() != TokenType.STRING && token.getType() != TokenType.UNQUOTE_STRING) {
             throw DsonCodecException.invalidTokenType(context.contextType, token, List.of(TokenType.STRING, TokenType.UNQUOTE_STRING));
         }
@@ -659,9 +659,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
         popNextValue();
         int stack = 0;
         switch (currentDsonType) {
-            case HEADER, OBJECT, ARRAY -> {
-                stack = 1;
-            }
+            case HEADER, OBJECT, ARRAY -> stack = 1;
         }
         skipStack(stack);
     }
@@ -679,7 +677,7 @@ public class DsonTextReader extends AbstractDsonDocReader {
             switch (token.getType()) {
                 case BEGIN_ARRAY, BEGIN_OBJECT -> stack++;
                 case HEADER -> {
-                    if (token.lastChar() == '{') {
+                    if (token.lastChar() == '{') { // @{
                         stack++;
                     }
                 }
