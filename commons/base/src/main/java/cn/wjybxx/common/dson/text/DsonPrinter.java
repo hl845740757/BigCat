@@ -37,6 +37,9 @@ public final class DsonPrinter implements AutoCloseable {
 
     private final Writer writer;
     private final String lineSeparator;
+
+    /** 行缓冲，减少同步写操作 */
+    private final StringBuilder builder = new StringBuilder(150);
     private char[] indentionArray = new char[0];
     private int indent = 0;
     private int column;
@@ -53,7 +56,8 @@ public final class DsonPrinter implements AutoCloseable {
     /** 换行 */
     public void println() {
         try {
-            writer.append(lineSeparator);
+            builder.append(lineSeparator);
+            flush();
             column = 0;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -63,8 +67,8 @@ public final class DsonPrinter implements AutoCloseable {
     /** 打印行首 */
     public void printLhead(LheadType lheadType) {
         try {
-            writer.append(lheadType.label);
-            writer.append(' ');
+            builder.append(lheadType.label);
+            builder.append(' ');
             column += lheadType.label.length() + 1;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -74,7 +78,7 @@ public final class DsonPrinter implements AutoCloseable {
     /** 打印缩进 */
     public void printIndent() {
         try {
-            writer.write(indentionArray, 0, indent);
+            builder.append(indentionArray, 0, indent);
             column += indent;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -83,7 +87,7 @@ public final class DsonPrinter implements AutoCloseable {
 
     public void print(char c) {
         try {
-            writer.write(c);
+            builder.append(c);
             column += 1;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -92,7 +96,7 @@ public final class DsonPrinter implements AutoCloseable {
 
     public void print(char[] cBuffer) {
         try {
-            writer.write(cBuffer);
+            builder.append(cBuffer);
             column += 1;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -101,7 +105,7 @@ public final class DsonPrinter implements AutoCloseable {
 
     public void print(char[] cBuffer, int offset, int len) {
         try {
-            writer.write(cBuffer, offset, len);
+            builder.append(cBuffer, offset, len);
             column += len;
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -111,7 +115,7 @@ public final class DsonPrinter implements AutoCloseable {
     /** @param text 纯文本 */
     public void print(String text) {
         try {
-            writer.write(text);
+            builder.append(text);
             column += text.length();
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -119,13 +123,13 @@ public final class DsonPrinter implements AutoCloseable {
     }
 
     /**
-     * @param offset Offset from which to start writing characters
-     * @param length 写入的长度，jdk这个api的风格和其它的不一样啊...
+     * @param start the starting index of the subsequence to be appended.
+     * @param end   the end index of the subsequence to be appended.
      */
-    public void print(String text, int offset, int length) {
+    public void printSubRange(String text, int start, int end) {
         try {
-            writer.write(text, offset, length);
-            column += length;
+            builder.append(text, start, end);
+            column += (end - start);
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
         }
@@ -138,6 +142,14 @@ public final class DsonPrinter implements AutoCloseable {
 
     public void flush() {
         try {
+            if (builder.length() > 0) {
+                // 显式转cBuffer，避免toString的额外开销
+                char[] cBuffer = new char[builder.length()];
+                builder.getChars(0, builder.length(), cBuffer, 0);
+
+                writer.write(cBuffer, 0, cBuffer.length);
+                builder.setLength(0);
+            }
             writer.flush();
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);
@@ -147,6 +159,7 @@ public final class DsonPrinter implements AutoCloseable {
     @Override
     public void close() {
         try {
+            flush();
             writer.close();
         } catch (Exception e) {
             ExceptionUtils.rethrow(e);

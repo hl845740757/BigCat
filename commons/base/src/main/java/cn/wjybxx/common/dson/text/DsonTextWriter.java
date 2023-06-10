@@ -112,7 +112,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
             case AUTO -> {
                 if (DsonTexts.canUnquoteString(value) && DsonTexts.isASCIIText(value)) {
                     printer.print(value);
-                } else if (value.length() < settings.softLineLength * 2) {
+                } else if (!settings.enableText || value.length() < settings.softLineLength * 2) {
                     printEscaped(value);
                 } else {
                     printText(value);
@@ -120,7 +120,13 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
             }
             case QUOTE -> printEscaped(value);
             case UNQUOTE -> printer.print(value);
-            case TEXT -> printText(value);
+            case TEXT -> {
+                if (settings.enableText) {
+                    printText(value);
+                } else {
+                    printEscaped(value);
+                }
+            }
         }
     }
 
@@ -131,6 +137,10 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
         printer.print('"');
         for (int i = 0, length = text.length(); i < length; i++) {
             printEscaped(text.charAt(i), printer, unicodeChar);
+            if (printer.getColumn() >= settings.softLineLength) {
+                printer.println();
+                printer.printLhead(LheadType.APPEND);
+            }
         }
         printer.print('"');
     }
@@ -147,7 +157,7 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
             default -> {
                 if ((c < 32 || c > 126) && unicodeChar) {
                     printer.print("\\u");
-                    printer.print(Integer.toHexString(0x10000 + (int) c), 1, 4);
+                    printer.printSubRange(Integer.toHexString(0x10000 + (int) c), 1, 5);
                     return;
                 }
                 printer.print(c);
@@ -156,30 +166,34 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
     }
 
     /** 纯文本模式打印，要执行换行符 */
-    private void printText(String value) {
+    private void printText(String text) {
         DsonPrinter printer = this.printer;
-        int softLineLength = settings.softLineLength;
-
-        // 需要处理换行符...
-        printer.print("@ss ");
-        int offset = 0;
-        while (offset < value.length()) {
-            int printable = Math.max(15, softLineLength - printer.getColumn());
-            int len = Math.min(printable, value.length() - offset);
-            printer.print(value, offset, len);
-            offset += len;
-            if (printer.getColumn() >= softLineLength) {
+        printer.print("@ss "); // 开始符
+        for (int i = 0, length = text.length(); i < length; i++) {
+            char c = text.charAt(i);
+            if (c == '\r') {
+                DsonTexts.checkLRLF(text, length, i, c);
+                i++;
+                c = text.charAt(i);
+            }
+            if (c == '\n') { // 要执行文本中的换行符
                 printer.println();
                 printer.printLhead(LheadType.TEXT_APPEND_LINE);
+                continue;
+            }
+            printer.print(c);
+            if (printer.getColumn() > settings.softLineLength) {
+                printer.println();
+                printer.printLhead(LheadType.APPEND);
             }
         }
         printer.println();
-        printer.printLhead(LheadType.APPEND_LINE);
+        printer.printLhead(LheadType.APPEND_LINE); // 结束符
     }
 
     private void printBinary(byte[] buffer, int offset, int length) {
         DsonPrinter printer = this.printer;
-        // 使用小buffer多次编码代替大的buffer，不过也可能性能会下降，如果printer存在获取锁的情况
+        // 使用小buffer多次编码代替大的buffer，不过也可能性能会下降
         int segment = 64;
         char[] cBuffer = new char[segment * 2];
         int loop = length / segment;
@@ -377,7 +391,6 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
         printer.print(contextType.startSymbol);
         if (style == ObjectStyle.INDENT) {
             printer.indent();
-            printer.printIndent();
         }
 
         setContext(newContext);
@@ -386,17 +399,19 @@ public class DsonTextWriter extends AbstractDsonDocWriter {
 
     @Override
     protected void doWriteEndContainer() {
-        // 记录preWritten在写length之前，最后的size要减4
         Context context = getContext();
-
         DsonPrinter printer = this.printer;
+
         if (context.style == ObjectStyle.INDENT) {
             printer.retract();
-            printer.println();
-            printer.printLhead(LheadType.APPEND_LINE);
-            printer.printIndent();
+            // 打印了内容的情况下才换行结束
+            if (context.headerWrited || context.count > 0) {
+                printer.println();
+                printer.printLhead(LheadType.APPEND_LINE);
+                printer.printIndent();
+            }
         }
-        printer.print(getContextType().endSymbol);
+        printer.print(context.contextType.endSymbol);
 
         this.recursionDepth--;
         setContext(context.parent);

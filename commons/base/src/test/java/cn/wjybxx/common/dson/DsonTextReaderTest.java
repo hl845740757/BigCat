@@ -35,10 +35,11 @@ public class DsonTextReaderTest {
             -- {@MyStruct\s
             -- \tname : wjybxx,
             -- \tage:28,
-            -- \t介绍: 这是一段中文 ,
+            -- \t介绍: 这是一段中文而且非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常长 ,
             -- \tintro: "hello world",
             -- \tref1 : {@ref localId: 10001, namespace: 16148b3b4e7b8923d398},
-            -- \tref2 : @ref 17630eb4f916148b
+            -- \tref2 : @ref 17630eb4f916148b,
+            -- \tbin : [@bin 0, 35df2e75e6a4be9e6f4571c64cb6d08b]
             -- }
             --
             -- {@MyStruct\s
@@ -78,7 +79,8 @@ public class DsonTextReaderTest {
 
         StringWriter stringWriter = new StringWriter();
         DsonTextWriterSettings settings = DsonTextWriterSettings.newBuilder()
-                .setUnicodeChar(true)
+                .setSoftLineLength(30)
+                .setUnicodeChar(false)
                 .build();
 
         DsonValue topObj = topObjects.get(0);
@@ -94,7 +96,13 @@ public class DsonTextReaderTest {
                         case DOUBLE -> writer.writeDouble(name, value.asDouble().getValue());
                         case BOOLEAN -> writer.writeBoolean(name, value.asBoolean().getValue());
                         case NULL -> writer.writeNull(name);
-                        case STRING -> writer.writeString(name, value.asString().getValue(), StringStyle.AUTO);
+                        case STRING -> {
+                            if (name.equals("介绍")){
+                                writer.writeString(name, value.asString().getValue(), StringStyle.TEXT);
+                            } else {
+                                writer.writeString(name, value.asString().getValue(), StringStyle.AUTO);
+                            }
+                        }
                         case BINARY -> writer.writeBinary(name, value.asBinary());
                         case EXT_INT32 -> writer.writeExtInt32(name, value.asExtInt32(), WireType.VARINT);
                         case EXT_INT64 -> writer.writeExtInt64(name, value.asExtInt64(), WireType.VARINT);
@@ -103,6 +111,7 @@ public class DsonTextReaderTest {
                     }
                 });
                 writer.writeEndObject();
+                writer.flush();
             }
             System.out.println(stringWriter.toString());
         }

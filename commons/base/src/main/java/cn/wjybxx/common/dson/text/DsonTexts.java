@@ -152,6 +152,18 @@ public class DsonTexts {
         return true;
     }
 
+    /**
+     * 现在操作系统的换行符只有: \r\n (windows) 和 \n (unix, mac)
+     * 检查中途是否出现单独的 \r
+     */
+    public static void checkLRLF(CharSequence buffer, int bufferLength, int pos, char c) {
+        if (c == '\r') {
+            if (pos + 1 == bufferLength || buffer.charAt(pos + 1) != '\n') {
+                throw new DsonParseException("invalid input. A separate \\r, \\r\\n or \\n is require, Position: " + pos);
+            }
+        }
+    }
+
     // 封装一下，方便以后切换实现
 
     public static char[] encodeHex(byte[] data) {

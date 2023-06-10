@@ -75,11 +75,7 @@ public class DsonStringBuffer extends AbstractDsonBuffer<LineInfo> {
      * 检查中途是否出现单独的 \r
      */
     static void checkLRLF(CharSequence buffer, int bufferLength, int endPos, char c) {
-        if (c == '\r') {
-            if (endPos + 1 != bufferLength && buffer.charAt(endPos + 1) != '\n') {
-                throw new DsonParseException("invalid input. A separate \\r, \\r\\n or \\n is require, Position: " + endPos);
-            }
-        }
+        DsonTexts.checkLRLF(buffer, bufferLength, endPos, c);
     }
 
     static int lengthLRLF(char c) {

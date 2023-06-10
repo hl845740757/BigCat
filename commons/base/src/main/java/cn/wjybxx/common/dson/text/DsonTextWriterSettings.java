@@ -27,11 +27,13 @@ public class DsonTextWriterSettings {
     public final String lineSeparator;
     public final int softLineLength;
     public final boolean unicodeChar;
+    public final boolean enableText;
 
     private DsonTextWriterSettings(Builder builder) {
         this.lineSeparator = Objects.requireNonNull(builder.lineSeparator);
-        this.softLineLength = builder.softLineLength;
+        this.softLineLength = Math.max(8, builder.softLineLength);
         this.unicodeChar = builder.unicodeChar;
+        this.enableText = builder.enableText;
     }
 
     public static Builder newBuilder() {
@@ -45,7 +47,8 @@ public class DsonTextWriterSettings {
         /**
          * 行长度，该值是一个换行参考值
          * 精确控制行长度较为复杂，那样我们需要考虑每一种值toString后长度超出的问题；
-         * 另外在美观性上也不好，比如：一个integer写到一半换行。
+         * 另外在美观性上也不好，比如：一个integer写到一半换行。。。
+         * 另外，这个行长度是是码元计数，不是字符计数。
          */
         private int softLineLength = 120;
         /**
@@ -53,6 +56,11 @@ public class DsonTextWriterSettings {
          * (ascii码32~126以外的字符)
          */
         private boolean unicodeChar = false;
+        /**
+         * 是否支持纯文本模式
+         * 如果{@link #unicodeChar}为true，该值通常需要关闭
+         */
+        private boolean enableText = true;
 
         private Builder() {
         }
@@ -85,6 +93,15 @@ public class DsonTextWriterSettings {
 
         public Builder setUnicodeChar(boolean unicodeChar) {
             this.unicodeChar = unicodeChar;
+            return this;
+        }
+
+        public boolean isEnableText() {
+            return enableText;
+        }
+
+        public Builder setEnableText(boolean enableText) {
+            this.enableText = enableText;
             return this;
         }
     }
