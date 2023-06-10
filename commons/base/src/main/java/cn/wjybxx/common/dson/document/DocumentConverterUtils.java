@@ -43,7 +43,7 @@ public class DocumentConverterUtils extends ConverterUtils {
     private static final String[] arrayElementNameCache;
 
     /** 默认id注册表 */
-    private static final ClassIdRegistry<DocClassId> CLASS_ID_REGISTRY;
+    private static final ClassIdRegistry<String> CLASS_ID_REGISTRY;
     /** 默认codec注册表 */
     private static final DocumentCodecRegistry CODEC_REGISTRY;
     /** Map看做普通Object编码的注册表 */
@@ -58,7 +58,7 @@ public class DocumentConverterUtils extends ConverterUtils {
             nameCache[idx] = Integer.toString(idx).intern();
         }
 
-        List<Map.Entry<DocumentPojoCodec<?>, DocClassId>> entryList = List.of(
+        List<Map.Entry<DocumentPojoCodec<?>, String>> entryList = List.of(
                 // 基础类型的数组codec用于避免拆装箱，提高性能
                 newCodec(new IntArrayCodec()),
                 newCodec(new LongArrayCodec()),
@@ -75,7 +75,7 @@ public class DocumentConverterUtils extends ConverterUtils {
                 newCodec(new MapCodec())
         );
 
-        final Map<Class<?>, DocClassId> classIdMap = entryList.stream()
+        final Map<Class<?>, String> classIdMap = entryList.stream()
                 .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue));
         CLASS_ID_REGISTRY = ClassIdRegistries.fromClassIdMap(classIdMap);
 
@@ -90,11 +90,11 @@ public class DocumentConverterUtils extends ConverterUtils {
         CODEC_REGISTRY2 = new DefaultCodecRegistry(codecMap);
     }
 
-    private static Map.Entry<DocumentPojoCodec<?>, DocClassId> newCodec(DocumentPojoCodecImpl<?> codecImpl) {
-        return Map.entry(new DocumentPojoCodec<>(codecImpl), DocClassId.of(codecImpl.getTypeName()));
+    private static Map.Entry<DocumentPojoCodec<?>, String> newCodec(DocumentPojoCodecImpl<?> codecImpl) {
+        return Map.entry(new DocumentPojoCodec<>(codecImpl), codecImpl.getTypeName());
     }
 
-    public static ClassIdRegistry<DocClassId> getDefaultClassIdRegistry() {
+    public static ClassIdRegistry<String> getDefaultClassIdRegistry() {
         return CLASS_ID_REGISTRY;
     }
 
@@ -153,8 +153,12 @@ public class DocumentConverterUtils extends ConverterUtils {
 
     // region 直接读取为DsonObject
 
+    /** @return 如果到达文件尾部，则返回null */
     public static DsonValue readTopDsonValue(DsonDocReader reader) {
         DsonType dsonType = reader.readDsonType();
+        if (dsonType == DsonType.END_OF_OBJECT) {
+            return null;
+        }
         if (dsonType == DsonType.OBJECT) {
             return readObject(reader);
         } else {
@@ -163,32 +167,53 @@ public class DocumentConverterUtils extends ConverterUtils {
     }
 
     /** 外部需要先readName */
-    private static DsonDocObject readObject(DsonDocReader reader) {
+    private static MutableDsonObject<String> readObject(DsonDocReader reader) {
         DsonType dsonType;
         String name;
         DsonValue value;
 
-        DsonDocObject dsonObject = new DsonDocObject();
-        dsonObject.setClassId(reader.readStartObject());
+        MutableDsonObject<String> dsonObject = new MutableDsonObject<>();
+        reader.readStartObject();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            name = reader.readName();
-            value = readAsDsonValue(reader, dsonType, name);
-            dsonObject.put(name, value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(reader, dsonObject.getHeader());
+            } else {
+                name = reader.readName();
+                value = readAsDsonValue(reader, dsonType, name);
+                dsonObject.put(name, value);
+            }
         }
         reader.readEndObject();
         return dsonObject;
     }
 
+    private static void readHeader(DsonDocReader reader, DsonHeader<String> header) {
+        DsonType dsonType;
+        String name;
+        DsonValue value;
+        reader.readStartHeader();
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            name = reader.readName();
+            value = readAsDsonValue(reader, dsonType, name);
+            header.put(name, value);
+        }
+        reader.readEndHeader();
+    }
+
     /** 外部需要先readName */
-    private static DsonDocArray readArray(DsonDocReader reader) {
+    private static MutableDsonArray<String> readArray(DsonDocReader reader) {
         DsonType dsonType;
         DsonValue value;
 
-        DsonDocArray dsonArray = new DsonDocArray();
-        dsonArray.setClassId(reader.readStartArray());
+        MutableDsonArray<String> dsonArray = new MutableDsonArray<>(8);
+        reader.readStartArray();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            value = readAsDsonValue(reader, dsonType, null);
-            dsonArray.add(value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(reader, dsonArray.getHeader());
+            } else {
+                value = readAsDsonValue(reader, dsonType, null);
+                dsonArray.add(value);
+            }
         }
         reader.readEndArray();
         return dsonArray;
@@ -206,18 +231,18 @@ public class DocumentConverterUtils extends ConverterUtils {
             case EXT_STRING -> reader.readExtString(name);
             case EXT_INT32 -> reader.readExtInt32(name);
             case EXT_INT64 -> reader.readExtInt64(name);
+            case REFERENCE -> new DsonObjectRef(reader.readRef(name));
             case NULL -> {
                 reader.readNull(name);
                 yield DsonNull.INSTANCE;
             }
-            case OBJECT -> {
-                reader.readName(name);
-                yield readObject(reader);
+            case HEADER -> {
+                MutableDsonHeader<String> header = new MutableDsonHeader<>();
+                readHeader(reader, header);
+                yield header;
             }
-            case ARRAY -> {
-                reader.readName(name);
-                yield readArray(reader);
-            }
+            case OBJECT -> readObject(reader);
+            case ARRAY -> readArray(reader);
             case END_OF_OBJECT -> throw new AssertionError();
         };
     }

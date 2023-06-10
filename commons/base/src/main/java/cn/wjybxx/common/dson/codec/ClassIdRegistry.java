@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.dson.codec;
 
-import cn.wjybxx.common.dson.ClassId;
 import cn.wjybxx.common.dson.DsonCodecException;
 
 import javax.annotation.Nullable;
@@ -36,7 +35,7 @@ import java.util.Map;
  * date - 2023/4/26
  */
 @ThreadSafe
-public interface ClassIdRegistry<T extends ClassId> {
+public interface ClassIdRegistry<T> {
 
     /**
      * 通过类型获取类型的字符串标识

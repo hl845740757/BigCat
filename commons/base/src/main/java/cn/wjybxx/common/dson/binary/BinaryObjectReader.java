@@ -19,6 +19,7 @@ package cn.wjybxx.common.dson.binary;
 import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.annotation.StableName;
 import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.dson.codec.ClassId;
 import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
@@ -28,7 +29,7 @@ import java.util.*;
 /**
  * 对{@link DsonBinReader}的封装，主要提供类型管理和兼容性支持
  * Dson的元素数据是严格读写，业务层通常不需要如此；
- * Dson的类型信息是{@link BinClassId}，业务层其实面对的{@link Class}
+ * Dson的类型信息是{@link ClassId}，业务层其实面对的{@link Class}
  * 不过，暂时还是不打算提供随机读取支持，会大幅增加开销。
  * <p>
  * 1.代理api可参考{@link DsonBinReader}的文档
@@ -70,11 +71,11 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     DsonBinary readBinary(int name);
 
-    DsonExtString readExtString(int name);
-
     DsonExtInt32 readExtInt32(int name);
 
     DsonExtInt64 readExtInt64(int name);
+
+    DsonExtString readExtString(int name);
 
     // endregion
 
@@ -102,37 +103,29 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     //
 
-    default BinClassId readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartObject(typeArgInfo);
+        readStartObject(typeArgInfo);
     }
 
-    default BinClassId readStartArray(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartArray(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartArray(typeArgInfo);
+        readStartArray(typeArgInfo);
     }
 
     /** 顶层对象或数组内元素 */
-    @Nonnull
-    BinClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndObject();
 
     /** 顶层对象或数组内元素 */
-    BinClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndArray();
 
     // endregion
 
     // region 代理
-
-    /**
-     * 查询是否到达了对象的末尾
-     *
-     * @see DsonBinReader#isAtEndOfObject()
-     */
-    boolean isAtEndOfObject();
 
     /**
      * 读取下一个数据类型
@@ -148,9 +141,6 @@ public interface BinaryObjectReader extends AutoCloseable {
     DsonType getCurrentDsonType();
 
     int getCurrentName();
-
-    @Nonnull
-    BinClassId getCurrentClassId();
 
     void skipName();
 

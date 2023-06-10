@@ -17,6 +17,7 @@
 package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.annotation.Beta;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
@@ -33,22 +34,6 @@ public interface DsonDocReader extends AutoCloseable {
 
     @Override
     void close();
-
-    /**
-     * 是否到达当前Array/Object的末尾；
-     * 1.该查询不会产生状态切换
-     * 2.如果该方法返回true，接下来的{@link #readDsonType()}必将返回{@link DsonType#END_OF_OBJECT}
-     * <p>
-     * 循环的基本写法：
-     * <pre>{@code
-     *  while(!isAtEndOfObject()) {
-     *     readDsonType();
-     *     readName();
-     *     readValue();
-     *  }
-     * }</pre>
-     */
-    boolean isAtEndOfObject();
 
     /** 当前是否处于应该读取type状态 */
     boolean isAtType();
@@ -98,12 +83,9 @@ public interface DsonDocReader extends AutoCloseable {
     String getCurrentName();
 
     /**
-     * 获取当前容器对象关联的class信息
-     * 1.该值在readStart/readEnd期间保持不变
-     * 2.如果尚未执行readStart方法，则抛出异常。
+     * 获取当前上下文的类型
      */
-    @Nonnull
-    DocClassId getCurrentClassId();
+    DsonContextType getContextType();
 
     // region 简单值
 
@@ -123,67 +105,48 @@ public interface DsonDocReader extends AutoCloseable {
 
     DsonBinary readBinary(String name);
 
-    DsonExtString readExtString(String name);
-
     DsonExtInt32 readExtInt32(String name);
 
     DsonExtInt64 readExtInt64(String name);
+
+    DsonExtString readExtString(String name);
+
+    ObjectRef readRef(String name);
 
     // endregion
 
     // region 容器
 
-    /***
-     * @return 当前对象的classId;如果之前未写入，则返回默认的ClassId
-     */
-    @Nonnull
-    default DocClassId readStartArray(String name) {
-        readName(name);
-        return readStartArray();
-    }
-
-    /***
-     * @return 当前对象的classId;如果之前未写入，则返回默认的ClassId
-     */
-    @Nonnull
-    DocClassId readStartArray();
+    void readStartArray();
 
     void readEndArray();
 
-    /***
-     * @return 当前对象的classId;如果之前未写入，则返回默认的ClassId
-     */
-    @Nonnull
-    default DocClassId readStartObject(String name) {
-        readName(name);
-        return readStartObject();
-    }
-
-    /***
-     * @return 当前对象的classId;如果之前未写入，则返回默认的ClassId
-     */
-    @Nonnull
-    DocClassId readStartObject();
+    void readStartObject();
 
     void readEndObject();
 
-    /**
-     * 该方法将使reader处于一个等待{@link #readStartArray()}调用的状态
-     * 1.该方法会导致reader的上下文切换，会提前进入读数组上下文。
-     * 2.会提前读取length和classId信息，{@link #getCurrentClassId()}将返回最新的对象信息
-     * 3.该状态下任何读值方法都将触发状态异常错误.
-     * 4.需要先读取字段的name，避免更多的重载方法。
-     * <p>
-     * 该方法的目的是先预读一部分数据，以确定如何解析后面的数据。
-     */
-    DocClassId prestartArray();
+    /** 开始读取对象头，对象头属于对象的匿名属性 */
+    void readStartHeader();
+
+    void readEndHeader();
 
     /**
-     * 该方法将使reader处于一个等待{@link #readStartObject()}调用的状态
-     *
-     * @see #prestartArray()
+     * 回退到等待开始状态
+     * 1.该方法只回退状态，不回退输入
+     * 2.只有在等待读取下一个值的类型时才可以执行，即等待{@link #readDsonType()}时才可以执行
+     * 3.通常用于在读取header之后回退，然后让业务对象的codec去解码
      */
-    DocClassId prestartObject();
+    void backToWaitStart();
+
+    default void readStartArray(String name) {
+        readName(name);
+        readStartArray();
+    }
+
+    default void readStartObject(String name) {
+        readName(name);
+        readStartObject();
+    }
 
     // endregion
 
@@ -201,24 +164,16 @@ public interface DsonDocReader extends AutoCloseable {
     void skipValue();
 
     /**
-     * 跳过Array或Object的剩余内容
+     * 跳过当前容器对象(Array、Object、Header)的剩余内容
      * 调用该方法后，{@link #getCurrentDsonType()}将返回{@link DsonType#END_OF_OBJECT}
      */
     void skipToEndOfObject();
 
     /**
-     * 查看value的概要信息
-     * 1.如果当前不处于读值状态则抛出状态异常
-     * 2.注意{@link DsonType#EXT_STRING}的length属性问题
-     * 3.只在二进制流下生效
-     */
-    DsonValueSummary peekValueSummary();
-
-    /**
      * 读取一个protobuf消息
      * 只有当前数据是Binary的时候才合法
      */
-    <T> T readMessage(String name, @Nonnull Parser<T> parser);
+    <T> T readMessage(String name, int binaryType, @Nonnull Parser<T> parser);
 
     /**
      * 将value的值读取为字节数组
@@ -234,21 +189,7 @@ public interface DsonDocReader extends AutoCloseable {
      */
     byte[] readValueAsBytes(String name);
 
-    /**
-     * 添加一个数据到Context上
-     * 通过attach的方式，可避免建立相同深度的上下文
-     */
-    void attachContext(Object value);
-
-    /** 返回添加到Context上的值 */
-    Object attachContext();
-
-    /** 查询当前是否是数组上下文 */
-    boolean isArrayContext();
-
-    /** 查询当前是否是Object上下文 */
-    boolean isObjectContext();
-
     @Beta
     DsonReaderGuide whatShouldIDo();
+
 }

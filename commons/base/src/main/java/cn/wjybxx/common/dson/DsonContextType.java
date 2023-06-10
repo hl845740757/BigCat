@@ -16,22 +16,44 @@
 
 package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.annotation.Internal;
-
 /**
  * @author wjybxx
  * date 2023/4/4
  */
-@Internal
 public enum DsonContextType {
 
-    /** 当前在最顶层，尚未开始读写（其实topLevel相当于一个数组） */
-    TOP_LEVEL,
+    /** 当前在最顶层，尚未开始读写（topLevel相当于一个数组） */
+    TOP_LEVEL(null, null, null),
 
     /** 当前是一个普通对象结构（文档结构） */
-    OBJECT,
+    OBJECT(DsonType.OBJECT, "{", "}"),
 
     /** 当前是一个数组结构 */
-    ARRAY,
+    ARRAY(DsonType.ARRAY, "[", "]"),
+
+    /** 当前是一个Header结构 - 类Object */
+    HEADER(DsonType.HEADER, "@{", "}");
+
+    public final DsonType dsonType;
+    public final String startSymbol;
+    public final String endSymbol;
+
+    DsonContextType(DsonType dsonType, String startSymbol, String endSymbol) {
+        this.dsonType = dsonType;
+        this.startSymbol = startSymbol;
+        this.endSymbol = endSymbol;
+    }
+
+    public boolean isContainer() {
+        return dsonType.isContainer();
+    }
+
+    public boolean isLikeArray() {
+        return this == ARRAY || this == TOP_LEVEL;
+    }
+
+    public boolean isLikeObject() {
+        return this == OBJECT || this == HEADER;
+    }
 
 }

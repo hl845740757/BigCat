@@ -39,13 +39,13 @@ public enum DsonExtInt32Type {
 
     ;
 
-    private final byte number;
+    private final int number;
 
     DsonExtInt32Type(int number) {
-        this.number = (byte) number;
+        this.number = number;
     }
 
-    public byte getValue() {
+    public int getValue() {
         return number;
     }
 

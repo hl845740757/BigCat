@@ -17,8 +17,11 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.*;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.io.Chunk;
+import cn.wjybxx.common.dson.text.ObjectStyle;
+import cn.wjybxx.common.dson.text.StringStyle;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
@@ -60,7 +63,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name, messageLite);
+            writer.writeMessage(name, converter.options.pbBinaryType, messageLite);
         }
     }
 
@@ -75,17 +78,17 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     @Override
     public void writeInt(int name, int value, WireType wireType) {
-        writer.writeInt32(name, value, wireType);
+        writer.writeInt32(name, value, wireType, false);
     }
 
     @Override
     public void writeLong(int name, long value, WireType wireType) {
-        writer.writeInt64(name, value, wireType);
+        writer.writeInt64(name, value, wireType, false);
     }
 
     @Override
     public void writeFloat(int name, float value) {
-        writer.writeFloat(name, value);
+        writer.writeFloat(name, value, false);
     }
 
     @Override
@@ -103,7 +106,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeString(name, value);
+            writer.writeString(name, value, StringStyle.AUTO);
         }
     }
 
@@ -117,22 +120,21 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, (byte) 0, value);
+            writer.writeBinary(name, new DsonBinary(0, value));
         }
     }
 
     @Override
-    public void writeBytes(int name, DsonBinaryType type, @Nonnull Chunk chunk) {
-        Objects.requireNonNull(chunk);
-        writer.writeBinary(name, type.getValue(), chunk);
+    public void writeBytes(int name, int type, @Nonnull Chunk chunk) {
+        writer.writeBinary(name, type, chunk);
     }
 
     @Override
-    public void writeBinary(int name, DsonBinaryType type, byte[] value) {
+    public void writeBinary(int name, int type, byte[] value) {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, type.getValue(), value);
+            writer.writeBinary(name, new DsonBinary(type, value));
         }
     }
 
@@ -146,24 +148,6 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeExtString(int name, DsonExtString value) {
-        if (value == null) {
-            writeNull(name);
-        } else {
-            writer.writeExtString(name, value);
-        }
-    }
-
-    @Override
-    public void writeExtString(int name, DsonExtStringType type, String value) {
-        if (value == null) {
-            writeNull(name);
-        } else {
-            writer.writeExtString(name, type.getValue(), value);
-        }
-    }
-
-    @Override
     public void writeExtInt32(int name, DsonExtInt32 value, WireType wireType) {
         if (value == null) {
             writeNull(name);
@@ -173,9 +157,8 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeExtInt32(int name, DsonExtInt32Type type, int value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt32(name, type.getValue(), value, wireType);
+    public void writeExtInt32(int name, int type, int value, WireType wireType) {
+        writer.writeExtInt32(name, new DsonExtInt32(type, value), wireType);
     }
 
     @Override
@@ -188,9 +171,24 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeExtInt64(int name, DsonExtInt64Type type, long value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt64(name, type.getValue(), value, wireType);
+    public void writeExtInt64(int name, int type, long value, WireType wireType) {
+        writer.writeExtInt64(name, new DsonExtInt64(type, value), wireType);
+    }
+
+    @Override
+    public void writeExtString(int name, DsonExtString value) {
+        if (value == null) {
+            writeNull(name);
+        } else {
+            writer.writeExtString(name, value, StringStyle.AUTO);
+        }
+    }
+
+    @Override
+    public void writeExtString(int name, int type, String value) {
+        // 这里为Null不安全
+        Objects.requireNonNull(value);
+        writer.writeExtString(name, new DsonExtString(type, value), StringStyle.AUTO);
     }
 
     // endregion
@@ -269,7 +267,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     @Override
     public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartObject(findEncodeClassId(value, typeArgInfo));
+        writer.writeStartObject(ObjectStyle.INDENT);
     }
 
     @Override
@@ -279,7 +277,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     @Override
     public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartArray(findEncodeClassId(value, typeArgInfo));
+        writer.writeStartArray(ObjectStyle.INDENT);
     }
 
     @Override
@@ -287,7 +285,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         writer.writeEndArray();
     }
 
-    private BinClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
+    private ClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举
         if (converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return converter.classIdRegistry.ofType(encodeClass);

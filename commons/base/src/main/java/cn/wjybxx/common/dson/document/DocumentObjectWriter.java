@@ -68,30 +68,30 @@ public interface DocumentObjectWriter extends AutoCloseable {
     //
     void writeBytes(String name, @Nullable byte[] value);
 
-    void writeBytes(String name, DsonBinaryType type, @Nonnull Chunk chunk);
+    void writeBytes(String name, int type, @Nonnull Chunk chunk);
 
-    void writeBinary(String name, DsonBinaryType type, byte[] value);
+    void writeBinary(String name, int type, byte[] value);
 
     void writeBinary(String name, DsonBinary binary);
 
     //
-    void writeExtString(String name, DsonExtString value);
-
-    void writeExtString(String name, DsonExtStringType type, String value);
-
     void writeExtInt32(String name, DsonExtInt32 value, WireType wireType);
 
-    void writeExtInt32(String name, DsonExtInt32Type type, int value, WireType wireType);
+    void writeExtInt32(String name, int type, int value, WireType wireType);
 
     void writeExtInt64(String name, DsonExtInt64 value, WireType wireType);
 
-    void writeExtInt64(String name, DsonExtInt64Type type, long value, WireType wireType);
+    void writeExtInt64(String name, int type, long value, WireType wireType);
 
-    default void writeExtInt32(String name, DsonExtInt32Type type, int value) {
+    void writeExtString(String name, DsonExtString value);
+
+    void writeExtString(String name, int type, String value);
+
+    default void writeExtInt32(String name, int type, int value) {
         writeExtInt32(name, type, value, WireType.VARINT);
     }
 
-    default void writeExtInt64(String name, DsonExtInt64Type type, int value) {
+    default void writeExtInt64(String name, int type, int value) {
         writeExtInt64(name, type, value, WireType.VARINT);
     }
 

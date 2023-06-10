@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx
+ * Copyright 2023 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,31 @@
 
 package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.ObjectUtils;
-
-import java.util.List;
+import cn.wjybxx.common.CollectionUtils;
 
 /**
+ * 1.Header不可以再持有header，否则陷入死循环
+ * 2.Header的结构应该是简单清晰的，可简单编解码
+ *
  * @author wjybxx
- * date - 2023/4/21
+ * date - 2023/5/27
  */
-public class DsonBinArray extends DsonArray {
+public class MutableDsonHeader<K> extends DsonHeader<K> {
 
-    private BinClassId classId = BinClassId.OBJECT;
-
-    public DsonBinArray() {
+    public MutableDsonHeader() {
+        this(4);
     }
 
-    public DsonBinArray(List<DsonValue> values) {
-        super(values);
+    public MutableDsonHeader(int expectedSize) {
+        super(CollectionUtils.newLinkedHashMap(expectedSize));
     }
 
-    DsonBinArray(List<DsonValue> values, boolean copy) {
-        super(values, copy);
-    }
+    //
 
-    public BinClassId getClassId() {
-        return classId;
-    }
-
-    public DsonBinArray setClassId(BinClassId classId) {
-        this.classId = ObjectUtils.nullToDef(classId, BinClassId.OBJECT);
+    /** @return this */
+    public MutableDsonHeader<K> append(K key, DsonValue value) {
+        super.append(key, value);
         return this;
     }
+
 }

@@ -63,11 +63,11 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     DsonBinary readBinary(String name);
 
-    DsonExtString readExtString(String name);
-
     DsonExtInt32 readExtInt32(String name);
 
     DsonExtInt64 readExtInt64(String name);
+
+    DsonExtString readExtString(String name);
 
     /**
      * 注意:
@@ -101,37 +101,30 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     //
 
-    default DocClassId readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartObject(typeArgInfo);
+        readStartObject(typeArgInfo);
     }
 
-    default DocClassId readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    default void readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
         readName(name);
-        return readStartArray(typeArgInfo);
+        readStartArray(typeArgInfo);
     }
 
     /** 顶层对象或数组内元素 */
     @Nonnull
-    DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndObject();
 
     /** 顶层对象或数组内元素 */
-    DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
+    void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo);
 
     void readEndArray();
 
     // endregion
 
     // region 代理
-
-    /**
-     * 查询是否到达了对象的末尾
-     *
-     * @see DsonBinReader#isAtEndOfObject()
-     */
-    boolean isAtEndOfObject();
 
     /**
      * 读取下一个数据类型
@@ -147,9 +140,6 @@ public interface DocumentObjectReader extends AutoCloseable {
     DsonType getCurrentDsonType();
 
     String getCurrentName();
-
-    @Nonnull
-    DocClassId getCurrentClassId();
 
     void skipName();
 

@@ -17,7 +17,8 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.dson.DocClassId;
+import cn.wjybxx.common.dson.DefaultDsonDocReader;
+import cn.wjybxx.common.dson.DefaultDsonDocWriter;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.codec.*;
 import cn.wjybxx.common.dson.document.codecs.MessageCodec;
@@ -25,6 +26,7 @@ import cn.wjybxx.common.dson.document.codecs.MessageEnumCodec;
 import cn.wjybxx.common.dson.io.*;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,11 +39,11 @@ import java.util.stream.Collectors;
  */
 public class DefaultDocumentConverter implements DocumentConverter {
 
-    final ClassIdRegistry<DocClassId> classIdRegistry;
+    final ClassIdRegistry<String> classIdRegistry;
     final DocumentCodecRegistry codecRegistry;
     final ConvertOptions options;
 
-    private DefaultDocumentConverter(ClassIdRegistry<DocClassId> classIdRegistry,
+    private DefaultDocumentConverter(ClassIdRegistry<String> classIdRegistry,
                                      DocumentCodecRegistry codecRegistry,
                                      ConvertOptions options) {
         this.codecRegistry = codecRegistry;
@@ -55,7 +57,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     @Override
-    public ClassIdRegistry<DocClassId> classIdRegistry() {
+    public ClassIdRegistry<String> classIdRegistry() {
         return classIdRegistry;
     }
 
@@ -107,7 +109,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DefaultDsonDocWriter(outputStream, options.recursionLimit))) {
+                new DefaultDsonDocWriter(options.recursionLimit, outputStream))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
@@ -115,7 +117,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
         try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
-                new DefaultDsonDocReader(inputStream, options.recursionLimit))) {
+                new DefaultDsonDocReader(options.recursionLimit, inputStream))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
@@ -133,7 +135,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
      */
     public static DefaultDocumentConverter newInstance(final Set<String> protoBufPackages,
                                                        final Set<String> pojoPackages,
-                                                       final ClassIdMapper<DocClassId> classIdMapper,
+                                                       final ClassIdMapper<String> classIdMapper,
                                                        final ConvertOptions options) {
         final Set<Class<?>> allProtoBufClasses = ProtobufUtils.scan(protoBufPackages);
 
@@ -141,7 +143,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
         final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList = DocumentPojoCodecScanner.scan(pojoPackages);
         pojoCodecImplList.forEach(e -> allClasses.add(e.getEncoderClass()));
 
-        final Map<Class<?>, DocClassId> classIdMap = allClasses.stream()
+        final Map<Class<?>, String> classIdMap = allClasses.stream()
                 .collect(Collectors.toMap(e -> e, classIdMapper::map));
 
         return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, options);
@@ -156,19 +158,19 @@ public class DefaultDocumentConverter implements DocumentConverter {
     @SuppressWarnings("unchecked")
     public static DefaultDocumentConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                        final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
-                                                       final Map<Class<?>, DocClassId> typeIdMap,
+                                                       final Map<Class<?>, String> typeIdMap,
                                                        final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            DocClassId classId = CollectionUtils.checkedGet(typeIdMap, clazz, "class");
-            if (classId.isObjectClassId()) {
+            String classId = CollectionUtils.checkedGet(typeIdMap, clazz, "class");
+            if (StringUtils.isBlank(classId)) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + clazz);
             }
         }
         for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            DocClassId classId = CollectionUtils.checkedGet(typeIdMap, codecImpl.getEncoderClass(), "class");
-            if (classId.isObjectClassId()) {
+            String classId = CollectionUtils.checkedGet(typeIdMap, codecImpl.getEncoderClass(), "class");
+            if (StringUtils.isBlank(classId)) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + codecImpl.getEncoderClass());
             }
         }
@@ -195,7 +197,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
             allPojoCodecList.add(new DocumentPojoCodec<>(codecImpl));
         }
 
-        ClassIdRegistry<DocClassId> classIdRegistry = ClassIdRegistries.fromRegistries(
+        ClassIdRegistry<String> classIdRegistry = ClassIdRegistries.fromRegistries(
                 ClassIdRegistries.fromClassIdMap(typeIdMap),
                 DocumentConverterUtils.getDefaultClassIdRegistry());
 

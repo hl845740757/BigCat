@@ -19,6 +19,8 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import cn.wjybxx.common.dson.io.Chunk;
+import cn.wjybxx.common.dson.text.ObjectStyle;
+import cn.wjybxx.common.dson.text.StringStyle;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
@@ -75,7 +77,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (messageLite == null) {
             writeNull(name);
         } else {
-            writer.writeMessage(name, messageLite);
+            writer.writeMessage(name, converter.options.pbBinaryType, messageLite);
         }
     }
 
@@ -90,17 +92,17 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeInt(String name, int value, WireType wireType) {
-        writer.writeInt32(name, value, wireType);
+        writer.writeInt32(name, value, wireType, false);
     }
 
     @Override
     public void writeLong(String name, long value, WireType wireType) {
-        writer.writeInt64(name, value, wireType);
+        writer.writeInt64(name, value, wireType, false);
     }
 
     @Override
     public void writeFloat(String name, float value) {
-        writer.writeFloat(name, value);
+        writer.writeFloat(name, value, false);
     }
 
     @Override
@@ -118,7 +120,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeString(name, value);
+            writer.writeString(name, value, StringStyle.AUTO);
         }
     }
 
@@ -135,22 +137,22 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, (byte) 0, value);
+            writer.writeBinary(name, new DsonBinary(0, value));
         }
     }
 
     @Override
-    public void writeBytes(String name, DsonBinaryType type, @Nonnull Chunk chunk) {
+    public void writeBytes(String name, int type, @Nonnull Chunk chunk) {
         Objects.requireNonNull(chunk);
-        writer.writeBinary(name, type.getValue(), chunk);
+        writer.writeBinary(name, type, chunk);
     }
 
     @Override
-    public void writeBinary(String name, DsonBinaryType type, byte[] value) {
+    public void writeBinary(String name, int type, byte[] value) {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeBinary(name, type.getValue(), value);
+            writer.writeBinary(name, new DsonBinary(type, value));
         }
     }
 
@@ -164,24 +166,6 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeExtString(String name, DsonExtString value) {
-        if (value == null) {
-            writeNull(name);
-        } else {
-            writer.writeExtString(name, value);
-        }
-    }
-
-    @Override
-    public void writeExtString(String name, DsonExtStringType type, String value) {
-        if (value == null) {
-            writeNull(name);
-        } else {
-            writer.writeExtString(name, type.getValue(), value);
-        }
-    }
-
-    @Override
     public void writeExtInt32(String name, DsonExtInt32 value, WireType wireType) {
         if (value == null) {
             writeNull(name);
@@ -191,9 +175,8 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeExtInt32(String name, DsonExtInt32Type type, int value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt32(name, type.getValue(), value, wireType);
+    public void writeExtInt32(String name, int type, int value, WireType wireType) {
+        writer.writeExtInt32(name, new DsonExtInt32(type, value), wireType);
     }
 
     @Override
@@ -206,11 +189,26 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeExtInt64(String name, DsonExtInt64Type type, long value, WireType wireType) {
-        Objects.requireNonNull(type);
-        writer.writeExtInt64(name, type.getValue(), value, wireType);
+    public void writeExtInt64(String name, int type, long value, WireType wireType) {
+        writer.writeExtInt64(name, new DsonExtInt64(type, value), wireType);
     }
 
+    @Override
+    public void writeExtString(String name, DsonExtString value) {
+        if (value == null) {
+            writeNull(name);
+        } else {
+            writer.writeExtString(name, value, StringStyle.AUTO);
+        }
+    }
+
+    @Override
+    public void writeExtString(String name, int type, String value) {
+        // 这里为Null不安全
+        Objects.requireNonNull(value);
+        writer.writeExtString(name, new DsonExtString(type, value), StringStyle.AUTO);
+
+    }
     // endregion
 
     // region object处理
@@ -287,7 +285,8 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartObject(findEncodeClassId(value, typeArgInfo));
+        writer.writeStartObject(ObjectStyle.INDENT);
+        String classId = findEncodeClassId(value, typeArgInfo);
     }
 
     @Override
@@ -297,7 +296,8 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartArray(findEncodeClassId(value, typeArgInfo));
+        writer.writeStartArray(ObjectStyle.INDENT);
+        String classId = findEncodeClassId(value, typeArgInfo);
     }
 
     @Override
@@ -305,7 +305,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         writer.writeEndArray();
     }
 
-    private DocClassId findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
+    private String findEncodeClassId(Object value, TypeArgInfo<?> typeArgInfo) {
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举
         if (converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return converter.classIdRegistry.ofType(encodeClass);

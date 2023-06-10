@@ -48,7 +48,7 @@ public class CodecBeanExample {
     public int age;
     public String name;
 
-    @FieldImpl(dsonType = DsonType.EXT_STRING, extStringType = DsonExtStringType.REGULAR_EXPRESSION)
+    @FieldImpl(dsonType = DsonType.EXT_STRING, dsonSubType = 12)
     public String reg;
 
     public Map<Integer, String> age2NameMap;

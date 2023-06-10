@@ -26,20 +26,15 @@ import javax.annotation.Nonnull;
  */
 public class DsonExtInt64 extends DsonValue implements Comparable<DsonExtInt64> {
 
-    private final byte type;
+    private final int type;
     private final long value;
 
-    public DsonExtInt64(DsonExtInt64Type type, long value) {
-        this(type.getValue(), value);
-    }
-
-    public DsonExtInt64(byte type, long value) {
-        if (type < 0) throw new IllegalArgumentException("invalid type " + type);
+    public DsonExtInt64(int type, long value) {
         this.type = type;
         this.value = value;
     }
 
-    public byte getType() {
+    public int getType() {
         return type;
     }
 
@@ -56,7 +51,7 @@ public class DsonExtInt64 extends DsonValue implements Comparable<DsonExtInt64> 
     //
     @Override
     public int compareTo(DsonExtInt64 that) {
-        int r = Byte.compare(type, that.type);
+        int r = Integer.compare(type, that.type);
         if (r != 0) {
             return r;
         }

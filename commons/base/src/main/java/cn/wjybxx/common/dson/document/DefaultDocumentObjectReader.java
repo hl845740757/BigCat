@@ -19,6 +19,7 @@ package cn.wjybxx.common.dson.document;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
 import com.google.protobuf.Parser;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -70,11 +71,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public boolean isAtEndOfObject() {
-        return reader.isAtEndOfObject();
-    }
-
-    @Override
     public DsonType readDsonType() {
         return reader.readDsonType();
     }
@@ -107,12 +103,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    @Nonnull
-    public DocClassId getCurrentClassId() {
-        return reader.getCurrentClassId();
-    }
-
-    @Override
     public void skipName() {
         reader.skipName();
     }
@@ -132,7 +122,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readMessage(name, parser);
+        return reader.readMessage(name, converter.options.pbBinaryType, parser);
     }
 
     @Override
@@ -191,11 +181,6 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public DsonExtString readExtString(String name) {
-        return NumberCodecHelper.readExtString(reader, name);
-    }
-
-    @Override
     public DsonExtInt32 readExtInt32(String name) {
         return NumberCodecHelper.readExtInt32(reader, name);
     }
@@ -203,6 +188,11 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     @Override
     public DsonExtInt64 readExtInt64(String name) {
         return NumberCodecHelper.readExtInt64(reader, name);
+    }
+
+    @Override
+    public DsonExtString readExtString(String name) {
+        return NumberCodecHelper.readExtString(reader, name);
     }
 
     // endregion
@@ -213,7 +203,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
         DsonType dsonType = reader.readDsonType();
-        if (reader.isObjectContext()) {
+        if (reader.getContextType() == DsonContextType.OBJECT) {
             reader.readName();
         }
         return readContainer(typeArgInfo, dsonType);
@@ -237,7 +227,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         }
         // 对象类型--需要先读取写入的类型，才可以解码
         DsonType dsonType = NumberCodecHelper.readOrGetDsonType(reader);
-        if (reader.isObjectContext()) {
+        if (reader.getContextType() == DsonContextType.OBJECT) {
             reader.readName(name);
         }
         if (dsonType == DsonType.NULL) {
@@ -257,17 +247,18 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
-        DocClassId classId;
-        if (dsonType == DsonType.ARRAY) {
-            classId = reader.prestartArray();
-        } else {
-            classId = reader.prestartObject();
-        }
-        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
-        if (codec == null) {
-            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
-        }
-        return codec.readObject(this, typeArgInfo);
+//        DocClassId classId;
+//        if (dsonType == DsonType.ARRAY) {
+//            classId = reader.prestartArray();
+//        } else {
+//            classId = reader.prestartObject();
+//        }
+//        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+//        if (codec == null) {
+//            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
+//        }
+//        return codec.readObject(this, typeArgInfo);
+        return null;
     }
 
     private <T> T readAsDsonValue(DsonType dsonType, String name, Class<T> declaredType) {
@@ -288,13 +279,12 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         return declaredType.cast(value);
     }
 
-    @Nonnull
     @Override
-    public DocClassId readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readStartObject();
+        reader.readStartObject();
     }
 
     @Override
@@ -304,11 +294,11 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public DocClassId readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
+    public void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
             reader.readDsonType();
         }
-        return reader.readStartArray();
+        reader.readStartArray();
     }
 
     @Override
@@ -319,9 +309,9 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
 
     //
     @SuppressWarnings("unchecked")
-    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DocClassId classId) {
+    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, String classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
+        final Class<?> encodedType = StringUtils.isBlank(classId) ? null : converter.classIdRegistry.ofId(classId);
         // 尝试按真实类型读 - 概率最大
         if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
             return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);

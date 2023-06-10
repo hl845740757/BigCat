@@ -17,11 +17,7 @@
 package cn.wjybxx.common.dson.document;
 
 import cn.wjybxx.common.EnumUtils;
-import cn.wjybxx.common.dson.AutoFields;
-import cn.wjybxx.common.dson.AutoTypeArgs;
-import cn.wjybxx.common.dson.ClassImpl;
-import cn.wjybxx.common.dson.DsonEnum;
-import cn.wjybxx.common.dson.FieldImpl;
+import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 
 import java.lang.annotation.*;

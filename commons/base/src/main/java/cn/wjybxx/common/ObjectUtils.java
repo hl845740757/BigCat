@@ -74,6 +74,14 @@ public class ObjectUtils {
         return value == null || value.isBlank();
     }
 
+    public static char firstChar(String value) {
+        return value.charAt(0);
+    }
+
+    public static char lastChar(String value) {
+        return value.charAt(value.length() - 1);
+    }
+
     // endregion
 
 }

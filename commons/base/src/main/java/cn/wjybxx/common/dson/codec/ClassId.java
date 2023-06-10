@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.codec;
+
+import cn.wjybxx.common.dson.Dsons;
 
 /**
  * 在二进制编码中，包体大小是比较重要的，因此使用数字来映射类型
@@ -22,14 +24,14 @@ package cn.wjybxx.common.dson;
  * @author wjybxx
  * date 2023/3/31
  */
-public class BinClassId implements ClassId {
+public final class ClassId {
 
     /** 默认命名空间 */
     public static final int DEFAULT_NAMESPACE = 0;
     /** 无效命名空间 */
     public static final int INVALID_NAMESPACE = 255;
     /** 对象的默认的类型id */
-    public static final BinClassId OBJECT = new BinClassId(0, 0);
+    public static final ClassId OBJECT = new ClassId(0, 0);
 
     /**
      * 1. 当使用算法生成id时可以减少冲突。
@@ -47,7 +49,7 @@ public class BinClassId implements ClassId {
     /**
      * @param namespace 0是保留命名空间，用户应避免使用
      */
-    public BinClassId(int namespace, int lclassId) {
+    public ClassId(int namespace, int lclassId) {
         if (namespace < 0 || namespace >= INVALID_NAMESPACE) {
             throw new IllegalArgumentException("invalid namespace " + namespace);
         }
@@ -63,10 +65,6 @@ public class BinClassId implements ClassId {
         return lclassId;
     }
 
-    public long getGuid() {
-        return Dsons.makeClassGuid(namespace, lclassId);
-    }
-
     public boolean isObjectClassId() {
         if (this == OBJECT) {
             return true;
@@ -78,23 +76,22 @@ public class BinClassId implements ClassId {
         return namespace == 0;
     }
 
-    public static BinClassId ofGuid(long guid) {
+    public long getGuid() {
+        return Dsons.makeClassGuid(namespace, lclassId);
+    }
+
+    public static ClassId ofGuid(long guid) {
         int namespace = Dsons.namespaceOfClassGuid(guid);
         int lclassId = Dsons.lclassIdOfClassGuid(guid);
-        return new BinClassId(namespace, lclassId);
+        return new ClassId(namespace, lclassId);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        BinClassId that = (BinClassId) o;
+        ClassId that = (ClassId) o;
         return namespace == that.namespace && lclassId == that.lclassId;
     }
 

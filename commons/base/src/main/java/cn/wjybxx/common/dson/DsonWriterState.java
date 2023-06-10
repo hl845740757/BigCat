@@ -19,9 +19,8 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.annotation.Internal;
 
 /**
- * Object循环 NAME-VALUE
- * Array循环 VALUE
- * 顶层上下文循环 VALUE-DONE
+ * Object、Header循环： NAME-VALUE
+ * 顶层上下文、Array循环： VALUE
  * <p>
  * type总是和value同时写入，因此不需要额外的 TYPE 状态，但name和value可能分开写入，因此需要两个状态。
  *
@@ -31,6 +30,7 @@ import cn.wjybxx.common.annotation.Internal;
 @Internal
 public enum DsonWriterState {
 
+    /** 底层上下文初始状态 */
     INITIAL,
 
     /**
@@ -41,8 +41,5 @@ public enum DsonWriterState {
      * 等待写入Value
      */
     VALUE,
-
-    /** 顶层上下文写入一个对象完毕 */
-    DONE,
 
 }

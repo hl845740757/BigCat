@@ -265,6 +265,7 @@ public class DefaultValueParser implements ValueParser {
      *     {  a, "abc" , , b  }          =>  [a, "abc", "", b]
      *     {  a, "{abc}" , { ,?, }, b  } =>  [a, "{abc}", { ,?, }, b]
      * </pre>
+     * TODO 可考虑数组定界符自定义
      */
     private static List<String> splitString2Array(String value) {
         if (StringUtils.isBlank(value)) {

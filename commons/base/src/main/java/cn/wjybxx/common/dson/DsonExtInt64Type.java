@@ -45,13 +45,13 @@ public enum DsonExtInt64Type {
     DATETIME(10),
     ;
 
-    private final byte number;
+    private final int number;
 
     DsonExtInt64Type(int number) {
-        this.number = (byte) number;
+        this.number = number;
     }
 
-    public byte getValue() {
+    public int getValue() {
         return number;
     }
 

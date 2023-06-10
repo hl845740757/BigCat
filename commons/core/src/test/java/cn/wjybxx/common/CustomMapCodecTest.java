@@ -18,6 +18,7 @@ package cn.wjybxx.common;
 
 import cn.wjybxx.common.dson.AutoTypeArgs;
 import cn.wjybxx.common.dson.ClassImpl;
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
 import cn.wjybxx.common.dson.binary.BinaryPojoCodecScanIgnore;
@@ -47,7 +48,7 @@ public class CustomMapCodecTest<K, V> extends IdentityHashMap<K, V> {
     }
 
     public void readObject(BinaryObjectReader reader) {
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             K k = reader.readObject(0);
             V v = reader.readObject(0);
             put(k, v);

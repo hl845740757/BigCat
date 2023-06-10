@@ -70,7 +70,6 @@ public class TimeProviders {
         return new UnsharableTimepiece();
     }
 
-
     // region 多线程的
 
     @ThreadSafe

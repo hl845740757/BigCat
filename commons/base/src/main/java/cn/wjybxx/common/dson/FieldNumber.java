@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 
 /**
  * 二进制编码下字段编号表示法
+ * 注意：不能直接使用{@code fullNumber}比较两个字段在类继承体系中的顺序，应当使用{@link #compareTo(FieldNumber)}进行比较
  *
  * @author wjybxx
  * date - 2023/4/19
@@ -46,6 +47,10 @@ public final class FieldNumber implements Comparable<FieldNumber> {
         return new IllegalArgumentException(String.format("invalid idep:%d or lnumber:%d", lnumber, idep));
     }
 
+    public static FieldNumber of(int idep, int lnumber) {
+        return new FieldNumber((byte) idep, lnumber);
+    }
+
     public static FieldNumber ofFullNumber(int fullNumber) {
         return new FieldNumber(Dsons.idepOfFullNumber(fullNumber),
                 Dsons.lnumberOfFullNumber(fullNumber));
@@ -53,7 +58,6 @@ public final class FieldNumber implements Comparable<FieldNumber> {
 
     /**
      * 获取字段的完整编号
-     * 注意：不能直接使用{@code fullNumber}比较两个字段在类继承体系中的顺序，应当使用{@link #compareTo(FieldNumber)}进行比较
      */
     public int getFullNumber() {
         return Dsons.makeFullNumber(idep, lnumber);

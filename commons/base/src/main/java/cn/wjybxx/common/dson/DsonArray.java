@@ -27,50 +27,45 @@ import java.util.function.UnaryOperator;
  * @author wjybxx
  * date - 2023/4/19
  */
-public abstract class DsonArray extends DsonValue implements List<DsonValue>, RandomAccess {
+public abstract class DsonArray<K> extends DsonValue implements List<DsonValue>, RandomAccess {
 
-    private final List<DsonValue> values;
+    final List<DsonValue> values;
 
-    public DsonArray() {
-        this(new ArrayList<>(), true);
+    protected DsonArray(List<DsonValue> values) {
+        this.values = values;
     }
 
-    public DsonArray(int initCapacity) {
-        this(new ArrayList<>(initCapacity), true);
+    //
+
+    public static <K> DsonArray<K> toImmutable(DsonArray<K> src) {
+        return ImmutableDsons.dsonArray(src);
     }
 
-    public DsonArray(List<DsonValue> values) {
-        this(values, true);
-    }
-
-    DsonArray(List<DsonValue> values, boolean copy) {
-        if (copy) {
-            this.values = new ArrayList<>(values);
-        } else {
-            this.values = values;
-        }
-    }
-
-    public final List<DsonValue> getValues() {
-        return Collections.unmodifiableList(values);
+    public static <K> DsonArray<K> empty() {
+        return ImmutableDsons.dsonArray();
     }
 
     @Nonnull
+    public abstract DsonHeader<K> getHeader();
+
+    public abstract DsonArray<K> setHeader(DsonHeader<K> header);
+
+    @Nonnull
     @Override
-    public DsonType getDsonType() {
+    public final DsonType getDsonType() {
         return DsonType.ARRAY;
     }
 
-    // equals和hash不测试classId，只要内容一致即可
+    public List<DsonValue> getValues() {
+        return Collections.unmodifiableList(values);
+    }
+
+    // equals和hash不测试header，只要内容一致即可
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DsonArray that = (DsonArray) o;
-
-        return values.equals(that.values);
+        return o instanceof DsonArray<?> that && values.equals(that.values);
     }
 
     @Override
@@ -82,6 +77,7 @@ public abstract class DsonArray extends DsonValue implements List<DsonValue>, Ra
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 "values=" + values +
+                ", header=" + getHeader() +
                 '}';
     }
 

@@ -31,8 +31,9 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 ### 项目主要内容
 
 1. 基础工具集：Future、EventBus、Rpc、序列化、热更新、状态机、行为树....
-2. 主循环框架
-3. 角色和场景框架，技能框架...
+2. 网络库 - 可靠UDP协议
+3. 主循环框架
+4. 角色和场景框架，技能框架...
 
 ### 已实现
 
@@ -42,6 +43,10 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/BigCat/blob/dev/doc/Dson.md)
 5. 表格对象和读取Excel工具
 6. 文件热更新管理 [文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/FileReload.md)
+
+近日在研： 
+1. 近日在研究网络相关知识，协议的设计思路已有，但还未开始编码。
+2. Dson的文本表达法，Json和Yaml我都不满意，项目的配置文件打算实现为Dson的格式。
 
 ### 资料
 

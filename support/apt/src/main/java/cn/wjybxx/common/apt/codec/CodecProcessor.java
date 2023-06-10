@@ -42,12 +42,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
 
     public static final String CNAME_FIELD_IMPL = "cn.wjybxx.common.dson.FieldImpl";
     public static final String CNAME_CLASS_IMPL = "cn.wjybxx.common.dson.ClassImpl";
-
     public static final String CNAME_WireType = "cn.wjybxx.common.dson.WireType";
-    public static final String CNAME_ExtInt32Type = "cn.wjybxx.common.dson.DsonExtInt32Type";
-    public static final String CNAME_ExtInt64Type = "cn.wjybxx.common.dson.DsonExtInt64Type";
-    public static final String CNAME_ExtStringType = "cn.wjybxx.common.dson.DsonExtStringType";
-    public static final String CNAME_BinaryType = "cn.wjybxx.common.dson.DsonBinaryType";
 
     // CodecImpl
     public static final String MNAME_GET_ENCODER_CLASS = "getEncoderClass";
@@ -71,12 +66,6 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     public TypeElement writerTypeElement;
     public TypeElement enumCodecTypeElement;
 
-    public TypeName typeNameWireType;
-    public TypeName typeNameBinarySubType;
-    public TypeName typeNameExtInt32SubType;
-    public TypeName typeNameExtInt64SubType;
-    public TypeName typeNameExtStringSubType;
-
     // 要覆盖的方法缓存，减少大量查询
     public TypeElement codecTypeElement;
     public ExecutableElement getEncoderClassMethod;
@@ -93,6 +82,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     public TypeMirror anno_classImplTypeMirror;
     public TypeElement autoFieldsTypeElement;
     public TypeElement autoArgsTypeElement;
+    public TypeName typeNameWireType;
 
     public TypeMirror dsonEnumTypeMirror;
     public TypeMirror stringTypeMirror;
@@ -114,12 +104,6 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
         writerTypeElement = elementUtils.getTypeElement(writerCanonicalName);
         enumCodecTypeElement = elementUtils.getTypeElement(enumCodecCanonicalName);
 
-        typeNameWireType = ClassName.get(elementUtils.getTypeElement(CNAME_WireType));
-        typeNameBinarySubType = ClassName.get(elementUtils.getTypeElement(CNAME_BinaryType));
-        typeNameExtInt32SubType = ClassName.get(elementUtils.getTypeElement(CNAME_ExtInt32Type));
-        typeNameExtInt64SubType = ClassName.get(elementUtils.getTypeElement(CNAME_ExtInt64Type));
-        typeNameExtStringSubType = ClassName.get(elementUtils.getTypeElement(CNAME_ExtStringType));
-
         codecTypeElement = elementUtils.getTypeElement(codecCanonicalName);
         getEncoderClassMethod = AptUtils.findMethodByName(codecTypeElement, MNAME_GET_ENCODER_CLASS);
         writeObjectMethod = AptUtils.findMethodByName(codecTypeElement, MNAME_WRITE_OBJECT);
@@ -135,6 +119,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
         anno_classImplTypeMirror = elementUtils.getTypeElement(CNAME_CLASS_IMPL).asType();
         autoFieldsTypeElement = elementUtils.getTypeElement(AutoFieldsProcessor.AUTO_CANONICAL_NAME);
         autoArgsTypeElement = elementUtils.getTypeElement(AutoTypeArgsProcessor.AUTO_CANONICAL_NAME);
+        typeNameWireType = ClassName.get(elementUtils.getTypeElement(CNAME_WireType));
 
         stringTypeMirror = elementUtils.getTypeElement(String.class.getCanonicalName()).asType();
         enumTypeMirror = elementUtils.getTypeElement(Enum.class.getCanonicalName()).asType();

@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson.document;
+package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.io.Chunk;
 import cn.wjybxx.common.dson.io.DsonOutput;
+import cn.wjybxx.common.dson.text.ObjectStyle;
+import cn.wjybxx.common.dson.text.StringStyle;
+import cn.wjybxx.common.dson.types.ObjectRef;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * @author wjybxx
@@ -29,9 +32,9 @@ import javax.annotation.Nullable;
  */
 public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
 
-    private final DsonOutput output;
+    private DsonOutput output;
 
-    public DefaultDsonDocWriter(DsonOutput output, int recursionLimit) {
+    public DefaultDsonDocWriter(int recursionLimit, DsonOutput output) {
         super(recursionLimit);
         this.output = output;
         setContext(new Context(null, DsonContextType.TOP_LEVEL));
@@ -55,7 +58,11 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
 
     @Override
     public void close() {
-        output.close();
+        if (output != null) {
+            output.close();
+            output = null;
+        }
+        super.close();
     }
 
     // region state
@@ -67,7 +74,8 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
             output.writeRawByte((byte) Dsons.makeFullType(dsonType.getNumber(), wireType.getNumber()));
         }
         Context context = getContext();
-        if (context.contextType == DsonContextType.OBJECT) {
+        if (context.contextType == DsonContextType.OBJECT ||
+                context.contextType == DsonContextType.HEADER) {
             output.writeString(context.name);
         }
     }
@@ -76,21 +84,21 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     // region 简单值
 
     @Override
-    protected void doWriteInt32(int value, WireType wireType) {
+    protected void doWriteInt32(int value, WireType wireType, boolean stronglyTyped) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.INT32, wireType);
         wireType.writeInt32(output, value);
     }
 
     @Override
-    protected void doWriteInt64(long value, WireType wireType) {
+    protected void doWriteInt64(long value, WireType wireType, boolean stronglyTyped) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.INT64, wireType);
         wireType.writeInt64(output, value);
     }
 
     @Override
-    protected void doWriteFloat(float value) {
+    protected void doWriteFloat(float value, boolean stronglyTyped) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.FLOAT, null);
         output.writeFloat(value);
@@ -111,7 +119,7 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteString(String value) {
+    protected void doWriteString(String value, StringStyle style) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.STRING, null);
         output.writeString(value);
@@ -124,49 +132,45 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     }
 
     @Override
-    protected void doWriteBinary(byte type, byte[] data) {
+    protected void doWriteBinary(DsonBinary binary) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + data.length);
-            output.writeRawByte(type);
-            output.writeRawBytes(data);
-        }
+        DsonReaderUtils.writeBinary(output, binary);
     }
 
     @Override
-    protected void doWriteBinary(byte type, Chunk chunk) {
+    protected void doWriteBinary(int type, Chunk chunk) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            output.writeFixed32(1 + chunk.getLength());
-            output.writeRawByte(type);
-            output.writeRawBytes(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
-        }
+        DsonReaderUtils.writeBinary(output, type, chunk);
     }
 
     @Override
-    protected void doWriteExtString(byte type, String value) {
-        DsonOutput output = this.output;
-        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
-        output.writeRawByte(type);
-        output.writeString(value);
-    }
-
-    @Override
-    protected void doWriteExtInt32(byte type, int value, WireType wireType) {
+    protected void doWriteExtInt32(DsonExtInt32 value, WireType wireType) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT32, wireType);
-        output.writeRawByte(type);
-        wireType.writeInt32(output, value);
+        DsonReaderUtils.writeExtInt32(output, value, wireType);
     }
 
     @Override
-    protected void doWriteExtInt64(byte type, long value, WireType wireType) {
+    protected void doWriteExtInt64(DsonExtInt64 value, WireType wireType) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.EXT_INT64, wireType);
-        output.writeRawByte(type);
-        wireType.writeInt64(output, value);
+        DsonReaderUtils.writeExtInt64(output, value, wireType);
+    }
+
+    @Override
+    protected void doWriteExtString(DsonExtString value, StringStyle style) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.EXT_STRING, null);
+        DsonReaderUtils.writeExtString(output, value);
+    }
+
+    @Override
+    protected void doWriteRef(ObjectRef objectRef) {
+        DsonOutput output = this.output;
+        writeFullTypeAndCurrentName(output, DsonType.REFERENCE, null);
+        DsonReaderUtils.writeRef(output, objectRef);
     }
 
     // endregion
@@ -174,15 +178,14 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
     // region 容器
 
     @Override
-    protected void doWriteStartContainer(DsonContextType contextType, DocClassId classId) {
+    protected void doWriteStartContainer(DsonContextType contextType, ObjectStyle style) {
         DsonOutput output = this.output;
-        DsonType dsonType = contextType == DsonContextType.ARRAY ? DsonType.ARRAY : DsonType.OBJECT;
+        DsonType dsonType = Objects.requireNonNull(contextType.dsonType);
         writeFullTypeAndCurrentName(output, dsonType, null);
 
         Context newContext = newContext(getContext(), contextType);
         newContext.preWritten = output.position();
         output.writeFixed32(0);
-        writeClassId(classId);
 
         setContext(newContext);
         this.recursionDepth++;
@@ -200,42 +203,22 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
         poolContext(context);
     }
 
-    private void writeClassId(@Nullable DocClassId classId) {
-        if (classId == null || classId.isObjectClassId()) {
-            output.writeString("");
-        } else {
-            output.writeString(classId.getValue());
-        }
-    }
     // endregion
 
     // region 特殊接口
 
     @Override
-    protected void doWriteMessage(MessageLite messageLite) {
+    protected void doWriteMessage(int binaryType, MessageLite messageLite) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, DsonType.BINARY, null);
-        {
-            int preWritten = output.position();
-            output.writeFixed32(0);
-            output.writeRawByte(DsonBinaryType.PROTOBUF_MESSAGE.getValue());
-            output.writeMessageNoSize(messageLite);
-            output.setFixedInt32(preWritten, output.position() - preWritten - 4);
-        }
+        DsonReaderUtils.writeMessage(output, binaryType, messageLite);
     }
 
     @Override
     protected void doWriteValueBytes(DsonType type, byte[] data) {
         DsonOutput output = this.output;
         writeFullTypeAndCurrentName(output, type, null);
-        {
-            if (type == DsonType.STRING) {
-                output.writeUint32(data.length);
-            } else {
-                output.writeFixed32(data.length);
-            }
-            output.writeRawBytes(data);
-        }
+        DsonReaderUtils.writeValueBytes(output, type, data);
     }
 
     // endregion
@@ -265,11 +248,11 @@ public class DefaultDsonDocWriter extends AbstractDsonDocWriter {
         public Context() {
         }
 
-        public Context(AbstractDsonDocWriter.Context parent, DsonContextType contextType) {
+        public Context(Context parent, DsonContextType contextType) {
             super(parent, contextType);
         }
 
-        void reset() {
+        public void reset() {
             super.reset();
             preWritten = 0;
         }

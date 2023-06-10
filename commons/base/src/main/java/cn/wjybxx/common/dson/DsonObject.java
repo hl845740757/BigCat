@@ -19,144 +19,165 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.CollectionUtils;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
+ * 不再采用二进制和Doc再衍生两个子类的方式，对性能的影响不大，因为直接使用DsonObject的情况较少，但带来的维护成本巨高。
+ *
  * @author wjybxx
  * date - 2023/4/21
  */
 public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValue> {
 
-    private final Map<K, DsonValue> map;
+    final Map<K, DsonValue> valueMap;
 
-    DsonObject() {
-        this.map = new LinkedHashMap<>();
+    DsonObject(Map<K, DsonValue> valueMap) {
+        this.valueMap = valueMap;
     }
 
-    DsonObject(int initialCapacity) {
-        this.map = new LinkedHashMap<>(initialCapacity);
+    //
+
+    /**
+     * 创建一个禁止修改的DsonObject
+     * 暂时未实现为深度的不可变，存在一些困难，主要是相互引用的问题
+     */
+    public static <K> DsonObject<K> toImmutable(DsonObject<K> src) {
+        return ImmutableDsons.dsonObject(src);
+    }
+
+    public static <K> DsonObject<K> empty() {
+        return ImmutableDsons.dsonObject();
     }
 
     @Nonnull
-    @Override
-    public DsonType getDsonType() {
-        return DsonType.OBJECT;
+    public abstract DsonHeader<K> getHeader();
+
+    public abstract DsonObject<K> setHeader(DsonHeader<K> header);
+
+    /**
+     * 返回对象的第一个键
+     *
+     * @throws NoSuchElementException 如果对象为空
+     */
+    public K firstKey() {
+        return CollectionUtils.firstKey(valueMap);
+    }
+
+    public Map<K, DsonValue> getValueMap() {
+        return Collections.unmodifiableMap(valueMap);
     }
 
     /** @return this */
     public DsonObject<K> append(K key, DsonValue value) {
-        if (key == null || value == null) {
-            throw nameOrValueIsNull();
-        }
-        map.put(key, value);
+        checkKeyValue(key, value);
+        valueMap.put(key, value);
         return this;
     }
 
     @Override
     public DsonValue put(K key, DsonValue value) {
-        if (key == null || value == null) {
-            throw nameOrValueIsNull();
-        }
-        return map.put(key, value);
+        checkKeyValue(key, value);
+        return valueMap.put(key, value);
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends DsonValue> m) {
         // 需要检测key-value的空
-        for (Map.Entry<? extends K, ? extends DsonValue> entry : m.entrySet()) {
+        for (Entry<? extends K, ? extends DsonValue> entry : m.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
-    /**
-     * @throws java.util.NoSuchElementException 如果对象为空
-     */
-    public K firstKey() {
-        return CollectionUtils.firstKey(map);
+    @Nonnull
+    @Override
+    public final DsonType getDsonType() {
+        return DsonType.OBJECT;
     }
 
-    private static IllegalArgumentException nameOrValueIsNull() {
-        return new IllegalArgumentException("name and value cant be null");
+    static <K> void checkKeyValue(K key, DsonValue value) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cant be null");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value cant be null");
+        }
     }
 
-    // equals和hash不测试classId，只要内容一致即可
+    // region equals
+    // 默认只比较value，不比较header和类型
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DsonObject<?> that = (DsonObject<?>) o;
-
-        return map.equals(that.map);
+        return o instanceof DsonObject<?> that && valueMap.equals(that.valueMap);
     }
 
     @Override
     public int hashCode() {
-        return map.hashCode();
+        return valueMap.hashCode();
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
-                "map=" + map +
+                "valueMap=" + valueMap +
+                ", header=" + getHeader() +
                 '}';
     }
+    // endregion
 
     // region 代理实现
 
     @Override
     public int size() {
-        return map.size();
+        return valueMap.size();
     }
 
     @Override
     public boolean isEmpty() {
-        return map.isEmpty();
+        return valueMap.isEmpty();
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return map.containsKey(key);
+        return valueMap.containsKey(key);
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return map.containsValue(value);
+        return valueMap.containsValue(value);
     }
 
     @Override
     public DsonValue get(Object key) {
-        return map.get(key);
+        return valueMap.get(key);
     }
 
     @Override
     public DsonValue remove(Object key) {
-        return map.remove(key);
+        return valueMap.remove(key);
     }
 
     @Override
     public void clear() {
-        map.clear();
+        valueMap.clear();
     }
 
     @Override
     public Set<K> keySet() {
-        return map.keySet();
+        return valueMap.keySet();
     }
 
     @Override
     public Collection<DsonValue> values() {
-        return map.values();
+        return valueMap.values();
     }
 
     @Override
-    public Set<Map.Entry<K, DsonValue>> entrySet() {
-        return map.entrySet();
+    public Set<Entry<K, DsonValue>> entrySet() {
+        return valueMap.entrySet();
     }
 
     // endregion
+
 }

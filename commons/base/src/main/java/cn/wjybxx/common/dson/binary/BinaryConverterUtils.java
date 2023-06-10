@@ -18,6 +18,7 @@ package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.binary.codecs.*;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ClassIdRegistries;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 import cn.wjybxx.common.dson.codec.ConverterUtils;
@@ -36,13 +37,13 @@ import java.util.stream.Collectors;
 public class BinaryConverterUtils extends ConverterUtils {
 
     /** 默认id注册表 */
-    private static final ClassIdRegistry<BinClassId> CLASS_ID_REGISTRY;
+    private static final ClassIdRegistry<ClassId> CLASS_ID_REGISTRY;
     /** 默认codec注册表 */
     private static final BinaryCodecRegistry CODEC_REGISTRY;
 
     static {
         // 基础类型的数组codec用于避免拆装箱，提高性能
-        List<Map.Entry<BinaryPojoCodec<?>, BinClassId>> entryList = List.of(
+        List<Map.Entry<BinaryPojoCodec<?>, ClassId>> entryList = List.of(
                 newCodec(new IntArrayCodec(), 1),
                 newCodec(new LongArrayCodec(), 2),
                 newCodec(new FloatArrayCodec(), 3),
@@ -57,7 +58,7 @@ public class BinaryConverterUtils extends ConverterUtils {
                 newCodec(new CollectionCodec(), 13),
                 newCodec(new MapCodec(), 14)
         );
-        final Map<Class<?>, BinClassId> classIdMap = entryList.stream()
+        final Map<Class<?>, ClassId> classIdMap = entryList.stream()
                 .collect(Collectors.toMap(e -> e.getKey().getEncoderClass(), Map.Entry::getValue));
         CLASS_ID_REGISTRY = ClassIdRegistries.fromClassIdMap(classIdMap);
 
@@ -67,12 +68,12 @@ public class BinaryConverterUtils extends ConverterUtils {
         CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
     }
 
-    private static Map.Entry<BinaryPojoCodec<?>, BinClassId> newCodec(BinaryPojoCodecImpl<?> codecImpl, int classId) {
+    private static Map.Entry<BinaryPojoCodec<?>, ClassId> newCodec(BinaryPojoCodecImpl<?> codecImpl, int classId) {
         assert classId > 0 : "classId must be positive";
-        return Map.entry(new BinaryPojoCodec<>(codecImpl), new BinClassId(0, classId));
+        return Map.entry(new BinaryPojoCodec<>(codecImpl), new ClassId(0, classId));
     }
 
-    public static ClassIdRegistry<BinClassId> getDefaultClassIdRegistry() {
+    public static ClassIdRegistry<ClassId> getDefaultClassIdRegistry() {
         return CLASS_ID_REGISTRY;
     }
 
@@ -121,8 +122,12 @@ public class BinaryConverterUtils extends ConverterUtils {
 
     // region 直接读取为DsonObject
 
-    public static DsonValue readTopDsonValue(DsonBinReader reader, int recursionLimit) {
+    /** @return 如果到达文件尾部，则返回null */
+    public static DsonValue readTopDsonValue(DsonBinReader reader) {
         DsonType dsonType = reader.readDsonType();
+        if (dsonType == DsonType.END_OF_OBJECT) {
+            return null;
+        }
         if (dsonType == DsonType.OBJECT) {
             return readObject(reader);
         } else {
@@ -131,32 +136,55 @@ public class BinaryConverterUtils extends ConverterUtils {
     }
 
     /** 外部需要先readName */
-    private static DsonBinObject readObject(DsonBinReader reader) {
+    private static MutableDsonObject<FieldNumber> readObject(DsonBinReader reader) {
         DsonType dsonType;
         int name;
         DsonValue value;
 
-        DsonBinObject dsonObject = new DsonBinObject();
-        dsonObject.setClassId(reader.readStartObject());
+        MutableDsonObject<FieldNumber> dsonObject = new MutableDsonObject<>();
+        reader.readStartObject();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            name = reader.readName();
-            value = readAsDsonValue(reader, dsonType, name);
-            dsonObject.put(FieldNumber.ofFullNumber(name), value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(reader, dsonObject.getHeader());
+            } else {
+                name = reader.readName();
+                value = readAsDsonValue(reader, dsonType, name);
+                dsonObject.put(FieldNumber.ofFullNumber(name), value);
+            }
         }
         reader.readEndObject();
         return dsonObject;
     }
 
+    private static void readHeader(DsonBinReader reader, DsonHeader<FieldNumber> header) {
+        DsonType dsonType;
+        int name;
+        DsonValue value;
+
+        reader.readStartHeader();
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            name = reader.readName();
+            value = readAsDsonValue(reader, dsonType, name);
+            header.put(FieldNumber.ofFullNumber(name), value);
+        }
+        reader.readEndHeader();
+    }
+
+
     /** 外部需要先readName */
-    private static DsonBinArray readArray(DsonBinReader reader) {
+    private static MutableDsonArray<FieldNumber> readArray(DsonBinReader reader) {
         DsonType dsonType;
         DsonValue value;
 
-        DsonBinArray dsonArray = new DsonBinArray();
-        dsonArray.setClassId(reader.readStartArray());
+        MutableDsonArray<FieldNumber> dsonArray = new MutableDsonArray<>(8);
+        reader.readStartArray();
         while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
-            value = readAsDsonValue(reader, dsonType, 0);
-            dsonArray.add(value);
+            if (dsonType == DsonType.HEADER) {
+                readHeader(reader, dsonArray.getHeader());
+            } else {
+                value = readAsDsonValue(reader, dsonType, 0);
+                dsonArray.add(value);
+            }
         }
         reader.readEndArray();
         return dsonArray;
@@ -174,18 +202,18 @@ public class BinaryConverterUtils extends ConverterUtils {
             case EXT_STRING -> reader.readExtString(name);
             case EXT_INT32 -> reader.readExtInt32(name);
             case EXT_INT64 -> reader.readExtInt64(name);
+            case REFERENCE -> new DsonObjectRef(reader.readRef(name));
             case NULL -> {
                 reader.readNull(name);
                 yield DsonNull.INSTANCE;
             }
-            case OBJECT -> {
-                reader.readName(name);
-                yield readObject(reader);
+            case HEADER -> {
+                MutableDsonHeader<FieldNumber> header = new MutableDsonHeader<>();
+                readHeader(reader, header);
+                yield header;
             }
-            case ARRAY -> {
-                reader.readName(name);
-                yield readArray(reader);
-            }
+            case OBJECT -> readObject(reader);
+            case ARRAY -> readArray(reader);
             case END_OF_OBJECT -> throw new AssertionError();
         };
     }

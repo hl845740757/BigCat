@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.dson.binary;
 
-import cn.wjybxx.common.dson.BinClassId;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ClassIdRegistry;
 import cn.wjybxx.common.dson.codec.Converter;
 
@@ -37,6 +37,6 @@ public interface BinaryConverter extends Converter {
 
     BinaryCodecRegistry codecRegistry();
 
-    ClassIdRegistry<BinClassId> classIdRegistry();
+    ClassIdRegistry<ClassId> classIdRegistry();
 
 }

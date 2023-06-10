@@ -75,20 +75,39 @@ public abstract class DsonValue {
         return (DsonBinary) this;
     }
 
-    public DsonDocArray asDocArray() {
-        return (DsonDocArray) this;
+    public DsonObjectRef asReference() {
+        return (DsonObjectRef) this;
     }
 
-    public DsonDocObject asDocObject() {
-        return (DsonDocObject) this;
+    @SuppressWarnings("unchecked")
+    public MutableDsonHeader<String> asHeader() {
+        return (MutableDsonHeader<String>) this;
     }
 
-    public DsonBinArray asBinArray() {
-        return (DsonBinArray) this;
+    @SuppressWarnings("unchecked")
+    public MutableDsonArray<String> asArray() {
+        return (MutableDsonArray<String>) this;
     }
 
-    public DsonBinObject asBinObject() {
-        return (DsonBinObject) this;
+    @SuppressWarnings("unchecked")
+    public MutableDsonObject<String> asObject() {
+        return (MutableDsonObject<String>) this;
+    }
+    //
+
+    @SuppressWarnings("unchecked")
+    public MutableDsonHeader<FieldNumber> asBinHeader() {
+        return (MutableDsonHeader<FieldNumber>) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public MutableDsonArray<FieldNumber> asBinArray() {
+        return (MutableDsonArray<FieldNumber>) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public MutableDsonObject<FieldNumber> asBinObject() {
+        return (MutableDsonObject<FieldNumber>) this;
     }
 
 }

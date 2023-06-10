@@ -16,60 +16,55 @@
 
 package cn.wjybxx.common.dson;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Objects;
 
 /**
- * 在文档型编解码中，可读性是比较重要的，因此字符串来映射类型
- *
  * @author wjybxx
- * date - 2023/4/21
+ * date - 2023/5/27
  */
-public final class DocClassId implements ClassId {
+public final class DsonElement<K> {
 
-    public static final DocClassId OBJECT = new DocClassId((String) null);
+    private final K name;
+    private final DsonValue value;
 
-    private final String value;
-
-    public DocClassId(String value) {
-        this.value = value;
+    public DsonElement(K name, DsonValue value) {
+        this.name = Objects.requireNonNull(name);
+        this.value = Objects.requireNonNull(value);
     }
 
-    public String getValue() {
+    public K getName() {
+        return name;
+    }
+
+    public DsonValue getValue() {
         return value;
     }
 
-    public boolean isObjectClassId() {
-        return this == OBJECT || StringUtils.isBlank(value);
-    }
-
     //
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DocClassId that = (DocClassId) o;
+        DsonElement<?> that = (DsonElement<?>) o;
 
-        return Objects.equals(value, that.value);
+        if (!name.equals(that.name)) return false;
+        return value.equals(that.value);
     }
 
     @Override
     public int hashCode() {
-        return value != null ? value.hashCode() : 0;
+        int result = name.hashCode();
+        result = 31 * result + value.hashCode();
+        return result;
     }
 
     @Override
     public String toString() {
-        return "DocClassId{" +
-                "value='" + value + '\'' +
+        return "DsonElement{" +
+                "name=" + name +
+                ", value=" + value +
                 '}';
     }
-
-    //
-    public static DocClassId of(String clsName) {
-        return StringUtils.isBlank(clsName) ? OBJECT : new DocClassId(clsName);
-    }
-
 }

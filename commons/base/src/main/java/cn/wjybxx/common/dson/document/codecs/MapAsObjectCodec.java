@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.dson.document.codecs;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;
@@ -78,7 +79,7 @@ public class MapAsObjectCodec implements DocumentPojoCodecImpl<Map> {
         }
 
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             String keyString = reader.readName();
             Object key = reader.decodeKey(keyString, typeArgInfo.typeArg1);
             Object value = reader.readObject(keyString, valueArgInfo);

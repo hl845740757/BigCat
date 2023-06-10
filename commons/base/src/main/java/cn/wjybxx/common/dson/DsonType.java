@@ -59,7 +59,16 @@ public enum DsonType {
      * 通过扩展类型，可避免破坏业务代码，可避免用户自行封装Long
      */
     EXT_STRING(11),
+    /**
+     * 对象引用
+     */
+    REFERENCE(12),
 
+    /**
+     * 对象头信息，与Object类型编码格式类似
+     * 但header不可以再直接嵌入header
+     */
+    HEADER(29),
     /**
      * 数组(v,v,v...)
      */
@@ -88,6 +97,7 @@ public enum DsonType {
         return number;
     }
 
+    /** header不属于普通意义上的容器 */
     public boolean isContainer() {
         return this == OBJECT || this == ARRAY;
     }

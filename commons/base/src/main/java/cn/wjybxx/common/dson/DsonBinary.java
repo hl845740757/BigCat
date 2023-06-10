@@ -16,34 +16,43 @@
 
 package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.Preconditions;
+
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Objects;
 
 /**
+ * 你通常不应该修改data中的数据。
+ * 该类难以实现不可变对象，虽然我们可以封装为ByteArray，
+ * 但许多接口都是基于byte[]的，封装会导致难以与其它接口协作。
+ *
  * @author wjybxx
  * date - 2023/4/19
  */
 public class DsonBinary extends DsonValue {
 
-    private final byte type;
+    private final int type;
     private final byte[] data;
 
-    public DsonBinary(DsonBinaryType type, byte[] data) {
-        this(type.getValue(), data);
-    }
-
     public DsonBinary(byte[] data) {
-        this((byte) 0, data);
+        this(0, data);
     }
 
-    public DsonBinary(byte type, byte[] data) {
-        if (type < 0) throw new IllegalArgumentException("invalid type " + type);
+    /**
+     * @param type 为避免开销和降低编解码复杂度，暂限定为单个字节范围 [0, 255]
+     */
+    public DsonBinary(int type, byte[] data) {
+        checksSubType(type);
         this.type = type;
         this.data = Objects.requireNonNull(data);
     }
 
-    public byte getType() {
+    public static void checksSubType(int type) {
+        Preconditions.checkBetween(type, 0, 255);
+    }
+
+    public int getType() {
         return type;
     }
 
@@ -59,11 +68,6 @@ public class DsonBinary extends DsonValue {
     }
 
     //
-
-    @Override
-    public DsonBinary clone() {
-        return new DsonBinary(type, data.clone());
-    }
 
     @Override
     public boolean equals(Object o) {

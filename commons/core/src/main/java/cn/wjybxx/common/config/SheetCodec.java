@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.config;
 
+import cn.wjybxx.common.dson.DsonType;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.document.DocumentObjectReader;
 import cn.wjybxx.common.dson.document.DocumentObjectWriter;
@@ -89,7 +90,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         Map<String, Header> headerMap = new LinkedHashMap<>();
         // headerMap写的是数组格式
         reader.readStartArray("headerMap", TypeArgInfo.ARRAYLIST);
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             reader.readStartObject(TypeArgInfo.OBJECT);
             Header header = new Header(reader.readString("args"),
                     reader.readString("name"),
@@ -131,14 +132,14 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         // valueRowList写的是数组格式
         ArrayList<SheetRow> valueRowList = new ArrayList<>();
         reader.readStartArray("valueRowList", TypeArgInfo.ARRAYLIST);
-        while (!reader.isAtEndOfObject()) {
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             reader.readStartObject(TypeArgInfo.OBJECT);
             int rowIndex = reader.readInt("rowIndex");
             Map<String, SheetCell> name2CellMap = new LinkedHashMap<>();
             {
                 // name2CellMap是一个嵌套数组
                 reader.readStartArray("name2CellMap", TypeArgInfo.ARRAYLIST);
-                while (!reader.isAtEndOfObject()) {
+                while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
                     reader.readStartObject(TypeArgInfo.OBJECT);
                     String name = reader.readString("name");
                     String value = reader.readString("value");

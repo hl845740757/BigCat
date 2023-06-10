@@ -41,20 +41,22 @@ public enum DsonExtStringType {
     JAVASCRIPT(10),
     /** lua脚本 */
     LUA(11),
-
     /** 正则表达式 */
     REGULAR_EXPRESSION(12),
-    /** CRON表达式 - 先占位 */
-    CRON_EXPRESSION(13),
+
+    /** 日期时间，IOS8601格式 */
+    DATETIME(14),
+    /** 标识符 */
+    SYMBOL(15),
 
     ;
-    private final byte number;
+    private final int number;
 
     DsonExtStringType(int number) {
-        this.number = (byte) number;
+        this.number = number;
     }
 
-    public byte getValue() {
+    public int getValue() {
         return number;
     }
 

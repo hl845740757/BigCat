@@ -17,7 +17,8 @@
 package cn.wjybxx.common.dson.binary;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.dson.BinClassId;
+import cn.wjybxx.common.dson.DefaultDsonBinReader;
+import cn.wjybxx.common.dson.DefaultDsonBinWriter;
 import cn.wjybxx.common.dson.TypeArgInfo;
 import cn.wjybxx.common.dson.binary.codecs.MessageCodec;
 import cn.wjybxx.common.dson.binary.codecs.MessageEnumCodec;
@@ -37,11 +38,11 @@ import java.util.stream.Collectors;
  */
 public class DefaultBinaryConverter implements BinaryConverter {
 
-    final ClassIdRegistry<BinClassId> classIdRegistry;
+    final ClassIdRegistry<ClassId> classIdRegistry;
     final BinaryCodecRegistry codecRegistry;
     final ConvertOptions options;
 
-    private DefaultBinaryConverter(ClassIdRegistry<BinClassId> classIdRegistry,
+    private DefaultBinaryConverter(ClassIdRegistry<ClassId> classIdRegistry,
                                    BinaryCodecRegistry codecRegistry,
                                    ConvertOptions options) {
         this.codecRegistry = codecRegistry;
@@ -55,7 +56,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
     }
 
     @Override
-    public ClassIdRegistry<BinClassId> classIdRegistry() {
+    public ClassIdRegistry<ClassId> classIdRegistry() {
         return classIdRegistry;
     }
 
@@ -107,7 +108,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (BinaryObjectWriter wrapper = new DefaultBinaryObjectWriter(this,
-                new DefaultDsonBinWriter(outputStream, options.recursionLimit))) {
+                new DefaultDsonBinWriter(options.recursionLimit, outputStream))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
@@ -115,7 +116,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
         try (BinaryObjectReader wrapper = new DefaultBinaryObjectReader(this,
-                new DefaultDsonBinReader(inputStream, options.recursionLimit))) {
+                new DefaultDsonBinReader(options.recursionLimit, inputStream))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
@@ -132,7 +133,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
      */
     public static DefaultBinaryConverter newInstance(final Set<String> protoBufPackages,
                                                      final Set<String> pojoPackages,
-                                                     final ClassIdMapper<BinClassId> classIdMapper,
+                                                     final ClassIdMapper<ClassId> classIdMapper,
                                                      final ConvertOptions options) {
         final Set<Class<?>> allProtoBufClasses = ProtobufUtils.scan(protoBufPackages);
 
@@ -140,7 +141,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
         final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList = BinaryPojoCodecScanner.scan(pojoPackages);
         pojoCodecImplList.forEach(e -> allClasses.add(e.getEncoderClass()));
 
-        final Map<Class<?>, BinClassId> classIdMap = allClasses.stream()
+        final Map<Class<?>, ClassId> classIdMap = allClasses.stream()
                 .collect(Collectors.toMap(e -> e, classIdMapper::map));
 
         return newInstance(allProtoBufClasses, pojoCodecImplList, classIdMap, options);
@@ -155,18 +156,18 @@ public class DefaultBinaryConverter implements BinaryConverter {
     @SuppressWarnings("unchecked")
     public static DefaultBinaryConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                      final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
-                                                     final Map<Class<?>, BinClassId> typeIdMap,
+                                                     final Map<Class<?>, ClassId> typeIdMap,
                                                      final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名空间是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            BinClassId classId = CollectionUtils.checkedGet(typeIdMap, clazz, "class");
+            ClassId classId = CollectionUtils.checkedGet(typeIdMap, clazz, "class");
             if (classId.isDefaultNameSpace()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + clazz);
             }
         }
         for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            BinClassId classId = CollectionUtils.checkedGet(typeIdMap, codecImpl.getEncoderClass(), "class");
+            ClassId classId = CollectionUtils.checkedGet(typeIdMap, codecImpl.getEncoderClass(), "class");
             if (classId.isDefaultNameSpace()) {
                 throw new IllegalArgumentException("bad classId " + classId + ", class " + codecImpl.getEncoderClass());
             }
@@ -194,7 +195,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
             allPojoCodecList.add(new BinaryPojoCodec<>(codecImpl));
         }
 
-        final ClassIdRegistry<BinClassId> classIdRegistry = ClassIdRegistries.fromRegistries(
+        final ClassIdRegistry<ClassId> classIdRegistry = ClassIdRegistries.fromRegistries(
                 ClassIdRegistries.fromClassIdMap(typeIdMap),
                 BinaryConverterUtils.getDefaultClassIdRegistry());
 

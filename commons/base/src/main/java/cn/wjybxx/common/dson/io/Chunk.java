@@ -26,8 +26,11 @@ package cn.wjybxx.common.dson.io;
 public final class Chunk {
 
     private final byte[] buffer;
+    /** 有效区域的起始偏移 */
     private int offset;
+    /** 有效区域的长度 */
     private int length;
+    /** 有效区域已使用长度 */
     private int used;
 
     public Chunk(byte[] buffer) {
@@ -35,8 +38,8 @@ public final class Chunk {
     }
 
     /**
-     * @param offset 有效部分的起始偏移量
-     * @param length 有效部分的长度
+     * @param offset 有效区域的起始偏移
+     * @param length 有效区域的长度
      */
     public Chunk(byte[] buffer, int offset, int length) {
         BinaryUtils.checkBuffer(buffer, offset, length);

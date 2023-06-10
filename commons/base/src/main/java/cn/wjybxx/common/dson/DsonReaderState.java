@@ -19,9 +19,8 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.annotation.Internal;
 
 /**
- * Object循环 TYPE-NAME-VALUE
- * Array循环 TYPE-VALUE
- * 顶层上下文循环 VALUE-DONE
+ * Object、Header循环 TYPE-NAME-VALUE
+ * 顶层上下文、Array循环 TYPE-VALUE
  * <p>
  * 由于type必须先读取，因此type需要独立的状态；又由于name可以单独读取，因此name也需要单独的转态，因此需要type-name-value三个状态。
  *
@@ -35,8 +34,11 @@ public enum DsonReaderState {
     INITIAL,
 
     /**
-     * 已确定是一个Array或Object，已读取ClassId，等待调用start方法
-     * 之所以要支持这个中间状态，是考虑到input频繁peek和回滚的开销较大。
+     * 已确定是一个Array/Object，等待用户调用readStartXXX方法
+     * 正常情况下不会出现该状态，Object/Array由于存在Header，我们通常需要读取header之后才能正确解码，
+     * 我们需要能在读取header之后重新恢复到需要调用readStartXXX的方法，才不会影响业务代码，也避免数据流回退
+     * <p>
+     * 简单说，用于peek一部分数据之后，重新设置为等待readStartXXX状态，避免数据流的回滚
      */
     WAIT_START_OBJECT,
     /**
@@ -52,11 +54,11 @@ public enum DsonReaderState {
      */
     VALUE,
     /**
-     * 当前对象读取完毕；状态下等待用户调用writeEnd
+     * 当前对象读取完毕；等待用户调用writeEndXXX
      */
     WAIT_END_OBJECT,
 
-    /** 顶层上下文的读取一个对象完毕 */
-    DONE,
+    /** 到达输入的尾部 */
+    END_OF_FILE,
 
 }

@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.dson;
+package cn.wjybxx.common.dson.text;
 
 /**
- * 类型的唯一id
- *
  * @author wjybxx
- * date - 2023/4/21
+ * date - 2023/6/6
  */
-public interface ClassId {
+public enum ObjectStyle {
+
+    /** 缩进模式 */
+    INDENT,
+
+    /** 流模式 - 线性模式 */
+    FLOW,
 
 }

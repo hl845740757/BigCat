@@ -19,17 +19,15 @@ package cn.wjybxx.common.dson;
 import cn.wjybxx.common.props.IProperties;
 import cn.wjybxx.common.props.PropertiesLoader;
 
-import java.util.List;
-
 /**
  * Dson数据结构的一些常量
  *
  * <h3>Object编码</h3>
  * 二进制编码格式：
  * <pre>
- *  length  [namespace classId] + [dsonType + wireType] +  [number  +  idep] + [length] + [subType] + [data] ...
- *  4Bytes   1 Byte    4Bytes       5 bits     3 bits       1~13 bits  3 bits   4 Bytes    1 Byte     0~n Bytes
- *  总长度    uint8                  1 Byte(unit8)             1 ~ 3 VarByte     int32
+ *  length   [dsonType + wireType] +  [number  +  idep] + [length] + [subType] + [data] ...
+ *  4Bytes     5 bits     3 bits       1~13 bits  3 bits   4 Bytes    1 Byte     0~n Bytes
+ *  总长度        1 Byte(unit8)             1 ~ 3 VarByte     int32
  * </pre>
  * 1. namespace(uint8)为255时表示未写入classId
  * 2. 数组元素没有fullNumber
@@ -42,13 +40,12 @@ import java.util.List;
  * <p>
  * 文档型编码格式：
  * <pre>
- *  length  [length + classId]  [dsonType + wireType] +  [length + name] +  [length] + [subType] + [data] ...
- *  4Bytes        nBytes          5 bits     3 bits           nBytes         4 Bytes     1 Byte    0~n Bytes
- *  总长度         string            1 Byte(unit8)             string          int32
+ *  length  [dsonType + wireType] +  [length + name] +  [length] + [subType] + [data] ...
+ *  4Bytes    5 bits     3 bits           nBytes         4 Bytes     1 Byte    0~n Bytes
+ *  总长度       1 Byte(unit8)             string          int32
  * </pre>
  * 文档型编码和二进制的区别：
- * 1.用字符串存储classId，classId按照普通的字符串格式存储(uint32的length + 内容)
- * 2.用字符串存储字段id，name按照普通的字符串格式存储(uint32的length + 内容)
+ * 1.用字符串存储字段id，name按照普通的字符串格式存储(uint32的length + 内容)
  *
  * <h3>此文档非彼文档</h3>
  * 在Dson中，文档并非常见的Json、Bson这类的文档，在这些文档对象表示法中，Map是看做普通对象的；
@@ -87,10 +84,6 @@ public final class Dsons {
     /** 完整类型信息占用的比特位数 */
     private static final int FULL_TYPE_BITS = DSON_TYPE_BITES + WIRETYPE_BITS;
     private static final int FULL_TYPE_MASK = (1 << FULL_TYPE_BITS) - 1;
-
-    /** 支持读取为bytes和直接写入bytes的数据类型 */
-    public static final List<DsonType> VALUE_BYTES_TYPES = List.of(DsonType.STRING,
-            DsonType.BINARY, DsonType.ARRAY, DsonType.OBJECT);
 
     // fieldNumber
 
@@ -194,20 +187,14 @@ public final class Dsons {
         enableClassIntern = properties.getAsBool("cn.wjybxx.common.dson.enableClassIntern", true);
     }
 
-    /** 文档型编码中，一个name最大字节数 */
-    public static final int NAME_MAX_BYTES = 32767;
-
     public static String internField(String fieldName) {
-        return (fieldName.length() <= 32 && enableFieldIntern) ? fieldName.intern() : fieldName;
+        return (enableFieldIntern && fieldName.length() <= 32) ? fieldName.intern() : fieldName;
     }
 
     public static String internClass(String className) {
         // 长度异常的数据不池化
-        return (className.length() <= 128 && enableClassIntern) ? className.intern() : className;
+        return (enableClassIntern && className.length() <= 128) ? className.intern() : className;
     }
     // endregion
 
-    // region 公共方法
-
-    // endregion
 }

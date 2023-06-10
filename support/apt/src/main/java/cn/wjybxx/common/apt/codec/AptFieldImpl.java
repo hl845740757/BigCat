@@ -42,10 +42,7 @@ public class AptFieldImpl {
     public static final String PNAME_wireType = "wireType";
 
     public static final String PNAME_dsonType = "dsonType";
-    public static final String PNAME_extInt32Type = "extInt32Type";
-    public static final String PNAME_extInt64Type = "extInt64Type";
-    public static final String PNAME_extStringType = "extStringType";
-    public static final String PNAME_binaryType = "binaryType";
+    public static final String PNAME_dsonSubType = "dsonSubType";
 
     /** 注解是否存在 */
     public boolean isAnnotationPresent = false;
@@ -62,11 +59,9 @@ public class AptFieldImpl {
 
     public int number = -1;
     public int idep = -1;
+
     public String dsonType;
-    public String extInt32Type = "NORMAL";
-    public String extInt64Type = "NORMAL";
-    public String extStringType = "NORMAL";
-    public String binaryType = "NORMAL";
+    public int dsonSubType = 0;
     public String wireType = WIRE_TYPE_VARINT;
 
     @Nonnull
@@ -88,13 +83,10 @@ public class AptFieldImpl {
             properties.writeProxy = getStringValue(valueMap, "writeProxy", properties.writeProxy).trim();
             properties.readProxy = getStringValue(valueMap, "readProxy", properties.readProxy).trim();
 
-            properties.idep = getIntValue(valueMap,"idep", properties.idep);
-            properties.number = getIntValue(valueMap,"number", properties.number);
+            properties.idep = getIntValue(valueMap, "idep", properties.idep);
+            properties.number = getIntValue(valueMap, "number", properties.number);
             properties.dsonType = getEnumConstantName(valueMap, PNAME_dsonType, null);
-            properties.extInt32Type = getEnumConstantName(valueMap, PNAME_extInt32Type, properties.extInt32Type);
-            properties.extInt64Type = getEnumConstantName(valueMap, PNAME_extInt64Type, properties.extInt64Type);
-            properties.extStringType = getEnumConstantName(valueMap, PNAME_extStringType, properties.extStringType);
-            properties.binaryType = getEnumConstantName(valueMap, PNAME_binaryType, properties.binaryType);
+            properties.dsonSubType = getIntValue(valueMap, PNAME_dsonSubType, properties.dsonSubType);
             properties.wireType = getEnumConstantName(valueMap, PNAME_wireType, properties.wireType);
         }
         return properties;

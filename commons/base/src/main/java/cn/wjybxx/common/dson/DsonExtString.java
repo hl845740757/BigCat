@@ -27,20 +27,15 @@ import java.util.Objects;
  */
 public class DsonExtString extends DsonValue implements Comparable<DsonExtString> {
 
-    private final byte type;
+    private final int type;
     private final String value;
 
-    public DsonExtString(DsonExtStringType type, String value) {
-        this(type.getValue(), value);
-    }
-
-    public DsonExtString(byte type, String value) {
-        if (type < 0) throw new IllegalArgumentException("invalid type " + type);
+    public DsonExtString(int type, String value) {
         this.type = type;
         this.value = Objects.requireNonNull(value);
     }
 
-    public byte getType() {
+    public int getType() {
         return type;
     }
 
@@ -57,7 +52,7 @@ public class DsonExtString extends DsonValue implements Comparable<DsonExtString
     //
     @Override
     public int compareTo(DsonExtString that) {
-        int r = Byte.compare(type, that.type);
+        int r = Integer.compare(type, that.type);
         if (r != 0) {
             return r;
         }

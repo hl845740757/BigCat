@@ -18,6 +18,7 @@ package cn.wjybxx.common;
 
 import cn.wjybxx.common.collect.DelayedCompressList;
 import cn.wjybxx.common.collect.SealedCollections;
+import cn.wjybxx.common.collect.SmallArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -317,8 +318,8 @@ public class CollectionUtils {
 
     // region arrayList快捷方法
 
-    public static <E> ArrayList<E> newArrayList() {
-        return new ArrayList<>();
+    public static <E> ArrayList<E> newSmallArrayList() {
+        return new SmallArrayList<>();
     }
 
     public static <E> ArrayList<E> newArrayList(E a) {

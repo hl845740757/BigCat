@@ -20,6 +20,7 @@ import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
 import cn.wjybxx.common.dson.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.dson.binary.DefaultBinaryConverter;
+import cn.wjybxx.common.dson.codec.ClassId;
 import cn.wjybxx.common.dson.codec.ConvertOptions;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -41,7 +42,7 @@ public class LazyCodeTest {
 
     @Test
     void testLazyCodec() {
-        BinClassId binClassId = new BinClassId(1, 1);
+        ClassId classId = new ClassId(1, 1);
 
         Random random = new Random();
         NestStruct nestStruct = new NestStruct(random.nextInt(), random.nextLong(),
@@ -53,7 +54,7 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.SOURCE)),
-                    Map.of(MyStruct.class, binClassId),
+                    Map.of(MyStruct.class, classId),
                     ConvertOptions.DEFAULT);
             bytesSource = converter.write(myStruct);
         }
@@ -63,7 +64,7 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.ROUTER)),
-                    Map.of(MyStruct.class, binClassId),
+                    Map.of(MyStruct.class, classId),
                     ConvertOptions.DEFAULT);
             routerBytes = converter.write(converter.read(bytesSource));
         }
@@ -73,7 +74,7 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.DESTINATION)),
-                    Map.of(MyStruct.class, binClassId),
+                    Map.of(MyStruct.class, classId),
                     ConvertOptions.DEFAULT);
             destStruct = (MyStruct) converter.read(routerBytes);
         }

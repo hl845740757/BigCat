@@ -41,9 +41,7 @@ public enum ClassIdPolicy {
      * 总是不写入对象的类型信息，无论运行时类型与声明类型是否相同
      * 注意：不写入的情况下只是会写为空id（比如空字符串或无效命名空间）
      */
-    NONE,
-
-    ;
+    NONE;
 
     public boolean test(Class<?> declared, Class<?> encodeClass) {
         return switch (this) {
