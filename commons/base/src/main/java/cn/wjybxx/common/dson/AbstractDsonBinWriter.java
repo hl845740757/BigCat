@@ -243,60 +243,48 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
     // region 容器
     @Override
     public void writeStartArray(ObjectStyle style) {
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        Context context = this.context;
-        autoStartTopLevel(context);
-        ensureValueState(context);
-        doWriteStartContainer(DsonContextType.ARRAY, style);
-        setNextState(); // 设置新上下文状态
+        writeStartContainer(DsonContextType.ARRAY, style);
     }
 
     @Override
     public void writeEndArray() {
-        Context context = this.context;
-        checkEndContext(context, DsonContextType.ARRAY, DsonWriterState.VALUE);
-        doWriteEndContainer();
-        setNextState(); // parent前进一个状态
+        writeEndContainer(DsonContextType.ARRAY, DsonWriterState.VALUE);
     }
 
     @Override
     public void writeStartObject(ObjectStyle style) {
+        writeStartContainer(DsonContextType.OBJECT, style);
+    }
+
+    @Override
+    public void writeEndObject() {
+        writeEndContainer(DsonContextType.OBJECT, DsonWriterState.NAME);
+    }
+
+    @Override
+    public void writeStartHeader(ObjectStyle style) {
+        writeStartContainer(DsonContextType.HEADER, style);
+    }
+
+    @Override
+    public void writeEndHeader() {
+        writeEndContainer(DsonContextType.HEADER, DsonWriterState.NAME);
+    }
+
+    private void writeStartContainer(DsonContextType contextType, ObjectStyle style) {
         if (recursionDepth >= recursionLimit) {
             throw DsonCodecException.recursionLimitExceeded();
         }
         Context context = this.context;
         autoStartTopLevel(context);
         ensureValueState(context);
-        doWriteStartContainer(DsonContextType.OBJECT, style);
+        doWriteStartContainer(contextType, style);
         setNextState(); // 设置新上下文状态
     }
 
-    @Override
-    public void writeEndObject() {
+    private void writeEndContainer(DsonContextType contextType, DsonWriterState expectedState) {
         Context context = this.context;
-        checkEndContext(context, DsonContextType.OBJECT, DsonWriterState.NAME);
-        doWriteEndContainer();
-        setNextState(); // parent前进一个状态
-    }
-
-    @Override
-    public void writeStartHeader(ObjectStyle style) {
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        Context context = this.context;
-//        autoStartTopLevel(context); // header不能是顶层对象
-        ensureValueState(context);
-        doWriteStartContainer(DsonContextType.HEADER, style);
-        setNextState(); // 设置新上下文状态
-    }
-
-    @Override
-    public void writeEndHeader() {
-        Context context = this.context;
-        checkEndContext(context, DsonContextType.HEADER, DsonWriterState.NAME);
+        checkEndContext(context, contextType, expectedState);
         doWriteEndContainer();
         setNextState(); // parent前进一个状态
     }
@@ -370,16 +358,20 @@ public abstract class AbstractDsonBinWriter implements DsonBinWriter {
             this.contextType = contextType;
         }
 
-        /** 方便查看赋值的调用 */
-        public void setState(DsonWriterState state) {
-            this.state = state;
-        }
-
         public void reset() {
             parent = null;
             contextType = null;
             state = DsonWriterState.INITIAL;
             name = 0;
+        }
+
+        /** 方便查看赋值的调用 */
+        public void setState(DsonWriterState state) {
+            this.state = state;
+        }
+
+        public Context getParent() {
+            return parent;
         }
     }
 

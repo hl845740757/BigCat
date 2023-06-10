@@ -90,7 +90,7 @@ public class DefaultDsonDocReader extends AbstractDsonDocReader {
                 throw DsonCodecException.invalidDsonType(context.contextType, dsonType);
             }
             if (context.contextType == DsonContextType.OBJECT) {
-                // 如果是header则直接进入VALUE状态 - header匿名属性，且固定写入了的
+                // 如果是header则直接进入VALUE状态 - header是匿名属性
                 if (dsonType == DsonType.HEADER) {
                     context.setState(DsonReaderState.VALUE);
                 } else {

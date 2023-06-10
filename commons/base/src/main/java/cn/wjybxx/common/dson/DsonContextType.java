@@ -29,7 +29,7 @@ public enum DsonContextType {
     OBJECT(DsonType.OBJECT, "{", "}"),
 
     /** 当前是一个数组结构 */
-    ARRAY(DsonType.ARRAY,"[", "]"),
+    ARRAY(DsonType.ARRAY, "[", "]"),
 
     /** 当前是一个Header结构 - 类Object */
     HEADER(DsonType.HEADER, "@{", "}");

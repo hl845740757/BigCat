@@ -22,7 +22,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/5/27
  */
-public class DsonElement<K> {
+public final class DsonElement<K> {
 
     private final K name;
     private final DsonValue value;

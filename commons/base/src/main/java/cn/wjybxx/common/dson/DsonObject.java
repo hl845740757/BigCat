@@ -17,7 +17,6 @@
 package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.annotation.Internal;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -28,7 +27,6 @@ import java.util.*;
  * @author wjybxx
  * date - 2023/4/21
  */
-@Internal
 public abstract class DsonObject<K> extends DsonValue implements Map<K, DsonValue> {
 
     final Map<K, DsonValue> valueMap;

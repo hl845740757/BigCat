@@ -35,12 +35,12 @@ public class MutableDsonHeader<K> extends DsonHeader<K> {
         super(CollectionUtils.newLinkedHashMap(expectedSize));
     }
 
+    //
+
     /** @return this */
     public MutableDsonHeader<K> append(K key, DsonValue value) {
         super.append(key, value);
         return this;
     }
-
-    //
 
 }

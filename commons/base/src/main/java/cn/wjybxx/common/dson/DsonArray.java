@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.dson;
 
-import cn.wjybxx.common.annotation.Internal;
-
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Consumer;
@@ -29,7 +27,6 @@ import java.util.function.UnaryOperator;
  * @author wjybxx
  * date - 2023/4/19
  */
-@Internal
 public abstract class DsonArray<K> extends DsonValue implements List<DsonValue>, RandomAccess {
 
     final List<DsonValue> values;

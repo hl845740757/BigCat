@@ -300,74 +300,32 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
 
     @Override
     public void readStartArray() {
-        Context context = this.context;
-        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
-            setNextState();
-            return;
-        }
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        autoStartTopLevel(context);
-        ensureValueState(context, DsonType.ARRAY);
-        doReadStartContainer(DsonContextType.ARRAY);
-        setNextState(); // 设置新上下文状态
+        readStartContainer(DsonType.ARRAY, DsonContextType.ARRAY);
     }
 
     @Override
     public void readEndArray() {
-        Context context = this.context;
-        checkEndContext(context, DsonContextType.ARRAY);
-        doReadEndContainer();
-        setNextState(); // parent前进一个状态
+        readEndContainer(DsonContextType.ARRAY);
     }
 
     @Override
     public void readStartObject() {
-        Context context = this.context;
-        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
-            setNextState();
-            return;
-        }
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-        autoStartTopLevel(context);
-        ensureValueState(context, DsonType.OBJECT);
-        doReadStartContainer(DsonContextType.OBJECT);
-        setNextState(); // 设置新上下文状态
+        readStartContainer(DsonType.OBJECT, DsonContextType.OBJECT);
     }
 
     @Override
     public void readEndObject() {
-        Context context = this.context;
-        checkEndContext(context, DsonContextType.OBJECT);
-        doReadEndContainer();
-        setNextState(); // parent前进一个状态
+        readEndContainer(DsonContextType.OBJECT);
     }
 
     @Override
     public void readStartHeader() {
-        Context context = this.context;
-        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
-            setNextState();
-            return;
-        }
-        if (recursionDepth >= recursionLimit) {
-            throw DsonCodecException.recursionLimitExceeded();
-        }
-//        autoStartTopLevel(context); // header不能是顶层对象
-        ensureValueState(context, DsonType.HEADER);
-        doReadStartContainer(DsonContextType.HEADER);
-        setNextState(); // 设置新上下文状态
+        readStartContainer(DsonType.HEADER, DsonContextType.HEADER);
     }
 
     @Override
     public void readEndHeader() {
-        Context context = this.context;
-        checkEndContext(context, DsonContextType.HEADER);
-        doReadEndContainer();
-        setNextState(); // parent前进一个状态
+        readEndContainer(DsonContextType.HEADER);
     }
 
     @Override
@@ -382,17 +340,33 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
         context.setState(DsonReaderState.WAIT_START_OBJECT);
     }
 
+    private void readStartContainer(DsonType dsonType, DsonContextType contextType) {
+        Context context = this.context;
+        if (context.state == DsonReaderState.WAIT_START_OBJECT) {
+            setNextState();
+            return;
+        }
+        if (recursionDepth >= recursionLimit) {
+            throw DsonCodecException.recursionLimitExceeded();
+        }
+        autoStartTopLevel(context);
+        ensureValueState(context, dsonType);
+        doReadStartContainer(contextType);
+        setNextState(); // 设置新上下文状态
+    }
+
+    private void readEndContainer(DsonContextType contextType) {
+        Context context = this.context;
+        checkEndContext(context, contextType);
+        doReadEndContainer();
+        setNextState(); // parent前进一个状态
+    }
+
     private void autoStartTopLevel(Context context) {
         if (context.contextType == DsonContextType.TOP_LEVEL
                 && (context.state == DsonReaderState.INITIAL || context.state == DsonReaderState.TYPE)) {
             readDsonType();
         }
-    }
-
-    protected void recoverDsonType(Context context) {
-        this.currentDsonType = Objects.requireNonNull(context.contextType.dsonType);
-        this.currentWireType = WireType.VARINT;
-        this.currentName = context.name;
     }
 
     private void checkEndContext(Context context, DsonContextType contextType) {
@@ -402,6 +376,12 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
         if (context.state != DsonReaderState.WAIT_END_OBJECT) {
             throw invalidState(List.of(DsonReaderState.WAIT_END_OBJECT));
         }
+    }
+
+    protected void recoverDsonType(Context context) {
+        this.currentDsonType = Objects.requireNonNull(context.contextType.dsonType);
+        this.currentWireType = WireType.VARINT;
+        this.currentName = context.name;
     }
 
     /**
@@ -529,6 +509,9 @@ public abstract class AbstractDsonBinReader implements DsonBinReader {
             this.state = state;
         }
 
+        public Context getParent() {
+            return parent;
+        }
     }
 
 }
