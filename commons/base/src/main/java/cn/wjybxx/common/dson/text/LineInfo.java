@@ -29,7 +29,7 @@ class LineInfo {
     final int startPos;
     /** 行全局结束位置，包含换行符 -- start和end相等时表示空行 */
     final int endPos;
-    /** 内容全局起始位置，可能 -1 */
+    /** 内容全局起始位置，可能 -1，表示该行没有内容 */
     final int contentStartPos;
     /** 行首类型 */
     final LheadType lheadType;

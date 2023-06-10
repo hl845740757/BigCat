@@ -85,20 +85,17 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
         }
     }
 
-    private static List<LocalLineInfo> preprocess(List<String> lines, List<LocalLineInfo> contentLines) {
+    private static List<LocalLineInfo> preprocess(List<String> originLines, List<LocalLineInfo> lines) {
         int ln = 0;
-        int lineIndex = -1;
         int startPos;
         int endPos = -1;
-        for (final String line : lines) {
+        for (final String line : originLines) {
             ln++;
             startPos = endPos + 1; // 换行符号也算一个字符
             endPos = startPos + line.length();
             if (line.isEmpty()) {
                 continue;
             }
-
-            lineIndex++;
             LheadType lheadType = parseLhead(line, 0, line.length(), ln);
             if (lheadType == LheadType.COMMENT) {
                 continue;
@@ -110,11 +107,11 @@ public class DsonLinesBuffer extends AbstractDsonBuffer<DsonLinesBuffer.LocalLin
             } else {
                 contentStartPos = startPos + contentStartIndex;
             }
-            contentLines.add(new LocalLineInfo(startPos, endPos, contentStartPos,
-                    lheadType, ln, lineIndex,
+            lines.add(new LocalLineInfo(startPos, endPos, contentStartPos,
+                    lheadType, ln, lines.size(),
                     line));
         }
-        return contentLines;
+        return lines;
     }
 
 
