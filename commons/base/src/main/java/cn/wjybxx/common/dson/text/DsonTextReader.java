@@ -42,7 +42,10 @@ import java.util.Objects;
 public class DsonTextReader extends AbstractDsonDocReader {
 
     private static final List<TokenType> VALUE_SEPARATOR_TOKENS = List.of(TokenType.COMMA, TokenType.END_OBJECT, TokenType.END_ARRAY);
-    private static final DsonToken TOKEN_CLASSNAME = new DsonToken(TokenType.UNQUOTE_STRING, DsonTexts.CLASS_NAME);
+    private static final DsonToken TOKEN_START_HEADER = new DsonToken(TokenType.HEADER, "@{", -1);
+    private static final DsonToken TOKEN_END_OBJECT = new DsonToken(TokenType.END_OBJECT, "}", -1);
+    private static final DsonToken TOKEN_COLON = new DsonToken(TokenType.COLON, ":", -1);
+    private static final DsonToken TOKEN_CLASSNAME = new DsonToken(TokenType.UNQUOTE_STRING, DsonTexts.CLASS_NAME, -1);
 
     private DsonScanner scanner;
     private final ArrayDeque<DsonToken> pushedTokenQueue = new ArrayDeque<>(6);
@@ -447,8 +450,8 @@ public class DsonTextReader extends AbstractDsonDocReader {
                 }
             }
             // 每读取一个值，判断下分隔符，尾部最多只允许一个逗号 -- 这里在尾部更容易处理
-            if ((keyToken = popToken()) == DsonToken.COMMA
-                    && (keyToken = popToken()) == DsonToken.COMMA) {
+            if ((keyToken = popToken()).getType() == TokenType.COMMA
+                    && (keyToken = popToken()).getType() == TokenType.COMMA) {
                 throw DsonCodecException.invalidTokenType(context.contextType, keyToken);
             } else {
                 pushToken(keyToken);
@@ -489,11 +492,11 @@ public class DsonTextReader extends AbstractDsonDocReader {
     private void escapeHeaderAndPush(DsonToken headerToken) {
         // 如果header不是结构体，则封装为结构体，注意...要反序压栈
         if (headerToken.firstChar() != '{') {
-            pushToken(DsonToken.END_OBJECT);
-            pushToken(new DsonToken(TokenType.STRING, headerToken.castAsString()));
-            pushToken(DsonToken.COLON);
+            pushToken(TOKEN_END_OBJECT);
+            pushToken(new DsonToken(TokenType.STRING, headerToken.castAsString(), -1));
+            pushToken(TOKEN_COLON);
             pushToken(TOKEN_CLASSNAME);
-            pushToken(DsonToken.HEADER_OBJECT);
+            pushToken(TOKEN_START_HEADER);
         } else {
             pushToken(headerToken);
         }
@@ -520,10 +523,11 @@ public class DsonTextReader extends AbstractDsonDocReader {
     @Override
     protected void doReadName() {
         currentName = Objects.requireNonNull(popNextName());
+        // 将header中的特殊属性记录下来
         Context context = getContext();
         if (context.contextType == DsonContextType.HEADER) {
             if (context.compClsNameToken == null && DsonTexts.COMP_CLASS_NAME.equals(currentName)) {
-                context.compClsNameToken = new DsonToken(TokenType.HEADER, nextValue);
+                context.compClsNameToken = new DsonToken(TokenType.HEADER, nextValue, -1);
             }
             // 其它属性
         }

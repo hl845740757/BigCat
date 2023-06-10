@@ -26,27 +26,17 @@ import java.util.Objects;
  */
 public class DsonToken {
 
-    public static final DsonToken EOF = new DsonToken(TokenType.EOF, "eof");
-
-    public static final DsonToken BEGIN_OBJECT_WITH_HEADER = new DsonToken(TokenType.BEGIN_OBJECT, "{@");
-    public static final DsonToken BEGIN_OBJECT = new DsonToken(TokenType.BEGIN_OBJECT, "{");
-    public static final DsonToken END_OBJECT = new DsonToken(TokenType.END_OBJECT, "}");
-
-    public static final DsonToken BEGIN_ARRAY_WITH_HEADER = new DsonToken(TokenType.BEGIN_ARRAY, "[@");
-    public static final DsonToken BEGIN_ARRAY = new DsonToken(TokenType.BEGIN_ARRAY, "[");
-    public static final DsonToken END_ARRAY = new DsonToken(TokenType.END_ARRAY, "]");
-
-    public static final DsonToken COLON = new DsonToken(TokenType.COLON, ":");
-    public static final DsonToken COMMA = new DsonToken(TokenType.COMMA, ",");
-    public static final DsonToken NULL = new DsonToken(TokenType.NULL, null);
-    public static final DsonToken HEADER_OBJECT = new DsonToken(TokenType.HEADER, "@{");
-
     private final TokenType type;
     private final Object value;
+    private final int pos;
 
-    public DsonToken(TokenType type, Object value) {
+    /**
+     * @param pos token所在的位置，-1表示动态生成的token
+     */
+    public DsonToken(TokenType type, Object value, int pos) {
         this.type = Objects.requireNonNull(type);
         this.value = value;
+        this.pos = pos;
     }
 
     public TokenType getType() {
@@ -56,6 +46,12 @@ public class DsonToken {
     public Object getValue() {
         return value;
     }
+
+    public int getPos() {
+        return pos;
+    }
+
+    //
 
     public String castAsString() {
         return (String) value;
@@ -72,29 +68,33 @@ public class DsonToken {
     }
 
     //
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DsonToken dsonToken = (DsonToken) o;
+        DsonToken token = (DsonToken) o;
 
-        if (type != dsonToken.type) return false;
-        return Objects.equals(value, dsonToken.value);
+        if (pos != token.pos) return false;
+        if (type != token.type) return false;
+        return Objects.equals(value, token.value);
     }
 
     @Override
     public int hashCode() {
         int result = type.hashCode();
         result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + pos;
         return result;
     }
 
     @Override
     public String toString() {
-        return "DsonToken{ " +
-                "type= " + type +
-                ", value= " + value +
-                " }";
+        return "DsonToken{" +
+                "type=" + type +
+                ", value=" + value +
+                ", pos=" + pos +
+                '}';
     }
 }
