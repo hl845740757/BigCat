@@ -66,6 +66,10 @@ public class ObjectUtils {
         return (str == null || str.isEmpty()) ? null : str;
     }
 
+    public static String blankToNull(String str) {
+        return (str == null || str.isBlank()) ? null : str;
+    }
+
     public static boolean isEmpty(String value) {
         return value == null || value.isEmpty();
     }

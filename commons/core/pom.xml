@@ -37,12 +37,6 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.jodd/jodd-core -->
-        <dependency>
-            <groupId>org.jodd</groupId>
-            <artifactId>jodd-core</artifactId>
-            <version>${jodd.version}</version>
-        </dependency>
 
         <!-- 并发工具包 -->
         <dependency>

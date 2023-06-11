@@ -16,12 +16,6 @@
 
 package cn.wjybxx.common.box;
 
-import cn.wjybxx.common.dson.AutoTypeArgs;
-import cn.wjybxx.common.dson.Dsons;
-import cn.wjybxx.common.dson.binary.BinaryObjectReader;
-import cn.wjybxx.common.dson.binary.BinaryObjectWriter;
-import cn.wjybxx.common.dson.binary.BinarySerializable;
-
 import java.util.Objects;
 
 /**
@@ -30,8 +24,6 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/3/31
  */
-@AutoTypeArgs
-@BinarySerializable
 public final class Tuple3<A, B, C> {
 
     private final Tuple2<A, B> tuple2;
@@ -40,21 +32,6 @@ public final class Tuple3<A, B, C> {
     public Tuple3(A first, B second, C third) {
         this.tuple2 = new Tuple2<>(first, second);
         this.third = third;
-    }
-
-    public Tuple3(BinaryObjectReader reader) {
-        A first = reader.readObject(Dsons.makeFullNumberZeroIdep(0));
-        B second = reader.readObject(Dsons.makeFullNumberZeroIdep(1));
-        C third = reader.readObject(Dsons.makeFullNumberZeroIdep(2));
-        this.tuple2 = new Tuple2<>(first, second);
-        this.third = third;
-    }
-
-    public void writeObject(BinaryObjectWriter writer) {
-        // 该类写入方式不是嵌套的，因此不能让生成的代码托管
-        writer.writeObject(Dsons.makeFullNumberZeroIdep(0), tuple2.getFirst());
-        writer.writeObject(Dsons.makeFullNumberZeroIdep(1), tuple2.getSecond());
-        writer.writeObject(Dsons.makeFullNumberZeroIdep(2), third);
     }
 
     public static <A, B, C> Tuple3<A, B, C> of(A first, B second, C third) {

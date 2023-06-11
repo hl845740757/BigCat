@@ -16,19 +16,12 @@
 
 package cn.wjybxx.common.box;
 
-import cn.wjybxx.common.dson.AutoTypeArgs;
-import cn.wjybxx.common.dson.Dsons;
-import cn.wjybxx.common.dson.binary.BinaryObjectReader;
-import cn.wjybxx.common.dson.binary.BinarySerializable;
-
 /**
  * int值的二元组
  *
  * @author wjybxx
  * date 2023/3/31
  */
-@AutoTypeArgs
-@BinarySerializable
 public class IntTuple2 {
 
     private final int first;
@@ -37,11 +30,6 @@ public class IntTuple2 {
     public IntTuple2(int first, int second) {
         this.first = first;
         this.second = second;
-    }
-
-    public IntTuple2(BinaryObjectReader reader) {
-        this.first = reader.readInt(Dsons.makeFullNumberZeroIdep(0));
-        this.second = reader.readInt(Dsons.makeFullNumberZeroIdep(1));
     }
 
     public int getFirst() {

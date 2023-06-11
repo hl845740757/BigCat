@@ -18,7 +18,8 @@ package cn.wjybxx.common.reload;
 
 import cn.wjybxx.common.AbstractConstant;
 import cn.wjybxx.common.Constant;
-import jodd.io.FileNameUtil;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * 1. path的含义取决于应用自身，可能是绝对路径，也可能是相对路径，也可能是其它的格式。
@@ -41,8 +42,8 @@ public final class FilePath<T> extends AbstractConstant<FilePath<?>> {
         this.virtual = builder.virtual;
 
         // 暂时先采用缓存的方式
-        this.fileName = FileNameUtil.getName(builder.getName());
-        this.fileNameWithoutExt = FileNameUtil.removeExtension(fileName);
+        this.fileName = FilenameUtils.getName(builder.getName());
+        this.fileNameWithoutExt = FilenameUtils.removeExtension(fileName);
     }
 
     /** @return 绑定的文件路径 - 这是一个转义方法 */

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.async;
+package cn.wjybxx.common.time;
 
 /**
  * 频率调节器 - 可理解为轮询式Timer调度器。
@@ -25,6 +25,8 @@ package cn.wjybxx.common.async;
  */
 public class Regulator {
 
+    /** 仅执行一次 */
+    private static final int ONCE = 0;
     /** 可变帧率 -- fixedDelay的间隔是前次任务的结束与下次任务的开始 */
     private static final int FIX_DELAY = 1;
     /** 固定帧率 */
@@ -46,16 +48,19 @@ public class Regulator {
     /** 两次执行之间的间隔 */
     private long deltaTime;
     /** 已触发次数 */
-    private int triggeredCount;
+    private int count;
+
+    /** 关联的任务 */
+    private Object task;
 
     private Regulator(int type, long firstDelay, long period, long lastUpdateTime) {
         this.type = type;
-        this.firstDelay = checkFirstDelay(type, firstDelay);
-        this.period = checkPeriod(period);
+        this.firstDelay = firstDelay;
+        this.period = period;
 
         this.lastUpdateTime = lastUpdateTime;
         this.deltaTime = 0;
-        this.triggeredCount = 0;
+        this.count = 0;
     }
 
     private static long checkFirstDelay(int type, long firstDelay) {
@@ -66,27 +71,37 @@ public class Regulator {
     }
 
     private static long checkPeriod(long period) {
-        if (period < 0) {
-            throw new IllegalArgumentException("period cant be negative, period " + period);
+        if (period <= 0) {
+            throw new IllegalArgumentException("period must be positive, period " + period);
         }
         return period;
     }
 
     /**
      * @param firstDelay 首次执行延迟
-     * @param period     触发间隔 - 为0则只触发一次
+     */
+    public static Regulator newOnce(long firstDelay) {
+        return new Regulator(ONCE, firstDelay, 0, 0);
+    }
+
+    /**
+     * @param firstDelay 首次执行延迟
+     * @param period     触发间隔
      * @return 按固定延迟更新的调节器，它保证的是两次执行的间隔大于更新间隔
      */
     public static Regulator newFixedDelay(long firstDelay, long period) {
+        checkPeriod(period);
         return new Regulator(FIX_DELAY, firstDelay, period, 0);
     }
 
     /**
      * @param firstDelay 首次执行延迟
-     * @param period     触发间隔 - 为0则只触发一次
+     * @param period     触发间隔
      * @return 按固定频率更新的调节器，它尽可能的保证总运行次数
      */
     public static Regulator newFixedRate(long firstDelay, long period) {
+        checkPeriod(period);
+        checkFirstDelay(FIX_RATE, firstDelay);
         return new Regulator(FIX_RATE, firstDelay, period, 0);
     }
 
@@ -100,7 +115,7 @@ public class Regulator {
     public Regulator restart(long curTime) {
         lastUpdateTime = curTime;
         deltaTime = 0;
-        triggeredCount = 0;
+        count = 0;
         return this;
     }
 
@@ -120,9 +135,9 @@ public class Regulator {
      * @return 如果应该执行一次update或者tick，则返回true，否则返回false
      */
     public boolean isReady(long curTime) {
-        boolean ready = triggeredCount == 0
-                ? curTime - lastUpdateTime >= firstDelay
-                : period > 0 && curTime - lastUpdateTime >= period;
+        boolean ready = count == 0
+                ? (curTime - lastUpdateTime >= firstDelay)
+                : period > 0 && (curTime - lastUpdateTime >= period);
         if (ready) {
             internalUpdate(curTime);
             return true;
@@ -131,13 +146,13 @@ public class Regulator {
     }
 
     private void internalUpdate(long curTime) {
-        if (type == FIX_DELAY) {
+        if (type == FIX_DELAY || type == ONCE) {
             // 一切都是真实时间，但deltaTime也不能小于0
             deltaTime = Math.max(0, curTime - lastUpdateTime);
             lastUpdateTime = curTime;
         } else {
             // 固定频率执行时，一切都是逻辑时间 -- 不过，也不应该超过当前时间
-            if (triggeredCount == 0) {
+            if (count == 0) {
                 deltaTime = firstDelay;
                 lastUpdateTime = Math.min(curTime, lastUpdateTime + firstDelay);
             } else {
@@ -145,12 +160,12 @@ public class Regulator {
                 lastUpdateTime = Math.min(curTime, lastUpdateTime + period);
             }
         }
-        triggeredCount++;
+        count++;
     }
 
     /** 获取下次执行的延迟 */
     public long getDelay(long curTime) {
-        if (triggeredCount == 0) {
+        if (count == 0) {
             return Math.max(0, curTime - lastUpdateTime - firstDelay);
         }
         return Math.max(0, curTime - lastUpdateTime - period);
@@ -177,9 +192,13 @@ public class Regulator {
         this.period = checkPeriod(period);
     }
 
+    /** @return 如果是周期性任务则返回true */
+    public boolean isPeriodic() {
+        return period != 0;
+    }
+
     /**
      * 它的具体含义取悦于更新时使用的{@code curTime}的含义。
-     * 慎用！
      */
     public long getLastUpdateTime() {
         return lastUpdateTime;
@@ -198,8 +217,16 @@ public class Regulator {
     /**
      * 触发次数
      */
-    public int getTriggeredCount() {
-        return triggeredCount;
+    public int getCount() {
+        return count;
     }
 
+    public Object getTask() {
+        return task;
+    }
+
+    public Regulator setTask(Object task) {
+        this.task = task;
+        return this;
+    }
 }

@@ -16,17 +16,10 @@
 
 package cn.wjybxx.common.box;
 
-import cn.wjybxx.common.dson.AutoTypeArgs;
-import cn.wjybxx.common.dson.Dsons;
-import cn.wjybxx.common.dson.binary.BinaryObjectReader;
-import cn.wjybxx.common.dson.binary.BinarySerializable;
-
 /**
  * @author wjybxx
  * date 2023/3/31
  */
-@AutoTypeArgs
-@BinarySerializable
 public class ShortTuple2 {
 
     private final short first;
@@ -35,11 +28,6 @@ public class ShortTuple2 {
     public ShortTuple2(short first, short second) {
         this.first = first;
         this.second = second;
-    }
-
-    public ShortTuple2(BinaryObjectReader reader) {
-        this.first = reader.readShort(Dsons.makeFullNumberZeroIdep(0));
-        this.second = reader.readShort(Dsons.makeFullNumberZeroIdep(1));
     }
 
     public short getFirst() {

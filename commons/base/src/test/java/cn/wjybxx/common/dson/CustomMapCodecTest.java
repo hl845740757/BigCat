@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.common.dson;
 
 import cn.wjybxx.common.dson.AutoTypeArgs;
 import cn.wjybxx.common.dson.ClassImpl;

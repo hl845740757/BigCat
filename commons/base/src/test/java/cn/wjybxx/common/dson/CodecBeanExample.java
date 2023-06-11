@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.common.dson;
 
+import cn.wjybxx.common.EnumUtils;
 import cn.wjybxx.common.dson.*;
 import cn.wjybxx.common.dson.binary.BinaryObjectReader;
 import cn.wjybxx.common.dson.binary.BinaryObjectWriter;

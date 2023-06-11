@@ -18,7 +18,7 @@ package cn.wjybxx.common;
 
 import cn.wjybxx.common.concurrent.DefaultThreadFactory;
 import cn.wjybxx.common.reload.*;
-import jodd.io.FileUtil;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -82,7 +83,7 @@ public class FileReloadTest {
             }
             builder.append(RandomStringUtils.random(16, true, true));
         }
-        FileUtil.writeString(file, builder.toString());
+        FileUtils.writeStringToFile(file, builder.toString(), StandardCharsets.UTF_8);
     }
 
     @Test
@@ -99,7 +100,7 @@ public class FileReloadTest {
     }
 
     private static void assertFileContent(File file) throws IOException {
-        List<String> lines = List.of(FileUtil.readLines(file));
+        List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
         String cacheString = join(lines);
         Assertions.assertEquals(lines, fileDataMgr.helloWorldList);
         Assertions.assertEquals(cacheString, fileDataMgr.helloWorldCacheString);
@@ -140,7 +141,7 @@ public class FileReloadTest {
 
         @Override
         public List<String> read(File file, FileDataProvider provider) throws Exception {
-            return List.of(FileUtil.readLines(file));
+            return FileUtils.readLines(file, StandardCharsets.UTF_8);
         }
 
     }

@@ -16,11 +16,6 @@
 
 package cn.wjybxx.common.box;
 
-import cn.wjybxx.common.dson.AutoTypeArgs;
-import cn.wjybxx.common.dson.Dsons;
-import cn.wjybxx.common.dson.binary.BinaryObjectReader;
-import cn.wjybxx.common.dson.binary.BinarySerializable;
-
 import java.util.Objects;
 
 /**
@@ -29,8 +24,6 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/3/31
  */
-@AutoTypeArgs
-@BinarySerializable
 public final class Tuple2<A, B> {
 
     private final A first;
@@ -39,11 +32,6 @@ public final class Tuple2<A, B> {
     public Tuple2(A first, B second) {
         this.first = first;
         this.second = second;
-    }
-
-    public Tuple2(BinaryObjectReader reader) {
-        this.first = reader.readObject(Dsons.makeFullNumberZeroIdep(0));
-        this.second = reader.readObject(Dsons.makeFullNumberZeroIdep(1));
     }
 
     public static <A, B> Tuple2<A, B> of(A first, B second) {
