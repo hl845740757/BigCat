@@ -56,8 +56,21 @@ public interface GuidGenerator extends Closeable {
     long next();
 
     /**
+     * 匹配分配id
+     *
+     * <pre>
+     *     long highest = next(n);
+     *     long lowest = highest - n + 1;
+     * </pre>
+     *
+     * @return 最大id
+     */
+    long next(int n);
+
+    /**
      * 关闭它持有的资源
      */
     @Override
     void close();
+
 }

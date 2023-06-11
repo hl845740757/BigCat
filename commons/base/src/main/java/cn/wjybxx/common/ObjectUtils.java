@@ -49,8 +49,12 @@ public class ObjectUtils {
         return result;
     }
 
-    public static String toStringIfNotNull(Object message) {
-        return message == null ? null : String.valueOf(message);
+    public static String toString(Object object, String nullDef) {
+        return object == null ? nullDef : object.toString();
+    }
+
+    public static String toStringIfNotNull(Object object) {
+        return object == null ? null : object.toString();
     }
 
     // endregion

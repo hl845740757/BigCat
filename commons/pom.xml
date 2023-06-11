@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.wjybxx.commons</groupId>
+    <groupId>cn.wjybxx.commons</groupId>
     <artifactId>commons-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -28,11 +28,11 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-
     <!-- 供应者信息 -->
     <scm>
         <url>https://github.com/hl845740757/BigCat</url>
         <connection>scm:git:https://github.com/hl845740757/BigCat.git</connection>
+        <developerConnection>https://github.com/hl845740757</developerConnection>
     </scm>
     <!-- issue -->
     <issueManagement>
@@ -67,6 +67,7 @@
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>
+        <commons-io.version>2.12.0</commons-io.version>
         <guava.version>31.1-jre</guava.version>
 
         <pb.version>3.22.3</pb.version>
@@ -126,7 +127,6 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
-
             <!-- 源码插件 -->
             <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-source-plugin -->
             <plugin>
@@ -139,27 +139,6 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- 文档插件 -->
-            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.4.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <!-- 注释不是特别规范，避免打包中断 -->
-                        <configuration>
-                            <doclint>none</doclint>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -183,6 +162,27 @@
             </distributionManagement>
             <build>
                 <plugins>
+                    <!-- 文档插件 -->
+                    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <!-- 注释不是特别规范，避免打包中断 -->
+                                <configuration>
+                                    <doclint>none</doclint>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
                     <!-- gpg签名插件 -->
                     <plugin>
                         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->

@@ -73,6 +73,19 @@
 
     <build>
         <plugins>
+            <!-- 指定参数-parameters，否则test目录下文件编译异常 -->
+            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <encoding>UTF8</encoding>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
             <!-- 源码插件，未加载项目的情况下看源码 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

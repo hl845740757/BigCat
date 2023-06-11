@@ -51,7 +51,7 @@ public class ClassScanner {
      * @return classSet
      */
     public static Set<Class<?>> findAllClass(String pkgName) {
-        return findClasses(pkgName, FunctionUtils.alwaysTrue(), FunctionUtils.alwaysTrue());
+        return findClasses(pkgName, f -> true, f -> true);
     }
 
     /**
@@ -109,9 +109,7 @@ public class ClassScanner {
 
         // 只接受文件夹和class文件
         File[] dirFiles = dir.listFiles(file -> file.isDirectory() || file.getName().endsWith(".class"));
-
-        // 没有符合条件的文件
-        if (dirFiles == null || dirFiles.length == 0) {
+        if (dirFiles == null) {
             return;
         }
 
@@ -135,7 +133,7 @@ public class ClassScanner {
             }
             //加载类
             try {
-                Class clazz = classLoader.loadClass(className);
+                Class<?> clazz = classLoader.loadClass(className);
                 if (classFilter.test(clazz)) {
                     classes.add(clazz);
                 }
@@ -171,7 +169,7 @@ public class ClassScanner {
 
         // 同样的进行循环迭代
         while (entry.hasMoreElements()) {
-            // 获取jar里的一个实体 可以是目录 和一些jar包里的其他文件 如META-INF等文
+            // 获取jar里的一个实体，可以是目录和一些jar包里的其他文件，如META-INF等文
             JarEntry jarEntry = entry.nextElement();
 
             // jar包中的文件夹
@@ -199,7 +197,6 @@ public class ClassScanner {
                     classes.add(clazz);
                 }
             } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                // jdk 1.7的语法
                 logger.warn("load class {} from jar {} caught exception", className, jar.getName(), e);
             }
         }

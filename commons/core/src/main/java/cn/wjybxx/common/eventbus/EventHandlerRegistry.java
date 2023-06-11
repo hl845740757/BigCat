@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.eventbus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -33,8 +32,7 @@ public interface EventHandlerRegistry {
      * @param handler    事件处理器
      * @param customData 传递给EventBus的自定义数据，用于实现切面等功能 -- 在实践中通常是Json
      */
-    <T> void registerX(@Nonnull Object masterKey, @Nullable Object childKey, @Nonnull EventHandler<T> handler,
-                       @Nullable Object customData);
+    <T> void registerX(Object masterKey, @Nullable Object childKey, EventHandler<T> handler, @Nullable Object customData);
 
     /**
      * 删除一个事件处理器。
@@ -44,14 +42,14 @@ public interface EventHandlerRegistry {
      * @param childKey  子事件key
      * @param handler   要删除的处理器
      */
-    void removeX(@Nonnull Object masterKey, @Nullable Object childKey, @Nonnull EventHandler<?> handler);
+    void removeX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
 
     /***
      * 判断handler是否在对应的事件监听列表表
      *
      * @param childKey 注意，这里不支持集合
      */
-    boolean contains(@Nonnull Object masterKey, @Nullable Object childKey, @Nonnull EventHandler<?> handler);
+    boolean contains(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
 
     /**
      * 清理注册表，释放内存
@@ -61,29 +59,27 @@ public interface EventHandlerRegistry {
     // region 辅助方法
     // 通过泛型提示Handler接收的事件类型，通常没有自定义数据
 
-    default <T> void register(@Nonnull Class<T> eventType, @Nonnull EventHandler<? super T> handler) {
+    default <T> void register(Class<T> eventType, EventHandler<? super T> handler) {
         registerX(eventType, null, handler, null);
     }
 
-    default <T> void register(@Nonnull Class<T> eventType, @Nonnull EventHandler<? super T> handler,
-                              @Nullable Object customData) {
+    default <T> void register(Class<T> eventType, EventHandler<? super T> handler, @Nullable Object customData) {
         registerX(eventType, null, handler, customData);
     }
 
-    default <T> void register(@Nonnull Class<T> eventType, @Nullable Object childKey, @Nonnull EventHandler<? super T> handler) {
+    default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler) {
         registerX(eventType, childKey, handler, null);
     }
 
-    default <T> void register(@Nonnull Class<T> eventType, @Nullable Object childKey, @Nonnull EventHandler<? super T> handler,
-                              @Nullable Object customData) {
+    default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler, @Nullable Object customData) {
         registerX(eventType, childKey, handler, customData);
     }
 
-    default void remove(@Nonnull Class<?> eventType, @Nonnull EventHandler<?> handler) {
+    default void remove(Class<?> eventType, EventHandler<?> handler) {
         removeX(eventType, null, handler);
     }
 
-    default void remove(@Nonnull Class<?> eventType, @Nonnull Object childKey, @Nonnull EventHandler<?> handler) {
+    default void remove(Class<?> eventType, Object childKey, EventHandler<?> handler) {
         removeX(eventType, childKey, handler);
     }
 
