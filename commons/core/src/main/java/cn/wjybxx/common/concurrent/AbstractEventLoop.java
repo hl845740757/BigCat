@@ -33,6 +33,10 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractEventLoop.class);
 
+    /** 前填充，避免字段与其它线程的可变数据加载到一起，后填充需要子类自行实现 */
+    @SuppressWarnings("unused")
+    private long p1, p2, p3, p4, p5, p6, p7, p8;
+
     protected final EventLoopGroup parent;
     protected final Collection<EventLoop> selfCollection = Collections.singleton(this);
     protected final EventLoopFutureContext futureContext;

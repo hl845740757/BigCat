@@ -132,7 +132,7 @@ public class RpcTest {
         public void syncSayHello() throws InterruptedException {
             {
                 String msg1 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                String response1 = rpcClient.syncCall(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<>(
+                String response1 = rpcClient.syncCall(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<>(
                         serviceId,
                         helloMethodId,
                         List.of(msg1)
@@ -141,7 +141,7 @@ public class RpcTest {
             }
             {
                 String msg2 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                String response2 = rpcClient.syncCall(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<>(
+                String response2 = rpcClient.syncCall(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<>(
                         serviceId,
                         helloAsyncMethodId,
                         List.of(msg2)
@@ -153,7 +153,7 @@ public class RpcTest {
         public void sayHello() {
             {
                 String msg1 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                rpcClient.call(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<String>(
+                rpcClient.call(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<String>(
                         serviceId,
                         helloMethodId,
                         List.of(msg1)
@@ -161,7 +161,7 @@ public class RpcTest {
             }
             {
                 String msg2 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                rpcClient.call(SimpleNodeSpec.SERVER, new DefaultRpcMethodSpec<String>(
+                rpcClient.call(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<String>(
                         serviceId,
                         helloAsyncMethodId,
                         List.of(msg2)
@@ -185,7 +185,7 @@ public class RpcTest {
         @Override
         public void run() {
             DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
-            SimpleNodeSpec role = SimpleNodeSpec.SERVER;
+            SimpleNodeId role = SimpleNodeId.SERVER;
             // 注册服务
             TestService testService = new TestService(executor);
             rpcProcessor.register(serviceId, helloMethodId, (context, methodSpec) -> {
@@ -196,7 +196,7 @@ public class RpcTest {
             });
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcSupportHandler rpcSupportHandler = new RpcSupportHandler(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
@@ -206,10 +206,10 @@ public class RpcTest {
                 while (!alert) {
                     RpcRequest request = serverQueue.poll(20, TimeUnit.MILLISECONDS);
                     if (request != null) {
-                        rpcSupportHandler.onRcvRequest(request);
+                        rpcClientImpl.onRcvRequest(request);
                     }
                     executor.tick();
-                    rpcSupportHandler.tick();
+                    rpcClientImpl.tick();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -230,14 +230,14 @@ public class RpcTest {
         @Override
         public void run() {
             DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
-            SimpleNodeSpec role = SimpleNodeSpec.CLIENT;
+            SimpleNodeId role = SimpleNodeId.CLIENT;
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcSupportHandler rpcSupportHandler = new RpcSupportHandler(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
-            TestClient testClient = new TestClient(timeProvider, rpcSupportHandler);
+            TestClient testClient = new TestClient(timeProvider, rpcClientImpl);
             executor.scheduleWithFixedDelay(testClient::sayHello, 200, 300);
             executor.scheduleWithFixedDelay(() -> {
                 try {
@@ -257,10 +257,10 @@ public class RpcTest {
                 while (!alert) {
                     RpcResponse response = clientQueue.poll(20, TimeUnit.MILLISECONDS);
                     if (response != null) {
-                        rpcSupportHandler.onRcvResponse(response);
+                        rpcClientImpl.onRcvResponse(response);
                     }
                     executor.tick();
-                    rpcSupportHandler.tick();
+                    rpcClientImpl.tick();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -269,14 +269,14 @@ public class RpcTest {
     }
 
     // 模拟路由
-    private class TestRpcRouterReceiver implements RpcRouterHandler, RpcReceiverHandler {
+    private class TestRpcRouterReceiver implements RpcSender, RpcReceiver {
 
         private TestRpcRouterReceiver() {
         }
 
         @Override
-        public boolean send(NodeSpec target, Object proto) {
-            SimpleNodeSpec targetRole = (SimpleNodeSpec) target;
+        public boolean send(NodeId target, Object proto) {
+            SimpleNodeId targetRole = (SimpleNodeId) target;
             switch (targetRole) {
                 case CLIENT -> {
                     return clientQueue.offer((RpcResponse) proto);
@@ -289,7 +289,7 @@ public class RpcTest {
         }
 
         @Override
-        public boolean broadcast(ScopeSpec scopeSpec, Object proto) {
+        public boolean broadcast(NodeScope nodeScope, Object proto) {
             throw new AssertionError(); // 不测试该实现
         }
 

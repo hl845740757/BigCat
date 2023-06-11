@@ -34,16 +34,16 @@ import javax.annotation.Nonnull;
 public class RpcRequest implements DebugLogFriendlyObject {
 
     /**
-     * 请求方的唯一标识 - 它与{@link NodeSpec}是两个维度的东西
+     * 客户端进程id - 它与{@link NodeId}是两个维度的东西
      * <p>
      * Q: 它出现的必要性？
      * A: 进程重启可能收到前一个进程的消息，因此需要在请求中记录其关联的进程。
      */
-    private long clientNodeGuid;
+    private long clientProcessId;
     /** 请求方 */
-    private NodeSpec clientNode;
-    /** 请求的唯一id */
-    private long requestGuid;
+    private NodeId clientNodeId;
+    /** 请求id */
+    private long requestId;
     /** 是否是单项调用（不需要结果） */
     private boolean oneWay;
     /** 方法描述信息 */
@@ -53,20 +53,20 @@ public class RpcRequest implements DebugLogFriendlyObject {
         // 可能的序列化支持
     }
 
-    public RpcRequest(long clientNodeGuid, NodeSpec clientNode, long requestGuid, boolean oneWay, RpcMethodSpec<?> rpcMethodSpec) {
-        this.requestGuid = requestGuid;
+    public RpcRequest(long clientProcessId, NodeId clientNodeId, long requestId, boolean oneWay, RpcMethodSpec<?> rpcMethodSpec) {
+        this.requestId = requestId;
         this.oneWay = oneWay;
-        this.clientNodeGuid = clientNodeGuid;
-        this.clientNode = clientNode;
+        this.clientProcessId = clientProcessId;
+        this.clientNodeId = clientNodeId;
         this.rpcMethodSpec = rpcMethodSpec;
     }
 
-    public long getRequestGuid() {
-        return requestGuid;
+    public long getRequestId() {
+        return requestId;
     }
 
-    public void setRequestGuid(long requestGuid) {
-        this.requestGuid = requestGuid;
+    public void setRequestId(long requestId) {
+        this.requestId = requestId;
     }
 
     public boolean isOneWay() {
@@ -77,20 +77,20 @@ public class RpcRequest implements DebugLogFriendlyObject {
         this.oneWay = oneWay;
     }
 
-    public long getClientNodeGuid() {
-        return clientNodeGuid;
+    public long getClientProcessId() {
+        return clientProcessId;
     }
 
-    public void setClientNodeGuid(long clientNodeGuid) {
-        this.clientNodeGuid = clientNodeGuid;
+    public void setClientProcessId(long clientProcessId) {
+        this.clientProcessId = clientProcessId;
     }
 
-    public NodeSpec getClientNode() {
-        return clientNode;
+    public NodeId getClientNodeId() {
+        return clientNodeId;
     }
 
-    public void setClientNode(NodeSpec clientNode) {
-        this.clientNode = clientNode;
+    public void setClientNodeId(NodeId clientNodeId) {
+        this.clientNodeId = clientNodeId;
     }
 
     public RpcMethodSpec<?> getRpcMethodSpec() {
@@ -105,9 +105,9 @@ public class RpcRequest implements DebugLogFriendlyObject {
     @Override
     public String toSimpleLog() {
         return '{' +
-                "clientNodeGuid=" + clientNodeGuid +
-                ", clientNode=" + clientNode +
-                ", requestGuid=" + requestGuid +
+                "clientNodeGuid=" + clientProcessId +
+                ", clientNode=" + clientNodeId +
+                ", requestGuid=" + requestId +
                 ", oneWay=" + oneWay +
                 ", methodSpec=" + rpcMethodSpec.toSimpleLog() +
                 '}';
@@ -117,9 +117,9 @@ public class RpcRequest implements DebugLogFriendlyObject {
     @Override
     public String toDetailLog() {
         return '{' +
-                "clientNodeGuid=" + clientNodeGuid +
-                ", clientNode=" + clientNode +
-                ", requestGuid=" + requestGuid +
+                "clientNodeGuid=" + clientProcessId +
+                ", clientNode=" + clientNodeId +
+                ", requestGuid=" + requestId +
                 ", oneWay=" + oneWay +
                 ", methodSpec=" + rpcMethodSpec.toDetailLog() +
                 '}';
@@ -128,9 +128,9 @@ public class RpcRequest implements DebugLogFriendlyObject {
     @Override
     public String toString() {
         return "RpcRequest{" +
-                "clientNodeGuid=" + clientNodeGuid +
-                ", clientNode=" + clientNode +
-                ", requestGuid=" + requestGuid +
+                "clientNodeGuid=" + clientProcessId +
+                ", clientNode=" + clientNodeId +
+                ", requestGuid=" + requestId +
                 ", oneWay=" + oneWay +
                 ", rpcMethodSpec=" + rpcMethodSpec.toSimpleLog() +
                 '}';

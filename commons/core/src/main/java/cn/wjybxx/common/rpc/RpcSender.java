@@ -23,7 +23,7 @@ package cn.wjybxx.common.rpc;
  * @author wjybxx
  * date 2023/4/1
  */
-public interface RpcRouterHandler {
+public interface RpcSender {
 
     /**
      * 单播一个协议
@@ -32,15 +32,15 @@ public interface RpcRouterHandler {
      * @param proto  要路由的协议
      * @return 如果不能发送，则返回false，请确保正确的进行了实现。
      */
-    boolean send(NodeSpec target, Object proto);
+    boolean send(NodeId target, Object proto);
 
     /**
      * 广播一个协议
      *
-     * @param scopeSpec 广播范围描述
+     * @param nodeScope 广播范围描述
      * @param proto     要路由的协议
      * @return 如果不能发送，则返回false，请确保正确的进行了实现。
      */
-    boolean broadcast(ScopeSpec scopeSpec, Object proto);
+    boolean broadcast(NodeScope nodeScope, Object proto);
 
 }

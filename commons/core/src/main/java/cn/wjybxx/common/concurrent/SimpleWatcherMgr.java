@@ -26,6 +26,7 @@ import java.util.Objects;
 
 /**
  * 一个简单的Watcher管理器
+ * 由于多用在多线程环境下，因此提供了缓存行填充特性
  *
  * @author wjybxx
  * date 2023/4/6
@@ -35,8 +36,14 @@ public final class SimpleWatcherMgr<E> implements WatchableEventQueue<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleWatcherMgr.class);
 
+    @SuppressWarnings("unused")
+    private long p1, p2, p3, p4, p5, p6, p7, p8;
+
     /** 常见方案：synchronized写，volatile读 */
     private volatile Watcher<? super E> watcher;
+
+    @SuppressWarnings("unused")
+    private long p9, p10, p11, p12, p13, p14, p15, p16;
 
     public Watcher<? super E> getWatcher() {
         return watcher;
@@ -60,22 +67,29 @@ public final class SimpleWatcherMgr<E> implements WatchableEventQueue<E> {
      * @return 如果事件被消费了则返回true，否则返回false
      */
     public boolean onEvent(@Nonnull E event) {
-        // 取消成功才处理事件，考虑竞争的情况 -- 取消失败，证明当前监听器失效
         Watcher<? super E> watcher = this.watcher;
-        if (watcher != null && watcher.test(event) && cancelWatch(watcher)) {
-            try {
-                watcher.onEvent(event);
-            } catch (Throwable ex) {
-                ThreadUtils.recoveryInterrupted(ex);
-                if (ex instanceof VirtualMachineError) {
-                    logger.error("watcher.onEvent caught exception", ex);
-                } else {
-                    logger.warn("watcher.onEvent caught exception", ex);
-                }
-            }
-            return true;
+        if (watcher == null) {
+            return false;
         }
-        return false;
+        // 取消成功才处理事件，考虑竞争的情况
+        // 取消失败，证明当前监听器失效；但取消成功，不能证明当前监听器有效！目标线程可能已醒来，正准备取消监听器
+        boolean r = false;
+        try {
+            if (watcher.test(event) && cancelWatch(watcher)) {
+                r = true;
+                watcher.onEvent(event);
+            }
+        } catch (Throwable ex) {
+            ThreadUtils.recoveryInterrupted(ex);
+            if (!r) {
+                logger.error("Fatal Error! watcher.test caught exception", ex);
+            } else if (ex instanceof VirtualMachineError) {
+                logger.error("watcher.onEvent caught exception", ex);
+            } else {
+                logger.warn("watcher.onEvent caught exception", ex);
+            }
+        }
+        return r;
     }
 
 }

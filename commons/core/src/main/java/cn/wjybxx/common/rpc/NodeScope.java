@@ -17,19 +17,12 @@
 package cn.wjybxx.common.rpc;
 
 /**
- * NodeSpec用于描述一个节点
- * 1. 建议使用静态方法代替构造函数，或提供Utils类，提供更友好的API。
- * 2. 建议实现toString方法
- * 3. 不建议NodeId包含实例guid(比如进程启动时生成的唯一guid)，保持像邮箱账号或手机号那样的稳定值，比如：ServerType + ServerId
- * <p>
- * 注意：
- * 1. 实现类务必实现{@link #equals(Object)}和{@link #hashCode()}
- * 2. 建议实现{@link #toString()}
- * 3. 除非是不可变对象，否则不要复用。
+ * 服务器组描述信息
+ * （用于广播和组播）
  *
  * @author wjybxx
  * date 2023/4/1
  */
-public interface NodeSpec {
+public interface NodeScope {
 
 }

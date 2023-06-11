@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * <h3>api设计</h3>
  * 该接口没有继承{@link java.util.Queue}，也没有提供读写数据的方法，这是故意的。
- * 1.对Watcher来讲，Watcher只期望目标队列能提供监听接口，而不要读写数据接口，只是知道目标应该是一个Queue。
+ * 1.对Watcher来讲，Watcher只期望目标队列能提供监听接口，而不需要读写数据接口，只是知道目标应该是一个Queue。
  * 2.由于不约定数据读写接口，因此你可以组合的方式集成Watcher和Queue的管理 -- 可用实现{@link SimpleWatcherMgr}。
  *
  * @author wjybxx
@@ -49,6 +49,7 @@ public interface WatchableEventQueue<E> {
 
     /**
      * 监听队列中的事件，直到某一个事件发生。
+     * 该方法通常由当前线程的代码调用
      *
      * @param watcher 监听器
      * @throws NullPointerException watcher is null
@@ -58,6 +59,8 @@ public interface WatchableEventQueue<E> {
 
     /**
      * 取消监听
+     * 该方法既可能是注册监听器的代码执行，也可能是提交事件的线程（watcher的一次性原理）
+     * 如果是监听者自身调用，则可以根据返回值检测到冲突，从而采取对应的行为，这时事件的生产者可能将调用{@link Watcher#onEvent(Object)}。
      *
      * @param watcher 用于判断是否是当前watcher
      * @return 如果参数为null，则返回false；如果给定watcher是当前watcher则删除成功并返回true，否则不产生影响并返回false
@@ -68,9 +71,15 @@ public interface WatchableEventQueue<E> {
     @ThreadSafe
     interface Watcher<E> {
 
-        /** 该方法禁止抛出异常 */
+        /**
+         * 该方法禁止抛出异常，否则可能导致严重错误（事件丢失），可能导致死锁
+         */
         boolean test(@Nonnull E event);
 
+        /**
+         * onEvent的最好是仅仅将数据传输到监听者线程并唤醒线程，不要执行复杂的逻辑
+         * 比如通过future传输数据，监听者在future上阻塞。
+         */
         void onEvent(@Nonnull E event);
 
     }

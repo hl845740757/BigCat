@@ -54,19 +54,19 @@ class RpcServiceExample {
 class RpcUserExample {
     public void rpcTest() throws Exception {
         RpcClient rpcClient = getRpcClient();
-        rpcClient.send(ServerNodeSpec.GAME, RpcServiceExampleProxy.hello("这是一个通知，不接收结果"));
-        rpcClient.call(ServerNodeSpec.GAME, RpcServiceExampleProxy.hello("这是一个异步调用，可监听结果"))
+        rpcClient.send(ServerNodeId.GAME, RpcServiceExampleProxy.hello("这是一个通知，不接收结果"));
+        rpcClient.call(ServerNodeId.GAME, RpcServiceExampleProxy.hello("这是一个异步调用，可监听结果"))
                 .thenApply(result -> {
                     System.out.println(result);
                     return null;
                 });
 
-        String result = rpcClient.syncCall(ServerNodeSpec.GAME,
+        String result = rpcClient.syncCall(ServerNodeId.GAME,
                 RpcServiceExampleProxy.helloAsync2("这是一个同步调用，远程异步执行"));
         System.out.println(result);
     }
 
-    public enum ServerNodeSpec implements NodeSpec {
+    public enum ServerNodeId implements NodeId {
         GAME,
         AUTH
     }

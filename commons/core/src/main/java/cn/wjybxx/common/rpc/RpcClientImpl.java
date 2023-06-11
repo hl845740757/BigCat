@@ -39,27 +39,26 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 /**
- * 提供Rpc调用支持的handler。
- * 实现了{@link RpcClient}接口，但仍建议你进行代理封装
+ * 默认的{@link RpcClient}实现，但仍建议你进行代理封装
  *
  * @author wjybxx
  * date 2023/4/1
  */
 @NotThreadSafe
-public class RpcSupportHandler implements RpcClient {
+public class RpcClientImpl implements RpcClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(RpcSupportHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(RpcClientImpl.class);
     private static final int INIT_REQUEST_GUID = 0;
 
     private long requestGuidSequencer = INIT_REQUEST_GUID;
     private final Long2ObjectLinkedOpenHashMap<DefaultRpcRequestStub> requestStubMap = new Long2ObjectLinkedOpenHashMap<>(500);
 
     private final long processGuid;
-    private final NodeSpec selfNodeSpec;
+    private final NodeId selfNodeId;
 
-    private final RpcRouterHandler rpcRouterHandler;
-    private final RpcReceiverHandler rpcReceiverHandler;
-    private final RpcProcessor rpcProcessor;
+    private final RpcSender sender;
+    private final RpcReceiver receiver;
+    private final RpcProcessor processor;
 
     private final TimeProvider timeProvider;
     private final long timeoutMs;
@@ -70,22 +69,22 @@ public class RpcSupportHandler implements RpcClient {
     private RpcLogConfig rpcLogConfig = RpcLogConfig.NONE;
 
     /**
-     * @param processGuid        当前服务器的进程唯一id（它与{@link NodeSpec}是两个不同维度的东西）
-     * @param selfNodeSpec       当前服务器的描述信息
-     * @param rpcRouterHandler   路由实现
-     * @param rpcReceiverHandler 用于主动接收消息
-     * @param rpcProcessor       rpc调用派发实现
-     * @param timeProvider       用于获取当前时间
-     * @param timeoutMs          rpc超时时间
+     * @param processGuid  当前服务器的进程唯一id（它与{@link NodeId}是两个不同维度的东西）
+     * @param selfNodeId   当前服务器的描述信息
+     * @param sender       路由实现
+     * @param receiver     用于主动接收消息
+     * @param processor    rpc调用派发实现
+     * @param timeProvider 用于获取当前时间
+     * @param timeoutMs    rpc超时时间
      */
-    public RpcSupportHandler(long processGuid, NodeSpec selfNodeSpec,
-                             RpcRouterHandler rpcRouterHandler, RpcReceiverHandler rpcReceiverHandler, RpcProcessor rpcProcessor,
-                             TimeProvider timeProvider, long timeoutMs) {
+    public RpcClientImpl(long processGuid, NodeId selfNodeId,
+                         RpcSender sender, RpcReceiver receiver, RpcProcessor processor,
+                         TimeProvider timeProvider, long timeoutMs) {
         this.processGuid = processGuid;
-        this.selfNodeSpec = Objects.requireNonNull(selfNodeSpec);
-        this.rpcRouterHandler = Objects.requireNonNull(rpcRouterHandler);
-        this.rpcReceiverHandler = Objects.requireNonNull(rpcReceiverHandler);
-        this.rpcProcessor = Objects.requireNonNull(rpcProcessor);
+        this.selfNodeId = Objects.requireNonNull(selfNodeId);
+        this.sender = Objects.requireNonNull(sender);
+        this.receiver = Objects.requireNonNull(receiver);
+        this.processor = Objects.requireNonNull(processor);
         this.timeProvider = Objects.requireNonNull(timeProvider);
         this.timeoutMs = timeoutMs;
     }
@@ -127,18 +126,18 @@ public class RpcSupportHandler implements RpcClient {
      * @param methodSpec 要调用的方法信息
      */
     @Override
-    public void send(NodeSpec target, RpcMethodSpec<?> methodSpec) {
+    public void send(NodeId target, RpcMethodSpec<?> methodSpec) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
 
         final long requestGuid = ++requestGuidSequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfNodeSpec, requestGuid, true, methodSpec);
+        final RpcRequest request = new RpcRequest(processGuid, selfNodeId, requestGuid, true, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(target, request);
         }
 
-        if (!rpcRouterHandler.send(target, request)) {
+        if (!sender.send(target, request)) {
             logger.warn("rpc router send failure, target " + target);
         }
     }
@@ -150,18 +149,18 @@ public class RpcSupportHandler implements RpcClient {
      * @param methodSpec 要调用的方法信息
      */
     @Override
-    public void broadcast(ScopeSpec scope, RpcMethodSpec<?> methodSpec) {
+    public void broadcast(NodeScope scope, RpcMethodSpec<?> methodSpec) {
         Objects.requireNonNull(scope);
         Objects.requireNonNull(methodSpec);
 
         final long requestGuid = ++requestGuidSequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfNodeSpec, requestGuid, true, methodSpec);
+        final RpcRequest request = new RpcRequest(processGuid, selfNodeId, requestGuid, true, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logBroadcastRequest(scope, request);
         }
 
-        if (!rpcRouterHandler.broadcast(scope, request)) {
+        if (!sender.broadcast(scope, request)) {
             logger.warn("rpc router broadcast failure, scope " + scope);
         }
     }
@@ -174,19 +173,19 @@ public class RpcSupportHandler implements RpcClient {
      * @return future，可以监听调用结果
      */
     @Override
-    public <V> FluentFuture<V> call(NodeSpec target, RpcMethodSpec<V> methodSpec) {
+    public <V> FluentFuture<V> call(NodeId target, RpcMethodSpec<V> methodSpec) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
 
         final long requestGuid = ++requestGuidSequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfNodeSpec, requestGuid, false, methodSpec);
+        final RpcRequest request = new RpcRequest(processGuid, selfNodeId, requestGuid, false, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(target, request);
         }
 
         // 执行发送(routerHandler的实现很关键)
-        if (!rpcRouterHandler.send(target, request)) {
+        if (!sender.send(target, request)) {
             logger.warn("rpc router call failure, target " + target);
             if (immediateFailureWhenSendFailed) {
                 return SameThreads.newFailedFuture(RpcClientException.routeFailed(target));
@@ -209,7 +208,7 @@ public class RpcSupportHandler implements RpcClient {
      * @return rpc调用结果
      */
     @Override
-    public <V> V syncCall(NodeSpec target, RpcMethodSpec<V> methodSpec) throws InterruptedException {
+    public <V> V syncCall(NodeId target, RpcMethodSpec<V> methodSpec) throws InterruptedException {
         return syncCall(target, methodSpec, timeoutMs);
     }
 
@@ -222,12 +221,12 @@ public class RpcSupportHandler implements RpcClient {
      * @return rpc调用结果
      */
     @Override
-    public <V> V syncCall(NodeSpec target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException {
+    public <V> V syncCall(NodeId target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
 
         final long requestGuid = ++requestGuidSequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfNodeSpec, requestGuid, false, methodSpec);
+        final RpcRequest request = new RpcRequest(processGuid, selfNodeId, requestGuid, false, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(target, request);
@@ -235,10 +234,10 @@ public class RpcSupportHandler implements RpcClient {
 
         // 必须先watch再发送，否则可能丢失信号
         RpcResponseWatcher watcher = new RpcResponseWatcher(processGuid, requestGuid);
-        rpcReceiverHandler.watch(watcher);
+        receiver.watch(watcher);
         try {
             // 执行发送(routerHandler的实现很关键)
-            if (!rpcRouterHandler.send(target, request)) {
+            if (!sender.send(target, request)) {
                 logger.warn("rpc router call failure, target " + target);
                 throw RpcClientException.routeFailed(target);
             }
@@ -260,7 +259,7 @@ public class RpcSupportHandler implements RpcClient {
         } catch (ExecutionException e) {
             throw RpcClientException.executionException(e);
         } finally {
-            rpcReceiverHandler.cancelWatch(watcher); // 及时取消watcher
+            receiver.cancelWatch(watcher); // 及时取消watcher
         }
     }
 
@@ -276,14 +275,14 @@ public class RpcSupportHandler implements RpcClient {
         if (request.isOneWay()) {
             // 单向消息 - 不需要结果
             try {
-                rpcProcessor.process(request);
+                processor.process(request);
             } catch (Exception e) {
                 ExceptionUtils.rethrow(e);
             }
         } else {
             // rpc
             try {
-                final Object result = rpcProcessor.process(request);
+                final Object result = processor.process(request);
                 if (result instanceof FluentFuture<?> future) {
                     // 未完成，需要监听结果
                     future.addListener(new FutureListener<>(request, this));
@@ -292,26 +291,26 @@ public class RpcSupportHandler implements RpcClient {
                     throw new IllegalStateException("unsupported future");
                 } else {
                     // 立即得到了结果
-                    final RpcResponse response = RpcResponse.newSucceedResponse(request.getClientNodeGuid(), request.getRequestGuid(), result);
-                    sendResponseAndLog(response, request.getClientNode());
+                    final RpcResponse response = RpcResponse.newSucceedResponse(request.getClientProcessId(), request.getRequestId(), result);
+                    sendResponseAndLog(response, request.getClientNodeId());
                 }
             } catch (Exception e) {
                 // 出现异常，立即返回失败
-                final RpcResponse response = RpcResponse.newFailedResponse(request.getClientNodeGuid(), request.getRequestGuid(),
+                final RpcResponse response = RpcResponse.newFailedResponse(request.getClientProcessId(), request.getRequestId(),
                         RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(e));
-                sendResponseAndLog(response, request.getClientNode());
+                sendResponseAndLog(response, request.getClientNodeId());
                 // 抛出异常
                 ExceptionUtils.rethrow(e);
             }
         }
     }
 
-    private void sendResponseAndLog(RpcResponse response, NodeSpec from) {
+    private void sendResponseAndLog(RpcResponse response, NodeId from) {
         if (rpcLogConfig.getSndResponseLogLevel() > DebugLogLevel.NONE) {
             logSndResponse(from, response);
         }
 
-        if (!rpcRouterHandler.send(from, response)) {
+        if (!sender.send(from, response)) {
             logger.warn("rpc send response failure, from {}", from);
         }
     }
@@ -321,13 +320,13 @@ public class RpcSupportHandler implements RpcClient {
      */
     public void onRcvResponse(RpcResponse response) {
         Objects.requireNonNull(response);
-        if (response.getClientNodeGuid() != processGuid) {
+        if (response.getClientProcessId() != processGuid) {
             // 不是我发起的请求的响应 - 避免造成错误的响应
             logger.info("rcv old process rpc response");
             return;
         }
 
-        final DefaultRpcRequestStub requestStub = requestStubMap.remove(response.getRequestGuid());
+        final DefaultRpcRequestStub requestStub = requestStubMap.remove(response.getRequestId());
         if (rpcLogConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
             logRcvResponse(response, requestStub);
         }
@@ -383,17 +382,17 @@ public class RpcSupportHandler implements RpcClient {
 
         private final CompletableFuture<RpcResponse> future = new CompletableFuture<>();
         private final long processGuid;
-        private final long reqGuid;
+        private final long requestId;
 
-        private RpcResponseWatcher(long processGuid, long reqGuid) {
+        private RpcResponseWatcher(long processGuid, long requestId) {
             this.processGuid = processGuid;
-            this.reqGuid = reqGuid;
+            this.requestId = requestId;
         }
 
         @Override
         public boolean test(@Nonnull RpcResponse response) {
-            return response.getClientNodeGuid() == processGuid
-                    && response.getRequestGuid() == reqGuid;
+            return response.getClientProcessId() == processGuid
+                    && response.getRequestId() == requestId;
         }
 
         @Override
@@ -405,17 +404,17 @@ public class RpcSupportHandler implements RpcClient {
     private static class FutureListener<V> implements BiConsumer<V, Throwable> {
 
         final long fromProcessGuid;
-        final NodeSpec from;
+        final NodeId from;
         final long requestGuid;
-        final RpcSupportHandler rpcSupportHandler;
+        final RpcClientImpl rpcClientImpl;
 
-        FutureListener(RpcRequest request, RpcSupportHandler rpcSupportHandler) {
+        FutureListener(RpcRequest request, RpcClientImpl rpcClientImpl) {
             // Q: 为什么不直接持有{@link RpcRequest}对象？
             // A: 会造成内存泄漏！会持有本不需要的{@link RpcMethodSpec}对象。
-            this.fromProcessGuid = request.getClientNodeGuid();
-            this.requestGuid = request.getRequestGuid();
-            this.from = request.getClientNode();
-            this.rpcSupportHandler = rpcSupportHandler;
+            this.fromProcessGuid = request.getClientProcessId();
+            this.requestGuid = request.getRequestId();
+            this.from = request.getClientNodeId();
+            this.rpcClientImpl = rpcClientImpl;
         }
 
         @Override
@@ -429,7 +428,7 @@ public class RpcSupportHandler implements RpcClient {
             } else {
                 response = RpcResponse.newSucceedResponse(fromProcessGuid, requestGuid, v);
             }
-            rpcSupportHandler.sendResponseAndLog(response, from);
+            rpcClientImpl.sendResponseAndLog(response, from);
         }
     }
 
@@ -437,10 +436,10 @@ public class RpcSupportHandler implements RpcClient {
 
         final FluentPromise<?> rpcPromise;
         final long deadline;
-        final NodeSpec target;
+        final NodeId target;
         final RpcRequest request;
 
-        DefaultRpcRequestStub(FluentPromise<?> rpcPromise, long deadline, NodeSpec target, RpcRequest request) {
+        DefaultRpcRequestStub(FluentPromise<?> rpcPromise, long deadline, NodeId target, RpcRequest request) {
             this.rpcPromise = rpcPromise;
             this.deadline = deadline;
             this.target = target;
@@ -453,7 +452,7 @@ public class RpcSupportHandler implements RpcClient {
         }
 
         @Override
-        public NodeSpec getTargetNode() {
+        public NodeId getTargetNode() {
             return target;
         }
 
@@ -467,15 +466,15 @@ public class RpcSupportHandler implements RpcClient {
 
     // region debug日志
 
-    private void logSndRequest(NodeSpec target, RpcRequest request) {
+    private void logSndRequest(NodeId target, RpcRequest request) {
         logger.info("snd rpc request, target {}, request {}", target, DebugLogUtils.logOf(rpcLogConfig.getSndRequestLogLevel(), request));
     }
 
-    private void logSndResponse(NodeSpec from, RpcResponse rpcResponse) {
+    private void logSndResponse(NodeId from, RpcResponse rpcResponse) {
         logger.info("snd rpc response, from {}, response {}", from, DebugLogUtils.logOf(rpcLogConfig.getSndResponseLogLevel(), rpcResponse));
     }
 
-    private void logBroadcastRequest(ScopeSpec scope, RpcRequest request) {
+    private void logBroadcastRequest(NodeScope scope, RpcRequest request) {
         logger.info("broadcast rpc request, scope {}, request {}", scope, DebugLogUtils.logOf(rpcLogConfig.getSndRequestLogLevel(), request));
     }
 

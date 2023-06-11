@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.rpc;
+package cn.wjybxx.common;
+
+import cn.wjybxx.common.rpc.NodeId;
 
 /**
- * 服务器组描述信息
- * （用于广播和组播）
- *
  * @author wjybxx
- * date 2023/4/1
+ * date 2023/4/13
  */
-public interface ScopeSpec {
+enum SimpleNodeId implements NodeId {
+
+    SERVER(1),
+    CLIENT(2);
+
+    final long id;
+
+    SimpleNodeId(long id) {
+        this.id = id;
+    }
 
 }

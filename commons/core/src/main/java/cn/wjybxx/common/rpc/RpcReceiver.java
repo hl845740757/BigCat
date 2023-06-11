@@ -24,7 +24,7 @@ import cn.wjybxx.common.concurrent.WatchableEventQueue;
  * @author wjybxx
  * date 2023/4/5
  */
-public interface RpcReceiverHandler {
+public interface RpcReceiver {
 
     /**
      * 监听rpc结果

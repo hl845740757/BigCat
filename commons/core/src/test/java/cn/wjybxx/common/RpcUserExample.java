@@ -36,14 +36,14 @@ public class RpcUserExample {
 
     public void rpcTest() throws Exception {
         RpcClient rpcClient = getRpcClient();
-        rpcClient.send(SimpleNodeSpec.SERVER, RpcServiceExampleProxy.hello("这是一个通知，不接收结果"));
-        rpcClient.call(SimpleNodeSpec.SERVER, RpcServiceExampleProxy.hello("这是一个异步调用，可监听结果"))
+        rpcClient.send(SimpleNodeId.SERVER, RpcServiceExampleProxy.hello("这是一个通知，不接收结果"));
+        rpcClient.call(SimpleNodeId.SERVER, RpcServiceExampleProxy.hello("这是一个异步调用，可监听结果"))
                 .thenApply(result -> {
                     System.out.println(result);
                     return null;
                 });
 
-        String result = rpcClient.syncCall(SimpleNodeSpec.SERVER,
+        String result = rpcClient.syncCall(SimpleNodeId.SERVER,
                 RpcServiceExampleProxy.helloAsync2("这是一个同步调用，远程异步执行"));
         System.out.println(result);
     }

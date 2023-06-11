@@ -94,12 +94,12 @@ public class RpcTest2 {
         @Override
         public void run() {
             DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
-            SimpleNodeSpec role = SimpleNodeSpec.SERVER;
+            SimpleNodeId role = SimpleNodeId.SERVER;
             // 注册服务
             RpcServiceExampleExporter.export(rpcProcessor, new RpcServiceExample());
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcSupportHandler rpcSupportHandler = new RpcSupportHandler(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
@@ -109,10 +109,10 @@ public class RpcTest2 {
                 while (!alert) {
                     RpcRequest request = serverQueue.poll(20, TimeUnit.MILLISECONDS);
                     if (request != null) {
-                        rpcSupportHandler.onRcvRequest(request);
+                        rpcClientImpl.onRcvRequest(request);
                     }
                     executor.tick();
-                    rpcSupportHandler.tick();
+                    rpcClientImpl.tick();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -133,14 +133,14 @@ public class RpcTest2 {
         @Override
         public void run() {
             DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
-            SimpleNodeSpec role = SimpleNodeSpec.CLIENT;
+            SimpleNodeId role = SimpleNodeId.CLIENT;
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcSupportHandler rpcSupportHandler = new RpcSupportHandler(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
-            RpcUserExample rpcUserExample = new RpcUserExample(rpcSupportHandler);
+            RpcUserExample rpcUserExample = new RpcUserExample(rpcClientImpl);
             executor.scheduleWithFixedDelay(() -> rpcTest(rpcUserExample), 200, 500);
 
             // 准备好以后执行countdown
@@ -149,10 +149,10 @@ public class RpcTest2 {
                 while (!alert) {
                     RpcResponse response = clientQueue.poll(20, TimeUnit.MILLISECONDS);
                     if (response != null) {
-                        rpcSupportHandler.onRcvResponse(response);
+                        rpcClientImpl.onRcvResponse(response);
                     }
                     executor.tick();
-                    rpcSupportHandler.tick();
+                    rpcClientImpl.tick();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -177,14 +177,14 @@ public class RpcTest2 {
 
     // 模拟路由
 
-    private class TestRpcRouterReceiver implements RpcRouterHandler, RpcReceiverHandler {
+    private class TestRpcRouterReceiver implements RpcSender, RpcReceiver {
 
         private TestRpcRouterReceiver() {
         }
 
         @Override
-        public boolean send(NodeSpec target, Object proto) {
-            SimpleNodeSpec targetRole = (SimpleNodeSpec) target;
+        public boolean send(NodeId target, Object proto) {
+            SimpleNodeId targetRole = (SimpleNodeId) target;
             switch (targetRole) {
                 case CLIENT -> {
                     return clientQueue.offer((RpcResponse) proto);
@@ -197,7 +197,7 @@ public class RpcTest2 {
         }
 
         @Override
-        public boolean broadcast(ScopeSpec scopeSpec, Object proto) {
+        public boolean broadcast(NodeScope nodeScope, Object proto) {
             throw new AssertionError(); // 不测试该实现
         }
 

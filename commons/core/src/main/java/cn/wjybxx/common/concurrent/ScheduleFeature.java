@@ -42,6 +42,11 @@ public enum ScheduleFeature {
      */
     PRIORITY_DECREASABLE(false),
 
+    /**
+     * 可以与其它线程无序
+     */
+    UNORDERED(false),
+
     ;
     private final boolean _defaultState;
     private final int _mask;

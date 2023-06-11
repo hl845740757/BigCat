@@ -70,23 +70,38 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
 
     };
 
-    private final Thread thread;
-    private final Worker worker;
-    private volatile int state = ST_NOT_STARTED;
-    private final XCompletableFuture<?> terminationFuture = new XCompletableFuture<>(new TerminateFutureContext(this));
+    // 填充开始 - 字段定义顺序不要随意调整
+    @SuppressWarnings("unused")
+    private long p1, p2, p3, p4, p5, p6, p7, p8;
 
-    /** 线程本地时间 */
+    /** 线程状态 */
+    private volatile int state = ST_NOT_STARTED;
+    @SuppressWarnings("unused")
+    private long p9, p10, p11, p12, p13, p14, p15, p16;
+
+    /** 线程本地时间 -- 纳秒 */
     private volatile long tickTime;
-    /** 周期性任务队列 -- 都是先于RingBuffer中的任务提交的 */
-    private final IndexedPriorityQueue<XScheduledFutureTask<?>> scheduledTaskQueue;
+    @SuppressWarnings("unused")
+    private long p17, p18, p19, p20, p21, p22, p23, p24;
+
     /** 事件队列 */
     private final RingBuffer<RingBufferEvent> ringBuffer;
+    /** 周期性任务队列 -- 都是先于RingBuffer中的任务提交的 -- 暂不提供带缓存行填充的实现 */
+    private final IndexedPriorityQueue<XScheduledFutureTask<?>> scheduledTaskQueue;
     /** 批量执行任务的大小 */
     private final int taskBatchSize;
     /** 任务拒绝策略 */
     private final RejectedExecutionHandler rejectedExecutionHandler;
     /** 用户自定义逻辑 */
     private final EventLoopAgent<? super RingBufferEvent> agent;
+
+    private final Thread thread;
+    private final Worker worker;
+    private final XCompletableFuture<?> terminationFuture = new XCompletableFuture<>(new TerminateFutureContext(this));
+
+    @SuppressWarnings("unused")
+    private long p25, p26, p27, p28, p29, p30, p31, p32;
+    // 填充结束
 
     public DisruptorEventLoop(EventLoopBuilder.DisruptorBuilder builder) {
         super(builder.getParent());
@@ -95,10 +110,10 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         ThreadFactory threadFactory = Objects.requireNonNull(builder.getThreadFactory(), "threadFactory");
 
         this.tickTime = System.nanoTime();
-        this.scheduledTaskQueue = new DefaultIndexedPriorityQueue<>(XScheduledFutureTask::compareTo, 64);
         this.ringBuffer = RingBuffer.createMultiProducer(RingBufferEvent::new,
                 builder.getRingBufferSize(),
                 waitStrategy);
+        this.scheduledTaskQueue = new DefaultIndexedPriorityQueue<>(XScheduledFutureTask::compareTo, 64);
         this.taskBatchSize = MathUtils.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
         this.rejectedExecutionHandler = Objects.requireNonNull(builder.getRejectedExecutionHandler());
         this.agent = Objects.requireNonNullElse(builder.getAgent(), EmptyAgent.getInstance());
@@ -322,6 +337,10 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         return sequence;
     }
 
+    /**
+     * @param lo inclusive
+     * @param hi inclusive
+     */
     @Beta
     public final void publish(long lo, long hi) {
         checkSequence(lo);

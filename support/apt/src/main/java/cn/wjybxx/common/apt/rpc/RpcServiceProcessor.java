@@ -51,6 +51,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private static final String CONTEXT_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcProcessContext";
     private static final String FUTURE_CANONICAL_NAME = "cn.wjybxx.common.async.FluentFuture";
+    private static final int MAX_PARAMETER_COUNT = 5;
 
     private TypeElement anno_rpcServiceElement;
     private TypeElement anno_rpcMethodElement;
@@ -164,13 +165,12 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     }
 
     private List<ExecutableElement> findInterfaceMethods(TypeElement typeElement) {
-        List<ExecutableElement> interfaceMethodList = AptUtils.findAllInterfaces(typeUtils, elementUtils, typeElement).stream()
+        return AptUtils.findAllInterfaces(typeUtils, elementUtils, typeElement).stream()
                 .map(RpcServiceProcessor::castTypeMirror2TypeElement)
                 .flatMap(e -> e.getEnclosedElements().stream())
                 .filter(e -> e.getKind() == ElementKind.METHOD)
                 .map(e -> (ExecutableElement) e)
                 .collect(Collectors.toList());
-        return interfaceMethodList;
     }
 
     private static TypeElement castTypeMirror2TypeElement(TypeMirror typeMirror) {
@@ -180,7 +180,12 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     }
 
     private void checkParameters(ExecutableElement method) {
-        for (VariableElement variableElement : method.getParameters()) {
+        List<? extends VariableElement> parameters = method.getParameters();
+        if (parameters.size() > MAX_PARAMETER_COUNT) {
+            messager.printMessage(Diagnostic.Kind.ERROR, " method has too many parameters!", method);
+        }
+
+        for (VariableElement variableElement : parameters) {
             if (isMap(variableElement.asType())) {
                 checkMap(variableElement, variableElement.asType());
                 continue;

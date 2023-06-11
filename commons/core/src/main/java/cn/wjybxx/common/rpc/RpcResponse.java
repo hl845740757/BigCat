@@ -33,14 +33,10 @@ import javax.annotation.Nonnull;
 @BinarySerializable
 public class RpcResponse implements DebugLogFriendlyObject {
 
-    /**
-     * 请求方的唯一标识
-     */
-    private long clientNodeGuid;
-    /**
-     * 请求的唯一id
-     */
-    private long requestGuid;
+    /** 请求方进程id */
+    private long clientProcessId;
+    /** 请求的唯一id */
+    private long requestId;
     /**
      * 错误码（0表示成功）
      * 没使用枚举，是为了方便用户扩展
@@ -56,9 +52,9 @@ public class RpcResponse implements DebugLogFriendlyObject {
         // 序列化支持
     }
 
-    private RpcResponse(long clientNodeGuid, long requestGuid, int errorCode, Object result) {
-        this.clientNodeGuid = clientNodeGuid;
-        this.requestGuid = requestGuid;
+    private RpcResponse(long clientProcessId, long requestId, int errorCode, Object result) {
+        this.clientProcessId = clientProcessId;
+        this.requestId = requestId;
         this.errorCode = errorCode;
         this.result = result;
     }
@@ -82,20 +78,20 @@ public class RpcResponse implements DebugLogFriendlyObject {
         return (String) result;
     }
 
-    public long getClientNodeGuid() {
-        return clientNodeGuid;
+    public long getClientProcessId() {
+        return clientProcessId;
     }
 
-    public void setClientNodeGuid(long clientNodeGuid) {
-        this.clientNodeGuid = clientNodeGuid;
+    public void setClientProcessId(long clientProcessId) {
+        this.clientProcessId = clientProcessId;
     }
 
-    public long getRequestGuid() {
-        return requestGuid;
+    public long getRequestId() {
+        return requestId;
     }
 
-    public void setRequestGuid(long requestGuid) {
-        this.requestGuid = requestGuid;
+    public void setRequestId(long requestId) {
+        this.requestId = requestId;
     }
 
     public int getErrorCode() {
@@ -118,8 +114,8 @@ public class RpcResponse implements DebugLogFriendlyObject {
     @Override
     public String toSimpleLog() {
         return "{" +
-                "clientNodeGuid=" + clientNodeGuid +
-                ", requestGuid=" + requestGuid +
+                "clientNodeGuid=" + clientProcessId +
+                ", requestGuid=" + requestId +
                 ", errorCode=" + errorCode +
                 '}';
     }
@@ -128,8 +124,8 @@ public class RpcResponse implements DebugLogFriendlyObject {
     @Override
     public String toDetailLog() {
         return "{" +
-                "clientNodeGuid=" + clientNodeGuid +
-                ", requestGuid=" + requestGuid +
+                "clientNodeGuid=" + clientProcessId +
+                ", requestGuid=" + requestId +
                 ", errorCode=" + errorCode +
                 ", result=" + result +
                 '}';
@@ -138,8 +134,8 @@ public class RpcResponse implements DebugLogFriendlyObject {
     @Override
     public String toString() {
         return "RpcResponse{" +
-                "clientNodeGuid=" + clientNodeGuid +
-                ", requestGuid=" + requestGuid +
+                "clientNodeGuid=" + clientProcessId +
+                ", requestGuid=" + requestId +
                 ", errorCode=" + errorCode +
                 ", result=" + result +
                 '}';

@@ -25,7 +25,8 @@ Q：编译报生成的XXX文件不存在？
 A：请先确保support项目安装成功，如果已安装成功，请仔细检查编译输出的错误信息，通常是忘记getter等方法，修改错误后先clean，然后再编译。
 
 Q：编译成功，但文件曝红，找不到文件？  
-A：请将各个模块 target/generated-sources/annotations 设置为源代码目录（mark directory as resources root）。
+A：请将各个模块 target/generated-sources/annotations 设置为源代码目录（mark directory as source root）;   
+将各个模块 target/generated-test-sources/test-annotations 设置为测试代码目录（mark directory as test source root）。
 
 ### 项目主要内容
 

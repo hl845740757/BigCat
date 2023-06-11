@@ -41,7 +41,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * 这里的rpc设计并未追求所谓的标准，而更追求实用性。
  * 在传统的RPC中，前后端接口是一致的，我觉得强行屏蔽远程和本地的差异并不好，这会限制使用者的灵活度(就像JAVA语言本身)；
  * 当我们明确告诉用户这就是一个RPC时（其实大家都知道），用户就可以决定如何处理结果，既可以忽略结果，也可以异步执行，也可以同步执行，因此注解生成的Proxy仅仅用于封装参数，而不执行。
- * 至于服务器信息参数(NodeSpec)，则用于用户决定要发送给谁，因为单纯根据服务id定位是不够的，我们经常需要精确的消息投递。
+ * 至于服务器信息参数(NodeId)，则用于用户决定要发送给谁，因为单纯根据服务id定位是不够的，我们经常需要精确的消息投递。
  * 我想过在以后通过protobuf定义rpc服务(修改grpc的语法)，用于客户端和服务器通信，但仍然会保持我们现在的设计，客户端和服务器的接口就是会不一样，Proxy仅用于打包。
  *
  * @author wjybxx
@@ -56,7 +56,7 @@ public interface RpcClient {
      * @param target     远程节点信息
      * @param methodSpec 要调用的方法信息
      */
-    void send(NodeSpec target, RpcMethodSpec<?> methodSpec);
+    void send(NodeId target, RpcMethodSpec<?> methodSpec);
 
     /**
      * 发起一个rpc调用，可以监听调用结果。
@@ -65,7 +65,7 @@ public interface RpcClient {
      * @param methodSpec 要调用的方法信息
      * @return future，可以监听调用结果
      */
-    <V> FluentFuture<V> call(NodeSpec target, RpcMethodSpec<V> methodSpec);
+    <V> FluentFuture<V> call(NodeId target, RpcMethodSpec<V> methodSpec);
 
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回 -- 使用默认的超时时间。
@@ -75,7 +75,7 @@ public interface RpcClient {
      * @return 方法返回值
      * @throws RpcException 执行错误时抛出异常
      */
-    <V> V syncCall(NodeSpec target, RpcMethodSpec<V> methodSpec) throws InterruptedException;
+    <V> V syncCall(NodeId target, RpcMethodSpec<V> methodSpec) throws InterruptedException;
 
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回。
@@ -86,7 +86,7 @@ public interface RpcClient {
      * @return 执行结果
      * @throws RpcException 执行错误时抛出异常
      */
-    <V> V syncCall(NodeSpec target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException;
+    <V> V syncCall(NodeId target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException;
 
     /**
      * 广播一个消息（广播一个调用）
@@ -94,6 +94,6 @@ public interface RpcClient {
      * @param scope      广播范围描述
      * @param methodSpec 要调用的方法信息
      */
-    void broadcast(ScopeSpec scope, RpcMethodSpec<?> methodSpec);
+    void broadcast(NodeScope scope, RpcMethodSpec<?> methodSpec);
 
 }

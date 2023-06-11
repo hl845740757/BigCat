@@ -66,7 +66,7 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
     public Object process(RpcRequest request) throws Exception {
         @Nullable RpcMethodSpec<?> methodSpec = request.getRpcMethodSpec();
         if (null == methodSpec) {
-            throw new IllegalArgumentException(request.getClientNode() + " send null methodSpec");
+            throw new IllegalArgumentException(request.getClientNodeId() + " send null methodSpec");
         }
 
         if (methodSpec instanceof DefaultRpcMethodSpec) {
@@ -85,7 +85,7 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
         final RpcMethodProxy methodProxy = proxyMap.get(methodKey);
         if (null == methodProxy) {
             final String msg = String.format("rcv unknown request, node %s, serviceId=%d methodId=%d",
-                    context.request().getClientNode(), rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
+                    context.request().getClientNodeId(), rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
             throw new RuntimeException(msg);
         }
 
@@ -94,7 +94,7 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
         } catch (Exception e) {
             // 不打印参数的详细信息，开销太大
             final String msg = String.format("invoke caught exception, node %s, serviceId=%d methodId=%d",
-                    context.request().getClientNode(), rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
+                    context.request().getClientNodeId(), rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
             throw new RuntimeException(msg, e);
         }
     }
@@ -104,7 +104,7 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
      */
     protected Object process0(RpcRequest request, RpcMethodSpec<?> methodSpec) {
         final String msg = String.format("unknown requestType, node %s, requestType=%s",
-                request.getClientNode(), methodSpec.getClass().getName());
+                request.getClientNodeId(), methodSpec.getClass().getName());
         throw new UnsupportedOperationException(msg);
     }
 
