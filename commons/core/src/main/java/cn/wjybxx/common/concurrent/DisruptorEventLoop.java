@@ -45,7 +45,7 @@ import java.util.concurrent.locks.LockSupport;
  * @author wjybxx
  * date 2023/4/10
  */
-public final class DisruptorEventLoop extends AbstractEventLoop {
+public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     /** 初始状态，未启动状态 */
     private static final int ST_NOT_STARTED = 0;
@@ -236,7 +236,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         } else {
             RingBufferEvent event = ringBuffer.get(sequence);
             event.internal_setType(0);
-            event.task = task;
+            event.obj0 = task;
             if (task instanceof XScheduledFutureTask<?> futureTask) {
                 futureTask.setId(sequence); // nice
                 if (futureTask.isEnable(ScheduleFeature.LOW_PRIORITY)) {
@@ -351,7 +351,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
     }
 
     @Override
-    protected void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered) {
+    final void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered) {
         assert inEventLoop();
         if (isShuttingDown()) {
             futureTask.cancel(false);
@@ -361,7 +361,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
     }
 
     @Override
-    protected void removeScheduled(XScheduledFutureTask<?> futureTask) {
+    final void removeScheduled(XScheduledFutureTask<?> futureTask) {
         if (inEventLoop()) {
             scheduledTaskQueue.removeTyped(futureTask);
         }
@@ -385,6 +385,14 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
     @Override
     public final boolean inEventLoop(Thread thread) {
         return this.thread == thread;
+    }
+
+    @Override
+    public final void wakeup() {
+        if (!inEventLoop()) {
+            thread.interrupt();
+            agent.wakeup();
+        }
     }
 
     public EventLoopAgent<? super RingBufferEvent> getAgent() {
@@ -440,34 +448,6 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         FutureUtils.completeTerminationFuture(terminationFuture);
     }
 
-    private void init() throws Exception {
-        agent.onStart(this);
-    }
-
-    private void safeLoopOnce() {
-        try {
-            agent.update();
-        } catch (Throwable t) {
-            if (t instanceof VirtualMachineError) {
-                logger.error("loopOnce caught exception", t);
-            } else {
-                logger.warn("loopOnce caught exception", t);
-            }
-        }
-    }
-
-    @Override
-    public void wakeup() {
-        if (!inEventLoop()) {
-            thread.interrupt();
-            agent.wakeup();
-        }
-    }
-
-    private void onShutdown() throws Exception {
-        agent.onShutdown();
-    }
-
     /**
      * 实现{@link RingBuffer}的消费者，实现基本和{@link BatchEventProcessor}一致。
      * 但解决了两个问题：
@@ -487,8 +467,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         public void run() {
             try {
                 tickTime = System.nanoTime();
-                CURRENT.set(DisruptorEventLoop.this);
-                init();
+                agent.onStart(DisruptorEventLoop.this);
 
                 loop();
             } catch (Throwable e) {
@@ -506,13 +485,12 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
 
                     // 退出前进行必要的清理，释放系统资源
                     try {
-                        onShutdown();
+                        agent.onShutdown();
                     } catch (Throwable e) {
                         logger.error("thread clean caught exception!", e);
                     } finally {
                         // 设置为终止状态
                         state = ST_TERMINATED;
-                        CURRENT.remove();
                         completeTerminationFuture();
                     }
                 }
@@ -570,6 +548,18 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
             }
         }
 
+        private void safeLoopOnce() {
+            try {
+                agent.update();
+            } catch (Throwable t) {
+                if (t instanceof VirtualMachineError) {
+                    logger.error("loopOnce caught exception", t);
+                } else {
+                    logger.warn("loopOnce caught exception", t);
+                }
+            }
+        }
+
         /**
          * 处理周期性任务，传入的限制只有在遇见低优先级任务的时候才生效
          * (为避免时序错误，处理周期性任务期间不响应关闭，不容易安全实现)
@@ -617,15 +607,15 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         /** @return curSequence */
         private long runTaskBatch(final long batchBeginSequence, final long batchEndSequence) {
             RingBuffer<RingBufferEvent> ringBuffer = DisruptorEventLoop.this.ringBuffer;
-            EventLoopAgent<? super RingBufferEvent> loopAgent = DisruptorEventLoop.this.agent;
+            EventLoopAgent<? super RingBufferEvent> agent = DisruptorEventLoop.this.agent;
             RingBufferEvent event;
             for (long curSequence = batchBeginSequence; curSequence <= batchEndSequence; curSequence++) {
                 event = ringBuffer.get(curSequence);
                 try {
                     if (event.getType() > 0) {
-                        loopAgent.onEvent(event);
+                        agent.onEvent(event);
                     } else if (event.getType() == 0) {
-                        event.task.run();
+                        event.castObj0ToRunnable().run();
                     } else {
                         if (isShuttingDown()) { // 生产者在观察到关闭时发布了不连续的数据
                             return curSequence;
@@ -661,7 +651,7 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
         private void cleanRingBuffer() {
             final long startTimeMillis = System.currentTimeMillis();
             final RingBuffer<RingBufferEvent> ringBuffer = DisruptorEventLoop.this.ringBuffer;
-            final EventLoopAgent<? super RingBufferEvent> loopAgent = DisruptorEventLoop.this.agent;
+            final EventLoopAgent<? super RingBufferEvent> agent = DisruptorEventLoop.this.agent;
 
             // 处理延迟任务
             tickTime = System.nanoTime();
@@ -696,9 +686,9 @@ public final class DisruptorEventLoop extends AbstractEventLoop {
                 }
                 try {
                     if (event.getType() > 0) {
-                        loopAgent.onEvent(event);
+                        agent.onEvent(event);
                     } else {
-                        event.task.run();
+                        event.castObj0ToRunnable().run();
                     }
                 } catch (Throwable t) {
                     logCause(t);

@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.concurrent;
 
-import cn.wjybxx.common.annotation.Internal;
-
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
@@ -25,7 +23,6 @@ import java.util.concurrent.Callable;
  * @author wjybxx
  * date 2023/4/14
  */
-@Internal
 public final class Adapters {
 
     public static final Object CONTINUE = new Object();

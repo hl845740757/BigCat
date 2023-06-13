@@ -34,7 +34,7 @@ public final class RingBufferEvent implements Runnable {
     public static final int TYPE_RUNNABLE = 0;
 
     private int type = TYPE_INVALID;
-    public Runnable task;
+    public Object obj0;
 
     // 扩展字段
     public int intVal1;
@@ -43,11 +43,10 @@ public final class RingBufferEvent implements Runnable {
     public long longVal2;
     public Object obj1;
     public Object obj2;
-    public Object obj3;
 
     public void copyFrom(RingBufferEvent src) {
         this.type = src.type;
-        this.task = src.task;
+        this.obj0 = src.obj0;
 
         // 扩展字段
         this.intVal1 = src.intVal1;
@@ -56,7 +55,6 @@ public final class RingBufferEvent implements Runnable {
         this.longVal2 = src.longVal2;
         this.obj1 = src.obj1;
         this.obj2 = src.obj2;
-        this.obj3 = src.obj3;
     }
 
     /**
@@ -65,10 +63,9 @@ public final class RingBufferEvent implements Runnable {
      */
     public void clean() {
         type = TYPE_INVALID;
-        task = null;
+        obj0 = null;
         obj1 = null;
         obj2 = null;
-        obj3 = null;
     }
 
     /**
@@ -94,7 +91,7 @@ public final class RingBufferEvent implements Runnable {
 
     /**
      * 用户不可以发布负类型的事件，否则可能影响事件循环的工作
-     * 如果用户发布 0 类型事件，则必须赋值{@link #task}
+     * 如果用户发布 0 类型事件，则必须赋值{@link #obj0}
      */
     public void setType(int type) {
         if (type < 0) {
@@ -117,18 +114,21 @@ public final class RingBufferEvent implements Runnable {
 
     }
 
+    public Runnable castObj0ToRunnable() {
+        return (Runnable) obj0;
+    }
+
     @Override
     public String toString() {
         return "RingBufferEvent{" +
                 "type=" + type +
-                ", task=" + task +
+                ", obj0=" + obj0 +
                 ", intVal1=" + intVal1 +
                 ", intVal2=" + intVal2 +
                 ", longVal1=" + longVal1 +
                 ", longVal2=" + longVal2 +
                 ", obj1=" + obj1 +
                 ", obj2=" + obj2 +
-                ", obj3=" + obj3 +
                 '}';
     }
 
