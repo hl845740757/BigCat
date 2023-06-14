@@ -47,7 +47,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private static final String METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String DEFAULT_METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.common.rpc.DefaultRpcMethodSpec";
-    private static final String METHOD_REGISTRY_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcMethodProxyRegistry";
+    private static final String METHOD_REGISTRY_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcRegistry";
 
     private static final String CONTEXT_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcProcessContext";
     private static final String FUTURE_CANONICAL_NAME = "cn.wjybxx.common.async.FluentFuture";

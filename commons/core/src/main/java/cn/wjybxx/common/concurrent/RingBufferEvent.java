@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.concurrent;
 
+import java.util.Objects;
+
 /**
  * 被缓存的事件对象
  * 1.用于Disruptor或类似的系统，当我们缓存对象时，更适合将字段展开以提高内存利用率
@@ -28,7 +30,7 @@ package cn.wjybxx.common.concurrent;
  * @author wjybxx
  * date 2023/4/10
  */
-public final class RingBufferEvent implements Runnable {
+public final class RingBufferEvent {
 
     public static final int TYPE_INVALID = -1;
     public static final int TYPE_RUNNABLE = 0;
@@ -43,6 +45,12 @@ public final class RingBufferEvent implements Runnable {
     public long longVal2;
     public Object obj1;
     public Object obj2;
+
+    public RingBufferEvent copy() {
+        RingBufferEvent event = new RingBufferEvent();
+        event.copyFrom(this);
+        return event;
+    }
 
     public void copyFrom(RingBufferEvent src) {
         this.type = src.type;
@@ -109,9 +117,9 @@ public final class RingBufferEvent implements Runnable {
         this.type = type;
     }
 
-    @Override
-    public void run() {
-
+    public void setExecuteEvent(Runnable task) {
+        type = 0;
+        obj1 = Objects.requireNonNull(task);
     }
 
     public Runnable castObj0ToRunnable() {

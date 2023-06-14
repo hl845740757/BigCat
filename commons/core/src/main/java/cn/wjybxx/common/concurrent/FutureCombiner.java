@@ -58,6 +58,11 @@ public interface FutureCombiner {
      */
     int futureCount();
 
+    /**
+     * 重置状态，使得可以重新添加future和选择
+     */
+    void clear();
+
     // region 选择方法 - 终结方法
 
     /**

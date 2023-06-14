@@ -126,7 +126,9 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
     boolean inEventLoop(Thread thread);
 
     /**
+     * 唤醒线程
      * 如果当前{@link EventLoop}线程陷入了阻塞状态，则将线程从阻塞中唤醒
+     * 如果线程已停止，则该方法不产生影响
      */
     void wakeup();
 

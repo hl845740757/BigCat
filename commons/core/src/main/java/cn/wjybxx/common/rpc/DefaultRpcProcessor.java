@@ -16,9 +16,6 @@
 
 package cn.wjybxx.common.rpc;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -26,40 +23,10 @@ import javax.annotation.Nullable;
  * @author wjybxx
  * date 2023/4/1
  */
-public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor {
-
-    /**
-     * 所有的Rpc请求处理函数, methodKey -> methodProxy
-     */
-    private final Int2ObjectMap<RpcMethodProxy> proxyMap = new Int2ObjectOpenHashMap<>(512);
+public class DefaultRpcProcessor extends DefaultRpcRegistry implements RpcProcessor {
 
     public DefaultRpcProcessor() {
 
-    }
-
-    @Override
-    public void register(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy) {
-        // rpc请求id不可以重复
-        final int methodKey = calMethodKey(serviceId, methodId);
-        if (proxyMap.containsKey(methodKey)) {
-            throw new IllegalArgumentException("methodKey " + methodKey + " is already registered!");
-        }
-        proxyMap.put(methodKey, proxy);
-    }
-
-    @Override
-    public void trustedRegister(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy) {
-        final int methodKey = calMethodKey(serviceId, methodId);
-        proxyMap.put(methodKey, proxy);
-    }
-
-    private static int calMethodKey(short serviceId, short methodId) {
-        // 使用乘法更直观，更有规律
-        return serviceId * 10000 + methodId;
-    }
-
-    public void clear() {
-        proxyMap.clear();
     }
 
     @Override
@@ -81,8 +48,7 @@ public class DefaultRpcProcessor implements RpcMethodProxyRegistry, RpcProcessor
     }
 
     protected Object processImpl(@Nonnull RpcProcessContext context, @Nonnull DefaultRpcMethodSpec<?> rpcMethodSpec) {
-        final int methodKey = calMethodKey(rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
-        final RpcMethodProxy methodProxy = proxyMap.get(methodKey);
+        final RpcMethodProxy methodProxy = getProxy(rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());
         if (null == methodProxy) {
             final String msg = String.format("rcv unknown request, node %s, serviceId=%d methodId=%d",
                     context.request().getClientNodeId(), rpcMethodSpec.getServiceId(), rpcMethodSpec.getMethodId());

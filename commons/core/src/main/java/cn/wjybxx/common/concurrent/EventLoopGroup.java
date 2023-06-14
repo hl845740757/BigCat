@@ -34,7 +34,7 @@ import java.util.concurrent.*;
  * A: 如果在接口层定义了严格的时序约定，实现类就会受到限制。
  * <p>
  * 1.时序很重要，在提供并发组件时应该详细的说明时序约定，否则用户将无所措手足。<br>
- * 2.
+ * 2.EventLoopGroup也可以有自己的线程 - 一种常见的情况是Group是一个监控线程。
  *
  * @author wjybxx
  * date 2023/4/7

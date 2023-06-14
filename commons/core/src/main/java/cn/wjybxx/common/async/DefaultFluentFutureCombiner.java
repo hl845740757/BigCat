@@ -51,6 +51,13 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
     public int futureCount() {
         return futureCount;
     }
+
+    @Override
+    public void clear() {
+        futureCount = 0;
+        childrenListener = new ChildListener();
+    }
+
     // endregion
 
     // region

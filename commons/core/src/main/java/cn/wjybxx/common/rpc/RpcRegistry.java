@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/1
  */
-public interface RpcMethodProxyRegistry {
+public interface RpcRegistry {
 
     /**
      * 注册一个rpc请求处理函数
@@ -39,9 +39,18 @@ public interface RpcMethodProxyRegistry {
     void trustedRegister(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy);
 
     /**
+     * 查询方法绑定的Proxy
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @return 如果不存在，则返回null
+     */
+    RpcMethodProxy getProxy(short serviceId, short methodId);
+
+    /**
      * 清理注册表
      * 因为{@link #register(short, short, RpcMethodProxy)}会捕获太多对象，
-     * 当不再使用{@link RpcMethodProxyRegistry}时，执行该方法可释放{@link RpcMethodProxy}捕获的对象。
+     * 当不再使用{@link RpcRegistry}时，执行该方法可释放{@link RpcMethodProxy}捕获的对象。
      */
     void clear();
 

@@ -44,7 +44,10 @@ public interface EventLoopAgent<T> {
      */
     void update() throws Exception;
 
-    /** 如果当前线程阻塞在中断也无法唤醒的地方，用户需要唤醒线程 */
+    /**
+     * 如果当前线程阻塞在中断也无法唤醒的地方，用户需要唤醒线程
+     * 该方法是多线程调用的，要小心并发问题
+     */
     default void wakeup() {
     }
 

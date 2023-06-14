@@ -163,7 +163,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     }
 
     @Override
-    public final void shutdown() {
+    public void shutdown() {
         int expectedState = state;
         for (; ; ) {
             if (isShuttingDown0(expectedState)) {
@@ -184,7 +184,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     @Nonnull
     @Override
-    public final List<Runnable> shutdownNow() {
+    public List<Runnable> shutdownNow() {
         shutdown();
         advanceRunState(ST_SHUTDOWN);
         // 这里不能操作ringBuffer中的数据，不能打破[多生产者单消费者]的架构
@@ -389,7 +389,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     @Override
     public final void wakeup() {
-        if (!inEventLoop()) {
+        if (!inEventLoop() && thread.isAlive()) {
             thread.interrupt();
             agent.wakeup();
         }
