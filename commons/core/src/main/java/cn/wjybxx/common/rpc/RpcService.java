@@ -40,11 +40,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface RpcService {
 
-    /**
-     * 该类对应的serviceId
-     *
-     * @return short
-     */
-    short serviceId();
+    int serviceId();
 
 }

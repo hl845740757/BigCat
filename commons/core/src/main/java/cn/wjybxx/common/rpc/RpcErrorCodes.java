@@ -41,5 +41,7 @@ public class RpcErrorCodes {
     // 11 - 20 表服务器异常
     /** 表示服务器调用出现异常的错误码 */
     public static final int SERVER_EXCEPTION = 11;
+    /** 不支持的接口调用 */
+    public static final int SERVER_UNSUPPORTED_INTERFACE = 12;
 
 }

@@ -33,10 +33,10 @@ public interface RpcRegistry {
      * @param methodId  方法id
      * @param proxy     代理方法
      */
-    void register(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy);
+    void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy);
 
     /** 受信任的注册方法，可用于覆盖之前绑定的代理方法 */
-    void trustedRegister(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy);
+    void trustedRegister(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy);
 
     /**
      * 查询方法绑定的Proxy
@@ -45,11 +45,11 @@ public interface RpcRegistry {
      * @param methodId  方法id
      * @return 如果不存在，则返回null
      */
-    RpcMethodProxy getProxy(short serviceId, short methodId);
+    RpcMethodProxy getProxy(int serviceId, int methodId);
 
     /**
      * 清理注册表
-     * 因为{@link #register(short, short, RpcMethodProxy)}会捕获太多对象，
+     * 因为{@link #register(int, int, RpcMethodProxy)}会捕获太多对象，
      * 当不再使用{@link RpcRegistry}时，执行该方法可释放{@link RpcMethodProxy}捕获的对象。
      */
     void clear();

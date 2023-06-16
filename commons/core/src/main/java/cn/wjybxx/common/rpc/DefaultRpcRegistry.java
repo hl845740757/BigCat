@@ -32,13 +32,13 @@ public class DefaultRpcRegistry implements RpcRegistry {
      */
     private final Int2ObjectMap<RpcMethodProxy> proxyMap = new Int2ObjectOpenHashMap<>(512);
 
-    private static int calMethodKey(short serviceId, short methodId) {
+    private static int calMethodKey(int serviceId, int methodId) {
         // 使用乘法更直观，更有规律
         return serviceId * 10000 + methodId;
     }
 
     @Override
-    public void register(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy) {
+    public void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy) {
         // rpc请求id不可以重复
         final int methodKey = calMethodKey(serviceId, methodId);
         if (proxyMap.containsKey(methodKey)) {
@@ -48,13 +48,13 @@ public class DefaultRpcRegistry implements RpcRegistry {
     }
 
     @Override
-    public void trustedRegister(short serviceId, short methodId, @Nonnull RpcMethodProxy proxy) {
+    public void trustedRegister(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy) {
         final int methodKey = calMethodKey(serviceId, methodId);
         proxyMap.put(methodKey, proxy);
     }
 
     @Override
-    public RpcMethodProxy getProxy(short serviceId, short methodId) {
+    public RpcMethodProxy getProxy(int serviceId, int methodId) {
         final int methodKey = calMethodKey(serviceId, methodId);
         return proxyMap.get(methodKey);
     }

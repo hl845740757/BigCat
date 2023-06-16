@@ -37,10 +37,10 @@ import java.util.List;
  */
 class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
 
-    private final short serviceId;
+    private final int serviceId;
     private final List<ExecutableElement> rpcMethods;
 
-    RpcProxyGenerator(RpcServiceProcessor processor, TypeElement typeElement, short serviceId, List<ExecutableElement> rpcMethods) {
+    RpcProxyGenerator(RpcServiceProcessor processor, TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         super(processor, typeElement);
         this.serviceId = serviceId;
         this.rpcMethods = rpcMethods;
@@ -96,7 +96,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         final List<ParameterSpec> parameters = builder.parameters;
         if (parameters.size() == 0) {
             // 无参时，使用 Collections.emptyList();
-            builder.addStatement("return new $T<>((short)$L, (short)$L, $T.emptyList())",
+            builder.addStatement("return new $T<>($L, $L, $T.emptyList())",
                     processor.defaultMethodSpecRawTypeName,
                     serviceId, processor.getMethodId(method),
                     Collections.class);
@@ -107,7 +107,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
             for (ParameterSpec parameterSpec : parameters) {
                 builder.addStatement("methodParams.add($L)", parameterSpec.name);
             }
-            builder.addStatement("return new $T<>((short)$L, (short)$L, methodParams)",
+            builder.addStatement("return new $T<>($L, $L, methodParams)",
                     processor.defaultMethodSpecRawTypeName,
                     serviceId, processor.getMethodId(method));
         }

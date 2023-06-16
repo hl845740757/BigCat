@@ -529,7 +529,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                         safeLoopOnce();
                     }
                 } catch (AlertException | InterruptedException e) {
-                    // 请求了关闭 -- BatchEventProcessor实现中并没有等待过程中的中断异常
+                    // 请求了关闭 -- BatchEventProcessor实现中并没有处理等待过程中的中断异常
                     if (isShuttingDown()) {
                         break;
                     }
