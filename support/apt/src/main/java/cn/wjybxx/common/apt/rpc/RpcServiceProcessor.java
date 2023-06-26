@@ -46,15 +46,15 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String METHOD_ID_PROPERTY_NAME = "methodId";
 
     private static final String METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcMethodSpec";
-    private static final String DEFAULT_METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.common.rpc.DefaultRpcMethodSpec";
-    private static final String METHOD_REGISTRY_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcMethodProxyRegistry";
+    private static final String DEFAULT_METHOD_SPEC_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcMethodSpec";
+    private static final String METHOD_REGISTRY_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcRegistry";
 
     private static final String CONTEXT_CANONICAL_NAME = "cn.wjybxx.common.rpc.RpcProcessContext";
     private static final String FUTURE_CANONICAL_NAME = "cn.wjybxx.common.async.FluentFuture";
     private static final int MAX_PARAMETER_COUNT = 5;
 
     private TypeElement anno_rpcServiceElement;
-    private TypeElement anno_rpcMethodElement;
+    private TypeElement anno_rpcMethodElement;、
 
     TypeElement methodSpecElement;
     ClassName defaultMethodSpecRawTypeName;
@@ -121,7 +121,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     /** @return rpc方法 - 避免每次查找，开销较大 */
     private List<ExecutableElement> checkBase(TypeElement typeElement) {
-        final Short serviceId = getServiceId(typeElement);
+        final int serviceId = getServiceId(typeElement);
         if (serviceId <= 0) {
             messager.printMessage(Diagnostic.Kind.ERROR, " serviceId " + serviceId + " must greater than 0!", typeElement);
             return List.of();
@@ -131,9 +131,9 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         allMethodList.addAll(findInterfaceMethods(typeElement));
 
         final List<ExecutableElement> rpcMethodList = new ArrayList<>();
-        final Set<Short> methodIdSet = new HashSet<>();
+        final Set<Integer> methodIdSet = new HashSet<>();
         for (final ExecutableElement method : allMethodList) {
-            final Short methodId = getMethodId(method);
+            final Integer methodId = getMethodId(method);
             if (methodId == null) { // 不是rpc方法
                 continue;
             }
@@ -225,22 +225,22 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     }
 
     private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
-        final Short serviceId = getServiceId(typeElement);
+        final int serviceId = getServiceId(typeElement);
         // 客户端代理
         genClientProxy(typeElement, serviceId, rpcMethodList);
         // 服务器代理
         genServerProxy(typeElement, serviceId, rpcMethodList);
     }
 
-    private Short getServiceId(TypeElement typeElement) {
-        // 基本类型会被包装，Object不能直接转short
-        return (Short) AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType())
+    private Integer getServiceId(TypeElement typeElement) {
+        // 基本类型会被包装，Object不能直接转int
+        return (Integer) AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType())
                 .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, SERVICE_ID_PROPERTY_NAME))
                 .orElseThrow();
     }
 
-    Short getMethodId(ExecutableElement method) {
-        return (Short) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
+    Integer getMethodId(ExecutableElement method) {
+        return (Integer) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
                 .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, METHOD_ID_PROPERTY_NAME))
                 .orElse(null);
     }
@@ -249,7 +249,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
      * 为客户端生成代理文件
      * XXXProxy
      */
-    private void genClientProxy(TypeElement typeElement, Short serviceId, List<ExecutableElement> rpcMethods) {
+    private void genClientProxy(TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         new RpcProxyGenerator(this, typeElement, serviceId, rpcMethods)
                 .execute();
     }
@@ -258,7 +258,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
      * 为服务器生成代理文件
      * XXXExporter
      */
-    private void genServerProxy(TypeElement typeElement, Short serviceId, List<ExecutableElement> rpcMethods) {
+    private void genServerProxy(TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         new RpcExporterGenerator(this, typeElement, serviceId, rpcMethods)
                 .execute();
     }

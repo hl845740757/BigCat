@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * 生成的代理类名: {@code xxxProxy} {@code xxxExporter}
  * 其中：
  * Proxy用于客户端创建{@link RpcMethodSpec}，即：打包参数。
- * Exporter用于服务端暴露接口，向{@link RpcMethodProxyRegistry}中注册暴露的方法。
+ * Exporter用于服务端暴露接口，向{@link RpcRegistry}中注册暴露的方法。
  * 生成的文件会添加一个指向源文件的引用，方便你通过引用查找生成的文件
  * <p>
  * 注意事项:
@@ -40,11 +40,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface RpcService {
 
-    /**
-     * 该类对应的serviceId
-     *
-     * @return short
-     */
-    short serviceId();
+    int serviceId();
 
 }

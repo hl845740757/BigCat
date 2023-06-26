@@ -132,7 +132,7 @@ public class RpcTest {
         public void syncSayHello() throws InterruptedException {
             {
                 String msg1 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                String response1 = rpcClient.syncCall(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<>(
+                String response1 = rpcClient.syncCall(SimpleNodeId.SERVER, new RpcMethodSpec<>(
                         serviceId,
                         helloMethodId,
                         List.of(msg1)
@@ -141,7 +141,7 @@ public class RpcTest {
             }
             {
                 String msg2 = "local syncSayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                String response2 = rpcClient.syncCall(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<>(
+                String response2 = rpcClient.syncCall(SimpleNodeId.SERVER, new RpcMethodSpec<>(
                         serviceId,
                         helloAsyncMethodId,
                         List.of(msg2)
@@ -153,7 +153,7 @@ public class RpcTest {
         public void sayHello() {
             {
                 String msg1 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                rpcClient.call(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<String>(
+                rpcClient.call(SimpleNodeId.SERVER, new RpcMethodSpec<String>(
                         serviceId,
                         helloMethodId,
                         List.of(msg1)
@@ -161,7 +161,7 @@ public class RpcTest {
             }
             {
                 String msg2 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
-                rpcClient.call(SimpleNodeId.SERVER, new DefaultRpcMethodSpec<String>(
+                rpcClient.call(SimpleNodeId.SERVER, new RpcMethodSpec<String>(
                         serviceId,
                         helloAsyncMethodId,
                         List.of(msg2)
@@ -184,19 +184,19 @@ public class RpcTest {
 
         @Override
         public void run() {
-            DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
+            RpcRegistry registry = new DefaultRpcRegistry();
             SimpleNodeId role = SimpleNodeId.SERVER;
             // 注册服务
             TestService testService = new TestService(executor);
-            rpcProcessor.register(serviceId, helloMethodId, (context, methodSpec) -> {
+            registry.register(serviceId, helloMethodId, (context, methodSpec) -> {
                 return testService.hello(methodSpec.getString(0));
             });
-            rpcProcessor.register(serviceId, helloAsyncMethodId, (context, methodSpec) -> {
+            registry.register(serviceId, helloAsyncMethodId, (context, methodSpec) -> {
                 return testService.helloAsync(methodSpec.getString(0));
             });
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, registry,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
@@ -229,11 +229,11 @@ public class RpcTest {
 
         @Override
         public void run() {
-            DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
+            RpcRegistry registry = new DefaultRpcRegistry();
             SimpleNodeId role = SimpleNodeId.CLIENT;
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, registry,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 

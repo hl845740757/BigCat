@@ -32,9 +32,6 @@ import java.lang.annotation.Target;
  * 2. 当方法返回值为void或泛型参数为通配符{@code ?}时，代理方法的返回值类型为Object（比Void有更好的兼容性）。
  * 3. 其它普通方法，其返回值类型就是代理方法的返回值类型。
  *
- * <h3>获取rpc上下文</h3>
- * 默认并不提供该支持，用户可以在自己的{@link RpcProcessor}将当{@link RpcProcessContext}发布到某个可访问的地方，eg：ThreadLocal。
- *
  * <h3>限制</h3>
  * 1. 方法不能是private - 至少是包级访问权限(让生成的代码可访问) -- 建议用接口定义服务。
  * 2. methodId必须在[0,9999]区间段。
@@ -57,6 +54,6 @@ public @interface RpcMethod {
      *
      * @return 由该id和serviceId构成唯一索引。
      */
-    short methodId();
+    int methodId();
 
 }

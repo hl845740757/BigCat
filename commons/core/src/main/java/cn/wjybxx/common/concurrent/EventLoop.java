@@ -62,11 +62,6 @@ import java.util.concurrent.TimeUnit;
 public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
 
     /**
-     * {@link EventLoop}的实现类在运行期间尽量将自己发布到该变量上，以供用户访问。
-     */
-    ThreadLocal<EventLoop> CURRENT = new ThreadLocal<>();
-
-    /**
      * @return this - 由于{@link EventLoop}表示单个线程，因此总是分配自己。
      */
     @Nonnull
@@ -131,7 +126,9 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
     boolean inEventLoop(Thread thread);
 
     /**
+     * 唤醒线程
      * 如果当前{@link EventLoop}线程陷入了阻塞状态，则将线程从阻塞中唤醒
+     * 如果线程已停止，则该方法不产生影响
      */
     void wakeup();
 

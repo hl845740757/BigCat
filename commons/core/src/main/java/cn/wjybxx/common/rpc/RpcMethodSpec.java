@@ -16,54 +16,132 @@
 package cn.wjybxx.common.rpc;
 
 
+import cn.wjybxx.common.dson.AutoTypeArgs;
+import cn.wjybxx.common.dson.binary.BinarySerializable;
 import cn.wjybxx.common.log.DebugLogFriendlyObject;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * rpc方法描述信息
- * <p>
- * 实现要求：
- * 1. 能快速定位到调用的方法。
- * 2. 额外数据尽可能的少，包体尽可能的小。
+ * 1. 使用int类型的serviceId和methodId，可以大大减少数据传输量，而且定位方法更快
+ * 2. 不记录方法参数类型，没有太大的意义
  *
- * @param <V> 用于捕获返回值类型（不要删除）
+ * @param <V> 用于捕获返回值类型
  * @author wjybxx
  * date 2023/4/1
  */
 @SuppressWarnings("unused")
-public interface RpcMethodSpec<V> extends DebugLogFriendlyObject {
+@AutoTypeArgs
+@BinarySerializable
+public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
 
-    // 方便消除生成代码里的奇怪代码
+    private int serviceId;
+    private int methodId;
+    private List<Object> methodParams;
 
-    int getInt(int index);
+    public RpcMethodSpec() {
+        // 用于可能的序列化支持
+    }
 
-    long getLong(int index);
+    public RpcMethodSpec(int serviceId, int methodId, List<Object> methodParams) {
+        this.serviceId = serviceId;
+        this.methodId = methodId;
+        this.methodParams = methodParams;
+    }
 
-    float getFloat(int index);
+    public int getServiceId() {
+        return serviceId;
+    }
 
-    double getDouble(int index);
+    public void setServiceId(int serviceId) {
+        this.serviceId = serviceId;
+    }
 
-    boolean getBoolean(int index);
+    public int getMethodId() {
+        return methodId;
+    }
 
-    String getString(int index);
+    public void setMethodId(int methodId) {
+        this.methodId = methodId;
+    }
 
-    Object getObject(int index);
+    public List<Object> getMethodParams() {
+        return methodParams;
+    }
 
-    //
+    public void setMethodParams(List<Object> methodParams) {
+        this.methodParams = methodParams;
+    }
 
-    /**
-     * @return 生成简单的日志信息，包括定位到的方法，以及方法参数个数，但不包含参数的详细信息
-     */
+    // region 简化生成代码
+
+    public int getInt(int index) {
+        Number number = (Number) methodParams.get(index);
+        return number.intValue();
+    }
+
+    public long getLong(int index) {
+        Number number = (Number) methodParams.get(index);
+        return number.longValue();
+    }
+
+    public float getFloat(int index) {
+        Number number = (Number) methodParams.get(index);
+        return number.floatValue();
+    }
+
+    public double getDouble(int index) {
+        Number number = (Number) methodParams.get(index);
+        return number.doubleValue();
+    }
+
+    public boolean getBoolean(int index) {
+        return (Boolean) methodParams.get(index);
+    }
+
+    public String getString(int index) {
+        return (String) methodParams.get(index);
+    }
+
+    public Object getObject(int index) {
+        return methodParams.get(index);
+    }
+
+    public <T> T getObject(int index, Class<T> clazz) {
+        return clazz.cast(methodParams.get(index));
+    }
+
+    // endregion
+
     @Nonnull
     @Override
-    String toSimpleLog();
+    public String toSimpleLog() {
+        return '{' +
+                "serviceId=" + serviceId +
+                ", methodId=" + methodId +
+                ", paramCount=" + methodParams.size() +
+                "}";
+    }
 
-    /**
-     * @return 生成详细的日志信息，在简单的日志信息基础上，还需要打印详细的参数信息
-     */
     @Nonnull
     @Override
-    String toDetailLog();
+    public String toDetailLog() {
+        return '{' + "serviceId=" + serviceId +
+                ", methodId=" + methodId +
+                ", paramCount=" + methodParams.size() +
+                ", params=" + methodParams +
+                "}";
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultRpcMethodSpec{"
+                + "serviceId=" + serviceId
+                + ", methodId=" + methodId
+                + ", methodParams=" + methodParams
+                + '}';
+    }
 
 }

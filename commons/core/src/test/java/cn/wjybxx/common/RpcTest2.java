@@ -93,13 +93,13 @@ public class RpcTest2 {
 
         @Override
         public void run() {
-            DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
+            RpcRegistry registry = new DefaultRpcRegistry();
             SimpleNodeId role = SimpleNodeId.SERVER;
             // 注册服务
-            RpcServiceExampleExporter.export(rpcProcessor, new RpcServiceExample());
+            RpcServiceExampleExporter.export(registry, new RpcServiceExample());
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, registry,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 
@@ -132,11 +132,11 @@ public class RpcTest2 {
 
         @Override
         public void run() {
-            DefaultRpcProcessor rpcProcessor = new DefaultRpcProcessor();
+            RpcRegistry registry = new DefaultRpcRegistry();
             SimpleNodeId role = SimpleNodeId.CLIENT;
 
             TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, rpcProcessor,
+            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, registry,
                     timeProvider, 5 * 1000);
 //            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
 

@@ -51,6 +51,13 @@ class DefaultFutureCombiner implements FutureCombiner {
     public int futureCount() {
         return futureCount;
     }
+
+    @Override
+    public void clear() {
+        futureCount = 0;
+        childrenListener = new ChildListener();
+    }
+
     // endregion
 
     // region

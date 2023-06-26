@@ -99,9 +99,9 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
         return result;
     }
 
-    private AbstractEventLoop eventLoop() {
+    private AbstractScheduledEventLoop eventLoop() {
         EventLoopFutureContext context = (EventLoopFutureContext) ctx;
-        return (AbstractEventLoop) context.getEventLoop();
+        return (AbstractScheduledEventLoop) context.getEventLoop();
     }
     //
 
@@ -150,7 +150,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
 
     @Override
     public void run() {
-        AbstractEventLoop eventLoop = eventLoop();
+        AbstractScheduledEventLoop eventLoop = eventLoop();
         if (isDone()) { // 未及时从队列删除
             eventLoop.removeScheduled(this);
             return;

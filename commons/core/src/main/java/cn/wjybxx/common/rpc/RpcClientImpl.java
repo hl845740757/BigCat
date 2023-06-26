@@ -58,13 +58,10 @@ public class RpcClientImpl implements RpcClient {
 
     private final RpcSender sender;
     private final RpcReceiver receiver;
-    private final RpcProcessor processor;
+    private final RpcRegistry registry;
 
     private final TimeProvider timeProvider;
     private final long timeoutMs;
-
-    /** 异步调用时，发送消息失败是否立即触发调用失败，如果为true，对应用来讲，会导致future的完成时间不可控 */
-    private boolean immediateFailureWhenSendFailed = false;
     /** 日志级别 */
     private RpcLogConfig rpcLogConfig = RpcLogConfig.NONE;
 
@@ -73,32 +70,20 @@ public class RpcClientImpl implements RpcClient {
      * @param selfNodeId   当前服务器的描述信息
      * @param sender       路由实现
      * @param receiver     用于主动接收消息
-     * @param processor    rpc调用派发实现
+     * @param registry     rpc调用派发实现
      * @param timeProvider 用于获取当前时间
      * @param timeoutMs    rpc超时时间
      */
     public RpcClientImpl(long processGuid, NodeId selfNodeId,
-                         RpcSender sender, RpcReceiver receiver, RpcProcessor processor,
+                         RpcSender sender, RpcReceiver receiver, RpcRegistry registry,
                          TimeProvider timeProvider, long timeoutMs) {
         this.processGuid = processGuid;
         this.selfNodeId = Objects.requireNonNull(selfNodeId);
         this.sender = Objects.requireNonNull(sender);
         this.receiver = Objects.requireNonNull(receiver);
-        this.processor = Objects.requireNonNull(processor);
+        this.registry = Objects.requireNonNull(registry);
         this.timeProvider = Objects.requireNonNull(timeProvider);
         this.timeoutMs = timeoutMs;
-    }
-
-    public boolean isImmediateFailureWhenSendFailed() {
-        return immediateFailureWhenSendFailed;
-    }
-
-    /**
-     * 如果为true，则发送失败时立即失败，future上的回调会立即执行。
-     * 注意：如果设置为true，则会有一定的时序影响，会产生后发送的先失败这么个情况。
-     */
-    public void setImmediateFailureWhenSendFailed(boolean immediateFailureWhenSendFailed) {
-        this.immediateFailureWhenSendFailed = immediateFailureWhenSendFailed;
     }
 
     public RpcLogConfig getRpcLogConfig() {
@@ -187,14 +172,10 @@ public class RpcClientImpl implements RpcClient {
         // 执行发送(routerHandler的实现很关键)
         if (!sender.send(target, request)) {
             logger.warn("rpc router call failure, target " + target);
-            if (immediateFailureWhenSendFailed) {
-                return SameThreads.newFailedFuture(RpcClientException.routeFailed(target));
-            }
         }
-
-        // 记录调用信息
+        // 保留存根
+        final long deadline  = timeProvider.getTime() + timeoutMs;
         final FluentPromise<V> promise = SameThreads.newPromise();
-        final long deadline = timeProvider.getTime() + timeoutMs;
         final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, target, request);
         requestStubMap.put(requestGuid, requestStub);
         return promise;
@@ -272,17 +253,30 @@ public class RpcClientImpl implements RpcClient {
             logRcvRequest(request);
         }
 
+        RpcMethodSpec<?> methodSpec = request.getRpcMethodSpec();
+        RpcMethodProxy proxy = registry.getProxy(methodSpec.getServiceId(), methodSpec.getMethodId());
+        if (proxy == null) {
+            logger.warn("rcv unknown request, node {}, serviceId={}, methodId={}",
+                    request.getClientNodeId(), methodSpec.getServiceId(), methodSpec.getMethodId());
+            if (!request.isOneWay()) {
+                RpcResponse response = RpcResponse.newFailedResponse(request.getClientProcessId(), request.getRequestId(), RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
+                sendResponseAndLog(response, request.getClientNodeId());
+            }
+            return;
+        }
+
+        DefaultRpcProcessContext context = new DefaultRpcProcessContext(request);
         if (request.isOneWay()) {
             // 单向消息 - 不需要结果
             try {
-                processor.process(request);
+                proxy.invoke(context, methodSpec);
             } catch (Exception e) {
-                ExceptionUtils.rethrow(e);
+                throw wrapException(request, methodSpec, e);
             }
         } else {
             // rpc
             try {
-                final Object result = processor.process(request);
+                final Object result = proxy.invoke(context, methodSpec);
                 if (result instanceof FluentFuture<?> future) {
                     // 未完成，需要监听结果
                     future.addListener(new FutureListener<>(request, this));
@@ -300,7 +294,7 @@ public class RpcClientImpl implements RpcClient {
                         RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(e));
                 sendResponseAndLog(response, request.getClientNodeId());
                 // 抛出异常
-                ExceptionUtils.rethrow(e);
+                throw wrapException(request, methodSpec, e);
             }
         }
     }
@@ -313,6 +307,12 @@ public class RpcClientImpl implements RpcClient {
         if (!sender.send(from, response)) {
             logger.warn("rpc send response failure, from {}", from);
         }
+    }
+
+    private static RuntimeException wrapException(RpcRequest request, RpcMethodSpec<?> methodSpec, Exception e) {
+        String msg = String.format("invoke caught exception, node %s, serviceId=%d, methodId=%d",
+                request.getClientNodeId(), methodSpec.getServiceId(), methodSpec.getMethodId());
+        return new RuntimeException(msg, e);
     }
 
     /**

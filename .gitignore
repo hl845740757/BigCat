@@ -23,6 +23,12 @@
 *.iws
 *.idea
 
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
 # Package Files #
 # *.jar # jar等可能是需要加入仓库的
 *.war

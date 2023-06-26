@@ -49,7 +49,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     private static final String GET_OBJECT_METHOD_NAME = "getObject";
     private static final Map<TypeKind, String> primitiveGetParamMethodName = new EnumMap<>(TypeKind.class);
 
-    private final short serviceId;
+    private final int serviceId;
     private final List<ExecutableElement> rpcMethods;
 
     static {
@@ -62,7 +62,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         }
     }
 
-    RpcExporterGenerator(RpcServiceProcessor processor, TypeElement typeElement, short serviceId, List<ExecutableElement> rpcMethods) {
+    RpcExporterGenerator(RpcServiceProcessor processor, TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         super(processor, typeElement);
         this.serviceId = serviceId;
         this.rpcMethods = rpcMethods;
@@ -144,8 +144,8 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * }
      * </pre>
      */
-    private MethodSpec genServerMethodProxy(TypeElement typeElement, short serviceId, ExecutableElement method) {
-        final Short methodId = processor.getMethodId(method);
+    private MethodSpec genServerMethodProxy(TypeElement typeElement, int serviceId, ExecutableElement method) {
+        final int methodId = processor.getMethodId(method);
         final MethodSpec.Builder builder = MethodSpec.methodBuilder(getServerProxyMethodName(methodId, method))
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(TypeName.VOID)
@@ -155,7 +155,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         AptUtils.copyTypeVariables(builder, method);
 
         // registry中的方法
-        builder.addCode("$L.register((short)$L, (short)$L, ($L, $L) -> {\n",
+        builder.addCode("$L.register($L, $L, ($L, $L) -> {\n",
                 varName_registry, serviceId, methodId, varName_context, varName_methodSpec);
 
         final InvokeStatement invokeStatement = genInvokeStatement(method);
@@ -173,7 +173,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     /**
      * 获取代理方法的名字
      */
-    private static String getServerProxyMethodName(short methodId, ExecutableElement method) {
+    private static String getServerProxyMethodName(int methodId, ExecutableElement method) {
         // 加上methodId防止重复
         return "_export" + BeanUtils.firstCharToUpperCase(method.getSimpleName().toString()) + "_" + methodId;
     }
