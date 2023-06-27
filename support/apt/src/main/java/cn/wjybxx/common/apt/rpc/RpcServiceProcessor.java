@@ -54,7 +54,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final int MAX_PARAMETER_COUNT = 5;
 
     private TypeElement anno_rpcServiceElement;
-    private TypeElement anno_rpcMethodElement;、
+    private TypeElement anno_rpcMethodElement;
 
     TypeElement methodSpecElement;
     ClassName defaultMethodSpecRawTypeName;

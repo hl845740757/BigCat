@@ -61,7 +61,7 @@ public class FutureUtils {
     }
     // endregion
 
-    public static <V> void setFuture(CompletableFuture<? super V> output, CompletableFuture<V> input) {
+    public static <V> void setFuture(CompletableFuture<? super V> output, CompletionStage<V> input) {
         Objects.requireNonNull(output, "output");
         input.whenComplete((v, throwable) -> {
             if (throwable != null) {
@@ -70,6 +70,27 @@ public class FutureUtils {
                 output.complete(v);
             }
         });
+    }
+
+    public static <V> void setFutureAsync(CompletableFuture<? super V> output, CompletionStage<V> input, @Nullable Executor executor) {
+        Objects.requireNonNull(output, "output");
+        if (executor == null) {
+            input.whenCompleteAsync((v, throwable) -> {
+                if (throwable != null) {
+                    output.completeExceptionally(throwable);
+                } else {
+                    output.complete(v);
+                }
+            });
+        } else {
+            input.whenCompleteAsync((v, throwable) -> {
+                if (throwable != null) {
+                    output.completeExceptionally(throwable);
+                } else {
+                    output.complete(v);
+                }
+            }, executor);
+        }
     }
 
     public static Throwable getCause(CompletableFuture<?> future) {

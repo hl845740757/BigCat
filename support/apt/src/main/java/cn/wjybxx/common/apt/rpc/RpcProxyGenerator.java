@@ -39,11 +39,13 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
 
     private final int serviceId;
     private final List<ExecutableElement> rpcMethods;
+    private final ClassName typeClassName;
 
     RpcProxyGenerator(RpcServiceProcessor processor, TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         super(processor, typeElement);
         this.serviceId = serviceId;
         this.rpcMethods = rpcMethods;
+        this.typeClassName = ClassName.get(typeElement);
     }
 
     @Override
@@ -111,6 +113,8 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
                     processor.defaultMethodSpecRawTypeName,
                     serviceId, processor.getMethodId(method));
         }
+        // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
+        builder.addJavadoc("{@link $T#$L}", typeClassName, method.getSimpleName().toString());
         return builder.build();
     }
 

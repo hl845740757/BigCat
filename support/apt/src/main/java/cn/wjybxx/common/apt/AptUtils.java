@@ -58,6 +58,8 @@ public class AptUtils {
     public static final AnnotationSpec NONNULL_ANNOTATION = AnnotationSpec.builder(Nonnull.class)
             .build();
 
+    public static final ClassName CLASS_NAME_SOURCE_REF = ClassName.get("cn.wjybxx.common.annotations", "SourceFileRef");
+
     private AptUtils() {
 
     }
@@ -75,7 +77,7 @@ public class AptUtils {
     }
 
     public static AnnotationSpec newSourceFileRefAnnotation(TypeName sourceFileTypeName) {
-        return AnnotationSpec.builder(SourceFileRef.class)
+        return AnnotationSpec.builder(CLASS_NAME_SOURCE_REF)
                 .addMember("value", "$T.class", sourceFileTypeName)
                 .build();
     }

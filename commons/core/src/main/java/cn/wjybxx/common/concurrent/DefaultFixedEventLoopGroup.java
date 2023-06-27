@@ -58,6 +58,7 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
         children = new EventLoop[numberChildren];
         for (int i = 0; i < numberChildren; i++) {
             EventLoop eventLoop = Objects.requireNonNull(eventLoopFactory.newChild(this, i));
+            if (eventLoop.parent() != this) throw new IllegalStateException("the parent of child is illegal");
             children[i] = eventLoop;
         }
         readonlyChildren = List.of(children);

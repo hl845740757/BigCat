@@ -51,7 +51,7 @@ public abstract class MyAbstractProcessor extends AbstractProcessor {
     }
 
     @Override
-    public final SourceVersion getSupportedSourceVersion() {
+    public SourceVersion getSupportedSourceVersion() {
         return AptUtils.SOURCE_VERSION;
     }
 

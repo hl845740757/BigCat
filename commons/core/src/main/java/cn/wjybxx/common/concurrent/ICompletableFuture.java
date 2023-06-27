@@ -108,4 +108,11 @@ public interface ICompletableFuture<T> extends Future<T>, CompletionStage<T> {
      */
     FutureContext getCtx();
 
+    /**
+     * 转换为我们的future
+     * 如果当前future的实现不是{@link CompletableFuture}的实力，需要创建一个新的future，并在进入完成状态时将结果传输到新的future上
+     */
+    @Override
+    XCompletableFuture<T> toCompletableFuture();
+
 }

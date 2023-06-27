@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.wjybxx.supports</groupId>
+    <groupId>cn.wjybxx.commons</groupId>
     <artifactId>supports-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -47,13 +47,12 @@
     </developers>
 
     <properties>
+        <!-- java版本，最终会升级为jdk21 -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <!-- mvn命令默认gbk编码导致中文注释异常，需要通过这里设置 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-
-        <!-- java版本，最终会升级为jdk21 -->
-        <compile.version>17</compile.version>
-        <target.version>17</target.version>
 
         <!-- 依赖版本 -->
         <jsr305.version>3.0.2</jsr305.version>

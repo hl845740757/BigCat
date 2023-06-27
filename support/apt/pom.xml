@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.wjybxx.supports</groupId>
+        <groupId>cn.wjybxx.commons</groupId>
         <artifactId>supports-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
@@ -12,13 +12,11 @@
     <artifactId>support-apt</artifactId>
 
     <dependencies>
-        <!-- 生成java代码的工具 -->
         <dependency>
-            <groupId>com.squareup</groupId>
-            <artifactId>javapoet</artifactId>
-            <version>1.13.0</version>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>apt-base</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
-
         <!-- 自动注册processor -->
         <dependency>
             <groupId>com.google.auto.service</groupId>

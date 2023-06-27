@@ -174,7 +174,7 @@ public class RpcClientImpl implements RpcClient {
             logger.warn("rpc router call failure, target " + target);
         }
         // 保留存根
-        final long deadline  = timeProvider.getTime() + timeoutMs;
+        final long deadline = timeProvider.getTime() + timeoutMs;
         final FluentPromise<V> promise = SameThreads.newPromise();
         final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, target, request);
         requestStubMap.put(requestGuid, requestStub);

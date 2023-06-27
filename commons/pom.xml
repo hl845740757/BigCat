@@ -50,13 +50,12 @@
     </developers>
 
     <properties>
+        <!-- java版本，最终会升级为jdk21 -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <!-- mvn命令默认gbk编码导致中文注释异常，需要通过这里设置 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-
-        <!-- java版本，最终会升级为jdk21 -->
-        <compile.version>17</compile.version>
-        <target.version>17</target.version>
 
         <!-- 依赖版本 -->
         <jsr305.version>3.0.2</jsr305.version>
@@ -64,6 +63,7 @@
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.4.6</logback.version>
         <junit.version>5.9.2</junit.version>
+        <dson.version>0.99.beta</dson.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>
