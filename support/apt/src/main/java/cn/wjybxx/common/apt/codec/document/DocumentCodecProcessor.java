@@ -39,17 +39,17 @@ import java.util.Set;
 @AutoService(Processor.class)
 public class DocumentCodecProcessor extends CodecProcessor {
 
-    private static final String CNAME_SERIALIZABLE = "cn.wjybxx.common.dson.document.DocumentSerializable";
-    private static final String CNAME_IGNORE = "cn.wjybxx.common.dson.document.DocumentIgnore";
+    private static final String CNAME_SERIALIZABLE = "cn.wjybxx.dson.codec.document.DocumentSerializable";
+    private static final String CNAME_IGNORE = "cn.wjybxx.dson.codec.document.DocumentIgnore";
     private static final String PNAME_TYPE_ALIAS = "typeAlias";
 
-    private static final String CNAME_READER = "cn.wjybxx.common.dson.document.DocumentObjectReader";
-    private static final String CNAME_WRITER = "cn.wjybxx.common.dson.document.DocumentObjectWriter";
-    private static final String CNAME_CODEC = "cn.wjybxx.common.dson.document.DocumentPojoCodecImpl";
+    private static final String CNAME_READER = "cn.wjybxx.dson.codec.document.DocumentObjectReader";
+    private static final String CNAME_WRITER = "cn.wjybxx.dson.codec.document.DocumentObjectWriter";
+    private static final String CNAME_CODEC = "cn.wjybxx.dson.codec.document.DocumentPojoCodecImpl";
 
-    private static final String CNAME_ABSTRACT_CODEC = "cn.wjybxx.common.dson.document.AbstractDocumentPojoCodecImpl";
+    private static final String CNAME_ABSTRACT_CODEC = "cn.wjybxx.dson.codec.document.AbstractDocumentPojoCodecImpl";
     private static final String MNAME_GET_TYPE_NAME = "getTypeName";
-    private static final String CNAME_ENUM_CODEC = "cn.wjybxx.common.dson.document.codecs.DsonEnumCodec";
+    private static final String CNAME_ENUM_CODEC = "cn.wjybxx.dson.codec.document.codecs.DsonEnumCodec";
 
     // 要覆盖的方法缓存，减少大量查询
     private ExecutableElement getTypeNameMethod;
@@ -151,7 +151,6 @@ public class DocumentCodecProcessor extends CodecProcessor {
     MethodSpec newGetTypeNameMethod(DeclaredType superDeclaredType, TypeElement typeElement) {
         return MethodSpec.overriding(getTypeNameMethod, superDeclaredType, typeUtils)
                 .addStatement("return $S", getTypeAlias(typeElement))
-                .addAnnotation(AptUtils.NONNULL_ANNOTATION)
                 .build();
     }
 

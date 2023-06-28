@@ -39,8 +39,8 @@ import java.util.stream.Collectors;
 @AutoService(Processor.class)
 public class AutoFieldsProcessor extends MyAbstractProcessor {
 
-    public static final String AUTO_CANONICAL_NAME = "cn.wjybxx.common.dson.AutoFields";
-    private static final String ALIAS_CANONICAL_NAME = "cn.wjybxx.common.dson.FieldAlias";
+    public static final String CNAME_AUTO = "cn.wjybxx.dson.codec.AutoFields";
+    private static final String CNAME_ALIAS = "cn.wjybxx.dson.codec.FieldAlias";
 
     private static final String PROPERTY_SKIP_STATIC = "skipStatic";
     private static final String PROPERTY_SKIP_INSTANCE = "skipInstance";
@@ -56,7 +56,7 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Collections.singleton(AUTO_CANONICAL_NAME);
+        return Collections.singleton(CNAME_AUTO);
     }
 
     @Override
@@ -65,8 +65,8 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
             return;
         }
 
-        anno_autoTypeElement = elementUtils.getTypeElement(AUTO_CANONICAL_NAME);
-        anno_aliasTypeElement = elementUtils.getTypeElement(ALIAS_CANONICAL_NAME);
+        anno_autoTypeElement = elementUtils.getTypeElement(CNAME_AUTO);
+        anno_aliasTypeElement = elementUtils.getTypeElement(CNAME_ALIAS);
 
         stringTypeName = ClassName.get(String.class);
         stringSetTypeName = ParameterizedTypeName.get(Set.class, String.class);

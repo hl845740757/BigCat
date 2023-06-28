@@ -17,8 +17,8 @@
 package cn.wjybxx.common.apt.codec.document;
 
 import cn.wjybxx.common.apt.AptUtils;
-import cn.wjybxx.common.apt.codec.CodecGenerator;
 import cn.wjybxx.common.apt.codec.AutoFieldsProcessor;
+import cn.wjybxx.common.apt.codec.CodecGenerator;
 import com.squareup.javapoet.TypeSpec;
 
 import javax.lang.model.element.TypeElement;

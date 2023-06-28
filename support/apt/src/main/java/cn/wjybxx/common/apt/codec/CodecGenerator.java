@@ -49,11 +49,11 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
 
     public static final String MNAME_WRITE_BINARY = "writeBytes";
     public static final String MNAME_WRITE_EXTSTRING = "writeExtString";
-    public static final String MNAME_WRITE_EXTINt32 = "writeExtInt32";
+    public static final String MNAME_WRITE_EXTINT32 = "writeExtInt32";
     public static final String MNAME_WRITE_EXTINT64 = "writeExtInt64";
 
-    private static final Map<TypeKind, String> primitiveReadMethodName = new EnumMap<>(TypeKind.class);
-    private static final Map<TypeKind, String> primitiveWriteMethodName = new EnumMap<>(TypeKind.class);
+    private static final Map<TypeKind, String> primitiveReadMethodNameMap = new EnumMap<>(TypeKind.class);
+    private static final Map<TypeKind, String> primitiveWriteMethodNameMap = new EnumMap<>(TypeKind.class);
 
     protected TypeName rawTypeName;
     protected List<? extends Element> allFieldsAndMethodWithInherit;
@@ -75,8 +75,8 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
                 continue;
             }
             final String name = BeanUtils.firstCharToUpperCase(typeKind.name().toLowerCase());
-            primitiveReadMethodName.put(typeKind, "read" + name);
-            primitiveWriteMethodName.put(typeKind, "write" + name);
+            primitiveReadMethodNameMap.put(typeKind, "read" + name);
+            primitiveWriteMethodNameMap.put(typeKind, "write" + name);
         }
     }
 
@@ -101,7 +101,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
     protected String getWriteMethodName(VariableElement variableElement) {
         TypeMirror typeMirror = variableElement.asType();
         if (isPrimitiveType(typeMirror)) {
-            return primitiveWriteMethodName.get(typeMirror.getKind());
+            return primitiveWriteMethodNameMap.get(typeMirror.getKind());
         }
         if (processor.isString(typeMirror)) {
             return MNAME_WRITE_STRING;
@@ -116,7 +116,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
     protected String getReadMethodName(VariableElement variableElement) {
         TypeMirror typeMirror = variableElement.asType();
         if (isPrimitiveType(typeMirror)) {
-            return primitiveReadMethodName.get(typeMirror.getKind());
+            return primitiveReadMethodNameMap.get(typeMirror.getKind());
         }
         if (processor.isString(typeMirror)) {
             return MNAME_READ_STRING;
@@ -248,7 +248,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
             switch (properties.dsonType) {
                 case AptFieldImpl.TYPE_EXT_INT32 -> {
                     builder.addStatement("writer.$L($L.$L, $L, instance.$L, $T.$L)",
-                            MNAME_WRITE_EXTINt32, fieldsClassName, fieldName,
+                            MNAME_WRITE_EXTINT32, fieldsClassName, fieldName,
                             properties.dsonSubType, access,
                             processor.typeNameWireType, wireType);
                 }

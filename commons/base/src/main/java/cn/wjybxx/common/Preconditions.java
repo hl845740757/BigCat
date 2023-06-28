@@ -16,11 +16,8 @@
 
 package cn.wjybxx.common;
 
-import org.apache.commons.lang3.StringUtils;
-
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.Map;
 
 import static cn.wjybxx.common.ObjectUtils.nullToDef;
 import static cn.wjybxx.common.ObjectUtils.toStringIfNotNull;
@@ -75,66 +72,132 @@ public class Preconditions {
     // endregion
 
     // region 数字检查
-    public static int checkPositive(int v, String name) {
+
+    public static int checkPositive(int v) {
+        return checkPositive(v, null);
+    }
+
+    public static int checkPositive(int v, String desc) {
         if (v <= 0) {
-            throw new IllegalArgumentException(String.format("%s expected positive, but found: %d", nullToDef(name, "value"), v));
+            throw new IllegalArgumentException(checkPositiveMsg(v, desc));
         }
         return v;
     }
 
-    public static long checkPositive(long v, String name) {
+    public static long checkPositive(long v) {
+        return checkPositive(v, null);
+    }
+
+    public static long checkPositive(long v, String desc) {
         if (v <= 0) {
-            throw new IllegalArgumentException(String.format("%s expected positive, but found: %d", nullToDef(name, "value"), v));
+            throw new IllegalArgumentException(checkPositiveMsg(v, desc));
         }
         return v;
     }
 
-    public static int checkNonNegative(int v, String name) {
+    private static String checkPositiveMsg(long v, String desc) {
+        if (desc == null) {
+            return String.format("value expected positive, but found: %d", v);
+        } else {
+            return String.format("%s expected positive, but found: %d", desc, v);
+        }
+    }
+
+    //
+
+    public static int checkNonNegative(int v) {
+        return checkNonNegative(v, null);
+    }
+
+    public static int checkNonNegative(int v, String desc) {
         if (v < 0) {
-            throw new IllegalArgumentException(String.format("%s expected nonnegative, but found: %d", nullToDef(name, "value"), v));
+            throw new IllegalArgumentException(checkNonNegativeMsg(v, desc));
         }
         return v;
     }
 
-    public static long checkNonNegative(long v, String name) {
+    public static long checkNonNegative(long v) {
+        return checkNonNegative(v, null);
+    }
+
+    public static long checkNonNegative(long v, String desc) {
         if (v < 0) {
-            throw new IllegalArgumentException(String.format("%s expected nonnegative, but found: %d", nullToDef(name, "value"), v));
+            throw new IllegalArgumentException(checkNonNegativeMsg(v, desc));
         }
         return v;
     }
 
+    private static String checkNonNegativeMsg(long v, String desc) {
+        if (desc == null) {
+            return String.format("value expected nonnegative, but found: %d", v);
+        } else {
+            return String.format("%s expected nonnegative, but found: %d", desc, v);
+        }
+    }
+
+    //
     public static int checkBetween(int v, int min, int max) {
+        return checkBetween(v, min, max, null);
+    }
+
+    public static int checkBetween(int v, int min, int max, String desc) {
         if (v < min || v > max) {
-            throw new IllegalArgumentException(String.format("value expected between range[%d, %d], but found: %d", min, max, v));
+            throw new IllegalArgumentException(checkBetweenMsg(v, min, max, desc));
         }
         return v;
     }
 
     public static long checkBetween(long v, long min, long max) {
+        return checkBetween(v, min, max, null);
+    }
+
+    public static long checkBetween(long v, long min, long max, String desc) {
         if (v < min || v > max) {
-            throw new IllegalArgumentException(String.format("value expected between range[%d, %d], but found: %d", min, max, v));
+            throw new IllegalArgumentException(checkBetweenMsg(v, min, max, desc));
         }
         return v;
+    }
+
+    private static String checkBetweenMsg(long v, long min, long max, String desc) {
+        if (desc == null) {
+            return String.format("value expected between range[%d, %d], but found: %d", min, max, v);
+        } else {
+            return String.format("%s expected between range[%d, %d], but found: %d", nullToDef(desc, "value"), min, max, v);
+        }
     }
     // endregion
 
     // region 字符串检查
 
-    public static void checkNotEmpty(String value, @Nullable String msg) {
-        if (value == null || value.isEmpty()) {
-            throw new IllegalArgumentException(nullToDef(msg, "value cant be empty"));
-        }
+    public static <T extends CharSequence> T checkNotEmpty(T value) {
+        return checkNotEmpty(value, null);
     }
 
-    public static void checkNotBlank(String value, @Nullable String msg) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(nullToDef(msg, "value cant be blank"));
+    public static <T extends CharSequence> T checkNotEmpty(T value, @Nullable String desc) {
+        if (ObjectUtils.isEmpty(value)) {
+            throw new IllegalArgumentException(String.format("%s cant be empty", nullToDef(desc, "value")));
         }
+        return value;
     }
 
-    public static String checkNotContainsWhiteSpace(String value, @Nullable String msg) {
-        if (StringUtils.containsWhitespace(value)) {
-            throw new IllegalArgumentException(nullToDef(msg, "value cant contain white space"));
+    public static <T extends CharSequence> T checkNotBlank(T value) {
+        return checkNotBlank(value, null);
+    }
+
+    public static <T extends CharSequence> T checkNotBlank(T value, @Nullable String desc) {
+        if (ObjectUtils.isBlank(value)) {
+            throw new IllegalArgumentException(String.format("%s cant be blank", nullToDef(desc, "value")));
+        }
+        return value;
+    }
+
+    public static <T extends CharSequence> T checkNoneWhiteSpace(T value) {
+        return checkNoneWhiteSpace(value, null);
+    }
+
+    public static <T extends CharSequence> T checkNoneWhiteSpace(T value, @Nullable String desc) {
+        if (ObjectUtils.containsWhitespace(value)) {
+            throw new IllegalArgumentException(String.format("%s cant contain whitespace", nullToDef(desc, "value")));
         }
         return value;
     }
@@ -143,29 +206,23 @@ public class Preconditions {
 
     // region 集合检查
 
-    public static <K, V> void checkContains(Map<K, V> map, K key,
-                                            @Nullable String property) {
-        if (!map.containsKey(key)) {
-            throw new IllegalArgumentException(String.format("%s is absent, key %s", nullToDef(property, "key"), key));
-        }
+    public static void checkNotEmpty(Collection<?> collection) {
+        checkNotEmpty(collection, null);
     }
 
-    public static <K, V> void checkNotContains(Map<K, V> map, K key,
-                                               @Nullable String property) {
-        if (map.containsKey(key)) {
-            throw new IllegalArgumentException(String.format("%s is duplicate, key %s", nullToDef(property, "key"), key));
-        }
-    }
-
-    public static void checkNotEmpty(Collection<?> collection, @Nullable String msg) {
+    public static void checkNotEmpty(Collection<?> collection, @Nullable String desc) {
         if (collection == null || collection.isEmpty()) {
-            throw new IllegalArgumentException(nullToDef(msg, "collection cant be empty"));
+            throw new IllegalArgumentException(String.format("%s cant be empty", nullToDef(desc, "collection")));
         }
     }
 
-    public static void checkNotEmpty(Object[] array, @Nullable String msg) {
+    public static void checkNotEmpty(Object[] array) {
+        checkNotEmpty(array, null);
+    }
+
+    public static void checkNotEmpty(Object[] array, @Nullable String desc) {
         if (array == null || array.length == 0) {
-            throw new IllegalArgumentException(nullToDef(msg, "array cant be empty"));
+            throw new IllegalArgumentException(String.format("%s cant be empty", nullToDef(desc, "array")));
         }
     }
 
@@ -186,6 +243,32 @@ public class Preconditions {
             }
         }
     }
+    // endregion
+
+    // region 数组下标
+
+    public static int checkElementIndex(int index, int size) {
+        return checkElementIndex(index, size, "index");
+    }
+
+    public static int checkElementIndex(int index, int size, String desc) {
+        // Carefully optimized for execution by hotspot (explanatory comment above)
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(badElementIndex(index, size, desc));
+        }
+        return index;
+    }
+
+    private static String badElementIndex(int index, int size, String desc) {
+        if (index < 0) {
+            return String.format("%s (%s) must not be negative", desc, index);
+        } else if (size < 0) {
+            throw new IllegalArgumentException("negative size: " + size);
+        } else { // index >= size
+            return String.format("%s (%s) must be less than size (%s)", desc, index, size);
+        }
+    }
+
     // endregion
 
 }

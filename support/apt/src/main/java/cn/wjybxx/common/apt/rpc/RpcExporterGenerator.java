@@ -46,7 +46,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     private static final String varName_context = "context";
     private static final String varName_methodSpec = "methodSpec";
 
-    private static final String GET_OBJECT_METHOD_NAME = "getObject";
+    private static final String MNAME_GET_OBJECT = "getObject";
     private static final Map<TypeKind, String> primitiveGetParamMethodName = new EnumMap<>(TypeKind.class);
 
     private final int serviceId;
@@ -209,7 +209,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
                 params.add(index);
             } else {
                 final TypeName parameterTypeName = TypeName.get(paramTypeMirror);
-                final String getParamMethodName = GET_OBJECT_METHOD_NAME;
+                final String getParamMethodName = MNAME_GET_OBJECT;
                 // (String) methodSpec.getObject(0)
                 format.append("($T) $L.$L($L)");
                 params.add(parameterTypeName);

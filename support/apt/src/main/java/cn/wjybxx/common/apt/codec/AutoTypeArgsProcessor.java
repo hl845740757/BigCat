@@ -39,9 +39,9 @@ import java.util.stream.Collectors;
 @AutoService(Processor.class)
 public class AutoTypeArgsProcessor extends MyAbstractProcessor {
 
-    public static final String AUTO_CANONICAL_NAME = "cn.wjybxx.common.dson.AutoTypeArgs";
-    public static final String IMPL_CANONICAL_NAME = "cn.wjybxx.common.dson.FieldImpl";
-    public static final String TYPEARG_CANONICAL_NAME = "cn.wjybxx.common.dson.TypeArgInfo";
+    public static final String CNAME_AUTO = "cn.wjybxx.dson.codec.AutoTypeArgs";
+    public static final String CNAME_IMPL = "cn.wjybxx.dson.codec.FieldImpl";
+    public static final String CNAME_TYPEARG = "cn.wjybxx.dson.codec.TypeArgInfo";
 
     private TypeElement anno_autoTypeElement;
     private TypeMirror anno_impTypeMirror;
@@ -57,7 +57,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(AUTO_CANONICAL_NAME);
+        return Set.of(CNAME_AUTO);
     }
 
     @Override
@@ -65,9 +65,9 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
         if (anno_autoTypeElement != null) {
             return;
         }
-        anno_autoTypeElement = elementUtils.getTypeElement(AUTO_CANONICAL_NAME);
-        anno_impTypeMirror = elementUtils.getTypeElement(IMPL_CANONICAL_NAME).asType();
-        typeArgRawTypeName = ClassName.get(elementUtils.getTypeElement(TYPEARG_CANONICAL_NAME));
+        anno_autoTypeElement = elementUtils.getTypeElement(CNAME_AUTO);
+        anno_impTypeMirror = elementUtils.getTypeElement(CNAME_IMPL).asType();
+        typeArgRawTypeName = ClassName.get(elementUtils.getTypeElement(CNAME_TYPEARG));
 
         mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
         collectionTypeMirror = elementUtils.getTypeElement(Collection.class.getCanonicalName()).asType();
@@ -290,7 +290,7 @@ public class AutoTypeArgsProcessor extends MyAbstractProcessor {
             }
         }
         messager.printMessage(Diagnostic.Kind.ERROR,
-                "Unknown abstract Map or Collection must contains impl annotation " + IMPL_CANONICAL_NAME,
+                "Unknown abstract Map or Collection must contains impl annotation " + CNAME_IMPL,
                 variableElement);
     }
 

@@ -67,6 +67,7 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>${jsr305.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

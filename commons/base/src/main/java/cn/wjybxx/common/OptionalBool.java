@@ -63,12 +63,12 @@ public enum OptionalBool {
         return this == FALSE;
     }
 
-    public boolean isPresent() {
-        return this != EMPTY;
-    }
-
     public boolean isEmpty() {
         return this == EMPTY;
+    }
+
+    public boolean isPresent() {
+        return this != EMPTY;
     }
 
     public boolean orElse(boolean value) {

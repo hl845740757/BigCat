@@ -40,9 +40,9 @@ import java.util.Set;
  */
 public abstract class CodecProcessor extends MyAbstractProcessor {
 
-    public static final String CNAME_FIELD_IMPL = "cn.wjybxx.common.dson.FieldImpl";
-    public static final String CNAME_CLASS_IMPL = "cn.wjybxx.common.dson.ClassImpl";
-    public static final String CNAME_WireType = "cn.wjybxx.common.dson.WireType";
+    public static final String CNAME_WireType = "cn.wjybxx.dson.WireType";
+    public static final String CNAME_FIELD_IMPL = "cn.wjybxx.dson.codec.FieldImpl";
+    public static final String CNAME_CLASS_IMPL = "cn.wjybxx.dson.codec.ClassImpl";
 
     // CodecImpl
     public static final String MNAME_GET_ENCODER_CLASS = "getEncoderClass";
@@ -55,7 +55,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     public static final String MNAME_READ_FIELDS = "readFields";
     public static final String MNAME_AFTER_DECODE = "afterDecode";
 
-    public static final String CNAME_DSON_ENUM = "cn.wjybxx.common.dson.DsonEnum";
+    public static final String CNAME_DSON_ENUM = "cn.wjybxx.dson.codec.DsonEnum";
     public static final String MNAME_FOR_NUMBER = "forNumber";
     public static final String MNAME_GET_NUMBER = "getNumber";
 
@@ -117,8 +117,8 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
 
         anno_fieldImplTypeMirror = elementUtils.getTypeElement(CNAME_FIELD_IMPL).asType();
         anno_classImplTypeMirror = elementUtils.getTypeElement(CNAME_CLASS_IMPL).asType();
-        autoFieldsTypeElement = elementUtils.getTypeElement(AutoFieldsProcessor.AUTO_CANONICAL_NAME);
-        autoArgsTypeElement = elementUtils.getTypeElement(AutoTypeArgsProcessor.AUTO_CANONICAL_NAME);
+        autoFieldsTypeElement = elementUtils.getTypeElement(AutoFieldsProcessor.CNAME_AUTO);
+        autoArgsTypeElement = elementUtils.getTypeElement(AutoTypeArgsProcessor.CNAME_AUTO);
         typeNameWireType = ClassName.get(elementUtils.getTypeElement(CNAME_WireType));
 
         stringTypeMirror = elementUtils.getTypeElement(String.class.getCanonicalName()).asType();
@@ -449,7 +449,6 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     public MethodSpec newGetEncoderClassMethod(DeclaredType superDeclaredType, TypeName rawTypeName) {
         return MethodSpec.overriding(getEncoderClassMethod, superDeclaredType, typeUtils)
                 .addStatement("return $T.class", rawTypeName)
-                .addAnnotation(AptUtils.NONNULL_ANNOTATION)
                 .build();
     }
 

@@ -35,15 +35,15 @@ import java.util.Set;
 @AutoService(Processor.class)
 public class BinaryCodecProcessor extends CodecProcessor {
 
-    private static final String CNAME_SERIALIZABLE = "cn.wjybxx.common.dson.binary.BinarySerializable";
-    private static final String CNAME_IGNORE = "cn.wjybxx.common.dson.binary.BinaryIgnore";
+    private static final String CNAME_SERIALIZABLE = "cn.wjybxx.dson.codec.binary.BinarySerializable";
+    private static final String CNAME_IGNORE = "cn.wjybxx.dson.codec.binary.BinaryIgnore";
 
-    private static final String CNAME_READER = "cn.wjybxx.common.dson.binary.BinaryObjectReader";
-    private static final String CNAME_WRITER = "cn.wjybxx.common.dson.binary.BinaryObjectWriter";
-    private static final String CNAME_CODEC = "cn.wjybxx.common.dson.binary.BinaryPojoCodecImpl";
+    private static final String CNAME_READER = "cn.wjybxx.dson.codec.binary.BinaryObjectReader";
+    private static final String CNAME_WRITER = "cn.wjybxx.dson.codec.binary.BinaryObjectWriter";
+    private static final String CNAME_CODEC = "cn.wjybxx.dson.codec.binary.BinaryPojoCodecImpl";
 
-    private static final String CNAME_ABSTRACT_CODEC = "cn.wjybxx.common.dson.binary.AbstractBinaryPojoCodecImpl";
-    private static final String CNAME_ENUM_CODEC = "cn.wjybxx.common.dson.binary.codecs.DsonEnumCodec";
+    private static final String CNAME_ABSTRACT_CODEC = "cn.wjybxx.dson.codec.binary.AbstractBinaryPojoCodecImpl";
+    private static final String CNAME_ENUM_CODEC = "cn.wjybxx.dson.codec.binary.codecs.DsonEnumCodec";
 
     public BinaryCodecProcessor() {
         super();

@@ -44,14 +44,14 @@ import java.util.stream.Collectors;
 @AutoService(Processor.class)
 public class SubscribeProcessor extends MyAbstractProcessor {
 
-    private static final String SUBSCRIBE_CANONICAL_NAME = "cn.wjybxx.common.eventbus.Subscribe";
-    private static final String GENERIC_EVENT_CANONICAL_NAME = "cn.wjybxx.common.eventbus.GenericEvent";
-    private static final String HANDLER_REGISTRY_CANONICAL_NAME = "cn.wjybxx.common.eventbus.EventHandlerRegistry";
+    private static final String CNAME_SUBSCRIBE = "cn.wjybxx.common.eventbus.Subscribe";
+    private static final String CNAME_GENERIC_EVENT = "cn.wjybxx.common.eventbus.GenericEvent";
+    private static final String CNAME_HANDLER_REGISTRY = "cn.wjybxx.common.eventbus.EventHandlerRegistry";
 
-    private static final String CHILD_EVENTS_PROPERTY_NAME = "childEvents";
-    private static final String CHILD_DECLARED_PROPERTY_NAME = "childDeclared";
-    private static final String CHILD_KEYS_PROPERTY_NAME = "childKeys";
-    private static final String CUSTOM_DATA_PROPERTY_NAME = "customData";
+    private static final String PNAME_CHILD_EVENTS = "childEvents";
+    private static final String PNAME_CHILD_DECLARED = "childDeclared";
+    private static final String PNAME_CHILD_KEYS = "childKeys";
+    private static final String PNAME_CUSTOM_DATA = "customData";
 
     private TypeElement anno_subscribeTypeElement;
     private TypeMirror genericEventTypeMirror;
@@ -59,7 +59,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Collections.singleton(SUBSCRIBE_CANONICAL_NAME);
+        return Collections.singleton(CNAME_SUBSCRIBE);
     }
 
     /**
@@ -72,9 +72,9 @@ public class SubscribeProcessor extends MyAbstractProcessor {
             return;
         }
 
-        anno_subscribeTypeElement = elementUtils.getTypeElement(SUBSCRIBE_CANONICAL_NAME);
-        genericEventTypeMirror = typeUtils.getDeclaredType(elementUtils.getTypeElement(GENERIC_EVENT_CANONICAL_NAME));
-        handlerRegistryTypeName = ClassName.get(elementUtils.getTypeElement(HANDLER_REGISTRY_CANONICAL_NAME));
+        anno_subscribeTypeElement = elementUtils.getTypeElement(CNAME_SUBSCRIBE);
+        genericEventTypeMirror = typeUtils.getDeclaredType(elementUtils.getTypeElement(CNAME_GENERIC_EVENT));
+        handlerRegistryTypeName = ClassName.get(elementUtils.getTypeElement(CNAME_HANDLER_REGISTRY));
     }
 
     @Override
@@ -176,7 +176,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
         final VariableElement eventParameter = method.getParameters().get(0);
         final TypeName eventTParamTypeName = TypeName.get(typeUtils.erasure(eventParameter.asType()));
         final String methodName = method.getSimpleName().toString();
-        final String customData = AptUtils.getAnnotationValueValue(annotationMirror, CUSTOM_DATA_PROPERTY_NAME);
+        final String customData = AptUtils.getAnnotationValueValue(annotationMirror, PNAME_CUSTOM_DATA);
         if (childEventsList.size() > 0) {
             // 声明了子事件，如果泛型参数不是通配符，子事件必须是泛型参数的子类
             if (!isTypeParameterWildCard(eventParameter)) {
@@ -209,7 +209,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
         final VariableElement eventParameter = method.getParameters().get(0);
         final TypeName eventTParamTypeName = TypeName.get(typeUtils.erasure(eventParameter.asType()));
         final String methodName = method.getSimpleName().toString();
-        final String customData = AptUtils.getAnnotationValueValue(annotationMirror, CUSTOM_DATA_PROPERTY_NAME);
+        final String customData = AptUtils.getAnnotationValueValue(annotationMirror, PNAME_CUSTOM_DATA);
 
         checkChildEvents(method, eventParameter.asType(), childEventTypeMirrors);
         // 子类型需要显示转为超类型 - 否则可能导致重载问题
@@ -226,12 +226,12 @@ public class SubscribeProcessor extends MyAbstractProcessor {
         final VariableElement eventParameter = method.getParameters().get(0);
         final TypeName eventTParamTypeName = TypeName.get(typeUtils.erasure(eventParameter.asType()));
         final String methodName = method.getSimpleName().toString();
-        final String customData = AptUtils.getAnnotationValueValue(annotationMirror, CUSTOM_DATA_PROPERTY_NAME);
+        final String customData = AptUtils.getAnnotationValueValue(annotationMirror, PNAME_CUSTOM_DATA);
 
-        final List<? extends AnnotationValue> childKeyList = AptUtils.getAnnotationValueValue(annotationMirror, CHILD_KEYS_PROPERTY_NAME);
+        final List<? extends AnnotationValue> childKeyList = AptUtils.getAnnotationValueValue(annotationMirror, PNAME_CHILD_KEYS);
         if (childKeyList != null && !childKeyList.isEmpty()) {
             // 声明了childKeys，判断是类常量字段还是普通字符串
-            final AnnotationValue childDeclared = AptUtils.getAnnotationValueValue(annotationMirror, CHILD_DECLARED_PROPERTY_NAME);
+            final AnnotationValue childDeclared = AptUtils.getAnnotationValueValue(annotationMirror, PNAME_CHILD_DECLARED);
             final TypeMirror childKeyDeclaredTypeMirror = childDeclared == null ? null : AptUtils.getAnnotationValueTypeMirror(childDeclared);
             if (childKeyDeclaredTypeMirror != null) {
                 final TypeName declaredTypeName = TypeName.get(childKeyDeclaredTypeMirror);
@@ -257,7 +257,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
     /** 获取所有的子事件类型 */
     @Nonnull
     private List<TypeMirror> getChildEventTypeMirrors(ExecutableElement method, AnnotationMirror annotationMirror) {
-        final List<? extends AnnotationValue> childEventsList = AptUtils.getAnnotationValueValue(annotationMirror, CHILD_EVENTS_PROPERTY_NAME);
+        final List<? extends AnnotationValue> childEventsList = AptUtils.getAnnotationValueValue(annotationMirror, PNAME_CHILD_EVENTS);
         if (childEventsList == null || childEventsList.isEmpty()) {
             return List.of();
         }
