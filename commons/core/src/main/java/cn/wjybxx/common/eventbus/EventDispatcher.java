@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.eventbus;
 
-import javax.annotation.Nonnull;
-
 /**
  * 事件分发器
  * 特殊约定见：{@link DynamicEvent}
@@ -27,6 +25,6 @@ import javax.annotation.Nonnull;
  */
 public interface EventDispatcher {
 
-    void post(@Nonnull Object event);
+    void post(Object event);
 
 }

@@ -58,22 +58,27 @@ public interface FutureContext {
     // 用户写操作检查
 
     default boolean cancel(XCompletableFuture<?> future, boolean mayInterruptIfRunning) {
+        if (future.ctx != this) throw new IllegalStateException();
         return future.internal_doCancel(mayInterruptIfRunning);
     }
 
     default <T> boolean complete(XCompletableFuture<T> future, T value) {
+        if (future.ctx != this) throw new IllegalStateException();
         return future.internal_doComplete(value);
     }
 
     default boolean completeExceptionally(XCompletableFuture<?> future, Throwable ex) {
+        if (future.ctx != this) throw new IllegalStateException();
         return future.internal_doCompleteExceptionally(ex);
     }
 
     default <T> void obtrudeValue(XCompletableFuture<T> future, T value) {
+        if (future.ctx != this) throw new IllegalStateException();
         future.internal_doObtrudeValue(value);
     }
 
     default void obtrudeException(XCompletableFuture<?> future, Throwable ex) {
+        if (future.ctx != this) throw new IllegalStateException();
         future.internal_doObtrudeException(ex);
     }
 

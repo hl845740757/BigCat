@@ -50,7 +50,8 @@ public interface SameThreadExecutor {
     /**
      * Q：返回值的意义？
      * A：为避免死循环或占用过多cpu，单次tick可能存在一些限制（即：屏障），如果外部确实想处理更多的任务，则可以根据该值判断是否继续运行。
-     * 简单来说，如果tick返回{@literal true}，表示当前帧还有可执行的任务。
+     *
+     * @return 如果还有可执行任务则返回true，否则返回false
      */
     boolean tick();
 

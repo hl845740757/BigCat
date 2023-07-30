@@ -65,8 +65,8 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
         return new XScheduledFutureTask<>(ctx, Adapters.toCallable(task, null), id, nanoTime, 0);
     }
 
-    static <V> XScheduledFutureTask<V> ofPeriodicRunnable(EventLoopFutureContext ctx, Runnable task,
-                                                          long id, long nanoTime, long period) {
+    static <V> XScheduledFutureTask<V> ofPeriodic(EventLoopFutureContext ctx, Runnable task,
+                                                  long id, long nanoTime, long period) {
         validatePeriod(period);
         return new XScheduledFutureTask<>(ctx, Adapters.toCallable(task, null), id, nanoTime, period);
     }
@@ -145,7 +145,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(nextTriggerTime - eventLoop().getTime(), TimeUnit.NANOSECONDS);
+        return unit.convert(nextTriggerTime - eventLoop().nanoTime(), TimeUnit.NANOSECONDS);
     }
 
     @Override
@@ -155,7 +155,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
             eventLoop.removeScheduled(this);
             return;
         }
-        long tickTime = eventLoop.getTime();
+        long tickTime = eventLoop.nanoTime();
         if (tickTime < nextTriggerTime) { // 显式测试一次，适应多种EventLoop
             eventLoop.reSchedulePeriodic(this, false);
             return;
@@ -171,8 +171,8 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
      * @return 如果需要再压入队列则返回true
      */
     boolean trigger(long tickTime) {
+        Callable<V> task = getTask();
         try {
-            Callable<V> task = getTask();
             if (period == 0) {
                 if (internal_setUncancellable()) { // 隐式测试isDone
                     V result = task.call();
@@ -205,6 +205,15 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
             }
         } catch (Throwable ex) {
             ThreadUtils.recoveryInterrupted(ex);
+            if (period != 0 && !Adapters.isTimeSharing(task)) {
+                boolean caught = isEnable(ScheduleFeature.CAUGHT_THROWABLE)
+                        || (isEnable(ScheduleFeature.CAUGHT_EXCEPTION) && ex instanceof Exception);
+                if (caught) {
+                    logger.info("periodic task caught exception", ex);
+                    setNextRunTime(tickTime, timeSharingContext);
+                    return true;
+                }
+            }
             internal_doCompleteExceptionally(ex);
         }
         return false;

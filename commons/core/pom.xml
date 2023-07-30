@@ -6,7 +6,7 @@
     <parent>
         <groupId>cn.wjybxx.commons</groupId>
         <artifactId>commons-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>core</artifactId>
@@ -14,18 +14,29 @@
     <dependencies>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>base</artifactId>
-            <version>${project.version}</version>
+            <artifactId>annotations</artifactId>
+            <version>${annotations.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.dson</groupId>
+            <artifactId>dson-core</artifactId>
+            <version>${dson.version}</version>
         </dependency>
         <!-- 我们的APT工具，默认不传递 -->
         <dependency>
-            <groupId>io.wjybxx.supports</groupId>
-            <artifactId>support-apt</artifactId>
-            <version>${project.version}</version>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>apt-common</artifactId>
+            <version>${apt.version}</version>
             <optional>true</optional>
         </dependency>
 
         <!-- 常用工具包 -->
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
         <dependency>
             <groupId>commons-codec</groupId>

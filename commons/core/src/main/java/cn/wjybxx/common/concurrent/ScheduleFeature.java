@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.concurrent;
 
-import cn.wjybxx.common.Bits;
-
 /**
  * 调度的特征值
  *
@@ -47,11 +45,21 @@ public enum ScheduleFeature {
      */
     UNORDERED(false),
 
+    /**
+     * 捕获{@link Exception}类异常
+     * 在出现异常后继续执行；只适用无需结果的周期性任务；
+     */
+    CAUGHT_EXCEPTION(false),
+    /**
+     * 捕获{@link Throwable}类异常，即所有的异常
+     */
+    CAUGHT_THROWABLE(false),
     ;
+
     private final boolean _defaultState;
     private final int _mask;
 
-    private ScheduleFeature(boolean defaultState) {
+    ScheduleFeature(boolean defaultState) {
         _defaultState = defaultState;
         _mask = (1 << ordinal());
     }
@@ -65,11 +73,15 @@ public enum ScheduleFeature {
     }
 
     public boolean enabledIn(int flags) {
-        return Bits.isSet(flags, _mask);
+        return (flags & _mask) == _mask;
     }
 
     public int setEnable(int flags, boolean enable) {
-        return Bits.set(flags, _mask, enable);
+        if (enable) {
+            return (flags | _mask);
+        } else {
+            return (flags & ~_mask);
+        }
     }
 
     /** 默认开启的flags */

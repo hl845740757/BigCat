@@ -20,7 +20,6 @@ import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.pool.DefaultObjectPool;
 import cn.wjybxx.common.pool.ObjectPool;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Collection;
@@ -55,7 +54,7 @@ public class DefaultEventBus implements EventBus {
     }
 
     @Override
-    public final void post(@Nonnull Object event) {
+    public final void post(Object event) {
         if (recursionDepth >= EventBusUtils.RECURSION_LIMIT) {
             throw new IllegalStateException("event had too many levels of nesting");
         }
@@ -70,7 +69,7 @@ public class DefaultEventBus implements EventBus {
                     final ComposeEventKey composeEventKey = keyPool.get();
                     composeEventKey.init(masterKey, childKey);
                     EventBusUtils.postEventImp(handlerMap, (Object) eventX, composeEventKey);
-                    keyPool.returnOne(composeEventKey);
+                    keyPool.free(composeEventKey);
                 }
             } else {
                 // 普通事件只支持class作为masterKey
@@ -87,8 +86,7 @@ public class DefaultEventBus implements EventBus {
     }
 
     @Override
-    public <T> void registerX(@Nonnull Object masterKey, @Nullable Object childKey, @Nonnull EventHandler<T> handler,
-                              @Nullable Object customData) {
+    public <T> void registerX(Object masterKey, @Nullable Object childKey, EventHandler<T> handler, @Nullable Object customData) {
         Objects.requireNonNull(masterKey, "masterKey");
         Objects.requireNonNull(handler, "handler");
         if (childKey == null) {
@@ -107,7 +105,7 @@ public class DefaultEventBus implements EventBus {
     }
 
     @Override
-    public void removeX(@Nonnull Object masterKey, @Nullable Object childKey, @Nonnull EventHandler<?> handler) {
+    public void removeX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
         Objects.requireNonNull(masterKey, "masterKey");
         Objects.requireNonNull(handler, "handler");
         if (childKey == null) {
@@ -123,19 +121,19 @@ public class DefaultEventBus implements EventBus {
                 composeEventKey.init(masterKey, childKey);
                 EventBusUtils.removeHandlerImp(handlerMap, composeEventKey, handler);
             }
-            keyPool.returnOne(composeEventKey);
+            keyPool.free(composeEventKey);
         }
     }
 
     @Override
-    public boolean contains(@Nonnull Object masterKey, @Nullable Object childKey, @Nonnull EventHandler<?> handler) {
+    public boolean contains(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
         if (childKey == null) {
             return EventBusUtils.containsImpl(handlerMap, masterKey, handler);
         } else {
             final ComposeEventKey composeEventKey = keyPool.get();
             composeEventKey.init(masterKey, childKey);
             boolean contains = EventBusUtils.containsImpl(handlerMap, composeEventKey, handler);
-            keyPool.returnOne(composeEventKey);
+            keyPool.free(composeEventKey);
             return contains;
         }
     }
@@ -148,12 +146,12 @@ public class DefaultEventBus implements EventBus {
         ComposeEventKey() {
         }
 
-        ComposeEventKey(@Nonnull Object masterKey, @Nonnull Object childKey) {
+        ComposeEventKey(Object masterKey, Object childKey) {
             this.masterKey = masterKey;
             this.childKey = childKey;
         }
 
-        void init(@Nonnull Object masterKey, Object childKey) {
+        void init(Object masterKey, Object childKey) {
             this.masterKey = masterKey;
             this.childKey = childKey;
         }

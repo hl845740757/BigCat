@@ -37,8 +37,8 @@ public class FileDataProviders {
         return new FileDataProviders.LimitedProvider(provider, filePathSet);
     }
 
-    public static <T> IllegalArgumentException fileDataAbsent(FilePath<T> filePath) {
-        return new IllegalArgumentException("fileData is null, filePath: " + filePath);
+    static <T> IllegalArgumentException fileDataAbsent(FilePath<T> filePath) {
+        return new IllegalArgumentException("fileData is absent, filePath: " + filePath);
     }
 
     static class LimitedProvider implements FileDataProvider {

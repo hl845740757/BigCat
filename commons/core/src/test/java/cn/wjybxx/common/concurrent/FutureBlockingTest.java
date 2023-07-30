@@ -35,6 +35,7 @@ public class FutureBlockingTest {
         consumer = EventLoopGroupBuilder.newBuilder()
                 .setNumberChildren(1)
                 .setEventLoopFactory((parent, index) -> EventLoopBuilder.newDisruptBuilder()
+                        .setParent(parent)
                         .setThreadFactory(new DefaultThreadFactory("consumer"))
                         .setAgent(new Agent())
                         .build())

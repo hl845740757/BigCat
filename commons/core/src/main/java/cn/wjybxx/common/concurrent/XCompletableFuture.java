@@ -42,7 +42,7 @@ import java.util.function.*;
  */
 public class XCompletableFuture<T> extends CompletableFuture<T> implements ICompletableFuture<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(XCompletableFuture.class);
+    static final Logger logger = LoggerFactory.getLogger(XCompletableFuture.class);
 
     protected final FutureContext ctx;
 
@@ -160,10 +160,10 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
         }
     }
 
-    protected static void logCause(Throwable x) {
+    private static void logCause(Throwable x) {
         if (!(x instanceof CompletionException) // 通常是二次封装
                 && !(x instanceof NoLogRequiredException)) {
-            logger.warn("future completed with exception", x);
+            logger.info("future completed with exception", x);
         }
     }
 

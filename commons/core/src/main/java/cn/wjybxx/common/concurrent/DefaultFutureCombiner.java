@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -28,10 +29,15 @@ import java.util.function.BiConsumer;
  */
 class DefaultFutureCombiner implements FutureCombiner {
 
+    private Supplier<XCompletableFuture<Object>> factory;
     private ChildListener childrenListener = new ChildListener();
     private int futureCount;
 
     DefaultFutureCombiner() {
+    }
+
+    DefaultFutureCombiner(Supplier<XCompletableFuture<Object>> factory) {
+        this.factory = factory;
     }
 
     //region
@@ -81,7 +87,7 @@ class DefaultFutureCombiner implements FutureCombiner {
         this.childrenListener = null;
 
         // 数据存储在ChildListener上有助于扩展
-        XCompletableFuture<Object> aggregatePromise = new XCompletableFuture<>();
+        XCompletableFuture<Object> aggregatePromise = factory == null ? new XCompletableFuture<>() : factory.get();
         childrenListener.futureCount = this.futureCount;
         childrenListener.options = options;
         childrenListener.aggregatePromise = aggregatePromise;

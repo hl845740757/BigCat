@@ -143,6 +143,10 @@ public final class ScheduleBuilder<V> {
         return timeout;
     }
 
+    public boolean hasTimeout() {
+        return timeout != -1;
+    }
+
     /**
      * 设置时间单位
      */

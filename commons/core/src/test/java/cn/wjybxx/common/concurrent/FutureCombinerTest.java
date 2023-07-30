@@ -39,6 +39,7 @@ public class FutureCombinerTest {
         consumer = EventLoopGroupBuilder.newBuilder()
                 .setNumberChildren(4)
                 .setEventLoopFactory((parent, index) -> EventLoopBuilder.newDisruptBuilder()
+                        .setParent(parent)
                         .setThreadFactory(threadFactory)
                         .build())
                 .build();

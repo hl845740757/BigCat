@@ -34,6 +34,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SubscribeExample {
 
+    public static final String MASTER_BEGIN = "begin";
+    public static final String MASTER_END = "end";
+
+    public static final String CHILD_P1 = "cp1";
+    public static final String CHILD_P2 = "cp2";
+    public static final String CHILD_P3 = "cp3";
+
     static final AtomicInteger counter = new AtomicInteger();
 
     @Subscribe
@@ -50,6 +57,40 @@ public class SubscribeExample {
     public void subscribeString(SimpleGenericEvent<String> stringEvent) {
         counter.incrementAndGet();
     }
+
+    // region
+
+    /** 引用类字段的方式声明主键和子键 */
+    @Subscribe(masterDeclared = SubscribeExample.class, masterKey = "MASTER_BEGIN")
+    public void subscribe1(Object event) {
+
+    }
+
+    /** 引用类字段的方式声明主键和子键 */
+    @Subscribe(
+            masterDeclared = SubscribeExample.class, masterKey = "MASTER_BEGIN",
+            childDeclared = SubscribeExample.class, childKeys = {"CHILD_P1", "CHILD_P2"}
+    )
+    public void subscribe2(Object event) {
+
+    }
+
+    /** 使用字符串主键和子键 */
+    @Subscribe(masterKey = "begin")
+    public void subscribe3(Object event) {
+
+    }
+
+    /** 使用字符串主键和子键 */
+    @Subscribe(
+            masterKey = "begin",
+            childKeys = {"cp1", "cp2"}
+    )
+    public void subscribe4(Object event) {
+
+    }
+
+    // endregion
 
     @Test
     void subscribeTest() {

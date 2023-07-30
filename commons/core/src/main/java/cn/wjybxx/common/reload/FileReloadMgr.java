@@ -72,8 +72,12 @@ public class FileReloadMgr {
         }
     }
 
-    FileDataProvider getDataProvider() {
+    public FileDataProvider getDataProvider() {
         return fileDataContainer;
+    }
+
+    public Set<FilePath<?>> getPathSet() {
+        return Collections.unmodifiableSet(metadataMap.keySet());
     }
 
     //
@@ -150,10 +154,6 @@ public class FileReloadMgr {
 
     FileStat getFileStat(FilePath<?> filePath) {
         return getMetadata(filePath).fileStat;
-    }
-
-    Set<FilePath<?>> getPathSet() {
-        return Collections.unmodifiableSet(metadataMap.keySet());
     }
 
     @SuppressWarnings("unchecked")
@@ -504,25 +504,6 @@ public class FileReloadMgr {
         }
     }
     // endregion
-
-    //
-    static class FileMetadata<T> {
-
-        final FileReader<T> reader;
-        final File file;
-        FileStat fileStat;
-
-        /** 读取文件的优先级 - 越小越靠前 */
-        int priority = -1;
-        /** 依赖的所有文件，缓存起来提高效率，在loadAll时初始化 */
-        Set<FilePath<?>> allDependents = Set.of();
-
-        FileMetadata(FileReader<T> reader, File file) {
-            this.file = file;
-            this.reader = reader;
-        }
-
-    }
 
     //
 

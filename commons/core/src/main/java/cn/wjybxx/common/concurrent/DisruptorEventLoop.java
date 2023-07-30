@@ -66,9 +66,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     private static final int LOWER_PRIORITY_QUEUE_ID = 1;
 
     private static final int TYPE_CLEAN_DEADLINE = -2;
-    private static final Runnable _emptyRunnable = () -> {
-
-    };
+    private static final Runnable _emptyRunnable = () -> {};
 
     // 填充开始 - 字段定义顺序不要随意调整
     @SuppressWarnings("unused")
@@ -80,7 +78,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     private long p9, p10, p11, p12, p13, p14, p15, p16;
 
     /** 线程本地时间 -- 纳秒 */
-    private volatile long tickTime;
+    private volatile long nanoTime;
     @SuppressWarnings("unused")
     private long p17, p18, p19, p20, p21, p22, p23, p24;
 
@@ -109,7 +107,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         WaitStrategy waitStrategy = Objects.requireNonNull(builder.getWaitStrategy(), "waitStrategy");
         ThreadFactory threadFactory = Objects.requireNonNull(builder.getThreadFactory(), "threadFactory");
 
-        this.tickTime = System.nanoTime();
+        this.nanoTime = System.nanoTime();
         this.ringBuffer = RingBuffer.createMultiProducer(RingBufferEvent::new,
                 builder.getRingBufferSize(),
                 waitStrategy);
@@ -373,8 +371,8 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     //
 
     @Override
-    public final long getTime() {
-        return tickTime;
+    protected final long nanoTime() {
+        return nanoTime;
     }
 
     @Override
@@ -466,7 +464,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         @Override
         public void run() {
             try {
-                tickTime = System.nanoTime();
+                nanoTime = System.nanoTime();
                 agent.onStart(DisruptorEventLoop.this);
 
                 loop();
@@ -508,15 +506,15 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
             // 不使用while(true)避免有大量任务堆积的时候长时间无法退出
             while (!isShuttingDown()) {
-                tickTime = System.nanoTime();
+                nanoTime = System.nanoTime();
                 try {
                     // 等待生产者生产数据
                     availableSequence = sequenceBarrier.waitFor(nextSequence);
 
                     // 多生产者模型下不可频繁调用waitFor，会在查询可用sequence时产生巨大的开销，因此查询之后本地切割为小批次，避免用户循环得不到执行
                     while (nextSequence <= availableSequence) {
-                        tickTime = System.nanoTime();
-                        processScheduledQueue(tickTime, taskBatchSize, false);
+                        nanoTime = System.nanoTime();
+                        processScheduledQueue(nanoTime, taskBatchSize, false);
 
                         batchEndSequence = Math.min(availableSequence, nextSequence + taskBatchSize - 1);
                         nextSequence = runTaskBatch(nextSequence, batchEndSequence) + 1;
@@ -538,8 +536,8 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                     if (isShuttingDown()) {
                         break;
                     }
-                    tickTime = System.nanoTime();
-                    processScheduledQueue(tickTime, taskBatchSize, false);
+                    nanoTime = System.nanoTime();
+                    processScheduledQueue(nanoTime, taskBatchSize, false);
                     safeLoopOnce();
                 } catch (Throwable e) {
                     // 不好的等待策略实现
@@ -654,8 +652,8 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
             final EventLoopAgent<? super RingBufferEvent> agent = DisruptorEventLoop.this.agent;
 
             // 处理延迟任务
-            tickTime = System.nanoTime();
-            processScheduledQueue(tickTime, 0, true);
+            nanoTime = System.nanoTime();
+            processScheduledQueue(nanoTime, 0, true);
             scheduledTaskQueue.clearIgnoringIndexes();
 
             // 当所有的槽位都填充后，所有生产者将阻塞，此时可以删除gatingSequence

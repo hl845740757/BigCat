@@ -6,7 +6,7 @@
 
     <groupId>cn.wjybxx.commons</groupId>
     <artifactId>commons-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>Commons-Parent</name>
@@ -14,8 +14,9 @@
     <url>https://github.com/hl845740757/BigCat</url>
 
     <modules>
-        <module>base</module>
         <module>core</module>
+        <module>rpc</module>
+        <module>config</module>
         <module>excel</module>
         <module>mongo</module>
     </modules>
@@ -50,10 +51,10 @@
     </developers>
 
     <properties>
+        <revision>1.0-SNAPSHOT</revision>
         <!-- java版本，最终会升级为jdk21 -->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <!-- mvn命令默认gbk编码导致中文注释异常，需要通过这里设置 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
@@ -63,7 +64,10 @@
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.4.6</logback.version>
         <junit.version>5.9.2</junit.version>
-        <dson.version>0.99.beta</dson.version>
+
+        <annotations.version>1.0-SNAPSHOT</annotations.version>
+        <dson.version>1.0.1</dson.version>
+        <apt.version>1.0-SNAPSHOT</apt.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>
@@ -114,6 +118,32 @@
 
     <build>
         <plugins>
+            <!-- 模块版本同步 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- 指定参数-parameters，否则test目录下文件编译异常 -->
             <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
             <plugin>
@@ -177,7 +207,10 @@
                                 </goals>
                                 <!-- 注释不是特别规范，避免打包中断 -->
                                 <configuration>
+                                    <!-- <additionalJOption>-Xdoclint:none</additionalJOption> -->
                                     <doclint>none</doclint>
+                                    <charset>UTF-8</charset>
+                                    <locale>zh_CN</locale>
                                 </configuration>
                             </execution>
                         </executions>
@@ -188,7 +221,7 @@
                         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <!-- id与mvn setting.xml的 gpg 配置中的 id 对应-->
@@ -205,7 +238,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
-                        <version>3.0.0</version>
+                        <version>3.1.1</version>
                     </plugin>
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>

@@ -6,7 +6,7 @@
     <parent>
         <groupId>cn.wjybxx.commons</groupId>
         <artifactId>commons-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>mongo</artifactId>
@@ -22,7 +22,7 @@
     <dependencies>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>base</artifactId>
+            <artifactId>core</artifactId>
             <version>${project.version}</version>
         </dependency>
 

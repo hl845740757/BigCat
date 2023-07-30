@@ -268,7 +268,8 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
      *                           (已执行)                 ↓
      *                                              Future3(stack) -> Completion3_1 ->  Completion3_2 -> Completion3_3
      * </pre>
-     * 参考自guava的FluentFuture
+     * 1.参考自guava的FluentFuture
+     * 2.JDK的CompletableFuture也做了栈优化，但没有做逆序处理，因此广播时是按照出栈顺序广播。。。
      *
      * @return newHead
      */

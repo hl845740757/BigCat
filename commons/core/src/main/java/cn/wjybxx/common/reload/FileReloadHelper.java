@@ -17,7 +17,6 @@
 package cn.wjybxx.common.reload;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.reload.FileReloadMgr.FileMetadata;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.File;

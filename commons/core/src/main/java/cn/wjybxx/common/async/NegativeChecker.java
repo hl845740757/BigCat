@@ -40,7 +40,7 @@ public enum NegativeChecker {
                 return value;
             }
             case FAILURE -> {
-                throw new IllegalArgumentException("initialDelay must be gte 0, value: " + value);
+                throw new IllegalArgumentException("value must be gte 0, but found: " + value);
             }
             case ZERO -> {
                 return 0;

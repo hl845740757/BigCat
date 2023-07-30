@@ -16,19 +16,16 @@
 
 package cn.wjybxx.common.concurrent;
 
-import cn.wjybxx.common.time.TimeProvider;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 事件循环
  * 它是单线程的，它保证任务不会并发执行，且任务的执行顺序和提交顺序一致。
  *
- * <h1>时序</h1>
+ * <h2>时序</h2>
  * 在{@link EventLoopGroup}的基础上，我们提供这样的时序保证：<br>
  * 1.如果 task1 的执行时间小于等于 task2 的执行时间，且 task1 先提交成功，则保证 task1 在 task2 之前执行。<br>
  * 它可以表述为：不保证后提交的高优先级的任务能先执行。<br>
@@ -59,7 +56,7 @@ import java.util.concurrent.TimeUnit;
  * date 2023/4/7
  */
 @ThreadSafe
-public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
+public interface EventLoop extends FixedEventLoopGroup {
 
     /**
      * @return this - 由于{@link EventLoop}表示单个线程，因此总是分配自己。
@@ -83,17 +80,6 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
     EventLoopGroup parent();
 
     // region
-
-    /**
-     * 当前线程的时间 -- 纳秒
-     * 我们约定EventLoop是单线程，因此一定是一个死循环结构，不论是为了性能还是时序安全，使用缓存时间都是必要的。
-     * 注意：接口中并不约定时间的更新时机，也不约定一个大循环只更新一次。
-     * 也就是说：线程可能在任意时间点更新缓存的时间，只要不破坏线程安全性和约定的任务时序。
-     * <p>
-     * 提供该接口以匹配{@link #schedule(Runnable, long, TimeUnit)}等接口
-     */
-    @Override
-    long getTime();
 
     /**
      * 测试当前线程是否是{@link EventLoop}所在线程。
@@ -122,6 +108,8 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
 
     /**
      * 测试给定线程是否是当前事件循环线程
+     * EventLoop约定接口是单线程的，不会并发执行提交的任务，但不代表整个生命周期都绑定在同一个线程上，
+     * 如果当前线程死亡，EventLoop是可以开启新的线程的，因此外部如果捕获了当前线程的引用，该引用可能失效。
      */
     boolean inEventLoop(Thread thread);
 
@@ -141,12 +129,50 @@ public interface EventLoop extends FixedEventLoopGroup, TimeProvider {
     <V> XCompletableFuture<V> newPromise();
 
     default <V> XCompletableFuture<V> newSucceededFuture(V result) {
-        return FutureUtils.newSucceededFuture(result);
+        XCompletableFuture<V> promise = newPromise();
+        promise.complete(result);
+        return promise;
     }
 
     default <V> XCompletableFuture<V> newFailedFuture(Throwable cause) {
-        return FutureUtils.newFailedFuture(cause);
+        XCompletableFuture<V> promise = newPromise();
+        promise.completeExceptionally(cause);
+        return promise;
     }
 
     // endregion
+
+    enum State {
+
+        /** 初始状态 -- 已创建，但尚未启动 */
+        INIT(0),
+        /** 启动中 */
+        STARTING(1),
+        /** 启动成功，运行中 */
+        RUNNING(2),
+        /** 正在关闭 */
+        SHUTTING_DOWN(3),
+        /** 二阶段关闭状态，终止前的清理工作 */
+        SHUTDOWN(4),
+        /** 终止 */
+        TERMINATED(5);
+
+        public final int number;
+
+        State(int number) {
+            this.number = number;
+        }
+
+        public static State forNumber(int number) {
+            return switch (number) {
+                case 0 -> INIT;
+                case 1 -> STARTING;
+                case 2 -> RUNNING;
+                case 3 -> SHUTTING_DOWN;
+                case 4 -> SHUTDOWN;
+                case 5 -> TERMINATED;
+                default -> throw new IllegalArgumentException("invalid number: " + number);
+            };
+        }
+    }
 }

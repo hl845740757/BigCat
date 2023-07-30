@@ -62,7 +62,7 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
         initialDelay = Math.max(0, initialDelay);
         ScheduleBuilder.validatePeriod(delay);
 
-        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command,
+        return schedule(XScheduledFutureTask.ofPeriodic(futureContext, command,
                 0, triggerTime(initialDelay, unit), -unit.toNanos(delay)));
     }
 
@@ -73,7 +73,7 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
         ScheduleBuilder.validateInitialDelay(initialDelay); // fixedRate禁止负延迟输入
         ScheduleBuilder.validatePeriod(period);
 
-        return schedule(XScheduledFutureTask.ofPeriodicRunnable(futureContext, command,
+        return schedule(XScheduledFutureTask.ofPeriodic(futureContext, command,
                 0, triggerTime(initialDelay, unit), unit.toNanos(period)));
     }
 
@@ -81,12 +81,19 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
     public <V> IScheduledFuture<V> schedule(ScheduleBuilder<V> builder) {
         Objects.requireNonNull(builder);
         return schedule(XScheduledFutureTask.ofBuilder(futureContext, builder,
-                0, getTime()));
+                0, nanoTime()));
     }
 
     final long triggerTime(long delay, TimeUnit unit) {
-        return getTime() + unit.toNanos(delay);
+        return nanoTime() + unit.toNanos(delay);
     }
+
+    /**
+     * 当前线程的时间 -- 纳秒（非时间戳）
+     * 1. 可以使用缓存的时间，也可以使用{@link System#nanoTime()}实时查询，只要不破坏任务的执行约定即可。
+     * 2. 如果使用缓存时间，接口中并不约定时间的更新时机，也不约定一个大循环只更新一次。也就是说，线程可能在任意时间点更新缓存的时间，只要不破坏线程安全性和约定的任务时序。
+     */
+    protected abstract long nanoTime();
 
     /** @implNote 需要在放入任务队列之前初始化id */
     <V> IScheduledFuture<V> schedule(XScheduledFutureTask<V> futureTask) {

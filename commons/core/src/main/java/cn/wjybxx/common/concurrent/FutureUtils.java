@@ -25,6 +25,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -193,13 +194,30 @@ public class FutureUtils {
         return future;
     }
 
+    public static FutureCombiner newCombiner() {
+        return new DefaultFutureCombiner();
+    }
+
+    public static FutureCombiner newCombiner(Supplier<XCompletableFuture<Object>> factory) {
+        return new DefaultFutureCombiner(factory);
+    }
+
+    public static FutureCombiner newCombiner(EventLoop eventLoop) {
+        return new DefaultFutureCombiner(eventLoop::newPromise);
+    }
+
+    public static <V> XCompletableFuture<V> toXCompletableFuture(CompletionStage<V> stage) {
+        if (stage instanceof ICompletableFuture<V> future) {
+            return future.toCompletableFuture();
+        }
+        XCompletableFuture<V> future = new XCompletableFuture<>();
+        setFuture(future, stage);
+        return future;
+    }
+
     public static void completeTerminationFuture(XCompletableFuture<?> terminationFuture) {
         TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
         terminationFutureCtx.terminate(terminationFuture);
-    }
-
-    public static FutureCombiner newCombiner() {
-        return new DefaultFutureCombiner();
     }
 
     /** @param downward 是否向下流动 */
