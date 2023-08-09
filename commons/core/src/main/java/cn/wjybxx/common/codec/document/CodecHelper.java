@@ -146,7 +146,6 @@ class CodecHelper {
         DsonType dsonType = readOrGetDsonType(reader);
         return switch (dsonType) {
             case BINARY -> reader.readBinary(name);
-            case STRING, ARRAY, OBJECT -> new DsonBinary(0, reader.readValueAsBytes(name));
             case NULL -> {
                 reader.readNull(name);
                 yield null;
@@ -245,5 +244,27 @@ class CodecHelper {
             return (byte) readInt(reader, name);
         }
         throw new AssertionError();
+    }
+
+    public static Object readValue(DsonReader reader, DsonType dsonType, String name) {
+        return switch (dsonType) {
+            case INT32 -> reader.readInt32(name);
+            case INT64 -> reader.readInt64(name);
+            case FLOAT -> reader.readFloat(name);
+            case DOUBLE -> reader.readDouble(name);
+            case BOOLEAN -> reader.readBoolean(name);
+            case STRING -> reader.readString(name);
+            case BINARY -> reader.readBinary(name);
+            case EXT_STRING -> reader.readExtString(name);
+            case EXT_INT32 -> reader.readExtInt32(name);
+            case EXT_INT64 -> reader.readExtInt64(name);
+            case REFERENCE -> reader.readRef(name);
+            case TIMESTAMP -> reader.readTimestamp(name);
+            case NULL -> {
+                reader.readNull(name);
+                yield null;
+            }
+            default -> throw new AssertionError(dsonType); // null和容器都前面测试了
+        };
     }
 }

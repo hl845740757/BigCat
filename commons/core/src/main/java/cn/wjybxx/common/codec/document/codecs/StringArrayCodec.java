@@ -16,12 +16,13 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -42,7 +43,7 @@ public class StringArrayCodec implements DocumentPojoCodecImpl<String[]> {
     }
 
     @Override
-    public void writeObject(String[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(String[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         for (String e : instance) {
             writer.writeString(null, e, StringStyle.AUTO);
         }

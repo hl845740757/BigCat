@@ -21,21 +21,6 @@ import sun.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
 
-class LhsPadding {
-    @SuppressWarnings("unused")
-    protected long p1, p2, p3, p4, p5, p6, p7, p8;
-}
-
-class Value extends LhsPadding {
-    /** 由于value是int值，因此需要左右两端都8个long */
-    protected volatile int value;
-}
-
-class RhsPadding extends Value {
-    @SuppressWarnings("unused")
-    protected long p9, p10, p11, p12, p13, p14, p15, p16;
-}
-
 /**
  * LMAX的{@link com.lmax.disruptor.Sequence}的int值版本，方便做一些逻辑。
  *
@@ -46,16 +31,25 @@ class RhsPadding extends Value {
  * <p>Also attempts to be more efficient with regards to false
  * sharing by adding padding around the volatile field.
  */
-public class IntSequence extends RhsPadding {
+public class IntSequence {
 
-    static final int INITIAL_VALUE = -1;
+    @SuppressWarnings("unused")
+    protected long p1, p2, p3, p4, p5, p6, p7, p8;
+
+    /** 由于value是int值，因此需要左右两端都8个long */
+    protected volatile int value;
+
+    @SuppressWarnings("unused")
+    protected long p9, p10, p11, p12, p13, p14, p15, p16;
+
+    private static final int INITIAL_VALUE = -1;
     private static final Unsafe UNSAFE;
     private static final long VALUE_OFFSET;
 
     static {
         UNSAFE = Util.getUnsafe();
         try {
-            VALUE_OFFSET = UNSAFE.objectFieldOffset(Value.class.getDeclaredField("value"));
+            VALUE_OFFSET = UNSAFE.objectFieldOffset(IntSequence.class.getDeclaredField("value"));
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

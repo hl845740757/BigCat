@@ -265,6 +265,10 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
             writeChar(name, (Character) value);
             return;
         }
+        if (value instanceof DsonValue dsonValue) {
+            DsonLites.writeDsonValue(writer, dsonValue, name);
+            return;
+        }
         throw DsonCodecException.unsupportedType(type);
     }
 

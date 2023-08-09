@@ -76,7 +76,7 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     void writeExtString(String name, DsonExtString value, StringStyle style);
 
-    void writeExtString(String name, int type, String value, StringStyle style);
+    void writeExtString(String name, int type, @Nullable String value, StringStyle style);
 
     void writeRef(String name, ObjectRef ref);
 
@@ -90,6 +90,10 @@ public interface DocumentObjectWriter extends AutoCloseable {
         writeObject(name, value, TypeArgInfo.OBJECT, null);
     }
 
+    default <T> void writeObject(String name, T value, TypeArgInfo<?> typeArgInfo) {
+        writeObject(name, value, typeArgInfo, null);
+    }
+
     /**
      * 写嵌套对象
      *
@@ -99,26 +103,15 @@ public interface DocumentObjectWriter extends AutoCloseable {
     <T> void writeObject(String name, T value, TypeArgInfo<?> typeArgInfo, @Nullable IStyle style);
 
     /** 写顶层对象 */
-    <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
-
-    //
-    default void writeStartObject(String name, Object value, TypeArgInfo<?> typeArgInfo) {
-        writeName(name);
-        writeStartObject(value, typeArgInfo);
-    }
-
-    default void writeStartArray(String name, Object value, TypeArgInfo<?> typeArgInfo) {
-        writeName(name);
-        writeStartArray(value, typeArgInfo);
-    }
+    <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo, @Nullable ObjectStyle style);
 
     /** 顶层对象或数组内元素 */
-    void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo);
+    void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 
     void writeEndObject();
 
     /** 顶层对象或数组内元素 */
-    void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo);
+    void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 
     void writeEndArray();
 
@@ -194,7 +187,7 @@ public interface DocumentObjectWriter extends AutoCloseable {
     }
 
     default void writeByte(String name, byte value, WireType wireType, INumberStyle style) {
-        writeInt(name, value, WireType.BYTE, style);
+        writeInt(name, value, WireType.VARINT, style);
     }
 
     default void writeChar(String name, char value) {
@@ -204,6 +197,34 @@ public interface DocumentObjectWriter extends AutoCloseable {
     /** @apiNote 保持签名以确保生成的代码可正确调用 */
     default void writeChar(String name, char value, WireType ignore, INumberStyle style) {
         writeInt(name, value, WireType.UINT, style);
+    }
+
+    default void writeStartObject(String name, Object value, TypeArgInfo<?> typeArgInfo) {
+        writeName(name);
+        writeStartObject(value, typeArgInfo, ObjectStyle.INDENT);
+    }
+
+    default void writeStartObject(String name, Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        writeName(name);
+        writeStartObject(value, typeArgInfo, style);
+    }
+
+    default void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
+        writeStartObject(value, typeArgInfo, ObjectStyle.INDENT);
+    }
+
+    default void writeStartArray(String name, Object value, TypeArgInfo<?> typeArgInfo) {
+        writeName(name);
+        writeStartArray(value, typeArgInfo, ObjectStyle.INDENT);
+    }
+
+    default void writeStartArray(String name, Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        writeName(name);
+        writeStartArray(value, typeArgInfo, style);
+    }
+
+    default void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
+        writeStartArray(value, typeArgInfo, ObjectStyle.INDENT);
     }
 
     // endregion

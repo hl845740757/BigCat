@@ -18,6 +18,7 @@ package cn.wjybxx.common.codec.document;
 
 import cn.wjybxx.common.codec.ConverterUtils;
 import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 
@@ -51,8 +52,10 @@ public interface DocumentPojoCodecImpl<T> {
     /**
      * 将对象写入输出流。
      * 将对象及其所有超类定义的所有要序列化的字段写入输出流。
+     *
+     * @param style 外部期望的输出格式
      */
-    void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo);
+    void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 
     /**
      * 从输入流中解析指定对象。

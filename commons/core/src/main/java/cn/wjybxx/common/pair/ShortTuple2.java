@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.box;
+package cn.wjybxx.common.pair;
 
 /**
  * @author wjybxx

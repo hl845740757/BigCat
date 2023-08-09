@@ -66,7 +66,7 @@
         <junit.version>5.9.2</junit.version>
 
         <annotations.version>1.0-SNAPSHOT</annotations.version>
-        <dson.version>1.0.1</dson.version>
+        <dson.version>1.0.2</dson.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>

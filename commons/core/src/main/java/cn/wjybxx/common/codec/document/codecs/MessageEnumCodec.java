@@ -16,13 +16,14 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
-import cn.wjybxx.dson.WireType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.WireType;
 import cn.wjybxx.dson.text.NumberStyle;
+import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.Internal;
 import com.google.protobuf.ProtocolMessageEnum;
 
@@ -54,7 +55,7 @@ public class MessageEnumCodec<T extends ProtocolMessageEnum> implements Document
     }
 
     @Override
-    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeInt("number", instance.getNumber(), WireType.UINT, NumberStyle.SIMPLE);
     }
 

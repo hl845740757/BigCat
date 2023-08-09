@@ -18,10 +18,11 @@ package cn.wjybxx.common.codec.document.codecs;
 
 import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
-import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -40,11 +41,11 @@ public class EnumLiteCodec<T extends EnumLite> implements DocumentPojoCodecImpl<
     private final IntFunction<T> mapper;
 
     /**
-     * @param forNumber forNumber静态方法的lambda表达式
+     * @param mapper forNumber静态方法的lambda表达式
      */
-    public EnumLiteCodec(Class<T> encoderClass, IntFunction<T> forNumber) {
+    public EnumLiteCodec(Class<T> encoderClass, IntFunction<T> mapper) {
         this.encoderClass = Objects.requireNonNull(encoderClass);
-        this.mapper = Objects.requireNonNull(forNumber);
+        this.mapper = Objects.requireNonNull(mapper);
     }
 
     public T forNumber(int number) {
@@ -63,7 +64,7 @@ public class EnumLiteCodec<T extends EnumLite> implements DocumentPojoCodecImpl<
     }
 
     @Override
-    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeInt("number", instance.getNumber());
     }
 

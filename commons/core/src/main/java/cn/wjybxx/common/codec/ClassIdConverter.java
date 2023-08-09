@@ -19,7 +19,7 @@ package cn.wjybxx.common.codec;
 /**
  * 常见算法包括：
  * 1. 或运算：(namespace << 32) | localId
- * 2. 加法： namespace * k + localId
+ * 2. 平移： namespace * k + localId
  *
  * @author wjybxx
  * date - 2023/7/20

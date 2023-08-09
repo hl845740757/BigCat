@@ -70,6 +70,6 @@ public class CompositeEventHandler<T> implements EventHandler<T> {
         } finally {
             children.endItr();
         }
-
     }
+
 }

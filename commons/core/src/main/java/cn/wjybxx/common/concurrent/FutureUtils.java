@@ -17,8 +17,8 @@
 package cn.wjybxx.common.concurrent;
 
 import cn.wjybxx.common.ThreadUtils;
-import cn.wjybxx.common.box.ObjectHolder;
 import cn.wjybxx.common.time.CachedTimeProvider;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -97,9 +97,9 @@ public class FutureUtils {
     public static Throwable getCause(CompletableFuture<?> future) {
         if (future.isCompletedExceptionally()) {
             // 捕获异常的开销更大...我们这相当于一个visitor
-            ObjectHolder<Throwable> causeHolder = new ObjectHolder<>();
-            future.whenComplete((v, cause) -> causeHolder.set(cause));
-            return FutureUtils.unwrapCompletionException(causeHolder.get());
+            MutableObject<Throwable> causeHolder = new MutableObject<>();
+            future.whenComplete((v, cause) -> causeHolder.setValue(cause));
+            return FutureUtils.unwrapCompletionException(causeHolder.getValue());
         }
         return null;
     }

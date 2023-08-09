@@ -19,7 +19,6 @@ package cn.wjybxx.common.codec;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 类型id注册表
@@ -37,7 +36,7 @@ import java.util.Map;
 public interface ClassIdRegistry<T> {
 
     /**
-     * 通过类型获取类型的字符串标识
+     * 通过类型获取类型的默认id标识
      */
     @Nullable
     T ofType(Class<?> type);

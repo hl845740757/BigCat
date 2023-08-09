@@ -16,9 +16,7 @@
 
 package cn.wjybxx.common.codec.binary;
 
-import cn.wjybxx.common.codec.ConvertOptions;
-import cn.wjybxx.common.codec.ConverterUtils;
-import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
@@ -164,10 +162,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public void readNull(int name) {
-        if (reader.isAtType()) {
-            reader.readDsonType();
-        }
-        reader.readNull(name);
+        CodecHelper.readNull(reader, name);
     }
 
     @Override
@@ -207,8 +202,8 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Override
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
-        DsonType dsonType = reader.readDsonType();
-        if (reader.getContextType() == DsonContextType.OBJECT) {
+        DsonType dsonType = CodecHelper.readOrGetDsonType(reader);
+        if (reader.getContextType().isLikeObject() && dsonType != DsonType.HEADER) {
             reader.readName();
         }
         return readContainer(typeArgInfo, dsonType);
@@ -232,14 +227,13 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         }
         // 对象类型--需要先读取写入的类型，才可以解码
         DsonType dsonType = CodecHelper.readOrGetDsonType(reader);
-        if (reader.getContextType() == DsonContextType.OBJECT) {
+        if (reader.getContextType().isLikeObject() && dsonType != DsonType.HEADER) {
             reader.readName(name);
         }
         if (dsonType == DsonType.NULL) {
             return null;
         }
-        if (dsonType.isContainer()) {
-            // 容器类型只能通过codec解码
+        if (dsonType.isContainer()) { // 容器类型只能通过codec解码
             return readContainer(typeArgInfo, dsonType);
         }
         // 考虑包装类型
@@ -248,43 +242,21 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
             return (T) CodecHelper.readPrimitive(reader, name, unboxed);
         }
         // 默认类型转换-声明类型可能是个抽象类型，eg：Number
-        return readAsDsonValue(dsonType, name, declaredType);
+        if (DsonValue.class.isAssignableFrom(declaredType)) {
+            return declaredType.cast(DsonLites.readDsonValue(reader));
+        }
+        return declaredType.cast(CodecHelper.readValue(reader, dsonType, name));
     }
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
-//        BinClassId classId;
-//        if (dsonType == DsonType.ARRAY) {
-//            classId = reader.prestartArray();
-//        } else {
-//            classId = reader.prestartObject();
-//        }
-//        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
-//        if (codec == null) {
-//            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
-//        }
-//        return codec.readObject(this, typeArgInfo);
-        return null;
+        ClassId classId = readClassId(dsonType);
+        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+        if (codec == null) {
+            throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
+        }
+        return codec.readObject(this, typeArgInfo);
     }
 
-    private <T> T readAsDsonValue(DsonType dsonType, int name, Class<T> declaredType) {
-        final DsonLiteReader reader = this.reader;
-        Object value = switch (dsonType) {
-            case INT32 -> reader.readInt32(name);
-            case INT64 -> reader.readInt64(name);
-            case FLOAT -> reader.readFloat(name);
-            case DOUBLE -> reader.readDouble(name);
-            case BOOLEAN -> reader.readBoolean(name);
-            case STRING -> reader.readString(name);
-            case BINARY -> reader.readBinary(name);
-            case EXT_STRING -> reader.readExtString(name);
-            case EXT_INT32 -> reader.readExtInt32(name);
-            case EXT_INT64 -> reader.readExtInt64(name);
-            default -> throw new AssertionError(dsonType); // null和容器都前面测试了
-        };
-        return declaredType.cast(value);
-    }
-
-    @Nonnull
     @Override
     public void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
         if (reader.isAtType()) {
@@ -313,18 +285,44 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         reader.readEndArray();
     }
 
-    //
-//    @SuppressWarnings("unchecked")
-//    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, ClassId classId) {
-//        final Class<T> declaredType = typeArgInfo.declaredType;
-//        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classDescRegistry.ofId(classId);
-//        // 尝试按真实类型读 - 概率最大
-//        if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
-//            return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);
-//        }
-//        // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)
-//        return converter.codecRegistry.get(declaredType);
-//    }
+    private ClassId readClassId(DsonType dsonType) {
+        DsonLiteReader reader = this.reader;
+        if (dsonType == DsonType.OBJECT) {
+            reader.readStartObject();
+        } else {
+            reader.readStartArray();
+        }
+        ClassId classId;
+        DsonType nextDsonType = reader.peekDsonType();
+        if (nextDsonType == DsonType.HEADER) {
+            if (reader.readDsonType() != DsonType.HEADER) {
+                throw new DsonCodecException();
+            }
+            reader.readStartHeader();
+            long classGuid = reader.readInt64(DsonHeader.NUMBERS_CLASS_ID);
+            classId = converter.options.classIdConverter.toClassId(classGuid);
+            if (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+                throw new DsonCodecException();
+            }
+            reader.readEndHeader();
+        } else {
+            classId = ClassId.OBJECT;
+        }
+        reader.backToWaitStart();
+        return classId;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, ClassId classId) {
+        final Class<T> declaredType = typeArgInfo.declaredType;
+        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
+        // 尝试按真实类型读 - 概率最大
+        if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
+            return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);
+        }
+        // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)
+        return converter.codecRegistry.get(declaredType);
+    }
 
     // endregion
 }

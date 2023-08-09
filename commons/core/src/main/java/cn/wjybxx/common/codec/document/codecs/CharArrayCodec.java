@@ -16,12 +16,13 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 
 import javax.annotation.Nonnull;
@@ -40,7 +41,7 @@ public class CharArrayCodec implements DocumentPojoCodecImpl<char[]> {
     }
 
     @Override
-    public void writeObject(char[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(char[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         for (char e : instance) {
             writer.writeChar(null, e);
         }

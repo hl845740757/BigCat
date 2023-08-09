@@ -18,11 +18,11 @@ package cn.wjybxx.common.codec.binary.codecs;
 
 import cn.wjybxx.common.codec.ConverterUtils;
 import cn.wjybxx.common.codec.TypeArgInfo;
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

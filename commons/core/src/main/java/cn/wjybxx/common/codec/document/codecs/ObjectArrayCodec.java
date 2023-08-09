@@ -17,12 +17,13 @@
 package cn.wjybxx.common.codec.document.codecs;
 
 import cn.wjybxx.common.codec.ConverterUtils;
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class ObjectArrayCodec implements DocumentPojoCodecImpl<Object[]> {
     }
 
     @Override
-    public void writeObject(Object[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(Object[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         TypeArgInfo<?> componentArgInfo = findComponentTypeArg(typeArgInfo.declaredType);
         for (Object e : instance) {
             writer.writeObject(null, e, componentArgInfo, null);

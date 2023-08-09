@@ -16,13 +16,14 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.NumberStyle;
+import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import javax.annotation.Nonnull;
@@ -41,7 +42,7 @@ public class FloatArrayCodec implements DocumentPojoCodecImpl<float[]> {
     }
 
     @Override
-    public void writeObject(float[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(float[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         for (float e : instance) {
             writer.writeFloat(null, e, NumberStyle.SIMPLE);
         }

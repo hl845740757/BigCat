@@ -49,7 +49,7 @@ public class DocumentConverterUtils extends ConverterUtils {
 
     static {
         Properties properties = System.getProperties();
-        NAME_CACHE_SIZE = InternalUtils.getInt(properties, "cn.wjybxx.common.codec.document.namecahesize", 200);
+        NAME_CACHE_SIZE = InternalUtils.getInt(properties, "cn.wjybxx.common.codec.document.namecachesize", 200);
 
         String[] nameCache = arrayElementNameCache = new String[NAME_CACHE_SIZE];
         for (int idx = 0; idx < nameCache.length; idx++) {

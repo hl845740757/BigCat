@@ -24,6 +24,7 @@ import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.dson.DsonLites;
 import cn.wjybxx.dson.text.NumberStyle;
+import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
 
 import javax.annotation.Nonnull;
@@ -216,7 +217,7 @@ class CodecStructs {
         }
 
         @Override
-        public void writeObject(MyStruct instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+        public void writeObject(MyStruct instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
             NestStruct nestStruct = instance.nestStruct;
             writer.writeStartObject("nestStruct", nestStruct, TypeArgInfo.of(NestStruct.class));
             {

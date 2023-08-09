@@ -16,12 +16,13 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
-import cn.wjybxx.dson.DsonBinary;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonBinary;
+import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
@@ -51,7 +52,7 @@ public class MessageCodec<T extends MessageLite> implements DocumentPojoCodecImp
     }
 
     @Override
-    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.dsonWriter().writeMessage("value", writer.options().pbBinaryType, instance);
     }
 

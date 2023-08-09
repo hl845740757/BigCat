@@ -16,12 +16,13 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 import javax.annotation.Nonnull;
@@ -40,7 +41,7 @@ public class LongArrayCodec implements DocumentPojoCodecImpl<long[]> {
     }
 
     @Override
-    public void writeObject(long[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(long[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         for (long e : instance) {
             writer.writeLong(null, e);
         }

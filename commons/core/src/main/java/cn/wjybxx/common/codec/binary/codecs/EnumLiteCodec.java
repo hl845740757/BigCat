@@ -39,11 +39,11 @@ public class EnumLiteCodec<T extends EnumLite> implements BinaryPojoCodecImpl<T>
     private final IntFunction<T> mapper;
 
     /**
-     * @param forNumber forNumber静态方法的lambda表达式
+     * @param mapper forNumber静态方法的lambda表达式
      */
-    public EnumLiteCodec(Class<T> encoderClass, IntFunction<T> forNumber) {
+    public EnumLiteCodec(Class<T> encoderClass, IntFunction<T> mapper) {
         this.encoderClass = Objects.requireNonNull(encoderClass);
-        this.mapper = Objects.requireNonNull(forNumber);
+        this.mapper = Objects.requireNonNull(mapper);
     }
 
     public T forNumber(int number) {

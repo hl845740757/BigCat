@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.codec.Converter;
 import cn.wjybxx.common.codec.ClassIdRegistry;
+import cn.wjybxx.common.codec.Converter;
 
 /**
  * 文档转换器

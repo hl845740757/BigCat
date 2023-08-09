@@ -22,8 +22,8 @@ import java.util.Set;
 /**
  * @author wjybxx
  * date - 2023/7/27
- */ //
-public class FileMetadata<T> {
+ */
+class FileMetadata<T> {
 
     final FileReader<T> reader;
     final File file;

@@ -17,12 +17,13 @@
 package cn.wjybxx.common.codec.document.codecs;
 
 import cn.wjybxx.common.codec.TypeArgInfo;
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.NumberStyle;
+import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 
 import javax.annotation.Nonnull;
@@ -41,7 +42,7 @@ public class DoubleArrayCodec implements DocumentPojoCodecImpl<double[]> {
     }
 
     @Override
-    public void writeObject(double[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(double[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         for (double e : instance) {
             writer.writeDouble(null, e, NumberStyle.SIMPLE);
         }

@@ -14,44 +14,52 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.box;
+package cn.wjybxx.common.pair;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * 三元组
+ * 二元组
  *
  * @author wjybxx
  * date 2023/3/31
  */
-public final class Tuple3<A, B, C> {
+public final class Tuple2<A, B> implements Map.Entry<A, B> {
 
-    private final Tuple2<A, B> tuple2;
-    private final C third;
+    private final A first;
+    private final B second;
 
-    public Tuple3(A first, B second, C third) {
-        this.tuple2 = new Tuple2<>(first, second);
-        this.third = third;
+    public Tuple2(A first, B second) {
+        this.first = first;
+        this.second = second;
     }
 
-    public static <A, B, C> Tuple3<A, B, C> of(A first, B second, C third) {
-        return new Tuple3<>(first, second, third);
-    }
-
-    public Tuple2<A, B> asTuple2() {
-        return tuple2;
+    public static <A, B> Tuple2<A, B> of(A first, B second) {
+        return new Tuple2<>(first, second);
     }
 
     public A getFirst() {
-        return tuple2.getFirst();
+        return first;
     }
 
     public B getSecond() {
-        return tuple2.getSecond();
+        return second;
     }
 
-    public C getThird() {
-        return third;
+    @Override
+    public A getKey() {
+        return first;
+    }
+
+    @Override
+    public B getValue() {
+        return second;
+    }
+
+    @Override
+    public B setValue(B value) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -59,25 +67,24 @@ public final class Tuple3<A, B, C> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Tuple3<?, ?, ?> tuple3 = (Tuple3<?, ?, ?>) o;
+        Tuple2<?, ?> tuple2 = (Tuple2<?, ?>) o;
 
-        if (!tuple2.equals(tuple3.tuple2)) return false;
-        return Objects.equals(third, tuple3.third);
+        if (!Objects.equals(first, tuple2.first)) return false;
+        return Objects.equals(second, tuple2.second);
     }
 
     @Override
     public int hashCode() {
-        int result = tuple2.hashCode();
-        result = 31 * result + (third != null ? third.hashCode() : 0);
+        int result = first != null ? first.hashCode() : 0;
+        result = 31 * result + (second != null ? second.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Tuple3{" +
-                "first=" + tuple2.getFirst() +
-                ", second=" + tuple2.getSecond() +
-                ", third=" + third +
+        return "Tuple2{" +
+                "first=" + first +
+                ", second=" + second +
                 '}';
     }
 

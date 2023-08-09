@@ -248,7 +248,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (codec == null) {
             throw DsonCodecException.unsupportedType(value.getClass());
         }
-        codec.writeObject(value, this, typeArgInfo);
+        codec.writeObject(value, this, typeArgInfo, findObjectStyle(value, typeArgInfo, style));
     }
 
     @Override
@@ -262,7 +262,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         DocumentPojoCodec<? super T> codec = findObjectEncoder(value);
         if (codec != null) {
             writer.writeName(name);
-            codec.writeObject(value, this, typeArgInfo);
+            codec.writeObject(value, this, typeArgInfo, findObjectStyle(value, typeArgInfo, style));
             return;
         }
 
@@ -308,12 +308,16 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
             writeChar(name, (Character) value);
             return;
         }
+        if (value instanceof DsonValue dsonValue) {
+            Dsons.writeDsonValue(writer, dsonValue, name);
+            return;
+        }
         throw DsonCodecException.unsupportedType(type);
     }
 
     @Override
-    public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartObject(ObjectStyle.INDENT);
+    public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        writer.writeStartObject(style);
         writeClassId(value, typeArgInfo);
     }
 
@@ -323,14 +327,21 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
-        writer.writeStartArray(ObjectStyle.INDENT);
+    public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        writer.writeStartArray(style);
         writeClassId(value, typeArgInfo);
     }
 
     @Override
     public void writeEndArray() {
         writer.writeEndArray();
+    }
+
+    private ObjectStyle findObjectStyle(Object value, TypeArgInfo<?> typeArgInfo, IStyle style) {
+        if (style instanceof ObjectStyle objectStyle) {
+            return objectStyle;
+        }
+        return ObjectStyle.INDENT;
     }
 
     private void writeClassId(Object value, TypeArgInfo<?> typeArgInfo) {

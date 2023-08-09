@@ -17,7 +17,6 @@
 package cn.wjybxx.common;
 
 import it.unimi.dsi.fastutil.chars.CharPredicate;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;

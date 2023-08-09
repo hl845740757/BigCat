@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common;
 
-import cn.wjybxx.common.box.IntTuple2;
-import cn.wjybxx.common.box.ShortTuple2;
+import cn.wjybxx.common.pair.IntTuple2;
+import cn.wjybxx.common.pair.ShortTuple2;
 
 /**
  * @author wjybxx
@@ -165,19 +165,13 @@ public class MathUtils {
 
     // region min,max
 
-    public static int max(int a, int b, int c) {
-        if (a < b) a = b;
-        if (a < c) a = c;
-        return a;
-    }
-
     public static int min(int a, int b, int c) {
         if (a > b) a = b;
         if (a > c) a = c;
         return a;
     }
 
-    public static long max(long a, long b, long c) {
+    public static int max(int a, int b, int c) {
         if (a < b) a = b;
         if (a < c) a = c;
         return a;
@@ -189,9 +183,10 @@ public class MathUtils {
         return a;
     }
 
-    public static float max(float a, float b, float c) {
-        float r = Math.max(a, b);
-        return Math.max(r, c);
+    public static long max(long a, long b, long c) {
+        if (a < b) a = b;
+        if (a < c) a = c;
+        return a;
     }
 
     public static float min(float a, float b, float c) {
@@ -199,8 +194,8 @@ public class MathUtils {
         return Math.min(r, c);
     }
 
-    public static double max(double a, double b, double c) {
-        double r = Math.max(a, b);
+    public static float max(float a, float b, float c) {
+        float r = Math.max(a, b);
         return Math.max(r, c);
     }
 
@@ -209,9 +204,39 @@ public class MathUtils {
         return Math.min(r, c);
     }
 
+    public static double max(double a, double b, double c) {
+        double r = Math.max(a, b);
+        return Math.max(r, c);
+    }
+
+    public static int min(short a, short b) {
+        return a < b ? a : b;
+    }
+
+    public static int max(short a, short b) {
+        return a > b ? a : b;
+    }
+
+    public static int min(short a, short b, short c) {
+        if (a > b) a = b;
+        if (a > c) a = c;
+        return a;
+    }
+
+    public static int max(short a, short b, short c) {
+        if (a < b) a = b;
+        if (a < c) a = c;
+        return a;
+    }
+
     // endregion
 
     // region 比较
+
+    public static boolean isBetween(short value, short min, short max) {
+        return value >= min && value <= max;
+    }
+
     public static boolean isBetween(int value, int min, int max) {
         return value >= min && value <= max;
     }

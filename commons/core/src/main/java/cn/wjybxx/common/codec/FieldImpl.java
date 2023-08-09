@@ -16,12 +16,12 @@
 
 package cn.wjybxx.common.codec;
 
-import cn.wjybxx.dson.DsonType;
-import cn.wjybxx.dson.WireType;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.WireType;
 import cn.wjybxx.dson.text.NumberStyle;
 import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;

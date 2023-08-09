@@ -74,7 +74,7 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     void writeExtString(int name, DsonExtString value);
 
-    void writeExtString(int name, int type, String value);
+    void writeExtString(int name, int type, @Nullable String value);
 
     // endregion
 
@@ -89,17 +89,6 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     /** 写顶层对象 */
     <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo);
-
-    //
-    default void writeStartObject(int name, Object value, TypeArgInfo<?> typeArgInfo) {
-        writeName(name);
-        writeStartObject(value, typeArgInfo);
-    }
-
-    default void writeStartArray(int name, Object value, TypeArgInfo<?> typeArgInfo) {
-        writeName(name);
-        writeStartArray(value, typeArgInfo);
-    }
 
     /** 顶层对象或数组内元素 */
     void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo);
@@ -163,11 +152,11 @@ public interface BinaryObjectWriter extends AutoCloseable {
     }
 
     default void writeByte(int name, byte value) {
-        writeInt(name, value, WireType.BYTE);
+        writeInt(name, value, WireType.VARINT);
     }
 
     default void writeByte(int name, byte value, WireType ignore) {
-        writeInt(name, value, WireType.BYTE);
+        writeInt(name, value, WireType.VARINT);
     }
 
     default void writeChar(int name, char value) {
@@ -176,6 +165,16 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     default void writeChar(int name, char value, WireType ignore) {
         writeInt(name, value, WireType.UINT);
+    }
+
+    default void writeStartObject(int name, Object value, TypeArgInfo<?> typeArgInfo) {
+        writeName(name);
+        writeStartObject(value, typeArgInfo);
+    }
+
+    default void writeStartArray(int name, Object value, TypeArgInfo<?> typeArgInfo) {
+        writeName(name);
+        writeStartArray(value, typeArgInfo);
     }
 
     // endregion
@@ -210,7 +209,7 @@ public interface BinaryObjectWriter extends AutoCloseable {
         writeExtInt64(name, type, value, wireType);
     }
 
-    default void writeExtString(int name, int type, @Nullable String value, StringStyle ignore) {
+    default void writeExtString(int name, int type, String value, StringStyle ignore) {
         writeExtString(name, type, value);
     }
 
@@ -219,5 +218,4 @@ public interface BinaryObjectWriter extends AutoCloseable {
     }
 
     // endregion
-
 }

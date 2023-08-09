@@ -22,6 +22,7 @@ import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
     }
 
     @Override
-    public void writeObject(Sheet sheet, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(Sheet sheet, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeString("fileName", sheet.getFileName());
         writer.writeString("sheetName", sheet.getSheetName());
         writer.writeInt("sheetIndex", sheet.getSheetIndex());
@@ -69,7 +70,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         // 只写values
         writer.writeStartArray("headerMap", headerMap.values(), TypeArgInfo.ARRAYLIST);
         for (Header header : headerMap.values()) {
-            writer.writeStartObject(header, TypeArgInfo.OBJECT);
+            writer.writeStartObject(header, TypeArgInfo.OBJECT, ObjectStyle.INDENT);
             writer.writeString("args", header.getArgs());
             writer.writeString("name", header.getName());
             writer.writeString("type", header.getType());
@@ -105,13 +106,13 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         // 其实将rowIndex看做key写成对象会更有效，但兼容性可能不好
         writer.writeStartArray("valueRowList", valueRowList, TypeArgInfo.ARRAYLIST);
         for (SheetRow valueRow : valueRowList) {
-            writer.writeStartObject(valueRow, TypeArgInfo.OBJECT);
+            writer.writeStartObject(valueRow, TypeArgInfo.OBJECT, ObjectStyle.INDENT);
             writer.writeInt("rowIndex", valueRow.getRowIndex());
             {
                 // name2CellMap写成kv的pair数组
                 writer.writeStartArray("name2CellMap", valueRow.getName2CellMap(), TypeArgInfo.ARRAYLIST);
                 for (SheetCell cell : valueRow.getName2CellMap().values()) {
-                    writer.writeStartObject(cell, TypeArgInfo.OBJECT);
+                    writer.writeStartObject(cell, TypeArgInfo.OBJECT, ObjectStyle.INDENT);
                     writer.writeString("name", cell.getName());
                     writer.writeString("value", cell.getValue());
                     writer.writeEndObject();

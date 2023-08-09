@@ -100,6 +100,7 @@ public @interface Subscribe {
 
     /**
      * 自定义扩展数据，通常是json或cmd格式，与搭配的EventBus相关。
+     * ps：现阶段更适合dson格式，可避免引号。
      * <p>
      * Q: 它的作用？
      * A: 告诉特定的事件处理器以实现一些特定的切面功能，比如：限定协议的频率。

@@ -18,6 +18,7 @@ package cn.wjybxx.common.codec.document;
 
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.codecs.EnumLiteCodec;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -68,19 +69,19 @@ public class DocumentPojoCodec<T> {
      * 将对象写入输出流。
      * 将对象及其所有超类定义的所有要序列化的字段写入输出流。
      */
-    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         if (codecImpl.autoStartEnd()) {
             if (isArray) {
-                writer.writeStartArray(instance, typeArgInfo);
-                codecImpl.writeObject(instance, writer, typeArgInfo);
+                writer.writeStartArray(instance, typeArgInfo, style);
+                codecImpl.writeObject(instance, writer, typeArgInfo, style);
                 writer.writeEndArray();
             } else {
-                writer.writeStartObject(instance, typeArgInfo);
-                codecImpl.writeObject(instance, writer, typeArgInfo);
+                writer.writeStartObject(instance, typeArgInfo, style);
+                codecImpl.writeObject(instance, writer, typeArgInfo, style);
                 writer.writeEndObject();
             }
         } else {
-            codecImpl.writeObject(instance, writer, typeArgInfo);
+            codecImpl.writeObject(instance, writer, typeArgInfo, style);
         }
     }
 
