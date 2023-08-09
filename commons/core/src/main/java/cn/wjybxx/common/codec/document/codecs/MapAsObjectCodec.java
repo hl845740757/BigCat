@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.codec.document.codecs;
 
+import cn.wjybxx.common.codec.ConverterUtils;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
@@ -24,7 +25,6 @@ import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -65,13 +65,7 @@ public class MapAsObjectCodec implements DocumentPojoCodecImpl<Map> {
 
     @Override
     public Map readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        Map<Object, Object> result;
-        if (typeArgInfo.factory != null) {
-            result = (Map<Object, Object>) typeArgInfo.factory.get();
-        } else {
-            result = new LinkedHashMap<>();
-        }
-
+        Map<Object, Object> result = ConverterUtils.newMap(typeArgInfo);
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             String keyString = reader.readName();

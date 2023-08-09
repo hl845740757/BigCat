@@ -33,30 +33,30 @@ import java.util.List;
  * date - 2023/4/26
  */
 @ThreadSafe
-public interface ClassIdRegistry<T> {
+public interface TypeMetaRegistry<T> {
 
     /**
      * 通过类型获取类型的默认id标识
      */
     @Nullable
-    T ofType(Class<?> type);
+    TypeMeta<T> ofType(Class<?> type);
 
     /**
      * 通过字符串名字找到类型信息
      */
     @Nullable
-    Class<?> ofId(T classId);
+    TypeMeta<T> ofId(T classId);
 
-    default T checkedOfType(Class<?> type) {
-        T r = ofType(type);
+    default TypeMeta<T> checkedOfType(Class<?> type) {
+        TypeMeta<T> r = ofType(type);
         if (r == null) {
             throw new DsonCodecException("classId is absent, type " + type);
         }
         return r;
     }
 
-    default Class<?> checkedOfId(T classId) {
-        Class<?> r = ofId(classId);
+    default TypeMeta<T> checkedOfId(T classId) {
+        TypeMeta<T> r = ofId(classId);
         if (r == null) {
             throw new DsonCodecException("type is absent, classId " + classId);
         }
@@ -66,6 +66,6 @@ public interface ClassIdRegistry<T> {
     /**
      * 该方法的主要目的在于聚合多个Registry为单个Registry，以提高查询效率
      */
-    List<ClassIdEntry<T>> export();
+    List<TypeMeta<T>> export();
 
 }

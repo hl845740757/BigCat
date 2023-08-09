@@ -17,10 +17,7 @@
 package cn.wjybxx.common.codec.document;
 
 import cn.wjybxx.common.EnumLite;
-import cn.wjybxx.common.codec.ConvertOptions;
-import cn.wjybxx.common.codec.ConverterUtils;
-import cn.wjybxx.common.codec.DsonCodecException;
-import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.io.Chunk;
 import cn.wjybxx.dson.text.INumberStyle;
@@ -341,6 +338,11 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (style instanceof ObjectStyle objectStyle) {
             return objectStyle;
         }
+        final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举...
+        TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
+        if (typeMeta != null) {
+            return typeMeta.style;
+        }
         return ObjectStyle.INDENT;
     }
 
@@ -349,10 +351,10 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (!converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return;
         }
-        String classId = converter.classIdRegistry.ofType(encodeClass);
-        if (classId != null) {
+        TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
+        if (typeMeta != null) {
             writer.writeStartHeader(ObjectStyle.FLOW);
-            writer.writeString(DsonHeader.NAMES_CLASS_NAME, classId, StringStyle.UNQUOTE);
+            writer.writeString(DsonHeader.NAMES_CLASS_NAME, typeMeta.mainClassId(), StringStyle.UNQUOTE);
             writer.writeEndHeader();
         }
     }

@@ -16,8 +16,13 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.codec.ClassIdRegistry;
 import cn.wjybxx.common.codec.Converter;
+import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.TypeMetaRegistry;
+
+import javax.annotation.Nonnull;
+import java.io.Reader;
+import java.io.Writer;
 
 /**
  * 文档转换器
@@ -35,8 +40,62 @@ import cn.wjybxx.common.codec.Converter;
  */
 public interface DocumentConverter extends Converter {
 
+    // region 文本编解码
+
+    /**
+     * 将一个对象写入源
+     * 如果对象的运行时类型和{@link TypeArgInfo#declaredType}一致，则会省去编码结果中的类型信息
+     */
+    @Nonnull
+    String writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * 从数据源中读取一个对象
+     *
+     * @param source      数据源
+     * @param jsonLike    是否像json一样没有行首
+     * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
+     */
+    <U> U readFromDson(CharSequence source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo);
+
+    /**
+     * 将一个对象写入指定writer
+     *
+     * @param writer 用于接收输出
+     */
+    void writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer);
+
+    /**
+     * 从数据源中读取一个对象
+     *
+     * @param source      用于支持大数据源
+     * @param jsonLike    是否像json一样没有行首
+     * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
+     */
+    <U> U readFromDson(Reader source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo);
+
+    default <U> U readFromDson(CharSequence source, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        return readFromDson(source, false, typeArgInfo);
+    }
+
+    default <U> U readFromDson(Reader source, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        return readFromDson(source, false, typeArgInfo);
+    }
+
+    @Nonnull
+    default String writeAsDson(Object value) {
+        return writeAsDson(value, TypeArgInfo.OBJECT);
+    }
+
+    @Nonnull
+    default Object readFromDson(CharSequence source) {
+        return readFromDson(source, false, TypeArgInfo.OBJECT);
+    }
+
+    // endregion
+
     DocumentCodecRegistry codecRegistry();
 
-    ClassIdRegistry<String> classIdRegistry();
+    TypeMetaRegistry<String> typeMetaRegistry();
 
 }

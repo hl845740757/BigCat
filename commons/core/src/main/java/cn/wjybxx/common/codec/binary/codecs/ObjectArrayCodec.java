@@ -40,20 +40,9 @@ public class ObjectArrayCodec implements BinaryPojoCodecImpl<Object[]> {
         return Object[].class;
     }
 
-    private static TypeArgInfo<?> findComponentTypeArg(Class<?> declaredType) {
-        if (!declaredType.isArray()) {
-            throw new IllegalArgumentException("declaredType is not arrayType, info " + declaredType);
-        }
-        Class<?> componentType = declaredType.getComponentType();
-        if (componentType != Object.class) {
-            return TypeArgInfo.of(componentType);
-        }
-        return TypeArgInfo.OBJECT;
-    }
-
     @Override
     public void writeObject(Object[] instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
-        TypeArgInfo<?> componentArgInfo = findComponentTypeArg(typeArgInfo.declaredType);
+        TypeArgInfo<?> componentArgInfo = ConverterUtils.findComponentTypeArg(typeArgInfo.declaredType);
         for (Object e : instance) {
             writer.writeObject(0, e, componentArgInfo);
         }
@@ -62,12 +51,10 @@ public class ObjectArrayCodec implements BinaryPojoCodecImpl<Object[]> {
     @Override
     public Object[] readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         ArrayList<Object> result = new ArrayList<>();
-
-        TypeArgInfo<?> componentArgInfo = findComponentTypeArg(typeArgInfo.declaredType);
+        TypeArgInfo<?> componentArgInfo = ConverterUtils.findComponentTypeArg(typeArgInfo.declaredType);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readObject(0, componentArgInfo));
         }
-
         // 一定不是基础类型数组
         return (Object[]) ConverterUtils.convertList2Array(result, typeArgInfo.declaredType);
     }

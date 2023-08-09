@@ -67,5 +67,4 @@ public class EnumLiteCodec<T extends EnumLite> implements DocumentPojoCodecImpl<
     public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeInt("number", instance.getNumber());
     }
-
 }

@@ -16,10 +16,10 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.codec.ClassIdEntry;
-import cn.wjybxx.common.codec.ClassIdRegistries;
-import cn.wjybxx.common.codec.ClassIdRegistry;
 import cn.wjybxx.common.codec.ConverterUtils;
+import cn.wjybxx.common.codec.TypeMeta;
+import cn.wjybxx.common.codec.TypeMetaRegistries;
+import cn.wjybxx.common.codec.TypeMetaRegistry;
 import cn.wjybxx.common.codec.document.codecs.*;
 import cn.wjybxx.dson.internal.InternalUtils;
 
@@ -41,7 +41,7 @@ public class DocumentConverterUtils extends ConverterUtils {
     private static final String[] arrayElementNameCache;
 
     /** 类型id注册表 */
-    private static final ClassIdRegistry<String> CLASS_ID_REGISTRY;
+    private static final TypeMetaRegistry<String> TYPE_META_REGISTRY;
     /** 默认codec注册表 */
     private static final DocumentCodecRegistry CODEC_REGISTRY;
     /** Map看做普通Object编码的注册表 */
@@ -80,7 +80,7 @@ public class DocumentConverterUtils extends ConverterUtils {
         codecMap.put(Map.class, new DocumentPojoCodec<>(new MapAsObjectCodec()));
         CODEC_REGISTRY2 = new DefaultCodecRegistry(codecMap);
 
-        CLASS_ID_REGISTRY = ClassIdRegistries.fromEntries(
+        TYPE_META_REGISTRY = TypeMetaRegistries.fromMetas(
                 entryOfClass(int[].class),
                 entryOfClass(long[].class),
                 entryOfClass(float[].class),
@@ -95,8 +95,8 @@ public class DocumentConverterUtils extends ConverterUtils {
         );
     }
 
-    private static ClassIdEntry<String> entryOfClass(Class<?> clazz) {
-        return ClassIdEntry.of(clazz, clazz.getSimpleName());
+    private static TypeMeta<String> entryOfClass(Class<?> clazz) {
+        return TypeMeta.of(clazz, clazz.getSimpleName());
     }
 
     private static <T> DocumentPojoCodec<T> newCodec(DocumentPojoCodecImpl<T> codecImpl) {
@@ -110,8 +110,8 @@ public class DocumentConverterUtils extends ConverterUtils {
         return encodeMapAsObject ? CODEC_REGISTRY2 : CODEC_REGISTRY;
     }
 
-    public static ClassIdRegistry<String> getDefaultClassIdRegistry() {
-        return CLASS_ID_REGISTRY;
+    public static TypeMetaRegistry<String> getDefaultTypeMetaRegistry() {
+        return TYPE_META_REGISTRY;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

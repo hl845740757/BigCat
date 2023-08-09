@@ -28,7 +28,7 @@ import java.util.Map;
 public class DocumentCodecRegistries {
 
     public static Map<Class<?>, DocumentPojoCodec<?>> newCodecMap(List<DocumentPojoCodec<?>> pojoCodecs) {
-        IdentityHashMap<Class<?>, DocumentPojoCodec<?>> codecMap = new IdentityHashMap<>(pojoCodecs.size());
+        final IdentityHashMap<Class<?>, DocumentPojoCodec<?>> codecMap = new IdentityHashMap<>(pojoCodecs.size());
         for (DocumentPojoCodec<?> codec : pojoCodecs) {
             codecMap.put(codec.getEncoderClass(), codec);
         }

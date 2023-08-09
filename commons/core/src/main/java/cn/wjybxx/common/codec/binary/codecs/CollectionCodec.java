@@ -52,7 +52,6 @@ public class CollectionCodec implements BinaryPojoCodecImpl<Collection> {
     @Override
     public Collection<?> readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         Collection<Object> result = ConverterUtils.newCollection(typeArgInfo);
-
         TypeArgInfo<?> componentArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readObject(0, componentArgInfo));

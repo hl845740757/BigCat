@@ -16,10 +16,7 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.codec.ConvertOptions;
-import cn.wjybxx.common.codec.ConverterUtils;
-import cn.wjybxx.common.codec.DsonCodecException;
-import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
@@ -343,10 +340,12 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     @SuppressWarnings("unchecked")
     private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, String classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = StringUtils.isBlank(classId) ? null : converter.classIdRegistry.ofId(classId);
-        // 尝试按真实类型读 - 概率最大
-        if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
-            return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);
+        if (!StringUtils.isBlank(classId)) {
+            TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofId(classId);
+            if (typeMeta != null && declaredType.isAssignableFrom(typeMeta.clazz)) {
+                // 尝试按真实类型读
+                return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(typeMeta.clazz);
+            }
         }
         // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)
         return converter.codecRegistry.get(declaredType);

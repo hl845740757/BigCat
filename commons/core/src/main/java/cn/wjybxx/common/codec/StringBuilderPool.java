@@ -17,23 +17,18 @@
 package cn.wjybxx.common.codec;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 
 /**
- * 类型id映射函数
- * <p>
- * 1.1个Class可以有多个ClassId(即允许别名)，以支持简写；但一个ClassId只能映射到一个Class。
- * 2.在文档型编解码中，可读性是比较重要的，因此不要一味追求简短。
- * 3.提供Mapper主要为方便通过算法映射
+ * 用于文本编码中避免频繁创建String
  *
  * @author wjybxx
- * date - 2023/4/26
+ * date - 2023/8/9
  */
-@FunctionalInterface
-public interface ClassIdMapper<T> {
+public interface StringBuilderPool {
 
-    /** List的第一个元素作为主要id */
     @Nonnull
-    List<T> map(Class<?> type);
+    StringBuilder alloc();
+
+    void release(StringBuilder builder);
 
 }

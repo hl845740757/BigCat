@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary;
+package cn.wjybxx.common.codec;
 
-import cn.wjybxx.common.codec.ClassId;
-import cn.wjybxx.common.codec.Converter;
-import cn.wjybxx.common.codec.TypeMetaRegistry;
-
-import javax.annotation.concurrent.ThreadSafe;
+import javax.annotation.Nonnull;
 
 /**
- * 二进制转换器
- * 二进制是指将对象序列化为字节数组，以编解码效率和压缩比例为重。
+ * 类型id映射函数
  * <p>
- * <h3>实现要求</h3>
- * 1.必须是线程安全的，建议实现为不可变对象
+ * 1.1个Class可以有多个ClassId(即允许别名)，以支持简写；但一个ClassId只能映射到一个Class。
+ * 2.在文档型编解码中，可读性是比较重要的，因此不要一味追求简短。
+ * 3.提供Mapper主要为方便通过算法映射
  *
  * @author wjybxx
- * date 2023/3/31
+ * date - 2023/4/26
  */
-@ThreadSafe
-public interface BinaryConverter extends Converter {
+@FunctionalInterface
+public interface TypeMetaMapper<T> {
 
-    BinaryCodecRegistry codecRegistry();
-
-    TypeMetaRegistry<ClassId> typeMetaRegistry();
+    /** List的第一个元素作为主要id */
+    @Nonnull
+    TypeMeta<T> map(Class<?> type);
 
 }

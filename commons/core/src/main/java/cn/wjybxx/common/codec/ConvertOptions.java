@@ -18,6 +18,7 @@ package cn.wjybxx.common.codec;
 
 import cn.wjybxx.common.OptionalBool;
 import cn.wjybxx.common.codec.document.codecs.MapAsObjectCodec;
+import cn.wjybxx.dson.text.DsonTextWriterSettings;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
@@ -59,6 +60,10 @@ public class ConvertOptions {
     public final ClassIdConverter classIdConverter;
     /** 缓存池 */
     public final BufferPool bufferPool;
+    /** 字符串缓存池 */
+    public final StringBuilderPool stringBuilderPool;
+    /** 文本编码设置 */
+    public final DsonTextWriterSettings textWriterSettings;
 
     public ConvertOptions(Builder builder) {
         this.recursionLimit = builder.recursionLimit;
@@ -68,6 +73,8 @@ public class ConvertOptions {
         this.pbBinaryType = builder.pbBinaryType;
         this.classIdConverter = builder.classIdConverter;
         this.bufferPool = builder.bufferPool;
+        this.stringBuilderPool = builder.stringBuilderPool;
+        this.textWriterSettings = Objects.requireNonNull(builder.textWriterSettings);
     }
 
     public static ConvertOptions DEFAULT = newBuilder().build();
@@ -86,7 +93,9 @@ public class ConvertOptions {
 
         private int pbBinaryType = 127;
         private ClassIdConverter classIdConverter = new DefaultClassIdConverter();
-        private BufferPool bufferPool = LocalBufferPool.INSTANCE;
+        private BufferPool bufferPool = LocalPools.BUFFER_POOL;
+        private StringBuilderPool stringBuilderPool = LocalPools.STRING_BUILDER_POOL;
+        private DsonTextWriterSettings textWriterSettings = DsonTextWriterSettings.newBuilder().build();
 
         public int getRecursionLimit() {
             return recursionLimit;
@@ -149,6 +158,24 @@ public class ConvertOptions {
 
         public Builder setBufferPool(BufferPool bufferPool) {
             this.bufferPool = Objects.requireNonNull(bufferPool);
+            return this;
+        }
+
+        public StringBuilderPool getStringBuilderPool() {
+            return stringBuilderPool;
+        }
+
+        public Builder setStringBuilderPool(StringBuilderPool stringBuilderPool) {
+            this.stringBuilderPool = stringBuilderPool;
+            return this;
+        }
+
+        public DsonTextWriterSettings getTextWriterSettings() {
+            return textWriterSettings;
+        }
+
+        public Builder setTextWriterSettings(DsonTextWriterSettings textWriterSettings) {
+            this.textWriterSettings = textWriterSettings;
             return this;
         }
 

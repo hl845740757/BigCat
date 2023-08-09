@@ -30,7 +30,7 @@ public class BinaryCodecRegistries {
     // region
 
     public static Map<Class<?>, BinaryPojoCodec<?>> newCodecMap(List<BinaryPojoCodec<?>> pojoCodecs) {
-        IdentityHashMap<Class<?>, BinaryPojoCodec<?>> codecMap = new IdentityHashMap<>(pojoCodecs.size());
+        final IdentityHashMap<Class<?>, BinaryPojoCodec<?>> codecMap = new IdentityHashMap<>(pojoCodecs.size());
         for (BinaryPojoCodec<?> codec : pojoCodecs) {
             codecMap.put(codec.getEncoderClass(), codec);
         }

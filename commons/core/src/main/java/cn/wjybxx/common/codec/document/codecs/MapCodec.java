@@ -59,7 +59,6 @@ public class MapCodec implements DocumentPojoCodecImpl<Map> {
     @Override
     public Map<?, ?> readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         Map<Object, Object> result = ConverterUtils.newMap(typeArgInfo);
-
         TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {

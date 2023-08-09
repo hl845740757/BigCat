@@ -65,5 +65,4 @@ public class EnumLiteCodec<T extends EnumLite> implements BinaryPojoCodecImpl<T>
     public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         return mapper.apply(reader.readInt(0));
     }
-
 }

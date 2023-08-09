@@ -16,8 +16,11 @@
 
 package cn.wjybxx.common.codec;
 
+import cn.wjybxx.common.codec.binary.BinaryConverter;
 import cn.wjybxx.common.codec.binary.DefaultBinaryConverter;
 import cn.wjybxx.common.codec.document.DefaultDocumentConverter;
+import cn.wjybxx.common.codec.document.DocumentConverter;
+import cn.wjybxx.dson.text.ObjectStyle;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,9 +65,9 @@ public class CodecTest {
     /** 基础读写测试 */
     @Test
     void binCodecTest() {
-        DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
+        BinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                 List.of(new CodecStructs.MyStructCodec()),
-                ClassIdRegistries.fromEntries(ClassIdEntry.of(CodecStructs.MyStruct.class, new ClassId(1, 1))),
+                TypeMetaRegistries.fromMetas(TypeMeta.of(CodecStructs.MyStruct.class, new ClassId(1, 1))),
                 ConvertOptions.DEFAULT);
 
         CodecStructs.MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(CodecStructs.MyStruct.class));
@@ -73,9 +76,9 @@ public class CodecTest {
 
     @Test
     void docCodecTest() {
-        DefaultDocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
+        DocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
                 List.of(new CodecStructs.MyStructCodec()),
-                ClassIdRegistries.fromEntries(ClassIdEntry.of(CodecStructs.MyStruct.class, "MyStruct")),
+                TypeMetaRegistries.fromMetas(TypeMeta.of(CodecStructs.MyStruct.class, "MyStruct")),
                 ConvertOptions.DEFAULT);
 
         CodecStructs.MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(CodecStructs.MyStruct.class));

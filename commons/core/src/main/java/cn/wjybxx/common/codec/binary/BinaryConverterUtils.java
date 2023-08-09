@@ -31,7 +31,7 @@ import java.util.Map;
 public class BinaryConverterUtils extends ConverterUtils {
 
     /** 类型id注册表 */
-    private static final ClassIdRegistry<ClassId> CLASS_ID_REGISTRY;
+    private static final TypeMetaRegistry<ClassId> TYPE_META_REGISTRY;
     /** 默认codec注册表 */
     private static final BinaryCodecRegistry CODEC_REGISTRY;
 
@@ -55,19 +55,19 @@ public class BinaryConverterUtils extends ConverterUtils {
         Map<Class<?>, BinaryPojoCodec<?>> codecMap = BinaryCodecRegistries.newCodecMap(entryList);
         CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
 
-        CLASS_ID_REGISTRY = ClassIdRegistries.fromEntries(
-                ClassIdEntry.of(int[].class, ClassId.ofDefaultNameSpace(1)),
-                ClassIdEntry.of(long[].class, ClassId.ofDefaultNameSpace(2)),
-                ClassIdEntry.of(float[].class, ClassId.ofDefaultNameSpace(3)),
-                ClassIdEntry.of(double[].class, ClassId.ofDefaultNameSpace(4)),
-                ClassIdEntry.of(boolean[].class, ClassId.ofDefaultNameSpace(5)),
-                ClassIdEntry.of(String[].class, ClassId.ofDefaultNameSpace(6)),
-                ClassIdEntry.of(short[].class, ClassId.ofDefaultNameSpace(7)),
-                ClassIdEntry.of(char[].class, ClassId.ofDefaultNameSpace(8)),
+        TYPE_META_REGISTRY = TypeMetaRegistries.fromMetas(
+                TypeMeta.of(int[].class, ClassId.ofDefaultNameSpace(1)),
+                TypeMeta.of(long[].class, ClassId.ofDefaultNameSpace(2)),
+                TypeMeta.of(float[].class, ClassId.ofDefaultNameSpace(3)),
+                TypeMeta.of(double[].class, ClassId.ofDefaultNameSpace(4)),
+                TypeMeta.of(boolean[].class, ClassId.ofDefaultNameSpace(5)),
+                TypeMeta.of(String[].class, ClassId.ofDefaultNameSpace(6)),
+                TypeMeta.of(short[].class, ClassId.ofDefaultNameSpace(7)),
+                TypeMeta.of(char[].class, ClassId.ofDefaultNameSpace(8)),
 
-                ClassIdEntry.of(Object[].class, ClassId.ofDefaultNameSpace(11)),
-                ClassIdEntry.of(Collection.class, ClassId.ofDefaultNameSpace(12)),
-                ClassIdEntry.of(Map.class, ClassId.ofDefaultNameSpace(13))
+                TypeMeta.of(Object[].class, ClassId.ofDefaultNameSpace(11)),
+                TypeMeta.of(Collection.class, ClassId.ofDefaultNameSpace(12)),
+                TypeMeta.of(Map.class, ClassId.ofDefaultNameSpace(13))
         );
     }
 
@@ -79,8 +79,8 @@ public class BinaryConverterUtils extends ConverterUtils {
         return CODEC_REGISTRY;
     }
 
-    public static ClassIdRegistry<ClassId> getDefaultClassIdRegistry() {
-        return CLASS_ID_REGISTRY;
+    public static TypeMetaRegistry<ClassId> getDefaultTypeMetaRegistry() {
+        return TYPE_META_REGISTRY;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

@@ -53,7 +53,6 @@ public class CollectionCodec implements DocumentPojoCodecImpl<Collection> {
     @Override
     public Collection<?> readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         Collection<Object> result = ConverterUtils.newCollection(typeArgInfo);
-
         TypeArgInfo<?> componentArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readObject(null, componentArgInfo));

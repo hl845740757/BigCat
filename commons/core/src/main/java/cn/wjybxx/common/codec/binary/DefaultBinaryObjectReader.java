@@ -315,10 +315,12 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @SuppressWarnings("unchecked")
     private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, ClassId classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
-        final Class<?> encodedType = classId.isObjectClassId() ? null : converter.classIdRegistry.ofId(classId);
-        // 尝试按真实类型读 - 概率最大
-        if (encodedType != null && declaredType.isAssignableFrom(encodedType)) {
-            return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(encodedType);
+        if (!classId.isObjectClassId()) {
+            TypeMeta<ClassId> typeMeta = converter.typeMetaRegistry.ofId(classId);
+            if (typeMeta != null && declaredType.isAssignableFrom(typeMeta.clazz)) {
+                // 尝试按真实类型读
+                return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(typeMeta.clazz);
+            }
         }
         // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)
         return converter.codecRegistry.get(declaredType);

@@ -21,12 +21,18 @@ import cn.wjybxx.common.codec.document.codecs.MessageCodec;
 import cn.wjybxx.common.codec.document.codecs.MessageEnumCodec;
 import cn.wjybxx.dson.DsonBinaryReader;
 import cn.wjybxx.dson.DsonBinaryWriter;
+import cn.wjybxx.dson.Dsons;
 import cn.wjybxx.dson.io.*;
+import cn.wjybxx.dson.text.DsonTextReader;
+import cn.wjybxx.dson.text.DsonTextWriter;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
+import org.apache.commons.io.output.StringBuilderWriter;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -38,15 +44,15 @@ import java.util.Set;
  */
 public class DefaultDocumentConverter implements DocumentConverter {
 
-    final ClassIdRegistry<String> classIdRegistry;
+    final TypeMetaRegistry<String> typeMetaRegistry;
     final DocumentCodecRegistry codecRegistry;
     final ConvertOptions options;
 
-    private DefaultDocumentConverter(ClassIdRegistry<String> classIdRegistry,
+    private DefaultDocumentConverter(TypeMetaRegistry<String> typeMetaRegistry,
                                      DocumentCodecRegistry codecRegistry,
                                      ConvertOptions options) {
         this.codecRegistry = codecRegistry;
-        this.classIdRegistry = classIdRegistry;
+        this.typeMetaRegistry = typeMetaRegistry;
         this.options = options;
     }
 
@@ -56,8 +62,8 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     @Override
-    public ClassIdRegistry<String> classIdRegistry() {
-        return classIdRegistry;
+    public TypeMetaRegistry<String> typeMetaRegistry() {
+        return typeMetaRegistry;
     }
 
     @Override
@@ -121,26 +127,64 @@ public class DefaultDocumentConverter implements DocumentConverter {
         }
     }
 
+    @Nonnull
+    @Override
+    public String writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo) {
+        StringBuilder stringBuilder = options.stringBuilderPool.alloc();
+        try {
+            writeAsDson(value, typeArgInfo, new StringBuilderWriter(stringBuilder));
+            return stringBuilder.toString();
+        } finally {
+            options.stringBuilderPool.release(stringBuilder);
+        }
+    }
+
+    @Override
+    public <U> U readFromDson(CharSequence source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
+                new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, jsonLike)))) {
+            return wrapper.readObject(typeArgInfo);
+        }
+    }
+
+    @Override
+    public void writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer) {
+        Objects.requireNonNull(writer, "writer");
+        try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
+                new DsonTextWriter(options.recursionLimit, writer, options.textWriterSettings))) {
+            wrapper.writeObject(value, typeArgInfo, null);
+            wrapper.flush();
+        }
+    }
+
+    @Override
+    public <U> U readFromDson(Reader source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
+                new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, 256, jsonLike)))) {
+            return wrapper.readObject(typeArgInfo);
+        }
+    }
+
     // ------------------------------------------------- 工厂方法 ------------------------------------------------------
 
     /**
      * @param allProtoBufClasses 所有的protobuf类
      * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
-     * @param classIdRegistry    所有的类型id信息，包括protobuf的类
+     * @param typeMetaRegistry   所有的类型id信息，包括protobuf的类
      * @param options            一些可选项
      */
     @SuppressWarnings("unchecked")
     public static DefaultDocumentConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                        final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
-                                                       final ClassIdRegistry<String> classIdRegistry,
+                                                       final TypeMetaRegistry<String> typeMetaRegistry,
                                                        final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            classIdRegistry.checkedOfType(clazz);
+            typeMetaRegistry.checkedOfType(clazz);
         }
         for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            classIdRegistry.checkedOfType(codecImpl.getEncoderClass());
+            typeMetaRegistry.checkedOfType(codecImpl.getEncoderClass());
         }
 
         final List<DocumentPojoCodec<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size() + pojoCodecImplList.size());
@@ -165,9 +209,9 @@ public class DefaultDocumentConverter implements DocumentConverter {
             allPojoCodecList.add(new DocumentPojoCodec<>(codecImpl));
         }
         return new DefaultDocumentConverter(
-                ClassIdRegistries.fromRegistries(
-                        classIdRegistry,
-                        DocumentConverterUtils.getDefaultClassIdRegistry()),
+                TypeMetaRegistries.fromRegistries(
+                        typeMetaRegistry,
+                        DocumentConverterUtils.getDefaultTypeMetaRegistry()),
                 DocumentCodecRegistries.fromRegistries(
                         DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
                         DocumentConverterUtils.getDefaultCodecRegistry(options.encodeMapAsObject)),

@@ -41,8 +41,8 @@ public class LazyCodeTest {
 
     @Test
     void testLazyCodec() {
-        ClassIdRegistry<ClassId> classIdRegistry = ClassIdRegistries.fromEntries(
-                ClassIdEntry.of(MyStruct.class, new ClassId(1, 1))
+        TypeMetaRegistry<ClassId> typeMetaRegistry = TypeMetaRegistries.fromMetas(
+                TypeMeta.of(MyStruct.class, new ClassId(1, 1))
         );
 
         Random random = new Random();
@@ -55,7 +55,7 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.SOURCE)),
-                    classIdRegistry,
+                    typeMetaRegistry,
                     ConvertOptions.DEFAULT);
             bytesSource = converter.write(myStruct);
         }
@@ -65,7 +65,7 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.ROUTER)),
-                    classIdRegistry,
+                    typeMetaRegistry,
                     ConvertOptions.DEFAULT);
             routerBytes = converter.write(converter.read(bytesSource));
         }
@@ -75,7 +75,7 @@ public class LazyCodeTest {
         {
             DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
                     List.of(new MyStructCodec(Role.DESTINATION)),
-                    classIdRegistry,
+                    typeMetaRegistry,
                     ConvertOptions.DEFAULT);
             destStruct = (MyStruct) converter.read(routerBytes);
         }

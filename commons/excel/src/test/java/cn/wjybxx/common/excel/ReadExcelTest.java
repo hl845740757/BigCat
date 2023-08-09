@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common.excel;
 
-import cn.wjybxx.common.codec.ClassIdEntry;
-import cn.wjybxx.common.codec.ClassIdRegistries;
+import cn.wjybxx.common.codec.TypeMeta;
+import cn.wjybxx.common.codec.TypeMetaRegistries;
 import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DefaultDocumentConverter;
@@ -46,7 +46,7 @@ public class ReadExcelTest {
 
         DefaultDocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
                 List.of(new SheetCodec()),
-                ClassIdRegistries.fromEntries(ClassIdEntry.of(Sheet.class, "Sheet")),
+                TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, "Sheet")),
                 ConvertOptions.DEFAULT);
 
         Sheet clonedObject = converter.cloneObject(skillSheet, TypeArgInfo.of(Sheet.class));

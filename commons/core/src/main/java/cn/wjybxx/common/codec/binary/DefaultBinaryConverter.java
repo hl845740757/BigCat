@@ -38,15 +38,15 @@ import java.util.Set;
  */
 public class DefaultBinaryConverter implements BinaryConverter {
 
-    final ClassIdRegistry<ClassId> classIdRegistry;
+    final TypeMetaRegistry<ClassId> typeMetaRegistry;
     final BinaryCodecRegistry codecRegistry;
     final ConvertOptions options;
 
-    private DefaultBinaryConverter(ClassIdRegistry<ClassId> classIdRegistry,
+    private DefaultBinaryConverter(TypeMetaRegistry<ClassId> typeMetaRegistry,
                                    BinaryCodecRegistry codecRegistry,
                                    ConvertOptions options) {
         this.codecRegistry = codecRegistry;
-        this.classIdRegistry = classIdRegistry;
+        this.typeMetaRegistry = typeMetaRegistry;
         this.options = options;
     }
 
@@ -56,8 +56,8 @@ public class DefaultBinaryConverter implements BinaryConverter {
     }
 
     @Override
-    public ClassIdRegistry<ClassId> classIdRegistry() {
-        return classIdRegistry;
+    public TypeMetaRegistry<ClassId> typeMetaRegistry() {
+        return typeMetaRegistry;
     }
 
     @Override
@@ -126,21 +126,21 @@ public class DefaultBinaryConverter implements BinaryConverter {
     /**
      * @param allProtoBufClasses 所有的protobuf类
      * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
-     * @param classIdRegistry    所有的类型id信息，包括protobuf的类
+     * @param typeMetaRegistry   所有的类型id信息，包括protobuf的类
      * @param options            一些可选项
      */
     @SuppressWarnings("unchecked")
     public static DefaultBinaryConverter newInstance(final Set<Class<?>> allProtoBufClasses,
                                                      final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
-                                                     final ClassIdRegistry<ClassId> classIdRegistry,
+                                                     final TypeMetaRegistry<ClassId> typeMetaRegistry,
                                                      final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名空间是否非法
         for (Class<?> clazz : allProtoBufClasses) {
-            classIdRegistry.checkedOfType(clazz);
+            typeMetaRegistry.checkedOfType(clazz);
         }
         for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
-            classIdRegistry.checkedOfType(codecImpl.getEncoderClass());
+            typeMetaRegistry.checkedOfType(codecImpl.getEncoderClass());
         }
 
         final List<BinaryPojoCodec<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size() + pojoCodecImplList.size());
@@ -166,9 +166,9 @@ public class DefaultBinaryConverter implements BinaryConverter {
         }
 
         return new DefaultBinaryConverter(
-                ClassIdRegistries.fromRegistries(
-                        classIdRegistry,
-                        BinaryConverterUtils.getDefaultClassIdRegistry()),
+                TypeMetaRegistries.fromRegistries(
+                        typeMetaRegistry,
+                        BinaryConverterUtils.getDefaultTypeMetaRegistry()),
                 BinaryCodecRegistries.fromRegistries(
                         BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList),
                         BinaryConverterUtils.getDefaultCodecRegistry()),

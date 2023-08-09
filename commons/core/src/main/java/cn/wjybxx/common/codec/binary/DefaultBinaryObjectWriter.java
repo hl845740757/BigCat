@@ -299,9 +299,9 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (!converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return;
         }
-        ClassId classId = converter.classIdRegistry.ofType(encodeClass);
-        if (classId != null) {
-            long classGuid = converter.options.classIdConverter.toGuid(classId);
+        TypeMeta<ClassId> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
+        if (typeMeta != null) {
+            long classGuid = converter.options.classIdConverter.toGuid(typeMeta.mainClassId());
             writer.writeStartHeader();
             writer.writeInt64(DsonHeader.NUMBERS_CLASS_ID, classGuid, WireType.UINT);
             writer.writeEndHeader();
