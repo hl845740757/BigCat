@@ -52,15 +52,12 @@ public class MessageCodec<T extends MessageLite> implements BinaryPojoCodecImpl<
 
     @Override
     public void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
-        writer.dsonWriter().writeMessage(0, writer.options().pbBinaryType, instance);
+        writer.writeMessage(0, writer.options().pbBinaryType, instance);
     }
 
     @Override
     public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        if (reader.isAtType()) {
-            reader.readDsonType();
-        }
-        return reader.dsonReader().readMessage(0, reader.options().pbBinaryType, parser);
+        return reader.readMessage(0, reader.options().pbBinaryType, parser);
     }
 
 }

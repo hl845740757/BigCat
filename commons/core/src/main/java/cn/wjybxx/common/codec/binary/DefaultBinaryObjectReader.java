@@ -20,6 +20,7 @@ import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
+import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,23 +53,8 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
-    public DsonLiteReader dsonReader() {
-        return reader;
-    }
-
-    @Override
-    public boolean isAtType() {
-        return reader.isAtType();
-    }
-
-    @Override
     public DsonType readDsonType() {
         return reader.readDsonType();
-    }
-
-    @Override
-    public boolean isAtName() {
-        return reader.isAtName();
     }
 
     @Override
@@ -116,6 +102,14 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Override
     public void skipToEndOfObject() {
         reader.skipToEndOfObject();
+    }
+
+    @Override
+    public <T> T readMessage(int name, int binaryType, @Nonnull Parser<T> parser) {
+        if (reader.isAtType()) {
+            reader.readDsonType();
+        }
+        return reader.readMessage(name, binaryType, parser);
     }
 
     @Override

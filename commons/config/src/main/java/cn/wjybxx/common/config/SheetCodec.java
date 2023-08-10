@@ -17,12 +17,13 @@
 package cn.wjybxx.common.config;
 
 
-import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
+import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.ObjectStyle;
+import cn.wjybxx.dson.text.StringStyle;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         // 只写values
         writer.writeStartArray("headerMap", headerMap.values(), TypeArgInfo.ARRAYLIST);
         for (Header header : headerMap.values()) {
-            writer.writeStartObject(header, TypeArgInfo.OBJECT, ObjectStyle.INDENT);
+            writer.writeStartObject(header, TypeArgInfo.OBJECT, ObjectStyle.FLOW);
             writer.writeString("args", header.getArgs());
             writer.writeString("name", header.getName());
             writer.writeString("type", header.getType());
@@ -106,15 +107,16 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         // 其实将rowIndex看做key写成对象会更有效，但兼容性可能不好
         writer.writeStartArray("valueRowList", valueRowList, TypeArgInfo.ARRAYLIST);
         for (SheetRow valueRow : valueRowList) {
-            writer.writeStartObject(valueRow, TypeArgInfo.OBJECT, ObjectStyle.INDENT);
+            writer.writeStartObject(valueRow, TypeArgInfo.OBJECT);
             writer.writeInt("rowIndex", valueRow.getRowIndex());
+
+            // name2CellMap写成kv的pair数组
+            writer.writeStartArray("name2CellMap", valueRow.getName2CellMap(), TypeArgInfo.ARRAYLIST);
             {
-                // name2CellMap写成kv的pair数组
-                writer.writeStartArray("name2CellMap", valueRow.getName2CellMap(), TypeArgInfo.ARRAYLIST);
                 for (SheetCell cell : valueRow.getName2CellMap().values()) {
-                    writer.writeStartObject(cell, TypeArgInfo.OBJECT, ObjectStyle.INDENT);
+                    writer.writeStartObject(cell, TypeArgInfo.OBJECT, ObjectStyle.FLOW);
                     writer.writeString("name", cell.getName());
-                    writer.writeString("value", cell.getValue());
+                    writer.writeString("value", cell.getValue(), StringStyle.QUOTE);
                     writer.writeEndObject();
                 }
                 writer.writeEndArray();
@@ -131,10 +133,11 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             reader.readStartObject(TypeArgInfo.OBJECT);
             int rowIndex = reader.readInt("rowIndex");
+
+            // name2CellMap是一个嵌套数组
             Map<String, SheetCell> name2CellMap = new LinkedHashMap<>();
+            reader.readStartArray("name2CellMap", TypeArgInfo.ARRAYLIST);
             {
-                // name2CellMap是一个嵌套数组
-                reader.readStartArray("name2CellMap", TypeArgInfo.ARRAYLIST);
                 while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
                     reader.readStartObject(TypeArgInfo.OBJECT);
                     String name = reader.readString("name");

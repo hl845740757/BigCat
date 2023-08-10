@@ -53,15 +53,12 @@ public class MessageCodec<T extends MessageLite> implements DocumentPojoCodecImp
 
     @Override
     public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
-        writer.dsonWriter().writeMessage("value", writer.options().pbBinaryType, instance);
+        writer.writeMessage("value", writer.options().pbBinaryType, instance);
     }
 
     @Override
     public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        if (reader.isAtType()) {
-            reader.readDsonType();
-        }
-        return reader.dsonReader().readMessage("value", reader.option().pbBinaryType, parser);
+        return reader.readMessage("value", reader.option().pbBinaryType, parser);
     }
 
 }

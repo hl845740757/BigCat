@@ -17,6 +17,7 @@
 package cn.wjybxx.common.codec;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * 用于文本编码中避免频繁创建String
@@ -24,6 +25,7 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date - 2023/8/9
  */
+@ThreadSafe
 public interface StringBuilderPool {
 
     @Nonnull

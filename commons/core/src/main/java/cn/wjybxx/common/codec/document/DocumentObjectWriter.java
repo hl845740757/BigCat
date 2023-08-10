@@ -23,6 +23,7 @@ import cn.wjybxx.dson.io.Chunk;
 import cn.wjybxx.dson.text.*;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
+import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -126,12 +127,11 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     ConvertOptions options();
 
-    /** 原始的writer -- 可能导致歧义的方法未直接代理，用户可获取原始的writer进行操作 */
-    DsonWriter dsonWriter();
-
     boolean isAtName();
 
     void writeName(String name);
+
+    void writeMessage(String name, int binaryType, MessageLite messageLite);
 
     void writeValueBytes(String name, DsonType dsonType, byte[] data);
 

@@ -31,7 +31,6 @@ import javax.annotation.Nonnull;
 @FunctionalInterface
 public interface TypeMetaMapper<T> {
 
-    /** List的第一个元素作为主要id */
     @Nonnull
     TypeMeta<T> map(Class<?> type);
 

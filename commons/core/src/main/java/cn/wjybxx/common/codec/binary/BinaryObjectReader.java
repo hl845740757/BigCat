@@ -23,6 +23,7 @@ import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.internal.CollectionUtils;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
+import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -133,18 +134,12 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     ConvertOptions options();
 
-    DsonLiteReader dsonReader();
-
-    boolean isAtType();
-
     /**
      * 读取下一个数据类型
      *
      * @see DsonLiteReader#readDsonType()
      */
     DsonType readDsonType();
-
-    boolean isAtName();
 
     int readName();
 
@@ -161,6 +156,8 @@ public interface BinaryObjectReader extends AutoCloseable {
     void skipValue();
 
     void skipToEndOfObject();
+
+    <T> T readMessage(int name, int binaryType, @Nonnull Parser<T> parser);
 
     byte[] readValueAsBytes(int name);
 

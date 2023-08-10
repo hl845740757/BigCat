@@ -21,8 +21,10 @@ import cn.wjybxx.common.codec.TypeMetaRegistries;
 import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.document.DefaultDocumentConverter;
+import cn.wjybxx.common.codec.document.DocumentConverter;
 import cn.wjybxx.common.config.Sheet;
 import cn.wjybxx.common.config.SheetCodec;
+import org.apache.commons.math3.stat.inference.TestUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -38,20 +40,24 @@ import java.util.Set;
 public class ReadExcelTest {
 
     @Test
-    void name() {
-        Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File("D:\\github-mine\\BigCat\\doc\\test.xlsx"),
-                ExcelReaderOptions.newBuilder().build());
+    void test() {
+        String userDir = System.getProperty("user.dir");
+        File projectRootDir = new File(userDir).getParentFile().getParentFile();
 
+        Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(projectRootDir.getPath() + "\\doc\\test.xlsx"),
+                ExcelReaderOptions.newBuilder().build());
         Sheet skillSheet = sheetMap.get("Skill");
 
-        DefaultDocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
+        DocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
                 List.of(new SheetCodec()),
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, "Sheet")),
                 ConvertOptions.DEFAULT);
 
+        String dson = converter.writeAsDson(skillSheet);
+//        System.out.println(dson);
+        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, TypeArgInfo.of(Sheet.class)));
+
         Sheet clonedObject = converter.cloneObject(skillSheet, TypeArgInfo.of(Sheet.class));
         Assertions.assertEquals(skillSheet, clonedObject);
-
-//        System.out.println(sheetMap);
     }
 }

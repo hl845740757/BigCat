@@ -26,6 +26,7 @@ import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
+import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -77,11 +78,6 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public DsonWriter dsonWriter() {
-        return writer;
-    }
-
-    @Override
     public boolean isAtName() {
         return writer.isAtName();
     }
@@ -89,6 +85,12 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeName(String name) {
         writer.writeName(name);
+    }
+
+    @Override
+    public void writeMessage(String name, int binaryType, MessageLite messageLite) {
+        Objects.requireNonNull(messageLite);
+        writer.writeMessage(name, binaryType, messageLite);
     }
 
     @Override
@@ -130,7 +132,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (value == null) {
             writeNull(name);
         } else {
-            writer.writeString(name, value, StringStyle.AUTO);
+            writer.writeString(name, value, style);
         }
     }
 
@@ -353,9 +355,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         }
         TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
         if (typeMeta != null) {
-            writer.writeStartHeader(ObjectStyle.FLOW);
-            writer.writeString(DsonHeader.NAMES_CLASS_NAME, typeMeta.mainClassId(), StringStyle.UNQUOTE);
-            writer.writeEndHeader();
+            writer.writeSimpleHeader(typeMeta.mainClassId());
         }
     }
 

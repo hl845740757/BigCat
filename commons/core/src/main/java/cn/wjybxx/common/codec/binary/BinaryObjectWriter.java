@@ -23,6 +23,7 @@ import cn.wjybxx.dson.io.Chunk;
 import cn.wjybxx.dson.text.INumberStyle;
 import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
+import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -111,12 +112,9 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     ConvertOptions options();
 
-    /** 原始的writer -- 可能导致歧义的方法未直接代理，用户可获取原始的writer进行操作 */
-    DsonLiteWriter dsonWriter();
-
-    boolean isAtName();
-
     void writeName(int name);
+
+    void writeMessage(int name, int binaryType, MessageLite messageLite);
 
     void writeValueBytes(int name, DsonType dsonType, byte[] data);
 
