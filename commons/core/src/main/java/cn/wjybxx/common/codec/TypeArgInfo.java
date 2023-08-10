@@ -58,6 +58,13 @@ public final class TypeArgInfo<T> {
         this.factory = null;
     }
 
+    public TypeArgInfo(Class<T> declaredType, Class<?> typeArg1) {
+        this.declaredType = Objects.requireNonNull(declaredType);
+        this.typeArg1 = nullToObjectClass(typeArg1);
+        this.typeArg2 = Object.class;
+        this.factory = null;
+    }
+
     public TypeArgInfo(Class<T> declaredType, Class<?> typeArg1, Class<?> typeArg2) {
         this.declaredType = Objects.requireNonNull(declaredType);
         this.typeArg1 = nullToObjectClass(typeArg1);
@@ -95,13 +102,18 @@ public final class TypeArgInfo<T> {
 
     public static final TypeArgInfo<ArrayList> ARRAYLIST =
             new TypeArgInfo<>(ArrayList.class, ArrayList::new, Object.class, Object.class);
-    public static final TypeArgInfo<LinkedHashSet> LINKEDHASHSET =
+    public static final TypeArgInfo<LinkedHashSet> LINKED_HASHSET =
             new TypeArgInfo<>(LinkedHashSet.class, LinkedHashSet::new, Object.class, Object.class);
 
-    public static final TypeArgInfo<LinkedHashMap> OBJECT_LINKEDHASHMAP =
+    public static final TypeArgInfo<LinkedHashMap> LINKED_HASHMAP =
             new TypeArgInfo<>(LinkedHashMap.class, LinkedHashMap::new, Object.class, Object.class);
-    public static final TypeArgInfo<LinkedHashMap> STRING_LINKEDHASHMAP =
+    public static final TypeArgInfo<LinkedHashMap> STRING_LINKED_HASHMAP =
             new TypeArgInfo<>(LinkedHashMap.class, LinkedHashMap::new, String.class, Object.class);
+
+    public static final TypeArgInfo<HashMap> HASHMAP =
+            new TypeArgInfo<>(HashMap.class, HashMap::new, Object.class, Object.class);
+    public static final TypeArgInfo<HashMap> STRING_HASHMAP =
+            new TypeArgInfo<>(HashMap.class, HashMap::new, String.class, Object.class);
 
     // 工厂方法
 

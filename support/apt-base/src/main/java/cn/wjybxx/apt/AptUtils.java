@@ -51,7 +51,7 @@ public class AptUtils {
      * 由于生成的代码不能很好的处理泛型等信息，因此需要抑制警告
      */
     public static final AnnotationSpec SUPPRESS_UNCHECKED_ANNOTATION = AnnotationSpec.builder(SuppressWarnings.class)
-            .addMember("value", "{$S, $S, $S}", "unchecked", "rawtypes", "unused")
+            .addMember("value", "{\"unchecked\", \"rawtypes\", \"unused\"}")
             .build();
 
     public static final AnnotationSpec NONNULL_ANNOTATION = AnnotationSpec.builder(Nonnull.class)

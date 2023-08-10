@@ -16,9 +16,10 @@
 
 package cn.wjybxx.common.config;
 
-import cn.wjybxx.common.json.JsonStringHelper;
-import it.unimi.dsi.fastutil.chars.CharArrayList;
-import org.apache.commons.lang3.ArrayUtils;
+import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.DsonCharStream;
+import cn.wjybxx.dson.text.DsonTextReader;
+import cn.wjybxx.dson.text.DsonTexts;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -154,16 +155,54 @@ public class DefaultValueParser implements ValueParser {
         }
 
         if (getArrayDimensional(typeToken) == 1) {
-            @SuppressWarnings("unchecked") final T result = (T) parseOneDimensionalArray(typeString, typeToken, value);
+            List<String> elements = new ArrayList<>(10);
+            try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, true))) {
+                if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
+                readOneDimensionArray(reader, elements);
+                if (reader.readDsonType() != DsonType.END_OF_OBJECT) throw new IllegalArgumentException(value);
+            }
+            @SuppressWarnings("unchecked") final T result = (T) convert2Array(typeString, typeToken, elements.toArray(String[]::new));
             return result;
         } else {
-            @SuppressWarnings("unchecked") final T result = (T) parseTwoDimensionalArray(typeString, typeToken, value);
+            // 读取为二维list
+            List<List<String>> twoDimensionElements = new ArrayList<>(10);
+            try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, true))) {
+                if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
+                readTwoDimensionArray(reader, twoDimensionElements);
+                if (reader.readDsonType() != DsonType.END_OF_OBJECT) throw new IllegalArgumentException(value);
+            }
+            // list转数组
+            @SuppressWarnings("unchecked") final T result = (T) Array.newInstance(typeToken.getComponentType(), twoDimensionElements.size());
+            for (int index = 0, elementsSize = twoDimensionElements.size(); index < elementsSize; index++) {
+                final List<String> elements = twoDimensionElements.get(index);
+                final String subTypeString = typeString.substring(0, typeString.indexOf(']') + 1);
+                final Object oneDimensionalArray = convert2Array(subTypeString, typeToken.getComponentType(), elements.toArray(String[]::new));
+                Array.set(result, index, oneDimensionalArray);
+            }
             return result;
         }
     }
 
-    private static Object parseOneDimensionalArray(String typeString, final Class<?> typeToken, final String value) {
-        final String[] elements = splitString2Array(value).toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+    private static void readTwoDimensionArray(DsonTextReader reader, List<List<String>> twoDimensionElements) {
+        reader.readStartArray();
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            ArrayList<String> elements = new ArrayList<>(10);
+            readOneDimensionArray(reader, elements);
+            twoDimensionElements.add(elements);
+        }
+        reader.readEndArray();
+    }
+
+    private static void readOneDimensionArray(DsonTextReader reader, List<String> elements) {
+        reader.readStartArray();
+        reader.setCompClsNameToken(DsonTexts.clsNameTokenOfType(DsonType.STRING));
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            elements.add(reader.readString(null));
+        }
+        reader.readEndArray();
+    }
+
+    private static Object convert2Array(String typeString, final Class<?> typeToken, final String[] elements) {
         final Class<?> componentType = typeToken.getComponentType();
         if (componentType == String.class) {
             return elements;
@@ -208,21 +247,6 @@ public class DefaultValueParser implements ValueParser {
         throw new IllegalArgumentException("unsupported component type: " + componentType);
     }
 
-    private Object parseTwoDimensionalArray(String typeString, final Class<?> typeToken, String value) {
-        if (StringUtils.isBlank(value)) {
-            return Array.newInstance(typeToken.getComponentType(), 0);
-        }
-        final String subTypeString = typeString.substring(0, typeString.indexOf(']') + 1);
-        final List<String> elements = splitString2Array(value);
-        final Object result = Array.newInstance(typeToken.getComponentType(), elements.size());
-        for (int index = 0, elementsSize = elements.size(); index < elementsSize; index++) {
-            final String element = elements.get(index);
-            final Object oneDimensionalArray = parseOneDimensionalArray(subTypeString, typeToken.getComponentType(), element);
-            Array.set(result, index, oneDimensionalArray);
-        }
-        return result;
-    }
-
     private static void checkArrayTypeString(String typeString) {
         if (!SUPPORTED_TYPES.contains(typeString) || !typeString.endsWith("[]")) {
             throw new IllegalArgumentException("tyString must end with [] or [][], typeString: " + typeString);
@@ -258,118 +282,4 @@ public class DefaultValueParser implements ValueParser {
         return result;
     }
 
-    /**
-     * 根据逗号分隔字符串为数组
-     * 1. “”内的内容要跳过，顶层的空格要跳过
-     * 2. 大括号理论在这里是不需要转义的，因为用户使用的大括号一定在字符串里
-     * <pre>
-     *     {  a, "abc" , , b  }          =>  [a, "abc", "", b]
-     *     {  a, "{abc}" , { ,?, }, b  } =>  [a, "{abc}", { ,?, }, b]
-     * </pre>
-     * TODO 可考虑数组定界符自定义
-     */
-    private static List<String> splitString2Array(String value) {
-        if (StringUtils.isBlank(value)) {
-            return new ArrayList<>();
-        }
-
-        final int startIndex = indexOfNonSpace(value, 0);
-        final int lastIndex = lastIndexOfNonSpace(value, value.length() - 1);
-        if (value.charAt(startIndex) != '{' || value.charAt(lastIndex) != '}') {
-            throw new ArrayStringParseException("invalid array, missing braces, value " + value);
-        }
-
-        List<String> result = new ArrayList<>();
-        // 不使用缓存的StringBuilder，避免线程安全问题 -- 读表过程可能是多线程的；初始小空间即可，因为String数组很少
-        StringBuilder sb = new StringBuilder(16);
-        CharArrayList charStack = new CharArrayList(4);
-        charStack.push('{');
-
-        // 用于去除空格 right < left 表示当前无内容
-        int left = -1;
-        int right = -2;
-        boolean isContinuous = true;
-        for (int idx = startIndex + 1; idx <= lastIndex; idx++) {
-            char c = value.charAt(idx);
-            if (charStack.size() == 1) {
-                if (c == ' ') {
-                    if (right < left) {
-                        left = idx;
-                        right = idx - 1;
-                    } else {
-                        isContinuous = false;
-                    }
-                } else {
-                    if (right < left) {
-                        left = right = idx;
-                    } else if (isContinuous) {
-                        right = idx;
-                    } else if (c != ',' && c != '}') { // 内容不连续
-                        throw new ArrayStringParseException("invalid array, discontinuous, value: " + value);
-                    }
-                }
-            }
-
-            // switch判断的都是非空字符，因此left和right一定都初始化了
-            switch (c) {
-                case ',' -> {
-                    if (charStack.size() == 1) { // 找到一个元素
-                        if (right == idx) {
-                            result.add(value.substring(left, right));
-                        } else {
-                            result.add(value.substring(left, right + 1));
-                        }
-                        left = idx;
-                        right = idx - 1;
-                        isContinuous = true;
-                    }
-                }
-                case '"' -> { // 存在字符串元素
-                    idx = skipString(sb, value, idx);
-                    right = idx;
-                }
-                case '{' -> { // 压栈
-                    charStack.push(c);
-                }
-                case '}' -> { // 弹出
-                    if (charStack.size() == 1) {
-                        if (idx != lastIndex) {
-                            throw new ArrayStringParseException("invalid array, missing braces, value " + value);
-                        }
-                        if (right == idx) {
-                            result.add(value.substring(left, right));
-                        } else {
-                            result.add(value.substring(left, right + 1));
-                        }
-                        return result;
-                    }
-                    charStack.popChar();
-                }
-            }
-        }
-        throw new IllegalArgumentException("invalid array value: " + value);
-    }
-
-    private static int indexOfNonSpace(String value, int fromIndex) {
-        for (int index = fromIndex; index < value.length(); index++) {
-            if (value.charAt(index) != ' ') {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    private static int lastIndexOfNonSpace(String value, int fromIndex) {
-        for (int index = fromIndex; index >= 0; index--) {
-            if (value.charAt(index) != ' ') {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    private static int skipString(StringBuilder sb, String value, int quoteIndex) {
-        sb.setLength(0);
-        return JsonStringHelper.escape(sb, value, '"', quoteIndex);
-    }
 }

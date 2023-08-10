@@ -109,17 +109,13 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         for (SheetRow valueRow : valueRowList) {
             writer.writeStartObject(valueRow, TypeArgInfo.OBJECT);
             writer.writeInt("rowIndex", valueRow.getRowIndex());
-
-            // name2CellMap写成kv的pair数组
-            writer.writeStartArray("name2CellMap", valueRow.getName2CellMap(), TypeArgInfo.ARRAYLIST);
             {
+                // cellMap写为Map
+                writer.writeStartObject("cellMap", valueRow.getName2CellMap(), TypeArgInfo.STRING_HASHMAP);
                 for (SheetCell cell : valueRow.getName2CellMap().values()) {
-                    writer.writeStartObject(cell, TypeArgInfo.OBJECT, ObjectStyle.FLOW);
-                    writer.writeString("name", cell.getName());
-                    writer.writeString("value", cell.getValue(), StringStyle.QUOTE);
-                    writer.writeEndObject();
+                    writer.writeString(cell.getName(), cell.getValue(), StringStyle.QUOTE);
                 }
-                writer.writeEndArray();
+                writer.writeEndObject();
             }
             writer.writeEndObject();
         }
@@ -134,20 +130,17 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
             reader.readStartObject(TypeArgInfo.OBJECT);
             int rowIndex = reader.readInt("rowIndex");
 
-            // name2CellMap是一个嵌套数组
+            // name2CellMap是一个嵌套Object
             Map<String, SheetCell> name2CellMap = new LinkedHashMap<>();
-            reader.readStartArray("name2CellMap", TypeArgInfo.ARRAYLIST);
             {
+                reader.readStartObject("cellMap", TypeArgInfo.STRING_HASHMAP);
                 while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
-                    reader.readStartObject(TypeArgInfo.OBJECT);
-                    String name = reader.readString("name");
-                    String value = reader.readString("value");
-                    reader.readEndObject();
-
+                    String name = reader.readName();
+                    String value = reader.readString(name);
                     Header header = headerMap.get(name);
                     name2CellMap.put(name, new SheetCell(value, header));
                 }
-                reader.readEndArray();
+                reader.readEndObject();
             }
             reader.readEndObject();
             valueRowList.add(new SheetRow(rowIndex, name2CellMap));

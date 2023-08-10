@@ -188,7 +188,7 @@ class CodecStructs {
             writer.writeBoolean(DsonLites.makeFullNumber(0, 5), instance.boolVal);
             writer.writeString(DsonLites.makeFullNumber(0, 6), instance.strVal);
             writer.writeBytes(DsonLites.makeFullNumber(0, 7), instance.bytes);
-            writer.writeObject(DsonLites.makeFullNumber(0, 8), instance.map, TypeArgInfo.STRING_LINKEDHASHMAP);
+            writer.writeObject(DsonLites.makeFullNumber(0, 8), instance.map, TypeArgInfo.STRING_LINKED_HASHMAP);
             writer.writeObject(DsonLites.makeFullNumber(0, 9), instance.list, TypeArgInfo.ARRAYLIST);
         }
 
@@ -211,7 +211,7 @@ class CodecStructs {
                     reader.readBoolean(DsonLites.makeFullNumber(0, 5)),
                     reader.readString(DsonLites.makeFullNumber(0, 6)),
                     reader.readBytes(DsonLites.makeFullNumber(0, 7)),
-                    reader.readObject(DsonLites.makeFullNumber(0, 8), TypeArgInfo.STRING_LINKEDHASHMAP),
+                    reader.readObject(DsonLites.makeFullNumber(0, 8), TypeArgInfo.STRING_LINKED_HASHMAP),
                     reader.readObject(DsonLites.makeFullNumber(0, 9), TypeArgInfo.ARRAYLIST),
                     nestStruct);
         }
@@ -235,7 +235,7 @@ class CodecStructs {
             writer.writeBoolean("boolVal", instance.boolVal);
             writer.writeString("strVal", instance.strVal, StringStyle.AUTO);
             writer.writeBytes("bytes", 0, instance.bytes);
-            writer.writeObject("map", instance.map, TypeArgInfo.STRING_LINKEDHASHMAP, null);
+            writer.writeObject("map", instance.map, TypeArgInfo.STRING_LINKED_HASHMAP, null);
             writer.writeObject("list", instance.list, TypeArgInfo.ARRAYLIST, null);
         }
 
@@ -258,7 +258,7 @@ class CodecStructs {
                     reader.readBoolean("boolVal"),
                     reader.readString("strVal"),
                     reader.readBytes("bytes"),
-                    reader.readObject("map", TypeArgInfo.STRING_LINKEDHASHMAP),
+                    reader.readObject("map", TypeArgInfo.STRING_LINKED_HASHMAP),
                     reader.readObject("list", TypeArgInfo.ARRAYLIST),
                     nestStruct);
         }

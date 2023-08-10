@@ -78,7 +78,7 @@ Dson有许多强大的特性，你如果只是简单使用Dson，那和普通的
 
 提示：
 1. 下面的代码片段来自test目录下的 *CodecBeanExample* 类。
-2. Numbers内部类和XXXFields的字段都是*编译时常量*，编译时将直接内联，因此不会有编解码时的访问开销。
+2. numbers和names字段都是*编译时常量*，编译时将直接内联，因此不会有编解码时的访问开销。
 
 #### 指定数字字段的编码格式
 
@@ -89,8 +89,8 @@ Dson集成了Protobuf的组件，支持数字的*varint、unit、sint、fixed*4�
     public int age;
     
     // 生成的编码代码
-    writer.writeInt(CodecBeanExampleTypeArgs.Numbers.age, instance.age, WireType.UINT);
-    writer.writeString(CodecBeanExampleTypeArgs.Numbers.name, instance.name);
+    writer.writeInt(CodecBeanExampleSchema.numbers_age, instance.age, WireType.UINT);
+    writer.writeString(CodecBeanExampleSchema.numbers_name, instance.name);
 ```
 示例中的int类型的age字段，在编码时将使用uint格式编码。
 
@@ -137,12 +137,12 @@ Dson的理念是：**能托管的逻辑就让生成的代码负责，用户只�
 生成的代码就会在编解码custom的时候调用用户的方法，下面是生成的代码节选：
 ```
     // 解码方法
-    instance.currencyMap1 = reader.readObject(CodecBeanExampleTypeArgs.Numbers.currencyMap1, CodecBeanExampleTypeArgs.currencyMap1);
-    instance.currencyMap2 = reader.readObject(CodecBeanExampleTypeArgs.Numbers.currencyMap2, CodecBeanExampleTypeArgs.currencyMap2);
+    instance.currencyMap1 = reader.readObject(CodecBeanExampleSchema.numbers_currencyMap1, CodecBeanExampleSchema.currencyMap1);
+    instance.currencyMap2 = reader.readObject(CodecBeanExampleSchema.numbers_currencyMap2, CodecBeanExampleSchema.currencyMap2);
     instance.readCustom(reader);
     // 编码方法
-    writer.writeObject(CodecBeanExampleTypeArgs.Numbers.currencyMap1, instance.currencyMap1, CodecBeanExampleTypeArgs.currencyMap1);
-    writer.writeObject(CodecBeanExampleTypeArgs.Numbers.currencyMap2, instance.currencyMap2, CodecBeanExampleTypeArgs.currencyMap2);
+    writer.writeObject(CodecBeanExampleSchema.numbers_currencyMap1, instance.currencyMap1, CodecBeanExampleSchema.currencyMap1);
+    writer.writeObject(CodecBeanExampleSchema.numbers_currencyMap2, instance.currencyMap2, CodecBeanExampleSchema.currencyMap2);
     instance.writeCustom(writer);
 ```
 
@@ -182,9 +182,9 @@ Dson除了基本的值类型外，还提供了ExtInt32（带标签的Int32）、
     public String reg;
     
     // 生成的编码代码
-    writer.writeExtString(CodecBeanExampleTypeArgs.Numbers.reg, DsonExtStringType.REGULAR_EXPRESSION, instance.reg);
+    writer.writeExtString(CodecBeanExampleSchema.numbers_reg, DsonExtStringType.REGULAR_EXPRESSION, instance.reg);
     // 生成的解码代码
-    instance.reg = reader.readString(CodecBeanExampleFields.reg);
+    instance.reg = reader.readString(CodecBeanExampleSchema.names_reg);
 ```
 仍然是CodecBeanExample中的代码，我们将一个String标记为了正则表达式，序列化时就会序列化为带标签的字符串；
 解码通常不需要特殊处理，因为我们的字段是字符串类型，可以读取ExtString类型。
