@@ -49,7 +49,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String CNAME_DEFAULT_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.common.rpc.RpcRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.common.rpc.RpcProcessContext";
-    private static final String CNAME_FLUENT_FUTURE = "cn.wjybxx.common.async.FluentFuture";
 
     private static final int MAX_PARAMETER_COUNT = 5;
 
@@ -96,7 +95,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         futureTypeMirrors = new ArrayList<>(3);
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletableFuture.class).asType());
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletionStage.class).asType());
-        futureTypeMirrors.add(elementUtils.getTypeElement(CNAME_FLUENT_FUTURE).asType());
 
         mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
         linkedHashMapTypeMirror = elementUtils.getTypeElement(LinkedHashMap.class.getCanonicalName()).asType();

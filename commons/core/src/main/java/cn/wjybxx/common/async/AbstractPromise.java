@@ -276,7 +276,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     private Completion clearListeners(Completion onto) {
         // 1. 将当前栈内元素逆序，因为即使在接口层进行了说明（不提供监听器执行时序保证），但仍然有人依赖于监听器的执行时序(期望先添加的先执行)
         // 2. 将逆序后的元素插入到'onto'前面，即插入到原本要被通知的下一个监听器的前面
-
+        // 坑爹之处：JDK的CompletableFuture没有这个顺序优化...
         Completion head = stack;
         Completion ontoHead = onto;
 

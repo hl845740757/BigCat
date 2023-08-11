@@ -17,7 +17,7 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.async.FluentFuture;
+import cn.wjybxx.common.concurrent.ICompletableFuture;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -31,7 +31,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * 3. {@code send} {@code call}之间必须满足先发送的先到。<br>
  * 4. 如果架构是单线程的，且消息队列是有界的，{@code syncCall}系列方法要小心死锁问题。
  * 5. 参数合法的情况下，不要抛出{@link RpcException}以外的异常。
- * 6. 如果无法执行请求，则应该返回一个已失败的{@link  FluentFuture}，且其异常是约定好的。
+ * 6. 如果无法执行请求，则应该返回一个已失败的{@link ICompletableFuture}，且其异常是约定好的。
  *
  * <h3>使用者注意</h3>
  * 1.虽然要求了所有的消息都先发先到。但是先发送的请求不一定先获得结果！对方什么时候返回给你结果是不确定的！
@@ -65,7 +65,7 @@ public interface RpcClient {
      * @param methodSpec 要调用的方法信息
      * @return future，可以监听调用结果
      */
-    <V> FluentFuture<V> call(NodeId target, RpcMethodSpec<V> methodSpec);
+    <V> ICompletableFuture<V> call(NodeId target, RpcMethodSpec<V> methodSpec);
 
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回 -- 使用默认的超时时间。

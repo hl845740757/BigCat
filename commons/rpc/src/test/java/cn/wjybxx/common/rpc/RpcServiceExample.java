@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.rpc;
 
-import cn.wjybxx.common.async.FluentFuture;
-import cn.wjybxx.common.async.SameThreads;
 import cn.wjybxx.common.concurrent.FutureUtils;
 
 import javax.annotation.Nonnull;
@@ -62,16 +60,10 @@ public class RpcServiceExample implements ExtensibleService {
         return Arrays.stream(value.split(",")).toList();
     }
 
-    /** 测试异步返回 -- JDK的Future */
+    /** 测试异步返回 */
     @RpcMethod(methodId = 6)
     public CompletableFuture<String> helloAsync(String msg) {
         return FutureUtils.newSucceededFuture(msg);
-    }
-
-    /** 测试异步返回 -- 单线程Future */
-    @RpcMethod(methodId = 7)
-    public FluentFuture<String> helloAsync2(String msg) {
-        return SameThreads.newSucceededFuture(msg);
     }
 
     // 测试从接口继承的方法

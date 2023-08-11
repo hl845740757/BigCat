@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.props;
 
-import cn.wjybxx.common.CollectionUtils;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
@@ -47,12 +45,7 @@ public class PropertiesImpl implements IProperties {
     }
 
     public static PropertiesImpl ofProperties(Properties properties) {
-        final Set<String> nameSet = properties.stringPropertyNames(); // key本就无序
-        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
-        for (String name : nameSet) {
-            copied.put(name, properties.getProperty(name));
-        }
-        return new PropertiesImpl(copied);
+        return new PropertiesImpl(PropertiesUtils.toMap(properties));
     }
 
     @Nullable

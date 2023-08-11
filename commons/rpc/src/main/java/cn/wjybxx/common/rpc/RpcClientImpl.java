@@ -18,9 +18,8 @@ package cn.wjybxx.common.rpc;
 
 
 import cn.wjybxx.common.ThreadUtils;
-import cn.wjybxx.common.async.FluentFuture;
-import cn.wjybxx.common.async.FluentPromise;
-import cn.wjybxx.common.async.SameThreads;
+import cn.wjybxx.common.concurrent.FutureUtils;
+import cn.wjybxx.common.concurrent.ICompletableFuture;
 import cn.wjybxx.common.concurrent.WatchableEventQueue;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
@@ -35,7 +34,10 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
 /**
@@ -158,7 +160,7 @@ public class RpcClientImpl implements RpcClient {
      * @return future，可以监听调用结果
      */
     @Override
-    public <V> FluentFuture<V> call(NodeId target, RpcMethodSpec<V> methodSpec) {
+    public <V> ICompletableFuture<V> call(NodeId target, RpcMethodSpec<V> methodSpec) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
 
@@ -175,7 +177,7 @@ public class RpcClientImpl implements RpcClient {
         }
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
-        final FluentPromise<V> promise = SameThreads.newPromise();
+        final ICompletableFuture<V> promise = FutureUtils.newPromise();
         final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, target, request);
         requestStubMap.put(requestGuid, requestStub);
         return promise;
@@ -277,12 +279,9 @@ public class RpcClientImpl implements RpcClient {
             // rpc
             try {
                 final Object result = proxy.invoke(context, methodSpec);
-                if (result instanceof FluentFuture<?> future) {
+                if (result instanceof CompletableFuture<?> future) {
                     // 未完成，需要监听结果
-                    future.addListener(new FutureListener<>(request, this));
-                } else if (result instanceof Future<?>) {
-                    // 多线程的future可能导致线程安全问题，需要用户在上层转换
-                    throw new IllegalStateException("unsupported future");
+                    future.whenComplete(new FutureListener<>(request, this));
                 } else {
                     // 立即得到了结果
                     final RpcResponse response = RpcResponse.newSucceedResponse(request.getClientProcessId(), request.getRequestId(), result);
@@ -334,10 +333,10 @@ public class RpcClientImpl implements RpcClient {
         if (requestStub != null) {
             final int errorCode = response.getErrorCode();
             if (errorCode == 0) {
-                @SuppressWarnings("unchecked") final FluentPromise<Object> promise = (FluentPromise<Object>) requestStub.rpcPromise;
-                promise.trySuccess(response.getResult());
+                @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.rpcPromise;
+                promise.complete(response.getResult());
             } else {
-                requestStub.rpcPromise.tryFailure(RpcServerException.failed(errorCode, response.getErrorMsg()));
+                requestStub.rpcPromise.completeExceptionally(RpcServerException.failed(errorCode, response.getErrorMsg()));
             }
         }
     }
@@ -362,7 +361,7 @@ public class RpcClientImpl implements RpcClient {
 
             logger.warn("rpc timeout, requestGuid {}, target {}", requestGuid, requestStub.target);
             requestStubMap.removeFirst();
-            requestStub.rpcPromise.tryFailure(RpcClientException.timeout());
+            requestStub.rpcPromise.completeExceptionally(RpcClientException.timeout());
         }
     }
 
@@ -434,12 +433,12 @@ public class RpcClientImpl implements RpcClient {
 
     private static class DefaultRpcRequestStub implements RpcRequestStub {
 
-        final FluentPromise<?> rpcPromise;
+        final ICompletableFuture<?> rpcPromise;
         final long deadline;
         final NodeId target;
         final RpcRequest request;
 
-        DefaultRpcRequestStub(FluentPromise<?> rpcPromise, long deadline, NodeId target, RpcRequest request) {
+        DefaultRpcRequestStub(ICompletableFuture<?> rpcPromise, long deadline, NodeId target, RpcRequest request) {
             this.rpcPromise = rpcPromise;
             this.deadline = deadline;
             this.target = target;

@@ -18,9 +18,9 @@ package cn.wjybxx.common.rpc;
 
 import cn.wjybxx.common.FunctionUtils;
 import cn.wjybxx.common.ThreadUtils;
-import cn.wjybxx.common.async.FluentFuture;
 import cn.wjybxx.common.async.SameThreadScheduledExecutor;
 import cn.wjybxx.common.async.SameThreads;
+import cn.wjybxx.common.concurrent.FutureUtils;
 import cn.wjybxx.common.concurrent.WatchableEventQueue;
 import cn.wjybxx.common.time.TimeProvider;
 import cn.wjybxx.common.time.TimeProviders;
@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -106,8 +107,10 @@ public class RpcTest {
             return reverseString(msg);
         }
 
-        public FluentFuture<String> helloAsync(String msg) {
-            return executor.scheduleCall(() -> hello(msg), 500);
+        public CompletableFuture<String> helloAsync(String msg) {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            SameThreads.setFuture(future, executor.scheduleCall(() -> hello(msg), 500));
+            return future;
         }
 
     }

@@ -62,7 +62,7 @@ class RpcUserExample {
                 });
 
         String result = rpcClient.syncCall(ServerNodeId.GAME,
-                RpcServiceExampleProxy.helloAsync2("这是一个同步调用，远程异步执行"));
+                RpcServiceExampleProxy.helloAsync("这是一个同步调用，远程异步执行"));
         System.out.println(result);
     }
 

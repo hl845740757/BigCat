@@ -115,7 +115,7 @@ public class PropertiesUtils {
 
     public static Map<String, String> toMap(Properties properties) {
         Set<String> keySet = properties.stringPropertyNames();
-        HashMap<String, String> hashMap = CollectionUtils.newHashMap(keySet.size());
+        HashMap<String, String> hashMap = CollectionUtils.newHashMap(keySet.size()); // key本就无序
         for (String key : keySet) {
             String value = properties.getProperty(key);
             if (value == null) continue;

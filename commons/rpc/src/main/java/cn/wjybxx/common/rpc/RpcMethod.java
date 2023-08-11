@@ -17,18 +17,17 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.async.FluentFuture;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.CompletionStage;
 
 /**
  * 该注解用于注释需要被导出的方法。
  *
  * <h3>代理方法的返回值</h3>
- * 1. 如果方法的返回值为{@link FluentFuture}或{@link java.util.concurrent.Future}，则会捕获{@code Future}的泛型参数作为返回值类型。
+ * 1. 如果方法的返回值为{@link CompletionStage}，则会捕获{@code Stage}的泛型参数作为返回值类型。
  * 2. 当方法返回值为void或泛型参数为通配符{@code ?}时，代理方法的返回值类型为Object（比Void有更好的兼容性）。
  * 3. 其它普通方法，其返回值类型就是代理方法的返回值类型。
  *

@@ -158,6 +158,17 @@ public class SameThreads {
         });
     }
 
+    public static <V> void setFuture(CompletableFuture<? super V> promise, FluentFuture<V> future) {
+        Objects.requireNonNull(promise, "promise");
+        future.addListener((v, throwable) -> {
+            if (throwable != null) {
+                promise.completeExceptionally(throwable);
+            } else {
+                promise.complete(v);
+            }
+        });
+    }
+
     /**
      * 创建一个future聚合器
      *
