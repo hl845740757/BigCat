@@ -16,16 +16,22 @@
 
 package cn.wjybxx.common.props;
 
+import cn.wjybxx.common.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author wjybxx
  * date - 2023/4/17
  */
 public class PropertiesUtils {
+
+    // region
 
     public static int getInt(Properties properties, String key) {
         String v = properties.getProperty(key);
@@ -83,6 +89,39 @@ public class PropertiesUtils {
 
     public static String getString(Properties properties, String key, String def) {
         return properties.getProperty(key, def);
+    }
+
+    public static short getShort(Properties properties, String key) {
+        String v = properties.getProperty(key);
+        return NumberUtils.toShort(v);
+    }
+
+    public static short getShort(Properties properties, String key, short def) {
+        String v = properties.getProperty(key);
+        return NumberUtils.toShort(v, def);
+    }
+
+    public static byte getByte(Properties properties, String key) {
+        String v = properties.getProperty(key);
+        return NumberUtils.toByte(v);
+    }
+
+    public static byte getByte(Properties properties, String key, byte def) {
+        String v = properties.getProperty(key);
+        return NumberUtils.toByte(v, def);
+    }
+
+    // endregion
+
+    public static Map<String, String> toMap(Properties properties) {
+        Set<String> keySet = properties.stringPropertyNames();
+        HashMap<String, String> hashMap = CollectionUtils.newHashMap(keySet.size());
+        for (String key : keySet) {
+            String value = properties.getProperty(key);
+            if (value == null) continue;
+            hashMap.put(key, value);
+        }
+        return hashMap;
     }
 
 }

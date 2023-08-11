@@ -17,7 +17,6 @@
 package cn.wjybxx.common.props;
 
 import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.annotation.ReadOnlyAfterInit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,24 +26,27 @@ import java.util.*;
  * @author wjybxx
  * date 2023/4/15
  */
-@ReadOnlyAfterInit
-class PropertiesImpl implements IProperties {
+public class PropertiesImpl implements IProperties {
 
     private final Map<String, String> params;
 
-    private PropertiesImpl(Map<String, String> params) {
-        this.params = params;
+    public PropertiesImpl() {
+        this.params = new LinkedHashMap<>();
     }
 
-    static PropertiesImpl ofMap(Map<String, String> properties) {
+    private PropertiesImpl(Map<String, String> params) {
+        this.params = Objects.requireNonNull(params);
+    }
+
+    public static PropertiesImpl ofMap(Map<String, String> properties) {
         return new PropertiesImpl(new LinkedHashMap<>(properties)); // 使用LinkedHashMap保留原始顺序
     }
 
-    static PropertiesImpl wrapMap(Map<String, String> properties) {
+    public static PropertiesImpl wrapMap(Map<String, String> properties) {
         return new PropertiesImpl(properties);
     }
 
-    static PropertiesImpl ofProperties(Properties properties) {
+    public static PropertiesImpl ofProperties(Properties properties) {
         final Set<String> nameSet = properties.stringPropertyNames(); // key本就无序
         final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
         for (String name : nameSet) {
@@ -53,29 +55,14 @@ class PropertiesImpl implements IProperties {
         return new PropertiesImpl(copied);
     }
 
-    static PropertiesImpl partialOfProperties(Properties properties, String namespace) {
-        final String filterKey = namespace + ".";
-        final Set<String> nameSet = properties.stringPropertyNames();
-        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
-        nameSet.stream()
-                .filter(k -> k.startsWith(filterKey))
-                .forEach(k -> copied.put(k.substring(filterKey.length()), properties.getProperty(k)));
-        return new PropertiesImpl(copied);
-    }
-
-    static PropertiesImpl partialOf(IProperties origin, String namespace) {
-        final String filterKey = namespace + ".";
-        final Set<String> nameSet = origin.keySet();
-        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
-        nameSet.stream()
-                .filter(k -> k.startsWith(filterKey))
-                .forEach(k -> copied.put(k.substring(filterKey.length()), origin.getAsString(k)));
-        return new PropertiesImpl(copied);
-    }
-
     @Nullable
     @Override
     public String getAsString(String key) {
+        return params.get(key);
+    }
+
+    @Override
+    public String get(Object key) {
         return params.get(key);
     }
 
@@ -86,8 +73,55 @@ class PropertiesImpl implements IProperties {
     }
 
     @Override
-    public boolean containsKey(String key) {
+    public Collection<String> values() {
+        return Collections.unmodifiableCollection(params.values());
+    }
+
+    @Override
+    public Set<Entry<String, String>> entrySet() {
+        return Collections.unmodifiableSet(params.entrySet());
+    }
+
+    //
+
+    @Override
+    public int size() {
+        return params.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return params.isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
         return params.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return params.containsValue(value);
+    }
+
+    @Override
+    public String put(String key, String value) {
+        return params.put(key, value);
+    }
+
+    @Override
+    public String remove(Object key) {
+        return params.remove(key);
+    }
+
+    @Override
+    public void putAll(Map<? extends String, ? extends String> m) {
+        params.putAll(m);
+    }
+
+    @Override
+    public void clear() {
+        params.clear();
     }
 
 }

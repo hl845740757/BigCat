@@ -45,7 +45,7 @@ public class FileReloadTest {
     private static final FilePath<List<String>> HelloWorld = POOL.newPath("temp-HelloWorld.txt");
     private static final FilePath<String> HelloWorldCache = POOL.newVirtualPath("HelloWorldCache.txt");
 
-    private static final String resDir = "testres/";
+    private static final String resDir = new File(System.getProperty("user.dir")).getParent() + "/testres/";
     private static final File file = new File(resDir + "/" + HelloWorld.getPath());
 
     private static TestFileDataMgr fileDataMgr;

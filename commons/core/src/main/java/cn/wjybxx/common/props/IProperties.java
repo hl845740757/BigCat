@@ -29,10 +29,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 主要为{@link java.util.Properties}提供快捷的解析方式
@@ -41,7 +38,7 @@ import java.util.Set;
  * @author wjybxx
  * date 2023/4/14
  */
-public interface IProperties {
+public interface IProperties extends Map<String, String> {
 
     // region 单值
 
@@ -192,9 +189,16 @@ public interface IProperties {
 
     // endregion
 
-    @Nonnull
+    /** @return 可能是快哉 */
+    @Override
     Set<String> keySet();
 
-    boolean containsKey(String key);
+    /** @return 可能是快哉 */
+    @Override
+    Collection<String> values();
+
+    /** @return 可能是快哉 */
+    @Override
+    Set<Entry<String, String>> entrySet();
 
 }

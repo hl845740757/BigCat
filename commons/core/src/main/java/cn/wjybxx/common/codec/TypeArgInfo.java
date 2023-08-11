@@ -53,23 +53,30 @@ public final class TypeArgInfo<T> {
      */
     public TypeArgInfo(Class<T> declaredType) {
         this.declaredType = Objects.requireNonNull(declaredType);
+        this.factory = null;
         this.typeArg1 = Object.class;
         this.typeArg2 = Object.class;
-        this.factory = null;
     }
 
     public TypeArgInfo(Class<T> declaredType, Class<?> typeArg1) {
         this.declaredType = Objects.requireNonNull(declaredType);
+        this.factory = null;
         this.typeArg1 = nullToObjectClass(typeArg1);
         this.typeArg2 = Object.class;
-        this.factory = null;
     }
 
     public TypeArgInfo(Class<T> declaredType, Class<?> typeArg1, Class<?> typeArg2) {
         this.declaredType = Objects.requireNonNull(declaredType);
+        this.factory = null;
         this.typeArg1 = nullToObjectClass(typeArg1);
         this.typeArg2 = nullToObjectClass(typeArg2);
-        this.factory = null;
+    }
+
+    public TypeArgInfo(Class<T> declaredType, Supplier<? extends T> factory) {
+        this.declaredType = Objects.requireNonNull(declaredType);
+        this.factory = factory;
+        this.typeArg1 = Object.class;
+        this.typeArg2 = Object.class;
     }
 
     public TypeArgInfo(Class<T> declaredType, Supplier<? extends T> factory, Class<?> typeArg1, Class<?> typeArg2) {

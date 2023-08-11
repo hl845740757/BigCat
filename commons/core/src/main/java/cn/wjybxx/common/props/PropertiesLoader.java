@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.props;
 
+import cn.wjybxx.common.CollectionUtils;
+
 import javax.annotation.Nonnull;
 import java.io.*;
 import java.net.URL;
@@ -23,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Q：命名空间？
@@ -73,11 +76,17 @@ public class PropertiesLoader {
      * @return 只包含指定命名空间参数的配置对象
      */
     public static IProperties partialOf(IProperties origin, String namespace) {
-        return PropertiesImpl.partialOf(origin, namespace);
+        final String filterKey = namespace + ".";
+        final Set<String> nameSet = origin.keySet();
+        final Map<String, String> copied = CollectionUtils.newLinkedHashMap(nameSet.size());
+        nameSet.stream()
+                .filter(k -> k.startsWith(filterKey))
+                .forEach(k -> copied.put(k.substring(filterKey.length()), origin.getAsString(k)));
+        return PropertiesImpl.wrapMap(copied);
     }
 
     public static IProperties partialOf(Properties origin, String namespace) {
-        return PropertiesImpl.partialOfProperties(origin, namespace);
+        return partialOf(wrapProperties(origin), namespace);
     }
 
     //
@@ -104,7 +113,7 @@ public class PropertiesLoader {
      */
     public static IProperties loadPartial(String filePath, String namespace) throws IOException {
         final Properties properties = loadRawPropertiesFromFile(filePath);
-        return PropertiesImpl.partialOfProperties(properties, namespace);
+        return partialOf(wrapProperties(properties), namespace);
     }
 
     //
