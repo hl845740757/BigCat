@@ -187,6 +187,10 @@ public interface IProperties extends Map<String, String> {
         return result;
     }
 
+    default String get(String key, String def) {
+        return getAsString(key, def);
+    }
+
     // endregion
 
     /** @return 可能是快哉 */

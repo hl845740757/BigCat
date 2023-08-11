@@ -69,7 +69,7 @@ public class SameThreads {
      */
     public static <V> FluentFuture<V> newSucceededFuture(V result) {
         final DefaultPromise<V> promise = new DefaultPromise<>();
-        promise.trySuccess(result);
+        promise.complete(result);
         return promise;
     }
 
@@ -95,7 +95,7 @@ public class SameThreads {
      */
     public static <V> FluentFuture<V> newFailedFuture(@Nonnull Throwable cause, boolean logCause) {
         final DefaultPromise<V> promise = new DefaultPromise<>();
-        promise.tryFailure(cause, logCause);
+        promise.completeExceptionally(cause, logCause);
         return promise;
     }
 
@@ -122,9 +122,9 @@ public class SameThreads {
         FluentPromise<V> promise = newPromise();
         jdkFuture.whenComplete((v, throwable) -> {
             if (throwable != null) {
-                promise.tryFailure(throwable);
+                promise.completeExceptionally(throwable);
             } else {
-                promise.trySuccess(v);
+                promise.complete(v);
             }
         });
         return promise;
@@ -136,9 +136,9 @@ public class SameThreads {
         FluentPromise<V> promise = newPromise();
         jdkFuture.whenCompleteAsync((v, throwable) -> {
             if (throwable != null) {
-                promise.tryFailure(throwable);
+                promise.completeExceptionally(throwable);
             } else {
-                promise.trySuccess(v);
+                promise.complete(v);
             }
         }, executor);
         return promise;
@@ -151,9 +151,9 @@ public class SameThreads {
         Objects.requireNonNull(promise, "promise");
         future.addListener((v, throwable) -> {
             if (throwable != null) {
-                promise.tryFailure(throwable);
+                promise.completeExceptionally(throwable);
             } else {
-                promise.trySuccess(v);
+                promise.complete(v);
             }
         });
     }
@@ -271,9 +271,9 @@ public class SameThreads {
             }
             try {
                 action.run();
-                output.trySuccess(null);
+                output.complete(null);
             } catch (Throwable ex) {
-                output.tryFailure(ex);
+                output.completeExceptionally(ex);
             }
         }
     }
@@ -295,9 +295,9 @@ public class SameThreads {
             }
             try {
                 final U result = fn.call();
-                output.trySuccess(result);
+                output.complete(result);
             } catch (Throwable ex) {
-                output.tryFailure(ex);
+                output.completeExceptionally(ex);
             }
         }
     }

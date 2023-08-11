@@ -89,16 +89,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     }
 
     @Override
-    public void setSuccess(V result) {
-        if (internalComplete(encodeValue(result))) {
-            postComplete(this);
-            return;
-        }
-        throw new IllegalStateException("Already complete");
-    }
-
-    @Override
-    public boolean trySuccess(V result) {
+    public boolean complete(V result) {
         if (internalComplete(encodeValue(result))) {
             postComplete(this);
             return true;
@@ -107,12 +98,8 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     }
 
     @Override
-    public void setFailure(Throwable cause, boolean logCause) {
-        Objects.requireNonNull(cause, "cause");
-        if (internalComplete(new AltResult(cause))) {
-            if (logCause) {
-                logCause(cause);
-            }
+    public void setComplete(V result) {
+        if (internalComplete(encodeValue(result))) {
             postComplete(this);
             return;
         }
@@ -120,7 +107,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     }
 
     @Override
-    public boolean tryFailure(Throwable cause, boolean logCause) {
+    public boolean completeExceptionally(Throwable cause, boolean logCause) {
         Objects.requireNonNull(cause, "cause");
         if (internalComplete(new AltResult(cause))) {
             if (logCause) {
@@ -130,6 +117,19 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void setCompleteExceptionally(Throwable cause, boolean logCause) {
+        Objects.requireNonNull(cause, "cause");
+        if (internalComplete(new AltResult(cause))) {
+            if (logCause) {
+                logCause(cause);
+            }
+            postComplete(this);
+            return;
+        }
+        throw new IllegalStateException("Already complete");
     }
 
     @Override
@@ -205,7 +205,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     @Override
     public boolean cancel() {
         final boolean cancelled = (result == null) &&
-                tryFailure(StacklessCancellationException.INSTANCE, false);
+                completeExceptionally(StacklessCancellationException.INSTANCE, false);
         return cancelled || isCancelled();
     }
 
@@ -276,7 +276,6 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     private Completion clearListeners(Completion onto) {
         // 1. 将当前栈内元素逆序，因为即使在接口层进行了说明（不提供监听器执行时序保证），但仍然有人依赖于监听器的执行时序(期望先添加的先执行)
         // 2. 将逆序后的元素插入到'onto'前面，即插入到原本要被通知的下一个监听器的前面
-        // 坑爹之处：JDK的CompletableFuture没有这个顺序优化...
         Completion head = stack;
         Completion ontoHead = onto;
 

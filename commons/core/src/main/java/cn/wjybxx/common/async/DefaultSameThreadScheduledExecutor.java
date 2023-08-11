@@ -346,9 +346,9 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                 if (period == 0) {
                     V result = task.call();
                     if (result == Adapters.CONTINUE) { // 未得出结果
-                        tryFailure(TimeSharingTimeoutException.INSTANCE);
+                        completeExceptionally(TimeSharingTimeoutException.INSTANCE);
                     } else {
-                        trySuccess(result);
+                        complete(result);
                     }
                 } else if (!isDone()) {
                     TimeSharingContext timeSharingContext = this.timeSharingContext;
@@ -357,12 +357,12 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                     }
                     V result = task.call();
                     if (result != Adapters.CONTINUE && Adapters.isTimeSharing(task)) {
-                        trySuccess(result); // 得出结果
+                        complete(result); // 得出结果
                         return false;
                     }
                     if (!isDone()) { // 未被取消
                         if (timeSharingContext != null && timeSharingContext.isTimeout()) { // 超时
-                            tryFailure(TimeSharingTimeoutException.INSTANCE);
+                            completeExceptionally(TimeSharingTimeoutException.INSTANCE);
                             return false;
                         }
                         setNextRunTime(tickTime, timeSharingContext);
@@ -373,7 +373,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                 }
             } catch (Throwable ex) {
                 ThreadUtils.recoveryInterrupted(ex);
-                tryFailure(ex);
+                completeExceptionally(ex);
             }
             return false;
         }

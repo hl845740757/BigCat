@@ -54,7 +54,7 @@ public interface FluentFuture<V> {
 
     /**
      * 如果future以任何形式的异常完成，则返回true。
-     * 包括被取消，以及显式调用{@link FluentPromise#setFailure(Throwable)}和{@link FluentPromise#tryFailure(Throwable)}操作。
+     * 包括被取消，以及显式调用{@link FluentPromise#setCompleteExceptionally(Throwable)}和{@link FluentPromise#completeExceptionally(Throwable)}操作。
      */
     boolean isFailed();
 

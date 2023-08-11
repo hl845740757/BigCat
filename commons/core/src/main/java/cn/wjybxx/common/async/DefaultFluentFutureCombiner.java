@@ -127,16 +127,16 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
 
             // 没有任务，立即完成
             if (futureCount == 0) {
-                return aggregatePromise.trySuccess(null);
+                return aggregatePromise.complete(null);
             }
             if (options.isAnyOf()) {
                 if (doneCount == 0) {
                     return false;
                 }
                 if (result != null) { // anyOf下尽量返回成功
-                    return aggregatePromise.trySuccess(decodeValue(result));
+                    return aggregatePromise.complete(decodeValue(result));
                 } else {
-                    return aggregatePromise.tryFailure(cause);
+                    return aggregatePromise.completeExceptionally(cause);
                 }
             }
 
@@ -147,14 +147,14 @@ class DefaultFluentFutureCombiner implements FluentFutureCombiner {
             // 包含了require小于等于0的情况
             final int successRequire = options.successRequire;
             if (succeedCount >= successRequire) {
-                return aggregatePromise.trySuccess(null);
+                return aggregatePromise.complete(null);
             }
             // 剩余的任务不足以达到成功，则立即失败；包含了require大于futureCount的情况
             if (succeedCount + (futureCount - doneCount) < successRequire) {
                 if (cause == null) {
                     cause = TaskInsufficientException.create(futureCount, doneCount, succeedCount, successRequire);
                 }
-                return aggregatePromise.tryFailure(cause);
+                return aggregatePromise.completeExceptionally(cause);
             }
             return false;
         }

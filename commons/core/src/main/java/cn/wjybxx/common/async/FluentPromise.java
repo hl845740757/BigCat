@@ -31,36 +31,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 public interface FluentPromise<V> extends FluentFuture<V> {
 
     /**
-     * 将future置为成功完成状态，如果future已进入完成状态，则抛出{@link IllegalStateException}
-     */
-    void setSuccess(V result);
-
-    /**
      * 尝试将future置为成功完成状态，如果future已进入完成状态，则返回false
      */
-    boolean trySuccess(V result);
+    boolean complete(V result);
 
     /**
-     * 将future置为失败状态，如果future已进入完成状态，则抛出{@link IllegalStateException}
+     * 将future置为成功完成状态，如果future已进入完成状态，则抛出{@link IllegalStateException}
      */
-    default void setFailure(Throwable cause) {
-        setFailure(cause, true);
-    }
-
-    /**
-     * 将future置为失败状态，如果future已进入完成状态，则抛出{@link IllegalStateException}
-     *
-     * @param logCause 是否记录日志
-     *                 注意：即便为true，如果异常是{@link NoLogRequiredException}，那么也不记录日志
-     */
-    void setFailure(Throwable cause, boolean logCause);
-
-    /**
-     * 尝试将future置为失败完成状态，如果future已进入完成状态，则返回false
-     */
-    default boolean tryFailure(Throwable cause) {
-        return tryFailure(cause, true);
-    }
+    void setComplete(V result);
 
     /**
      * 尝试将future置为失败完成状态，如果future已进入完成状态，则返回false
@@ -68,6 +46,28 @@ public interface FluentPromise<V> extends FluentFuture<V> {
      * @param logCause 是否记录日志
      *                 注意：即便为true，如果异常是{@link NoLogRequiredException}，那么也不记录日志
      */
-    boolean tryFailure(Throwable cause, boolean logCause);
+    boolean completeExceptionally(Throwable cause, boolean logCause);
+
+    /**
+     * 将future置为失败状态，如果future已进入完成状态，则抛出{@link IllegalStateException}
+     *
+     * @param logCause 是否记录日志
+     *                 注意：即便为true，如果异常是{@link NoLogRequiredException}，那么也不记录日志
+     */
+    void setCompleteExceptionally(Throwable cause, boolean logCause);
+
+    /**
+     * 尝试将future置为失败完成状态，如果future已进入完成状态，则返回false
+     */
+    default boolean completeExceptionally(Throwable cause) {
+        return completeExceptionally(cause, true);
+    }
+
+    /**
+     * 将future置为失败状态，如果future已进入完成状态，则抛出{@link IllegalStateException}
+     */
+    default void setCompleteExceptionally(Throwable cause) {
+        setCompleteExceptionally(cause, true);
+    }
 
 }
