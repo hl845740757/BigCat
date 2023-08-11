@@ -42,14 +42,14 @@ public interface EventHandlerRegistry {
      * @param childKey  子事件key
      * @param handler   要删除的处理器
      */
-    void removeX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
+    void unregisterX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
 
     /***
      * 判断handler是否在对应的事件监听列表表
      *
      * @param childKey 注意，这里不支持集合
      */
-    boolean contains(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
+    boolean hasListener(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
 
     /**
      * 清理注册表，释放内存
@@ -57,7 +57,7 @@ public interface EventHandlerRegistry {
     void clear();
 
     // region 辅助方法
-    // 通过泛型提示Handler接收的事件类型，通常没有自定义数据
+    // 通过泛型提示Handler接收的事件类型
 
     default <T> void register(Class<T> eventType, EventHandler<? super T> handler) {
         registerX(eventType, null, handler, null);
@@ -75,12 +75,12 @@ public interface EventHandlerRegistry {
         registerX(eventType, childKey, handler, customData);
     }
 
-    default void remove(Class<?> eventType, EventHandler<?> handler) {
-        removeX(eventType, null, handler);
+    default void unregister(Class<?> eventType, EventHandler<?> handler) {
+        unregisterX(eventType, null, handler);
     }
 
-    default void remove(Class<?> eventType, Object childKey, EventHandler<?> handler) {
-        removeX(eventType, childKey, handler);
+    default void unregister(Class<?> eventType, Object childKey, EventHandler<?> handler) {
+        unregisterX(eventType, childKey, handler);
     }
 
     // endregion

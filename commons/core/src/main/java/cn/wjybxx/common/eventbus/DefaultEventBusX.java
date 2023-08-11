@@ -61,18 +61,18 @@ public class DefaultEventBusX implements EventBus {
                 key.sourceKey = eventX.sourceKey();
                 key.masterKey = eventX.masterKey();
                 // 先以sourceKey + masterKey派发一次
-                EventBusUtils.postEventImp(handlerMap, event, key);
+                EventBusUtils.postEvent(handlerMap, event, key);
 
                 // 如果存在childKey，再以全部key派发一次
                 final Object childKey = eventX.childKey();
                 if (childKey != null) {
                     key.childKey = childKey;
-                    EventBusUtils.postEventImp(handlerMap, eventX, key);
+                    EventBusUtils.postEvent(handlerMap, eventX, key);
                 }
             } else {
                 // 普通事件只支持class作为masterKey
                 key.masterKey = event.getClass();
-                EventBusUtils.postEventImp(handlerMap, event, key);
+                EventBusUtils.postEvent(handlerMap, event, key);
             }
             keyPool.free(key);
         } finally {
@@ -97,16 +97,16 @@ public class DefaultEventBusX implements EventBus {
         if (CollectionUtils.isNotEmptyCollection(childKey)) {
             for (Object c : (Collection<?>) childKey) {
                 final ComposeEventKey key = new ComposeEventKey(sourceKey, masterKey, c);
-                EventBusUtils.addHandlerImp(handlerMap, key, handler);
+                EventBusUtils.addHandler(handlerMap, key, handler);
             }
         } else {
             final ComposeEventKey key = new ComposeEventKey(sourceKey, masterKey, childKey);
-            EventBusUtils.addHandlerImp(handlerMap, key, handler);
+            EventBusUtils.addHandler(handlerMap, key, handler);
         }
     }
 
     @Override
-    public void removeX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
+    public void unregisterX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
         Objects.requireNonNull(masterKey, "masterKey");
         Objects.requireNonNull(handler, "handler");
 
@@ -122,17 +122,17 @@ public class DefaultEventBusX implements EventBus {
         if (CollectionUtils.isNotEmptyCollection(childKey)) {
             for (Object c : (Collection<?>) childKey) {
                 composeEventKey.init(sourceKey, masterKey, c);
-                EventBusUtils.removeHandlerImp(handlerMap, composeEventKey, handler);
+                EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
             }
         } else {
             composeEventKey.init(sourceKey, masterKey, childKey);
-            EventBusUtils.removeHandlerImp(handlerMap, composeEventKey, handler);
+            EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
         }
         keyPool.free(composeEventKey);
     }
 
     @Override
-    public boolean contains(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
+    public boolean hasListener(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
         Objects.requireNonNull(masterKey, "masterKey");
         Objects.requireNonNull(handler, "handler");
 
@@ -145,7 +145,7 @@ public class DefaultEventBusX implements EventBus {
         }
         final ComposeEventKey composeEventKey = keyPool.get();
         composeEventKey.init(sourceKey, masterKey, childKey);
-        boolean contains = EventBusUtils.containsImpl(handlerMap, composeEventKey, handler);
+        boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
         keyPool.free(composeEventKey);
         return contains;
     }

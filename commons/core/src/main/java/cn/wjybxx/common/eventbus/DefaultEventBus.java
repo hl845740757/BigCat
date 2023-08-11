@@ -62,18 +62,18 @@ public class DefaultEventBus implements EventBus {
         try {
             if (event instanceof DynamicEvent eventX) {
                 final Object masterKey = eventX.masterKey();
-                EventBusUtils.postEventImp(handlerMap, eventX, masterKey);
+                EventBusUtils.postEvent(handlerMap, eventX, masterKey);
 
                 final Object childKey = eventX.childKey();
                 if (childKey != null) {
                     final ComposeEventKey composeEventKey = keyPool.get();
                     composeEventKey.init(masterKey, childKey);
-                    EventBusUtils.postEventImp(handlerMap, (Object) eventX, composeEventKey);
+                    EventBusUtils.postEvent(handlerMap, (Object) eventX, composeEventKey);
                     keyPool.free(composeEventKey);
                 }
             } else {
                 // 普通事件只支持class作为masterKey
-                EventBusUtils.postEventImp(handlerMap, event, event.getClass());
+                EventBusUtils.postEvent(handlerMap, event, event.getClass());
             }
         } finally {
             recursionDepth--;
@@ -90,49 +90,49 @@ public class DefaultEventBus implements EventBus {
         Objects.requireNonNull(masterKey, "masterKey");
         Objects.requireNonNull(handler, "handler");
         if (childKey == null) {
-            EventBusUtils.addHandlerImp(handlerMap, masterKey, handler);
+            EventBusUtils.addHandler(handlerMap, masterKey, handler);
         } else {
             if (CollectionUtils.isNotEmptyCollection(childKey)) {
                 for (Object c : (Collection<?>) childKey) {
                     final ComposeEventKey key = new ComposeEventKey(masterKey, c);
-                    EventBusUtils.addHandlerImp(handlerMap, key, handler);
+                    EventBusUtils.addHandler(handlerMap, key, handler);
                 }
             } else {
                 final ComposeEventKey key = new ComposeEventKey(masterKey, childKey);
-                EventBusUtils.addHandlerImp(handlerMap, key, handler);
+                EventBusUtils.addHandler(handlerMap, key, handler);
             }
         }
     }
 
     @Override
-    public void removeX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
+    public void unregisterX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
         Objects.requireNonNull(masterKey, "masterKey");
         Objects.requireNonNull(handler, "handler");
         if (childKey == null) {
-            EventBusUtils.removeHandlerImp(handlerMap, masterKey, handler);
+            EventBusUtils.removeHandler(handlerMap, masterKey, handler);
         } else {
             final ComposeEventKey composeEventKey = keyPool.get();
             if (CollectionUtils.isNotEmptyCollection(childKey)) {
                 for (Object c : (Collection<?>) childKey) {
                     composeEventKey.init(masterKey, c);
-                    EventBusUtils.removeHandlerImp(handlerMap, composeEventKey, handler);
+                    EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
                 }
             } else {
                 composeEventKey.init(masterKey, childKey);
-                EventBusUtils.removeHandlerImp(handlerMap, composeEventKey, handler);
+                EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
             }
             keyPool.free(composeEventKey);
         }
     }
 
     @Override
-    public boolean contains(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
+    public boolean hasListener(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
         if (childKey == null) {
-            return EventBusUtils.containsImpl(handlerMap, masterKey, handler);
+            return EventBusUtils.hasListener(handlerMap, masterKey, handler);
         } else {
             final ComposeEventKey composeEventKey = keyPool.get();
             composeEventKey.init(masterKey, childKey);
-            boolean contains = EventBusUtils.containsImpl(handlerMap, composeEventKey, handler);
+            boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
             keyPool.free(composeEventKey);
             return contains;
         }

@@ -46,7 +46,7 @@ public class EventBusUtils {
      * @param eventKey   事件对应的key
      * @param <T>        事件的类型
      */
-    public static <K, T> void postEventImp(Map<K, EventHandler<?>> handlerMap, @Nonnull T event, @Nonnull K eventKey) {
+    public static <K, T> void postEvent(Map<K, EventHandler<?>> handlerMap, @Nonnull T event, @Nonnull K eventKey) {
         @SuppressWarnings("unchecked") final EventHandler<? super T> handler = (EventHandler<? super T>) handlerMap.get(eventKey);
         if (null == handler) {
             return;
@@ -78,7 +78,7 @@ public class EventBusUtils {
      * @param handler    事件处理器
      * @param <T>        事件的类型
      */
-    public static <K, T> void addHandlerImp(Map<K, EventHandler<?>> handlerMap, @Nonnull K eventKey, EventHandler<? super T> handler) {
+    public static <K, T> void addHandler(Map<K, EventHandler<?>> handlerMap, @Nonnull K eventKey, EventHandler<? super T> handler) {
         Objects.requireNonNull(handler);
         @SuppressWarnings("unchecked") final EventHandler<? super T> existHandler = (EventHandler<? super T>) handlerMap.get(eventKey);
         if (null == existHandler) {
@@ -93,7 +93,7 @@ public class EventBusUtils {
         }
     }
 
-    public static <K, T> boolean removeHandlerImp(Map<K, EventHandler<?>> handlerMap, @Nonnull K eventKey, EventHandler<? super T> handler) {
+    public static <K, T> boolean removeHandler(Map<K, EventHandler<?>> handlerMap, @Nonnull K eventKey, EventHandler<? super T> handler) {
         if (handler == null) {
             return false;
         }
@@ -117,7 +117,7 @@ public class EventBusUtils {
         }
     }
 
-    public static <K> boolean containsImpl(Map<K, EventHandler<?>> handlerMap, @Nonnull K eventKey, EventHandler<?> handler) {
+    public static <K> boolean hasListener(Map<K, EventHandler<?>> handlerMap, @Nonnull K eventKey, EventHandler<?> handler) {
         if (handler == null) {
             return false;
         }
