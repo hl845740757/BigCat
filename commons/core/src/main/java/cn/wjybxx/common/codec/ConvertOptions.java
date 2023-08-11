@@ -64,6 +64,8 @@ public class ConvertOptions {
     public final StringBuilderPool stringBuilderPool;
     /** 文本编码设置 */
     public final DsonTextWriterSettings textWriterSettings;
+    /** 类json文本编码 */
+    public final DsonTextWriterSettings jsonWriterSettings;
 
     public ConvertOptions(Builder builder) {
         this.recursionLimit = builder.recursionLimit;
@@ -75,6 +77,11 @@ public class ConvertOptions {
         this.bufferPool = builder.bufferPool;
         this.stringBuilderPool = builder.stringBuilderPool;
         this.textWriterSettings = Objects.requireNonNull(builder.textWriterSettings);
+        this.jsonWriterSettings = Objects.requireNonNull(builder.jsonWriterSettings);
+
+        if (!jsonWriterSettings.jsonLike) {
+            throw new IllegalArgumentException("jsonWriterSetting.jsonLike must be true");
+        }
     }
 
     public static ConvertOptions DEFAULT = newBuilder().build();
@@ -95,7 +102,8 @@ public class ConvertOptions {
         private ClassIdConverter classIdConverter = new DefaultClassIdConverter();
         private BufferPool bufferPool = LocalPools.BUFFER_POOL;
         private StringBuilderPool stringBuilderPool = LocalPools.STRING_BUILDER_POOL;
-        private DsonTextWriterSettings textWriterSettings = DsonTextWriterSettings.newBuilder().build();
+        private DsonTextWriterSettings textWriterSettings = DsonTextWriterSettings.DEFAULT;
+        private DsonTextWriterSettings jsonWriterSettings = DsonTextWriterSettings.JSON_DEFAULT;
 
         public int getRecursionLimit() {
             return recursionLimit;
@@ -176,6 +184,15 @@ public class ConvertOptions {
 
         public Builder setTextWriterSettings(DsonTextWriterSettings textWriterSettings) {
             this.textWriterSettings = textWriterSettings;
+            return this;
+        }
+
+        public DsonTextWriterSettings getJsonWriterSettings() {
+            return jsonWriterSettings;
+        }
+
+        public Builder setJsonWriterSettings(DsonTextWriterSettings jsonWriterSettings) {
+            this.jsonWriterSettings = jsonWriterSettings;
             return this;
         }
 

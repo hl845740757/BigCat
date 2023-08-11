@@ -57,13 +57,17 @@ public interface EventHandlerRegistry {
     void clear();
 
     // region 辅助方法
-    // 通过泛型提示Handler接收的事件类型
+    // 默认参数和通过泛型提示Handler接收的事件类型
+
+    default <T> void registerX(Object masterKey, @Nullable Object childKey, EventHandler<T> handler) {
+        registerX(masterKey, childKey, handler, null);
+    }
 
     default <T> void register(Class<T> eventType, EventHandler<? super T> handler) {
         registerX(eventType, null, handler, null);
     }
 
-    default <T> void register(Class<T> eventType, EventHandler<? super T> handler, @Nullable Object customData) {
+    default <T> void register(Class<T> eventType, EventHandler<? super T> handler, Object customData) {
         registerX(eventType, null, handler, customData);
     }
 
@@ -71,7 +75,7 @@ public interface EventHandlerRegistry {
         registerX(eventType, childKey, handler, null);
     }
 
-    default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler, @Nullable Object customData) {
+    default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler, Object customData) {
         registerX(eventType, childKey, handler, customData);
     }
 

@@ -40,4 +40,8 @@ public class ExcelUtils {
         }
     }
 
+    public static Map<String, Sheet> readExcel(File file) {
+        return readExcel(file, ExcelReaderOptions.DEFAULT);
+    }
+
 }

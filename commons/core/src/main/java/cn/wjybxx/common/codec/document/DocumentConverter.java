@@ -45,9 +45,21 @@ public interface DocumentConverter extends Converter {
     /**
      * 将一个对象写入源
      * 如果对象的运行时类型和{@link TypeArgInfo#declaredType}一致，则会省去编码结果中的类型信息
+     *
+     * @param jsonLike    是否输出为类json模式（无行首）
+     * @param typeArgInfo 对象的类型信息
      */
     @Nonnull
-    String writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo);
+    String writeAsDson(Object value, boolean jsonLike, TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * 将一个对象写入指定writer
+     *
+     * @param jsonLike    是否输出为类json模式（无行首）
+     * @param typeArgInfo 对象的类型信息
+     * @param writer      用于接收输出
+     */
+    void writeAsDson(Object value, boolean jsonLike, TypeArgInfo<?> typeArgInfo, Writer writer);
 
     /**
      * 从数据源中读取一个对象
@@ -56,14 +68,7 @@ public interface DocumentConverter extends Converter {
      * @param jsonLike    是否像json一样没有行首
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
-    <U> U readFromDson(CharSequence source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo);
-
-    /**
-     * 将一个对象写入指定writer
-     *
-     * @param writer 用于接收输出
-     */
-    void writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer);
+    <U> U readFromDson(CharSequence source, boolean jsonLike, TypeArgInfo<U> typeArgInfo);
 
     /**
      * 从数据源中读取一个对象
@@ -72,22 +77,32 @@ public interface DocumentConverter extends Converter {
      * @param jsonLike    是否像json一样没有行首
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
-    <U> U readFromDson(Reader source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo);
+    <U> U readFromDson(Reader source, boolean jsonLike, TypeArgInfo<U> typeArgInfo);
 
-    default <U> U readFromDson(CharSequence source, @Nonnull TypeArgInfo<U> typeArgInfo) {
+    // endregion
+
+    // region 快捷方法
+
+    default String writeAsDson(Object value, TypeArgInfo<?> typeArgInfo) {
+        return writeAsDson(value, false, typeArgInfo);
+    }
+
+    default void writeAsDson(Object value, TypeArgInfo<?> typeArgInfo, Writer writer) {
+        writeAsDson(value, false, typeArgInfo, writer);
+    }
+
+    default <U> U readFromDson(CharSequence source, TypeArgInfo<U> typeArgInfo) {
         return readFromDson(source, false, typeArgInfo);
     }
 
-    default <U> U readFromDson(Reader source, @Nonnull TypeArgInfo<U> typeArgInfo) {
+    default <U> U readFromDson(Reader source, TypeArgInfo<U> typeArgInfo) {
         return readFromDson(source, false, typeArgInfo);
     }
 
-    @Nonnull
     default String writeAsDson(Object value) {
-        return writeAsDson(value, TypeArgInfo.OBJECT);
+        return writeAsDson(value, false, TypeArgInfo.OBJECT);
     }
 
-    @Nonnull
     default Object readFromDson(CharSequence source) {
         return readFromDson(source, false, TypeArgInfo.OBJECT);
     }

@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common.excel;
 
-import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.FunctionUtils;
+import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.config.DefaultValueParser;
 
 import javax.annotation.Nonnull;
@@ -35,6 +35,8 @@ import java.util.function.Predicate;
  */
 @Immutable
 public class ExcelReaderOptions {
+
+    public final static ExcelReaderOptions DEFAULT = ExcelReaderOptions.newBuilder().build();
 
     public final Set<String> supportedTypes;
     public final int bufferSize;

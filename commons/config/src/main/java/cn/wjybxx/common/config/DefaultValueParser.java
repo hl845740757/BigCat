@@ -165,7 +165,7 @@ public class DefaultValueParser implements ValueParser {
             return result;
         } else {
             // 读取为二维list
-            List<List<String>> twoDimensionElements = new ArrayList<>(10);
+            List<List<String>> twoDimensionElements = new ArrayList<>(4);
             try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, true))) {
                 if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
                 readTwoDimensionArray(reader, twoDimensionElements);

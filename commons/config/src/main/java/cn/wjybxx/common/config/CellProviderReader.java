@@ -84,7 +84,7 @@ public abstract class CellProviderReader {
         return parser.readAsBool(cell.getType(), cell.getValue());
     }
 
-    public <T> T readAsArray(String name, Class<T> typeToken) {
+    public <T> T readAsArray(String name, @Nonnull Class<T> typeToken) {
         final SheetCell cell = checkedGetCell(name);
         return parser.readAsArray(cell.getType(), cell.getValue(), typeToken);
     }

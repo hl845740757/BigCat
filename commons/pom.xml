@@ -66,15 +66,15 @@
         <junit.version>5.9.2</junit.version>
 
         <annotations.version>1.0-SNAPSHOT</annotations.version>
-        <dson.version>1.0.2</dson.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
+        <dson.version>1.0.3</dson.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.12.0</commons-io.version>
         <guava.version>31.1-jre</guava.version>
 
-        <pb.version>3.22.3</pb.version>
+        <pb.version>3.24.0</pb.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>4.0.1</jctools.version>
     </properties>

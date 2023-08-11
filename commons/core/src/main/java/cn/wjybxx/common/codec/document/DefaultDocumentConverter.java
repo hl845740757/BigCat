@@ -25,6 +25,7 @@ import cn.wjybxx.dson.Dsons;
 import cn.wjybxx.dson.io.*;
 import cn.wjybxx.dson.text.DsonTextReader;
 import cn.wjybxx.dson.text.DsonTextWriter;
+import cn.wjybxx.dson.text.DsonTextWriterSettings;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -129,13 +130,24 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     @Nonnull
     @Override
-    public String writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    public String writeAsDson(Object value, boolean jsonLike, @Nonnull TypeArgInfo<?> typeArgInfo) {
         StringBuilder stringBuilder = options.stringBuilderPool.alloc();
         try {
-            writeAsDson(value, typeArgInfo, new StringBuilderWriter(stringBuilder));
+            writeAsDson(value, jsonLike, typeArgInfo, new StringBuilderWriter(stringBuilder));
             return stringBuilder.toString();
         } finally {
             options.stringBuilderPool.release(stringBuilder);
+        }
+    }
+
+    @Override
+    public void writeAsDson(Object value, boolean jsonLike, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer) {
+        Objects.requireNonNull(writer, "writer");
+        DsonTextWriterSettings writerSettings = jsonLike ? options.jsonWriterSettings : options.textWriterSettings;
+        try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
+                new DsonTextWriter(options.recursionLimit, writer, writerSettings))) {
+            wrapper.writeObject(value, typeArgInfo, null);
+            wrapper.flush();
         }
     }
 
@@ -144,16 +156,6 @@ public class DefaultDocumentConverter implements DocumentConverter {
         try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
                 new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, jsonLike)))) {
             return wrapper.readObject(typeArgInfo);
-        }
-    }
-
-    @Override
-    public void writeAsDson(Object value, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer) {
-        Objects.requireNonNull(writer, "writer");
-        try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DsonTextWriter(options.recursionLimit, writer, options.textWriterSettings))) {
-            wrapper.writeObject(value, typeArgInfo, null);
-            wrapper.flush();
         }
     }
 
