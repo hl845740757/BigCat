@@ -30,15 +30,15 @@ public class TerminateFutureContext extends EventLoopFutureContext {
         super(eventLoop);
     }
 
-    public void terminate(XCompletableFuture<?> future) {
-        super.complete(future, null);
+    public boolean terminate(XCompletableFuture<?> future) {
+        return super.complete(future, null);
     }
 
-    public void terminate(XCompletableFuture<?> future, Throwable ex) {
+    public boolean terminate(XCompletableFuture<?> future, Throwable ex) {
         if (ex == null) {
-            super.complete(future, null);
+            return super.complete(future, null);
         } else {
-            super.completeExceptionally(future, ex);
+            return super.completeExceptionally(future, ex);
         }
     }
 

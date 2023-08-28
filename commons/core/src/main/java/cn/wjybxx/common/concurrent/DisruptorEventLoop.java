@@ -49,14 +49,16 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     /** 初始状态，未启动状态 */
     private static final int ST_NOT_STARTED = 0;
+    /** 启动中 */
+    private static final int ST_STARTING = 1;
     /** 运行状态 */
-    private static final int ST_STARTED = 1;
+    private static final int ST_RUNNING = 2;
     /** 正在关闭状态 */
-    private static final int ST_SHUTTING_DOWN = 2;
+    private static final int ST_SHUTTING_DOWN = 3;
     /** 已关闭状态，正在进行最后的清理 */
-    private static final int ST_SHUTDOWN = 3;
+    private static final int ST_SHUTDOWN = 4;
     /** 终止状态 */
-    private static final int ST_TERMINATED = 4;
+    private static final int ST_TERMINATED = 5;
 
     private static final int MIN_BATCH_SIZE = 64;
     private static final int MAX_BATCH_SIZE = 64 * 1024;
@@ -96,6 +98,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     private final Thread thread;
     private final Worker worker;
     private final XCompletableFuture<?> terminationFuture = new XCompletableFuture<>(new TerminateFutureContext(this));
+    private final XCompletableFuture<?> runningFuture = new XCompletableFuture<>(new TerminateFutureContext(this));
 
     @SuppressWarnings("unused")
     private long p25, p26, p27, p28, p29, p30, p31, p32;
@@ -128,6 +131,21 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     // region 生命周期
 
     @Override
+    public State getState() {
+        return State.valueOf(state);
+    }
+
+    @Override
+    public boolean isStarting() {
+        return state == ST_STARTING;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return state == ST_RUNNING;
+    }
+
+    @Override
     public final boolean isShuttingDown() {
         return isShuttingDown0(state);
     }
@@ -156,12 +174,11 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     }
 
     @Override
-    public final XCompletableFuture<?> terminationFuture() {
-        return terminationFuture;
-    }
-
-    @Override
     public void shutdown() {
+        if (!runningFuture.isDone()) {
+            FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException("Shutdown"));
+        }
+
         int expectedState = state;
         for (; ; ) {
             if (isShuttingDown0(expectedState)) {
@@ -188,12 +205,29 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         // 这里不能操作ringBuffer中的数据，不能打破[多生产者单消费者]的架构
         return Collections.emptyList();
     }
+
+    @Override
+    public final ICompletableFuture<?> terminationFuture() {
+        return terminationFuture;
+    }
+
+    @Override
+    public ICompletableFuture<?> runningFuture() {
+        return runningFuture;
+    }
+
+    @Override
+    public ICompletableFuture<?> start() {
+        ensureThreadStarted();
+        return runningFuture;
+    }
+
     // endregion
 
     // region 任务提交
 
     @Override
-    public final void execute(@Nonnull Runnable task) {
+    public void execute(@Nonnull Runnable task) {
         Objects.requireNonNull(task, "task");
         if (isShuttingDown()) {
             rejectedExecutionHandler.rejected(task, this);
@@ -348,6 +382,19 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         }
     }
 
+    /** 获取当前任务数，返回值是一个估算值 */
+    @Beta
+    public int taskCount() {
+        long count = ringBuffer.getCursor() - worker.sequence.get();
+        if (count > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        if (count == -1) {
+            return 0;
+        }
+        return (int) count;
+    }
+
     @Override
     final void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered) {
         assert inEventLoop();
@@ -399,7 +446,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     private void ensureThreadStarted() {
         if (state == ST_NOT_STARTED
-                && STATE.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
+                && STATE.compareAndSet(this, ST_NOT_STARTED, ST_STARTING)) {
             thread.start();
         }
     }
@@ -409,7 +456,9 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
             // TODO 是否需要启动线程，进行更彻底的清理？
             state = ST_TERMINATED;
             worker.removeFromGatingSequence(); // 防死锁
-            completeTerminationFuture();
+
+            FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException());
+            FutureUtils.completeTerminationFuture(terminationFuture);
         } else {
             // 等待策略是根据alert信号判断EventLoop是否已开始关闭的，因此即使inEventLoop也需要alert，否则可能丢失信号，在waitFor处无法停止
             worker.sequenceBarrier.alert();
@@ -442,10 +491,6 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         return (int) STATE.compareAndExchange(this, expectedState, targetState);
     }
 
-    private void completeTerminationFuture() {
-        FutureUtils.completeTerminationFuture(terminationFuture);
-    }
-
     /**
      * 实现{@link RingBuffer}的消费者，实现基本和{@link BatchEventProcessor}一致。
      * 但解决了两个问题：
@@ -463,16 +508,32 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
         @Override
         public void run() {
+            outer:
             try {
+                if (runningFuture.isDone()) {
+                    break outer;
+                }
+
                 nanoTime = System.nanoTime();
                 agent.onStart(DisruptorEventLoop.this);
 
-                loop();
+                advanceRunState(ST_RUNNING);
+                FutureUtils.completeTerminationFuture(runningFuture);
+
+                if (runningFuture.isSucceeded()) {
+                    loop();
+                }
             } catch (Throwable e) {
                 logger.error("thread exit due to exception!", e);
             } finally {
                 // 如果是非正常退出，需要切换到正在关闭状态 - 告知其它线程，已经开始关闭
                 advanceRunState(ST_SHUTTING_DOWN);
+                if (!runningFuture.isDone()) { // 启动失败
+                    FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException("StartFailed"));
+                }
+                if (!runningFuture.isSucceeded()) {
+                    advanceRunState(ST_SHUTDOWN); // 启动失败直接进入清理状态，丢弃所有提交的任务
+                }
 
                 try {
                     // 清理ringBuffer中的数据
@@ -489,7 +550,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                     } finally {
                         // 设置为终止状态
                         state = ST_TERMINATED;
-                        completeTerminationFuture();
+                        FutureUtils.completeTerminationFuture(terminationFuture);
                     }
                 }
             }

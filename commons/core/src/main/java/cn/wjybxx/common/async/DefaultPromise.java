@@ -113,8 +113,8 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
     @Override
     public FluentFuture<V> addListener(@Nonnull BiConsumer<? super V, ? super Throwable> action) {
         Objects.requireNonNull(action);
-        if ((action instanceof Completion)) {
-            pushCompletionStack((Completion) action);
+        if (action instanceof Completion completion) {
+            pushCompletionStack(completion);
         } else {
             pushCompletionStack(new ActionWhenComplete<>(this, action));
         }

@@ -40,12 +40,10 @@ public class MessageEnumCodec<T extends ProtocolMessageEnum> implements Document
 
     private final Class<T> clazz;
     private final Internal.EnumLiteMap<T> enumLiteMap;
-    private final String typeName;
 
     public MessageEnumCodec(Class<T> clazz, Internal.EnumLiteMap<T> enumLiteMap) {
         this.clazz = clazz;
         this.enumLiteMap = enumLiteMap;
-        this.typeName = "Protobuf." + clazz.getSimpleName();
     }
 
     @Nonnull

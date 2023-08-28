@@ -49,15 +49,15 @@ public final class ScheduleBuilder<V> {
     }
 
     public static ScheduleBuilder<Object> newRunnable(Runnable task) {
-        return new ScheduleBuilder<>(Adapters.toCallable(task, null));
+        return new ScheduleBuilder<>(FutureUtils.toCallable(task, null));
     }
 
     public static <V> ScheduleBuilder<V> newRunnable(Runnable task, V result) {
-        return new ScheduleBuilder<>(Adapters.toCallable(task, result));
+        return new ScheduleBuilder<>(FutureUtils.toCallable(task, result));
     }
 
     public static <V> ScheduleBuilder<V> newTimeSharing(TimeSharingTask<V> task) {
-        return new ScheduleBuilder<>(Adapters.toCallable(task));
+        return new ScheduleBuilder<>(FutureUtils.toCallable(task));
     }
 
     // region 调度方式

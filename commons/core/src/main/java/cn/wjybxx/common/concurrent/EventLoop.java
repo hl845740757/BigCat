@@ -63,14 +63,18 @@ public interface EventLoop extends FixedEventLoopGroup {
      */
     @Nonnull
     @Override
-    EventLoop next();
+    default EventLoop next() {
+        return this;
+    }
 
     /**
      * @return this - 由于{@link EventLoop}表示单个线程，因此总是选中自己
      */
     @Nonnull
     @Override
-    EventLoop select(int key);
+    default EventLoop select(int key) {
+        return this;
+    }
 
     /**
      * 返回该EventLoop线程所在的线程组（管理该EventLoop的容器）。
@@ -142,6 +146,34 @@ public interface EventLoop extends FixedEventLoopGroup {
 
     // endregion
 
+    /** @return EventLoop的当前状态 */
+    State getState();
+
+    /** 是否处于启动中状态 */
+    boolean isStarting();
+
+    /** 是否处于运行状态 */
+    boolean isRunning();
+
+    /**
+     * 等待线程进入运行状态的future
+     * future会在EventLoop成功启动的时候进入完成状态
+     * <p>
+     * 1.如果EventLoop启动失败，则Future进入失败完成状态
+     * 2.如果EventLoop未启动直接关闭，则Future进入失败完成状态
+     * 3.EventLoop关闭时，Future保持之前的结果
+     */
+    ICompletableFuture<?> runningFuture();
+
+    /**
+     * 主动启动EventLoop
+     * 一般而言，我们可以不主动启动EventLoop，在提交任务时会自动启动EventLoop，但如果我们需要确保EventLoop处于正确的状态才能对外提供服务时，则可以主动启动时EventLoop。
+     * 另外，通过提交任务启动EventLoop，是无法根据任务的执行结果来判断启动是否成功的。
+     *
+     * @return {@link #runningFuture()}
+     */
+    ICompletableFuture<?> start();
+
     enum State {
 
         /** 初始状态 -- 已创建，但尚未启动 */
@@ -163,7 +195,7 @@ public interface EventLoop extends FixedEventLoopGroup {
             this.number = number;
         }
 
-        public static State forNumber(int number) {
+        public static State valueOf(int number) {
             return switch (number) {
                 case 0 -> INIT;
                 case 1 -> STARTING;

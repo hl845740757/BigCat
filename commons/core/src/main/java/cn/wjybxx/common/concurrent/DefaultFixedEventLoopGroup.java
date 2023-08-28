@@ -75,7 +75,7 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
     // -------------------------------------  子类生命周期管理 --------------------------------
 
     @Override
-    public XCompletableFuture<?> terminationFuture() {
+    public ICompletableFuture<?> terminationFuture() {
         return terminationFuture;
     }
 
@@ -118,7 +118,7 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
      * 当所有的子节点都进入终结状态时，该方法将被调用
      * 通常用于执行一些清理工作
      */
-    protected void terminateHook() {
+    protected void invokeTerminationHook() {
         if (terminationHook != null) {
             terminationHook.run();
         }
@@ -174,7 +174,7 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
         public void accept(Object o, Throwable throwable) {
             if (terminatedChildren.incrementAndGet() == children.length) {
                 try {
-                    terminateHook();
+                    invokeTerminationHook();
                 } catch (Throwable e) {
                     logger.error("terminateHook caught exception!", e);
                 } finally {

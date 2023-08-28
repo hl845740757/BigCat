@@ -62,13 +62,13 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
 
     static <V> XScheduledFutureTask<V> ofRunnable(EventLoopFutureContext ctx, Runnable task,
                                                   long id, long nanoTime) {
-        return new XScheduledFutureTask<>(ctx, Adapters.toCallable(task, null), id, nanoTime, 0);
+        return new XScheduledFutureTask<>(ctx, FutureUtils.toCallable(task, null), id, nanoTime, 0);
     }
 
     static <V> XScheduledFutureTask<V> ofPeriodic(EventLoopFutureContext ctx, Runnable task,
                                                   long id, long nanoTime, long period) {
         validatePeriod(period);
-        return new XScheduledFutureTask<>(ctx, Adapters.toCallable(task, null), id, nanoTime, period);
+        return new XScheduledFutureTask<>(ctx, FutureUtils.toCallable(task, null), id, nanoTime, period);
     }
 
     private static void validatePeriod(long period) {
@@ -176,10 +176,10 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
             if (period == 0) {
                 if (internal_setUncancellable()) { // 隐式测试isDone
                     V result = task.call();
-                    if (result == Adapters.CONTINUE) { // 未得出结果
-                        internal_doCompleteExceptionally(TimeSharingTimeoutException.INSTANCE);
-                    } else {
+                    if (result != FutureUtils.CONTINUE) {  // 得出结果
                         internal_doComplete(result);
+                    } else {
+                        internal_doCompleteExceptionally(TimeSharingTimeoutException.INSTANCE);
                     }
                 }
             } else if (!isDone()) {
@@ -188,8 +188,8 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
                     timeSharingContext.beforeCall(tickTime, nextTriggerTime, period);
                 }
                 V result = task.call();
-                if (result != Adapters.CONTINUE && Adapters.isTimeSharing(task)) {
-                    internal_doComplete(result); // 得出结果
+                if (result != FutureUtils.CONTINUE && FutureUtils.isTimeSharing(task)) { // 周期性任务，只有分时任务可以有结果
+                    internal_doComplete(result);
                     return false;
                 }
                 if (!isDone()) { // 未被取消
@@ -205,7 +205,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
             }
         } catch (Throwable ex) {
             ThreadUtils.recoveryInterrupted(ex);
-            if (period != 0 && !Adapters.isTimeSharing(task)) {
+            if (period != 0 && !FutureUtils.isTimeSharing(task)) {
                 boolean caught = isEnable(ScheduleFeature.CAUGHT_THROWABLE)
                         || (isEnable(ScheduleFeature.CAUGHT_EXCEPTION) && ex instanceof Exception);
                 if (caught) {

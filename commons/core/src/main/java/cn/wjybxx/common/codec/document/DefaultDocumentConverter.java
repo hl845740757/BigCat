@@ -16,9 +16,10 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.codec.*;
-import cn.wjybxx.common.codec.document.codecs.MessageCodec;
-import cn.wjybxx.common.codec.document.codecs.MessageEnumCodec;
+import cn.wjybxx.common.codec.ConvertOptions;
+import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.TypeMetaRegistries;
+import cn.wjybxx.common.codec.TypeMetaRegistry;
 import cn.wjybxx.dson.DsonBinaryReader;
 import cn.wjybxx.dson.DsonBinaryWriter;
 import cn.wjybxx.dson.Dsons;
@@ -26,8 +27,6 @@ import cn.wjybxx.dson.io.*;
 import cn.wjybxx.dson.text.DsonTextReader;
 import cn.wjybxx.dson.text.DsonTextWriter;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
-import com.google.protobuf.MessageLite;
-import com.google.protobuf.ProtocolMessageEnum;
 import org.apache.commons.io.output.StringBuilderWriter;
 
 import javax.annotation.Nonnull;
@@ -37,7 +36,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * @author wjybxx
@@ -170,43 +168,21 @@ public class DefaultDocumentConverter implements DocumentConverter {
     // ------------------------------------------------- 工厂方法 ------------------------------------------------------
 
     /**
-     * @param allProtoBufClasses 所有的protobuf类
-     * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
-     * @param typeMetaRegistry   所有的类型id信息，包括protobuf的类
-     * @param options            一些可选项
+     * @param pojoCodecImplList 所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
+     * @param typeMetaRegistry  所有的类型id信息，包括protobuf的类
+     * @param options           一些可选项
      */
-    @SuppressWarnings("unchecked")
-    public static DefaultDocumentConverter newInstance(final Set<Class<?>> allProtoBufClasses,
-                                                       final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
+    public static DefaultDocumentConverter newInstance(final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
                                                        final TypeMetaRegistry<String> typeMetaRegistry,
                                                        final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名是否非法
-        for (Class<?> clazz : allProtoBufClasses) {
-            typeMetaRegistry.checkedOfType(clazz);
-        }
         for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
             typeMetaRegistry.checkedOfType(codecImpl.getEncoderClass());
         }
 
-        final List<DocumentPojoCodec<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size() + pojoCodecImplList.size());
-        // 解析parser
-        for (Class<?> messageClazz : allProtoBufClasses) {
-            // protoBuf消息
-            if (MessageLite.class.isAssignableFrom(messageClazz)) {
-                MessageCodec<?> messageCodec = parseMessageCodec((Class<? extends MessageLite>) messageClazz);
-                allPojoCodecList.add(new DocumentPojoCodec<>(messageCodec));
-                continue;
-            }
-            // protoBuf枚举
-            if (ProtocolMessageEnum.class.isAssignableFrom(messageClazz)) {
-                MessageEnumCodec<?> enumCodec = parseMessageEnumCodec((Class<? extends ProtocolMessageEnum>) messageClazz);
-                allPojoCodecList.add(new DocumentPojoCodec<>(enumCodec));
-                continue;
-            }
-            throw new IllegalArgumentException("Unsupported class " + messageClazz);
-        }
         // 转换codecImpl
+        final List<DocumentPojoCodec<?>> allPojoCodecList = new ArrayList<>(pojoCodecImplList.size());
         for (DocumentPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
             allPojoCodecList.add(new DocumentPojoCodec<>(codecImpl));
         }
@@ -218,16 +194,6 @@ public class DefaultDocumentConverter implements DocumentConverter {
                         DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
                         DocumentConverterUtils.getDefaultCodecRegistry(options.encodeMapAsObject)),
                 options);
-    }
-
-    private static <T extends MessageLite> MessageCodec<T> parseMessageCodec(Class<T> messageClazz) {
-        final var enumLiteMap = ProtobufUtils.findParser(messageClazz);
-        return new MessageCodec<>(messageClazz, enumLiteMap);
-    }
-
-    private static <T extends ProtocolMessageEnum> MessageEnumCodec<T> parseMessageEnumCodec(Class<T> messageClazz) {
-        final var enumLiteMap = ProtobufUtils.findMapper(messageClazz);
-        return new MessageEnumCodec<>(messageClazz, enumLiteMap);
     }
 
 }

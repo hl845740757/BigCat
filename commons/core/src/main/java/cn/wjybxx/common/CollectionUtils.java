@@ -500,6 +500,17 @@ public class CollectionUtils {
         Arrays.sort(elements, comparator);
         return List.of(elements);
     }
+
+    /** 如果列表为Null，则返回空数组列表 */
+    public static <E> List<E> nullToArrayList(@Nullable List<E> src) {
+        return src == null ? new ArrayList<>() : src;
+    }
+
+    /** 如果列表为Null，则返回空列表 */
+    public static <E> List<E> nullToEmptyList(@Nullable List<E> src) {
+        return src == null ? List.of() : src;
+    }
+
     // endregion
 
     // region set

@@ -50,7 +50,7 @@ class XFutureTask<V> extends XCompletableFuture<V> implements RunnableFuture<V> 
 
     XFutureTask(FutureContext ctx, Runnable task, V result) {
         super(ctx);
-        this.task = Adapters.toCallable(task, result);
+        this.task = FutureUtils.toCallable(task, result);
     }
 
     @Override

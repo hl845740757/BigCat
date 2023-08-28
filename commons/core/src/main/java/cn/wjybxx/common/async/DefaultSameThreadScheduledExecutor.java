@@ -19,7 +19,7 @@ package cn.wjybxx.common.async;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.collect.DefaultIndexedPriorityQueue;
 import cn.wjybxx.common.collect.IndexedPriorityQueue;
-import cn.wjybxx.common.concurrent.Adapters;
+import cn.wjybxx.common.concurrent.FutureUtils;
 import cn.wjybxx.common.concurrent.TimeSharingContext;
 import cn.wjybxx.common.concurrent.TimeSharingTask;
 import cn.wjybxx.common.concurrent.TimeSharingTimeoutException;
@@ -134,7 +134,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         checkTimeSharingTimeout(timeout);
 
         final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.getTime());
-        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, Adapters.toCallable(task), timeSharingContext,
+        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, FutureUtils.toCallable(task), timeSharingContext,
                 ++sequencer, nextTriggerTime(initialDelay), -period);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
@@ -152,7 +152,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         checkTimeSharingTimeout(timeout);
 
         final TimeSharingContext timeSharingContext = new TimeSharingContext(timeout, timeProvider.getTime());
-        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, Adapters.toCallable(task), timeSharingContext,
+        final ScheduledFutureTask<V> scheduledFutureTask = new ScheduledFutureTask<>(this, FutureUtils.toCallable(task), timeSharingContext,
                 ++sequencer, nextTriggerTime(initialDelay), period);
         delayExecute(scheduledFutureTask);
         return scheduledFutureTask;
@@ -345,10 +345,10 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                 Callable<V> task = this.task;
                 if (period == 0) {
                     V result = task.call();
-                    if (result == Adapters.CONTINUE) { // 未得出结果
-                        completeExceptionally(TimeSharingTimeoutException.INSTANCE);
-                    } else {
+                    if (result != FutureUtils.CONTINUE) { // 得出结果
                         complete(result);
+                    } else {
+                        completeExceptionally(TimeSharingTimeoutException.INSTANCE);
                     }
                 } else if (!isDone()) {
                     TimeSharingContext timeSharingContext = this.timeSharingContext;
@@ -356,8 +356,8 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
                         timeSharingContext.beforeCall(tickTime, nextTriggerTime, period);
                     }
                     V result = task.call();
-                    if (result != Adapters.CONTINUE && Adapters.isTimeSharing(task)) {
-                        complete(result); // 得出结果
+                    if (result != FutureUtils.CONTINUE && FutureUtils.isTimeSharing(task)) { // 周期性任务，只有分时任务可以有结果
+                        complete(result);
                         return false;
                     }
                     if (!isDone()) { // 未被取消

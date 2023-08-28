@@ -62,6 +62,17 @@ public class FutureUtils {
     }
     // endregion
 
+    // region future工具方法
+
+    public static <V> XCompletableFuture<V> toXCompletableFuture(CompletionStage<V> stage) {
+        if (stage instanceof ICompletableFuture<V> future) {
+            return future.toCompletableFuture();
+        }
+        XCompletableFuture<V> future = new XCompletableFuture<>();
+        setFuture(future, stage);
+        return future;
+    }
+
     public static <V> void setFuture(CompletableFuture<? super V> output, CompletionStage<V> input) {
         Objects.requireNonNull(output, "output");
         input.whenComplete((v, throwable) -> {
@@ -92,6 +103,12 @@ public class FutureUtils {
                 }
             }, executor);
         }
+    }
+
+    public static <V> XCompletableFuture<V> setFutureAsync(EventLoop eventLoop, CompletionStage<V> input) {
+        XCompletableFuture<V> result = eventLoop.newPromise();
+        setFutureAsync(result, input, eventLoop);
+        return result;
     }
 
     public static Throwable getCause(CompletableFuture<?> future) {
@@ -160,10 +177,60 @@ public class FutureUtils {
         return true; // 循环外isDone
     }
 
-    //
+    public static boolean completeTerminationFuture(XCompletableFuture<?> terminationFuture) {
+        TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
+        return terminationFutureCtx.terminate(terminationFuture);
+    }
+
+    public static boolean completeTerminationFuture(XCompletableFuture<?> terminationFuture, Throwable cause) {
+        TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
+        return terminationFutureCtx.terminate(terminationFuture, cause);
+    }
+
+    // endregion
+
+    // region future工厂方法
+    public static <V> XCompletableFuture<V> newPromise() {
+        return new XCompletableFuture<>();
+    }
+
+    public static <V> XCompletableFuture<V> newSucceededFuture(V result) {
+        XCompletableFuture<V> future = new XCompletableFuture<>(ObtrudeClosedFutureContext.ONLY_SELF);
+        future.internal_doComplete(result);
+        return future;
+    }
+
+    public static <V> XCompletableFuture<V> newFailedFuture(Throwable cause) {
+        XCompletableFuture<V> future = new XCompletableFuture<>(ObtrudeClosedFutureContext.ONLY_SELF);
+        future.internal_doCompleteExceptionally(cause);
+        return future;
+    }
+
+    public static FutureCombiner newCombiner() {
+        return new DefaultFutureCombiner();
+    }
+
+    public static FutureCombiner newCombiner(EventLoop eventLoop) {
+        return new DefaultFutureCombiner(eventLoop::newPromise);
+    }
+
+    public static FutureCombiner newCombiner(Supplier<XCompletableFuture<Object>> factory) {
+        return new DefaultFutureCombiner(factory);
+    }
+
+    /** @param downward 是否向下流动 */
+    public static FutureContext obtrdeClosedFutureContext(boolean downward) {
+        if (downward) {
+            return ObtrudeClosedFutureContext.DOWNWARD;
+        } else {
+            return ObtrudeClosedFutureContext.ONLY_SELF;
+        }
+    }
+
+    // endregion
 
     public static boolean inEventLoop(@Nullable Executor executor) {
-        return executor instanceof EventLoop && ((EventLoop) executor).inEventLoop();
+        return executor instanceof EventLoop eventLoop && eventLoop.inEventLoop();
     }
 
     public static void ensureInEventLoop(EventLoop eventLoop, String msg) {
@@ -178,57 +245,6 @@ public class FutureUtils {
         }
     }
 
-    public static <V> XCompletableFuture<V> newPromise() {
-        return new XCompletableFuture<>();
-    }
-
-    public static <V> XCompletableFuture<V> newSucceededFuture(V result) {
-        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.ONLY_SELF);
-        future.internal_doObtrudeValue(result);
-        return future;
-    }
-
-    public static <V> XCompletableFuture<V> newFailedFuture(Throwable cause) {
-        XCompletableFuture<V> future = new XCompletableFuture<>(VobtrudeClosedFutureContext.ONLY_SELF);
-        future.internal_doObtrudeException(cause);
-        return future;
-    }
-
-    public static FutureCombiner newCombiner() {
-        return new DefaultFutureCombiner();
-    }
-
-    public static FutureCombiner newCombiner(Supplier<XCompletableFuture<Object>> factory) {
-        return new DefaultFutureCombiner(factory);
-    }
-
-    public static FutureCombiner newCombiner(EventLoop eventLoop) {
-        return new DefaultFutureCombiner(eventLoop::newPromise);
-    }
-
-    public static <V> XCompletableFuture<V> toXCompletableFuture(CompletionStage<V> stage) {
-        if (stage instanceof ICompletableFuture<V> future) {
-            return future.toCompletableFuture();
-        }
-        XCompletableFuture<V> future = new XCompletableFuture<>();
-        setFuture(future, stage);
-        return future;
-    }
-
-    public static void completeTerminationFuture(XCompletableFuture<?> terminationFuture) {
-        TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
-        terminationFutureCtx.terminate(terminationFuture);
-    }
-
-    /** @param downward 是否向下流动 */
-    public static FutureContext getVobtrdeClosedFutureContext(boolean downward) {
-        if (downward) {
-            return VobtrudeClosedFutureContext.DOWNWARD;
-        } else {
-            return VobtrudeClosedFutureContext.ONLY_SELF;
-        }
-    }
-
     /**
      * 创建一个支持缓存的时间提供器，且可以多线程安全访问。
      * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值，且应该只有一个线程调用更新方法。
@@ -238,19 +254,52 @@ public class FutureUtils {
      * @return timeProvider - threadSafe
      */
     public static CachedTimeProvider newTimeProvider(EventLoop eventLoop, long curTime) {
-        return new ThreadSafeCachedTimeProvider(eventLoop, curTime);
+        return new EventLoopTimeProvider(eventLoop, curTime);
     }
+
+    // region callable适配
+
+    public static final Object CONTINUE = new Object();
+
+    public static <V> Callable<V> toCallable(Runnable task, V result) {
+        Objects.requireNonNull(task);
+        return new RunnableAdapter<>(task, result);
+    }
+
+    public static <V> Callable<V> toCallable(TimeSharingTask<V> task) {
+        Objects.requireNonNull(task);
+        return new TimeSharingAdapter<>(task);
+    }
+
+    public static boolean isTimeSharing(Callable<?> task) {
+        return task.getClass() == TimeSharingAdapter.class;
+    }
+
+    public static Object unwrapTask(Object task) {
+        if (task == null) {
+            return null;
+        }
+        if (task instanceof RunnableAdapter<?> adapter) {
+            return adapter.task;
+        }
+        if (task instanceof TimeSharingAdapter<?> adapter) {
+            return adapter.task;
+        }
+        return task;
+    }
+
+    // endregion
 
     // region 适配类
 
-    private static class VobtrudeClosedFutureContext implements FutureContext {
+    private static class ObtrudeClosedFutureContext implements FutureContext {
 
-        private static final VobtrudeClosedFutureContext ONLY_SELF = new VobtrudeClosedFutureContext(false);
-        private static final VobtrudeClosedFutureContext DOWNWARD = new VobtrudeClosedFutureContext(true);
+        private static final ObtrudeClosedFutureContext ONLY_SELF = new ObtrudeClosedFutureContext(false);
+        private static final ObtrudeClosedFutureContext DOWNWARD = new ObtrudeClosedFutureContext(true);
 
         final boolean downward;
 
-        private VobtrudeClosedFutureContext(boolean downward) {
+        private ObtrudeClosedFutureContext(boolean downward) {
             this.downward = downward;
         }
 
@@ -271,12 +320,12 @@ public class FutureUtils {
     }
 
     @ThreadSafe
-    private static class ThreadSafeCachedTimeProvider implements CachedTimeProvider {
+    private static class EventLoopTimeProvider implements CachedTimeProvider {
 
         private final EventLoop eventLoop;
         private volatile long time;
 
-        private ThreadSafeCachedTimeProvider(EventLoop eventLoop, long time) {
+        private EventLoopTimeProvider(EventLoop eventLoop, long time) {
             this.eventLoop = eventLoop;
             setTime(time);
         }
@@ -296,9 +345,55 @@ public class FutureUtils {
 
         @Override
         public String toString() {
-            return "ThreadSafeCachedTimeProvider{" +
+            return "EventLoopTimeProvider{" +
                     "curTime=" + time +
                     '}';
+        }
+    }
+
+    private static class RunnableAdapter<T> implements Callable<T> {
+
+        final Runnable task;
+        final T result;
+
+        public RunnableAdapter(Runnable task, T result) {
+            this.task = task;
+            this.result = result;
+        }
+
+        @Override
+        public T call() throws Exception {
+            task.run();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Runnable2CallbackAdapter{task=" + task + '}';
+        }
+    }
+
+    private static class TimeSharingAdapter<V> implements Callable<V> {
+
+        final TimeSharingTask<V> task;
+
+        private TimeSharingAdapter(TimeSharingTask<V> task) {
+            this.task = task;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public V call() throws Exception {
+            ResultHolder<V> resultHolder = task.step();
+            if (resultHolder == null) {
+                return (V) CONTINUE;
+            }
+            return resultHolder.result;
+        }
+
+        @Override
+        public String toString() {
+            return "TimeSharingAdapter{task=" + task + '}';
         }
     }
     // endregion

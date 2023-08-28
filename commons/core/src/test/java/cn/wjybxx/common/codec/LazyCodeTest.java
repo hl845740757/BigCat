@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 /**
  * 测试中间路由节点不解码，直到目的地后解码是否正确
@@ -53,7 +52,7 @@ public class LazyCodeTest {
         // 源端
         final byte[] bytesSource;
         {
-            DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
+            DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(
                     List.of(new MyStructCodec(Role.SOURCE)),
                     typeMetaRegistry,
                     ConvertOptions.DEFAULT);
@@ -63,7 +62,7 @@ public class LazyCodeTest {
         final byte[] routerBytes;
         // 模拟转发 -- 读进来再写
         {
-            DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
+            DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(
                     List.of(new MyStructCodec(Role.ROUTER)),
                     typeMetaRegistry,
                     ConvertOptions.DEFAULT);
@@ -73,7 +72,7 @@ public class LazyCodeTest {
         // 终端
         MyStruct destStruct;
         {
-            DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(Set.of(),
+            DefaultBinaryConverter converter = DefaultBinaryConverter.newInstance(
                     List.of(new MyStructCodec(Role.DESTINATION)),
                     typeMetaRegistry,
                     ConvertOptions.DEFAULT);

@@ -91,7 +91,7 @@ public interface EventLoopGroup extends ScheduledExecutorService {
      * 返回等待线程终止的future。
      * 返回的{@link CompletableFuture}会在该Group管理的所有{@link EventLoop}终止后收到通知.
      */
-    XCompletableFuture<?> terminationFuture();
+    ICompletableFuture<?> terminationFuture();
 
     /**
      * 请求关闭 ExecutorService，不再接收新的任务。

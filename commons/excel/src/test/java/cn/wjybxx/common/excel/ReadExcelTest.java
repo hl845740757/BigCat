@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author wjybxx
@@ -50,7 +49,7 @@ public class ReadExcelTest {
         ConvertOptions options = ConvertOptions.newBuilder()
                 .setTextWriterSettings(DsonTextWriterSettings.JSON_DEFAULT)
                 .build();
-        DocumentConverter converter = DefaultDocumentConverter.newInstance(Set.of(),
+        DocumentConverter converter = DefaultDocumentConverter.newInstance(
                 List.of(new SheetCodec()),
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, "Sheet")),
                 options);

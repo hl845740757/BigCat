@@ -17,20 +17,15 @@
 package cn.wjybxx.common.codec.binary;
 
 import cn.wjybxx.common.codec.*;
-import cn.wjybxx.common.codec.binary.codecs.MessageCodec;
-import cn.wjybxx.common.codec.binary.codecs.MessageEnumCodec;
 import cn.wjybxx.dson.DsonBinaryLiteReader;
 import cn.wjybxx.dson.DsonBinaryLiteWriter;
 import cn.wjybxx.dson.io.*;
-import com.google.protobuf.MessageLite;
-import com.google.protobuf.ProtocolMessageEnum;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * @author wjybxx
@@ -124,43 +119,21 @@ public class DefaultBinaryConverter implements BinaryConverter {
     // ------------------------------------------------- 工厂方法 ------------------------------------------------------
 
     /**
-     * @param allProtoBufClasses 所有的protobuf类
-     * @param pojoCodecImplList  所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
-     * @param typeMetaRegistry   所有的类型id信息，包括protobuf的类
-     * @param options            一些可选项
+     * @param pojoCodecImplList 所有的普通对象编解码器，外部传入，因此用户可以处理冲突后传入
+     * @param typeMetaRegistry  所有的类型id信息，包括protobuf的类
+     * @param options           一些可选项
      */
-    @SuppressWarnings("unchecked")
-    public static DefaultBinaryConverter newInstance(final Set<Class<?>> allProtoBufClasses,
-                                                     final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
+    public static DefaultBinaryConverter newInstance(final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
                                                      final TypeMetaRegistry<ClassId> typeMetaRegistry,
                                                      final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名空间是否非法
-        for (Class<?> clazz : allProtoBufClasses) {
-            typeMetaRegistry.checkedOfType(clazz);
-        }
         for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
             typeMetaRegistry.checkedOfType(codecImpl.getEncoderClass());
         }
 
-        final List<BinaryPojoCodec<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size() + pojoCodecImplList.size());
-        // 解析parser
-        for (Class<?> messageClazz : allProtoBufClasses) {
-            // protoBuf消息
-            if (MessageLite.class.isAssignableFrom(messageClazz)) {
-                MessageCodec<?> messageCodec = parseMessageCodec((Class<? extends MessageLite>) messageClazz);
-                allPojoCodecList.add(new BinaryPojoCodec<>(messageCodec));
-                continue;
-            }
-            // protoBuf枚举
-            if (ProtocolMessageEnum.class.isAssignableFrom(messageClazz)) {
-                MessageEnumCodec<?> enumCodec = parseMessageEnumCodec((Class<? extends ProtocolMessageEnum>) messageClazz);
-                allPojoCodecList.add(new BinaryPojoCodec<>(enumCodec));
-                continue;
-            }
-            throw new IllegalArgumentException("Unsupported class " + messageClazz);
-        }
         // 转换codecImpl
+        List<BinaryPojoCodec<?>> allPojoCodecList = new ArrayList<>(pojoCodecImplList.size());
         for (BinaryPojoCodecImpl<?> codecImpl : pojoCodecImplList) {
             allPojoCodecList.add(new BinaryPojoCodec<>(codecImpl));
         }
@@ -173,16 +146,6 @@ public class DefaultBinaryConverter implements BinaryConverter {
                         BinaryCodecRegistries.fromPojoCodecs(allPojoCodecList),
                         BinaryConverterUtils.getDefaultCodecRegistry()),
                 options);
-    }
-
-    private static <T extends MessageLite> MessageCodec<T> parseMessageCodec(Class<T> messageClazz) {
-        final var enumLiteMap = ProtobufUtils.findParser(messageClazz);
-        return new MessageCodec<>(messageClazz, enumLiteMap);
-    }
-
-    private static <T extends ProtocolMessageEnum> MessageEnumCodec<T> parseMessageEnumCodec(Class<T> messageClazz) {
-        final var enumLiteMap = ProtobufUtils.findMapper(messageClazz);
-        return new MessageEnumCodec<>(messageClazz, enumLiteMap);
     }
 
 }

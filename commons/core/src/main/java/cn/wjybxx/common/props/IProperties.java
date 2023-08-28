@@ -193,15 +193,15 @@ public interface IProperties extends Map<String, String> {
 
     // endregion
 
-    /** @return 可能是快哉 */
+    /** @return 可能是快照 */
     @Override
     Set<String> keySet();
 
-    /** @return 可能是快哉 */
+    /** @return 可能是快照 */
     @Override
     Collection<String> values();
 
-    /** @return 可能是快哉 */
+    /** @return 可能是快照 */
     @Override
     Set<Entry<String, String>> entrySet();
 
