@@ -54,29 +54,27 @@ public class DefaultRpcClient implements RpcClient {
     private final Long2ObjectLinkedOpenHashMap<DefaultRpcRequestStub> requestStubMap = new Long2ObjectLinkedOpenHashMap<>(500);
     private final WatcherMgr<RpcResponse> watcherMgr = new SimpleWatcherMgr<>();
 
-    private final long processGuid;
+    private final long conId;
     private final RpcAddr selfRpcAddr;
-
     private final RpcSender sender;
     private final RpcRegistry registry;
-
     private final TimeProvider timeProvider;
     private final long timeoutMs;
     /** 日志级别 */
     private RpcLogConfig rpcLogConfig = RpcLogConfig.NONE;
 
     /**
-     * @param processGuid  当前服务器的进程唯一id（它与{@link RpcAddr}是两个不同维度的东西）
+     * @param conId        连接id
      * @param selfRpcAddr  当前服务器的描述信息
      * @param sender       路由实现
      * @param registry     rpc调用派发实现
      * @param timeProvider 用于获取当前时间
      * @param timeoutMs    rpc超时时间
      */
-    public DefaultRpcClient(long processGuid, RpcAddr selfRpcAddr,
+    public DefaultRpcClient(long conId, RpcAddr selfRpcAddr,
                             RpcSender sender, RpcRegistry registry,
                             TimeProvider timeProvider, long timeoutMs) {
-        this.processGuid = processGuid;
+        this.conId = conId;
         this.selfRpcAddr = Objects.requireNonNull(selfRpcAddr);
         this.sender = Objects.requireNonNull(sender);
         this.registry = Objects.requireNonNull(registry);
@@ -118,7 +116,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 methodSpec, requestId, RpcClient.INVOKE_ONE_WAY);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -142,7 +140,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 methodSpec, requestId, RpcClient.INVOKE_BROADCAST);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -167,7 +165,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 methodSpec, requestId, RpcClient.INVOKE_CALL);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -212,7 +210,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(processGuid, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 methodSpec, requestId, RpcClient.INVOKE_SYNC_CALL);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -220,7 +218,7 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         // 必须先watch再发送，否则可能丢失信号
-        RpcResponseWatcher watcher = new RpcResponseWatcher(processGuid, requestId);
+        RpcResponseWatcher watcher = new RpcResponseWatcher(conId, requestId);
         watcherMgr.watch(watcher);
         try {
             // 执行发送(routerHandler的实现很关键)
@@ -297,7 +295,7 @@ public class DefaultRpcClient implements RpcClient {
             return;
         }
 
-        RpcMethodSpec<T> methodSpec = new RpcMethodSpec<>(request.getServiceId(), request.getMethodId(), request.getParameters());
+        RpcMethodSpec<?> methodSpec = new RpcMethodSpec<>(request.getServiceId(), request.getMethodId(), request.getParameters());
         DefaultRpcContext<T> context;
         if (!RpcClient.isRequireResult(request.getInvokeType())) {
             // 单向消息 - 不需要结果
@@ -333,7 +331,7 @@ public class DefaultRpcClient implements RpcClient {
      */
     public void onRcvResponse(RpcResponse response) {
         Objects.requireNonNull(response);
-        if (response.getConId() != processGuid) {
+        if (response.getConId() != conId) {
             // 不是我发起的请求的响应 - 避免造成错误的响应
             logger.info("rcv old process rpc response");
             return;
@@ -349,6 +347,8 @@ public class DefaultRpcClient implements RpcClient {
             if (errorCode == 0) {
                 @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.rpcPromise;
                 promise.complete(response.getResult());
+            } else if (RpcErrorCodes.isUserCode(errorCode)) {
+                requestStub.rpcPromise.completeExceptionally(new ErrorCodeException(errorCode, response.getErrorMsg()));
             } else {
                 requestStub.rpcPromise.completeExceptionally(RpcServerException.failed(errorCode, response.getErrorMsg()));
             }
@@ -427,6 +427,9 @@ public class DefaultRpcClient implements RpcClient {
             return RpcResponse.newFailedResponse(request.getConId(), selfRpcAddr, request.getSrcAddr(),
                     request.getRequestId(), codeException.getErrorCode(), codeException.getMessage());
         } else {
+            // 异常信息已由上游打印，这里只打印rpc信息
+            logger.warn("rpc execute caught exception, conId: {}, from: {}, requestId: {}",
+                    request.getConId(), request.getSrcAddr(), request.getRequestId());
             return RpcResponse.newFailedResponse(request.getConId(), selfRpcAddr, request.getSrcAddr(),
                     request.getRequestId(), RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(e));
         }
@@ -470,9 +473,6 @@ public class DefaultRpcClient implements RpcClient {
         public void accept(V v, Throwable throwable) {
             final RpcResponse response;
             if (throwable != null) {
-                // 异常信息已由上游打印，这里只打印rpc信息
-                logger.warn("rpc execute caught exception, conId: {}, from: {}, requestId: {}",
-                        request.getConId(), request.getSrcAddr(), request.getRequestId());
                 response = rpcClient.newFailedResponse(request, throwable);
             } else {
                 response = rpcClient.newSucceedResponse(request, v);

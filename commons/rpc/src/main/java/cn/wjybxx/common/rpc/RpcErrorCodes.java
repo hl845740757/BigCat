@@ -16,8 +16,11 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.ex.ErrorCodeException;
+
 /**
- * 0~20留给底层扩展，其它区间段，可以自定义。
+ * 0~100留给底层扩展，其它区间段，可以自定义。
+ * 当远程抛出{@link ErrorCodeException}且code大于100时，本地也将抛出{@link ErrorCodeException}
  *
  * @author wjybxx
  * date 2023/4/1
@@ -44,4 +47,7 @@ public class RpcErrorCodes {
     /** 不支持的接口调用 */
     public static final int SERVER_UNSUPPORTED_INTERFACE = 12;
 
+    public static boolean isUserCode(int code) {
+        return code > 100;
+    }
 }
