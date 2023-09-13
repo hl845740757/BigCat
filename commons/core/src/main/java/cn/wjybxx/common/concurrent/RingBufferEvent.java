@@ -30,7 +30,7 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/4/10
  */
-public final class RingBufferEvent implements Runnable {
+public final class RingBufferEvent implements AgentEvent {
 
     public static final int TYPE_INVALID = -1;
     public static final int TYPE_RUNNABLE = 0;
@@ -124,11 +124,6 @@ public final class RingBufferEvent implements Runnable {
 
     public Runnable castObj0ToRunnable() {
         return (Runnable) obj0;
-    }
-
-    @Override
-    public void run() {
-
     }
 
     @Override

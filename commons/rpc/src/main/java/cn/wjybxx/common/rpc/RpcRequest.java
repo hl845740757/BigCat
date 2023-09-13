@@ -17,11 +17,12 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
 import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
+import cn.wjybxx.common.log.DebugLogFriendlyObject;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * rpc请求结构体
@@ -31,109 +32,119 @@ import javax.annotation.Nonnull;
  */
 @AutoSchema
 @BinarySerializable
-public class RpcRequest implements DebugLogFriendlyObject {
+public class RpcRequest extends RpcProtocol implements DebugLogFriendlyObject {
 
-    /**
-     * 客户端进程id - 它与{@link NodeId}是两个维度的东西
-     * <p>
-     * Q: 它出现的必要性？
-     * A: 进程重启可能收到前一个进程的消息，因此需要在请求中记录其关联的进程。
-     */
-    private long clientProcessId;
-    /** 请求方 */
-    private NodeId clientNodeId;
+    /** 服务id */
+    private int serviceId;
+    /** 方法id */
+    private int methodId;
+    /** 方法参数 */
+    private List<Object> parameters;
+
     /** 请求id */
     private long requestId;
-    /** 是否是单项调用（不需要结果） */
-    private boolean oneWay;
-    /** 方法描述信息 */
-    private RpcMethodSpec<?> rpcMethodSpec;
+    /** 调用类型 */
+    private int invokeType;
 
     public RpcRequest() {
         // 可能的序列化支持
     }
 
-    public RpcRequest(long clientProcessId, NodeId clientNodeId, long requestId, boolean oneWay, RpcMethodSpec<?> rpcMethodSpec) {
-        this.requestId = requestId;
-        this.oneWay = oneWay;
-        this.clientProcessId = clientProcessId;
-        this.clientNodeId = clientNodeId;
-        this.rpcMethodSpec = rpcMethodSpec;
+    public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr) {
+        super(conId, srcAddr, destAddr);
     }
+
+    public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr,
+                      RpcMethodSpec<?> methodSpec, long requestId, int invokeType) {
+        super(conId, srcAddr, destAddr);
+        this.requestId = requestId;
+        this.invokeType = invokeType;
+        this.serviceId = methodSpec.getServiceId();
+        this.methodId = methodSpec.getMethodId();
+        this.parameters = methodSpec.getParameters();
+    }
+
+    //
 
     public long getRequestId() {
         return requestId;
     }
 
-    public void setRequestId(long requestId) {
+    public RpcRequest setRequestId(long requestId) {
         this.requestId = requestId;
+        return this;
     }
 
-    public boolean isOneWay() {
-        return oneWay;
+    public int getInvokeType() {
+        return invokeType;
     }
 
-    public void setOneWay(boolean oneWay) {
-        this.oneWay = oneWay;
+    public RpcRequest setInvokeType(int invokeType) {
+        this.invokeType = invokeType;
+        return this;
     }
 
-    public long getClientProcessId() {
-        return clientProcessId;
+    public int getServiceId() {
+        return serviceId;
     }
 
-    public void setClientProcessId(long clientProcessId) {
-        this.clientProcessId = clientProcessId;
+    public RpcRequest setServiceId(int serviceId) {
+        this.serviceId = serviceId;
+        return this;
     }
 
-    public NodeId getClientNodeId() {
-        return clientNodeId;
+    public int getMethodId() {
+        return methodId;
     }
 
-    public void setClientNodeId(NodeId clientNodeId) {
-        this.clientNodeId = clientNodeId;
+    public RpcRequest setMethodId(int methodId) {
+        this.methodId = methodId;
+        return this;
     }
 
-    public RpcMethodSpec<?> getRpcMethodSpec() {
-        return rpcMethodSpec;
+    public List<Object> getParameters() {
+        return parameters;
     }
 
-    public void setRpcMethodSpec(RpcMethodSpec<?> rpcMethodSpec) {
-        this.rpcMethodSpec = rpcMethodSpec;
+    public RpcRequest setParameters(List<Object> parameters) {
+        this.parameters = parameters;
+        return this;
     }
+
+    //
 
     @Nonnull
     @Override
     public String toSimpleLog() {
-        return '{' +
-                "clientNodeGuid=" + clientProcessId +
-                ", clientNode=" + clientNodeId +
-                ", requestGuid=" + requestId +
-                ", oneWay=" + oneWay +
-                ", methodSpec=" + rpcMethodSpec.toSimpleLog() +
+        return "{" +
+                "requestId=" + requestId +
+                ", invokeType=" + invokeType +
+                ", serviceId=" + serviceId +
+                ", methodId=" + methodId +
+                ", parameterCount=" + parameters.size() +
+                ", conId=" + conId +
+                ", srcAddr=" + srcAddr +
+                ", destAddr=" + destAddr +
                 '}';
     }
 
     @Nonnull
     @Override
     public String toDetailLog() {
-        return '{' +
-                "clientNodeGuid=" + clientProcessId +
-                ", clientNode=" + clientNodeId +
-                ", requestGuid=" + requestId +
-                ", oneWay=" + oneWay +
-                ", methodSpec=" + rpcMethodSpec.toDetailLog() +
-                '}';
+        return toString();
     }
 
     @Override
     public String toString() {
         return "RpcRequest{" +
-                "clientNodeGuid=" + clientProcessId +
-                ", clientNode=" + clientNodeId +
-                ", requestGuid=" + requestId +
-                ", oneWay=" + oneWay +
-                ", rpcMethodSpec=" + rpcMethodSpec.toSimpleLog() +
+                "requestId=" + requestId +
+                ", invokeType=" + invokeType +
+                "serviceId=" + serviceId +
+                ", methodId=" + methodId +
+                ", parameters=" + parameters +
+                ", conId=" + conId +
+                ", srcAddr=" + srcAddr +
+                ", destAddr=" + destAddr +
                 '}';
     }
-
 }

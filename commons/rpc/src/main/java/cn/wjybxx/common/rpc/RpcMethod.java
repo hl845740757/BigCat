@@ -17,10 +17,14 @@
 package cn.wjybxx.common.rpc;
 
 
+import cn.wjybxx.common.codec.TypeMeta;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -28,17 +32,22 @@ import java.util.concurrent.CompletionStage;
  *
  * <h3>代理方法的返回值</h3>
  * 1. 如果方法的返回值为{@link CompletionStage}，则会捕获{@code Stage}的泛型参数作为返回值类型。
- * 2. 当方法返回值为void或泛型参数为通配符{@code ?}时，代理方法的返回值类型为Object（比Void有更好的兼容性）。
+ * 2. 当方法返回值为void时，代理方法的返回值类型为Object（比Void有更好的兼容性）。
  * 3. 其它普通方法，其返回值类型就是代理方法的返回值类型。
+ *
+ * <h3>Context</h3>
+ * Context有助于实现复杂的消息交互，允许在返回结果前后向对方发送额外的消息，这在与客户端通信的过程中非常有用。
+ * 1. 如果需要Ctx，必须将{@link RpcContext}定义为方法的第一个参数。
+ * 2. Context不会导出给客户端的Proxy，也不会计数
+ * 3. 关于context的用法可查看测试用例(RpcTest2)
  *
  * <h3>限制</h3>
  * 1. 方法不能是private - 至少是包级访问权限(让生成的代码可访问) -- 建议用接口定义服务。
  * 2. methodId必须在[0,9999]区间段。
- *
- * <h3>方法参数和返回值类型限制</h3>
- * 1. 不要使用short/byte/char及其包装类型，兼容性较差。
- * 2. 使用{@link java.util.Collection}和{@link java.util.Map}时，只可以使用抽象接口，否则需要定义Bean确定编解码类型。
- * 3. 建议保持参数数量小于等于3个，超过3个请定义Bean；定义Bean可以减少接口的变化频率，以及更好的编解码效率和类型精确度。
+ * 3. 异步方法的Future不能使用通配符{@code ?}
+ * 4. 方法参数不可超过5个，否则需要定义Bean -- Context不计数
+ * 5. 避免使用short/byte/char及其包装类型，兼容性较差。
+ * 6. 使用集合和Map时，如果使用{@link Collection}和{@link Map}以外的类型，请确保实现类存在{@link TypeMeta}
  *
  * @author wjybxx
  * date 2023/4/1

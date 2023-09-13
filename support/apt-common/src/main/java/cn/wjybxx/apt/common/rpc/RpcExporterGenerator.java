@@ -19,10 +19,7 @@ package cn.wjybxx.apt.common.rpc;
 import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
 import cn.wjybxx.apt.BeanUtils;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -192,8 +189,21 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         params.add(varName_instance);
         params.add(method.getSimpleName().toString());
 
+        // 去除context
+        List<? extends VariableElement> parameters = method.getParameters();
+        if (processor.firstArgIsContext(method)) {
+            // 方法的返回类型可能是void，但context的泛型不一定
+            TypeName targetContextType = ParameterizedTypeName.get(parameters.get(0).asType());
+            format.append("($T) context");
+            params.add(targetContextType);
+
+            parameters = method.getParameters().subList(1, parameters.size());
+            if (parameters.size() > 0) {
+                format.append(", ");
+            }
+        }
+
         // 填充参数
-        final List<? extends VariableElement> parameters = method.getParameters();
         for (int index = 0; index < parameters.size(); index++) {
             VariableElement variableElement = parameters.get(index);
             if (index > 0) {

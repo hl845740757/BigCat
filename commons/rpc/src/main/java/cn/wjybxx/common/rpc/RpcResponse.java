@@ -17,9 +17,9 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
 import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
+import cn.wjybxx.common.log.DebugLogFriendlyObject;
 
 import javax.annotation.Nonnull;
 
@@ -31,16 +31,11 @@ import javax.annotation.Nonnull;
  */
 @AutoSchema
 @BinarySerializable
-public class RpcResponse implements DebugLogFriendlyObject {
+public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
 
-    /** 请求方进程id */
-    private long clientProcessId;
     /** 请求的唯一id */
     private long requestId;
-    /**
-     * 错误码（0表示成功）
-     * 没使用枚举，是为了方便用户扩展
-     */
+    /** 错误码（0表示成功） -- 不使用枚举，以方便用户扩展 */
     private int errorCode;
     /**
      * 如果调用成功，该值表示对应的结果。
@@ -52,19 +47,27 @@ public class RpcResponse implements DebugLogFriendlyObject {
         // 序列化支持
     }
 
-    private RpcResponse(long clientProcessId, long requestId, int errorCode, Object result) {
-        this.clientProcessId = clientProcessId;
+    public RpcResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr) {
+        super(conId, srcAddr, destAddr);
+    }
+
+    private RpcResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr,
+                        long requestId, int errorCode, Object result) {
+        super(conId, srcAddr, destAddr);
         this.requestId = requestId;
         this.errorCode = errorCode;
         this.result = result;
     }
 
-    public static RpcResponse newSucceedResponse(long clientNodeGuid, long requestGuid, Object result) {
-        return new RpcResponse(clientNodeGuid, requestGuid, 0, result);
+    public static RpcResponse newSucceedResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr,
+                                                 long requestId, Object result) {
+        return new RpcResponse(conId, srcAddr, destAddr, requestId, 0, result);
     }
 
-    public static RpcResponse newFailedResponse(long clientNodeGuid, long requestGuid, int errorCode, String msg) {
-        return new RpcResponse(clientNodeGuid, requestGuid, errorCode, msg);
+    public static RpcResponse newFailedResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr,
+                                                long requestId, int errorCode, String msg) {
+        if (errorCode == 0) throw new IllegalArgumentException("invalid errorCode " + errorCode);
+        return new RpcResponse(conId, srcAddr, destAddr, requestId, errorCode, msg);
     }
 
     public boolean isSuccess() {
@@ -77,68 +80,63 @@ public class RpcResponse implements DebugLogFriendlyObject {
         }
         return (String) result;
     }
-
-    public long getClientProcessId() {
-        return clientProcessId;
-    }
-
-    public void setClientProcessId(long clientProcessId) {
-        this.clientProcessId = clientProcessId;
-    }
+    //
 
     public long getRequestId() {
         return requestId;
     }
 
-    public void setRequestId(long requestId) {
+    public RpcResponse setRequestId(long requestId) {
         this.requestId = requestId;
+        return this;
     }
 
     public int getErrorCode() {
         return errorCode;
     }
 
-    public void setErrorCode(int errorCode) {
+    public RpcResponse setErrorCode(int errorCode) {
         this.errorCode = errorCode;
+        return this;
     }
 
     public Object getResult() {
         return result;
     }
 
-    public void setResult(Object result) {
+    public RpcResponse setResult(Object result) {
         this.result = result;
+        return this;
     }
 
     @Nonnull
     @Override
     public String toSimpleLog() {
         return "{" +
-                "clientNodeGuid=" + clientProcessId +
-                ", requestGuid=" + requestId +
+                "requestId=" + requestId +
                 ", errorCode=" + errorCode +
+                ", result=" + result +
+                ", conId=" + conId +
+                ", srcAddr=" + srcAddr +
+                ", destAddr=" + destAddr +
                 '}';
     }
 
     @Nonnull
     @Override
     public String toDetailLog() {
-        return "{" +
-                "clientNodeGuid=" + clientProcessId +
-                ", requestGuid=" + requestId +
-                ", errorCode=" + errorCode +
-                ", result=" + result +
-                '}';
+        return toString();
     }
 
     @Override
     public String toString() {
         return "RpcResponse{" +
-                "clientNodeGuid=" + clientProcessId +
-                ", requestGuid=" + requestId +
+                "requestId=" + requestId +
                 ", errorCode=" + errorCode +
                 ", result=" + result +
+                ", conId=" + conId +
+                ", srcAddr=" + srcAddr +
+                ", destAddr=" + destAddr +
                 '}';
     }
-
 }

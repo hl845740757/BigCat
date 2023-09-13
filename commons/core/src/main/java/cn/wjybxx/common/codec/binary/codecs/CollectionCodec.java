@@ -26,6 +26,8 @@ import cn.wjybxx.dson.DsonType;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -33,16 +35,24 @@ import java.util.Collection;
  */
 @SuppressWarnings("rawtypes")
 @BinaryPojoCodecScanIgnore
-public class CollectionCodec implements BinaryPojoCodecImpl<Collection> {
+public class CollectionCodec<T extends Collection> implements BinaryPojoCodecImpl<T> {
+
+    final Class<T> clazz;
+    final Supplier<? extends T> factory;
+
+    public CollectionCodec(Class<T> clazz, Supplier<? extends T> factory) {
+        this.clazz = Objects.requireNonNull(clazz);
+        this.factory = factory;
+    }
 
     @Nonnull
     @Override
-    public Class<Collection> getEncoderClass() {
-        return Collection.class;
+    public Class<T> getEncoderClass() {
+        return clazz;
     }
 
     @Override
-    public void writeObject(Collection instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
         TypeArgInfo<?> componentArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         for (Object e : instance) {
             writer.writeObject(0, e, componentArgInfo);
@@ -50,12 +60,12 @@ public class CollectionCodec implements BinaryPojoCodecImpl<Collection> {
     }
 
     @Override
-    public Collection<?> readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        Collection<Object> result = ConverterUtils.newCollection(typeArgInfo);
+    public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        Collection<Object> result = ConverterUtils.newCollection(typeArgInfo, factory);
         TypeArgInfo<?> componentArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readObject(0, componentArgInfo));
         }
-        return result;
+        return clazz.cast(result);
     }
 }

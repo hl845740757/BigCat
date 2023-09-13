@@ -192,7 +192,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
                         DocumentConverterUtils.getDefaultTypeMetaRegistry()),
                 DocumentCodecRegistries.fromRegistries(
                         DocumentCodecRegistries.fromPojoCodecs(allPojoCodecList),
-                        DocumentConverterUtils.getDefaultCodecRegistry(options.encodeMapAsObject)),
+                        DocumentConverterUtils.getDefaultCodecRegistry()),
                 options);
     }
 

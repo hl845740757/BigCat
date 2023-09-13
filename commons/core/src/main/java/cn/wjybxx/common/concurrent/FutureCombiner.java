@@ -67,7 +67,7 @@ public interface FutureCombiner {
 
     /**
      * 返回的promise在任意future进入完成状态时进入完成状态
-     * 返回的promise与首个future的结果相同
+     * 返回的promise与首个完成future的结果相同（不准确）
      */
     XCompletableFuture<Object> anyOf();
 

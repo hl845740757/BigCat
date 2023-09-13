@@ -58,7 +58,7 @@ public class MessageCodec<T extends MessageLite> implements DocumentPojoCodecImp
 
     @Override
     public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        return reader.readMessage("value", reader.option().pbBinaryType, parser);
+        return reader.readMessage("value", reader.options().pbBinaryType, parser);
     }
 
 }

@@ -26,7 +26,9 @@ import cn.wjybxx.dson.DsonType;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -34,16 +36,24 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")
 @BinaryPojoCodecScanIgnore
-public class MapCodec implements BinaryPojoCodecImpl<Map> {
+public class MapCodec<T extends Map> implements BinaryPojoCodecImpl<T> {
+
+    final Class<T> clazz;
+    final Supplier<? extends T> factory;
+
+    public MapCodec(Class<T> clazz, Supplier<? extends T> factory) {
+        this.clazz = Objects.requireNonNull(clazz);
+        this.factory = factory;
+    }
 
     @Nonnull
     @Override
-    public Class<Map> getEncoderClass() {
-        return Map.class;
+    public Class<T> getEncoderClass() {
+        return clazz;
     }
 
     @Override
-    public void writeObject(Map instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
         TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
         @SuppressWarnings("unchecked") Set<Map.Entry<?, ?>> entrySet = instance.entrySet();
@@ -54,8 +64,8 @@ public class MapCodec implements BinaryPojoCodecImpl<Map> {
     }
 
     @Override
-    public Map<?, ?> readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        Map<Object, Object> result = ConverterUtils.newMap(typeArgInfo);
+    public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        Map<Object, Object> result = ConverterUtils.newMap(typeArgInfo, factory);
         TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
@@ -63,7 +73,7 @@ public class MapCodec implements BinaryPojoCodecImpl<Map> {
             Object value = reader.readObject(0, valueArgInfo);
             result.put(key, value);
         }
-        return result;
+        return clazz.cast(result);
     }
 
 }

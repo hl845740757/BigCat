@@ -17,7 +17,7 @@
 package cn.wjybxx.common.rpc;
 
 import cn.wjybxx.common.concurrent.SimpleWatcherMgr;
-import cn.wjybxx.common.concurrent.WatchableEventQueue;
+import cn.wjybxx.common.concurrent.WatcherMgr;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
@@ -29,19 +29,17 @@ import java.util.concurrent.TimeUnit;
  * date 2023/4/5
  */
 @ThreadSafe
-class SimpleEventQueue<E> implements WatchableEventQueue<E> {
+class SimpleEventQueue<E> {
 
     /** 无界队列，避免死锁 */
     private final LinkedBlockingQueue<E> blockingQueue = new LinkedBlockingQueue<>(10);
     private final SimpleWatcherMgr<E> watcherMgr = new SimpleWatcherMgr<>();
 
-    @Override
-    public void watch(Watcher<? super E> watcher) {
+    public void watch(WatcherMgr.Watcher<? super E> watcher) {
         watcherMgr.watch(watcher);
     }
 
-    @Override
-    public boolean cancelWatch(Watcher<?> watcher) {
+    public boolean cancelWatch(WatcherMgr.Watcher<?> watcher) {
         return watcherMgr.cancelWatch(watcher);
     }
 

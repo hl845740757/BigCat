@@ -39,7 +39,7 @@ public interface RpcMethodProxy {
      * @return 方法执行结果，可能情况：1.null 2.{@link CompletionStage} 3.其它结果
      * @throws Exception 由于用户的代码可能存在抛出异常的情况，这里声明异常对lambda更友好
      */
-    Object invoke(@StableName RpcProcessContext context,
+    Object invoke(@StableName RpcContext<?> context,
                   @StableName RpcMethodSpec<?> methodSpec) throws Exception;
 
 }

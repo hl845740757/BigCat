@@ -26,9 +26,14 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -46,9 +51,8 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String PNAME_METHOD_ID = "methodId";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
-    private static final String CNAME_DEFAULT_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.common.rpc.RpcRegistry";
-    private static final String CNAME_CONTEXT = "cn.wjybxx.common.rpc.RpcProcessContext";
+    private static final String CNAME_CONTEXT = "cn.wjybxx.common.rpc.RpcContext";
 
     private static final int MAX_PARAMETER_COUNT = 5;
 
@@ -56,17 +60,16 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private TypeElement anno_rpcMethodElement;
 
     TypeElement methodSpecElement;
-    ClassName defaultMethodSpecRawTypeName;
+    ClassName methodSpecRawTypeName;
     ClassName methodRegistryTypeName;
 
+    ClassName contextRawTypeName;
+    TypeMirror contextTypeMirror;
+
+    TypeMirror boxedVoidTypeMirror;
     TypeMirror objectTypeMirror;
     TypeMirror stringTypeMirror;
     List<TypeMirror> futureTypeMirrors;
-
-    private TypeMirror mapTypeMirror;
-    private TypeMirror linkedHashMapTypeMirror;
-    private TypeMirror collectionTypeMirror;
-    private TypeMirror arrayListTypeMirror;
 
     public RpcServiceProcessor() {
     }
@@ -86,20 +89,19 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         anno_rpcMethodElement = elementUtils.getTypeElement(CNAME_RPC_METHOD);
 
         methodSpecElement = elementUtils.getTypeElement(CNAME_METHOD_SPEC);
-        defaultMethodSpecRawTypeName = ClassName.get(elementUtils.getTypeElement(CNAME_DEFAULT_METHOD_SPEC));
+        methodSpecRawTypeName = ClassName.get(methodSpecElement);
         methodRegistryTypeName = ClassName.get(elementUtils.getTypeElement(CNAME_METHOD_REGISTRY));
+
+        TypeElement contextTypeElement = elementUtils.getTypeElement(CNAME_CONTEXT);
+        contextRawTypeName = ClassName.get(contextTypeElement);
+        contextTypeMirror = contextTypeElement.asType();
 
         objectTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Object.class).asType();
         stringTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, String.class).asType();
 
-        futureTypeMirrors = new ArrayList<>(3);
+        futureTypeMirrors = new ArrayList<>(2);
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletableFuture.class).asType());
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletionStage.class).asType());
-
-        mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
-        linkedHashMapTypeMirror = elementUtils.getTypeElement(LinkedHashMap.class.getCanonicalName()).asType();
-        collectionTypeMirror = elementUtils.getTypeElement(Collection.class.getCanonicalName()).asType();
-        arrayListTypeMirror = elementUtils.getTypeElement(ArrayList.class.getCanonicalName()).asType();
     }
 
     @Override
@@ -119,11 +121,12 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     /** @return rpc方法 - 避免每次查找，开销较大 */
     private List<ExecutableElement> checkBase(TypeElement typeElement) {
-        final int serviceId = getServiceId(typeElement);
-        if (serviceId <= 0) {
-            messager.printMessage(Diagnostic.Kind.ERROR, " serviceId " + serviceId + " must greater than 0!", typeElement);
-            return List.of();
-        }
+        // 新设计下，允许serviceId小于0，表示本地服务(Local Service)
+//        final int serviceId = getServiceId(typeElement);
+//        if (serviceId <= 0) {
+//            messager.printMessage(Diagnostic.Kind.ERROR, " serviceId " + serviceId + " must greater than 0!", typeElement);
+//            return List.of();
+//        }
 
         List<ExecutableElement> allMethodList = new ArrayList<>(BeanUtils.getAllMethodsWithInherit(typeElement));
         allMethodList.addAll(findInterfaceMethods(typeElement));
@@ -179,46 +182,27 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private void checkParameters(ExecutableElement method) {
         List<? extends VariableElement> parameters = method.getParameters();
-        if (parameters.size() > MAX_PARAMETER_COUNT) {
-            messager.printMessage(Diagnostic.Kind.ERROR, " method has too many parameters!", method);
+        if (parameters.size() == 0) {
+            return;
         }
-        for (VariableElement variableElement : parameters) {
-            if (isMap(variableElement.asType())) {
-                checkMap(variableElement, variableElement.asType());
-                continue;
-            }
-            if (isCollection(variableElement.asType())) {
-                checkCollection(variableElement, variableElement.asType());
+        // 检测方法参数个数
+        boolean firstArgIsContext = isContext(parameters.get(0).asType());
+        int maxParameterCount = firstArgIsContext ? MAX_PARAMETER_COUNT + 1 : MAX_PARAMETER_COUNT;
+        if (parameters.size() > maxParameterCount) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "method has too many parameters!", method);
+        }
+        // 检查后续是否存在context参数
+        for (int idx = firstArgIsContext ? 1 : 0; idx < parameters.size(); idx++) {
+            VariableElement variableElement = parameters.get(idx);
+            if (isContext(variableElement.asType())) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "context must be declared as the first parameter!", method);
                 continue;
             }
         }
     }
 
     private void checkReturnType(ExecutableElement method) {
-        TypeMirror returnType = method.getReturnType();
-        if (isMap(returnType)) {
-            checkMap(method, returnType);
-        } else if (isCollection(returnType)) {
-            checkCollection(method, returnType);
-        }
-    }
 
-    private void checkMap(Element element, TypeMirror typeMirror) {
-        if (!isAssignableFromLinkedHashMap(typeMirror)) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Unsupported map type, Map parameter/return only support LinkedHashMap's parent, " +
-                            "refer to the annotation '@FieldImpl' for more help",
-                    element);
-        }
-    }
-
-    private void checkCollection(Element element, TypeMirror typeMirror) {
-        if (!isAssignableFormArrayList(typeMirror)) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Unsupported collection type, Collection parameter/return only support ArrayList's parent," +
-                            " refer to the annotation '@FieldImpl' for more help",
-                    element);
-        }
     }
 
     private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
@@ -260,22 +244,8 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
                 .execute();
     }
 
-    private boolean isMap(TypeMirror typeMirror) {
-        return !typeMirror.getKind().isPrimitive() &&
-                AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, mapTypeMirror);
-    }
-
-    private boolean isAssignableFromLinkedHashMap(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, linkedHashMapTypeMirror, typeMirror);
-    }
-
-    private boolean isCollection(TypeMirror typeMirror) {
-        return !typeMirror.getKind().isPrimitive() &&
-                AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, collectionTypeMirror);
-    }
-
-    private boolean isAssignableFormArrayList(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, arrayListTypeMirror, typeMirror);
+    boolean isContext(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, contextTypeMirror);
     }
 
     boolean isString(TypeMirror typeMirror) {
@@ -289,6 +259,10 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
             }
         }
         return false;
+    }
+
+    boolean firstArgIsContext(ExecutableElement method) {
+        return method.getParameters().size() > 0 && isContext(method.getParameters().get(0).asType());
     }
 
 }

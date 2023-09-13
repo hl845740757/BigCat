@@ -92,9 +92,28 @@ public class TimeUtils {
     /** 时分的格式化器 */
     public static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
 
-    /** {@link LocalTime}对应的毫秒时间 */
+    public static long toEpochMillis(LocalDateTime dateTime) {
+        final long millis = dateTime.getNano() / TimeUtils.NANOS_PER_MILLI;
+        return dateTime.toEpochSecond(ZoneOffset.UTC) * 1000L + millis;
+    }
+
+    public LocalDateTime toDateTime(long epochMilli) {
+        final long extraMilli = epochMilli % 1000;
+        final int nanoOfSecond = (int) (extraMilli * TimeUtils.NANOS_PER_MILLI);
+        return LocalDateTime.ofEpochSecond(epochMilli / 1000, nanoOfSecond, ZoneOffset.UTC);
+    }
+
     public static long toMillisOfDay(LocalTime time) {
         return time.toSecondOfDay() * 1000L + time.getNano() / NANOS_PER_MILLI;
+    }
+
+    public static int toSecondOfDay(LocalTime time) {
+        return time.toSecondOfDay();
+    }
+
+    /** 将毫秒时间戳转为秒时间戳 */
+    public static int toSeconds(long timeMillis) {
+        return (int) (timeMillis / 1000);
     }
 
     /** 获取月份的天数，总是忘记api... */

@@ -32,7 +32,7 @@ import java.util.Objects;
  * date 2023/4/6
  */
 @ThreadSafe
-public final class SimpleWatcherMgr<E> implements WatchableEventQueue<E> {
+public final class SimpleWatcherMgr<E> implements WatcherMgr<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleWatcherMgr.class);
 
@@ -66,6 +66,7 @@ public final class SimpleWatcherMgr<E> implements WatchableEventQueue<E> {
     /**
      * @return 如果事件被消费了则返回true，否则返回false
      */
+    @Override
     public boolean onEvent(@Nonnull E event) {
         Watcher<? super E> watcher = this.watcher;
         if (watcher == null) {

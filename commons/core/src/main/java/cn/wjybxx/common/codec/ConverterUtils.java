@@ -19,14 +19,23 @@ package cn.wjybxx.common.codec;
 import cn.wjybxx.dson.text.*;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
  * date 2023/3/31
  */
 public class ConverterUtils {
+
+    private static final MethodType SUPPLIER_INVOKE_TYPE = MethodType.methodType(Supplier.class);
+    private static final MethodType SUPPLIER_GET_METHOD_TYPE = MethodType.methodType(Object.class);
 
     private static final Map<Class<?>, Class<?>> wrapperToPrimitiveTypeMap = new IdentityHashMap<>(9);
     private static final Map<Class<?>, Class<?>> primitiveTypeToWrapperMap = new IdentityHashMap<>(9);
@@ -85,6 +94,20 @@ public class ConverterUtils {
 
     public static boolean isPrimitiveType(Class<?> type) {
         return type.isPrimitive();
+    }
+
+    /**
+     * 无参构造函数转lambda实例 -- 比反射构建实例要快。
+     */
+    public static <T> Supplier<T> noArgsConstructorToSupplier(MethodHandles.Lookup lookup, Constructor<T> constructor) throws Throwable {
+        Class<T> returnType = constructor.getDeclaringClass();
+        CallSite callSite = LambdaMetafactory.metafactory(lookup,
+                "get", SUPPLIER_INVOKE_TYPE, SUPPLIER_GET_METHOD_TYPE,
+                lookup.unreflectConstructor(constructor),
+                MethodType.methodType(returnType));
+
+        @SuppressWarnings("unchecked") Supplier<T> supplier = (Supplier<T>) callSite.getTarget().invoke();
+        return supplier;
     }
 
     // region
@@ -194,9 +217,13 @@ public class ConverterUtils {
         return style instanceof ObjectStyle objectStyle ? objectStyle : null;
     }
 
-    public static Collection<Object> newCollection(TypeArgInfo<?> typeArgInfo) {
+    @SuppressWarnings("unchecked")
+    public static Collection<Object> newCollection(TypeArgInfo<?> typeArgInfo, Supplier<?> factory) {
         if (typeArgInfo.factory != null) {
             return (Collection<Object>) typeArgInfo.factory.get();
+        }
+        if (factory != null) {
+            return (Collection<Object>) factory.get();
         }
         if (Set.class.isAssignableFrom(typeArgInfo.declaredType)) {
             return new LinkedHashSet<>();
@@ -204,9 +231,13 @@ public class ConverterUtils {
         return new ArrayList<>();
     }
 
-    public static Map<Object, Object> newMap(TypeArgInfo<?> typeArgInfo) {
+    @SuppressWarnings("unchecked")
+    public static Map<Object, Object> newMap(TypeArgInfo<?> typeArgInfo, Supplier<?> factory) {
         if (typeArgInfo.factory != null) {
             return (Map<Object, Object>) typeArgInfo.factory.get();
+        }
+        if (factory != null) {
+            return (Map<Object, Object>) factory.get();
         }
         return new LinkedHashMap<>();
     }

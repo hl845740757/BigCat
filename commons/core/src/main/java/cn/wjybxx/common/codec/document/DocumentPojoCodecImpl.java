@@ -64,15 +64,6 @@ public interface DocumentPojoCodecImpl<T> {
     T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo);
 
     /**
-     * 当前对象是否按照数组格式编码
-     * 1.默认情况下，Map是被看做普通的数组的
-     * 2.该属性只有{@link #autoStartEnd()} 为true的时候有效。
-     */
-    default boolean isWriteAsArray() {
-        return ConverterUtils.isEncodeAsArray(getEncoderClass());
-    }
-
-    /**
      * 该方法用于告知{@link DocumentPojoCodec}是否自动调用以下方法
      * {@link DocumentObjectWriter#writeStartObject(String, Object, TypeArgInfo)} ()}
      * {@link DocumentObjectWriter#writeEndObject()}
@@ -86,5 +77,14 @@ public interface DocumentPojoCodecImpl<T> {
      */
     default boolean autoStartEnd() {
         return true;
+    }
+
+    /**
+     * 当前对象是否按照数组格式编码
+     * 1.默认情况下，Map是被看做普通的数组的
+     * 2.该属性只有{@link #autoStartEnd()} 为true的时候有效。
+     */
+    default boolean isWriteAsArray() {
+        return ConverterUtils.isEncodeAsArray(getEncoderClass());
     }
 }

@@ -15,6 +15,7 @@
 
     <modules>
         <module>annotations</module>
+        <module>agent</module>
         <module>apt-base</module>
         <module>apt-common</module>
     </modules>

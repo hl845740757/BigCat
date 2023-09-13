@@ -221,7 +221,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         }
         // 对象类型--需要先读取写入的类型，才可以解码
         DsonType dsonType = CodecHelper.readOrGetDsonType(reader);
-        if (reader.getContextType().isLikeObject() && dsonType != DsonType.HEADER) {
+        if (reader.isAtName()) {
             reader.readName(name);
         }
         if (dsonType == DsonType.NULL) {

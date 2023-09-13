@@ -25,9 +25,6 @@ import javax.annotation.concurrent.ThreadSafe;
 /**
  * 二进制转换器
  * 二进制是指将对象序列化为字节数组，以编解码效率和压缩比例为重。
- * <p>
- * <h3>实现要求</h3>
- * 1.必须是线程安全的，建议实现为不可变对象
  *
  * @author wjybxx
  * date 2023/3/31

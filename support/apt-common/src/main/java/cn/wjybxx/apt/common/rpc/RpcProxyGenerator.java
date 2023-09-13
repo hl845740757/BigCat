@@ -95,11 +95,16 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         AptUtils.copyParameters(builder, method);
         builder.varargs(method.isVarArgs());
 
+        // 去除context参数
         final List<ParameterSpec> parameters = builder.parameters;
+        if (processor.firstArgIsContext(method)) {
+            parameters.remove(0);
+        }
+
         if (parameters.size() == 0) {
             // 无参时，使用 Collections.emptyList();
             builder.addStatement("return new $T<>($L, $L, $T.emptyList())",
-                    processor.defaultMethodSpecRawTypeName,
+                    processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method),
                     Collections.class);
         } else {
@@ -110,7 +115,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
                 builder.addStatement("methodParams.add($L)", parameterSpec.name);
             }
             builder.addStatement("return new $T<>($L, $L, methodParams)",
-                    processor.defaultMethodSpecRawTypeName,
+                    processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method));
         }
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
@@ -118,17 +123,17 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         return builder.build();
     }
 
-    /** 获取返回类型，如果丢失基本类型，会进行装箱 */
+    /**
+     * 获取返回类型，如果是基本类型，会进行装箱
+     */
     private TypeMirror getBoxedReturnType(ExecutableElement method) {
         TypeMirror returnType = method.getReturnType();
         if (returnType.getKind().isPrimitive()) {
             return typeUtils.boxedClass((PrimitiveType) returnType).asType();
         }
-        if (returnType.getKind() == TypeKind.WILDCARD
-                || returnType.getKind() == TypeKind.VOID) {
-            return processor.objectTypeMirror; // 通配符和void转为Object
+        if (returnType.getKind() == TypeKind.VOID) {
+            return processor.objectTypeMirror;
         }
-
         if (processor.isFuture(returnType)) { // future类型，捕获泛型参数
             return findFutureTypeArgument(method);
         } else {

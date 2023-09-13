@@ -27,7 +27,9 @@ import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -35,38 +37,87 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")
 @DocumentPojoCodecScanIgnore
-public class MapCodec implements DocumentPojoCodecImpl<Map> {
+public class MapCodec<T extends Map> implements DocumentPojoCodecImpl<T> {
+
+    final Class<T> clazz;
+    final Supplier<? extends T> factory;
+
+    public MapCodec(Class<T> clazz, Supplier<? extends T> factory) {
+        this.clazz = Objects.requireNonNull(clazz);
+        this.factory = factory;
+    }
 
     @Nonnull
     @Override
-    public Class<Map> getEncoderClass() {
-        return Map.class;
+    public Class<T> getEncoderClass() {
+        return clazz;
     }
 
     @Override
-    public void writeObject(Map instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
-        TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
+    public boolean autoStartEnd() {
+        return false;
+    }
+
+    @Override
+    public boolean isWriteAsArray() {
+        return false;
+    }
+
+    @Override
+    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
         @SuppressWarnings("unchecked") Set<Map.Entry<?, ?>> entrySet = instance.entrySet();
 
-        // 注意：map是一个普通的array
-        for (Map.Entry<?, ?> entry : entrySet) {
-            writer.writeObject(null, entry.getKey(), ketArgInfo, null);
-            writer.writeObject(null, entry.getValue(), valueArgInfo, null);
+        if (writer.options().encodeMapAsObject) {
+            writer.writeStartObject(instance, typeArgInfo, style);
+            for (Map.Entry<?, ?> entry : entrySet) {
+                String keyString = writer.encodeKey(entry.getKey());
+                Object value = entry.getValue();
+                if (value == null) {
+                    // map写为普通的Object的时候，必须要写入Null，否则containsKey会异常；要强制写入Null必须先写入Name
+                    writer.writeName(keyString);
+                    writer.writeNull(keyString);
+                } else {
+                    writer.writeObject(keyString, value, valueArgInfo, null);
+                }
+            }
+            writer.writeEndObject();
+        } else {
+            TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
+            writer.writeStartArray(instance, typeArgInfo, style);
+            for (Map.Entry<?, ?> entry : entrySet) {
+                writer.writeObject(null, entry.getKey(), ketArgInfo, null);
+                writer.writeObject(null, entry.getValue(), valueArgInfo, null);
+            }
+            writer.writeEndArray();
         }
     }
 
     @Override
-    public Map<?, ?> readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        Map<Object, Object> result = ConverterUtils.newMap(typeArgInfo);
-        TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
+    public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        Map<Object, Object> result = ConverterUtils.newMap(typeArgInfo, factory);
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
-        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
-            Object key = reader.readObject(null, ketArgInfo);
-            Object value = reader.readObject(null, valueArgInfo);
-            result.put(key, value);
+
+        if (reader.options().encodeMapAsObject) {
+            reader.readStartObject(typeArgInfo);
+            while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+                String keyString = reader.readName();
+                Object key = reader.decodeKey(keyString, typeArgInfo.typeArg1);
+                Object value = reader.readObject(keyString, valueArgInfo);
+                result.put(key, value);
+            }
+            reader.readEndObject();
+        } else {
+            TypeArgInfo<?> ketArgInfo = TypeArgInfo.of(typeArgInfo.typeArg1);
+            reader.readStartArray(typeArgInfo);
+            while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+                Object key = reader.readObject(null, ketArgInfo);
+                Object value = reader.readObject(null, valueArgInfo);
+                result.put(key, value);
+            }
+            reader.readEndArray();
         }
-        return result;
+        return clazz.cast(result);
     }
 
 }

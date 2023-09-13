@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.wjybxx.bigcat</groupId>
+    <groupId>cn.wjybxx.bigcat</groupId>
     <artifactId>bigcat-framework</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>Framework</name>
@@ -47,6 +47,7 @@
     </developers>
 
     <properties>
+        <revision>1.0-SNAPSHOT</revision>
         <!-- java版本，最终会升级为jdk21 -->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -58,8 +59,12 @@
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.4.6</logback.version>
         <junit.version>5.9.2</junit.version>
-        <commons.version>1.0-SNAPSHOT</commons.version>
+        <guice.version>7.0.0</guice.version>
 
+        <annotations.version>1.0-SNAPSHOT</annotations.version>
+        <commons.version>1.0-SNAPSHOT</commons.version>
+        <apt.version>1.0-SNAPSHOT</apt.version>
+        <dson.version>1.0.4</dson.version>
     </properties>
 
     <dependencies>
@@ -82,22 +87,58 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- 我们的基础包 -->
         <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>apt</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${guice.version}</version>
         </dependency>
+
+        <!-- commons和apt -->
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>rpc</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>apt-common</artifactId>
+            <version>${apt.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- 模块版本同步 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- 指定参数-parameters，否则test目录下文件编译异常 -->
             <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
             <plugin>
@@ -111,7 +152,8 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
-            <!-- 源码插件，未加载项目的情况下看源码 -->
+            <!-- 源码插件 -->
+            <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-source-plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>

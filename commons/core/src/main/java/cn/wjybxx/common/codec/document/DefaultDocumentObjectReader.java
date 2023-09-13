@@ -73,7 +73,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
     }
 
     @Override
-    public ConvertOptions option() {
+    public ConvertOptions options() {
         return converter.options;
     }
 
@@ -246,7 +246,7 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         }
         // 对象类型--需要先读取写入的类型，才可以解码
         DsonType dsonType = CodecHelper.readOrGetDsonType(reader);
-        if (reader.getContextType() == DsonContextType.OBJECT) {
+        if (reader.isAtName()) {
             reader.readName(name);
         }
         if (dsonType == DsonType.NULL) {

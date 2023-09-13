@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.codec;
 
-import cn.wjybxx.common.codec.document.codecs.MapAsObjectCodec;
+import cn.wjybxx.common.codec.document.codecs.MapCodec;
 
 /**
  * @author wjybxx
@@ -41,7 +41,7 @@ public enum ConverterFeature {
      * 是否把Map编码为普通对象
      * 1.只在文档编解码中生效
      * 2.如果要将一个Map结构编码为普通对象，<b>Key的运行时必须和声明类型相同</b>，且只支持String、Integer、Long、EnumLite。
-     * 3.即使不开启该选项，用户也可以通过定义字段的writeProxy实现将Map写为普通Object - 可参考{@link MapAsObjectCodec}
+     * 3.即使不开启该选项，用户也可以通过定义字段的writeProxy实现将Map写为普通Object - 可参考{@link MapCodec}
      *
      * <h3>Map不是Object</h3>
      * 本质上讲，Map是数组，而不是普通的Object，因为标准的Map是允许复杂key的，因此Map默认应该序列化为数组。但存在两个特殊的场景：

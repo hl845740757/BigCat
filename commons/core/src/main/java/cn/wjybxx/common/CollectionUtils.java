@@ -83,6 +83,15 @@ public class CollectionUtils {
         return elements.get(elements.size() - 1);
     }
 
+    public static <E> E first(List<E> elements) {
+        return elements.get(0);
+    }
+
+    // jdk21终于要内置了...
+    public static <E> E last(List<E> elements) {
+        return elements.get(elements.size() - 1);
+    }
+
     /** 删除list的前n个元素 */
     public static void removeFirstN(List<?> list, int n) {
         if (n <= 0) {

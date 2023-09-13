@@ -18,6 +18,8 @@ package cn.wjybxx.common.rpc;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.annotation.Nonnull;
 
@@ -57,6 +59,15 @@ public class DefaultRpcRegistry implements RpcRegistry {
     public RpcMethodProxy getProxy(int serviceId, int methodId) {
         final int methodKey = calMethodKey(serviceId, methodId);
         return proxyMap.get(methodKey);
+    }
+
+    @Override
+    public IntSet export() {
+        IntOpenHashSet result = new IntOpenHashSet(10);
+        proxyMap.keySet().intStream()
+                .map(e -> e / 10000)
+                .forEach(result::add);
+        return result;
     }
 
     public void clear() {

@@ -28,6 +28,7 @@ import static cn.wjybxx.common.ObjectUtils.toStringIfNotNull;
  * @author wjybxx
  * date - 2023/4/27
  */
+@SuppressWarnings("unused")
 public class Preconditions {
 
     // region checkArgument

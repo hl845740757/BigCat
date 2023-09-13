@@ -16,20 +16,19 @@
 
 package cn.wjybxx.common.rpc;
 
-import cn.wjybxx.common.rpc.RpcServiceExampleExporter;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.async.SameThreadScheduledExecutor;
 import cn.wjybxx.common.async.SameThreads;
-import cn.wjybxx.common.concurrent.WatchableEventQueue;
 import cn.wjybxx.common.time.TimeProvider;
 import cn.wjybxx.common.time.TimeProviders;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,8 +42,10 @@ public class RpcTest2 {
 
     private static final Logger logger = LoggerFactory.getLogger("RpcTest2");
 
-    private SimpleEventQueue<RpcRequest> serverQueue;
-    private SimpleEventQueue<RpcResponse> clientQueue;
+    private BlockingQueue<RpcProtocol> serverQueue;
+    private BlockingQueue<RpcProtocol> clientQueue;
+    private ServerWorker serverWorker;
+    private ClientWorker clientWorker;
 
     private Thread serverThread;
     private Thread clientThread;
@@ -53,22 +54,19 @@ public class RpcTest2 {
     private CountDownLatch latch = new CountDownLatch(2);
     private volatile boolean alert;
 
-    @BeforeEach
-    void setUp() throws InterruptedException {
-        serverQueue = new SimpleEventQueue<>();
-        clientQueue = new SimpleEventQueue<>();
+    void test(int mode) throws InterruptedException {
+        serverQueue = new LinkedBlockingQueue<>();
+        clientQueue = new LinkedBlockingQueue<>();
 
+        serverThread = new Thread((serverWorker = new ServerWorker()));
+        clientThread = new Thread((clientWorker = new ClientWorker(mode)));
         latch = new CountDownLatch(2);
-        serverThread = new Thread(new ServerWorker());
-        clientThread = new Thread(new ClientWorker());
+        alert = false;
 
         serverThread.start();
         clientThread.start();
         latch.await();
-    }
 
-    @Test
-    void waitTimeout() throws InterruptedException {
         ThreadUtils.sleepQuietly(5 * 1000);
         alert = true;
         serverThread.interrupt();
@@ -81,39 +79,51 @@ public class RpcTest2 {
         logger.info("succeeded rpc request " + counter.get());
     }
 
+    @Test
+    void basicTest() throws InterruptedException {
+        test(0);
+    }
+
+    @Test
+    void contextTest() throws InterruptedException {
+        test(1);
+    }
+
+
     // 模拟双端线程
     private class ServerWorker implements Runnable {
 
         final TimeProvider timeProvider;
         final SameThreadScheduledExecutor executor;
+        final DefaultRpcClient rpcClient;
 
         private ServerWorker() {
             this.timeProvider = TimeProviders.systemTimeProvider();
             this.executor = SameThreads.newScheduledExecutor(timeProvider);
+
+            SimpleAddr role = SimpleAddr.SERVER;
+            RpcRegistry registry = new DefaultRpcRegistry();
+            rpcClient = new DefaultRpcClient(role.id, role, new TestRpcSender(), registry,
+                    timeProvider, 5 * 1000);
+//            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
 
         @Override
         public void run() {
-            RpcRegistry registry = new DefaultRpcRegistry();
-            SimpleNodeId role = SimpleNodeId.SERVER;
             // 注册服务
-            RpcServiceExampleExporter.export(registry, new RpcServiceExample());
-
-            TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, registry,
-                    timeProvider, 5 * 1000);
-//            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
+            RpcRegistry registry = rpcClient.getRegistry();
+            RpcServiceExampleExporter.export(registry, new RpcServiceExample(rpcClient));
 
             // 准备好以后执行countdown
             latch.countDown();
             try {
                 while (!alert) {
-                    RpcRequest request = serverQueue.poll(20, TimeUnit.MILLISECONDS);
-                    if (request != null) {
-                        rpcClientImpl.onRcvRequest(request);
+                    RpcProtocol protocol = serverQueue.poll(20, TimeUnit.MILLISECONDS);
+                    if (protocol != null) {
+                        rpcClient.onRcvProtocol(protocol);
                     }
                     executor.tick();
-                    rpcClientImpl.tick();
+                    rpcClient.tick();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -125,44 +135,57 @@ public class RpcTest2 {
 
         final TimeProvider timeProvider;
         final SameThreadScheduledExecutor executor;
+        final int mode;
 
-        private ClientWorker() {
+        final DefaultRpcClient rpcClient;
+
+        private ClientWorker(int mode) {
             this.timeProvider = TimeProviders.systemTimeProvider();
             this.executor = SameThreads.newScheduledExecutor(timeProvider);
+            this.mode = mode;
+
+            SimpleAddr role = SimpleAddr.CLIENT;
+            rpcClient = new DefaultRpcClient(role.id, role, new TestRpcSender(), new DefaultRpcRegistry(),
+                    timeProvider, 5 * 1000);
+//            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
+        }
+
+        public boolean checkWatcher(RpcResponse response) {
+            return rpcClient.checkWatcher(response);
         }
 
         @Override
         public void run() {
-            RpcRegistry registry = new DefaultRpcRegistry();
-            SimpleNodeId role = SimpleNodeId.CLIENT;
+            // 注册服务
+            RpcRegistry registry = rpcClient.getRegistry();
+            RpcClientExampleExporter.export(registry, new RpcClientExample(rpcClient));
 
-            TestRpcRouterReceiver routerReceiver = new TestRpcRouterReceiver();
-            RpcClientImpl rpcClientImpl = new RpcClientImpl(role.id, role, routerReceiver, routerReceiver, registry,
-                    timeProvider, 5 * 1000);
-//            rpcSupportHandler.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
-
-            RpcUserExample rpcUserExample = new RpcUserExample(rpcClientImpl);
+            RpcClientExample rpcUserExample = new RpcClientExample(rpcClient);
             executor.scheduleWithFixedDelay(() -> rpcTest(rpcUserExample), 200, 500);
 
             // 准备好以后执行countdown
             latch.countDown();
             try {
                 while (!alert) {
-                    RpcResponse response = clientQueue.poll(20, TimeUnit.MILLISECONDS);
-                    if (response != null) {
-                        rpcClientImpl.onRcvResponse(response);
+                    RpcProtocol protocol = clientQueue.poll(10, TimeUnit.MILLISECONDS);
+                    if (protocol != null) {
+                        rpcClient.onRcvProtocol(protocol);
                     }
                     executor.tick();
-                    rpcClientImpl.tick();
+                    rpcClient.tick();
                 }
             } catch (InterruptedException e) {
                 // 退出
             }
         }
 
-        private void rpcTest(RpcUserExample rpcUserExample) {
+        private void rpcTest(RpcClientExample rpcUserExample) {
             try {
-                rpcUserExample.rpcTest();
+                if (mode == 1) {
+                    rpcUserExample.contextTest();
+                } else {
+                    rpcUserExample.test();
+                }
                 counter.incrementAndGet();
             } catch (RpcClientException e) {
                 if (!alert) {
@@ -178,38 +201,26 @@ public class RpcTest2 {
 
     // 模拟路由
 
-    private class TestRpcRouterReceiver implements RpcSender, RpcReceiver {
+    private class TestRpcSender implements RpcSender {
 
-        private TestRpcRouterReceiver() {
+        private TestRpcSender() {
         }
 
         @Override
-        public boolean send(NodeId target, Object proto) {
-            SimpleNodeId targetRole = (SimpleNodeId) target;
+        public boolean send(RpcProtocol proto) {
+            SimpleAddr targetRole = (SimpleAddr) proto.getDestAddr();
             switch (targetRole) {
                 case CLIENT -> {
-                    return clientQueue.offer((RpcResponse) proto);
+                    if (proto instanceof RpcResponse response) {
+                        return clientWorker.checkWatcher(response) || clientQueue.offer(response);
+                    }
+                    return clientQueue.offer(proto);
                 }
                 case SERVER -> {
-                    return serverQueue.offer((RpcRequest) proto);
+                    return serverQueue.offer(proto);
                 }
             }
             return false;
-        }
-
-        @Override
-        public boolean broadcast(NodeScope nodeScope, Object proto) {
-            throw new AssertionError(); // 不测试该实现
-        }
-
-        @Override
-        public void watch(WatchableEventQueue.Watcher<? super RpcResponse> watcher) {
-            clientQueue.watch(watcher);
-        }
-
-        @Override
-        public void cancelWatch(WatchableEventQueue.Watcher<? super RpcResponse> watcher) {
-            clientQueue.cancelWatch(watcher);
         }
     }
 

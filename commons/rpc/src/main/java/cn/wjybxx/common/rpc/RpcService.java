@@ -40,6 +40,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface RpcService {
 
+    /**
+     * 服务id < 0，则表示本地服务
+     * 服务id >= 0 表示公共服务
+     */
     int serviceId();
 
 }

@@ -17,7 +17,7 @@
 package cn.wjybxx.common.codec;
 
 import cn.wjybxx.common.OptionalBool;
-import cn.wjybxx.common.codec.document.codecs.MapAsObjectCodec;
+import cn.wjybxx.common.codec.document.codecs.MapCodec;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
 
 import javax.annotation.concurrent.Immutable;
@@ -50,7 +50,7 @@ public class ConvertOptions {
      * 1.只在文档编解码中生效
      * 2.在Dson中，Map被看做一个特殊的数组结构，而不是普通的Object，Map和Object本就是性质不同的对象。
      * 如果要将一个Map结构编码为普通对象，<b>Key的运行时必须和声明类型相同</b>，且只支持String、Integer、Long、EnumLite。
-     * 3.即使不开启该选项，用户也可以通过定义字段的writeProxy实现将Map写为普通Object - 可参考{@link MapAsObjectCodec}
+     * 3.即使不开启该选项，用户也可以通过定义字段的writeProxy实现将Map写为普通Object - 可参考{@link MapCodec}
      */
     public final boolean encodeMapAsObject;
 
@@ -79,6 +79,9 @@ public class ConvertOptions {
         this.textWriterSettings = Objects.requireNonNull(builder.textWriterSettings);
         this.jsonWriterSettings = Objects.requireNonNull(builder.jsonWriterSettings);
 
+        if (textWriterSettings.jsonLike) {
+            throw new IllegalArgumentException("textWriterSettings.jsonLike must be false");
+        }
         if (!jsonWriterSettings.jsonLike) {
             throw new IllegalArgumentException("jsonWriterSetting.jsonLike must be true");
         }

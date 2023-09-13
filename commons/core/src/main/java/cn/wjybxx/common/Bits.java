@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+
 /**
  * @author wjybxx
  * date - 2023/4/17
@@ -83,5 +85,36 @@ public class Bits {
     }
 
     // endregion
+
+    /** @param indexArray bit位为1的元素下标的数组 */
+    public static long indexArray2Bits(int[] indexArray) {
+        long r = 0;
+        for (int idx : indexArray) {
+            r |= (1L << idx);
+        }
+        return r;
+    }
+
+    /** @return bit位为1的元素下标的数组 */
+    public static int[] bits2IndexArray(long bits) {
+        IntArrayList list = new IntArrayList(8);
+        for (int idx = 0; idx < 64; idx++) {
+            if ((bits & (1L << idx)) != 0) {
+                list.add(idx);
+            }
+        }
+        return list.toIntArray();
+    }
+
+    /** @return bit位为1的元素下标的数组 */
+    public static int[] bits2IndexArray(int bits) {
+        IntArrayList list = new IntArrayList(8);
+        for (int idx = 0; idx < 32; idx++) {
+            if ((bits & (1 << idx)) != 0) {
+                list.add(idx);
+            }
+        }
+        return list.toIntArray();
+    }
 
 }

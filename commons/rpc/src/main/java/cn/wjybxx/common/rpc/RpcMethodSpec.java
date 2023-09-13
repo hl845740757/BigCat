@@ -16,12 +16,13 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
 import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
+import cn.wjybxx.common.log.DebugLogFriendlyObject;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * rpc方法描述信息
@@ -39,16 +40,17 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
 
     private int serviceId;
     private int methodId;
-    private List<Object> methodParams;
+    private List<Object> parameters;
+//    private transient boolean sharable;
 
     public RpcMethodSpec() {
         // 用于可能的序列化支持
     }
 
-    public RpcMethodSpec(int serviceId, int methodId, List<Object> methodParams) {
+    public RpcMethodSpec(int serviceId, int methodId, List<Object> parameters) {
         this.serviceId = serviceId;
         this.methodId = methodId;
-        this.methodParams = methodParams;
+        this.parameters = Objects.requireNonNull(parameters);
     }
 
     public int getServiceId() {
@@ -67,50 +69,54 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
         this.methodId = methodId;
     }
 
-    public List<Object> getMethodParams() {
-        return methodParams;
+    public List<Object> getParameters() {
+        return parameters;
     }
 
-    public void setMethodParams(List<Object> methodParams) {
-        this.methodParams = methodParams;
+    public void setParameters(List<Object> parameters) {
+        this.parameters = parameters;
     }
 
     // region 简化生成代码
 
     public int getInt(int index) {
-        Number number = (Number) methodParams.get(index);
+        Number number = (Number) parameters.get(index);
         return number.intValue();
     }
 
     public long getLong(int index) {
-        Number number = (Number) methodParams.get(index);
+        Number number = (Number) parameters.get(index);
         return number.longValue();
     }
 
     public float getFloat(int index) {
-        Number number = (Number) methodParams.get(index);
+        Number number = (Number) parameters.get(index);
         return number.floatValue();
     }
 
     public double getDouble(int index) {
-        Number number = (Number) methodParams.get(index);
+        Number number = (Number) parameters.get(index);
         return number.doubleValue();
     }
 
     public boolean getBoolean(int index) {
-        return (Boolean) methodParams.get(index);
+        return (Boolean) parameters.get(index);
     }
 
     public String getString(int index) {
-        return (String) methodParams.get(index);
+        return (String) parameters.get(index);
     }
 
     public Object getObject(int index) {
-        return methodParams.get(index);
+        return parameters.get(index);
     }
 
     public <T> T getObject(int index, Class<T> clazz) {
-        return clazz.cast(methodParams.get(index));
+        return clazz.cast(parameters.get(index));
+    }
+
+    public void setObject(int index, Object arg) {
+        parameters.set(index, arg);
     }
 
     // endregion
@@ -121,7 +127,7 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
         return '{' +
                 "serviceId=" + serviceId +
                 ", methodId=" + methodId +
-                ", paramCount=" + methodParams.size() +
+                ", paramCount=" + parameters.size() +
                 "}";
     }
 
@@ -130,8 +136,8 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
     public String toDetailLog() {
         return '{' + "serviceId=" + serviceId +
                 ", methodId=" + methodId +
-                ", paramCount=" + methodParams.size() +
-                ", params=" + methodParams +
+                ", paramCount=" + parameters.size() +
+                ", params=" + parameters +
                 "}";
     }
 
@@ -140,7 +146,7 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
         return "DefaultRpcMethodSpec{"
                 + "serviceId=" + serviceId
                 + ", methodId=" + methodId
-                + ", methodParams=" + methodParams
+                + ", methodParams=" + parameters
                 + '}';
     }
 

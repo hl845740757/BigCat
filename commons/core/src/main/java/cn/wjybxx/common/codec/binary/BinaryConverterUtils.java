@@ -22,7 +22,10 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -48,8 +51,8 @@ public class BinaryConverterUtils extends ConverterUtils {
                 newCodec(new CharArrayCodec()),
 
                 newCodec(new ObjectArrayCodec()),
-                newCodec(new CollectionCodec()),
-                newCodec(new MapCodec())
+                newCodec(new CollectionCodec<>(Collection.class, null)),
+                newCodec(new MapCodec<>(Map.class, null))
         );
 
         Map<Class<?>, BinaryPojoCodec<?>> codecMap = BinaryCodecRegistries.newCodecMap(entryList);
@@ -119,7 +122,7 @@ public class BinaryConverterUtils extends ConverterUtils {
         }
     }
 
-    // region protobuf
+    // region 特殊类型支持：protobuf,集合,map
 
     public static List<? extends BinaryPojoCodecImpl<?>> scanProtobuf(final Set<Class<?>> allProtoBufClasses) {
         final List<BinaryPojoCodecImpl<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size());
@@ -150,6 +153,19 @@ public class BinaryConverterUtils extends ConverterUtils {
     public static <T extends ProtocolMessageEnum> MessageEnumCodec<T> createMessageEnumCodec(Class<T> messageClazz) {
         final var enumLiteMap = ProtobufUtils.findMapper(messageClazz);
         return new MessageEnumCodec<>(messageClazz, enumLiteMap);
+    }
+
+    /** @param lookup 外部缓存实例，避免每次创建的开销 */
+    public static <T extends Collection<?>> CollectionCodec<T> createCollectionCodec(MethodHandles.Lookup lookup, Class<T> clazz) throws Throwable {
+        Constructor<T> constructor = clazz.getConstructor();
+        Supplier<T> factory = noArgsConstructorToSupplier(lookup, constructor);
+        return new CollectionCodec<>(clazz, factory);
+    }
+
+    public static <T extends Map<?, ?>> MapCodec<T> createMapCodec(MethodHandles.Lookup lookup, Class<T> clazz) throws Throwable {
+        Constructor<T> constructor = clazz.getConstructor();
+        Supplier<T> factory = noArgsConstructorToSupplier(lookup, constructor);
+        return new MapCodec<>(clazz, factory);
     }
 
     // endregion

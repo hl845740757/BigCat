@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.rpc;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -46,6 +48,13 @@ public interface RpcRegistry {
      * @return 如果不存在，则返回null
      */
     RpcMethodProxy getProxy(int serviceId, int methodId);
+
+    /**
+     * 导出注册表中包含的服务
+     *
+     * @return 注册的所有服务的id
+     */
+    IntSet export();
 
     /**
      * 清理注册表

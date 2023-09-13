@@ -18,7 +18,9 @@ package cn.wjybxx.common.rpc;
 
 /**
  * 该接口负责真正的消息路由。
- * 实现要求：发给同一个target的消息必须保证先发的先到！！！
+ * 实现要求：
+ * 1. 发给同一个target的消息必须保证先发的先到！！！
+ * 2. 单播和广播消息之间最好也保证顺序 —— 使用双channel或双topic的方式可能存在时序问题。
  *
  * @author wjybxx
  * date 2023/4/1
@@ -26,21 +28,11 @@ package cn.wjybxx.common.rpc;
 public interface RpcSender {
 
     /**
-     * 单播一个协议
+     * 发送一个协议
      *
-     * @param target 协议的目标方
-     * @param proto  要路由的协议
+     * @param proto 要路由的协议
      * @return 如果不能发送，则返回false，请确保正确的进行了实现。
      */
-    boolean send(NodeId target, Object proto);
-
-    /**
-     * 广播一个协议
-     *
-     * @param nodeScope 广播范围描述
-     * @param proto     要路由的协议
-     * @return 如果不能发送，则返回false，请确保正确的进行了实现。
-     */
-    boolean broadcast(NodeScope nodeScope, Object proto);
+    boolean send(RpcProtocol proto);
 
 }

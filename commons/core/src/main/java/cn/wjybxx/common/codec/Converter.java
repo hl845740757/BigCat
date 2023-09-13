@@ -19,11 +19,19 @@ package cn.wjybxx.common.codec;
 import cn.wjybxx.dson.io.Chunk;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
+ * Q：如何解决集合和Map的编解码问题？
+ * A：为使用到的集合分配{@link TypeMeta}，并利用Utils类提供的方法创建对应{@code CollectionCodec}和{@code MapCodec}实例。
+ * <p>
+ * Q：如何解决Protobuf的消息编解码问题？
+ * A：为使用到的消息分配{@link TypeMeta}，并利用Utils类提供的方法创建对应的{@code MessageCodec}。
+ *
  * @author wjybxx
  * date 2023/3/31
  */
+@ThreadSafe
 public interface Converter {
 
     /**

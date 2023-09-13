@@ -127,7 +127,7 @@ public interface DocumentObjectReader extends AutoCloseable {
     @Override
     void close();
 
-    ConvertOptions option();
+    ConvertOptions options();
 
     DsonType readDsonType();
 

@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.async;
 
+import cn.wjybxx.common.NegativeChecker;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.collect.DefaultIndexedPriorityQueue;
 import cn.wjybxx.common.collect.IndexedPriorityQueue;

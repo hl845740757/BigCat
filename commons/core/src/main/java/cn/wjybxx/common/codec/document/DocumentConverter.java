@@ -21,6 +21,7 @@ import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.Reader;
 import java.io.Writer;
 
@@ -38,6 +39,7 @@ import java.io.Writer;
  * @author wjybxx
  * date 2023/4/4
  */
+@ThreadSafe
 public interface DocumentConverter extends Converter {
 
     // region 文本编解码

@@ -94,16 +94,19 @@ public class Sheet {
 
     /** 是否是参数表 */
     public boolean isParamSheet() {
+        assert headerMap.size() > 0;
         // 只有普通表可以只有表头没有内容
         if (valueRowList.isEmpty()) {
             return false;
         }
-        assert headerMap.size() > 0;
         // 由于不同项目的起始行号可能不同，因此这里不测试第一行的编号
-        // header和value在同一行是的param表
+        // header和value在同一行是的param表 -- 且一行只有一个Cell
         SheetRow firstValueRow = valueRowList.iterator().next();
-        String name = firstValueRow.getNameSet().iterator().next();
-        return headerMap.get(name).getRowIndex() == firstValueRow.getRowIndex();
+        if (firstValueRow.getName2CellMap().size() != 1) {
+            return false;
+        }
+        SheetCell cell = firstValueRow.getName2CellMap().values().iterator().next();
+        return cell.getHeader().getRowIndex() == firstValueRow.getRowIndex();
     }
 
     /**

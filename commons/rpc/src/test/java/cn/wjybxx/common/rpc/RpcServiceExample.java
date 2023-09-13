@@ -32,6 +32,12 @@ import java.util.concurrent.CompletableFuture;
 @RpcService(serviceId = 1)
 public class RpcServiceExample implements ExtensibleService {
 
+    private final RpcClient rpcClient;
+
+    public RpcServiceExample(RpcClient rpcClient) {
+        this.rpcClient = rpcClient;
+    }
+
     @RpcMethod(methodId = 1)
     public String hello(String msg) {
         return msg;
@@ -64,6 +70,14 @@ public class RpcServiceExample implements ExtensibleService {
     @RpcMethod(methodId = 6)
     public CompletableFuture<String> helloAsync(String msg) {
         return FutureUtils.newSucceededFuture(msg);
+    }
+
+    /** 测试context的代码生成 */
+    @RpcMethod(methodId = 7)
+    public void contextHello(RpcContext<String> rpcContext, String msg) {
+        rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage("context -- before"));
+        rpcContext.sendResult(msg);
+        rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage("context -- end\n"));
     }
 
     // 测试从接口继承的方法

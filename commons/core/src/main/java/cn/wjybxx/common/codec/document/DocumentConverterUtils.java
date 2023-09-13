@@ -23,7 +23,10 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * @author wjybxx
@@ -43,8 +46,6 @@ public class DocumentConverterUtils extends ConverterUtils {
     private static final TypeMetaRegistry<String> TYPE_META_REGISTRY;
     /** 默认codec注册表 */
     private static final DocumentCodecRegistry CODEC_REGISTRY;
-    /** Map看做普通Object编码的注册表 */
-    private static final DocumentCodecRegistry CODEC_REGISTRY2;
 
     static {
         Properties properties = System.getProperties();
@@ -67,17 +68,12 @@ public class DocumentConverterUtils extends ConverterUtils {
                 newCodec(new CharArrayCodec()),
 
                 newCodec(new ObjectArrayCodec()),
-                newCodec(new CollectionCodec()),
-                newCodec(new MapCodec())
+                newCodec(new CollectionCodec<>(Collection.class, null)),
+                newCodec(new MapCodec<>(Map.class, null))
         );
 
         Map<Class<?>, DocumentPojoCodec<?>> codecMap = DocumentCodecRegistries.newCodecMap(entryList);
         CODEC_REGISTRY = new DefaultCodecRegistry(codecMap);
-
-        // 替换Map的Codec，需要先拷贝
-        codecMap = new IdentityHashMap<>(codecMap);
-        codecMap.put(Map.class, new DocumentPojoCodec<>(new MapAsObjectCodec()));
-        CODEC_REGISTRY2 = new DefaultCodecRegistry(codecMap);
 
         TYPE_META_REGISTRY = TypeMetaRegistries.fromMetas(
                 entryOfClass(int[].class),
@@ -102,11 +98,8 @@ public class DocumentConverterUtils extends ConverterUtils {
         return new DocumentPojoCodec<>(codecImpl);
     }
 
-    /**
-     * @param encodeMapAsObject 是否将map看做普通的Object
-     */
-    public static DocumentCodecRegistry getDefaultCodecRegistry(boolean encodeMapAsObject) {
-        return encodeMapAsObject ? CODEC_REGISTRY2 : CODEC_REGISTRY;
+    public static DocumentCodecRegistry getDefaultCodecRegistry() {
+        return  CODEC_REGISTRY;
     }
 
     public static TypeMetaRegistry<String> getDefaultTypeMetaRegistry() {
@@ -156,7 +149,7 @@ public class DocumentConverterUtils extends ConverterUtils {
         return Integer.toString(idx);
     }
 
-    // region protobuf
+    // region 特殊类型支持：protobuf,集合,map
 
     public static List<? extends DocumentPojoCodecImpl<?>> scanProtobuf(final Set<Class<?>> allProtoBufClasses) {
         final List<DocumentPojoCodecImpl<?>> allPojoCodecList = new ArrayList<>(allProtoBufClasses.size());
@@ -187,6 +180,19 @@ public class DocumentConverterUtils extends ConverterUtils {
     public static <T extends ProtocolMessageEnum> MessageEnumCodec<T> createMessageEnumCodec(Class<T> messageClazz) {
         final var enumLiteMap = ProtobufUtils.findMapper(messageClazz);
         return new MessageEnumCodec<>(messageClazz, enumLiteMap);
+    }
+
+    /** @param lookup 外部缓存实例，避免每次创建的开销 */
+    public static <T extends Collection<?>> CollectionCodec<T> createCollectionCodec(MethodHandles.Lookup lookup, Class<T> clazz) throws Throwable {
+        Constructor<T> constructor = clazz.getConstructor();
+        Supplier<T> factory = noArgsConstructorToSupplier(lookup, constructor);
+        return new CollectionCodec<>(clazz, factory);
+    }
+
+    public static <T extends Map<?, ?>> MapCodec<T> createMapCodec(MethodHandles.Lookup lookup, Class<T> clazz) throws Throwable {
+        Constructor<T> constructor = clazz.getConstructor();
+        Supplier<T> factory = noArgsConstructorToSupplier(lookup, constructor);
+        return new MapCodec<>(clazz, factory);
     }
 
     // endregion
