@@ -34,17 +34,17 @@ import java.util.List;
 @BinarySerializable
 public class RpcRequest extends RpcProtocol implements DebugLogFriendlyObject {
 
+    /** 请求id */
+    private long requestId;
+    /** 调用类型 */
+    private int invokeType;
+
     /** 服务id */
     private int serviceId;
     /** 方法id */
     private int methodId;
     /** 方法参数 */
     private List<Object> parameters;
-
-    /** 请求id */
-    private long requestId;
-    /** 调用类型 */
-    private int invokeType;
 
     public RpcRequest() {
         // 可能的序列化支持
@@ -55,7 +55,7 @@ public class RpcRequest extends RpcProtocol implements DebugLogFriendlyObject {
     }
 
     public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                      RpcMethodSpec<?> methodSpec, long requestId, int invokeType) {
+                      long requestId, int invokeType, RpcMethodSpec<?> methodSpec) {
         super(conId, srcAddr, destAddr);
         this.requestId = requestId;
         this.invokeType = invokeType;

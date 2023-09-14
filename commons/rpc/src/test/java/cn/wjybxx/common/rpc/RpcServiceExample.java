@@ -80,6 +80,12 @@ public class RpcServiceExample implements ExtensibleService {
         rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage("context -- end\n"));
     }
 
+    /** 测试包含request的参数生成 -- 可以拿到连接id和远程地址 */
+    @RpcMethod(methodId = 8)
+    public void requestHello(RpcRequest request, String msg) {
+
+    }
+
     // 测试从接口继承的方法
     private final Map<String, Object> extBlackboard = new HashMap<>();
 

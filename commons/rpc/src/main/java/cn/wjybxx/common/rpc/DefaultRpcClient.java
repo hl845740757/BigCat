@@ -117,7 +117,7 @@ public class DefaultRpcClient implements RpcClient {
 
         final long requestId = ++sequencer;
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
-                methodSpec, requestId, RpcClient.INVOKE_ONE_WAY);
+                requestId, RpcInvokeType.ONEWAY, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
@@ -141,7 +141,7 @@ public class DefaultRpcClient implements RpcClient {
 
         final long requestId = ++sequencer;
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
-                methodSpec, requestId, RpcClient.INVOKE_BROADCAST);
+                requestId, RpcInvokeType.BROADCAST, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logBroadcastRequest(request);
@@ -166,7 +166,7 @@ public class DefaultRpcClient implements RpcClient {
 
         final long requestId = ++sequencer;
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
-                methodSpec, requestId, RpcClient.INVOKE_CALL);
+                requestId, RpcInvokeType.CALL, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
@@ -211,7 +211,7 @@ public class DefaultRpcClient implements RpcClient {
 
         final long requestId = ++sequencer;
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
-                methodSpec, requestId, RpcClient.INVOKE_SYNC_CALL);
+                requestId, RpcInvokeType.SYNC_CALL, methodSpec);
 
         if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
@@ -253,25 +253,9 @@ public class DefaultRpcClient implements RpcClient {
             onRcvRequest(request);
         } else if (protocol instanceof RpcResponse response) {
             onRcvResponse(response);
-        } else if (protocol instanceof RpcMessage message) {
-            onRcvMessage(message);
         } else {
             throw new IllegalArgumentException("invalid protocol " + protocol);
         }
-    }
-
-    /**
-     * 收到一个rpc消息
-     */
-    public void onRcvMessage(RpcMessage message) {
-        // message的主要作用是节省网络开胸
-        RpcRequest request = new RpcRequest(message.getConId(), message.getSrcAddr(), message.getDestAddr());
-        request.setServiceId(message.getServiceId())
-                .setMethodId(message.getMethodId())
-                .setParameters(message.getParameters())
-                .setRequestId(0)
-                .setInvokeType(RpcClient.INVOKE_ONE_WAY);
-        onRcvRequest(request);
     }
 
     /**
@@ -287,30 +271,32 @@ public class DefaultRpcClient implements RpcClient {
         if (proxy == null) {
             logger.warn("rcv unknown request, node {}, serviceId={}, methodId={}",
                     request.getSrcAddr(), request.getServiceId(), request.getMethodId());
-            if (RpcClient.isRequireResult(request.getInvokeType())) {
-                final RpcResponse response = RpcResponse.newFailedResponse(request.getConId(), selfRpcAddr, request.srcAddr, request.getRequestId(),
-                        RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
+            if (RpcInvokeType.isCall(request.getInvokeType())) {
+                final RpcResponse response = RpcResponse.newFailedResponse(request, selfRpcAddr, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
                 sendResponseAndLog(response);
             }
             return;
         }
 
         RpcMethodSpec<?> methodSpec = new RpcMethodSpec<>(request.getServiceId(), request.getMethodId(), request.getParameters());
-        DefaultRpcContext<T> context;
-        if (!RpcClient.isRequireResult(request.getInvokeType())) {
+        DefaultRpcContext<T> context = new DefaultRpcContext<>(request, new XCompletableFuture<>());
+        if (RpcInvokeType.isMessage(request.getInvokeType())) {
             // 单向消息 - 不需要结果
-            context = new DefaultRpcContext<>(request, null);
             try {
                 proxy.invoke(context, methodSpec);
+                context.future().complete(null);
             } catch (Exception e) {
+                context.future().completeExceptionally(e);
                 throw wrapException(request, e);
             }
         } else {
             // rpc -- 监听future完成事件
-            context = new DefaultRpcContext<>(request, new XCompletableFuture<>());
             context.future().whenComplete(new FutureListener<>(request, this));
             try {
                 final Object result = proxy.invoke(context, methodSpec);
+                if (result == context) {
+                    return; // 用户使用了context返回结果
+                }
                 if (result instanceof CompletableFuture) {
                     @SuppressWarnings("unchecked") CompletableFuture<T> future = (CompletableFuture<T>) result;
                     FutureUtils.setFuture(context.future(), future);
@@ -417,21 +403,15 @@ public class DefaultRpcClient implements RpcClient {
     }
 
     private <V> RpcResponse newSucceedResponse(RpcRequest request, V result) {
-        return RpcResponse.newSucceedResponse(request.getConId(), selfRpcAddr, request.getSrcAddr(),
-                request.getRequestId(), result);
+        return RpcResponse.newSucceedResponse(request, selfRpcAddr, result);
     }
 
     private RpcResponse newFailedResponse(RpcRequest request, Throwable e) {
         e = FutureUtils.unwrapCompletionException(e);
         if (e instanceof ErrorCodeException codeException) {
-            return RpcResponse.newFailedResponse(request.getConId(), selfRpcAddr, request.getSrcAddr(),
-                    request.getRequestId(), codeException.getErrorCode(), codeException.getMessage());
+            return RpcResponse.newFailedResponse(request, selfRpcAddr, codeException.getErrorCode(), codeException.getMessage());
         } else {
-            // 异常信息已由上游打印，这里只打印rpc信息
-            logger.warn("rpc execute caught exception, conId: {}, from: {}, requestId: {}",
-                    request.getConId(), request.getSrcAddr(), request.getRequestId());
-            return RpcResponse.newFailedResponse(request.getConId(), selfRpcAddr, request.getSrcAddr(),
-                    request.getRequestId(), RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(e));
+            return RpcResponse.newFailedResponse(request, selfRpcAddr, RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(e));
         }
     }
 

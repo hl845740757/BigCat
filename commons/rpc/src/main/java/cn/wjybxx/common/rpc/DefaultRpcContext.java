@@ -33,24 +33,9 @@ public class DefaultRpcContext<V> implements RpcContext<V> {
         this.future = future;
     }
 
-    /** 左思右想，觉得这个future还是不提供给用户好一些 */
-    public XCompletableFuture<V> future() {
-        return future;
-    }
-
     @Override
     public RpcRequest request() {
         return request;
-    }
-
-    @Override
-    public void sendResult(V msg) {
-        if (future != null) future.complete(msg);
-    }
-
-    @Override
-    public void sendError(int errorCode, String msg) {
-        if (future != null) future.completeExceptionally(new ErrorCodeException(errorCode, msg));
     }
 
     @Override
@@ -59,7 +44,17 @@ public class DefaultRpcContext<V> implements RpcContext<V> {
     }
 
     @Override
-    public boolean isRequireResult() {
-        return RpcClient.isRequireResult(request.getInvokeType());
+    public void sendResult(V msg) {
+        future.complete(msg);
+    }
+
+    @Override
+    public void sendError(int errorCode, String msg) {
+        future.completeExceptionally(new ErrorCodeException(errorCode, msg));
+    }
+
+    @Override
+    public XCompletableFuture<V> future() {
+        return future;
     }
 }

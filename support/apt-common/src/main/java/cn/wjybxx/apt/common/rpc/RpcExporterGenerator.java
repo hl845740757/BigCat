@@ -120,23 +120,36 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
     /**
      * 为某个具体方法生成注册方法，方法分为两类
-     * 1. 有返回值的，直接返回方法执行结果（任意值）
+     * 1. 有返回值的，直接返回方法执行结果（任意值）; 如果方法签名中包含request，需要传入
      * <pre>
      * {@code
      * 		private static void exportMethod1(RpcFunctionRegistry registry, T instance) {
      * 		    registry.register(10001, (context, methodSpec) -> {
      * 		        return instance.method10001(methodSpec.getInt(0), methodSpec.getLong(1));
+     * 		        // return instance.method10001(context.request(), methodSpec.getInt(0), methodSpec.getLong(1));
      *         }
      *     }
      * }
      * </pre>
-     * 2. 无返回值的，代理执行完之后直接返回null
+     * 2. 无返回值的，代理执行完之后直接返回null；如果方法签名中包含request，需要传入
      * <pre>
      * {@code
      * 		private static void exportMethod2(RpcFunctionRegistry registry, T instance) {
      * 		    registry.register(10002, (context, methodSpec) -> {
      * 		        instance.method10002(methodSpec.getInt(0), methodSpec.getLong(1));
+     * 		        // instance.method10002(context.request(), methodSpec.getInt(0), methodSpec.getLong(1));
      * 		        return null;
+     *          }
+     *     }
+     * }
+     * </pre>
+     * 3. 方法签名中包含context，代理返回context参数
+     * <pre>
+     * {@code
+     * 		private static void exportMethod2(RpcFunctionRegistry registry, T instance) {
+     * 		    registry.register(10003, (context, methodSpec) -> {
+     * 		        instance.method10002(context, methodSpec.getInt(0), methodSpec.getLong(1));
+     * 		        return context;
      *          }
      *     }
      * }
@@ -156,12 +169,16 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         builder.addCode("$L.register($L, $L, ($L, $L) -> {\n",
                 varName_registry, serviceId, methodId, varName_context, varName_methodSpec);
 
-        final InvokeStatement invokeStatement = genInvokeStatement(method);
-        if (method.getReturnType().getKind() != TypeKind.VOID) {
-            builder.addStatement("    return " + invokeStatement.format, invokeStatement.params.toArray());
-        } else {
+        FirstArgType firstArgType = processor.firstArgType(method);
+        final InvokeStatement invokeStatement = genInvokeStatement(method, firstArgType);
+        if (firstArgType == FirstArgType.CONTEXT) {
+            builder.addStatement("    " + invokeStatement.format, invokeStatement.params.toArray());
+            builder.addStatement("    return context");
+        } else if (method.getReturnType().getKind() == TypeKind.VOID) {
             builder.addStatement("    " + invokeStatement.format, invokeStatement.params.toArray());
             builder.addStatement("    return null");
+        } else {
+            builder.addStatement("    return " + invokeStatement.format, invokeStatement.params.toArray());
         }
 
         builder.addStatement("})");
@@ -180,7 +197,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * 生成方法调用代码，没有分号和换行符。
      * {@code instance.rpcMethod(a, b, c)}
      */
-    private InvokeStatement genInvokeStatement(ExecutableElement method) {
+    private InvokeStatement genInvokeStatement(ExecutableElement method, FirstArgType firstArgType) {
         final StringBuilder format = new StringBuilder();
         final List<Object> params = new ArrayList<>(method.getParameters().size());
 
@@ -189,14 +206,17 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         params.add(varName_instance);
         params.add(method.getSimpleName().toString());
 
-        // 去除context
+        // 去除context和request
         List<? extends VariableElement> parameters = method.getParameters();
-        if (processor.firstArgIsContext(method)) {
-            // 方法的返回类型可能是void，但context的泛型不一定
-            TypeName targetContextType = ParameterizedTypeName.get(parameters.get(0).asType());
-            format.append("($T) context");
-            params.add(targetContextType);
-
+        if (firstArgType.noCounting()) {
+            if (firstArgType == FirstArgType.CONTEXT) {
+                // 方法的返回类型可能是void，但context的泛型不一定
+                TypeName targetContextType = TypeName.get(parameters.get(0).asType());
+                format.append("($T) context");
+                params.add(targetContextType);
+            } else {
+                format.append("context.request()");
+            }
             parameters = method.getParameters().subList(1, parameters.size());
             if (parameters.size() > 0) {
                 format.append(", ");

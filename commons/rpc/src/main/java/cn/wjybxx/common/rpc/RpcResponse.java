@@ -35,6 +35,10 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
 
     /** 请求的唯一id */
     private long requestId;
+    /** 服务id -- 定位返回值类型 */
+    private int serviceId;
+    /** 方法id */
+    private int methodId;
     /** 错误码（0表示成功） -- 不使用枚举，以方便用户扩展 */
     private int errorCode;
     /**
@@ -51,23 +55,22 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
         super(conId, srcAddr, destAddr);
     }
 
-    private RpcResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                        long requestId, int errorCode, Object result) {
-        super(conId, srcAddr, destAddr);
-        this.requestId = requestId;
+    private RpcResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, Object result) {
+        super(request.getConId(), selfAddr, request.getSrcAddr());
+        this.requestId = request.getRequestId();
+        this.serviceId = request.getServiceId();
+        this.methodId = request.getMethodId();
         this.errorCode = errorCode;
         this.result = result;
     }
 
-    public static RpcResponse newSucceedResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                                                 long requestId, Object result) {
-        return new RpcResponse(conId, srcAddr, destAddr, requestId, 0, result);
+    public static RpcResponse newSucceedResponse(RpcRequest request, RpcAddr selfAddr, Object result) {
+        return new RpcResponse(request, selfAddr, 0, result);
     }
 
-    public static RpcResponse newFailedResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                                                long requestId, int errorCode, String msg) {
+    public static RpcResponse newFailedResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, String msg) {
         if (errorCode == 0) throw new IllegalArgumentException("invalid errorCode " + errorCode);
-        return new RpcResponse(conId, srcAddr, destAddr, requestId, errorCode, msg);
+        return new RpcResponse(request, selfAddr, errorCode, msg);
     }
 
     public boolean isSuccess() {
@@ -88,6 +91,24 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
 
     public RpcResponse setRequestId(long requestId) {
         this.requestId = requestId;
+        return this;
+    }
+
+    public int getServiceId() {
+        return serviceId;
+    }
+
+    public RpcResponse setServiceId(int serviceId) {
+        this.serviceId = serviceId;
+        return this;
+    }
+
+    public int getMethodId() {
+        return methodId;
+    }
+
+    public RpcResponse setMethodId(int methodId) {
+        this.methodId = methodId;
         return this;
     }
 
@@ -114,6 +135,8 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
     public String toSimpleLog() {
         return "{" +
                 "requestId=" + requestId +
+                ", serviceId=" + serviceId +
+                ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
                 ", result=" + result +
                 ", conId=" + conId +
@@ -132,6 +155,8 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
     public String toString() {
         return "RpcResponse{" +
                 "requestId=" + requestId +
+                ", serviceId=" + serviceId +
+                ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
                 ", result=" + result +
                 ", conId=" + conId +

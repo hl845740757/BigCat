@@ -16,6 +16,9 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.annotation.StableName;
+import cn.wjybxx.common.concurrent.ICompletableFuture;
+
 /**
  * rpc执行时的上下文。
  * 定义该接口，方便扩展，比如添加接收到请求时的时间等信息。
@@ -28,7 +31,15 @@ public interface RpcContext<V> {
     /**
      * @return 返回调用的详细信息
      */
+    @StableName
     RpcRequest request();
+
+    /**
+     * 远端地址
+     * 可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
+     */
+    @StableName
+    RpcAddr remoteAddr();
 
     /** 发送正确结果 */
     void sendResult(V msg);
@@ -36,15 +47,7 @@ public interface RpcContext<V> {
     /** 发送错误结果 */
     void sendError(int errorCode, String msg);
 
-    /**
-     * 远端地址
-     * 可用于在返回结果前后向目标发送额外的消息
-     */
-    RpcAddr remoteAddr();
-
-    /**
-     * 本次调用远端是否需要结果
-     */
-    boolean isRequireResult();
+    /** 注意：future进入完成状态只能表明rpc的流程完成，不能表示rpc调用的方法已全部完成 */
+    ICompletableFuture<V> future();
 
 }

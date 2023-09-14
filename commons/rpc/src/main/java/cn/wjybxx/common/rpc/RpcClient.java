@@ -96,17 +96,4 @@ public interface RpcClient {
      */
     void broadcast(RpcAddr target, RpcMethodSpec<?> methodSpec);
 
-    // region 无处安放的小手
-
-    int INVOKE_ONE_WAY = 0;
-    int INVOKE_CALL = 1;
-    int INVOKE_SYNC_CALL = 2;
-    int INVOKE_BROADCAST = 3;
-
-    static boolean isRequireResult(int invokeType) {
-        return invokeType == INVOKE_CALL
-                || invokeType == INVOKE_SYNC_CALL;
-    }
-
-    // endregion
 }

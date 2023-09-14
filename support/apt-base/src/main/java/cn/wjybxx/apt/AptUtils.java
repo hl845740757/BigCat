@@ -60,6 +60,8 @@ public class AptUtils {
     public static final ClassName CLASS_NAME_SOURCE_REF = ClassName.get(SourceFileRef.class);
     public static final ClassName CLASS_NAME_STRING = ClassName.get(String.class);
     public static final ClassName CLASS_NAME_OBJECT = ClassName.get(Object.class);
+
+    public static final ClassName CLASS_NAME_LIST = ClassName.get(List.class);
     public static final ClassName CLASS_NAME_ARRAY_LIST = ClassName.get(ArrayList.class);
     public static final ClassName CLASS_NAME_LINKED_HASH_MAP = ClassName.get(LinkedHashMap.class);
     public static final ClassName CLASS_NAME_LINKED_HASH_SET = ClassName.get(LinkedHashSet.class);

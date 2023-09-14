@@ -23,12 +23,12 @@ import com.squareup.javapoet.*;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -72,10 +72,10 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
      * 为客户端生成代理方法
      * <pre>{@code
      * 		public static MethodSpec<String> method1(int id, String param) {
-     * 			List<Object> methodParams = new ArrayList<>(2);
-     * 			methodParams.add(id);
-     * 			methodParams.add(param);
-     * 			return new DefaultRpcMethodSpec<>(1, 2, methodParams, 0, 0);
+     * 			List<Object> _parameters = new ArrayList<>(2);
+     * 			_parameters.add(id);
+     * 			_parameters.add(param);
+     * 			return new DefaultRpcMethodSpec<>(1, 2, _parameters, 0, 0);
      *        }
      * }
      * </pre>
@@ -95,29 +95,31 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         AptUtils.copyParameters(builder, method);
         builder.varargs(method.isVarArgs());
 
-        // 去除context参数
+        // 去除context和request参数
         final List<ParameterSpec> parameters = builder.parameters;
-        if (processor.firstArgIsContext(method)) {
+        final FirstArgType firstArgType = processor.firstArgType(method);
+        if (firstArgType.noCounting()) {
             parameters.remove(0);
         }
 
         if (parameters.size() == 0) {
-            // 无参时，使用 Collections.emptyList();
-            builder.addStatement("return new $T<>($L, $L, $T.emptyList())",
+            // 无参时，使用 List.of();
+            builder.addStatement("return new $T<>($L, $L, $T.of())",
                     processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method),
-                    Collections.class);
+                    AptUtils.CLASS_NAME_LIST);
         } else {
+            // ArrayList<Object> _parameters = new ArrayList<>(2);
             ClassName arrayListTypeName = AptUtils.CLASS_NAME_ARRAY_LIST;
-            // ArrayList<Object> methodParams = new ArrayList<>(2);
-            builder.addStatement("$T<Object> methodParams = new $T<>($L)", arrayListTypeName, arrayListTypeName, parameters.size());
+            builder.addStatement("$T<Object> _parameters = new $T<>($L)", arrayListTypeName, arrayListTypeName, parameters.size());
             for (ParameterSpec parameterSpec : parameters) {
-                builder.addStatement("methodParams.add($L)", parameterSpec.name);
+                builder.addStatement("_parameters.add($L)", parameterSpec.name);
             }
-            builder.addStatement("return new $T<>($L, $L, methodParams)",
+            builder.addStatement("return new $T<>($L, $L, _parameters)",
                     processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method));
         }
+
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
         builder.addJavadoc("{@link $T#$L}", typeClassName, method.getSimpleName().toString());
         return builder.build();
@@ -127,22 +129,29 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
      * 获取返回类型，如果是基本类型，会进行装箱
      */
     private TypeMirror getBoxedReturnType(ExecutableElement method) {
+        // context覆盖返回值类型
+        List<? extends VariableElement> parameters = method.getParameters();
+        if (parameters.size() > 0 && processor.isContext(parameters.get(0).asType())) {
+            return findFutureTypeArgument(parameters.get(0).asType(), method);
+        }
+        // 基础类型和void
         TypeMirror returnType = method.getReturnType();
         if (returnType.getKind().isPrimitive()) {
             return typeUtils.boxedClass((PrimitiveType) returnType).asType();
         }
         if (returnType.getKind() == TypeKind.VOID) {
-            return processor.objectTypeMirror;
+            return processor.boxedVoidTypeMirror;
         }
-        if (processor.isFuture(returnType)) { // future类型，捕获泛型参数
-            return findFutureTypeArgument(method);
+        // future类型
+        if (processor.isFuture(returnType)) {
+            return findFutureTypeArgument(returnType, method);
         } else {
             return returnType;
         }
     }
 
-    private TypeMirror findFutureTypeArgument(ExecutableElement method) {
-        TypeMirror firstTypeParameter = AptUtils.findFirstTypeParameter(method.getReturnType());
+    private TypeMirror findFutureTypeArgument(TypeMirror typeMirror, ExecutableElement method) {
+        TypeMirror firstTypeParameter = AptUtils.findFirstTypeParameter(typeMirror);
         if (firstTypeParameter == null) {
             messager.printMessage(Diagnostic.Kind.WARNING, "Future missing type parameter!", method);
             return processor.objectTypeMirror;

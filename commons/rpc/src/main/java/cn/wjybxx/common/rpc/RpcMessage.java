@@ -16,23 +16,19 @@
 
 package cn.wjybxx.common.rpc;
 
-import cn.wjybxx.common.codec.AutoSchema;
-import cn.wjybxx.common.codec.binary.BinarySerializable;
-
 import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
  * 单向消息
- * 在服务器与服务器通信之间不会被用到，但客户端与服务器通信之间会用到，可以节省8个字节的requestId开销。
- * (以后在客户端和服务器通信之间会设计这样的协议)
+ * 1. 该类只用于表明协议结构，实际不会被使用和传输，实际使用和传输的是{@link RpcRequest}.
+ * 2. 该结构可以省去8或6字节的requestId开销。
+ * 3. 在服务器与服务器通信之间不会被使用，主要用于节省客户端与服务器之间的通信开销。
  *
  * @author wjybxx
  * date - 2023/9/11
  */
 @SuppressWarnings("unused")
-@AutoSchema
-@BinarySerializable
 public class RpcMessage extends RpcProtocol {
 
     /** 服务id */

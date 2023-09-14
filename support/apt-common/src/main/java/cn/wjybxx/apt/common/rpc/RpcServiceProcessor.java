@@ -26,7 +26,6 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
@@ -53,6 +52,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.common.rpc.RpcRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.common.rpc.RpcContext";
+    private static final String CNAME_REQUEST = "cn.wjybxx.common.rpc.RpcRequest";
 
     private static final int MAX_PARAMETER_COUNT = 5;
 
@@ -65,6 +65,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     ClassName contextRawTypeName;
     TypeMirror contextTypeMirror;
+    TypeMirror requestTypeMirror;
 
     TypeMirror boxedVoidTypeMirror;
     TypeMirror objectTypeMirror;
@@ -95,7 +96,9 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         TypeElement contextTypeElement = elementUtils.getTypeElement(CNAME_CONTEXT);
         contextRawTypeName = ClassName.get(contextTypeElement);
         contextTypeMirror = contextTypeElement.asType();
+        requestTypeMirror = elementUtils.getTypeElement(CNAME_REQUEST).asType();
 
+        boxedVoidTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Void.class).asType();
         objectTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Object.class).asType();
         stringTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, String.class).asType();
 
@@ -121,13 +124,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     /** @return rpc方法 - 避免每次查找，开销较大 */
     private List<ExecutableElement> checkBase(TypeElement typeElement) {
-        // 新设计下，允许serviceId小于0，表示本地服务(Local Service)
-//        final int serviceId = getServiceId(typeElement);
-//        if (serviceId <= 0) {
-//            messager.printMessage(Diagnostic.Kind.ERROR, " serviceId " + serviceId + " must greater than 0!", typeElement);
-//            return List.of();
-//        }
-
         List<ExecutableElement> allMethodList = new ArrayList<>(BeanUtils.getAllMethodsWithInherit(typeElement));
         allMethodList.addAll(findInterfaceMethods(typeElement));
 
@@ -138,17 +134,14 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
             if (methodId == null) { // 不是rpc方法
                 continue;
             }
-
             if (method.getModifiers().contains(Modifier.STATIC)) { // 不可以是静态的
                 messager.printMessage(Diagnostic.Kind.ERROR, "RpcMethod method can't be static！", method);
                 continue;
             }
-
             if (!method.getModifiers().contains(Modifier.PUBLIC)) { // 必须是public
                 messager.printMessage(Diagnostic.Kind.ERROR, "RpcMethod method must be public！", method);
                 continue;
             }
-
             if (methodId < 0 || methodId > 9999) {
                 messager.printMessage(Diagnostic.Kind.ERROR, " methodId " + methodId + " must between [0,9999]!", method);
                 continue;
@@ -157,9 +150,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
                 messager.printMessage(Diagnostic.Kind.ERROR, " methodId " + methodId + " is duplicate!", method);
                 continue;
             }
-
             checkParameters(method);
-            checkReturnType(method);
             rpcMethodList.add(method);
         }
         return rpcMethodList;
@@ -185,31 +176,30 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         if (parameters.size() == 0) {
             return;
         }
+        FirstArgType firstArgType = firstArgType(method);
+        // 如果声明了context，方法的返回值必须是void
+        if (firstArgType == FirstArgType.CONTEXT && method.getReturnType().getKind() != TypeKind.VOID) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "the return type of method(context) must be void", method);
+        }
+
         // 检测方法参数个数
-        boolean firstArgIsContext = isContext(parameters.get(0).asType());
-        int maxParameterCount = firstArgIsContext ? MAX_PARAMETER_COUNT + 1 : MAX_PARAMETER_COUNT;
+        int maxParameterCount = firstArgType.noCounting() ? MAX_PARAMETER_COUNT + 1 : MAX_PARAMETER_COUNT;
         if (parameters.size() > maxParameterCount) {
             messager.printMessage(Diagnostic.Kind.ERROR, "method has too many parameters!", method);
         }
-        // 检查后续是否存在context参数
-        for (int idx = firstArgIsContext ? 1 : 0; idx < parameters.size(); idx++) {
+        // 检查后续是否存在context参数 -- 意义不是很大
+        for (int idx = firstArgType.noCounting() ? 1 : 0; idx < parameters.size(); idx++) {
             VariableElement variableElement = parameters.get(idx);
-            if (isContext(variableElement.asType())) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "context must be declared as the first parameter!", method);
+            if (isContext(variableElement.asType()) || isRequest(variableElement.asType())) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "context and request must be declared as the first parameter!", method);
                 continue;
             }
         }
     }
 
-    private void checkReturnType(ExecutableElement method) {
-
-    }
-
     private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
         final int serviceId = getServiceId(typeElement);
-        // 客户端代理
         genClientProxy(typeElement, serviceId, rpcMethodList);
-        // 服务器代理
         genServerProxy(typeElement, serviceId, rpcMethodList);
     }
 
@@ -248,6 +238,10 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, contextTypeMirror);
     }
 
+    boolean isRequest(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, requestTypeMirror);
+    }
+
     boolean isString(TypeMirror typeMirror) {
         return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, stringTypeMirror);
     }
@@ -261,8 +255,14 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return false;
     }
 
-    boolean firstArgIsContext(ExecutableElement method) {
-        return method.getParameters().size() > 0 && isContext(method.getParameters().get(0).asType());
+    FirstArgType firstArgType(ExecutableElement method) {
+        List<? extends VariableElement> parameters = method.getParameters();
+        if (parameters.size() == 0) return FirstArgType.NONE;
+
+        TypeMirror typeMirror = parameters.get(0).asType();
+        if (isContext(typeMirror)) return FirstArgType.CONTEXT;
+        if (isRequest(typeMirror)) return FirstArgType.REQUEST;
+        return FirstArgType.OTHER;
     }
 
 }
