@@ -196,4 +196,25 @@ public class DefaultDocumentConverter implements DocumentConverter {
                 options);
     }
 
+    /**
+     * @param registryList     可以包含一些特殊的registry
+     * @param typeMetaRegistry 所有的类型id信息，包括protobuf的类
+     * @param options          一些可选项
+     * @return
+     */
+    public static DefaultDocumentConverter newInstance2(final List<DocumentCodecRegistry> registryList,
+                                                        final TypeMetaRegistry<String> typeMetaRegistry,
+                                                        final ConvertOptions options) {
+
+        ArrayList<DocumentCodecRegistry> copied = new ArrayList<>(registryList);
+        copied.add(DocumentConverterUtils.getDefaultCodecRegistry());
+
+        return new DefaultDocumentConverter(
+                TypeMetaRegistries.fromRegistries(
+                        typeMetaRegistry,
+                        DocumentConverterUtils.getDefaultTypeMetaRegistry()),
+                DocumentCodecRegistries.fromRegistries(
+                        copied.toArray(DocumentCodecRegistry[]::new)),
+                options);
+    }
 }

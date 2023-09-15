@@ -17,6 +17,7 @@
 package cn.wjybxx.common.codec.document;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,14 @@ public class DocumentCodecRegistries {
             codecMap.put(codec.getEncoderClass(), codec);
         }
         return codecMap;
+    }
+
+    public static DocumentCodecRegistry fromPojoCodecImpl(List<DocumentPojoCodecImpl<?>> pojoCodecs) {
+        ArrayList<DocumentPojoCodec<?>> codecList = new ArrayList<>(pojoCodecs.size());
+        for (DocumentPojoCodecImpl<?> pojoCodec : pojoCodecs) {
+            codecList.add(new DocumentPojoCodec<>(pojoCodec));
+        }
+        return fromPojoCodecs(codecList);
     }
 
     public static DocumentCodecRegistry fromPojoCodecs(List<DocumentPojoCodec<?>> pojoCodecs) {

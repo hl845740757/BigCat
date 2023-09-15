@@ -243,10 +243,10 @@ public class ConverterUtils {
     }
 
     public static TypeArgInfo<?> findComponentTypeArg(Class<?> declaredType) {
-        if (!declaredType.isArray()) {
+        Class<?> componentType = declaredType.getComponentType();
+        if (componentType == null) {
             throw new IllegalArgumentException("declaredType is not arrayType, info " + declaredType);
         }
-        Class<?> componentType = declaredType.getComponentType();
         if (componentType != Object.class) {
             return TypeArgInfo.of(componentType);
         }

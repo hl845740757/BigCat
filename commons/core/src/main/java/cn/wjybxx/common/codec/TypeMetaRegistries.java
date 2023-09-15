@@ -26,17 +26,19 @@ import java.util.*;
 public class TypeMetaRegistries {
 
     public static <T> TypeMetaRegistry<T> fromMapper(final Set<Class<?>> typeSet, TypeMetaMapper<T> mapper) {
-        List<TypeMeta<T>> typeMetaList = typeSet.stream()
-                .map(mapper::map)
-                .toList();
+        List<TypeMeta<T>> typeMetaList = new ArrayList<>();
+        for (Class<?> clazz : typeSet) {
+            typeMetaList.add(mapper.map(clazz));
+        }
         return fromMetas(typeMetaList);
     }
 
     @SafeVarargs
     public static <T> TypeMetaRegistry<T> fromRegistries(TypeMetaRegistry<T>... registries) {
-        List<TypeMeta<T>> typeMetaList = Arrays.stream(registries)
-                .flatMap(e -> e.export().stream())
-                .toList();
+        List<TypeMeta<T>> typeMetaList = new ArrayList<>();
+        for (TypeMetaRegistry<T> e : registries) {
+            typeMetaList.addAll(e.export());
+        }
         return fromMetas(typeMetaList);
     }
 

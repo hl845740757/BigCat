@@ -24,12 +24,12 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.Executor;
 
 /**
- * 测试正常使用{@link Executor#execute(Runnable)}提交任务的时序
+ * 测试正常使用{@link DefaultEventLoop#execute(Runnable)}提交任务的时序
  *
  * @author wjybxx
  * date 2023/4/11
  */
-public class DisruptorEventLoopTest1 {
+public class DefaultEventLoopTest1 {
 
     private Counter counter;
     private EventLoop consumer;
@@ -39,7 +39,7 @@ public class DisruptorEventLoopTest1 {
     @BeforeEach
     void setUp() {
         counter = new Counter();
-        consumer = EventLoopBuilder.newDisruptBuilder()
+        consumer = EventLoopBuilder.newDefaultBuilder()
                 .setThreadFactory(new DefaultThreadFactory("consumer"))
                 .build();
 
@@ -71,7 +71,7 @@ public class DisruptorEventLoopTest1 {
 
         @Override
         public void run() {
-            EventLoop consumer = DisruptorEventLoopTest1.this.consumer;
+            EventLoop consumer = DefaultEventLoopTest1.this.consumer;
             long sequencer = 0;
             while (!alert && sequencer < 1000000) {
                 consumer.execute(counter.newTask(type, sequencer++));

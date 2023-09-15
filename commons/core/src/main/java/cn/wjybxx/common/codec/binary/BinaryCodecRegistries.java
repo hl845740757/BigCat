@@ -17,6 +17,7 @@
 package cn.wjybxx.common.codec.binary;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,14 @@ public class BinaryCodecRegistries {
             codecMap.put(codec.getEncoderClass(), codec);
         }
         return codecMap;
+    }
+
+    public static BinaryCodecRegistry fromPojoCodecImpl(List<BinaryPojoCodecImpl<?>> pojoCodecs) {
+        List<BinaryPojoCodec<?>> codecList = new ArrayList<>(pojoCodecs.size());
+        for (BinaryPojoCodecImpl<?> pojoCodec : pojoCodecs) {
+            codecList.add(new BinaryPojoCodec<>(pojoCodec));
+        }
+        return fromPojoCodecs(codecList);
     }
 
     public static BinaryCodecRegistry fromPojoCodecs(List<BinaryPojoCodec<?>> pojoCodecs) {

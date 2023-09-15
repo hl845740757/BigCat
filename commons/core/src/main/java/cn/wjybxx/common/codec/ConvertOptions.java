@@ -36,9 +36,13 @@ public class ConvertOptions {
     public final ClassIdPolicy classIdPolicy;
 
     /**
-     * 开启的特征值
+     * 是否写入对象基础类型字段的默认值
+     * 1.数值类型默认值为0
+     * 2.bool类型默认值为false
+     * <p>
+     * 基础值类型需要单独控制，因为有时候我们仅想不输出null，但要输出基础类型字段的默认值 -- 通常是在文本模式下。
      */
-    public final int features = 0;
+    public final boolean appendDef;
     /**
      * 是否写入对象内的null值
      * 1.只在文档编解码中生效
@@ -48,9 +52,16 @@ public class ConvertOptions {
     /**
      * 是否把Map编码为普通对象
      * 1.只在文档编解码中生效
-     * 2.在Dson中，Map被看做一个特殊的数组结构，而不是普通的Object，Map和Object本就是性质不同的对象。
-     * 如果要将一个Map结构编码为普通对象，<b>Key的运行时必须和声明类型相同</b>，且只支持String、Integer、Long、EnumLite。
+     * 2.如果要将一个Map结构编码为普通对象，<b>Key的运行时必须和声明类型相同</b>，且只支持String、Integer、Long、EnumLite。
      * 3.即使不开启该选项，用户也可以通过定义字段的writeProxy实现将Map写为普通Object - 可参考{@link MapCodec}
+     *
+     * <h3>Map不是Object</h3>
+     * 本质上讲，Map是数组，而不是普通的Object，因为标准的Map是允许复杂key的，因此Map默认应该序列化为数组。但存在两个特殊的场景：
+     * 1.与脚本语言通信
+     * 脚本语言通常没有静态语言中的字典结构，由object充当，但object不支持复杂的key作为键，通常仅支持数字和字符串作为key。
+     * 因此在与脚本语言通信时，要求将Map序列化为简单的object。
+     * 2.配置文件读写
+     * 配置文件通常是无类型的，因此读取到内存中通常是一个字典结构；程序在输出配置文件时，同样需要将字典结构输出为object结构。
      */
     public final boolean encodeMapAsObject;
 
@@ -70,8 +81,11 @@ public class ConvertOptions {
     public ConvertOptions(Builder builder) {
         this.recursionLimit = builder.recursionLimit;
         this.classIdPolicy = builder.classIdPolicy;
+
+        this.appendDef = builder.appendDef.orElse(false);
         this.appendNull = builder.appendNull.orElse(false);
         this.encodeMapAsObject = builder.encodeMapAsObject.orElse(false);
+
         this.pbBinaryType = builder.pbBinaryType;
         this.classIdConverter = builder.classIdConverter;
         this.bufferPool = builder.bufferPool;
@@ -98,6 +112,7 @@ public class ConvertOptions {
         private ClassIdPolicy classIdPolicy = ClassIdPolicy.OPTIMIZED;
         private int recursionLimit = 32;
 
+        private OptionalBool appendDef = OptionalBool.TRUE;
         private OptionalBool appendNull = OptionalBool.FALSE;
         private OptionalBool encodeMapAsObject = OptionalBool.FALSE;
 
@@ -124,6 +139,15 @@ public class ConvertOptions {
 
         public Builder setClassIdPolicy(ClassIdPolicy classIdPolicy) {
             this.classIdPolicy = Objects.requireNonNull(classIdPolicy);
+            return this;
+        }
+
+        public OptionalBool getAppendDef() {
+            return appendDef;
+        }
+
+        public Builder setAppendDef(OptionalBool appendDef) {
+            this.appendDef = appendDef;
             return this;
         }
 

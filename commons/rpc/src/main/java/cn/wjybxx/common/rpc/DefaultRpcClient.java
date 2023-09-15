@@ -179,7 +179,7 @@ public class DefaultRpcClient implements RpcClient {
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
         final ICompletableFuture<V> promise = FutureUtils.newPromise();
-        final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, target, request);
+        final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, request);
         requestStubMap.put(requestId, requestStub);
         return promise;
     }
@@ -331,12 +331,12 @@ public class DefaultRpcClient implements RpcClient {
         if (requestStub != null) {
             final int errorCode = response.getErrorCode();
             if (errorCode == 0) {
-                @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.rpcPromise;
+                @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.future;
                 promise.complete(response.getResult());
             } else if (RpcErrorCodes.isUserCode(errorCode)) {
-                requestStub.rpcPromise.completeExceptionally(new ErrorCodeException(errorCode, response.getErrorMsg()));
+                requestStub.future.completeExceptionally(new ErrorCodeException(errorCode, response.getErrorMsg()));
             } else {
-                requestStub.rpcPromise.completeExceptionally(RpcServerException.failed(errorCode, response.getErrorMsg()));
+                requestStub.future.completeExceptionally(RpcServerException.failed(errorCode, response.getErrorMsg()));
             }
         }
     }
@@ -369,9 +369,9 @@ public class DefaultRpcClient implements RpcClient {
                 return;
             }
 
-            logger.warn("rpc timeout, requestId {}, target {}", requestId, requestStub.target);
+            logger.warn("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
             requestStubMap.removeFirst();
-            requestStub.rpcPromise.completeExceptionally(RpcClientException.timeout());
+            requestStub.future.completeExceptionally(RpcClientException.timeout());
         }
     }
 
@@ -464,15 +464,13 @@ public class DefaultRpcClient implements RpcClient {
 
     private static class DefaultRpcRequestStub implements RpcRequestStub {
 
-        final ICompletableFuture<?> rpcPromise;
+        final ICompletableFuture<?> future;
         final long deadline;
-        final RpcAddr target;
         final RpcRequest request;
 
-        DefaultRpcRequestStub(ICompletableFuture<?> rpcPromise, long deadline, RpcAddr target, RpcRequest request) {
-            this.rpcPromise = rpcPromise;
+        DefaultRpcRequestStub(ICompletableFuture<?> future, long deadline, RpcRequest request) {
+            this.future = future;
             this.deadline = deadline;
-            this.target = target;
             this.request = request;
         }
 
@@ -482,8 +480,8 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         @Override
-        public RpcAddr getTargetNode() {
-            return target;
+        public RpcAddr getDestAddr() {
+            return request.getDestAddr();
         }
 
         @Override
@@ -497,20 +495,17 @@ public class DefaultRpcClient implements RpcClient {
     // region debug日志
 
     private void logSndRequest(RpcRequest request) {
-        logger.info("snd rpc request, target {}, request {}",
-                request.getDestAddr(),
+        logger.info("snd rpc request, request {}",
                 DebugLogUtils.logOf(rpcLogConfig.getSndRequestLogLevel(), request));
     }
 
     private void logBroadcastRequest(RpcRequest request) {
-        logger.info("broadcast rpc request, target {}, request {}",
-                request.getDestAddr(),
+        logger.info("broadcast rpc request, request {}",
                 DebugLogUtils.logOf(rpcLogConfig.getSndRequestLogLevel(), request));
     }
 
     private void logSndResponse(RpcResponse response) {
-        logger.info("snd rpc response, from {}, response {}",
-                response.getDestAddr(),
+        logger.info("snd rpc response, response {}",
                 DebugLogUtils.logOf(rpcLogConfig.getSndResponseLogLevel(), response));
     }
 
@@ -524,8 +519,7 @@ public class DefaultRpcClient implements RpcClient {
             logger.info("rcv rpc response, but request is timeout, response {}",
                     DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), response));
         } else {
-            logger.info("rcv rpc response, requestStub {}, response {}",
-                    DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), requestStub),
+            logger.info("rcv rpc response, response {}",
                     DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), response));
         }
     }

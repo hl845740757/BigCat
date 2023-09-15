@@ -46,7 +46,6 @@ public class RpcTest2 {
     private BlockingQueue<RpcProtocol> clientQueue;
     private ServerWorker serverWorker;
     private ClientWorker clientWorker;
-
     private Thread serverThread;
     private Thread clientThread;
 
@@ -60,6 +59,7 @@ public class RpcTest2 {
 
         serverThread = new Thread((serverWorker = new ServerWorker()));
         clientThread = new Thread((clientWorker = new ClientWorker(mode)));
+        counter.set(0);
         latch = new CountDownLatch(2);
         alert = false;
 
@@ -88,7 +88,6 @@ public class RpcTest2 {
     void contextTest() throws InterruptedException {
         test(1);
     }
-
 
     // 模拟双端线程
     private class ServerWorker implements Runnable {

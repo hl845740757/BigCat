@@ -148,4 +148,24 @@ public class DefaultBinaryConverter implements BinaryConverter {
                 options);
     }
 
+    /**
+     * @param registryList     可以包含一些特殊的可以包含一些特殊的registry
+     * @param typeMetaRegistry 所有的类型id信息，包括protobuf的类
+     * @param options          一些可选项
+     */
+    public static DefaultBinaryConverter newInstance2(final List<BinaryCodecRegistry> registryList,
+                                                      final TypeMetaRegistry<ClassId> typeMetaRegistry,
+                                                      final ConvertOptions options) {
+        ArrayList<BinaryCodecRegistry> copied = new ArrayList<>(registryList);
+        copied.add(BinaryConverterUtils.getDefaultCodecRegistry());
+
+        return new DefaultBinaryConverter(
+                TypeMetaRegistries.fromRegistries(
+                        typeMetaRegistry,
+                        BinaryConverterUtils.getDefaultTypeMetaRegistry()),
+                BinaryCodecRegistries.fromRegistries(
+                        copied.toArray(BinaryCodecRegistry[]::new)),
+                options);
+
+    }
 }

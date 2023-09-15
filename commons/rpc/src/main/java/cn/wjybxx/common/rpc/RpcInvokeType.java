@@ -22,19 +22,19 @@ package cn.wjybxx.common.rpc;
  */
 public class RpcInvokeType {
 
-    public static final int ONEWAY = 0;
-    public static final int BROADCAST = 1;
+    public static final int ONEWAY = 1;
     public static final int CALL = 2;
     public static final int SYNC_CALL = 3;
+    public static final int BROADCAST = 4;
 
     /** 是否是消息 -- 远程不需要结果 */
-    public static boolean isMessage(int invokeType) {
-        return invokeType <= BROADCAST;
+    public static boolean isMessage(int type) {
+        return type == ONEWAY || type == BROADCAST;
     }
 
     /** 是否是调用 -- 远程需要结果 */
-    public static boolean isCall(int invokeType) {
-        return invokeType > BROADCAST;
+    public static boolean isCall(int type) {
+        return type == CALL || type == SYNC_CALL;
     }
 
 }

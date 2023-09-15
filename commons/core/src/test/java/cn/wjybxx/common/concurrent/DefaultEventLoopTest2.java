@@ -21,40 +21,48 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.Executor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
- * 测试正常使用{@link Executor#execute(Runnable)}提交任务的时序
+ * 测试多生产者使用{@link DefaultEventLoop#execute(Runnable)}发布任务的时序
  *
  * @author wjybxx
  * date 2023/4/11
  */
-public class DisruptorEventLoopTest1 {
+public class DefaultEventLoopTest2 {
+
+    private static final int PRODUCER_COUNT = 4;
 
     private Counter counter;
     private EventLoop consumer;
-    private Producer producer;
+    private List<Producer> producerList;
     private volatile boolean alert;
 
     @BeforeEach
     void setUp() {
         counter = new Counter();
-        consumer = EventLoopBuilder.newDisruptBuilder()
+        consumer = EventLoopBuilder.newDefaultBuilder()
                 .setThreadFactory(new DefaultThreadFactory("consumer"))
                 .build();
 
-        producer = new Producer(1);
-        producer.start();
+        producerList = new ArrayList<>(PRODUCER_COUNT);
+        for (int i = 1; i <= PRODUCER_COUNT; i++) {
+            producerList.add(new Producer(i));
+        }
+        producerList.forEach(Thread::start);
     }
 
     @Test
     void timedWait() throws InterruptedException {
         ThreadUtils.sleepQuietly(5000);
-        alert = true;
-        producer.join();
 
         consumer.shutdown();
+        alert = true;
+
         consumer.terminationFuture().join();
+        producerList.forEach(ThreadUtils::joinUninterruptedly);
 
         Assertions.assertTrue(counter.getSequenceMap().size() > 0, "Counter.sequenceMap.size == 0");
         Assertions.assertTrue(counter.getErrorMsgList().isEmpty(), counter.getErrorMsgList()::toString);
@@ -62,19 +70,27 @@ public class DisruptorEventLoopTest1 {
 
     private class Producer extends Thread {
 
-        final int type;
+        private final int type;
 
         public Producer(int type) {
             super("Producer-" + type);
             this.type = type;
+            if (type <= 0) { // 0是系统任务
+                throw new IllegalArgumentException();
+            }
         }
 
         @Override
         public void run() {
-            EventLoop consumer = DisruptorEventLoopTest1.this.consumer;
-            long sequencer = 0;
-            while (!alert && sequencer < 1000000) {
-                consumer.execute(counter.newTask(type, sequencer++));
+            EventLoop consumer = DefaultEventLoopTest2.this.consumer;
+            long localSequence = 0;
+            while (!alert && localSequence < 1000000) {
+                try {
+                    consumer.execute(counter.newTask(type, localSequence++));
+                } catch (RejectedExecutionException ignore) {
+                    assert alert;
+                    break;
+                }
             }
         }
     }

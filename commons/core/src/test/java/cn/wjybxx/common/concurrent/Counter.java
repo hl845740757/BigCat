@@ -45,7 +45,7 @@ public class Counter {
 
     public void count(int type, long sequence) {
         if (type < 1) {
-            errorMsgList.add(String.format("code1 event.type: %d (expected: > 0)",
+            errorMsgList.add(String.format("code1, event.type: %d (expected: > 0)",
                     type));
             return;
         }

@@ -36,7 +36,7 @@ public class DisruptorEventLoopTest2 {
     private static final int PRODUCER_COUNT = 4;
 
     private Counter counter;
-    private DisruptorEventLoop consumer;
+    private EventLoop consumer;
     private List<Producer> producerList;
     private volatile boolean alert;
 
@@ -82,7 +82,7 @@ public class DisruptorEventLoopTest2 {
 
         @Override
         public void run() {
-            DisruptorEventLoop consumer = DisruptorEventLoopTest2.this.consumer;
+            EventLoop consumer = DisruptorEventLoopTest2.this.consumer;
             long localSequence = 0;
             while (!alert && localSequence < 1000000) {
                 try {

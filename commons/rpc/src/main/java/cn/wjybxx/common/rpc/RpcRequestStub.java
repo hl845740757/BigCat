@@ -29,7 +29,7 @@ public interface RpcRequestStub {
     long getDeadline();
 
     /** 获取请求的目的地 */
-    RpcAddr getTargetNode();
+    RpcAddr getDestAddr();
 
     /** 获取请求信息 */
     RpcRequest getRequest();
