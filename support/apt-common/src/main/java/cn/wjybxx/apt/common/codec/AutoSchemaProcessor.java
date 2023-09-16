@@ -365,20 +365,61 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
     }
     // endregion
 
+    // region names
+
+    private List<FieldSpec> genNames(TypeElement typeElement, List<VariableElement> allFields) {
+        final Set<String> dsonNameSet = new HashSet<>((int) (allFields.size() * 1.35f));
+        final List<FieldSpec> fieldSpecList = new ArrayList<>(allFields.size());
+
+        for (VariableElement variableElement : allFields) {
+            // name其实可以都生成
+            if (!CodecProcessor.isSerializableField(typeUtils, elementUtils, variableElement, anno_docIgnore)) {
+                continue;
+            }
+            AptFieldImpl properties = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImpTypeMirror);
+            String fieldName = variableElement.getSimpleName().toString();
+            String dsonName;
+            if (!AptUtils.isBlank(properties.name)) {
+                dsonName = properties.name.trim();
+            } else {
+                dsonName = fieldName;
+            }
+            if (!dsonNameSet.add(dsonName)) {
+                messager.printMessage(Diagnostic.Kind.ERROR,
+                        String.format("dsonName is duplicate, dsonName %s", dsonName),
+                        variableElement);
+                continue;
+            }
+            fieldSpecList.add(FieldSpec.builder(AptUtils.CLASS_NAME_STRING, "names_" + fieldName, AptUtils.PUBLIC_STATIC_FINAL)
+                    .initializer("$S", dsonName)
+                    .build()
+            );
+        }
+        return fieldSpecList;
+    }
+
+    // endregion
+
     // region numbers
 
     private List<FieldSpec> genNumbers(TypeElement typeElement, List<VariableElement> allFields) {
-        final int idep = calIdep(typeElement);
         final Set<Integer> fullNumberSet = new HashSet<>((int) (allFields.size() * 1.35f));
         final List<FieldSpec> fieldSpecList = new ArrayList<>(allFields.size());
 
-        int curIdep = idep;
+        int curIdep = -1;
         int curNumber = 0;
+        TypeElement curTypeElement = null;
         for (VariableElement variableElement : allFields) {
             // number一定要进行过滤
             if (!CodecProcessor.isSerializableField(typeUtils, elementUtils, variableElement, anno_binIgnore)) {
                 continue;
             }
+            // idep必须在切换类时重新计算
+            if (curTypeElement == null || !curTypeElement.equals(variableElement.getEnclosingElement())) {
+                curTypeElement = (TypeElement) variableElement.getEnclosingElement();
+                curIdep = calIdep(curTypeElement);
+            }
+
             AptFieldImpl properties = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImpTypeMirror);
             if (properties.idep >= 0) {
                 curIdep = properties.idep;
@@ -415,41 +456,6 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
 
     private static int makeFullNumber(int idep, int lnumber) {
         return (lnumber << 3) | idep;
-    }
-
-    // endregion
-
-    // region names
-
-    private List<FieldSpec> genNames(TypeElement typeElement, List<VariableElement> allFields) {
-        final Set<String> dsonNameSet = new HashSet<>((int) (allFields.size() * 1.35f));
-        final List<FieldSpec> fieldSpecList = new ArrayList<>(allFields.size());
-
-        for (VariableElement variableElement : allFields) {
-            // name其实可以都生成
-            if (!CodecProcessor.isSerializableField(typeUtils, elementUtils, variableElement, anno_docIgnore)) {
-                continue;
-            }
-            AptFieldImpl properties = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImpTypeMirror);
-            String fieldName = variableElement.getSimpleName().toString();
-            String dsonName;
-            if (!AptUtils.isBlank(properties.name)) {
-                dsonName = properties.name.trim();
-            } else {
-                dsonName = fieldName;
-            }
-            if (!dsonNameSet.add(dsonName)) {
-                messager.printMessage(Diagnostic.Kind.ERROR,
-                        String.format("dsonName is duplicate, dsonName %s", dsonName),
-                        variableElement);
-                continue;
-            }
-            fieldSpecList.add(FieldSpec.builder(AptUtils.CLASS_NAME_STRING, "names_" + fieldName, AptUtils.PUBLIC_STATIC_FINAL)
-                    .initializer("$S", dsonName)
-                    .build()
-            );
-        }
-        return fieldSpecList;
     }
 
     // endregion

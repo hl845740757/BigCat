@@ -51,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
  * 由于{@link EventLoop}都是单线程的，你需要避免死锁等问题。<br>
  * 1. 如果两个{@link EventLoop}存在交互，且其中一个使用有界任务队列，则有可能导致死锁，或大量任务超时。<br>
  * 2. 如果在{@link EventLoop}上执行阻塞或死循环操作，则可能导致死锁，或大量任务超时。<br>
+ * 3. 如果{@link EventLoop}支持自定义等待策略，要小心选择或实现，可能导致定时任务不能被及时执行。
  *
  * @author wjybxx
  * date 2023/4/7

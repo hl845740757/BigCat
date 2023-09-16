@@ -83,7 +83,6 @@ public class BeanUtils {
         final List<TypeElement> flatInherit = AptUtils.flatInheritAndReverse(typeElement);
         return flatInherit.stream()
                 .flatMap(e -> e.getEnclosedElements().stream())
-                .filter(e -> !e.getModifiers().contains(Modifier.STATIC))
                 .filter(e -> e.getKind() == ElementKind.METHOD || e.getKind() == ElementKind.FIELD)
                 .collect(Collectors.toList());
     }
@@ -92,7 +91,6 @@ public class BeanUtils {
         final List<TypeElement> flatInherit = AptUtils.flatInheritAndReverse(typeElement);
         return flatInherit.stream()
                 .flatMap(e -> e.getEnclosedElements().stream())
-                .filter(e -> !e.getModifiers().contains(Modifier.STATIC))
                 .filter(e -> e.getKind() == ElementKind.FIELD)
                 .collect(Collectors.toList());
     }
@@ -100,7 +98,9 @@ public class BeanUtils {
     /**
      * 获取类所有的方法，包含继承得到的方法
      * {@link Elements#getAllMembers(TypeElement)}只包含父类的公共属性，不包含私有的东西。
-     * 注意：不包含接口。
+     * 注意：
+     * 1. 不包含接口中的方法。
+     * 2. 包含静态方法
      */
     public static List<ExecutableElement> getAllMethodsWithInherit(TypeElement typeElement) {
         final List<TypeElement> flatInherit = AptUtils.flatInheritAndReverse(typeElement);

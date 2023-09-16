@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common;
 
+import cn.wjybxx.common.annotation.AutoFields;
 import cn.wjybxx.common.eventbus.DefaultEventBus;
 import cn.wjybxx.common.eventbus.Subscribe;
 import org.junit.jupiter.api.Assertions;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author wjybxx
  * date 2023/4/7
  */
+@AutoFields(skipStatic = false)
 public class SubscribeExample {
 
     public static final String MASTER_BEGIN = "begin";

@@ -115,22 +115,6 @@ public interface PoolableObjectFactory<T> {
         };
     }
 
-    static <E extends PoolableObject> PoolableObjectFactory<E> poolableFactory(Supplier<? extends E> factory) {
-        Objects.requireNonNull(factory);
-        return new PoolableObjectFactory<>() {
-            @Nonnull
-            @Override
-            public E newInstance(ObjectPool<E> pool) {
-                return factory.get();
-            }
-
-            @Override
-            public void inactive(E obj) {
-                obj.resetPoolable();
-            }
-        };
-    }
-
     // endregion
 
 }

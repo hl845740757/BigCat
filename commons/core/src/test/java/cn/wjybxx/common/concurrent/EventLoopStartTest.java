@@ -74,6 +74,7 @@ public class EventLoopStartTest {
         final boolean thr;
         final long delay;
 
+        /** @param thr 启动时是否抛出异常 */
         private Agent(boolean thr, long delay) {
             this.thr = thr;
             this.delay = delay;

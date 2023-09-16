@@ -185,13 +185,13 @@ public class DocumentConverterUtils extends ConverterUtils {
     /** @param lookup 外部缓存实例，避免每次创建的开销 */
     public static <T extends Collection<?>> CollectionCodec<T> createCollectionCodec(MethodHandles.Lookup lookup, Class<T> clazz) throws Throwable {
         Constructor<T> constructor = clazz.getConstructor();
-        Supplier<T> factory = noArgsConstructorToSupplier(lookup, constructor);
+        Supplier<T> factory = noArgConstructorToSupplier(lookup, constructor);
         return new CollectionCodec<>(clazz, factory);
     }
 
     public static <T extends Map<?, ?>> MapCodec<T> createMapCodec(MethodHandles.Lookup lookup, Class<T> clazz) throws Throwable {
         Constructor<T> constructor = clazz.getConstructor();
-        Supplier<T> factory = noArgsConstructorToSupplier(lookup, constructor);
+        Supplier<T> factory = noArgConstructorToSupplier(lookup, constructor);
         return new MapCodec<>(clazz, factory);
     }
 

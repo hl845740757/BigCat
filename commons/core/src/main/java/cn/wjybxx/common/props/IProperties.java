@@ -33,7 +33,7 @@ import java.util.*;
 
 /**
  * 主要为{@link java.util.Properties}提供快捷的解析方式
- * 日常读取配置文件需要一个快捷工具
+ * （项目的配置文件，我使用Dson文本）
  *
  * @author wjybxx
  * date 2023/4/14

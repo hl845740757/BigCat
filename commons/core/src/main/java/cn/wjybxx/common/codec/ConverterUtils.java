@@ -99,7 +99,7 @@ public class ConverterUtils {
     /**
      * 无参构造函数转lambda实例 -- 比反射构建实例要快。
      */
-    public static <T> Supplier<T> noArgsConstructorToSupplier(MethodHandles.Lookup lookup, Constructor<T> constructor) throws Throwable {
+    public static <T> Supplier<T> noArgConstructorToSupplier(MethodHandles.Lookup lookup, Constructor<T> constructor) throws Throwable {
         Class<T> returnType = constructor.getDeclaringClass();
         CallSite callSite = LambdaMetafactory.metafactory(lookup,
                 "get", SUPPLIER_INVOKE_TYPE, SUPPLIER_GET_METHOD_TYPE,

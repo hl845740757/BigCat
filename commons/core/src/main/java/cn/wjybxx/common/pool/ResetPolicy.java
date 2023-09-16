@@ -30,7 +30,6 @@ public interface ResetPolicy<V> {
 
     void reset(V object);
 
-    ResetPolicy<? super PoolableObject> RESET = PoolableObject::resetPoolable;
     ResetPolicy<? super Collection<?>> CLEAR = Collection::clear;
     ResetPolicy<? super Map<?, ?>> CLEAR_MAP = Map::clear;
     ResetPolicy<Object> DO_NOTHING = V -> {};

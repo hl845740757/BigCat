@@ -605,13 +605,10 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     private static class MpscSequencer extends Sequence implements Sequencer {
 
         final WaitStrategy waitStrategy;
-        final IndexedQueueSizeUtil.IndexedQueue taskQueue;
+        final MpscUnboundedXaddArrayQueue2<?> taskQueue;
         final CursorSequence cursorSequence;
 
-        /**
-         * @param taskQueue 这个内部接口可以少绕一圈；替代品是{@link org.jctools.queues.QueueProgressIndicators}
-         */
-        public MpscSequencer(WaitStrategy waitStrategy, IndexedQueueSizeUtil.IndexedQueue taskQueue) {
+        public MpscSequencer(WaitStrategy waitStrategy, MpscUnboundedXaddArrayQueue2<?> taskQueue) {
             this.waitStrategy = waitStrategy;
             this.taskQueue = taskQueue;
             this.cursorSequence = new CursorSequence(taskQueue);
