@@ -46,6 +46,8 @@ public class RpcErrorCodes {
     public static final int SERVER_EXCEPTION = 11;
     /** 不支持的接口调用 */
     public static final int SERVER_UNSUPPORTED_INTERFACE = 12;
+    /** 连接状态错误 */
+    public static final int SERVER_CONNECTION_STATE_ERROR = 13;
 
     public static boolean isUserCode(int code) {
         return code > 100;

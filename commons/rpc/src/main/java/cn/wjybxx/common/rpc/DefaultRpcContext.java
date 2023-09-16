@@ -50,6 +50,7 @@ public class DefaultRpcContext<V> implements RpcContext<V> {
 
     @Override
     public void sendError(int errorCode, String msg) {
+        if (errorCode == 0) throw new IllegalArgumentException();
         future.completeExceptionally(new ErrorCodeException(errorCode, msg));
     }
 

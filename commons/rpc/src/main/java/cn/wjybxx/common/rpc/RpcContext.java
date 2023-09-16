@@ -47,7 +47,7 @@ public interface RpcContext<V> {
     /** 发送错误结果 */
     void sendError(int errorCode, String msg);
 
-    /** 注意：future进入完成状态只能表明rpc的流程完成，不能表示rpc调用的方法已全部完成 */
+    /** 注意：future进入完成状态只能表明rpc的流程完成，不能表示rpc调用的方法已执行完成 */
     ICompletableFuture<V> future();
 
 }

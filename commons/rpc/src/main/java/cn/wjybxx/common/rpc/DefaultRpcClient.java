@@ -60,8 +60,11 @@ public class DefaultRpcClient implements RpcClient {
     private final RpcRegistry registry;
     private final TimeProvider timeProvider;
     private final long timeoutMs;
+
     /** 日志级别 */
-    private RpcLogConfig rpcLogConfig = RpcLogConfig.NONE;
+    private RpcLogConfig logConfig = RpcLogConfig.NONE;
+    /** 拦截测试 */
+    private RpcInterceptor interceptor;
 
     /**
      * @param conId        连接id
@@ -82,12 +85,22 @@ public class DefaultRpcClient implements RpcClient {
         this.timeoutMs = timeoutMs;
     }
 
-    public RpcLogConfig getRpcLogConfig() {
-        return rpcLogConfig;
+    public RpcLogConfig getLogConfig() {
+        return logConfig;
     }
 
-    public void setRpcLogConfig(RpcLogConfig rpcLogConfig) {
-        this.rpcLogConfig = Objects.requireNonNullElse(rpcLogConfig, RpcLogConfig.NONE);
+    public DefaultRpcClient setLogConfig(RpcLogConfig logConfig) {
+        this.logConfig = Objects.requireNonNullElse(logConfig, RpcLogConfig.NONE);
+        return this;
+    }
+
+    public RpcInterceptor getInterceptor() {
+        return interceptor;
+    }
+
+    public DefaultRpcClient setInterceptor(RpcInterceptor interceptor) {
+        this.interceptor = interceptor;
+        return this;
     }
 
     public RpcRegistry getRegistry() {
@@ -119,7 +132,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 requestId, RpcInvokeType.ONEWAY, methodSpec);
 
-        if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
         }
 
@@ -143,7 +156,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 requestId, RpcInvokeType.BROADCAST, methodSpec);
 
-        if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logBroadcastRequest(request);
         }
 
@@ -168,7 +181,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 requestId, RpcInvokeType.CALL, methodSpec);
 
-        if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
         }
 
@@ -213,7 +226,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
                 requestId, RpcInvokeType.SYNC_CALL, methodSpec);
 
-        if (rpcLogConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
         }
 
@@ -228,7 +241,7 @@ public class DefaultRpcClient implements RpcClient {
             }
 
             RpcResponse response = watcher.future.get(timeoutMs, TimeUnit.MILLISECONDS);
-            if (rpcLogConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
+            if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
                 logRcvResponse(response, request);
             }
 
@@ -263,7 +276,7 @@ public class DefaultRpcClient implements RpcClient {
      */
     public <T> void onRcvRequest(RpcRequest request) {
         Objects.requireNonNull(request);
-        if (rpcLogConfig.getRcvRequestLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getRcvRequestLogLevel() > DebugLogLevel.NONE) {
             logRcvRequest(request);
         }
 
@@ -273,6 +286,14 @@ public class DefaultRpcClient implements RpcClient {
                     request.getSrcAddr(), request.getServiceId(), request.getMethodId());
             if (RpcInvokeType.isCall(request.getInvokeType())) {
                 final RpcResponse response = RpcResponse.newFailedResponse(request, selfRpcAddr, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
+                sendResponseAndLog(response);
+            }
+            return;
+        }
+        int code = interceptor == null ? 0 : interceptor.test(request);
+        if (code != 0) {
+            if (RpcInvokeType.isCall(request.getInvokeType())) {
+                final RpcResponse response = RpcResponse.newFailedResponse(request, selfRpcAddr, code, "");
                 sendResponseAndLog(response);
             }
             return;
@@ -324,7 +345,7 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         final DefaultRpcRequestStub requestStub = requestStubMap.remove(response.getRequestId());
-        if (rpcLogConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
             logRcvResponse(response, requestStub);
         }
 
@@ -387,7 +408,7 @@ public class DefaultRpcClient implements RpcClient {
     // region 内部实现
 
     private void sendResponseAndLog(RpcResponse response) {
-        if (rpcLogConfig.getSndResponseLogLevel() > DebugLogLevel.NONE) {
+        if (logConfig.getSndResponseLogLevel() > DebugLogLevel.NONE) {
             logSndResponse(response);
         }
 
@@ -496,38 +517,38 @@ public class DefaultRpcClient implements RpcClient {
 
     private void logSndRequest(RpcRequest request) {
         logger.info("snd rpc request, request {}",
-                DebugLogUtils.logOf(rpcLogConfig.getSndRequestLogLevel(), request));
+                DebugLogUtils.logOf(logConfig.getSndRequestLogLevel(), request));
     }
 
     private void logBroadcastRequest(RpcRequest request) {
         logger.info("broadcast rpc request, request {}",
-                DebugLogUtils.logOf(rpcLogConfig.getSndRequestLogLevel(), request));
+                DebugLogUtils.logOf(logConfig.getSndRequestLogLevel(), request));
     }
 
     private void logSndResponse(RpcResponse response) {
         logger.info("snd rpc response, response {}",
-                DebugLogUtils.logOf(rpcLogConfig.getSndResponseLogLevel(), response));
+                DebugLogUtils.logOf(logConfig.getSndResponseLogLevel(), response));
     }
 
     private void logRcvRequest(RpcRequest request) {
         logger.info("rcv rpc request, request {}",
-                DebugLogUtils.logOf(rpcLogConfig.getRcvRequestLogLevel(), request));
+                DebugLogUtils.logOf(logConfig.getRcvRequestLogLevel(), request));
     }
 
     private void logRcvResponse(RpcResponse response, DefaultRpcRequestStub requestStub) {
         if (null == requestStub) {
             logger.info("rcv rpc response, but request is timeout, response {}",
-                    DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), response));
+                    DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
         } else {
             logger.info("rcv rpc response, response {}",
-                    DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), response));
+                    DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
         }
     }
 
     private void logRcvResponse(RpcResponse response, RpcRequest request) {
         logger.info("rcv rpc response, request {}, response {}",
-                DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), request),
-                DebugLogUtils.logOf(rpcLogConfig.getRcvResponseLogLevel(), response));
+                DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), request),
+                DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
     }
 
     // endregion
