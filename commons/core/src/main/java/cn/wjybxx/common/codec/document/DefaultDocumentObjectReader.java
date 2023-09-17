@@ -89,9 +89,12 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
             return true;
         }
         if (reader.isAtValue()) {
-            return reader.getCurrentName().equals(name);
+            if (reader.getCurrentName().equals(name)) {
+                return true;
+            }
+            reader.skipValue();
         }
-        // 用户调用 readDsonType，可指定下一个key的值
+        // 用户未调用readDsonType，可指定下一个key的值
         if (reader.isAtType()) {
             KeyIterator keyItr = (KeyIterator) reader.attachment();
             if (keyItr.keySet.contains(name)) {
