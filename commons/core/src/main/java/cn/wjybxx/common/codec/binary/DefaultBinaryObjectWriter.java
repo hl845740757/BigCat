@@ -270,7 +270,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo) {
+    public void writeStartObject(@Nonnull Object value, TypeArgInfo<?> typeArgInfo) {
         writer.writeStartObject();
         writeClassId(value, typeArgInfo);
     }
@@ -281,7 +281,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo) {
+    public void writeStartArray(@Nonnull Object value, TypeArgInfo<?> typeArgInfo) {
         writer.writeStartArray();
         writeClassId(value, typeArgInfo);
     }

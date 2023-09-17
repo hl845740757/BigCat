@@ -118,8 +118,11 @@ public class Sheet {
         if (header == null) {
             return null;
         }
-        return getValueRow(header.getRowIndex())
-                .getCell(name);
+        SheetRow valueRow = getValueRow(header.getRowIndex());
+        if (valueRow == null) {
+            throw new IllegalArgumentException("valueRow is absent, name: " + name);
+        }
+        return valueRow.getCell(name);
     }
 
     /** @param rowIndex 有效内容行的真实索引，非数组下标 */

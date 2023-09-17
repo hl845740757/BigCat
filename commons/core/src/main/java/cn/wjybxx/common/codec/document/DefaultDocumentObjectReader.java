@@ -41,28 +41,9 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         this.reader = reader;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T decodeKey(String keyString, Class<T> keyDeclared) {
-        if (keyDeclared == String.class || keyDeclared == Object.class) {
-            return (T) keyString;
-        }
-        if (keyDeclared == Integer.class) { // key一定是包装类型
-            return (T) Integer.valueOf(keyString);
-        }
-        if (keyDeclared == Long.class) {
-            return (T) Long.valueOf(keyString);
-        }
-        DocumentPojoCodec<T> pojoCodec = converter.codecRegistry.get(keyDeclared);
-        if (pojoCodec == null || !pojoCodec.isEnumLiteCodec()) {
-            throw DsonCodecException.unsupportedKeyType(keyDeclared);
-        }
-        int number = Integer.parseInt(keyString);
-        T enumLite = pojoCodec.forNumber(number);
-        if (enumLite == null) {
-            throw DsonCodecException.enumAbsent(keyDeclared, number);
-        }
-        return enumLite;
+        return DocumentConverterUtils.decodeKey(keyString, keyDeclared, converter.codecRegistry);
     }
 
     // region 代理

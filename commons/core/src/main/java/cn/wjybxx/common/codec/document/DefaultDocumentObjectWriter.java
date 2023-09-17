@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.io.Chunk;
@@ -48,17 +47,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public String encodeKey(Object key) {
-        Objects.requireNonNull(key);
-        if (key instanceof String str) {
-            return str;
-        }
-        if ((key instanceof Integer) || (key instanceof Long)) {
-            return key.toString();
-        }
-        if (!(key instanceof EnumLite enumLite)) {
-            throw DsonCodecException.unsupportedType(key.getClass());
-        }
-        return Integer.toString(enumLite.getNumber());
+        return DocumentConverterUtils.encodeKey(key);
     }
 
     // region 代理
@@ -75,11 +64,6 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public ConvertOptions options() {
         return converter.options;
-    }
-
-    @Override
-    public boolean isAtName() {
-        return writer.isAtName();
     }
 
     @Override
@@ -315,7 +299,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeStartObject(@Nonnull Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeStartObject(style);
         writeClassId(value, typeArgInfo);
     }
@@ -326,7 +310,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeStartArray(@Nonnull Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeStartArray(style);
         writeClassId(value, typeArgInfo);
     }

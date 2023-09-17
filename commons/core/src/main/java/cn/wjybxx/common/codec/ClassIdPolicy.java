@@ -16,6 +16,10 @@
 
 package cn.wjybxx.common.codec;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
 /**
  * 类型id的写入策略
  *
@@ -46,7 +50,15 @@ public enum ClassIdPolicy {
         return switch (this) {
             case NONE -> false;
             case ALWAYS -> true;
-            case OPTIMIZED -> encodeClass != declared;
+            case OPTIMIZED -> {
+                if (encodeClass == declared) {
+                    yield false;
+                }
+                // 默认解码类型的父类型无需写入
+                yield encodeClass != ArrayList.class
+                        && encodeClass != HashMap.class
+                        && encodeClass != LinkedHashMap.class;
+            }
         };
     }
 

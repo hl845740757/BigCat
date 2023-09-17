@@ -36,8 +36,6 @@ import java.util.*;
 @SuppressWarnings("unused")
 public interface DocumentObjectReader extends AutoCloseable {
 
-    <T> T decodeKey(String keyString, Class<T> keyDeclared);
-
     // region 简单值
 
     int readInt(String name);
@@ -124,15 +122,28 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     // region 代理
 
+    <T> T decodeKey(String keyString, Class<T> keyDeclared);
+
     @Override
     void close();
 
     ConvertOptions options();
 
+    /** 读取下一个数据的类型 */
     DsonType readDsonType();
 
+    /**
+     * 读取下一个值的名字
+     * 该方法只能在{@link #readDsonType()}后调用
+     */
     String readName();
 
+    /**
+     * 读取指定名字的值 -- 可实现随机读
+     * 如果尚未调用{@link #readDsonType()}，该方法将尝试跳转到该name所在的字段。
+     * 如果已调用{@link #readDsonType()}，则该方法必须与下一个name匹配。
+     * 如果reader不支持随机读，当名字不匹配下一个值时将抛出异常。
+     */
     void readName(String name);
 
     DsonType getCurrentDsonType();

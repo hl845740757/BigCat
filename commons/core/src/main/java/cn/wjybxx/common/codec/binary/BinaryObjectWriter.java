@@ -30,8 +30,10 @@ import javax.annotation.Nullable;
 
 /**
  * 对{@link DsonLiteWriter}的封装，主要提供类型管理和兼容性支持
+ * <p>
  * 1.对于对象类型，如果value为null，将自动调用{@link #writeNull(int)}
- * 2.
+ * 2.数组内元素name传0
+ * 3.业务层必须按照Bean的字段定义顺序写
  *
  * @author wjybxx
  * date 2023/3/31
@@ -92,18 +94,18 @@ public interface BinaryObjectWriter extends AutoCloseable {
     <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo);
 
     /** 顶层对象或数组内元素 */
-    void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo);
+    void writeStartObject(@Nonnull Object value, TypeArgInfo<?> typeArgInfo);
 
     void writeEndObject();
 
     /** 顶层对象或数组内元素 */
-    void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo);
+    void writeStartArray(@Nonnull Object value, TypeArgInfo<?> typeArgInfo);
 
     void writeEndArray();
 
     // endregion
 
-    // region 代理
+    // region 特殊接口
 
     void flush();
 

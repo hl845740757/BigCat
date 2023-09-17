@@ -73,7 +73,7 @@ public class TimeoutSleepingWaitStrategy implements WaitStrategy {
 
         int sleepRetries = this.sleepRetries;
         int counter = retries + sleepRetries;
-        int yieldThreshold = 100 + sleepRetries;
+        int yieldThreshold = sleepRetries + retries / 2; // 前半程自旋空转，后半程字段自旋尝试让出CPU
 
         long availableSequence;
         while ((availableSequence = dependentSequence.get()) < sequence) {

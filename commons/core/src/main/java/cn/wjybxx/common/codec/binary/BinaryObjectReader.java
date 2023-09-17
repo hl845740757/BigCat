@@ -31,10 +31,10 @@ import java.util.*;
 
 /**
  * 对{@link DsonLiteReader}的封装，主要提供类型管理和兼容性支持
- * Dson的元素数据是严格读写的，业务层通常不需要如此；
  * <p>
- * 1.代理api可参考{@link DsonLiteReader}的文档
- * 2.顶层对象和数组内元素{@literal name}传0
+ * 1.数组内元素 name 传0
+ * 2.业务层按照Bean的字段定义顺序读，而不是按照二进制流中的数据顺序读
+ * 3.先调用{@link #readName(int)}和先调用{@link #readDsonType()}是不同的，具体可见方法文档说明、
  *
  * @author wjybxx
  * date 2023/3/31
@@ -134,16 +134,24 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     ConvertOptions options();
 
-    /**
-     * 读取下一个数据类型
-     *
-     * @see DsonLiteReader#readDsonType()
-     */
+    /** 读取下一个数据的类型 */
     DsonType readDsonType();
 
+    /**
+     * 读取下一个值的名字
+     * 该方法只能在{@link #readDsonType()}后调用
+     */
     int readName();
 
-    void readName(int name);
+    /**
+     * 读取指定名字的值 -- 可实现随机读
+     * 如果尚未调用{@link #readDsonType()}，该方法将尝试跳转到该name所在的字段。
+     * 如果已调用{@link #readDsonType()}，则该方法必须与下一个name匹配。
+     * 如果reader不支持随机读，当名字不匹配下一个值时将抛出异常。
+     *
+     * @return 如果存在对应字段，则返回true，否则返回false；返回false的情况下，{@link #getCurrentName()}不等于参数
+     */
+    boolean readName(int name);
 
     DsonType getCurrentDsonType();
 

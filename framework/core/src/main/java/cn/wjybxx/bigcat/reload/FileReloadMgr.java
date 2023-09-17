@@ -313,14 +313,13 @@ public class FileReloadMgr {
                 .expectedNodeCount(metadataMap.size())
                 .build();
         for (FileMetadata<?> fileMetadata : metadataMap.values()) {
-            FileReader<?> reader = fileMetadata.reader;
-            graph.addNode(reader.filePath());
+            graph.addNode(fileMetadata.reader.filePath());
         }
         for (FileMetadata<?> fileMetadata : metadataMap.values()) {
-            FileReader<?> reader = fileMetadata.reader;
-            ensureFileReaderExist(reader.dependents()); // 确保依赖的文件存在
-            for (FilePath<?> dependent : reader.dependents()) {
-                graph.putEdge(dependent, reader.filePath());
+            Set<FilePath<?>> dependents = fileMetadata.reader.dependents();
+            ensureFileReaderExist(dependents); // 确保依赖的文件存在
+            for (FilePath<?> dependent : dependents) {
+                graph.putEdge(dependent, fileMetadata.reader.filePath());
             }
         }
         // 确定FileReader的执行优先级

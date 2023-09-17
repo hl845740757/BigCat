@@ -54,23 +54,58 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public DsonType readDsonType() {
-        return reader.readDsonType();
+        if (reader.isAtType()) {
+            return reader.readDsonType();
+        } else {
+            return reader.getCurrentDsonType();
+        }
     }
 
     @Override
     public int readName() {
-        if (reader.isAtType()) {
-            reader.readDsonType();
+        if (reader.isAtName()) {
+            return reader.readName();
+        } else {
+            return reader.getCurrentName();
         }
-        return reader.readName();
     }
 
     @Override
-    public void readName(int name) {
-        if (reader.isAtType()) {
-            reader.readDsonType();
+    public boolean readName(int name) {
+        DsonLiteReader reader = this.reader;
+        if (reader.getContextType() == DsonContextType.ARRAY) {
+            if (name != 0) throw new IllegalArgumentException("the name of array element must be 0");
+            return true;
         }
-        reader.readName(name);
+        // 判断上次读取的name是否有效
+        if (reader.isAtValue()) {
+            if (reader.getCurrentName() == name) {
+                return true;
+            }
+            if (FieldNumber.compare(reader.getCurrentName(), name) < 0) {
+                reader.skipValue();
+            }
+        }
+        if (reader.isAtType()) {
+            // 尚可尝试读取
+            while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+                if (FieldNumber.compare(reader.readName(), name) >= 0) {
+                    break;
+                }
+                reader.skipValue();
+            }
+            if (reader.getCurrentDsonType() == DsonType.END_OF_OBJECT) {
+                return false;
+            }
+            return reader.getCurrentName() == name;
+        } else {
+            // 当前已到达尾部
+            if (reader.getCurrentDsonType() == DsonType.END_OF_OBJECT) {
+                return false;
+            }
+            reader.readName(name); // 不匹配会产生异常
+            return true;
+        }
     }
 
     @Override
@@ -106,18 +141,12 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public <T> T readMessage(int name, int binaryType, @Nonnull Parser<T> parser) {
-        if (reader.isAtType()) {
-            reader.readDsonType();
-        }
-        return reader.readMessage(name, binaryType, parser);
+        return readName(name) ? reader.readMessage(name, binaryType, parser) : null;
     }
 
     @Override
     public byte[] readValueAsBytes(int name) {
-        if (reader.isAtType()) {
-            reader.readDsonType();
-        }
-        return reader.readValueAsBytes(name);
+        return readName(name) ? reader.readValueAsBytes(name) : null;
     }
 
     // endregion
@@ -126,67 +155,69 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public int readInt(int name) {
-        return CodecHelper.readInt(reader, name);
+        return readName(name) ? CodecHelper.readInt(reader, name) : 0;
     }
 
     @Override
     public long readLong(int name) {
-        return CodecHelper.readLong(reader, name);
+        return readName(name) ? CodecHelper.readLong(reader, name) : 0;
     }
 
     @Override
     public float readFloat(int name) {
-        return CodecHelper.readFloat(reader, name);
+        return readName(name) ? CodecHelper.readFloat(reader, name) : 0;
     }
 
     @Override
     public double readDouble(int name) {
-        return CodecHelper.readDouble(reader, name);
+        return readName(name) ? CodecHelper.readDouble(reader, name) : 0;
     }
 
     @Override
     public boolean readBoolean(int name) {
-        return CodecHelper.readBool(reader, name);
+        return readName(name) && CodecHelper.readBool(reader, name);
     }
 
     @Override
     public String readString(int name) {
-        return CodecHelper.readString(reader, name);
+        return readName(name) ? CodecHelper.readString(reader, name) : null;
     }
 
     @Override
     public void readNull(int name) {
-        CodecHelper.readNull(reader, name);
+        if (readName(name)) {
+            CodecHelper.readNull(reader, name);
+        }
     }
 
     @Override
     public DsonBinary readBinary(int name) {
-        return CodecHelper.readBinary(reader, name);
+        return readName(name) ? CodecHelper.readBinary(reader, name) : null;
     }
 
     @Override
     public DsonExtInt32 readExtInt32(int name) {
-        return CodecHelper.readExtInt32(reader, name);
+        return readName(name) ? CodecHelper.readExtInt32(reader, name) : null;
     }
 
     @Override
     public DsonExtInt64 readExtInt64(int name) {
-        return CodecHelper.readExtInt64(reader, name);
+        return readName(name) ? CodecHelper.readExtInt64(reader, name) : null;
     }
 
     @Override
     public DsonExtString readExtString(int name) {
-        return CodecHelper.readExtString(reader, name);
+        return readName(name) ? CodecHelper.readExtString(reader, name) : null;
     }
 
     @Override
     public ObjectRef readRef(int name) {
-        return CodecHelper.readRef(reader, name);
+        return readName(name) ? CodecHelper.readRef(reader, name) : null;
     }
 
     @Override
     public OffsetTimestamp readTimestamp(int name) {
-        return CodecHelper.readTimestamp(reader, name);
+        return readName(name) ? CodecHelper.readTimestamp(reader, name) : null;
     }
 
     // endregion
@@ -196,10 +227,8 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Override
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
-        DsonType dsonType = CodecHelper.readOrGetDsonType(reader);
-        if (reader.getContextType().isLikeObject() && dsonType != DsonType.HEADER) {
-            reader.readName();
-        }
+        DsonType dsonType = reader.readDsonType();
+        assert dsonType.isContainer(); // 我们这里顶层并不支持Header
         return readContainer(typeArgInfo, dsonType);
     }
 
@@ -208,6 +237,10 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     @Override
     public <T> T readObject(int name, TypeArgInfo<T> typeArgInfo) {
         Class<T> declaredType = typeArgInfo.declaredType;
+        if (!readName(name)) {
+            return (T) ConverterUtils.getDefaultValue(declaredType);
+        }
+
         DsonLiteReader reader = this.reader;
         // 基础类型不能返回null
         if (declaredType.isPrimitive()) {
@@ -216,14 +249,15 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         if (declaredType == String.class) {
             return (T) CodecHelper.readString(reader, name);
         }
-        if (declaredType == byte[].class) { // binary可以接收定长数据
+        if (declaredType == byte[].class) {
             return (T) CodecHelper.readBinary(reader, name);
         }
-        // 对象类型--需要先读取写入的类型，才可以解码
-        DsonType dsonType = CodecHelper.readOrGetDsonType(reader);
-        if (reader.isAtName()) {
-            reader.readName(name);
+
+        // 对象类型--需要先读取写入的类型，才可以解码；Object上下文的话，readName已处理
+        if (reader.getContextType() == DsonContextType.ARRAY) {
+            if (reader.isAtType()) reader.readDsonType();
         }
+        DsonType dsonType = reader.getCurrentDsonType();
         if (dsonType == DsonType.NULL) {
             return null;
         }
@@ -289,15 +323,11 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         ClassId classId;
         DsonType nextDsonType = reader.peekDsonType();
         if (nextDsonType == DsonType.HEADER) {
-            if (reader.readDsonType() != DsonType.HEADER) {
-                throw new DsonCodecException();
-            }
+            reader.readDsonType();
             reader.readStartHeader();
             long classGuid = reader.readInt64(DsonHeader.NUMBERS_CLASS_ID);
             classId = converter.options.classIdConverter.toClassId(classGuid);
-            if (reader.readDsonType() != DsonType.END_OF_OBJECT) {
-                throw new DsonCodecException();
-            }
+            reader.skipToEndOfObject();
             reader.readEndHeader();
         } else {
             classId = ClassId.OBJECT;

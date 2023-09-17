@@ -29,17 +29,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * 在文档编码中，默认情况下Writer不会写入自定义Object的Null字段，
- * 如果用户期望强制写入null，需要先调用{@link #writeName(String)}，再调用{@link #writeNull(String)}，
- * 这样我们就能知道用户确实需要写入该字段。
+ * 如果用户期望强制写入null，需要先调用{@link DocumentObjectWriter#writeName(String)}，
+ * 再调用{@link DocumentObjectWriter#writeNull(String)}
  *
  * @author wjybxx
  * date 2023/4/3
  */
 @SuppressWarnings("unused")
 public interface DocumentObjectWriter extends AutoCloseable {
-
-    String encodeKey(Object key);
 
     // region 基础api
 
@@ -107,12 +104,12 @@ public interface DocumentObjectWriter extends AutoCloseable {
     <T> void writeObject(T value, TypeArgInfo<?> typeArgInfo, @Nullable ObjectStyle style);
 
     /** 顶层对象或数组内元素 */
-    void writeStartObject(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
+    void writeStartObject(@Nonnull Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 
     void writeEndObject();
 
     /** 顶层对象或数组内元素 */
-    void writeStartArray(Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
+    void writeStartArray(@Nonnull Object value, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 
     void writeEndArray();
 
@@ -120,14 +117,14 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     // region 代理
 
+    String encodeKey(Object key);
+
     void flush();
 
     @Override
     void close();
 
     ConvertOptions options();
-
-    boolean isAtName();
 
     void writeName(String name);
 
