@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.codec.document;
 
+import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.io.Chunk;
@@ -47,7 +48,17 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public String encodeKey(Object key) {
-        return DocumentConverterUtils.encodeKey(key);
+        Objects.requireNonNull(key);
+        if (key instanceof String str) {
+            return str;
+        }
+        if ((key instanceof Integer) || (key instanceof Long)) {
+            return key.toString();
+        }
+        if (!(key instanceof EnumLite enumLite)) {
+            throw DsonCodecException.unsupportedType(key.getClass());
+        }
+        return Integer.toString(enumLite.getNumber());
     }
 
     // region 代理

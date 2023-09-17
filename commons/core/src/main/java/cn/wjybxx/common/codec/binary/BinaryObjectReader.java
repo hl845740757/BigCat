@@ -135,7 +135,7 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     // endregion
 
-    // region 代理
+    // region 特殊接口
 
     @Override
     void close();

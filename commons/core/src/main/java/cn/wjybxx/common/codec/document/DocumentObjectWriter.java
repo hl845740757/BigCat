@@ -115,9 +115,7 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     // endregion
 
-    // region 代理
-
-    String encodeKey(Object key);
+    // region 特殊接口
 
     void flush();
 
@@ -131,6 +129,8 @@ public interface DocumentObjectWriter extends AutoCloseable {
     void writeMessage(String name, int binaryType, MessageLite messageLite);
 
     void writeValueBytes(String name, DsonType dsonType, byte[] data);
+
+    String encodeKey(Object key);
 
     // endregion
 

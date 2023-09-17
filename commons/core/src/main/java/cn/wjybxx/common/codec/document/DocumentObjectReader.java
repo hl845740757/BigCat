@@ -128,9 +128,7 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     // endregion
 
-    // region 代理
-
-    <T> T decodeKey(String keyString, Class<T> keyDeclared);
+    // region 流程
 
     @Override
     void close();
@@ -173,6 +171,7 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     byte[] readValueAsBytes(String name);
 
+    <T> T decodeKey(String keyString, Class<T> keyDeclared);
     // endregion
 
     // region 快捷方法

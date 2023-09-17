@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.codec.document;
 
-import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.codec.*;
 import cn.wjybxx.common.codec.document.codecs.*;
 import cn.wjybxx.dson.internal.InternalUtils;
@@ -148,43 +147,6 @@ public class DocumentConverterUtils extends ConverterUtils {
         if (idx < 0) throw new IllegalArgumentException("invalid idx " + idx);
         if (idx < NAME_CACHE_SIZE) return arrayElementNameCache[idx];
         return Integer.toString(idx);
-    }
-
-    static String encodeKey(Object key) {
-        Objects.requireNonNull(key);
-        if (key instanceof String str) {
-            return str;
-        }
-        if ((key instanceof Integer) || (key instanceof Long)) {
-            return key.toString();
-        }
-        if (!(key instanceof EnumLite enumLite)) {
-            throw DsonCodecException.unsupportedType(key.getClass());
-        }
-        return Integer.toString(enumLite.getNumber());
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> T decodeKey(String keyString, Class<T> keyDeclared, DocumentCodecRegistry codecRegistry) {
-        if (keyDeclared == String.class || keyDeclared == Object.class) {
-            return (T) keyString;
-        }
-        if (keyDeclared == Integer.class) { // key一定是包装类型
-            return (T) Integer.valueOf(keyString);
-        }
-        if (keyDeclared == Long.class) {
-            return (T) Long.valueOf(keyString);
-        }
-        DocumentPojoCodec<T> pojoCodec = codecRegistry.get(keyDeclared);
-        if (pojoCodec == null || !pojoCodec.isEnumLiteCodec()) {
-            throw DsonCodecException.unsupportedKeyType(keyDeclared);
-        }
-        int number = Integer.parseInt(keyString);
-        T enumLite = pojoCodec.forNumber(number);
-        if (enumLite == null) {
-            throw DsonCodecException.enumAbsent(keyDeclared, number);
-        }
-        return enumLite;
     }
 
     // region 特殊类型支持：protobuf,集合,map
