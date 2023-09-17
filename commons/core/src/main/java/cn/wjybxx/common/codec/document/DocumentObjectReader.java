@@ -143,8 +143,11 @@ public interface DocumentObjectReader extends AutoCloseable {
      * 如果尚未调用{@link #readDsonType()}，该方法将尝试跳转到该name所在的字段。
      * 如果已调用{@link #readDsonType()}，则该方法必须与下一个name匹配。
      * 如果reader不支持随机读，当名字不匹配下一个值时将抛出异常。
+     * 返回false的情况下，可继续调用该方法或{@link #readDsonType()}读取下一个字段。
+     *
+     * @return 如果存在对应字段，则返回true，否则返回false
      */
-    void readName(String name);
+    boolean readName(String name);
 
     DsonType getCurrentDsonType();
 

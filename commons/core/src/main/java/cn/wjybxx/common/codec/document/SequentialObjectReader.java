@@ -17,41 +17,30 @@
 package cn.wjybxx.common.codec.document;
 
 import cn.wjybxx.common.codec.*;
-import cn.wjybxx.common.pool.DefaultObjectPool;
-import cn.wjybxx.common.pool.ObjectPool;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
 import com.google.protobuf.Parser;
-import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.Objects;
-import java.util.Set;
 
 /**
- * 默认实现之所以限定{@link DsonObjectReader}，是因为文档默认情况下用于解析数据库和文本文件，
- * 文档中的字段顺序可能和类定义不同，因此顺序读的容错较低。
+ * 如果觉得{@link DefaultDocumentObjectReader}的开销有点大，以后可以支持双模式
  *
  * @author wjybxx
  * date - 2023/4/23
  */
-public class DefaultDocumentObjectReader implements DocumentObjectReader {
-
-    private static final ThreadLocal<ObjectPool<ObjectLinkedOpenHashSet<String>>> LOCAL_POOL
-            = ThreadLocal.withInitial(() -> new DefaultObjectPool<>(ObjectLinkedOpenHashSet::new, ObjectLinkedOpenHashSet::clear, 2, 16));
+public class SequentialObjectReader implements DocumentObjectReader {
 
     private final DefaultDocumentConverter converter;
-    private final DsonObjectReader reader;
-    private final ObjectPool<ObjectLinkedOpenHashSet<String>> keySetPool;
+    private final DsonReader reader;
 
-    public DefaultDocumentObjectReader(DefaultDocumentConverter converter, DsonObjectReader reader) {
+    public SequentialObjectReader(DefaultDocumentConverter converter, DsonReader reader) {
         this.converter = converter;
         this.reader = reader;
-        this.keySetPool = LOCAL_POOL.get(); // 缓存下来，技减少查询
     }
 
     @Override
@@ -91,23 +80,17 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
         if (reader.isAtValue()) {
             return reader.getCurrentName().equals(name);
         }
-        // 用户调用 readDsonType，可指定下一个key的值
         if (reader.isAtType()) {
-            KeyIterator keyItr = (KeyIterator) reader.attachment();
-            if (keyItr.keySet.contains(name)) {
-                keyItr.setNext(name);
-                reader.readDsonType();
-                reader.readName();
-                return true;
+            if (reader.readDsonType() == DsonType.END_OF_OBJECT) {
+                return false;
             }
-            return false;
         } else {
             if (reader.getCurrentDsonType() == DsonType.END_OF_OBJECT) {
                 return false;
             }
-            reader.readName(name);
-            return true;
         }
+        reader.readName(name);
+        return true;
     }
 
     @Override
@@ -293,17 +276,10 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
             reader.readDsonType();
         }
         reader.readStartObject();
-
-        KeyIterator keyItr = new KeyIterator(reader.getkeySet(), keySetPool.get());
-        reader.setKeyItr(keyItr, DsonNull.INSTANCE);
-        reader.attach(keyItr);
     }
 
     @Override
     public void readEndObject() {
-        KeyIterator keyItr = (KeyIterator) reader.attach(null);
-        keySetPool.free(keyItr.keyItr);
-
         reader.skipToEndOfObject();
         reader.readEndObject();
     }
@@ -360,30 +336,4 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
 
     // endregion
 
-    private static class KeyIterator implements Iterator<String> {
-
-        final Set<String> keySet;
-        final ObjectLinkedOpenHashSet<String> keyItr;
-
-        public KeyIterator(Set<String> keySet, ObjectLinkedOpenHashSet<String> keyItr) {
-            this.keySet = keySet;
-            this.keyItr = keyItr;
-            keyItr.addAll(keySet);
-        }
-
-        public void setNext(String key) {
-            Objects.requireNonNull(key);
-            keyItr.addAndMoveToFirst(key);
-        }
-
-        @Override
-        public boolean hasNext() {
-            return keyItr.size() > 0;
-        }
-
-        @Override
-        public String next() {
-            return keyItr.removeFirst();
-        }
-    }
 }

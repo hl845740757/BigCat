@@ -54,20 +54,12 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public DsonType readDsonType() {
-        if (reader.isAtType()) {
-            return reader.readDsonType();
-        } else {
-            return reader.getCurrentDsonType();
-        }
+        return reader.isAtType() ? reader.readDsonType() : reader.getCurrentDsonType();
     }
 
     @Override
     public int readName() {
-        if (reader.isAtName()) {
-            return reader.readName();
-        } else {
-            return reader.getCurrentName();
-        }
+        return reader.isAtName() ? reader.readName() : reader.getCurrentName();
     }
 
     @Override
@@ -228,7 +220,6 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     public <T> T readObject(TypeArgInfo<T> typeArgInfo) {
         Objects.requireNonNull(typeArgInfo);
         DsonType dsonType = reader.readDsonType();
-        assert dsonType.isContainer(); // 我们这里顶层并不支持Header
         return readContainer(typeArgInfo, dsonType);
     }
 
@@ -287,7 +278,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public void readStartObject(@Nonnull TypeArgInfo<?> typeArgInfo) {
-        if (reader.isAtType()) {
+        if (reader.isAtType()) { // 顶层对象适配
             reader.readDsonType();
         }
         reader.readStartObject();
@@ -301,7 +292,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     @Override
     public void readStartArray(@Nonnull TypeArgInfo<?> typeArgInfo) {
-        if (reader.isAtType()) {
+        if (reader.isAtType()) {  // 顶层对象适配
             reader.readDsonType();
         }
         reader.readStartArray();

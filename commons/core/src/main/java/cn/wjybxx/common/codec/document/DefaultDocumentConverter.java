@@ -20,9 +20,7 @@ import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.TypeMetaRegistries;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
-import cn.wjybxx.dson.DsonBinaryReader;
-import cn.wjybxx.dson.DsonBinaryWriter;
-import cn.wjybxx.dson.Dsons;
+import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.io.*;
 import cn.wjybxx.dson.text.DsonTextReader;
 import cn.wjybxx.dson.text.DsonTextWriter;
@@ -120,10 +118,15 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
-        try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
-                new DsonBinaryReader(options.recursionLimit, inputStream))) {
+        try (DsonReader binaryReader = new DsonBinaryReader(options.recursionLimit, inputStream);
+             DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(binaryReader))) {
             return wrapper.readObject(typeArgInfo);
         }
+    }
+
+    private DsonObjectReader toDsonObjectReader(DsonReader dsonReader) {
+        DsonValue dsonValue = Dsons.readTopDsonValue(dsonReader);
+        return new DsonObjectReader(options.recursionLimit, new DsonArray<String>().append(dsonValue));
     }
 
     @Nonnull
@@ -151,16 +154,16 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     @Override
     public <U> U readFromDson(CharSequence source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
-                new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, jsonLike)))) {
+        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, jsonLike));
+             DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
 
     @Override
     public <U> U readFromDson(Reader source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        try (DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this,
-                new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, 256, jsonLike)))) {
+        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, 256, jsonLike));
+             DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
