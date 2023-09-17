@@ -74,9 +74,10 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
             if (reader.getCurrentName() == name) {
                 return true;
             }
-            if (FieldNumber.compare(reader.getCurrentName(), name) < 0) {
-                reader.skipValue();
+            if (FieldNumber.compare(reader.getCurrentName(), name) > 0) {
+                return false;
             }
+            reader.skipValue();
         }
         if (reader.isAtType()) {
             // 尚可尝试读取

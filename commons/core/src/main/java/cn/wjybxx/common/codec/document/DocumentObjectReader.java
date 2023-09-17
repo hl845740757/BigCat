@@ -98,14 +98,22 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     //
 
-    default void readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
-        readName(name);
-        readStartObject(typeArgInfo);
+    /** @return 如果存在对应的字段则返回true */
+    default boolean readStartObject(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+        if (readName(name)) {
+            readStartObject(typeArgInfo);
+            return true;
+        }
+        return false;
     }
 
-    default void readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
-        readName(name);
-        readStartArray(typeArgInfo);
+    /** @return 如果存在对应的字段则返回true */
+    default boolean readStartArray(String name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+        if (readName(name)) {
+            readStartArray(typeArgInfo);
+            return true;
+        }
+        return false;
     }
 
     /** 顶层对象或数组内元素 */

@@ -19,6 +19,9 @@ package cn.wjybxx.common.codec.document;
 import cn.wjybxx.common.codec.Converter;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
+import cn.wjybxx.dson.DsonArray;
+import cn.wjybxx.dson.DsonObject;
+import cn.wjybxx.dson.DsonValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -80,6 +83,19 @@ public interface DocumentConverter extends Converter {
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
     <U> U readFromDson(Reader source, boolean jsonLike, TypeArgInfo<U> typeArgInfo);
+
+    /**
+     * @param value       顶层对象必须的容器对象，Object和数组
+     * @param typeArgInfo 对象的类型信息
+     * @return {@link DsonObject}或{@link DsonArray}
+     */
+    DsonValue writeAsDsonValue(Object value, TypeArgInfo<?> typeArgInfo);
+
+    /**
+     * @param source      {@link DsonObject}或{@link DsonArray}
+     * @param typeArgInfo 要读取的目标类型信息
+     */
+    <U> U readFromDsonValue(DsonValue source, TypeArgInfo<U> typeArgInfo);
 
     // endregion
 

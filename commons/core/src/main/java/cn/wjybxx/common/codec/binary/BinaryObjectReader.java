@@ -105,14 +105,22 @@ public interface BinaryObjectReader extends AutoCloseable {
 
     //
 
-    default void readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
-        readName(name);
-        readStartObject(typeArgInfo);
+    /** @return 如果存在对应的字段则返回true */
+    default boolean readStartObject(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+        if (readName(name)) {
+            readStartObject(typeArgInfo);
+            return true;
+        }
+        return false;
     }
 
-    default void readStartArray(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
-        readName(name);
-        readStartArray(typeArgInfo);
+    /** @return 如果存在对应的字段则返回true */
+    default boolean readStartArray(int name, @Nonnull TypeArgInfo<?> typeArgInfo) {
+        if (readName(name)) {
+            readStartArray(typeArgInfo);
+            return true;
+        }
+        return false;
     }
 
     /** 顶层对象或数组内元素 */

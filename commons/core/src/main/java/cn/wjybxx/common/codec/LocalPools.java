@@ -90,6 +90,7 @@ public class LocalPools {
             Objects.requireNonNull(builder, "builder");
             Queue<StringBuilder> queue = LOCAL_STRING_QUEUE.get();
             if (queue.size() < POOL_SIZE) {
+                builder.setLength(0);
                 queue.offer(builder);
             }
         }

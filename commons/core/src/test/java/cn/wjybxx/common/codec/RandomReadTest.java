@@ -49,8 +49,8 @@ public class RandomReadTest {
 
         Bean bean = new Bean();
         bean.iv1 = 1;
-        bean.lv1 = 3;
-        bean.fv1 = 5;
+        bean.lv2 = 3;
+        bean.fv2 = 5;
         bean.dv1 = 7;
         bean.bv1 = true;
 
@@ -75,9 +75,9 @@ public class RandomReadTest {
 
         Bean bean = new Bean();
         bean.iv1 = 1;
-        bean.lv1 = 3;
+        bean.lv2 = 3;
         bean.fv1 = 5;
-        bean.dv1 = 7;
+        bean.dv2 = 7;
         bean.bv1 = true;
 
         Assertions.assertEquals(bean, converter.cloneObject(bean, TypeArgInfo.OBJECT));

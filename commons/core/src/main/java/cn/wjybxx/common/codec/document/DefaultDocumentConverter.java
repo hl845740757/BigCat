@@ -25,6 +25,7 @@ import cn.wjybxx.dson.io.*;
 import cn.wjybxx.dson.text.DsonTextReader;
 import cn.wjybxx.dson.text.DsonTextWriter;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
+import cn.wjybxx.dson.text.ObjectStyle;
 import org.apache.commons.io.output.StringBuilderWriter;
 
 import javax.annotation.Nonnull;
@@ -118,8 +119,13 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
-        try (DsonReader binaryReader = new DsonBinaryReader(options.recursionLimit, inputStream);
-             DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(binaryReader))) {
+        try (DsonReader binaryReader = new DsonBinaryReader(options.recursionLimit, inputStream)) {
+            DocumentObjectReader wrapper;
+            if (!options.appendDef || !options.appendNull) { // 二进制数据不全
+                wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(binaryReader));
+            } else {
+                wrapper = new SequentialObjectReader(this, binaryReader);
+            }
             return wrapper.readObject(typeArgInfo);
         }
     }
@@ -164,6 +170,32 @@ public class DefaultDocumentConverter implements DocumentConverter {
     public <U> U readFromDson(Reader source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
         try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, 256, jsonLike));
              DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
+            return wrapper.readObject(typeArgInfo);
+        }
+    }
+
+    @Override
+    public DsonValue writeAsDsonValue(Object value, TypeArgInfo<?> typeArgInfo) {
+        Objects.requireNonNull(value);
+        DsonArray<String> outList = new DsonArray<>(1);
+        try (DsonWriter objectWriter = new DsonObjectWriter(options.recursionLimit, outList);
+             DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this, objectWriter)) {
+            wrapper.writeObject(value, typeArgInfo, ObjectStyle.INDENT);
+            DsonValue dsonValue = outList.get(0);
+            if (dsonValue.getDsonType().isContainer()) {
+                return dsonValue;
+            }
+            throw new IllegalArgumentException("value must be container");
+        }
+    }
+
+    @Override
+    public <U> U readFromDsonValue(DsonValue source, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        if (!source.getDsonType().isContainer()) {
+            throw new IllegalArgumentException("value must be container");
+        }
+        try (DsonReader objectReader = new DsonObjectReader(options.recursionLimit, new DsonArray<String>().append(source));
+             DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(objectReader))) {
             return wrapper.readObject(typeArgInfo);
         }
     }

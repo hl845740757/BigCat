@@ -304,11 +304,12 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
 
     @Override
     public void readEndObject() {
-        KeyIterator keyItr = (KeyIterator) reader.attach(null);
-        keySetPool.free(keyItr.keyItr);
-
+        KeyIterator keyItr = (KeyIterator) reader.attach(null); // 需要在readEndObject之前保存下来
         reader.skipToEndOfObject();
         reader.readEndObject();
+
+        keySetPool.free(keyItr.keyQueue);
+        keyItr.keyQueue = null;
     }
 
     @Override
@@ -365,28 +366,28 @@ public class DefaultDocumentObjectReader implements DocumentObjectReader {
 
     private static class KeyIterator implements Iterator<String> {
 
-        final Set<String> keySet;
-        final ObjectLinkedOpenHashSet<String> keyItr;
+        Set<String> keySet;
+        ObjectLinkedOpenHashSet<String> keyQueue;
 
-        public KeyIterator(Set<String> keySet, ObjectLinkedOpenHashSet<String> keyItr) {
+        public KeyIterator(Set<String> keySet, ObjectLinkedOpenHashSet<String> keyQueue) {
             this.keySet = keySet;
-            this.keyItr = keyItr;
-            keyItr.addAll(keySet);
+            this.keyQueue = keyQueue;
+            keyQueue.addAll(keySet);
         }
 
         public void setNext(String key) {
             Objects.requireNonNull(key);
-            keyItr.addAndMoveToFirst(key);
+            keyQueue.addAndMoveToFirst(key);
         }
 
         @Override
         public boolean hasNext() {
-            return keyItr.size() > 0;
+            return keyQueue.size() > 0;
         }
 
         @Override
         public String next() {
-            return keyItr.removeFirst();
+            return keyQueue.removeFirst();
         }
     }
 }
