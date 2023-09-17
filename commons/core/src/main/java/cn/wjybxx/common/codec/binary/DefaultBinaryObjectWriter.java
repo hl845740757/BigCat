@@ -77,27 +77,37 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     @Override
     public void writeInt(int name, int value, WireType wireType) {
-        writer.writeInt32(name, value, wireType);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeInt32(name, value, wireType);
+        }
     }
 
     @Override
     public void writeLong(int name, long value, WireType wireType) {
-        writer.writeInt64(name, value, wireType);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeInt64(name, value, wireType);
+        }
     }
 
     @Override
     public void writeFloat(int name, float value) {
-        writer.writeFloat(name, value);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeFloat(name, value);
+        }
     }
 
     @Override
     public void writeDouble(int name, double value) {
-        writer.writeDouble(name, value);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeDouble(name, value);
+        }
     }
 
     @Override
     public void writeBoolean(int name, boolean value) {
-        writer.writeBoolean(name, value);
+        if (value || (!writer.isAtName() || options().appendDef)) {
+            writer.writeBoolean(name, value);
+        }
     }
 
     @Override

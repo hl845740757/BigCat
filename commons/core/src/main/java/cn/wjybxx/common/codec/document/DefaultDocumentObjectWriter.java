@@ -88,27 +88,37 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
 
     @Override
     public void writeInt(String name, int value, WireType wireType, INumberStyle style) {
-        writer.writeInt32(name, value, wireType, style);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeInt32(name, value, wireType, style);
+        }
     }
 
     @Override
     public void writeLong(String name, long value, WireType wireType, INumberStyle style) {
-        writer.writeInt64(name, value, wireType, style);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeInt64(name, value, wireType, style);
+        }
     }
 
     @Override
     public void writeFloat(String name, float value, INumberStyle style) {
-        writer.writeFloat(name, value, style);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeFloat(name, value, style);
+        }
     }
 
     @Override
     public void writeDouble(String name, double value, INumberStyle style) {
-        writer.writeDouble(name, value, style);
+        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+            writer.writeDouble(name, value, style);
+        }
     }
 
     @Override
     public void writeBoolean(String name, boolean value) {
-        writer.writeBoolean(name, value);
+        if (value || (!writer.isAtName() || options().appendDef)) {
+            writer.writeBoolean(name, value);
+        }
     }
 
     @Override
