@@ -53,7 +53,13 @@ public class DefaultDocumentObjectReader extends AbstractObjectReader implements
         DsonReader reader = this.reader;
         if (reader.getContextType() == DsonContextType.ARRAY) {
             if (name != null) throw new IllegalArgumentException("the name of array element must be null");
-            return true;
+            if (reader.isAtValue()) {
+                return true;
+            }
+            if (reader.isAtType()) {
+                return reader.readDsonType() != DsonType.END_OF_OBJECT;
+            }
+            return reader.getCurrentDsonType() != DsonType.END_OF_OBJECT;
         }
         if (reader.isAtValue()) {
             if (reader.getCurrentName().equals(name)) {

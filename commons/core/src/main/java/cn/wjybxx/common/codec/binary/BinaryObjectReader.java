@@ -158,7 +158,8 @@ public interface BinaryObjectReader extends AutoCloseable {
      * 如果reader不支持随机读，当名字不匹配下一个值时将抛出异常。
      * 返回false的情况下，可继续调用该方法或{@link #readDsonType()}读取下一个字段。
      *
-     * @return 如果存在对应字段，则返回true，否则返回false
+     * @return 如果是Object上下午，如果字段存在则返回true，否则返回false；
+     * 如果是Array上下文，如果尚未到达数组尾部，则返回true，否则返回false
      */
     boolean readName(int name);
 

@@ -18,6 +18,7 @@ package cn.wjybxx.common.eventbus;
 
 
 import cn.wjybxx.common.annotation.AutoFields;
+import cn.wjybxx.common.annotation.StableName;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -105,6 +106,7 @@ public @interface Subscribe {
      * Q: 它的作用？
      * A: 告诉特定的事件处理器以实现一些特定的切面功能，比如：限定协议的频率。
      */
+    @StableName
     String customData() default "";
 
 }

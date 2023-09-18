@@ -17,6 +17,7 @@
 package cn.wjybxx.common.rpc;
 
 
+import cn.wjybxx.common.annotation.StableName;
 import cn.wjybxx.common.codec.TypeMeta;
 
 import java.lang.annotation.ElementType;
@@ -58,7 +59,7 @@ import java.util.concurrent.CompletionStage;
  * @author wjybxx
  * date 2023/4/1
  */
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface RpcMethod {
 
@@ -69,5 +70,12 @@ public @interface RpcMethod {
      * @return 由该id和serviceId构成唯一索引。
      */
     int methodId();
+
+    /**
+     * 自定义扩展数据，通常是json或dson格式。
+     * 它的主要作用是配置切面数据，用于拦截器。比如：某些消息只能在玩家在场景的时候处理。
+     */
+    @StableName
+    String customData() default "";
 
 }

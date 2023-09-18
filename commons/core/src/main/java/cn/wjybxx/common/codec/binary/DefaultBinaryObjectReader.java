@@ -67,7 +67,13 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
         DsonLiteReader reader = this.reader;
         if (reader.getContextType() == DsonContextType.ARRAY) {
             if (name != 0) throw new IllegalArgumentException("the name of array element must be 0");
-            return true;
+            if (reader.isAtValue()) {
+                return true;
+            }
+            if (reader.isAtType()) {
+                return reader.readDsonType() != DsonType.END_OF_OBJECT;
+            }
+            return reader.getCurrentDsonType() != DsonType.END_OF_OBJECT;
         }
         // 判断上次读取的name是否有效
         if (reader.isAtValue()) {
