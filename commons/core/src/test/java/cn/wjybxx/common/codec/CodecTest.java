@@ -25,9 +25,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 
 /**
+ * 基础读写测试
+ *
  * @author wjybxx
  * date 2023/4/3
  */
@@ -61,7 +66,6 @@ public class CodecTest {
         this.myStruct = myStruct;
     }
 
-    /** 基础读写测试 */
     @Test
     void binCodecTest() {
         BinaryConverter converter = DefaultBinaryConverter.newInstance(

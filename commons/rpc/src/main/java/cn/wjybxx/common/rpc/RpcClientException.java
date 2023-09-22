@@ -68,4 +68,7 @@ public class RpcClientException extends RpcException {
         return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "executionException", e, true, true);
     }
 
+    public static RpcClientException interrupted(InterruptedException e) {
+        return new RpcClientException(RpcErrorCodes.LOCAL_INTERRUPTED, "interrupted", e, true, true);
+    }
 }

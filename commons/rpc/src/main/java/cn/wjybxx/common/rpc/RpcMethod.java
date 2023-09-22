@@ -72,6 +72,16 @@ public @interface RpcMethod {
     int methodId();
 
     /**
+     * 方法参数是否可共享
+     * 该属性主要用于进程内跨线程rpc调用时减少不必要的开销，比如：调用db接口。
+     * <p>
+     * 1.该属性用于配置默认值，以免所有调用者都需要调用{@link RpcMethodSpec#setSharable(boolean)}设置共享属性。
+     * 2.如果方法参数仅限：基本类型 + 包装类型 + String + {@link com.google.protobuf.Message}，则默认会设置为true。
+     * (项目未引入protobuf也是安全的)
+     */
+    boolean sharable() default false;
+
+    /**
      * 自定义扩展数据，通常是json或dson格式。
      * 它的主要作用是配置切面数据，用于拦截器。比如：某些消息只能在玩家在场景的时候处理。
      */

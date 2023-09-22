@@ -41,7 +41,7 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
     private int serviceId;
     private int methodId;
     private List<Object> parameters;
-//    private transient boolean sharable;
+    private transient boolean sharable;
 
     public RpcMethodSpec() {
         // 用于可能的序列化支持
@@ -51,6 +51,13 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.parameters = Objects.requireNonNull(parameters);
+    }
+
+    public RpcMethodSpec(int serviceId, int methodId, List<Object> parameters, boolean sharable) {
+        this.serviceId = serviceId;
+        this.methodId = methodId;
+        this.parameters = parameters;
+        this.sharable = sharable;
     }
 
     public int getServiceId() {
@@ -75,6 +82,15 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
 
     public void setParameters(List<Object> parameters) {
         this.parameters = parameters;
+    }
+
+    public boolean isSharable() {
+        return sharable;
+    }
+
+    public RpcMethodSpec<V> setSharable(boolean sharable) {
+        this.sharable = sharable;
+        return this;
     }
 
     // region 简化生成代码

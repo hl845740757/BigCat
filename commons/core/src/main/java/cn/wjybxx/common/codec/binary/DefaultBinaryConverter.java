@@ -56,6 +56,11 @@ public class DefaultBinaryConverter implements BinaryConverter {
     }
 
     @Override
+    public ConvertOptions options() {
+        return options;
+    }
+
+    @Override
     public void write(Object value, Chunk chunk, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(value);
         final DsonOutput outputStream = DsonOutputs.newInstance(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());

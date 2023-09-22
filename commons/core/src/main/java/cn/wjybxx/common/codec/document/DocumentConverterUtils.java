@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -69,7 +70,13 @@ public class DocumentConverterUtils extends ConverterUtils {
 
                 newCodec(new ObjectArrayCodec()),
                 newCodec(new CollectionCodec<>(Collection.class, null)),
-                newCodec(new MapCodec<>(Map.class, null))
+                newCodec(new MapCodec<>(Map.class, null)),
+
+                // 常用具体类型集合 -- 不含默认解码类型的超类
+                newCodec(new CollectionCodec<>(LinkedList.class, LinkedList::new)),
+                newCodec(new CollectionCodec<>(ArrayDeque.class, ArrayDeque::new)),
+                newCodec(new MapCodec<>(IdentityHashMap.class, IdentityHashMap::new)),
+                newCodec(new MapCodec<>(ConcurrentHashMap.class, ConcurrentHashMap::new))
         );
 
         Map<Class<?>, DocumentPojoCodec<?>> codecMap = DocumentCodecRegistries.newCodecMap(entryList);
@@ -84,9 +91,16 @@ public class DocumentConverterUtils extends ConverterUtils {
                 entryOfClass(String[].class),
                 entryOfClass(short[].class),
                 entryOfClass(char[].class),
+
                 entryOfClass(Object[].class),
                 entryOfClass(Collection.class),
-                entryOfClass(Map.class)
+                entryOfClass(Map.class),
+
+                // 常用具体类型集合
+                entryOfClass(LinkedList.class),
+                entryOfClass(ArrayDeque.class),
+                entryOfClass(IdentityHashMap.class),
+                entryOfClass(ConcurrentHashMap.class)
         );
     }
 

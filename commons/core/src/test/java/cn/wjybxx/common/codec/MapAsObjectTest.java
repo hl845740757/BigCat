@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 测试Map按照Object类型编码
+ *
  * @author wjybxx
  * date - 2023/9/13
  */

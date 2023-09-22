@@ -260,7 +260,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
 
         @Override
         public void hook(Runnable srcEvent, Runnable destEvent, long sequence) {
-            sequencer.signalAllWhenBlocking();
+            sequencer.signalAllWhenBlocking(); // 理论上发布失败的情况下可不调用该方法，不过概率小，优化的意义不大
             if (srcEvent != destEvent) {
                 rejectedExecutionHandler.rejected(srcEvent, DefaultEventLoop.this);
             } else if (sequence == 0 && !inEventLoop()) {

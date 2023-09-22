@@ -26,6 +26,7 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
@@ -48,11 +49,13 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String CNAME_RPC_METHOD = "cn.wjybxx.common.rpc.RpcMethod";
     private static final String PNAME_SERVICE_ID = "serviceId";
     private static final String PNAME_METHOD_ID = "methodId";
+    private static final String PNAME_SHARABLE = "sharable";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.common.rpc.RpcRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.common.rpc.RpcContext";
     private static final String CNAME_REQUEST = "cn.wjybxx.common.rpc.RpcRequest";
+    private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
 
     private static final int MAX_PARAMETER_COUNT = 5;
 
@@ -70,7 +73,12 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     TypeMirror boxedVoidTypeMirror;
     TypeMirror objectTypeMirror;
     TypeMirror stringTypeMirror;
-    List<TypeMirror> futureTypeMirrors;
+    List<TypeMirror> futureTypeMirrors = new ArrayList<>(2);
+
+    /** protobuf的消息类型 -- 该字段可能为null，如果项目未使用protobuf */
+    TypeMirror protobufMessageTypeMirror;
+    /** 不可变类型，不包含基础类型 */
+    Set<TypeMirror> immutableTypeMirrors = new HashSet<>(36);
 
     public RpcServiceProcessor() {
     }
@@ -102,9 +110,21 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         objectTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Object.class).asType();
         stringTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, String.class).asType();
 
-        futureTypeMirrors = new ArrayList<>(2);
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletableFuture.class).asType());
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletionStage.class).asType());
+
+        try {
+            protobufMessageTypeMirror = elementUtils.getTypeElement(CNAME_PROTOBUF_MESSAGE).asType();
+        } catch (Exception ignore) {
+
+        }
+        for (TypeKind typeKind : TypeKind.values()) {
+            if (!typeKind.isPrimitive()) continue;
+            PrimitiveType primitiveType = typeUtils.getPrimitiveType(typeKind);
+            TypeElement typeElement = typeUtils.boxedClass(primitiveType);
+            immutableTypeMirrors.add(typeElement.asType());
+        }
+        immutableTypeMirrors.add(stringTypeMirror);
     }
 
     @Override
@@ -214,6 +234,41 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return (Integer) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
                 .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, PNAME_METHOD_ID))
                 .orElse(null);
+    }
+
+    Boolean isSharable(ExecutableElement method) {
+        Boolean annoValue = (Boolean) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
+                .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, PNAME_SHARABLE))
+                .orElse(Boolean.FALSE);
+        if (annoValue) {
+            return true;
+        }
+        // 如果所有参数都是不可变的，则默认true
+        List<? extends VariableElement> parameters = method.getParameters();
+        for (VariableElement parameter : parameters) {
+            if (isContext(parameter.asType()) || isRequest(parameter.asType())) {
+                continue;
+            }
+            if (!isImmutableType(parameter.asType())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 默认只对基础类型，包装类型，String做自动的判别
+    private boolean isImmutableType(TypeMirror typeMirror) {
+        if (typeMirror.getKind().isPrimitive()) {
+            return true;
+        }
+        if (immutableTypeMirrors.contains(typeMirror)) {
+            return true;
+        }
+        if (protobufMessageTypeMirror != null
+                && AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, protobufMessageTypeMirror)) {
+            return true;
+        }
+        return false;
     }
 
     /**

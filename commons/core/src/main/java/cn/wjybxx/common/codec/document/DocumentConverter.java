@@ -16,12 +16,14 @@
 
 package cn.wjybxx.common.codec.document;
 
+import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.Converter;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
 import cn.wjybxx.dson.DsonArray;
 import cn.wjybxx.dson.DsonObject;
 import cn.wjybxx.dson.DsonValue;
+import cn.wjybxx.dson.text.DsonMode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -51,38 +53,38 @@ public interface DocumentConverter extends Converter {
      * 将一个对象写入源
      * 如果对象的运行时类型和{@link TypeArgInfo#declaredType}一致，则会省去编码结果中的类型信息
      *
-     * @param jsonLike    是否输出为类json模式（无行首）
+     * @param dsonMode    文本模式
      * @param typeArgInfo 对象的类型信息
      */
     @Nonnull
-    String writeAsDson(Object value, boolean jsonLike, TypeArgInfo<?> typeArgInfo);
-
-    /**
-     * 将一个对象写入指定writer
-     *
-     * @param jsonLike    是否输出为类json模式（无行首）
-     * @param typeArgInfo 对象的类型信息
-     * @param writer      用于接收输出
-     */
-    void writeAsDson(Object value, boolean jsonLike, TypeArgInfo<?> typeArgInfo, Writer writer);
+    String writeAsDson(Object value, DsonMode dsonMode, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 从数据源中读取一个对象
      *
      * @param source      数据源
-     * @param jsonLike    是否像json一样没有行首
+     * @param dsonMode    文本模式
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
-    <U> U readFromDson(CharSequence source, boolean jsonLike, TypeArgInfo<U> typeArgInfo);
+    <U> U readFromDson(CharSequence source, DsonMode dsonMode, TypeArgInfo<U> typeArgInfo);
+
+    /**
+     * 将一个对象写入指定writer
+     *
+     * @param dsonMode    文本模式
+     * @param typeArgInfo 对象的类型信息
+     * @param writer      用于接收输出
+     */
+    void writeAsDson(Object value, DsonMode dsonMode, TypeArgInfo<?> typeArgInfo, Writer writer);
 
     /**
      * 从数据源中读取一个对象
      *
      * @param source      用于支持大数据源
-     * @param jsonLike    是否像json一样没有行首
+     * @param dsonMode    文本模式
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
-    <U> U readFromDson(Reader source, boolean jsonLike, TypeArgInfo<U> typeArgInfo);
+    <U> U readFromDson(Reader source, DsonMode dsonMode, TypeArgInfo<U> typeArgInfo);
 
     /**
      * @param value       顶层对象必须的容器对象，Object和数组
@@ -102,27 +104,19 @@ public interface DocumentConverter extends Converter {
     // region 快捷方法
 
     default String writeAsDson(Object value, TypeArgInfo<?> typeArgInfo) {
-        return writeAsDson(value, false, typeArgInfo);
-    }
-
-    default void writeAsDson(Object value, TypeArgInfo<?> typeArgInfo, Writer writer) {
-        writeAsDson(value, false, typeArgInfo, writer);
+        return writeAsDson(value, DsonMode.STANDARD, typeArgInfo);
     }
 
     default <U> U readFromDson(CharSequence source, TypeArgInfo<U> typeArgInfo) {
-        return readFromDson(source, false, typeArgInfo);
-    }
-
-    default <U> U readFromDson(Reader source, TypeArgInfo<U> typeArgInfo) {
-        return readFromDson(source, false, typeArgInfo);
+        return readFromDson(source, DsonMode.STANDARD, typeArgInfo);
     }
 
     default String writeAsDson(Object value) {
-        return writeAsDson(value, false, TypeArgInfo.OBJECT);
+        return writeAsDson(value, DsonMode.STANDARD, TypeArgInfo.OBJECT);
     }
 
     default Object readFromDson(CharSequence source) {
-        return readFromDson(source, false, TypeArgInfo.OBJECT);
+        return readFromDson(source, DsonMode.STANDARD, TypeArgInfo.OBJECT);
     }
 
     // endregion
@@ -130,5 +124,7 @@ public interface DocumentConverter extends Converter {
     DocumentCodecRegistry codecRegistry();
 
     TypeMetaRegistry<String> typeMetaRegistry();
+
+    ConvertOptions options();
 
 }

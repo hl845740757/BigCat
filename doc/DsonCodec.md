@@ -1,4 +1,5 @@
 # Dson序列化
+
 该模块提供了基于Dson的序列化简单实现。
 
 ## Dson与Json、Bson、Protobuf的比较
@@ -77,13 +78,23 @@ Dson有许多强大的特性，你如果只是简单使用Dson，那和普通的
 如果与Dson深度集成，Dson将提供许多强大的功能。
 
 提示：
+
 1. 下面的代码片段来自test目录下的 *CodecBeanExample* 类。
 2. numbers和names字段都是*编译时常量*，编译时将直接内联，因此不会有编解码时的访问开销。
+3. 测试目录下codec包中包含了许多有用的测试用例，建议阅读。
+
+#### 默认值可选写入
+
+对于基础类型 int32,int64,float,double,bool，可以通过 *Options.appendDef* 控制是否写入写入默认值；
+对于引用类型，可以通过 *Options.appendNull* 控制是否写入null值。
+
+如果数据结构中有大量的可选属性（默认值），那么不写入默认只和null可以很好的压缩数据包。
 
 #### 指定数字字段的编码格式
 
 Dson集成了Protobuf的组件，支持数字的*varint、unit、sint、fixed*4种编码格式，你可以简单的通过*FieldImpl*注解声明
 字段的编码格式，而且*修改编码格式不会导致兼容性问题*，eg：
+
 ```
     @FieldImpl(wireType = WireType.UINT)
     public int age;
@@ -92,22 +103,27 @@ Dson集成了Protobuf的组件，支持数字的*varint、unit、sint、fixed*4�
     writer.writeInt(CodecBeanExampleSchema.numbers_age, instance.age, WireType.UINT);
     writer.writeString(CodecBeanExampleSchema.numbers_name, instance.name);
 ```
+
 示例中的int类型的age字段，在编码时将使用uint格式编码。
 
 #### 指定多态字段的实现
 
 以Map的解码为例，一般序列化框架只能反序列化为LinkedHashMap，限制了业务对数据结构的引用；但Dson支持你指定字段的实现类，eg：
+
 ```
     @FieldImpl(EnumMap.class)
     public Map<Sex, String> sex2NameMap3;
 ```
+
 上面的这个Map字段在解码时就会解码为EnumMap。具体类型的集合和Map，通常不需要指定实现类，但也是可以指定的，eg：
+
 ```
     public Int2IntOpenHashMap currencyMap1;
     
     @FieldImpl(Int2IntOpenHashMap.class)
     public Int2IntMap currencyMap2;
 ```
+
 上面的这两个Map字段都会解码为 Int2IntOpenHashMap，编解码代码都是生成的静态代码，看看生成的代码你就很容易明白这是如何实现的。
 
 #### 字段级别的读写代理
@@ -133,8 +149,10 @@ Dson的理念是：**能托管的逻辑就让生成的代码负责，用户只�
         this.custom = reader.readObject(TypeArgInfo.OBJECT);
     }
 ```
+
 我们在类中有一个Object类型的custom字段，并且通过FieldImpl声明了读写代理方法的名字，
 生成的代码就会在编解码custom的时候调用用户的方法，下面是生成的代码节选：
+
 ```
     // 解码方法
     instance.currencyMap1 = reader.readObject(CodecBeanExampleSchema.numbers_currencyMap1, CodecBeanExampleSchema.currencyMap1);
@@ -149,6 +167,7 @@ Dson的理念是：**能托管的逻辑就让生成的代码负责，用户只�
 #### AfterDecode等钩子方法
 
 Dson提供了 *writeObject、readObject、afterDecode、constructor* 4种默认的钩子调用支持。
+
 1. 如果用户定义了包含指定writer的writeObject方法，在编码时将自动调用该方法。
 2. 如果用户定义了包含指定reader的readObject方法，在解码时将自动调用
 3. 如果用户定义了包含指定reader的构造方法，在解码时将自动调用 - 通常用于读取final字段。
@@ -156,6 +175,7 @@ Dson提供了 *writeObject、readObject、afterDecode、constructor* 4种默认�
 
 注意，这里仍然遵从前面的编码指导，你只需要处理特殊的字段，其它字段交给生成的代码处理即可。  
 仍然是上面的类，我们在其中定义了一个afterDecode方法，生成的代码会自动调用该方法，我们可以在该方法中检查数据的状态和初始化缓存字段。
+
 ```
     public void afterDecode() {
         if (age < 1) throw new IllegalStateException();
@@ -186,6 +206,7 @@ Dson除了基本的值类型外，还提供了ExtInt32（带标签的Int32）、
     // 生成的解码代码
     instance.reg = reader.readString(CodecBeanExampleSchema.names_reg);
 ```
+
 仍然是CodecBeanExample中的代码，我们将一个String标记为了正则表达式，序列化时就会序列化为带标签的字符串；
 解码通常不需要特殊处理，因为我们的字段是字符串类型，可以读取ExtString类型。
 

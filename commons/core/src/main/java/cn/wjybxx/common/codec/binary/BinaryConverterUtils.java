@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -52,7 +53,13 @@ public class BinaryConverterUtils extends ConverterUtils {
 
                 newCodec(new ObjectArrayCodec()),
                 newCodec(new CollectionCodec<>(Collection.class, null)),
-                newCodec(new MapCodec<>(Map.class, null))
+                newCodec(new MapCodec<>(Map.class, null)),
+
+                // 常用具体类型集合 -- 不含默认解码类型的超类
+                newCodec(new CollectionCodec<>(LinkedList.class, LinkedList::new)),
+                newCodec(new CollectionCodec<>(ArrayDeque.class, ArrayDeque::new)),
+                newCodec(new MapCodec<>(IdentityHashMap.class, IdentityHashMap::new)),
+                newCodec(new MapCodec<>(ConcurrentHashMap.class, ConcurrentHashMap::new))
         );
 
         Map<Class<?>, BinaryPojoCodec<?>> codecMap = BinaryCodecRegistries.newCodecMap(entryList);
@@ -70,7 +77,14 @@ public class BinaryConverterUtils extends ConverterUtils {
 
                 TypeMeta.of(Object[].class, ClassId.ofDefaultNameSpace(11)),
                 TypeMeta.of(Collection.class, ClassId.ofDefaultNameSpace(12)),
-                TypeMeta.of(Map.class, ClassId.ofDefaultNameSpace(13))
+                TypeMeta.of(Map.class, ClassId.ofDefaultNameSpace(13)),
+
+                // 常用具体类型集合
+                TypeMeta.of(LinkedList.class, ClassId.ofDefaultNameSpace(21)),
+                TypeMeta.of(ArrayDeque.class, ClassId.ofDefaultNameSpace(22)),
+                TypeMeta.of(IdentityHashMap.class, ClassId.ofDefaultNameSpace(23)),
+                TypeMeta.of(ConcurrentHashMap.class, ClassId.ofDefaultNameSpace(24))
+
         );
     }
 

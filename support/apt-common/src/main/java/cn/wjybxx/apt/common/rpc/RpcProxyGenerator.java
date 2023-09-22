@@ -104,7 +104,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
 
         if (parameters.size() == 0) {
             // 无参时，使用 List.of();
-            builder.addStatement("return new $T<>($L, $L, $T.of())",
+            builder.addStatement("return new $T<>($L, $L, $T.of(), true)",
                     processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method),
                     AptUtils.CLASS_NAME_LIST);
@@ -115,9 +115,9 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
             for (ParameterSpec parameterSpec : parameters) {
                 builder.addStatement("_parameters.add($L)", parameterSpec.name);
             }
-            builder.addStatement("return new $T<>($L, $L, _parameters)",
+            builder.addStatement("return new $T<>($L, $L, _parameters, $L)",
                     processor.methodSpecRawTypeName,
-                    serviceId, processor.getMethodId(method));
+                    serviceId, processor.getMethodId(method), processor.isSharable(method));
         }
 
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有

@@ -24,6 +24,7 @@ import cn.wjybxx.common.codec.document.DefaultDocumentConverter;
 import cn.wjybxx.common.codec.document.DocumentConverter;
 import cn.wjybxx.common.config.Sheet;
 import cn.wjybxx.common.config.SheetCodec;
+import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -46,17 +47,15 @@ public class ReadExcelTest {
         Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(projectRootDir.getPath() + "\\doc\\test.xlsx"));
         Sheet skillSheet = sheetMap.get("Skill");
 
-        ConvertOptions options = ConvertOptions.newBuilder()
-                .setTextWriterSettings(DsonTextWriterSettings.JSON_DEFAULT)
-                .build();
+        ConvertOptions options = ConvertOptions.newBuilder().build();
         DocumentConverter converter = DefaultDocumentConverter.newInstance(
                 List.of(new SheetCodec()),
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, "Sheet")),
                 options);
 
-        String dson = converter.writeAsDson(skillSheet);
+        String dson = converter.writeAsDson(skillSheet, DsonMode.RELAXED, TypeArgInfo.OBJECT);
 //        System.out.println(dson);
-        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, true, TypeArgInfo.of(Sheet.class)));
+        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, DsonMode.RELAXED, TypeArgInfo.of(Sheet.class)));
 
         Sheet clonedObject = converter.cloneObject(skillSheet, TypeArgInfo.of(Sheet.class));
         Assertions.assertEquals(skillSheet, clonedObject);

@@ -18,6 +18,7 @@ package cn.wjybxx.common.codec;
 
 import cn.wjybxx.common.OptionalBool;
 import cn.wjybxx.common.codec.document.codecs.MapCodec;
+import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
 
 import javax.annotation.concurrent.Immutable;
@@ -93,11 +94,11 @@ public class ConvertOptions {
         this.textWriterSettings = Objects.requireNonNull(builder.textWriterSettings);
         this.jsonWriterSettings = Objects.requireNonNull(builder.jsonWriterSettings);
 
-        if (textWriterSettings.jsonLike) {
-            throw new IllegalArgumentException("textWriterSettings.jsonLike must be false");
+        if (textWriterSettings.dsonMode != DsonMode.STANDARD) {
+            throw new IllegalArgumentException("textWriterSettings.dsonMode must be STANDARD");
         }
-        if (!jsonWriterSettings.jsonLike) {
-            throw new IllegalArgumentException("jsonWriterSetting.jsonLike must be true");
+        if (jsonWriterSettings.dsonMode != DsonMode.RELAXED) {
+            throw new IllegalArgumentException("jsonWriterSetting.dsonMode must be RELAXED");
         }
     }
 
@@ -121,7 +122,7 @@ public class ConvertOptions {
         private BufferPool bufferPool = LocalPools.BUFFER_POOL;
         private StringBuilderPool stringBuilderPool = LocalPools.STRING_BUILDER_POOL;
         private DsonTextWriterSettings textWriterSettings = DsonTextWriterSettings.DEFAULT;
-        private DsonTextWriterSettings jsonWriterSettings = DsonTextWriterSettings.JSON_DEFAULT;
+        private DsonTextWriterSettings jsonWriterSettings = DsonTextWriterSettings.RELAXED_DEFAULT;
 
         public int getRecursionLimit() {
             return recursionLimit;

@@ -86,6 +86,15 @@ public class RpcServiceExample implements ExtensibleService {
 
     }
 
+    /** 测试参数带泛型 */
+    @RpcMethod(methodId = 11)
+    public Long box_add(Integer a, Long b) {
+        if (a == null && b == null) return null;
+        if (a == null) a = 0;
+        if (b == null) b = 0L;
+        return a.longValue() + b;
+    }
+
     // 测试从接口继承的方法
     private final Map<String, Object> extBlackboard = new HashMap<>();
 

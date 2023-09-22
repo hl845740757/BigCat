@@ -62,6 +62,22 @@ public class DefaultRpcRegistry implements RpcRegistry {
     }
 
     @Override
+    public boolean hasProxy(int serviceId, int methodId) {
+        final int methodKey = calMethodKey(serviceId, methodId);
+        return proxyMap.containsKey(methodKey);
+    }
+
+    @Override
+    public void setDefaultProxy(RpcMethodProxy defaultProxy) {
+        proxyMap.defaultReturnValue(defaultProxy);
+    }
+
+    @Override
+    public RpcMethodProxy getDefaultProxy() {
+        return proxyMap.defaultReturnValue();
+    }
+
+    @Override
     public IntSet export() {
         IntOpenHashSet result = new IntOpenHashSet(10);
         proxyMap.keySet().intStream()

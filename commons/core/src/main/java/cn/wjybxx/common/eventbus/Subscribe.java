@@ -17,7 +17,6 @@
 package cn.wjybxx.common.eventbus;
 
 
-import cn.wjybxx.common.annotation.AutoFields;
 import cn.wjybxx.common.annotation.StableName;
 
 import java.lang.annotation.ElementType;
@@ -85,9 +84,12 @@ public @interface Subscribe {
      * <h3>作用</h3>
      * 1.在声明了该属性时，{@link #childKeys()}表示为该类型里的静态常量字段，表示事件的子键为{@code ChildDeclared.xxx}。
      * 2.在没有声明该属性时，{@link #childKeys()}表示使用普通字符串作为子键。
+     *
      * <h3>建议：</h3>
-     * 1.当用于枚举和常量类时，可以使用{@link AutoFields}生成对应的常量字符串。
-     * 2.建议都声明该属性，可以保持很好的可读性和扩展性 -- 通过访问类常量的方式支持任意类型的子键（int,string,enum...）。
+     * 建议都声明该属性，声明该属性有以下好处：
+     * 1.通过访问类常量的方式支持任意类型的子键（int,string,enum...）。
+     * 2.{@link #childKeys()}拼写错误会导致编译错误。
+     * 3.可以保持很好的可读性和扩展性
      */
     Class<?> childDeclared() default Object.class;
 

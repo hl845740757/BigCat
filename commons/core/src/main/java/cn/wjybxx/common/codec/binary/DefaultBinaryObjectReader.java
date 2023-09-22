@@ -24,6 +24,8 @@ import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -276,7 +278,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
         ClassId classId = readClassId(dsonType);
-        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+        BinaryPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, dsonType, classId);
         if (codec == null) {
             throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
         }
@@ -335,13 +337,20 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, ClassId classId) {
+    private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DsonType dsonType, ClassId classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
         if (!classId.isObjectClassId()) {
             TypeMeta<ClassId> typeMeta = converter.typeMetaRegistry.ofId(classId);
             if (typeMeta != null && declaredType.isAssignableFrom(typeMeta.clazz)) {
                 // 尝试按真实类型读
                 return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(typeMeta.clazz);
+            }
+        }
+        if (declaredType == Object.class) {
+            if (dsonType == DsonType.ARRAY) {
+                return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(List.class);
+            } else {
+                return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(Map.class);
             }
         }
         // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)

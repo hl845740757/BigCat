@@ -18,6 +18,7 @@ package cn.wjybxx.common.config;
 
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.DsonCharStream;
+import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.DsonTextReader;
 import cn.wjybxx.dson.text.DsonTexts;
 import org.apache.commons.lang3.StringUtils;
@@ -156,7 +157,7 @@ public class DefaultValueParser implements ValueParser {
 
         if (getArrayDimensional(typeToken) == 1) {
             List<String> elements = new ArrayList<>(10);
-            try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, true))) {
+            try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, DsonMode.RELAXED))) {
                 if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
                 readOneDimensionArray(reader, elements);
                 if (reader.readDsonType() != DsonType.END_OF_OBJECT) throw new IllegalArgumentException(value);
@@ -166,7 +167,7 @@ public class DefaultValueParser implements ValueParser {
         } else {
             // 读取为二维list
             List<List<String>> twoDimensionElements = new ArrayList<>(4);
-            try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, true))) {
+            try (DsonTextReader reader = new DsonTextReader(16, DsonCharStream.newCharStream(value, DsonMode.RELAXED))) {
                 if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
                 readTwoDimensionArray(reader, twoDimensionElements);
                 if (reader.readDsonType() != DsonType.END_OF_OBJECT) throw new IllegalArgumentException(value);

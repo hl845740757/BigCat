@@ -50,6 +50,16 @@ public interface RpcRegistry {
     RpcMethodProxy getProxy(int serviceId, int methodId);
 
     /**
+     * 由于{@link #getProxy(int, int)}可能返回默认的proxy，因此不能根据是否为null判断是否存在服务
+     */
+    boolean hasProxy(int serviceId, int methodId);
+
+    /** 设置默认的proxy */
+    void setDefaultProxy(RpcMethodProxy defaultProxy);
+
+    RpcMethodProxy getDefaultProxy();
+
+    /**
      * 导出注册表中包含的服务
      *
      * @return 注册的所有服务的id

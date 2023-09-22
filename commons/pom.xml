@@ -69,7 +69,7 @@
 
         <annotations.version>1.0-SNAPSHOT</annotations.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
-        <dson.version>1.0.5</dson.version>
+        <dson.version>1.0.6</dson.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>

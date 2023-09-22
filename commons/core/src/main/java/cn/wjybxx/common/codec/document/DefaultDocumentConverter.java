@@ -22,10 +22,7 @@ import cn.wjybxx.common.codec.TypeMetaRegistries;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
 import cn.wjybxx.dson.*;
 import cn.wjybxx.dson.io.*;
-import cn.wjybxx.dson.text.DsonTextReader;
-import cn.wjybxx.dson.text.DsonTextWriter;
-import cn.wjybxx.dson.text.DsonTextWriterSettings;
-import cn.wjybxx.dson.text.ObjectStyle;
+import cn.wjybxx.dson.text.*;
 import org.apache.commons.io.output.StringBuilderWriter;
 
 import javax.annotation.Nonnull;
@@ -62,6 +59,11 @@ public class DefaultDocumentConverter implements DocumentConverter {
     @Override
     public TypeMetaRegistry<String> typeMetaRegistry() {
         return typeMetaRegistry;
+    }
+
+    @Override
+    public ConvertOptions options() {
+        return options;
     }
 
     @Override
@@ -137,10 +139,10 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     @Nonnull
     @Override
-    public String writeAsDson(Object value, boolean jsonLike, @Nonnull TypeArgInfo<?> typeArgInfo) {
+    public String writeAsDson(Object value, DsonMode dsonMode, @Nonnull TypeArgInfo<?> typeArgInfo) {
         StringBuilder stringBuilder = options.stringBuilderPool.alloc();
         try {
-            writeAsDson(value, jsonLike, typeArgInfo, new StringBuilderWriter(stringBuilder));
+            writeAsDson(value, dsonMode, typeArgInfo, new StringBuilderWriter(stringBuilder));
             return stringBuilder.toString();
         } finally {
             options.stringBuilderPool.release(stringBuilder);
@@ -148,27 +150,27 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     @Override
-    public void writeAsDson(Object value, boolean jsonLike, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer) {
-        Objects.requireNonNull(writer, "writer");
-        DsonTextWriterSettings writerSettings = jsonLike ? options.jsonWriterSettings : options.textWriterSettings;
-        try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DsonTextWriter(options.recursionLimit, writer, writerSettings))) {
-            wrapper.writeObject(value, typeArgInfo, null);
-            wrapper.flush();
-        }
-    }
-
-    @Override
-    public <U> U readFromDson(CharSequence source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, jsonLike));
+    public <U> U readFromDson(CharSequence source, DsonMode dsonMode, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, dsonMode));
              DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
             return wrapper.readObject(typeArgInfo);
         }
     }
 
     @Override
-    public <U> U readFromDson(Reader source, boolean jsonLike, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, 256, jsonLike));
+    public void writeAsDson(Object value, DsonMode dsonMode, @Nonnull TypeArgInfo<?> typeArgInfo, Writer writer) {
+        Objects.requireNonNull(writer, "writer");
+        DsonTextWriterSettings writerSettings = dsonMode == DsonMode.RELAXED ? options.jsonWriterSettings : options.textWriterSettings;
+        try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
+                new DsonTextWriter(options.recursionLimit, writerSettings, writer))) {
+            wrapper.writeObject(value, typeArgInfo, null);
+            wrapper.flush();
+        }
+    }
+
+    @Override
+    public <U> U readFromDson(Reader source, DsonMode dsonMode, @Nonnull TypeArgInfo<U> typeArgInfo) {
+        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, dsonMode, 256, true));
              DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
             return wrapper.readObject(typeArgInfo);
         }

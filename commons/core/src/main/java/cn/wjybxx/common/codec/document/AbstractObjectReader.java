@@ -25,6 +25,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -257,7 +259,7 @@ abstract class AbstractObjectReader implements DocumentObjectReader {
 
     private <T> T readContainer(TypeArgInfo<T> typeArgInfo, DsonType dsonType) {
         String classId = readClassId(dsonType);
-        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, classId);
+        DocumentPojoCodec<? extends T> codec = findObjectDecoder(typeArgInfo, dsonType, classId);
         if (codec == null) {
             throw DsonCodecException.incompatible(typeArgInfo.declaredType, classId);
         }
@@ -315,13 +317,20 @@ abstract class AbstractObjectReader implements DocumentObjectReader {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, String classId) {
+    private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DsonType dsonType, String classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
         if (!StringUtils.isBlank(classId)) {
             TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofId(classId);
             if (typeMeta != null && declaredType.isAssignableFrom(typeMeta.clazz)) {
                 // 尝试按真实类型读
                 return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(typeMeta.clazz);
+            }
+        }
+        if (declaredType == Object.class) {
+            if (dsonType == DsonType.ARRAY) {
+                return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(List.class);
+            } else {
+                return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(Map.class);
             }
         }
         // 尝试按照声明类型读 - 读的时候两者可能是无继承关系的(投影)
