@@ -69,7 +69,7 @@ public class BinaryPojoCodec<T> {
      * 将对象写入输出流。
      * 将对象及其所有超类定义的所有要序列化的字段写入输出流。
      */
-    public void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
         if (codecImpl.autoStartEnd()) {
             if (isArray) {
                 writer.writeStartArray(instance, typeArgInfo);

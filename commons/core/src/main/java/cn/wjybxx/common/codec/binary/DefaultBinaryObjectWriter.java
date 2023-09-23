@@ -77,35 +77,35 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
 
     @Override
     public void writeInt(int name, int value, WireType wireType) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeInt32(name, value, wireType);
         }
     }
 
     @Override
     public void writeLong(int name, long value, WireType wireType) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeInt64(name, value, wireType);
         }
     }
 
     @Override
     public void writeFloat(int name, float value) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeFloat(name, value);
         }
     }
 
     @Override
     public void writeDouble(int name, double value) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeDouble(name, value);
         }
     }
 
     @Override
     public void writeBoolean(int name, boolean value) {
-        if (value || (!writer.isAtName() || options().appendDef)) {
+        if (value || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeBoolean(name, value);
         }
     }
@@ -212,7 +212,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (codec == null) {
             throw DsonCodecException.unsupportedType(value.getClass());
         }
-        codec.writeObject(value, this, typeArgInfo);
+        codec.writeObject(this, value, typeArgInfo);
     }
 
     @Override
@@ -226,7 +226,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         BinaryPojoCodec<? super T> codec = findObjectEncoder(value);
         if (codec != null) {
             writer.writeName(name);
-            codec.writeObject(value, this, typeArgInfo);
+            codec.writeObject(this, value, typeArgInfo);
             return;
         }
 

@@ -363,8 +363,10 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         } else {
             sequence = ringBuffer.next(size);
         }
-        if (isShuttingDown()) { // sequence不一定有效了
-            ringBuffer.publish(sequence);
+        if (isShuttingDown()) {
+            // sequence不一定有效了，申请的全部序号都要发布
+            long lo = sequence - (size - 1);
+            ringBuffer.publish(lo, sequence);
             return -1;
         }
         return sequence;

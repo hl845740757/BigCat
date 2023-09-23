@@ -17,6 +17,7 @@
 package cn.wjybxx.common.codec;
 
 import cn.wjybxx.common.OptionalBool;
+import cn.wjybxx.common.codec.binary.BinaryConverter;
 import cn.wjybxx.common.codec.document.codecs.MapCodec;
 import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
@@ -38,15 +39,16 @@ public class ConvertOptions {
 
     /**
      * 是否写入对象基础类型字段的默认值
-     * 1.数值类型默认值为0
-     * 2.bool类型默认值为false
+     * 1.数值类型默认值为0，bool类型默认值为false
+     * 2.只在Object上下文生效
      * <p>
      * 基础值类型需要单独控制，因为有时候我们仅想不输出null，但要输出基础类型字段的默认值 -- 通常是在文本模式下。
+     * 强烈建议在{@link BinaryConverter}下不写入默认值和null
      */
     public final boolean appendDef;
     /**
      * 是否写入对象内的null值
-     * 1.只在文档编解码中生效
+     * 1.只在Object上下文生效
      * 2.对于一般的对象可不写入，因为ObjectReader是支持随机读的
      */
     public final boolean appendNull;
@@ -83,8 +85,8 @@ public class ConvertOptions {
         this.recursionLimit = builder.recursionLimit;
         this.classIdPolicy = builder.classIdPolicy;
 
-        this.appendDef = builder.appendDef.orElse(false);
-        this.appendNull = builder.appendNull.orElse(false);
+        this.appendDef = builder.appendDef.orElse(true);
+        this.appendNull = builder.appendNull.orElse(true);
         this.encodeMapAsObject = builder.encodeMapAsObject.orElse(false);
 
         this.pbBinaryType = builder.pbBinaryType;
@@ -114,7 +116,7 @@ public class ConvertOptions {
         private int recursionLimit = 32;
 
         private OptionalBool appendDef = OptionalBool.TRUE;
-        private OptionalBool appendNull = OptionalBool.FALSE;
+        private OptionalBool appendNull = OptionalBool.TRUE;
         private OptionalBool encodeMapAsObject = OptionalBool.FALSE;
 
         private int pbBinaryType = 127;

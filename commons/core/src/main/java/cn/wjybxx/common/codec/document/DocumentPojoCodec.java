@@ -69,7 +69,7 @@ public class DocumentPojoCodec<T> {
      * 将对象写入输出流。
      * 将对象及其所有超类定义的所有要序列化的字段写入输出流。
      */
-    public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         if (codecImpl.autoStartEnd()) {
             if (isArray) {
                 writer.writeStartArray(instance, typeArgInfo, style);

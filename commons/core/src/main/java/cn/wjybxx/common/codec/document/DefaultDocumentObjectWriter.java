@@ -46,21 +46,6 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         this.writer = writer;
     }
 
-    @Override
-    public String encodeKey(Object key) {
-        Objects.requireNonNull(key);
-        if (key instanceof String str) {
-            return str;
-        }
-        if ((key instanceof Integer) || (key instanceof Long)) {
-            return key.toString();
-        }
-        if (!(key instanceof EnumLite enumLite)) {
-            throw DsonCodecException.unsupportedType(key.getClass());
-        }
-        return Integer.toString(enumLite.getNumber());
-    }
-
     // region 代理
     @Override
     public void flush() {
@@ -93,41 +78,56 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         Objects.requireNonNull(data);
         writer.writeValueBytes(name, dsonType, data);
     }
+
+    @Override
+    public String encodeKey(Object key) {
+        Objects.requireNonNull(key);
+        if (key instanceof String str) {
+            return str;
+        }
+        if ((key instanceof Integer) || (key instanceof Long)) {
+            return key.toString();
+        }
+        if (!(key instanceof EnumLite enumLite)) {
+            throw DsonCodecException.unsupportedType(key.getClass());
+        }
+        return Integer.toString(enumLite.getNumber());
+    }
     // endregion
 
     // region 简单值
 
     @Override
     public void writeInt(String name, int value, WireType wireType, INumberStyle style) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeInt32(name, value, wireType, style);
         }
     }
 
     @Override
     public void writeLong(String name, long value, WireType wireType, INumberStyle style) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeInt64(name, value, wireType, style);
         }
     }
 
     @Override
     public void writeFloat(String name, float value, INumberStyle style) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeFloat(name, value, style);
         }
     }
 
     @Override
     public void writeDouble(String name, double value, INumberStyle style) {
-        if (value != 0 || (!writer.isAtName() || options().appendDef)) {
+        if (value != 0 || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeDouble(name, value, style);
         }
     }
 
     @Override
     public void writeBoolean(String name, boolean value) {
-        if (value || (!writer.isAtName() || options().appendDef)) {
+        if (value || (!writer.isAtName() || converter.options.appendDef)) {
             writer.writeBoolean(name, value);
         }
     }
@@ -144,7 +144,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     @Override
     public void writeNull(String name) {
         // 用户已写入name或convert开启了null写入
-        if (!writer.isAtName() || converter.options.appendNull) {
+        if (!writer.isAtName() || options().appendNull) {
             writer.writeNull(name);
         }
     }
@@ -252,7 +252,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (codec == null) {
             throw DsonCodecException.unsupportedType(value.getClass());
         }
-        codec.writeObject(value, this, typeArgInfo, findObjectStyle(value, typeArgInfo, style));
+        codec.writeObject(this, value, typeArgInfo, findObjectStyle(value, typeArgInfo, style));
     }
 
     @Override
@@ -266,7 +266,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         DocumentPojoCodec<? super T> codec = findObjectEncoder(value);
         if (codec != null) {
             writer.writeName(name);
-            codec.writeObject(value, this, typeArgInfo, findObjectStyle(value, typeArgInfo, style));
+            codec.writeObject(this, value, typeArgInfo, findObjectStyle(value, typeArgInfo, style));
             return;
         }
 
