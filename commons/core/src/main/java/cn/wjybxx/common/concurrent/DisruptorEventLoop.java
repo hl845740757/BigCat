@@ -525,12 +525,12 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                 }
             } catch (Throwable e) {
                 logger.error("thread exit due to exception!", e);
+                if (!runningFuture.isDone()) { // 启动失败
+                    FutureUtils.completeTerminationFuture(runningFuture, e);
+                }
             } finally {
                 // 如果是非正常退出，需要切换到正在关闭状态 - 告知其它线程，已经开始关闭
                 advanceRunState(ST_SHUTTING_DOWN);
-                if (!runningFuture.isDone()) { // 启动失败
-                    FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException("StartFailed"));
-                }
                 if (!runningFuture.isSucceeded()) {
                     advanceRunState(ST_SHUTDOWN); // 启动失败直接进入清理状态，丢弃所有提交的任务
                 }

@@ -77,6 +77,10 @@ public class CodecBeanExample {
     @FieldImpl(writeProxy = "writeCustom", readProxy = "readCustom")
     public Object custom;
 
+    // 测试非标准的getter/seter
+    private boolean boolValue;
+    private String sV;
+
     public CodecBeanExample() {
     }
 
@@ -100,6 +104,28 @@ public class CodecBeanExample {
     public void afterDecode() {
         if (age < 1) throw new IllegalStateException();
     }
+
+    // REGION 非标准getter/setter
+
+    /** 标准getter为:{@code isBoolValue} */
+    public boolean getBoolValue() {
+        return boolValue;
+    }
+
+    public void setBoolValue(boolean boolValue) {
+        this.boolValue = boolValue;
+    }
+
+    /** 标准getter为：{@code getsV} */
+    public String getSV() {
+        return sV;
+    }
+
+    /** 标准setter为：{@code setsV} */
+    public void setSV(String sV) {
+        this.sV = sV;
+    }
+    // ENDREGION
 
     //
     @BinarySerializable

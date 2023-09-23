@@ -16,8 +16,6 @@
 
 package cn.wjybxx.apt;
 
-import com.squareup.javapoet.TypeName;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.lang.model.element.*;
@@ -115,30 +113,58 @@ public class BeanUtils {
      * 是否包含非private的setter方法
      */
     public static boolean containsNotPrivateSetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
-        final String fieldName = variableElement.getSimpleName().toString();
-        final String setterMethodName = BeanUtils.setterMethodName(fieldName, AptUtils.isPrimitiveBoolean(variableElement.asType()));
-        return allFieldsAndMethodWithInherit.stream()
-                .filter(e -> !e.getModifiers().contains(Modifier.PRIVATE))
-                .filter(e -> e.getKind() == ElementKind.METHOD)
-                .map(e -> (ExecutableElement) e)
-                .filter(e -> e.getParameters().size() == 1)
-                .filter(e -> e.getSimpleName().toString().equals(setterMethodName))
-                .anyMatch(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), variableElement.asType()));
+        return findNotPrivateSetter(typeUtils, variableElement, allFieldsAndMethodWithInherit) != null;
     }
 
     /**
      * 是否包含非private的getter方法
      */
     public static boolean containsNotPrivateGetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+        return findNotPrivateGetter(typeUtils, variableElement, allFieldsAndMethodWithInherit) != null;
+    }
+
+    /**
+     * 该方法会查询标准的setter命名，同时会查询{@code set + firstCharToUpperCase(fieldName)}格式的命名
+     */
+    public static ExecutableElement findNotPrivateSetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+        final String fieldName = variableElement.getSimpleName().toString();
+        final String setterMethodName = BeanUtils.setterMethodName(fieldName, AptUtils.isPrimitiveBoolean(variableElement.asType()));
+        final String setterMethodName2 = "set" + BeanUtils.firstCharToUpperCase(fieldName);
+        return allFieldsAndMethodWithInherit.stream()
+                .filter(e -> !e.getModifiers().contains(Modifier.PRIVATE))
+                .filter(e -> e.getKind() == ElementKind.METHOD)
+                .map(e -> (ExecutableElement) e)
+                .filter(e -> e.getParameters().size() == 1)
+                .filter(e -> {
+                    String mName = e.getSimpleName().toString();
+                    return mName.equals(setterMethodName) || mName.equals(setterMethodName2);
+                })
+                .findFirst()
+                .orElse(null);
+        // 我们去掉了参数类型测试，用户不应该出现setter同名却干别的事情的方法
+        //    .anyMatch(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), variableElement.asType()));
+    }
+
+    /**
+     * 该方法会查询标准的getter命名，同时会查询{@code get + firstCharToUpperCase(fieldName)}格式的命名
+     */
+    public static ExecutableElement findNotPrivateGetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
         final String fieldName = variableElement.getSimpleName().toString();
         final String getterMethodName = BeanUtils.getterMethodName(fieldName, AptUtils.isPrimitiveBoolean(variableElement.asType()));
+        final String getterMethodName2 = "get" + BeanUtils.firstCharToUpperCase(fieldName);
         return allFieldsAndMethodWithInherit.stream()
                 .filter(e -> !e.getModifiers().contains(Modifier.PRIVATE))
                 .filter(e -> e.getKind() == ElementKind.METHOD)
                 .map(e -> (ExecutableElement) e)
                 .filter(e -> e.getParameters().size() == 0)
-                .filter(e -> e.getSimpleName().toString().equals(getterMethodName))
-                .anyMatch(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getReturnType(), variableElement.asType()));
+                .filter(e -> {
+                    String mName = e.getSimpleName().toString();
+                    return mName.equals(getterMethodName) || mName.equals(getterMethodName2);
+                })
+                .findFirst()
+                .orElse(null);
+        // 我们去掉了参数类型测试，用户不应该出现getter同名却干别的事情的方法
+        //       .anyMatch(e -> AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, e.getReturnType(), variableElement.asType()));
     }
 
     /**
@@ -170,7 +196,7 @@ public class BeanUtils {
     }
 
     /**
-     * 获取getter方法的名字
+     * 获取标准getter方法的名字
      *
      * @param filedName          字段名字
      * @param isPrimitiveBoolean 是否是bool值 - 坑太多了，只有基本类型的boolean才会变成is，包装类型的不会
@@ -200,7 +226,7 @@ public class BeanUtils {
     }
 
     /**
-     * 获取setter方法的名字
+     * 获取标准setter方法的名字
      *
      * @param filedName 字段名字
      * @return 方法名
@@ -222,16 +248,6 @@ public class BeanUtils {
         } else {
             return "set" + firstCharToUpperCase(filedName);
         }
-    }
-
-    /**
-     * 是否是基本类型的boolean
-     *
-     * @param typeName 类型描述名
-     * @return 如果boolean类型或Boolean则返回true
-     */
-    public static boolean isPrimitiveBoolean(TypeName typeName) {
-        return typeName == TypeName.BOOLEAN;
     }
 
     /**

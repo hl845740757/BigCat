@@ -66,6 +66,36 @@ public class AptUtils {
     public static final ClassName CLASS_NAME_LINKED_HASH_MAP = ClassName.get(LinkedHashMap.class);
     public static final ClassName CLASS_NAME_LINKED_HASH_SET = ClassName.get(LinkedHashSet.class);
 
+    public static final Map<String, TypeName> primitiveTypeNameMap;
+    public static final Map<String, TypeName> boxedTypeNameMap;
+
+    static {
+        {
+            Map<String, TypeName> tempMap = new LinkedHashMap<>(16);
+            tempMap.put("int", TypeName.INT);
+            tempMap.put("long", TypeName.LONG);
+            tempMap.put("float", TypeName.FLOAT);
+            tempMap.put("double", TypeName.DOUBLE);
+            tempMap.put("boolean", TypeName.BOOLEAN);
+            tempMap.put("short", TypeName.SHORT);
+            tempMap.put("byte", TypeName.BYTE);
+            tempMap.put("char", TypeName.CHAR);
+            primitiveTypeNameMap = Collections.unmodifiableMap(tempMap);
+        }
+        {
+            Map<String, TypeName> tempMap = new LinkedHashMap<>(16);
+            tempMap.put("Integer", TypeName.INT.box());
+            tempMap.put("Long", TypeName.LONG.box());
+            tempMap.put("Float", TypeName.FLOAT.box());
+            tempMap.put("Double", TypeName.DOUBLE.box());
+            tempMap.put("Boolean", TypeName.BOOLEAN.box());
+            tempMap.put("Short", TypeName.SHORT.box());
+            tempMap.put("Byte", TypeName.BYTE.box());
+            tempMap.put("Character", TypeName.CHAR.box());
+            boxedTypeNameMap = Collections.unmodifiableMap(tempMap);
+        }
+    }
+
     private AptUtils() {
 
     }
@@ -128,6 +158,14 @@ public class AptUtils {
     public static ClassName classNameOfCanonicalName(String cname) {
         int index = cname.lastIndexOf('.');
         return ClassName.get(cname.substring(0, index), cname.substring(index + 1));
+    }
+
+    /** 查询给定TypeName是否是包装类型 -- 比使用equals快 */
+    public static boolean isBoxedType(TypeName typeName) {
+        for (TypeName value : boxedTypeNameMap.values()) {
+            if (value == typeName) return true;
+        }
+        return false;
     }
 
     // ----------------------------------------------------- 分割线 -----------------------------------------------
@@ -393,7 +431,7 @@ public class AptUtils {
 
     /** 将注解属性转换为 name -> AnnotationValue 的Map */
     public static Map<String, AnnotationValue> getAnnotationValuesMap(AnnotationMirror annotationMirror) {
-        final HashMap<String, AnnotationValue> r = new HashMap<>();
+        final Map<String, AnnotationValue> r = new LinkedHashMap<>();
         for (var entry : annotationMirror.getElementValues().entrySet()) {
             final String name = entry.getKey().getSimpleName().toString();
             final AnnotationValue value = entry.getValue();
@@ -451,10 +489,6 @@ public class AptUtils {
                 return null;
             }
         }, null);
-    }
-
-    public static DeclaredType getRawDeclaredType(Types tpeUtils, Elements elementUtils, Class<?> clazz) {
-        return (DeclaredType) tpeUtils.erasure(elementUtils.getTypeElement(clazz.getCanonicalName()).asType());
     }
 
     public static TypeElement getTypeElementOfClass(Elements elementUtils, Class<?> clazz) {
@@ -586,7 +620,7 @@ public class AptUtils {
     /**
      * 获取一个类或接口所属的包名
      */
-    private static String getPackageName(TypeElement typeElement, Elements elementUtils) {
+    public static String getPackageName(TypeElement typeElement, Elements elementUtils) {
         return elementUtils.getPackageOf(typeElement).getQualifiedName().toString();
     }
 

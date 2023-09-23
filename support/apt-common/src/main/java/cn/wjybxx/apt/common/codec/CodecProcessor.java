@@ -217,7 +217,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
                 // 工具写：需要提供可直接取值或包含非private的getter方法
                 if (AptUtils.isBlank(aptFieldImpl.getter)
                         && !canGetDirectly(variableElement, typeElement)
-                        && !containsNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit)) {
+                        && findNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit) == null) {
                     messager.printMessage(Diagnostic.Kind.ERROR,
                             String.format("serializable field (%s) must contains a not private getter or canGetDirectly", variableElement.getSimpleName()),
                             typeElement); // 可能无法定位到超类字段，因此打印到Type
@@ -231,7 +231,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
                 // 工具读：需要提供可直接赋值或非private的setter方法
                 if (AptUtils.isBlank(aptFieldImpl.setter) &&
                         !canSetDirectly(variableElement, typeElement)
-                        && !containsNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit)) {
+                        && findNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit) == null) {
                     messager.printMessage(Diagnostic.Kind.ERROR,
                             String.format("serializable field (%s) must contains a not private setter or canSetDirectly", variableElement.getSimpleName()),
                             typeElement);
@@ -358,21 +358,21 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     /**
-     * 是否包含非private的getter方法
+     * 查找非private的getter方法
      *
      * @param allFieldsAndMethodWithInherit 所有的字段和方法，可能在父类中
      */
-    public boolean containsNotPrivateGetter(final VariableElement variableElement, final List<? extends Element> allFieldsAndMethodWithInherit) {
-        return BeanUtils.containsNotPrivateGetter(typeUtils, variableElement, allFieldsAndMethodWithInherit);
+    public ExecutableElement findNotPrivateGetter(final VariableElement variableElement, final List<? extends Element> allFieldsAndMethodWithInherit) {
+        return BeanUtils.findNotPrivateGetter(typeUtils, variableElement, allFieldsAndMethodWithInherit);
     }
 
     /**
-     * 是否包含非private的setter方法
+     * 查找非private的setter方法
      *
      * @param allFieldsAndMethodWithInherit 所有的字段和方法，可能在父类中
      */
-    public boolean containsNotPrivateSetter(final VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
-        return BeanUtils.containsNotPrivateSetter(typeUtils, variableElement, allFieldsAndMethodWithInherit);
+    public ExecutableElement findNotPrivateSetter(final VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+        return BeanUtils.findNotPrivateSetter(typeUtils, variableElement, allFieldsAndMethodWithInherit);
     }
 
     /**
