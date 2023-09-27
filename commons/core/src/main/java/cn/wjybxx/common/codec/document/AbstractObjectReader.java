@@ -320,7 +320,7 @@ abstract class AbstractObjectReader implements DocumentObjectReader {
     private <T> DocumentPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DsonType dsonType, String classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
         if (!StringUtils.isBlank(classId)) {
-            TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofId(classId);
+            TypeMeta typeMeta = converter.typeMetaRegistry.ofName(classId);
             if (typeMeta != null && declaredType.isAssignableFrom(typeMeta.clazz)) {
                 // 尝试按真实类型读
                 return (DocumentPojoCodec<? extends T>) converter.codecRegistry.get(typeMeta.clazz);

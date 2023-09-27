@@ -39,11 +39,11 @@ import java.util.Objects;
  */
 public class DefaultDocumentConverter implements DocumentConverter {
 
-    final TypeMetaRegistry<String> typeMetaRegistry;
+    final TypeMetaRegistry typeMetaRegistry;
     final DocumentCodecRegistry codecRegistry;
     final ConvertOptions options;
 
-    private DefaultDocumentConverter(TypeMetaRegistry<String> typeMetaRegistry,
+    private DefaultDocumentConverter(TypeMetaRegistry typeMetaRegistry,
                                      DocumentCodecRegistry codecRegistry,
                                      ConvertOptions options) {
         this.codecRegistry = codecRegistry;
@@ -57,7 +57,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     @Override
-    public TypeMetaRegistry<String> typeMetaRegistry() {
+    public TypeMetaRegistry typeMetaRegistry() {
         return typeMetaRegistry;
     }
 
@@ -210,7 +210,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
      * @param options           一些可选项
      */
     public static DefaultDocumentConverter newInstance(final List<? extends DocumentPojoCodecImpl<?>> pojoCodecImplList,
-                                                       final TypeMetaRegistry<String> typeMetaRegistry,
+                                                       final TypeMetaRegistry typeMetaRegistry,
                                                        final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名是否非法
@@ -240,7 +240,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
      * @return
      */
     public static DefaultDocumentConverter newInstance2(final List<DocumentCodecRegistry> registryList,
-                                                        final TypeMetaRegistry<String> typeMetaRegistry,
+                                                        final TypeMetaRegistry typeMetaRegistry,
                                                         final ConvertOptions options) {
 
         ArrayList<DocumentCodecRegistry> copied = new ArrayList<>(registryList);

@@ -33,11 +33,11 @@ import java.util.Objects;
  */
 public class DefaultBinaryConverter implements BinaryConverter {
 
-    final TypeMetaRegistry<ClassId> typeMetaRegistry;
+    final TypeMetaRegistry typeMetaRegistry;
     final BinaryCodecRegistry codecRegistry;
     final ConvertOptions options;
 
-    private DefaultBinaryConverter(TypeMetaRegistry<ClassId> typeMetaRegistry,
+    private DefaultBinaryConverter(TypeMetaRegistry typeMetaRegistry,
                                    BinaryCodecRegistry codecRegistry,
                                    ConvertOptions options) {
         this.codecRegistry = codecRegistry;
@@ -51,7 +51,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
     }
 
     @Override
-    public TypeMetaRegistry<ClassId> typeMetaRegistry() {
+    public TypeMetaRegistry typeMetaRegistry() {
         return typeMetaRegistry;
     }
 
@@ -129,7 +129,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
      * @param options           一些可选项
      */
     public static DefaultBinaryConverter newInstance(final List<? extends BinaryPojoCodecImpl<?>> pojoCodecImplList,
-                                                     final TypeMetaRegistry<ClassId> typeMetaRegistry,
+                                                     final TypeMetaRegistry typeMetaRegistry,
                                                      final ConvertOptions options) {
         Objects.requireNonNull(options, "options");
         // 检查classId是否存在，以及命名空间是否非法
@@ -159,7 +159,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
      * @param options          一些可选项
      */
     public static DefaultBinaryConverter newInstance2(final List<BinaryCodecRegistry> registryList,
-                                                      final TypeMetaRegistry<ClassId> typeMetaRegistry,
+                                                      final TypeMetaRegistry typeMetaRegistry,
                                                       final ConvertOptions options) {
         ArrayList<BinaryCodecRegistry> copied = new ArrayList<>(registryList);
         copied.add(BinaryConverterUtils.getDefaultCodecRegistry());

@@ -25,80 +25,95 @@ import java.util.*;
  */
 public class TypeMetaRegistries {
 
-    public static <T> TypeMetaRegistry<T> fromMapper(final Set<Class<?>> typeSet, TypeMetaMapper<T> mapper) {
-        List<TypeMeta<T>> typeMetaList = new ArrayList<>();
+    public static TypeMetaRegistry fromMapper(final Set<Class<?>> typeSet, TypeMetaMapper mapper) {
+        List<TypeMeta> typeMetaList = new ArrayList<>();
         for (Class<?> clazz : typeSet) {
             typeMetaList.add(mapper.map(clazz));
         }
         return fromMetas(typeMetaList);
     }
 
-    @SafeVarargs
-    public static <T> TypeMetaRegistry<T> fromRegistries(TypeMetaRegistry<T>... registries) {
-        List<TypeMeta<T>> typeMetaList = new ArrayList<>();
-        for (TypeMetaRegistry<T> e : registries) {
+    public static TypeMetaRegistry fromRegistries(TypeMetaRegistry... registries) {
+        List<TypeMeta> typeMetaList = new ArrayList<>();
+        for (TypeMetaRegistry e : registries) {
             typeMetaList.addAll(e.export());
         }
         return fromMetas(typeMetaList);
     }
 
-    @SafeVarargs
-    public static <T> TypeMetaRegistry<T> fromMetas(TypeMeta<T>... typeMetas) {
+    public static TypeMetaRegistry fromMetas(TypeMeta... typeMetas) {
         return fromMetas(Arrays.asList(typeMetas));
     }
 
-    public static <T> TypeMetaRegistry<T> fromMetas(List<TypeMeta<T>> typeMetaList) {
+    public static TypeMetaRegistry fromMetas(List<TypeMeta> typeMetaList) {
         // 先转为不可变
         typeMetaList = typeMetaList.stream()
                 .map(TypeMeta::toImmutable)
-                .filter(e -> e.classIds.size() > 0)
                 .toList();
 
-        final IdentityHashMap<Class<?>, TypeMeta<T>> type2MetaMap = new IdentityHashMap<>(typeMetaList.size());
-        final HashMap<T, TypeMeta<T>> id2MetaMap = new HashMap<>((int) (typeMetaList.size() * 1.5f));
-        for (TypeMeta<T> typeMeta : typeMetaList) {
+        final IdentityHashMap<Class<?>, TypeMeta> type2MetaMap = new IdentityHashMap<>(typeMetaList.size());
+        final HashMap<ClassId, TypeMeta> id2MetaMap = new HashMap<>((int) (typeMetaList.size() * 1.5f));
+        final HashMap<String, TypeMeta> name2MetaMap = new HashMap<>((int) (typeMetaList.size() * 1.5f));
+
+        for (TypeMeta typeMeta : typeMetaList) {
             Class<?> type = typeMeta.clazz;
             if (type2MetaMap.containsKey(type)) {
                 throw new IllegalArgumentException("type %s is duplicate".formatted(type));
             }
             type2MetaMap.put(type, typeMeta);
 
-            for (T classId : typeMeta.classIds) {
+            for (String className : typeMeta.classNames) {
+                if (name2MetaMap.containsKey(className)) {
+                    throw new IllegalArgumentException("className %s is duplicate".formatted(className));
+                }
+                name2MetaMap.put(className, typeMeta);
+            }
+            for (ClassId classId : typeMeta.classIds) {
                 if (id2MetaMap.containsKey(classId)) {
                     throw new IllegalArgumentException("classId %s is duplicate".formatted(classId));
                 }
                 id2MetaMap.put(classId, typeMeta);
             }
         }
-        return new TypeMetaRegistryImpl<>(typeMetaList, type2MetaMap, id2MetaMap);
+        return new TypeMetaRegistryImpl(typeMetaList, type2MetaMap, id2MetaMap, name2MetaMap);
     }
 
-    private static class TypeMetaRegistryImpl<T> implements TypeMetaRegistry<T> {
+    private static class TypeMetaRegistryImpl implements TypeMetaRegistry {
 
-        private final List<TypeMeta<T>> typeMetas;
-        private final Map<Class<?>, TypeMeta<T>> type2MetaMap;
-        private final Map<T, TypeMeta<T>> id2MetaMap;
+        private final List<TypeMeta> typeMetas;
+        private final Map<Class<?>, TypeMeta> type2MetaMap;
+        private final Map<ClassId, TypeMeta> id2MetaMap;
+        private final HashMap<String, TypeMeta> name2MetaMap;
 
-        TypeMetaRegistryImpl(List<TypeMeta<T>> typeMetas, Map<Class<?>, TypeMeta<T>> type2MetaMap, Map<T, TypeMeta<T>> id2MetaMap) {
+        TypeMetaRegistryImpl(List<TypeMeta> typeMetas,
+                             Map<Class<?>, TypeMeta> type2MetaMap,
+                             Map<ClassId, TypeMeta> id2MetaMap,
+                             HashMap<String, TypeMeta> name2MetaMap) {
             this.typeMetas = typeMetas;
             this.type2MetaMap = type2MetaMap;
             this.id2MetaMap = id2MetaMap;
+            this.name2MetaMap = name2MetaMap;
         }
 
         @Nullable
         @Override
-        public TypeMeta<T> ofType(Class<?> type) {
+        public TypeMeta ofType(Class<?> type) {
             return type2MetaMap.get(type);
         }
 
         @Nullable
         @Override
-        public TypeMeta<T> ofId(T typeName) {
-            return id2MetaMap.get(typeName);
+        public TypeMeta ofId(ClassId clsId) {
+            return id2MetaMap.get(clsId);
         }
 
         @Override
-        public List<TypeMeta<T>> export() {
+        public TypeMeta ofName(String clsName) {
+            return name2MetaMap.get(clsName);
+        }
+
+        @Override
+        public List<TypeMeta> export() {
             return new ArrayList<>(typeMetas);
         }
     }

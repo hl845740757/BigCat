@@ -306,8 +306,8 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
         if (!converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return;
         }
-        TypeMeta<ClassId> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
-        if (typeMeta != null) {
+        TypeMeta typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
+        if (typeMeta != null && typeMeta.classIds.size() > 0) {
             long classGuid = converter.options.classIdConverter.toGuid(typeMeta.mainClassId());
             writer.writeStartHeader();
             writer.writeInt64(DsonHeader.NUMBERS_CLASS_ID, classGuid, WireType.UINT);

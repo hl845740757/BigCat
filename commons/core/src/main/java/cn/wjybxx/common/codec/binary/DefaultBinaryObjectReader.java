@@ -340,7 +340,7 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     private <T> BinaryPojoCodec<? extends T> findObjectDecoder(TypeArgInfo<T> typeArgInfo, DsonType dsonType, ClassId classId) {
         final Class<T> declaredType = typeArgInfo.declaredType;
         if (!classId.isObjectClassId()) {
-            TypeMeta<ClassId> typeMeta = converter.typeMetaRegistry.ofId(classId);
+            TypeMeta typeMeta = converter.typeMetaRegistry.ofId(classId);
             if (typeMeta != null && declaredType.isAssignableFrom(typeMeta.clazz)) {
                 // 尝试按真实类型读
                 return (BinaryPojoCodec<? extends T>) converter.codecRegistry.get(typeMeta.clazz);

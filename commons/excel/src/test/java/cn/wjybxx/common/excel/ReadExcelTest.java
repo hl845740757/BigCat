@@ -25,7 +25,7 @@ import cn.wjybxx.common.codec.document.DocumentConverter;
 import cn.wjybxx.common.config.Sheet;
 import cn.wjybxx.common.config.SheetCodec;
 import cn.wjybxx.dson.text.DsonMode;
-import cn.wjybxx.dson.text.DsonTextWriterSettings;
+import cn.wjybxx.dson.text.ObjectStyle;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +50,7 @@ public class ReadExcelTest {
         ConvertOptions options = ConvertOptions.newBuilder().build();
         DocumentConverter converter = DefaultDocumentConverter.newInstance(
                 List.of(new SheetCodec()),
-                TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, "Sheet")),
+                TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
                 options);
 
         String dson = converter.writeAsDson(skillSheet, DsonMode.RELAXED, TypeArgInfo.OBJECT);

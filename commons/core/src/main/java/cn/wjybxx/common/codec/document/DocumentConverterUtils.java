@@ -19,6 +19,7 @@ package cn.wjybxx.common.codec.document;
 import cn.wjybxx.common.codec.*;
 import cn.wjybxx.common.codec.document.codecs.*;
 import cn.wjybxx.dson.internal.InternalUtils;
+import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
 
@@ -44,7 +45,7 @@ public class DocumentConverterUtils extends ConverterUtils {
     private static final String[] arrayElementNameCache;
 
     /** 类型id注册表 */
-    private static final TypeMetaRegistry<String> TYPE_META_REGISTRY;
+    private static final TypeMetaRegistry TYPE_META_REGISTRY;
     /** 默认codec注册表 */
     private static final DocumentCodecRegistry CODEC_REGISTRY;
 
@@ -104,8 +105,8 @@ public class DocumentConverterUtils extends ConverterUtils {
         );
     }
 
-    private static TypeMeta<String> entryOfClass(Class<?> clazz) {
-        return TypeMeta.of(clazz, clazz.getSimpleName());
+    private static TypeMeta entryOfClass(Class<?> clazz) {
+        return TypeMeta.of(clazz, ObjectStyle.INDENT, clazz.getSimpleName());
     }
 
     private static <T> DocumentPojoCodec<T> newCodec(DocumentPojoCodecImpl<T> codecImpl) {
@@ -116,7 +117,7 @@ public class DocumentConverterUtils extends ConverterUtils {
         return CODEC_REGISTRY;
     }
 
-    public static TypeMetaRegistry<String> getDefaultTypeMetaRegistry() {
+    public static TypeMetaRegistry getDefaultTypeMetaRegistry() {
         return TYPE_META_REGISTRY;
     }
 

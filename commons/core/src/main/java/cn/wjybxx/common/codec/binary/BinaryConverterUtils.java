@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 public class BinaryConverterUtils extends ConverterUtils {
 
     /** 类型id注册表 */
-    private static final TypeMetaRegistry<ClassId> TYPE_META_REGISTRY;
+    private static final TypeMetaRegistry TYPE_META_REGISTRY;
     /** 默认codec注册表 */
     private static final BinaryCodecRegistry CODEC_REGISTRY;
 
@@ -96,7 +96,7 @@ public class BinaryConverterUtils extends ConverterUtils {
         return CODEC_REGISTRY;
     }
 
-    public static TypeMetaRegistry<ClassId> getDefaultTypeMetaRegistry() {
+    public static TypeMetaRegistry getDefaultTypeMetaRegistry() {
         return TYPE_META_REGISTRY;
     }
 

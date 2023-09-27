@@ -346,7 +346,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
             return objectStyle;
         }
         final Class<?> encodeClass = ConverterUtils.getEncodeClass(value); // 小心枚举...
-        TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
+        TypeMeta typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
         if (typeMeta != null) {
             return typeMeta.style;
         }
@@ -358,9 +358,9 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
         if (!converter.options.classIdPolicy.test(typeArgInfo.declaredType, encodeClass)) {
             return;
         }
-        TypeMeta<String> typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
-        if (typeMeta != null) {
-            writer.writeSimpleHeader(typeMeta.mainClassId());
+        TypeMeta typeMeta = converter.typeMetaRegistry.ofType(encodeClass);
+        if (typeMeta != null && typeMeta.classNames.size() > 0) {
+            writer.writeSimpleHeader(typeMeta.mainClassName());
         }
     }
 

@@ -20,6 +20,7 @@ import cn.wjybxx.common.codec.binary.BinaryConverter;
 import cn.wjybxx.common.codec.binary.DefaultBinaryConverter;
 import cn.wjybxx.common.codec.document.DefaultDocumentConverter;
 import cn.wjybxx.common.codec.document.DocumentConverter;
+import cn.wjybxx.dson.text.ObjectStyle;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +82,7 @@ public class CodecTest {
     void docCodecTest() {
         DocumentConverter converter = DefaultDocumentConverter.newInstance(
                 List.of(new CodecStructs.MyStructCodec()),
-                TypeMetaRegistries.fromMetas(TypeMeta.of(CodecStructs.MyStruct.class, "MyStruct")),
+                TypeMetaRegistries.fromMetas(TypeMeta.of(CodecStructs.MyStruct.class, ObjectStyle.INDENT, "MyStruct")),
                 ConvertOptions.DEFAULT);
 
         CodecStructs.MyStruct clonedObject = converter.cloneObject(myStruct, TypeArgInfo.of(CodecStructs.MyStruct.class));

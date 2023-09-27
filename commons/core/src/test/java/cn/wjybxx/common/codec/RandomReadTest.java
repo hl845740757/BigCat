@@ -46,7 +46,7 @@ public class RandomReadTest {
 
         DocumentConverter converter = DefaultDocumentConverter.newInstance(
                 List.of(new BeanDocCodec()),
-                TypeMetaRegistries.fromMetas(TypeMeta.of(Bean.class, "Bean")),
+                TypeMetaRegistries.fromMetas(TypeMeta.of(Bean.class, ObjectStyle.INDENT, "Bean")),
                 options);
 
         Bean bean = new Bean();

@@ -40,7 +40,7 @@ public class LazyCodeTest {
 
     @Test
     void testLazyCodec() {
-        TypeMetaRegistry<ClassId> typeMetaRegistry = TypeMetaRegistries.fromMetas(
+        TypeMetaRegistry typeMetaRegistry = TypeMetaRegistries.fromMetas(
                 TypeMeta.of(MyStruct.class, new ClassId(1, 1))
         );
 

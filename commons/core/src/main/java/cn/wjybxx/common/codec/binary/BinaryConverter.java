@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.codec.binary;
 
-import cn.wjybxx.common.codec.ClassId;
 import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.Converter;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
@@ -35,7 +34,7 @@ public interface BinaryConverter extends Converter {
 
     BinaryCodecRegistry codecRegistry();
 
-    TypeMetaRegistry<ClassId> typeMetaRegistry();
+    TypeMetaRegistry typeMetaRegistry();
 
     ConvertOptions options();
 }

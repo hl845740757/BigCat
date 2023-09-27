@@ -123,7 +123,7 @@ public interface DocumentConverter extends Converter {
 
     DocumentCodecRegistry codecRegistry();
 
-    TypeMetaRegistry<String> typeMetaRegistry();
+    TypeMetaRegistry typeMetaRegistry();
 
     ConvertOptions options();
 

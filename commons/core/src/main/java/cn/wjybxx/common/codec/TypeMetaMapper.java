@@ -29,9 +29,9 @@ import javax.annotation.Nonnull;
  * date - 2023/4/26
  */
 @FunctionalInterface
-public interface TypeMetaMapper<T> {
+public interface TypeMetaMapper {
 
     @Nonnull
-    TypeMeta<T> map(Class<?> type);
+    TypeMeta map(Class<?> type);
 
 }

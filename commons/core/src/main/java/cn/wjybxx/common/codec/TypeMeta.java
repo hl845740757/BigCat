@@ -29,52 +29,50 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/7/29
  */
-public class TypeMeta<T> {
+public class TypeMeta {
 
     public final Class<?> clazz;
     /** 文本编码时的输出格式 */
     public final ObjectStyle style;
+    /** 支持的类型名 */
+    public final List<String> classNames;
     /** 支持的类型id -- 为空将被忽略 */
-    public final List<T> classIds;
+    public final List<ClassId> classIds;
 
-    public TypeMeta(Class<?> clazz, ObjectStyle style, List<T> classIds) {
+    public TypeMeta(Class<?> clazz, ObjectStyle style, List<String> classNames, List<ClassId> classIds) {
         this.clazz = Objects.requireNonNull(clazz);
         this.style = Objects.requireNonNull(style);
+        this.classNames = Objects.requireNonNull(classNames);
         this.classIds = Objects.requireNonNull(classIds);
     }
 
-    public T mainClassId() {
+    public ClassId mainClassId() {
         return classIds.get(0);
     }
 
-    public TypeMeta<T> toImmutable() {
-        return new TypeMeta<>(clazz, style, List.copyOf(classIds));
+    public String mainClassName() {
+        return classNames.get(0);
     }
 
-    public static <T> TypeMeta<T> of(Class<?> clazz, T classId) {
-        return new TypeMeta<>(clazz, ObjectStyle.INDENT, List.of(classId));
+    /** 转为不可变 */
+    public TypeMeta toImmutable() {
+        return new TypeMeta(clazz, style, List.copyOf(classNames), List.copyOf(classIds));
     }
 
-    @SafeVarargs
-    public static <T> TypeMeta<T> of(Class<?> clazz, T... classId) {
-        return new TypeMeta<>(clazz, ObjectStyle.INDENT, List.of(classId));
+    public static TypeMeta of(Class<?> clazz, ClassId classId) {
+        return new TypeMeta(clazz, ObjectStyle.INDENT, List.of(), List.of(classId));
     }
 
-    public static <T> TypeMeta<T> of(Class<?> clazz, List<T> classId) {
-        return new TypeMeta<>(clazz, ObjectStyle.INDENT, classId);
+    public static TypeMeta of(Class<?> clazz, ClassId... classIds) {
+        return new TypeMeta(clazz, ObjectStyle.INDENT, List.of(), List.of(classIds));
     }
 
-    public static <T> TypeMeta<T> of(Class<?> clazz, ObjectStyle style, T classId) {
-        return new TypeMeta<>(clazz, style, List.of(classId));
+    public static TypeMeta of(Class<?> clazz, ObjectStyle style, String className) {
+        return new TypeMeta(clazz, style, List.of(className), List.of());
     }
 
-    @SafeVarargs
-    public static <T> TypeMeta<T> of(Class<?> clazz, ObjectStyle style, T... classId) {
-        return new TypeMeta<>(clazz, style, List.of(classId));
-    }
-
-    public static <T> TypeMeta<T> of(Class<?> clazz, ObjectStyle style, List<T> classId) {
-        return new TypeMeta<>(clazz, style, classId);
+    public static TypeMeta of(Class<?> clazz, ObjectStyle style, String... classNames) {
+        return new TypeMeta(clazz, style, List.of(classNames), List.of());
     }
 
     @Override
@@ -82,6 +80,7 @@ public class TypeMeta<T> {
         return "TypeMeta{" +
                 "clazz=" + clazz +
                 ", style=" + style +
+                ", classNames=" + classNames +
                 ", classIds=" + classIds +
                 '}';
     }
