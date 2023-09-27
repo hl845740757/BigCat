@@ -18,6 +18,7 @@ package cn.wjybxx.apt.common.codec.document;
 
 import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
@@ -38,7 +39,7 @@ public class EnumDocCodecGenerator extends AbstractGenerator<DocumentCodecProces
 
     @Override
     public void execute() {
-        final TypeName rawTypeName = TypeName.get(typeUtils.erasure(typeElement.asType()));
+        final ClassName rawTypeName = ClassName.get(typeElement);
         final DeclaredType superDeclaredType = typeUtils.getDeclaredType(processor.enumCodecTypeElement, typeUtils.erasure(typeElement.asType()));
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
@@ -48,7 +49,7 @@ public class EnumDocCodecGenerator extends AbstractGenerator<DocumentCodecProces
 
         final TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(DocumentCodecProcessor.getCodecClassName(typeElement, elementUtils));
         typeBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
+                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
                 .addAnnotation(processorInfoAnnotation)
                 .addAnnotations(processor.getAdditionalAnnotations(typeElement))
                 .superclass(TypeName.get(superDeclaredType))

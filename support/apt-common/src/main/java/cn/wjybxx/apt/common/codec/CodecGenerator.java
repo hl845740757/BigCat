@@ -20,6 +20,7 @@ import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
 import cn.wjybxx.apt.BeanUtils;
 import cn.wjybxx.apt.common.codec.binary.BinaryCodecProcessor;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
@@ -54,7 +55,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
     private static final Map<TypeKind, String> primitiveReadMethodNameMap = new EnumMap<>(TypeKind.class);
     private static final Map<TypeKind, String> primitiveWriteMethodNameMap = new EnumMap<>(TypeKind.class);
 
-    protected TypeName rawTypeName;
+    protected ClassName rawTypeName;
     protected List<? extends Element> allFieldsAndMethodWithInherit;
     protected boolean containsReaderConstructor;
     protected boolean containsReadObjectMethod;
@@ -142,7 +143,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
 
     /** 子类需要初始化 fieldsClassName */
     protected void init() {
-        rawTypeName = TypeName.get(typeUtils.erasure(typeElement.asType()));
+        rawTypeName = ClassName.get(typeElement);
         allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
         containsReaderConstructor = processor.containsReaderConstructor(typeElement);
         containsReadObjectMethod = processor.containsReadObjectMethod(allFieldsAndMethodWithInherit);
@@ -189,7 +190,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
 
         TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(codecClassName)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
+                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
                 .addAnnotation(processorInfoAnnotation)
                 .addAnnotations(processor.getAdditionalAnnotations(typeElement))
 

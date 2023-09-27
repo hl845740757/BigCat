@@ -102,7 +102,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
     private void genProxyClass(TypeElement typeElement, List<? extends Element> methodList) {
         final TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(getProxyClassName(elementUtils, typeElement))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
+                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
                 .addAnnotation(processorInfoAnnotation)
                 .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)))
                 .addMethod(genRegisterMethod(typeElement, methodList));

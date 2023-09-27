@@ -32,10 +32,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 /**
@@ -318,8 +315,8 @@ public class DefaultRpcClient implements RpcClient {
                 if (result == context) {
                     return; // 用户使用了context返回结果
                 }
-                if (result instanceof CompletableFuture) {
-                    @SuppressWarnings("unchecked") CompletableFuture<T> future = (CompletableFuture<T>) result;
+                if (result instanceof CompletionStage<?>) {
+                    @SuppressWarnings("unchecked") CompletionStage<T> future = (CompletionStage<T>) result;
                     FutureUtils.setFuture(context.future(), future);
                 } else {
                     // 立即得到了结果

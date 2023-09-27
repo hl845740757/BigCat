@@ -35,7 +35,7 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
 
     /** 请求的唯一id */
     private long requestId;
-    /** 服务id -- 定位返回值类型 */
+    /** 服务id -- 定位返回值类型，也可以用于校验 */
     private int serviceId;
     /** 方法id */
     private int methodId;

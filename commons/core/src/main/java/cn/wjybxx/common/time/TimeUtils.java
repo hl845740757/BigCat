@@ -116,6 +116,16 @@ public class TimeUtils {
         return (int) (timeMillis / 1000);
     }
 
+    /**
+     * 将秒时间和毫秒时间合并为毫秒时间
+     *
+     * @param seconds 时间的秒部分
+     * @param millis  时间的毫秒部分
+     */
+    public static long toMillis(long seconds, long millis) {
+        return seconds * 1000 + millis;
+    }
+
     /** 获取月份的天数，总是忘记api... */
     public static int lengthOfMonth(LocalDateTime localDateTime) {
         return localDateTime.toLocalDate().lengthOfMonth();

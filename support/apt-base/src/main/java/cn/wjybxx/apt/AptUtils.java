@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -50,21 +51,36 @@ public class AptUtils {
     /**
      * 由于生成的代码不能很好的处理泛型等信息，因此需要抑制警告
      */
-    public static final AnnotationSpec SUPPRESS_UNCHECKED_ANNOTATION = AnnotationSpec.builder(SuppressWarnings.class)
+    public static final AnnotationSpec SUPPRESS_UNCHECKED_RAWTYPES = AnnotationSpec.builder(SuppressWarnings.class)
             .addMember("value", "{\"unchecked\", \"rawtypes\", \"unused\"}")
             .build();
 
-    public static final AnnotationSpec NONNULL_ANNOTATION = AnnotationSpec.builder(Nonnull.class)
+    public static final AnnotationSpec SUPPRESS_UNCHECKED = AnnotationSpec.builder(SuppressWarnings.class)
+            .addMember("value", "{\"unchecked\", \"unused\"}")
+            .build();
+
+    public static final AnnotationSpec ANNOTATION_OVERRIDE = AnnotationSpec.builder(Override.class).build();
+    public static final AnnotationSpec ANNOTATION_NONNULL = AnnotationSpec.builder(Nonnull.class)
             .build();
 
     public static final ClassName CLASS_NAME_SOURCE_REF = ClassName.get(SourceFileRef.class);
     public static final ClassName CLASS_NAME_STRING = ClassName.get(String.class);
-    public static final ClassName CLASS_NAME_OBJECT = ClassName.get(Object.class);
+    public static final TypeName CLASS_NAME_BYTES = ArrayTypeName.of(TypeName.BYTE);
 
     public static final ClassName CLASS_NAME_LIST = ClassName.get(List.class);
     public static final ClassName CLASS_NAME_ARRAY_LIST = ClassName.get(ArrayList.class);
-    public static final ClassName CLASS_NAME_LINKED_HASH_MAP = ClassName.get(LinkedHashMap.class);
-    public static final ClassName CLASS_NAME_LINKED_HASH_SET = ClassName.get(LinkedHashSet.class);
+
+    public static final ClassName CLASS_NAME_SET = ClassName.get(Set.class);
+    public static final ClassName CLASS_NAME_HASH_SET = ClassName.get(HashSet.class);
+    public static final ClassName CLASS_NAME_LINKED_SET = ClassName.get(LinkedHashSet.class);
+
+    public static final ClassName CLASS_NAME_MAP = ClassName.get(Map.class);
+    public static final ClassName CLASS_NAME_HASH_MAP = ClassName.get(HashMap.class);
+    public static final ClassName CLASS_NAME_LINKED_MAP = ClassName.get(LinkedHashMap.class);
+
+    public static final ClassName CLASS_NAME_SUPPLIER = ClassName.get(Supplier.class);
+    public static final ClassName CLASS_NAME_ARRAYS = ClassName.get(Arrays.class);
+    public static final ClassName CLASS_NAME_OBJECTS = ClassName.get(Objects.class);
 
     public static final Map<String, TypeName> primitiveTypeNameMap;
     public static final Map<String, TypeName> boxedTypeNameMap;

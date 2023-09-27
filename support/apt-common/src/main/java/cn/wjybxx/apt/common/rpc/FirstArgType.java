@@ -23,6 +23,7 @@ package cn.wjybxx.apt.common.rpc;
  * date - 2023/9/14
  */
 enum FirstArgType {
+
     NONE,
     REQUEST,
     CONTEXT,

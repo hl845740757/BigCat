@@ -40,7 +40,6 @@ public class PojoDocCodecGenerator extends CodecGenerator<DocumentCodecProcessor
 
     protected void gen() {
         TypeSpec.Builder typeBuilder = genCommons(DocumentCodecProcessor.getCodecClassName(typeElement, elementUtils));
-        // 写入文件
         AptUtils.writeToFile(typeElement, typeBuilder, elementUtils, messager, filer);
     }
 

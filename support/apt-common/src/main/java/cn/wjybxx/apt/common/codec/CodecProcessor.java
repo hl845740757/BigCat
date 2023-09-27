@@ -434,7 +434,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     public MethodSpec newGetEncoderClassMethod(DeclaredType superDeclaredType, TypeName rawTypeName) {
         return MethodSpec.overriding(getEncoderClassMethod, superDeclaredType, typeUtils)
                 .addStatement("return $T.class", rawTypeName)
-                .addAnnotation(AptUtils.NONNULL_ANNOTATION)
+                .addAnnotation(AptUtils.ANNOTATION_NONNULL)
                 .build();
     }
 

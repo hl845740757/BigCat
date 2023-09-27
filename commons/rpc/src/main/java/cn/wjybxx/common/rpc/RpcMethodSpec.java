@@ -127,10 +127,6 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
         return parameters.get(index);
     }
 
-    public <T> T getObject(int index, Class<T> clazz) {
-        return clazz.cast(parameters.get(index));
-    }
-
     public void setObject(int index, Object arg) {
         parameters.set(index, arg);
     }

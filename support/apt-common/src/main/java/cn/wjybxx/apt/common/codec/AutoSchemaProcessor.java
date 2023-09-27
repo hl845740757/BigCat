@@ -114,7 +114,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
 
         final TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(getProxyClassName(typeElement, elementUtils))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_ANNOTATION)
+                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
                 .addAnnotation(processorInfoAnnotation)
                 .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)))
                 .addFields(typesFields)

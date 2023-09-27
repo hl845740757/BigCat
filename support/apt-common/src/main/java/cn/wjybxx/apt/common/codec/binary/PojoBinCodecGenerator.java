@@ -40,7 +40,6 @@ class PojoBinCodecGenerator extends CodecGenerator<BinaryCodecProcessor> {
     @Override
     protected void gen() {
         TypeSpec.Builder typeBuilder = genCommons(BinaryCodecProcessor.getCodecClassName(typeElement, elementUtils));
-        // 写入文件
         AptUtils.writeToFile(typeElement, typeBuilder, elementUtils, messager, filer);
     }
 }
