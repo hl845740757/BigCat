@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.mongo.adapter;
+package cn.wjybxx.common.mongo;
 
 import org.bson.BsonReader;
 import org.bson.BsonWriter;

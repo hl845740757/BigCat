@@ -267,6 +267,11 @@ public class CollectionUtils {
         return count;
     }
 
+    /** 获取从某个索引开始的子列表 */
+    public static <E> List<E> subList(List<E> src, int index) {
+        return src.subList(index, src.size());
+    }
+
     // region 使用“==”操作集合
     // 注意：对于拆装箱的对象慎用
 
@@ -556,7 +561,7 @@ public class CollectionUtils {
     }
 
     /** 用于需要保持元素顺序的场景 */
-    public static <E> Set<E> toImmutableLinkedHashSet(@Nullable Set<E> src) {
+    public static <E> Set<E> toImmutableLinkedHashSet(@Nullable Collection<E> src) {
         if (src == null || src.isEmpty()) {
             return Set.of();
         }

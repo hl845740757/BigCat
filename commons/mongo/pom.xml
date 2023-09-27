@@ -16,7 +16,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <bson.version>4.9.1</bson.version>
+        <bson.version>4.10.2</bson.version>
     </properties>
 
     <dependencies>

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.mongo.adapter;
+package cn.wjybxx.common.mongo;
 
 import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -57,6 +58,20 @@ public class MongoCodecRegistry implements CodecRegistry {
     @Override
     public <T> Codec<T> get(Class<T> clazz) {
         return delegated.get(clazz);
+    }
+
+    @Override
+    public <T> Codec<T> get(Class<T> clazz, List<Type> typeArguments) {
+        return delegated.get(clazz, typeArguments);
+    }
+
+    @Override
+    public <T> Codec<T> get(Class<T> clazz, List<Type> typeArguments, CodecRegistry registry) {
+        return delegated.get(clazz, typeArguments, registry);
+    }
+
+    public static Builder newBuilder() {
+        return new Builder();
     }
 
     public static class Builder {

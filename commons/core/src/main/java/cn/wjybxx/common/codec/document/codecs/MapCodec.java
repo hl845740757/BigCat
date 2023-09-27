@@ -59,11 +59,6 @@ public class MapCodec<T extends Map> implements DocumentPojoCodecImpl<T> {
     }
 
     @Override
-    public boolean isWriteAsArray() {
-        return false;
-    }
-
-    @Override
     public void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         TypeArgInfo<?> valueArgInfo = TypeArgInfo.of(typeArgInfo.typeArg2);
         @SuppressWarnings("unchecked") Set<Map.Entry<?, ?>> entrySet = instance.entrySet();

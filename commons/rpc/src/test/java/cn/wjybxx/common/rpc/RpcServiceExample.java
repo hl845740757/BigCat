@@ -86,7 +86,7 @@ public class RpcServiceExample implements ExtensibleService {
 
     }
 
-    /** 测试参数带泛型 */
+    /** 测试不可变 */
     @RpcMethod(methodId = 11)
     public Long box_add(Integer a, Long b) {
         if (a == null && b == null) return null;

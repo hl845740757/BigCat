@@ -45,7 +45,7 @@ public final class MpscUnboundedXaddArrayQueue2<E> extends MpUnboundedXaddArrayQ
 
     public interface OfferHooker<E> {
 
-        /** @return 返回null将导致死锁！！！ */
+        /** @return 不可返回null */
         E translate(E event, long sequence);
 
         void hook(E srcEvent, E destEvent, long sequence);
