@@ -1,0 +1,209 @@
+/*
+ * Copyright 2023 wjybxx(845740757@qq.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package cn.wjybxx.bigcat.fx;
+
+import cn.wjybxx.common.concurrent.*;
+import cn.wjybxx.common.rpc.RpcRegistry;
+import com.google.inject.Injector;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntSets;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * @author wjybxx
+ * date - 2023/10/4
+ */
+public class WorkerImpl extends DisruptorEventLoop implements Worker {
+
+    private final String workerId;
+    private final Injector injector;
+    private final MainModule mainModule;
+    private final List<WorkerModule> moduleList;
+    private volatile IntSet serviceIdSet = IntSets.emptySet();
+
+    public WorkerImpl(WorkerBuilder.DisruptWorkerBuilder builder) {
+        super(decorate(builder));
+        Agent agent = (Agent) getAgent();
+        agent.worker = this;
+
+        this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
+        this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
+
+        // 初始化Module列表
+        List<WorkerModule> moduleList = FxUtils.createModules(builder);
+        this.mainModule = (MainModule) moduleList.get(0);
+        this.moduleList = List.copyOf(moduleList);
+    }
+
+    private static EventLoopBuilder.DisruptorBuilder decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
+        return builder.getDelegateBuilder()
+                .setAgent(new Agent());
+    }
+
+    private void setServiceIdSet(IntSet serviceIdSet) {
+        this.serviceIdSet = IntSets.unmodifiable(new IntOpenHashSet(serviceIdSet));
+    }
+
+    @Override
+    public String workerId() {
+        return workerId;
+    }
+
+    @Override
+    public Injector injector() {
+        return injector;
+    }
+
+    @Override
+    public MainModule mainModule() {
+        return mainModule;
+    }
+
+    @Override
+    public List<WorkerModule> modules() {
+        return moduleList; // 是不可变List
+    }
+
+    @Override
+    public IntSet services() {
+        return serviceIdSet; // 不可变Set
+    }
+
+    @Nullable
+    @Override
+    public Node parent() {
+        return (Node) parent;
+    }
+
+    @Nonnull
+    @Override
+    public Worker next() {
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public Worker select(int key) {
+        return this;
+    }
+
+    private static class Agent implements EventLoopAgent<AgentEvent> {
+
+        WorkerImpl worker;
+        MainModule mainModule; // 缓存
+        List<WorkerModule> updatableModuleList = new ArrayList<>();
+        List<WorkerModule> startedModuleList = new ArrayList<>();
+
+        public Agent() {
+        }
+
+        @Override
+        public void onStart(EventLoop eventLoop) throws Exception {
+            mainModule = worker.mainModule;
+            updatableModuleList.addAll(FxUtils.filterUpdatableModules(worker.moduleList));
+
+            Worker.CURRENT_WORKER.set(worker);
+            resolveDependence();
+
+            mainModule.beforeWorkerStart();
+            startModules();
+            exportServices();
+            mainModule.afterWorkerStart();
+        }
+
+        private void resolveDependence() {
+            for (WorkerModule workerModule : worker.moduleList) {
+                workerModule.inject(worker);
+            }
+            mainModule.resolveDependence();
+        }
+
+        private void exportServices() {
+            RpcRegistry registry = worker.injector.getInstance(RpcRegistry.class);
+            worker.setServiceIdSet(registry.export());
+        }
+
+        private void startModules() {
+            // 顺序启动
+            for (WorkerModule workerModule : worker.moduleList) {
+                workerModule.start();
+                startedModuleList.add(workerModule);
+            }
+        }
+
+        private void stopModules() {
+            // 逆序停止
+            List<WorkerModule> startedModuleList = this.startedModuleList;
+            for (int i = startedModuleList.size() - 1; i >= 0; i--) {
+                WorkerModule workerModule = startedModuleList.get(i);
+                try {
+                    workerModule.stop();
+                } catch (Throwable e) {
+                    logCause(e);
+                }
+            }
+        }
+
+        @Override
+        public void onEvent(AgentEvent event) throws Exception {
+            mainModule.onEvent(event);
+        }
+
+        @Override
+        public void update() throws Exception {
+            if (!mainModule.checkMainLoop()) {
+                return;
+            }
+            mainModule.beforeMainLoop();
+            List<WorkerModule> updatableModuleList = this.updatableModuleList;
+            for (int i = 0; i < updatableModuleList.size(); i++) {
+                WorkerModule workerModule = updatableModuleList.get(i);
+                try {
+                    workerModule.update();
+                } catch (Throwable e) {
+                    logCause(e);
+                }
+            }
+            mainModule.afterMainLoop();
+        }
+
+        @Override
+        public void onShutdown() throws Exception {
+            try {
+                mainModule.beforeWorkerShutdown();
+            } catch (Throwable e) {
+                logCause(e);
+            }
+            try {
+                stopModules();
+                mainModule.afterWorkerShutdown();
+            } finally {
+                Worker.CURRENT_WORKER.remove();
+                mainModule = null;
+                updatableModuleList.clear();
+                startedModuleList.clear();
+            }
+        }
+    }
+
+}

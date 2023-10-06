@@ -46,7 +46,7 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 
 近日在研： 
 1. 近日在研究网络相关知识，协议的设计思路已有，但还未开始编码。
-2. Dson的文本表达法，Json和Yaml我都不满意，项目的配置文件打算实现为Dson的格式。
+2. 通过protobuf定义客户端与服务端的Rpc通信，适用于游戏业务。
 
 ### 资料
 
