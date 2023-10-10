@@ -14,22 +14,34 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
 
 /**
- * 方法的第一个参数
+ * pb元素类型
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/9
  */
-enum FirstArgType {
+public enum PBElementKind {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
+    /** 文件（包） */
+    FILE,
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
-    }
+    /** 服务类 */
+    SERVICE,
+
+    /** 消息类 */
+    MESSAGE,
+
+    /** 枚举类 */
+    ENUM,
+
+    /** RPC方法 */
+    METHOD,
+
+    /** 字段 */
+    FIELD,
+
+    /** 枚举值 */
+    ENUM_VALUE,
 }

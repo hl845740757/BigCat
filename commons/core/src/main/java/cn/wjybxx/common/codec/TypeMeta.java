@@ -18,6 +18,7 @@ package cn.wjybxx.common.codec;
 
 import cn.wjybxx.dson.text.ObjectStyle;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,8 +37,15 @@ public class TypeMeta {
     public final ObjectStyle style;
     /** 支持的类型名 */
     public final List<String> classNames;
-    /** 支持的类型id -- 为空将被忽略 */
+    /** 支持的类型id */
     public final List<ClassId> classIds;
+
+    public TypeMeta(Class<?> clazz, ObjectStyle style) {
+        this.clazz = Objects.requireNonNull(clazz);
+        this.style = Objects.requireNonNull(style);
+        this.classNames = new ArrayList<>();
+        this.classIds = new ArrayList<>();
+    }
 
     public TypeMeta(Class<?> clazz, ObjectStyle style, List<String> classNames, List<ClassId> classIds) {
         this.clazz = Objects.requireNonNull(clazz);

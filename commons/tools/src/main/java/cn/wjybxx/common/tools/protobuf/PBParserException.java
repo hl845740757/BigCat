@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
 
 /**
- * 方法的第一个参数
- *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/9
  */
-enum FirstArgType {
+public class PBParserException extends RuntimeException {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
-
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
+    public PBParserException() {
     }
+
+    public PBParserException(String message) {
+        super(message);
+    }
+
+    public PBParserException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

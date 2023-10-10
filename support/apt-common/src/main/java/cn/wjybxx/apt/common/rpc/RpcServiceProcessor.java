@@ -46,17 +46,20 @@ import java.util.stream.Collectors;
 public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private static final String CNAME_RPC_SERVICE = "cn.wjybxx.common.rpc.RpcService";
-    private static final String CNAME_RPC_METHOD = "cn.wjybxx.common.rpc.RpcMethod";
     private static final String PNAME_SERVICE_ID = "serviceId";
+    private static final String PNAME_GEN_EXPORTER = "genExporter";
+    private static final String PNAME_GEN_PROXY = "genProxy";
+
+    private static final String CNAME_RPC_METHOD = "cn.wjybxx.common.rpc.RpcMethod";
     private static final String PNAME_METHOD_ID = "methodId";
     private static final String PNAME_SHARABLE = "sharable";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.common.rpc.RpcRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.common.rpc.RpcContext";
-    private static final String CNAME_REQUEST = "cn.wjybxx.common.rpc.RpcRequest";
-    private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
+    private static final String CNAME_GENERIC_CONTEXT = "cn.wjybxx.common.rpc.RpcGenericContext";
 
+    private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
     private static final int MAX_PARAMETER_COUNT = 5;
 
     private TypeElement anno_rpcServiceElement;
@@ -68,7 +71,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     ClassName contextRawTypeName;
     TypeMirror contextTypeMirror;
-    TypeMirror requestTypeMirror;
+    TypeMirror genericContextTypeMirror;
 
     TypeMirror boxedVoidTypeMirror;
     TypeMirror objectTypeMirror;
@@ -104,7 +107,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         TypeElement contextTypeElement = elementUtils.getTypeElement(CNAME_CONTEXT);
         contextRawTypeName = ClassName.get(contextTypeElement);
         contextTypeMirror = contextTypeElement.asType();
-        requestTypeMirror = elementUtils.getTypeElement(CNAME_REQUEST).asType();
+        genericContextTypeMirror = elementUtils.getTypeElement(CNAME_GENERIC_CONTEXT).asType();
 
         boxedVoidTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Void.class).asType();
         objectTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Object.class).asType();
@@ -210,7 +213,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         // 检查后续是否存在context参数 -- 意义不是很大
         for (int idx = firstArgType.noCounting() ? 1 : 0; idx < parameters.size(); idx++) {
             VariableElement variableElement = parameters.get(idx);
-            if (isContext(variableElement.asType()) || isRequest(variableElement.asType())) {
+            if (isContext(variableElement.asType()) || isGenericContext(variableElement.asType())) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "context and request must be declared as the first parameter!", method);
                 continue;
             }
@@ -218,9 +221,16 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     }
 
     private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
-        final int serviceId = getServiceId(typeElement);
-        genClientProxy(typeElement, serviceId, rpcMethodList);
-        genServerProxy(typeElement, serviceId, rpcMethodList);
+        AnnotationMirror serviceAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType())
+                .orElseThrow();
+
+        final int serviceId = AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_SERVICE_ID, null);
+        if (AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_GEN_EXPORTER, Boolean.TRUE)) {
+            genServerProxy(typeElement, serviceId, rpcMethodList);
+        }
+        if (AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_GEN_PROXY, Boolean.TRUE)) {
+            genClientProxy(typeElement, serviceId, rpcMethodList);
+        }
     }
 
     Integer getServiceId(TypeElement typeElement) {
@@ -246,7 +256,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         // 如果所有参数都是不可变的，则默认true
         List<? extends VariableElement> parameters = method.getParameters();
         for (VariableElement parameter : parameters) {
-            if (isContext(parameter.asType()) || isRequest(parameter.asType())) {
+            if (isContext(parameter.asType()) || isGenericContext(parameter.asType())) {
                 continue;
             }
             if (!isImmutableType(parameter.asType())) {
@@ -293,8 +303,9 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, contextTypeMirror);
     }
 
-    boolean isRequest(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, requestTypeMirror);
+    /** 是否是通用Context */
+    boolean isGenericContext(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, genericContextTypeMirror);
     }
 
     boolean isString(TypeMirror typeMirror) {
@@ -316,7 +327,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
         TypeMirror typeMirror = parameters.get(0).asType();
         if (isContext(typeMirror)) return FirstArgType.CONTEXT;
-        if (isRequest(typeMirror)) return FirstArgType.REQUEST;
+        if (isGenericContext(typeMirror)) return FirstArgType.GENERIC_CONTEXT; // 需放在后面判断
         return FirstArgType.OTHER;
     }
 

@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
 
 /**
- * 方法的第一个参数
+ * pb上下文类型
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/8
  */
-enum FirstArgType {
+enum ContextType {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
+    FILE,
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
-    }
+    SERVICE,
+
+    MESSAGE,
+
+    ENUM;
+
 }

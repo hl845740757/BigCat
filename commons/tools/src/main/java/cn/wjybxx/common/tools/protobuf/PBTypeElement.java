@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
 
 /**
- * 方法的第一个参数
+ * pb类型元素
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/7
  */
-enum FirstArgType {
+public abstract sealed class PBTypeElement
+        extends PBElement
+        permits PBMessage, PBEnum, PBService {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
-
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
-    }
 }

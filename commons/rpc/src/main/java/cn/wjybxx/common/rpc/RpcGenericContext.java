@@ -16,29 +16,32 @@
 
 package cn.wjybxx.common.rpc;
 
-import cn.wjybxx.common.concurrent.ICompletableFuture;
-
 /**
- * rpc执行时的上下文接口。
- * 1. 该接口提供了返回结果的方法。
- * 2. 当Rpc方法的第一个参数为该接口时，由用户自行控制结果的返回时机。
+ * rpc上下文基础接口。
+ * 1. 该接口仅提供获取远端信息方案
+ * 2. 当rpc方法的第一个参数为该类型时，仍由Rpc框架管理结果的返回。
+ * 3. 在运行时如有特殊需求，可转换为{@link RpcContext}接口。
  *
  * @author wjybxx
- * date 2023/4/1
+ * date - 2023/4/1
  */
-public interface RpcContext<V> extends RpcGenericContext {
-
-    /** 发送正确结果 */
-    void sendResult(V msg);
-
-    /** 发送错误结果 */
-    void sendError(int errorCode, String msg);
+public interface RpcGenericContext {
 
     /**
-     * 注意：
-     * 1.future进入完成状态只能表明rpc的流程完成，不能表示rpc调用的方法已执行完成
-     * 2.不建议直接操作future
+     * @return 返回调用的详细信息
      */
-    ICompletableFuture<V> future();
+    RpcRequest request();
+
+    /**
+     * 远端地址
+     * 可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
+     */
+    RpcAddr remoteAddr();
+
+    /**
+     * 本地地址
+     * 可用于校验 -- 对应{@link RpcRequest#destAddr}
+     */
+    RpcAddr localAddr();
 
 }

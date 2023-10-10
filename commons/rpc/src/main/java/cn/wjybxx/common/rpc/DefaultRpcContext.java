@@ -44,6 +44,11 @@ public class DefaultRpcContext<V> implements RpcContext<V> {
     }
 
     @Override
+    public RpcAddr localAddr() {
+        return request.destAddr;
+    }
+
+    @Override
     public void sendResult(V msg) {
         future.complete(msg);
     }

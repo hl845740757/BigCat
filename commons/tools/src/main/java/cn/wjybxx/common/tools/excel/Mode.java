@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.excel;
 
 /**
- * 方法的第一个参数
+ * 读取表格的模式，用于选择性读取行列
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/4/16
  */
-enum FirstArgType {
+public enum Mode {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
+    ONLY_SERVER,
+    ONLY_CLIENT,
+    BOTH
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
-    }
 }

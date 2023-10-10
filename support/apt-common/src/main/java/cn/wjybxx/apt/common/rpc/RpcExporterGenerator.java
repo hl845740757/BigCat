@@ -209,14 +209,10 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         // 去除context和request
         List<? extends VariableElement> parameters = method.getParameters();
         if (firstArgType.noCounting()) {
-            if (firstArgType == FirstArgType.CONTEXT) {
-                // 方法的返回类型可能是void，但context的泛型不一定
-                TypeName targetContextType = TypeName.get(parameters.get(0).asType());
-                format.append("($T) context");
-                params.add(targetContextType);
-            } else {
-                format.append("context.request()");
-            }
+            TypeName targetContextType = TypeName.get(parameters.get(0).asType());
+            format.append("($T) context");
+            params.add(targetContextType);
+
             parameters = method.getParameters().subList(1, parameters.size());
             if (parameters.size() > 0) {
                 format.append(", ");

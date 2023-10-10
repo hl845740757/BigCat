@@ -174,11 +174,16 @@ public class BeanUtils {
      * @return 首字符大写的字符串
      */
     public static String firstCharToUpperCase(@Nonnull String str) {
-        if (str.length() > 1) {
-            return str.substring(0, 1).toUpperCase() + str.substring(1);
-        } else {
-            return str.toUpperCase();
+        if (str.length() == 0) {
+            return str;
         }
+        char firstChar = str.charAt(0);
+        if (Character.isLowerCase(firstChar)) { // 可拦截非英文字符
+            StringBuilder sb = new StringBuilder(str);
+            sb.setCharAt(0, Character.toUpperCase(firstChar));
+            return sb.toString();
+        }
+        return str;
     }
 
     /**
@@ -188,11 +193,16 @@ public class BeanUtils {
      * @return 首字符小写的字符串
      */
     public static String firstCharToLowerCase(@Nonnull String str) {
-        if (str.length() > 1) {
-            return str.substring(0, 1).toLowerCase() + str.substring(1);
-        } else {
-            return str.toLowerCase();
+        if (str.length() == 0) {
+            return str;
         }
+        char firstChar = str.charAt(0);
+        if (Character.isUpperCase(firstChar)) { // 可拦截非英文字符
+            StringBuilder sb = new StringBuilder(str);
+            sb.setCharAt(0, Character.toLowerCase(firstChar));
+            return sb.toString();
+        }
+        return str;
     }
 
     /**
@@ -254,7 +264,11 @@ public class BeanUtils {
      * 查询名字的第一个或第二个字符是否是大写
      */
     private static boolean isFirstOrSecondCharUpperCase(String name) {
-        if (name.length() > 0 && Character.isUpperCase(name.charAt(0))) {
+        if (name.length() < 1) {
+            return false;
+        }
+        // 下划线开头的也需要特殊处理...
+        if (Character.isUpperCase(name.charAt(0)) || name.charAt(0) == '_') {
             return true;
         }
         if (name.length() > 1 && Character.isUpperCase(name.charAt(1))) {

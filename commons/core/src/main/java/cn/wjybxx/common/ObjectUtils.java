@@ -127,12 +127,41 @@ public class ObjectUtils {
         return false;
     }
 
-    public static int indexOfNonWhitespace(CharSequence cs) {
+    /**
+     * 查找首个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int firstCharNonWhitespace(CharSequence cs) {
         int length = length(cs);
         if (length == 0) {
             return -1;
         }
         for (int i = 0; i < length; i++) {
+            char c = cs.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return c;
+            }
+        }
+        return -1;
+    }
+
+    /** 查找首个非空白字符 */
+    public static int indexOfNonWhitespace(CharSequence cs) {
+        return indexOfNonWhitespace(cs, 0);
+    }
+
+    /** 查找首个非空白字符 */
+    public static int indexOfNonWhitespace(CharSequence cs, final int startIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = startIndex; i < length; i++) {
             if (!Character.isWhitespace(cs.charAt(i))) {
                 return i;
             }
@@ -140,12 +169,34 @@ public class ObjectUtils {
         return -1;
     }
 
+    /** 逆向查找首个非空白字符 */
     public static int lastIndexOfNonWhitespace(CharSequence cs) {
+        return lastIndexOfNonWhitespace(cs, -1);
+    }
+
+    /**
+     * 逆向查找首个非空白字符
+     *
+     * @param startIndex 开始下标，-1表示从最后一个字符开始
+     * @return -1表示查找失败
+     */
+    public static int lastIndexOfNonWhitespace(CharSequence cs, int startIndex) {
+        if (startIndex < -1) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
         int length = length(cs);
         if (length == 0) {
             return -1;
         }
-        for (int i = length - 1; i >= 0; i--) {
+
+        if (startIndex == -1) {
+            startIndex = length - 1;
+        } else if (startIndex >= length) {
+            startIndex = length - 1;
+        }
+
+        for (int i = startIndex; i >= 0; i--) {
             if (!Character.isWhitespace(cs.charAt(i))) {
                 return i;
             }
@@ -154,11 +205,20 @@ public class ObjectUtils {
     }
 
     public static int indexOf(CharSequence cs, CharPredicate predicate) {
+        return indexOf(cs, predicate, 0);
+    }
+
+    public static int indexOf(CharSequence cs, CharPredicate predicate, final int startIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
         int length = length(cs);
         if (length == 0) {
             return -1;
         }
-        for (int i = 0; i < length; i++) {
+
+        for (int i = startIndex; i < length; i++) {
             if (predicate.test(cs.charAt(i))) {
                 return i;
             }
@@ -167,11 +227,30 @@ public class ObjectUtils {
     }
 
     public static int lastIndexOf(CharSequence cs, CharPredicate predicate) {
+        return lastIndexOf(cs, predicate, -1);
+    }
+
+    /**
+     * @param startIndex 开始下标，-1表示从最后一个字符开始
+     * @return -1表示查找失败
+     */
+    public static int lastIndexOf(CharSequence cs, CharPredicate predicate, int startIndex) {
+        if (startIndex < -1) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
         int length = length(cs);
         if (length == 0) {
             return -1;
         }
-        for (int i = length - 1; i >= 0; i--) {
+
+        if (startIndex == -1) {
+            startIndex = length - 1;
+        } else if (startIndex >= length) {
+            startIndex = length - 1;
+        }
+
+        for (int i = startIndex; i >= 0; i--) {
             if (predicate.test(cs.charAt(i))) {
                 return i;
             }
@@ -213,6 +292,50 @@ public class ObjectUtils {
         }
         return str.lines()
                 .collect(Collectors.toList());
+    }
+
+    /** 首字母大写 */
+    public static String firstCharToUpperCase(String str) {
+        int length = length(str);
+        if (length == 0) {
+            return str;
+        }
+        char firstChar = str.charAt(0);
+        if (Character.isLowerCase(firstChar)) { // 可拦截非英文字符
+            StringBuilder sb = new StringBuilder(str);
+            sb.setCharAt(0, Character.toUpperCase(firstChar));
+            return sb.toString();
+        }
+        return str;
+    }
+
+    /** 首字母小写 */
+    public static String firstCharToLowerCase(String str) {
+        int length = length(str);
+        if (length == 0) {
+            return str;
+        }
+        char firstChar = str.charAt(0);
+        if (Character.isUpperCase(firstChar)) { // 可拦截非英文字符
+            StringBuilder sb = new StringBuilder(str);
+            sb.setCharAt(0, Character.toLowerCase(firstChar));
+            return sb.toString();
+        }
+        return str;
+    }
+
+    /** 去除字符串的双引号 */
+    public static String unquote(String str) {
+        int length = length(str);
+        if (length == 0) {
+            return str;
+        }
+        char firstChar = str.charAt(0);
+        char lastChar = str.charAt(str.length() - 1);
+        if (firstChar == '"' && lastChar == '"') {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
     }
 
     // endregion

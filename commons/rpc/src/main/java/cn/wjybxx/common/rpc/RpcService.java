@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.annotation.StableName;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -45,5 +47,18 @@ public @interface RpcService {
      * 服务id >= 0 表示公共服务
      */
     int serviceId();
+
+    /**
+     * 自定义扩展数据，通常是json或dson格式。
+     * 它的主要作用是配置切面数据，用于拦截器。
+     */
+    @StableName
+    String customData() default "";
+
+    /** 是否生成服务端用的{@code Exporter} */
+    boolean genExporter() default true;
+
+    /** 是否生成客户端用的{@code Proxy} */
+    boolean genProxy() default true;
 
 }

@@ -14,22 +14,38 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
+
+import javax.annotation.Nonnull;
 
 /**
- * 方法的第一个参数
+ * protobuf枚举值
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/9/27
  */
-enum FirstArgType {
+public class PBEnumValue extends PBElement {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
+    /** 数字id */
+    private int number;
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
+    @Nonnull
+    @Override
+    public PBElementKind getKind() {
+        return PBElementKind.ENUM_VALUE;
+    }
+
+    public int getNumber() {
+        return number;
+    }
+
+    public PBEnumValue setNumber(int number) {
+        this.number = number;
+        return this;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", number=").append(number);
     }
 }

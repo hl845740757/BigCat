@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
 
 /**
- * 方法的第一个参数
+ * 我们支持的元注解类型
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/9
  */
-enum FirstArgType {
+public class AnnotationTypes {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
+    /** rpc服务 */
+    public static final String SERVICE = "RpcService";
+    /** rpc方法 */
+    public static final String METHOD = "RpcMethod";
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
-    }
+    /** 服务端切面参数 */
+    public static final String SPARAM = "Sparam";
+    /** 客户端切面参数 */
+    public static final String CPARAM = "Cparam";
+
 }

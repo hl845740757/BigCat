@@ -32,21 +32,16 @@ import java.util.concurrent.CompletionStage;
  * 该注解用于注释需要被导出的方法。
  *
  * <h3>代理方法的返回值</h3>
- * 1. 如果方法第一个参数为{@link RpcContext}，则返回值类型必须声明为void，代理返回会捕获{@link RpcContext}的泛型参数作为返回值类型。
- * 2. 如果方法的返回值为{@link CompletionStage}，则会捕获{@link  CompletionStage}的泛型参数作为返回值类型。
+ * 1. 如果方法第一个参数为{@link RpcContext}，则返回值类型必须声明为void，代理会捕获{@link RpcContext}的泛型参数作为返回值类型。
+ * 2. 如果方法的返回值为{@link CompletionStage}，则会捕获{@link CompletionStage}的泛型参数作为返回值类型。
  * 3. 其它普通方法，其返回值类型就是代理方法的返回值类型（基本类型和void会被装箱）。
  *
  * <h3>Context</h3>
  * Context有助于实现复杂的消息交互，允许在返回结果前后向对方发送额外的消息，这在与客户端通信的过程中非常有用。
  * 1. 如果需要Ctx，必须将{@link RpcContext}定义为方法的第一个参数。
  * 2. Context不会导出给客户端的Proxy，也不会计数
- * 3. 关于context的用法可查看测试用例(RpcTest2)
- *
- * <h3>Request</h3>
- * 如果用户只想获得远程的信息，而不想自行管理方法的返回时机，这可以通过声明Request参数实现。
- * 1. 如果需要Request，必须将{@link RpcRequest}定义方法的第一个参数。
- * 2. Request不会导出给客户端的Proxy，也不会计数
- * 3. 关于request的用法可查看测试用例(RpcTest2)
+ * 3. 如果只想获得远程信息，而不想自行管理方法的返回时机，可将Ctx声明为{@link RpcGenericContext}
+ * 4. 关于context的用法可查看测试用例(RpcTest2)
  *
  * <h3>限制</h3>
  * 1. 方法不能是private - 至少是包级访问权限(让生成的代码可访问) -- 建议用接口定义服务。

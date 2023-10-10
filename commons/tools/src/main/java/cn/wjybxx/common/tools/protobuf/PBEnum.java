@@ -14,22 +14,30 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.tools.protobuf;
+
+import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
- * 方法的第一个参数
+ * protobuf枚举
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/7
  */
-enum FirstArgType {
+public final class PBEnum extends PBTypeElement {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
-
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
+    @Nonnull
+    @Override
+    public PBElementKind getKind() {
+        return PBElementKind.ENUM;
     }
+
+    public List<PBEnumValue> getEnumValueList() {
+        return getEnclosedElements().stream()
+                .filter(e -> e.getKind() == PBElementKind.ENUM_VALUE)
+                .map(e -> (PBEnumValue) e)
+                .toList();
+    }
+
 }

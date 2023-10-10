@@ -305,7 +305,9 @@ public class DefaultRpcClient implements RpcClient {
                 context.future().complete(null);
             } catch (Exception e) {
                 context.future().completeExceptionally(e);
-                throw wrapException(request, e);
+                if (!(e instanceof NoLogRequiredException)) {
+                    throw wrapException(request, e);
+                }
             }
         } else {
             // rpc -- 监听future完成事件
@@ -325,7 +327,9 @@ public class DefaultRpcClient implements RpcClient {
                 }
             } catch (Exception e) {
                 context.future().completeExceptionally(e);
-                throw wrapException(request, e);
+                if (!(e instanceof NoLogRequiredException)) {
+                    throw wrapException(request, e);
+                }
             }
         }
     }

@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.apt.common.rpc;
+package cn.wjybxx.common.annotation;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * 方法的第一个参数
+ * 用于配置目标的优先级
  *
  * @author wjybxx
- * date - 2023/9/14
+ * date - 2023/10/6
  */
-enum FirstArgType {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Priority {
 
-    NONE,
-    GENERIC_CONTEXT,
-    CONTEXT,
-    OTHER;
+    /** 权重值 */
+    int value();
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
-    }
+    /** 注释 */
+    String comment() default "";
+
 }

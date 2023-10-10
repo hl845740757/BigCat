@@ -20,7 +20,7 @@
         <module>mongo</module>
 
         <!-- 外部工具模块，非运行时模块，开发期工具 -->
-        <module>excel</module>
+        <module>tools</module>
     </modules>
 
     <!-- 证书 -->

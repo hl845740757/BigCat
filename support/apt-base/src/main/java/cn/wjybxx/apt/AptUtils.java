@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  */
 public class AptUtils {
 
-    public static final SourceVersion SOURCE_VERSION = SourceVersion.RELEASE_17;
+    public static final SourceVersion SOURCE_VERSION = SourceVersion.latestSupported();
     public static final Modifier[] PUBLIC_STATIC = {Modifier.PUBLIC, Modifier.STATIC};
     public static final Modifier[] PUBLIC_STATIC_FINAL = {Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL};
     public static final Modifier[] PRIVATE_STATIC_FINAL = {Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL};
