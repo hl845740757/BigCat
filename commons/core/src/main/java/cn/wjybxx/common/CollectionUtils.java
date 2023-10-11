@@ -87,9 +87,9 @@ public class CollectionUtils {
         return elements.get(0);
     }
 
-    // jdk21终于要内置了...
     public static <E> E last(List<E> elements) {
-        return elements.get(elements.size() - 1);
+        return elements.getLast(); // jdk21
+//        return elements.get(elements.size() - 1);
     }
 
     /** 删除list的前n个元素 */
@@ -632,9 +632,9 @@ public class CollectionUtils {
 
     /** @throws NoSuchElementException 如果map为空 */
     public static <K> K firstKey(Map<K, ?> map) {
-        // JDK的LinkedHashMap真的有点气人，都知道是有序的，还不让查询第一个Key...
-        if (map instanceof SortedMap<K, ?> sortedMap) {
-            return sortedMap.firstKey();
+        // jdk21 LinkedHashMap总算可以获取首个键值对了...
+        if (map instanceof SequencedMap<K, ?> sequencedMap) {
+            return sequencedMap.firstEntry().getKey();
         } else {
             return map.keySet().iterator().next();
         }

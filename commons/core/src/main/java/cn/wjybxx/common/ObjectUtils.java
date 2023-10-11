@@ -16,13 +16,8 @@
 
 package cn.wjybxx.common;
 
-import it.unimi.dsi.fastutil.chars.CharPredicate;
-
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 一些基础的扩展
@@ -76,23 +71,6 @@ public class ObjectUtils {
     // region string
     // 没打算造一个StringUtils
 
-    public static <T extends CharSequence> T emptyToDef(T str, T def) {
-        return isEmpty(str) ? def : str;
-    }
-
-    public static <T extends CharSequence> T blankToDef(T str, T def) {
-        return isBlank(str) ? def : str;
-    }
-
-    //
-    public static char firstChar(CharSequence value) {
-        return value.charAt(0);
-    }
-
-    public static char lastChar(CharSequence value) {
-        return value.charAt(value.length() - 1);
-    }
-
     public static int length(CharSequence cs) {
         return cs == null ? 0 : cs.length();
     }
@@ -114,184 +92,16 @@ public class ObjectUtils {
         return true;
     }
 
-    public static boolean containsWhitespace(final CharSequence cs) {
-        final int strLen = length(cs);
-        if (strLen == 0) {
-            return false;
-        }
-        for (int i = 0; i < strLen; i++) {
-            if (Character.isWhitespace(cs.charAt(i))) {
-                return true;
-            }
-        }
-        return false;
+    public static <T extends CharSequence> T emptyToDef(T str, T def) {
+        return isEmpty(str) ? def : str;
     }
 
-    /**
-     * 查找首个非空白字符
-     *
-     * @return 如果不存在则返回-1
-     */
-    public static int firstCharNonWhitespace(CharSequence cs) {
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-        for (int i = 0; i < length; i++) {
-            char c = cs.charAt(i);
-            if (!Character.isWhitespace(c)) {
-                return c;
-            }
-        }
-        return -1;
+    public static <T extends CharSequence> T blankToDef(T str, T def) {
+        return isBlank(str) ? def : str;
     }
 
-    /** 查找首个非空白字符 */
-    public static int indexOfNonWhitespace(CharSequence cs) {
-        return indexOfNonWhitespace(cs, 0);
-    }
-
-    /** 查找首个非空白字符 */
-    public static int indexOfNonWhitespace(CharSequence cs, final int startIndex) {
-        if (startIndex < 0) {
-            throw new IllegalArgumentException("startIndex " + startIndex);
-        }
-
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-        for (int i = startIndex; i < length; i++) {
-            if (!Character.isWhitespace(cs.charAt(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /** 逆向查找首个非空白字符 */
-    public static int lastIndexOfNonWhitespace(CharSequence cs) {
-        return lastIndexOfNonWhitespace(cs, -1);
-    }
-
-    /**
-     * 逆向查找首个非空白字符
-     *
-     * @param startIndex 开始下标，-1表示从最后一个字符开始
-     * @return -1表示查找失败
-     */
-    public static int lastIndexOfNonWhitespace(CharSequence cs, int startIndex) {
-        if (startIndex < -1) {
-            throw new IllegalArgumentException("startIndex " + startIndex);
-        }
-
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-
-        if (startIndex == -1) {
-            startIndex = length - 1;
-        } else if (startIndex >= length) {
-            startIndex = length - 1;
-        }
-
-        for (int i = startIndex; i >= 0; i--) {
-            if (!Character.isWhitespace(cs.charAt(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static int indexOf(CharSequence cs, CharPredicate predicate) {
-        return indexOf(cs, predicate, 0);
-    }
-
-    public static int indexOf(CharSequence cs, CharPredicate predicate, final int startIndex) {
-        if (startIndex < 0) {
-            throw new IllegalArgumentException("startIndex " + startIndex);
-        }
-
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-
-        for (int i = startIndex; i < length; i++) {
-            if (predicate.test(cs.charAt(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static int lastIndexOf(CharSequence cs, CharPredicate predicate) {
-        return lastIndexOf(cs, predicate, -1);
-    }
-
-    /**
-     * @param startIndex 开始下标，-1表示从最后一个字符开始
-     * @return -1表示查找失败
-     */
-    public static int lastIndexOf(CharSequence cs, CharPredicate predicate, int startIndex) {
-        if (startIndex < -1) {
-            throw new IllegalArgumentException("startIndex " + startIndex);
-        }
-
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-
-        if (startIndex == -1) {
-            startIndex = length - 1;
-        } else if (startIndex >= length) {
-            startIndex = length - 1;
-        }
-
-        for (int i = startIndex; i >= 0; i--) {
-            if (predicate.test(cs.charAt(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /** 查找第一个非给定char的元素的位置 */
-    public static int indexOfNot(CharSequence cs, char c) {
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-        for (int i = 0; i < length; i++) {
-            if (cs.charAt(i) != c) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /** 查找最后一个非给定char的元素位置 */
-    public static int lastIndexOfNot(CharSequence cs, char c) {
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-        for (int i = length - 1; i >= 0; i--) {
-            if (cs.charAt(i) != c) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static List<String> toLines(String str) {
-        if (isEmpty(str)) {
-            return new ArrayList<>();
-        }
-        return str.lines()
-                .collect(Collectors.toList());
+    public static char lastChar(CharSequence value) {
+        return value.charAt(value.length() - 1);
     }
 
     /** 首字母大写 */
@@ -324,19 +134,118 @@ public class ObjectUtils {
         return str;
     }
 
-    /** 去除字符串的双引号 */
-    public static String unquote(String str) {
-        int length = length(str);
-        if (length == 0) {
-            return str;
+    // region 空白字符
+
+    /** 是否包含不可见字符 */
+    public static boolean containsWhitespace(final CharSequence cs) {
+        final int strLen = length(cs);
+        if (strLen == 0) {
+            return false;
         }
-        char firstChar = str.charAt(0);
-        char lastChar = str.charAt(str.length() - 1);
-        if (firstChar == '"' && lastChar == '"') {
-            return str.substring(1, str.length() - 1);
+        for (int i = 0; i < strLen; i++) {
+            if (Character.isWhitespace(cs.charAt(i))) {
+                return true;
+            }
         }
-        return str;
+        return false;
     }
+
+    /**
+     * 查找首个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int firstCharNonWhitespace(CharSequence cs) {
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = 0; i < length; i++) {
+            char c = cs.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return c;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * 查找最后一个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int lastCharNonWhitespace(CharSequence cs) {
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = length - 1; i >= 0; i--) {
+            char c = cs.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return c;
+            }
+        }
+        return -1;
+    }
+
+    /** 索引首个非空白字符的 */
+    public static int indexOfNonWhitespace(CharSequence cs) {
+        return indexOfNonWhitespace(cs, 0);
+    }
+
+    /** 索引首个非空白字符 */
+    public static int indexOfNonWhitespace(CharSequence cs, final int startIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = startIndex; i < length; i++) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** 逆向索引首个非空白字符 */
+    public static int lastIndexOfNonWhitespace(CharSequence cs) {
+        return lastIndexOfNonWhitespace(cs, -1);
+    }
+
+    /**
+     * 逆向索引首个非空白字符
+     *
+     * @param startIndex 开始下标，-1表示从最后一个字符开始
+     * @return -1表示查找失败
+     */
+    public static int lastIndexOfNonWhitespace(CharSequence cs, int startIndex) {
+        if (startIndex < -1) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+
+        if (startIndex == -1) {
+            startIndex = length - 1;
+        } else if (startIndex >= length) {
+            startIndex = length - 1;
+        }
+
+        for (int i = startIndex; i >= 0; i--) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    // endregion
 
     // endregion
 

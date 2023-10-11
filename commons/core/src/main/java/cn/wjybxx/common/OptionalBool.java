@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 
 /**
  * 使用{@link Boolean}类型容易忘记检查null
- * 我发现居然没有类库提供这么一个组件呢。
+ * 我发现居然没有类库提供这么一个组件呢 -- 和直接使用包装类型似乎一样。
  *
  * @author wjybxx
  * date - 2023/4/17

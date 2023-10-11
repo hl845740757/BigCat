@@ -24,8 +24,8 @@ package cn.wjybxx.common.tools.excel;
  */
 public enum Mode {
 
-    ONLY_SERVER,
-    ONLY_CLIENT,
+    SERVER,
+    CLIENT,
     BOTH
 
 }

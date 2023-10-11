@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common.tools.protobuf;
 
-import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.tools.util.Line;
+import cn.wjybxx.common.tools.util.Utils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -100,7 +100,7 @@ public abstract class PBElement {
 
     /** 获取去除掉双引号的可选项值 */
     public String getUnquoteOption(String name) {
-        return ObjectUtils.unquote(options.get(name));
+        return Utils.unquote(options.get(name));
     }
 
     // endregion

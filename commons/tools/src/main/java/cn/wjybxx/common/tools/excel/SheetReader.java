@@ -213,7 +213,7 @@ class SheetReader {
         if (mode == Mode.BOTH) {
             return containsCSChar(headerValue, 's') || containsCSChar(headerValue, 'c');
         }
-        if (mode == Mode.ONLY_CLIENT) {
+        if (mode == Mode.CLIENT) {
             containsCSChar(headerValue, 'c');
         }
         return containsCSChar(headerValue, 's');

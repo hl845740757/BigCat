@@ -1,0 +1,143 @@
+/*
+ * Copyright 2023 wjybxx(845740757@qq.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package cn.wjybxx.common.tools.util;
+
+import cn.wjybxx.common.ObjectUtils;
+import it.unimi.dsi.fastutil.chars.CharPredicate;
+
+/**
+ * @author wjybxx
+ * date - 2023/10/9
+ */
+public class Utils extends ObjectUtils {
+
+    // region 字符查找
+
+    /** 查找第一个非给定char的元素的位置 */
+    public static int indexOfNot(CharSequence cs, char c) {
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = 0; i < length; i++) {
+            if (cs.charAt(i) != c) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** 查找最后一个非给定char的元素位置 */
+    public static int lastIndexOfNot(CharSequence cs, char c) {
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = length - 1; i >= 0; i--) {
+            if (cs.charAt(i) != c) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int indexOf(CharSequence cs, CharPredicate predicate) {
+        return indexOf(cs, predicate, 0);
+    }
+
+    public static int indexOf(CharSequence cs, CharPredicate predicate, final int startIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+
+        for (int i = startIndex; i < length; i++) {
+            if (predicate.test(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int lastIndexOf(CharSequence cs, CharPredicate predicate) {
+        return lastIndexOf(cs, predicate, -1);
+    }
+
+    /**
+     * @param startIndex 开始下标，-1表示从最后一个字符开始
+     * @return -1表示查找失败
+     */
+    public static int lastIndexOf(CharSequence cs, CharPredicate predicate, int startIndex) {
+        if (startIndex < -1) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+
+        if (startIndex == -1) {
+            startIndex = length - 1;
+        } else if (startIndex >= length) {
+            startIndex = length - 1;
+        }
+
+        for (int i = startIndex; i >= 0; i--) {
+            if (predicate.test(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // endregion
+
+    /** 去除字符串的双引号 */
+    public static String unquote(String str) {
+        int length = ObjectUtils.length(str);
+        if (length == 0) {
+            return str;
+        }
+        char firstChar = str.charAt(0);
+        char lastChar = str.charAt(str.length() - 1);
+        if (firstChar == '"' && lastChar == '"') {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
+    }
+
+    /** 给字符串添加双引号，若之前无双引号 */
+    public static String quote(String str) {
+        if (str == null) {
+            return null;
+        }
+        if (str.isEmpty()) {
+            return "\"\"";
+        }
+        char firstChar = str.charAt(0);
+        char lastChar = str.charAt(str.length() - 1);
+        if (firstChar == '"' && lastChar == '"') {
+            return str;
+        }
+        return '"' + str + '"';
+    }
+}

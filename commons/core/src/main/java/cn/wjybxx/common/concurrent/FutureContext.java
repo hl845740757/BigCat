@@ -39,6 +39,17 @@ public interface FutureContext {
     }
 
     /**
+     * 创建了一个下游future
+     * 1.该方法可用于追踪调用链的尾部，用于异常处理等逻辑
+     *
+     * @param future     当前future
+     * @param downFuture 新的future
+     */
+    default void reportFuture(XCompletableFuture<?> future, XCompletableFuture<?> downFuture) {
+
+    }
+
+    /**
      * 检查死锁 -- 单线程下支持阻塞操作API，绕不开死锁检测
      * 在任务未完成的情况下，当用户调用以下阻塞方法时将检查死锁
      * {@link XCompletableFuture#get()}

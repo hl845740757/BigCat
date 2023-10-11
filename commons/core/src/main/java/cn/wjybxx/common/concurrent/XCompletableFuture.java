@@ -43,6 +43,7 @@ import java.util.function.*;
 public class XCompletableFuture<T> extends CompletableFuture<T> implements ICompletableFuture<T> {
 
     static final Logger logger = LoggerFactory.getLogger(XCompletableFuture.class);
+    static final boolean enableLogError = Boolean.parseBoolean(System.getProperty("cn.wjybxx.common.concurrent.XCompletableFuture.logError", "true"));
 
     protected final FutureContext ctx;
 
@@ -146,7 +147,11 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
 
     @Override
     public <U> XCompletableFuture<U> newIncompleteFuture() {
-        return new XCompletableFuture<>(downContext());
+        XCompletableFuture<U> future = new XCompletableFuture<>(downContext());
+        if (ctx != null) {
+            ctx.reportFuture(this, future);
+        }
+        return future;
     }
 
     protected FutureContext downContext() {
@@ -161,7 +166,7 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
     }
 
     private static void logCause(Throwable x) {
-        if (!(x instanceof CompletionException) // 通常是二次封装
+        if (enableLogError && !(x instanceof CompletionException) // 通常是二次封装
                 && !(x instanceof NoLogRequiredException)) {
             logger.info("future completed with exception", x);
         }
