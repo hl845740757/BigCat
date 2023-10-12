@@ -66,7 +66,7 @@ public interface FutureContext {
         return false;
     }
 
-    // 用户写操作检查
+    // region 用户写操作检查
 
     default boolean cancel(XCompletableFuture<?> future, boolean mayInterruptIfRunning) {
         if (future.ctx != this) throw new IllegalStateException();
@@ -93,4 +93,5 @@ public interface FutureContext {
         future.internal_doObtrudeException(ex);
     }
 
+    // endregion
 }
