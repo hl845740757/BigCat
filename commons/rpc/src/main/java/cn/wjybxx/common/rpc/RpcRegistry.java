@@ -16,9 +16,11 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.annotation.StableName;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Rpc方法代理注册表
@@ -34,11 +36,36 @@ public interface RpcRegistry {
      * @param serviceId 服务id
      * @param methodId  方法id
      * @param proxy     代理方法
+     * @throws IllegalArgumentException 如果已存在对应的proxy，则抛出异常
      */
+    @StableName
     void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy);
 
-    /** 受信任的注册方法，可用于覆盖之前绑定的代理方法 */
-    void trustedRegister(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy);
+    /**
+     * 设置代理的切面数据
+     * 由于一个方法只能由一个proxy，因此切面数据可以独立注册
+     *
+     * @param serviceId  服务id
+     * @param methodId   方法id
+     * @param customData 自定义切面数据；也可用于指示是否可覆盖
+     */
+    @StableName
+    void setProxyData(int serviceId, int methodId, String customData);
+
+    /**
+     * 注册一个rpc请求处理函数
+     *
+     * @param serviceId  服务id
+     * @param methodId   方法id
+     * @param proxy      代理方法
+     * @param customData 自定义切面数据；也可用于指示是否可覆盖
+     */
+    @StableName
+    default void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy,
+                          @Nullable String customData) {
+        register(serviceId, methodId, proxy);
+        setProxyData(serviceId, methodId, customData);
+    }
 
     /**
      * 查询方法绑定的Proxy
@@ -48,6 +75,16 @@ public interface RpcRegistry {
      * @return 如果不存在，则返回null
      */
     RpcMethodProxy getProxy(int serviceId, int methodId);
+
+    /**
+     * 删除指定方法的Proxy
+     * 在删除后可重新注册，通常用于覆盖特定方法的proxy
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @return 如果不存在，则返回null
+     */
+    RpcMethodProxy removeProxy(int serviceId, int methodId);
 
     /**
      * 由于{@link #getProxy(int, int)}可能返回默认的proxy，因此不能根据是否为null判断是否存在服务

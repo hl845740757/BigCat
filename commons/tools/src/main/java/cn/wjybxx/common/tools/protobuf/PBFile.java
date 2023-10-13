@@ -19,6 +19,7 @@ package cn.wjybxx.common.tools.protobuf;
 import javax.annotation.Nonnull;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -33,10 +34,7 @@ public class PBFile extends PBElement {
     private String fileName;
     /** 语法级别 */
     private String syntax;
-    /**
-     * 导入的文件
-     * 无需包含commons文件，commons文件会被自动导入，这里可用于导入一些特殊的依赖
-     */
+    /** 导入的文件（显式声明的依赖和commons） */
     private final Set<String> imports = new LinkedHashSet<>(4);
 
     //
@@ -48,7 +46,9 @@ public class PBFile extends PBElement {
     }
 
     public PBFile addImport(String fileName) {
-        assert fileName.endsWith(".proto");
+        if (!fileName.endsWith(".proto")) {
+            throw new IllegalArgumentException(); // protobuf语法规范
+        }
         this.imports.add(fileName);
         return this;
     }

@@ -56,10 +56,7 @@ public class PBField extends PBElement {
         return Objects.equals(type, "map");
     }
 
-    public boolean isRepeatedOrMap() {
-        return modifier == MODIFIER_REPEATED || isMap();
-    }
-
+    /** 是否是数组字段 */
     public boolean isRepeated() {
         return modifier == MODIFIER_REPEATED;
     }

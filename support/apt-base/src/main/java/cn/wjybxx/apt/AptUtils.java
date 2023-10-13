@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -48,9 +50,7 @@ public class AptUtils {
     public static final Modifier[] PUBLIC_STATIC_FINAL = {Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL};
     public static final Modifier[] PRIVATE_STATIC_FINAL = {Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL};
 
-    /**
-     * 由于生成的代码不能很好的处理泛型等信息，因此需要抑制警告
-     */
+    /** 由于生成的代码不能很好的处理泛型等信息，因此需要抑制警告 */
     public static final AnnotationSpec SUPPRESS_UNCHECKED_RAWTYPES = AnnotationSpec.builder(SuppressWarnings.class)
             .addMember("value", "{\"unchecked\", \"rawtypes\", \"unused\"}")
             .build();
@@ -60,27 +60,29 @@ public class AptUtils {
             .build();
 
     public static final AnnotationSpec ANNOTATION_OVERRIDE = AnnotationSpec.builder(Override.class).build();
-    public static final AnnotationSpec ANNOTATION_NONNULL = AnnotationSpec.builder(Nonnull.class)
-            .build();
+    public static final AnnotationSpec ANNOTATION_NONNULL = AnnotationSpec.builder(Nonnull.class).build();
 
-    public static final ClassName CLASS_NAME_SOURCE_REF = ClassName.get(SourceFileRef.class);
-    public static final ClassName CLASS_NAME_STRING = ClassName.get(String.class);
-    public static final TypeName CLASS_NAME_BYTES = ArrayTypeName.of(TypeName.BYTE);
+    public static final ClassName CLSNAME_SOURCE_REF = ClassName.get(SourceFileRef.class);
+    public static final ClassName CLSNAME_STRING = ClassName.get(String.class);
+    public static final TypeName CLSNAME_BYTES = ArrayTypeName.of(TypeName.BYTE);
 
-    public static final ClassName CLASS_NAME_LIST = ClassName.get(List.class);
-    public static final ClassName CLASS_NAME_ARRAY_LIST = ClassName.get(ArrayList.class);
+    public static final ClassName CLSNAME_LIST = ClassName.get(List.class);
+    public static final ClassName CLSNAME_ARRAY_LIST = ClassName.get(ArrayList.class);
 
-    public static final ClassName CLASS_NAME_SET = ClassName.get(Set.class);
-    public static final ClassName CLASS_NAME_HASH_SET = ClassName.get(HashSet.class);
-    public static final ClassName CLASS_NAME_LINKED_SET = ClassName.get(LinkedHashSet.class);
+    public static final ClassName CLSNAME_SET = ClassName.get(Set.class);
+    public static final ClassName CLSNAME_HASH_SET = ClassName.get(HashSet.class);
+    public static final ClassName CLSNAME_LINKED_SET = ClassName.get(LinkedHashSet.class);
 
-    public static final ClassName CLASS_NAME_MAP = ClassName.get(Map.class);
-    public static final ClassName CLASS_NAME_HASH_MAP = ClassName.get(HashMap.class);
-    public static final ClassName CLASS_NAME_LINKED_MAP = ClassName.get(LinkedHashMap.class);
+    public static final ClassName CLSNAME_MAP = ClassName.get(Map.class);
+    public static final ClassName CLSNAME_HASH_MAP = ClassName.get(HashMap.class);
+    public static final ClassName CLSNAME_LINKED_MAP = ClassName.get(LinkedHashMap.class);
 
-    public static final ClassName CLASS_NAME_SUPPLIER = ClassName.get(Supplier.class);
-    public static final ClassName CLASS_NAME_ARRAYS = ClassName.get(Arrays.class);
-    public static final ClassName CLASS_NAME_OBJECTS = ClassName.get(Objects.class);
+    public static final ClassName CLSNAME_SUPPLIER = ClassName.get(Supplier.class);
+    public static final ClassName CLSNAME_ARRAYS = ClassName.get(Arrays.class);
+    public static final ClassName CLSNAME_OBJECTS = ClassName.get(Objects.class);
+
+    public static final ClassName CLSNAME_FUTURE = ClassName.get(CompletableFuture.class);
+    public static final ClassName CLSNAME_STAGE = ClassName.get(CompletionStage.class);
 
     public static final Map<String, TypeName> primitiveTypeNameMap;
     public static final Map<String, TypeName> boxedTypeNameMap;
@@ -133,7 +135,7 @@ public class AptUtils {
      * 方便查看文件的依赖
      */
     public static AnnotationSpec newSourceFileRefAnnotation(TypeName sourceFileTypeName) {
-        return AnnotationSpec.builder(CLASS_NAME_SOURCE_REF)
+        return AnnotationSpec.builder(CLSNAME_SOURCE_REF)
                 .addMember("value", "$T.class", sourceFileTypeName)
                 .build();
     }
@@ -171,6 +173,7 @@ public class AptUtils {
         }
     }
 
+    /** @param cname 类的标准名，import语句格式 */
     public static ClassName classNameOfCanonicalName(String cname) {
         int index = cname.lastIndexOf('.');
         return ClassName.get(cname.substring(0, index), cname.substring(index + 1));
@@ -415,19 +418,19 @@ public class AptUtils {
      * @param propertyName     属性的名字
      * @return object
      */
-    @SuppressWarnings("unchecked")
     @Nullable
     public static <T> T getAnnotationValueValue(AnnotationMirror annotationMirror, String propertyName) {
-        return (T) Optional.ofNullable(getAnnotationValue(annotationMirror, propertyName))
-                .map(AnnotationValue::getValue)
-                .orElse(null);
+        return getAnnotationValueValue(annotationMirror, propertyName, null);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T getAnnotationValueValue(AnnotationMirror annotationMirror, String propertyName, T def) {
-        return (T) Optional.ofNullable(getAnnotationValue(annotationMirror, propertyName))
-                .map(AnnotationValue::getValue)
-                .orElse(def);
+        AnnotationValue annotationValue = getAnnotationValue(annotationMirror, propertyName);
+        if (annotationValue == null) {
+            return def;
+        } else {
+            return (T) annotationValue.getValue();
+        }
     }
 
     /**

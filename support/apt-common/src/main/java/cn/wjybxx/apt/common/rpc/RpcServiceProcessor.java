@@ -30,10 +30,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
@@ -53,6 +50,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String CNAME_RPC_METHOD = "cn.wjybxx.common.rpc.RpcMethod";
     private static final String PNAME_METHOD_ID = "methodId";
     private static final String PNAME_SHARABLE = "sharable";
+    private static final String PNAME_CUSTOM_DATA = "customData";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.common.rpc.RpcRegistry";
@@ -78,8 +76,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     TypeMirror stringTypeMirror;
     List<TypeMirror> futureTypeMirrors = new ArrayList<>(2);
 
-    /** protobuf的消息类型 -- 该字段可能为null，如果项目未使用protobuf */
-    TypeMirror protobufMessageTypeMirror;
     /** 不可变类型，不包含基础类型 */
     Set<TypeMirror> immutableTypeMirrors = new HashSet<>(36);
 
@@ -116,11 +112,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletableFuture.class).asType());
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletionStage.class).asType());
 
-        try {
-            protobufMessageTypeMirror = elementUtils.getTypeElement(CNAME_PROTOBUF_MESSAGE).asType();
-        } catch (Exception ignore) {
-
-        }
         for (TypeKind typeKind : TypeKind.values()) {
             if (!typeKind.isPrimitive()) continue;
             PrimitiveType primitiveType = typeUtils.getPrimitiveType(typeKind);
@@ -153,10 +144,11 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         final List<ExecutableElement> rpcMethodList = new ArrayList<>();
         final Set<Integer> methodIdSet = new HashSet<>();
         for (final ExecutableElement method : allMethodList) {
-            final Integer methodId = getMethodId(method);
-            if (methodId == null) { // 不是rpc方法
+            Map<String, AnnotationValue> annoValueMap = getMethodAnnoValueMap(method);
+            if (annoValueMap == null) {  // 不是rpc方法
                 continue;
             }
+            final int methodId = getMethodId(method, annoValueMap);
             if (method.getModifiers().contains(Modifier.STATIC)) { // 不可以是静态的
                 messager.printMessage(Diagnostic.Kind.ERROR, "RpcMethod method can't be static！", method);
                 continue;
@@ -240,19 +232,34 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
                 .orElseThrow();
     }
 
-    Integer getMethodId(ExecutableElement method) {
-        return (Integer) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
-                .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, PNAME_METHOD_ID))
+    Map<String, AnnotationValue> getMethodAnnoValueMap(ExecutableElement method) {
+        var annotationMirror = AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
                 .orElse(null);
+        if (annotationMirror == null) {
+            return null;
+        }
+        return AptUtils.getAnnotationValuesMap(annotationMirror);
     }
 
-    Boolean isSharable(ExecutableElement method) {
-        Boolean annoValue = (Boolean) AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
-                .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, PNAME_SHARABLE))
-                .orElse(Boolean.FALSE);
-        if (annoValue) {
-            return true;
+    int getMethodId(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
+        return (Integer) annoValueMap.get(PNAME_METHOD_ID).getValue();
+    }
+
+    String getCustomData(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
+        AnnotationValue annotationValue = annoValueMap.get(PNAME_CUSTOM_DATA);
+        if (annotationValue == null) {
+            return null;
         }
+        return (String) annotationValue.getValue();
+    }
+
+    boolean isSharable(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
+        // 指定了属性则以属性为准
+        AnnotationValue annotationValue = annoValueMap.get(PNAME_SHARABLE);
+        if (annotationValue != null) {
+            return (Boolean) annotationValue.getValue();
+        }
+
         // 如果所有参数都是不可变的，则默认true
         List<? extends VariableElement> parameters = method.getParameters();
         for (VariableElement parameter : parameters) {
@@ -271,14 +278,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         if (typeMirror.getKind().isPrimitive()) {
             return true;
         }
-        if (immutableTypeMirrors.contains(typeMirror)) {
-            return true;
-        }
-        if (protobufMessageTypeMirror != null
-                && AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, protobufMessageTypeMirror)) {
-            return true;
-        }
-        return false;
+        return immutableTypeMirrors.contains(typeMirror);
     }
 
     /**

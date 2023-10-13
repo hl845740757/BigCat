@@ -19,12 +19,12 @@ package cn.wjybxx.apt.common.rpc;
 import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
 import cn.wjybxx.apt.BeanUtils;
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
 
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
@@ -156,7 +156,8 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * </pre>
      */
     private MethodSpec genServerMethodProxy(TypeElement typeElement, int serviceId, ExecutableElement method) {
-        final int methodId = processor.getMethodId(method);
+        final Map<String, AnnotationValue> annoValueMap = processor.getMethodAnnoValueMap(method);
+        final int methodId = processor.getMethodId(method, annoValueMap);
         final MethodSpec.Builder builder = MethodSpec.methodBuilder(getServerProxyMethodName(methodId, method))
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(TypeName.VOID)
@@ -182,6 +183,12 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         }
 
         builder.addStatement("})");
+
+        // 注册切面数据
+        String customData = processor.getCustomData(method, annoValueMap);
+        if (customData != null) {
+            builder.addStatement("$L.setProxyData($L, $L, $S)", varName_registry, serviceId, methodId, customData);
+        }
         return builder.build();
     }
 

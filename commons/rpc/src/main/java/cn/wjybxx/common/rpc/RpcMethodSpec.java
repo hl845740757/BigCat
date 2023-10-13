@@ -40,7 +40,7 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
 
     private int serviceId;
     private int methodId;
-    private List<Object> parameters;
+    private List<Object> parameters; // 要省开销的化，可以是Object类型，当方法参数大于1才扩展为List
     private transient boolean sharable;
 
     public RpcMethodSpec() {

@@ -22,6 +22,8 @@ import cn.wjybxx.common.tools.util.Line;
 import cn.wjybxx.common.tools.util.LineIterator;
 import cn.wjybxx.dson.DsonObject;
 import cn.wjybxx.dson.DsonValue;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +70,7 @@ public class PBParser {
         this.context.started = true;
     }
 
+    /** 不包含Option、import、syntax声明 */
     public List<Line> getProcessedLines() {
         return processedLines;
     }
@@ -86,16 +89,10 @@ public class PBParser {
         pbFile.setSimpleName(FilenameUtils.removeExtension(fileName));
 
         // 处理导入
-        String simpleName = pbFile.getSimpleName();
-        if (options.getRoot() != null && !simpleName.equals(options.getRoot())) {
-            if (options.getCommons().contains(simpleName)) { // 公共文件只导入root
-                pbFile.addImport(options.getRoot() + ".proto");
-            } else {
-                for (String common : options.getCommons()) { // 其它文件导入所有公共文件
-                    pbFile.addImport(common + ".proto");
-                }
-            }
-        }
+        addCommonImports(pbFile);
+
+        // 处理option
+        options.getDefOptions().forEach(pbFile::addOption);
 
         try {
             final LineIterator lineIterator = new LineIterator(new FileReader(file, StandardCharsets.UTF_8));
@@ -130,6 +127,20 @@ public class PBParser {
         return pbFile;
     }
 
+    private void addCommonImports(PBFile pbFile) {
+        String simpleName = pbFile.getSimpleName();
+        if (options.getRoot() == null || simpleName.equals(options.getRoot())) {
+            return;
+        }
+        if (options.getCommons().contains(simpleName)) { // 公共文件只导入root
+            pbFile.addImport(options.getRoot() + ".proto");
+        } else {
+            for (String common : options.getCommons()) { // 其它文件导入所有公共文件
+                pbFile.addImport(common + ".proto");
+            }
+        }
+    }
+
     // region 容器
 
     private void topLevelReadLine(final LineInfo lineInfo) {
@@ -145,18 +156,23 @@ public class PBParser {
             }
             case PBKeywords.MESSAGE -> readStartContainer(ContextType.MESSAGE, lineInfo);
             case PBKeywords.ENUM -> readStartContainer(ContextType.ENUM, lineInfo);
+
             case PBKeywords.OPTION -> {
                 context.clearCommentLines();
                 parseOption(context.container, lineInfo);
+                processedLines.removeLast(); // 删除原始行，由pbFile内信息覆盖
             }
             case PBKeywords.IMPORT -> {
                 context.clearCommentLines();
                 context.asFile().addImport(parseQuoteValue(lineInfo));
+                processedLines.removeLast(); // 删除原始行，由pbFile内信息覆盖
             }
             case PBKeywords.SYNTAX -> {
                 context.clearCommentLines();
                 context.asFile().setSyntax(parseQuoteValue(lineInfo));
+                processedLines.removeLast(); // 删除原始行，由pbFile内信息覆盖
             }
+
             case null, default -> context.clearCommentLines();
         }
     }
@@ -256,6 +272,7 @@ public class PBParser {
             }
             // 注释掉service相关行
             commentServiceLines(service);
+            checkMethodIds(service);
         }
     }
 
@@ -379,6 +396,19 @@ public class PBParser {
     // endregion
 
     // region service
+
+    /** 检查方法id重复等 */
+    private void checkMethodIds(PBService service) {
+        List<PBMethod> methods = service.getMethods();
+        IntSet methodIdSet = new IntOpenHashSet(methods.size());
+        for (PBMethod method : methods) {
+            if (methodIdSet.add(method.getMethodId())) {
+                continue;
+            }
+            throw new PBParserException("methodId is duplicate, serviceName: %s, methodName: %s, methodId: %d"
+                    .formatted(service.getServiceId(), method.getSimpleName(), method.getMethodId()));
+        }
+    }
 
     private void commentServiceLines(PBService service) {
         int startLn = service.getSourceLine().ln;
@@ -603,8 +633,7 @@ public class PBParser {
         }
         PBEnumValue enumValue = new PBEnumValue()
                 .setNumber(number);
-        enumValue
-                .setSimpleName(name)
+        enumValue.setSimpleName(name)
                 .setSourceLine(lineInfo.asLine())
                 .setSourceEndLine(lineInfo.asLine());
 
@@ -670,6 +699,25 @@ public class PBParser {
         } catch (Exception e) {
             throw new PBParserException("invalid dson, line: " + lineInfo, e);
         }
+    }
+
+    /** 测试注释是否是注解 */
+    public static boolean isAnnotationComment(String comment) {
+        int startIndex = ObjectUtils.indexOfNonWhitespace(comment, 2);
+        if (startIndex < 0 || comment.charAt(startIndex) != '@') {
+            return false; // @前面有其它内容
+        }
+        int valueStartIndex = comment.indexOf('{');
+        int valueEndIndex = comment.lastIndexOf('}');
+        if (valueStartIndex < 0 || valueStartIndex >= valueEndIndex) {
+            return false;
+        }
+
+        String type = comment.substring(startIndex + 1, valueStartIndex).trim();
+        if (StringUtils.containsWhitespace(type)) {
+            return false; // '//@ A C{' , 类型不连贯
+        }
+        return true;
     }
 
     // endregion

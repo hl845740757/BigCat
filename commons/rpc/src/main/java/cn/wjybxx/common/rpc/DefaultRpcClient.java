@@ -247,7 +247,7 @@ public class DefaultRpcClient implements RpcClient {
                 @SuppressWarnings("unchecked") final V result = (V) response.getResult();
                 return result;
             } else {
-                throw RpcServerException.failed(errorCode, response.getErrorMsg());
+                throw newServerException(response, errorCode);
             }
         } catch (TimeoutException e) {
             throw RpcClientException.blockingTimeout(e);
@@ -282,7 +282,7 @@ public class DefaultRpcClient implements RpcClient {
             logger.warn("rcv unknown request, node {}, serviceId={}, methodId={}",
                     request.getSrcAddr(), request.getServiceId(), request.getMethodId());
             if (RpcInvokeType.isCall(request.getInvokeType())) {
-                final RpcResponse response = RpcResponse.newFailedResponse(request, selfRpcAddr, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
+                final RpcResponse response = newFailedResponse(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
                 sendResponseAndLog(response);
             }
             return;
@@ -290,43 +290,40 @@ public class DefaultRpcClient implements RpcClient {
         int code = interceptor == null ? 0 : interceptor.test(request);
         if (code != 0) {
             if (RpcInvokeType.isCall(request.getInvokeType())) {
-                final RpcResponse response = RpcResponse.newFailedResponse(request, selfRpcAddr, code, "");
+                final RpcResponse response = newFailedResponse(request, code, "");
                 sendResponseAndLog(response);
             }
             return;
         }
 
         RpcMethodSpec<?> methodSpec = new RpcMethodSpec<>(request.getServiceId(), request.getMethodId(), request.getParameters());
-        DefaultRpcContext<T> context = new DefaultRpcContext<>(request, new XCompletableFuture<>());
+        RpcContextImpl<T> context = new RpcContextImpl<>(request, this);
         if (RpcInvokeType.isMessage(request.getInvokeType())) {
             // 单向消息 - 不需要结果
             try {
                 proxy.invoke(context, methodSpec);
-                context.future().complete(null);
             } catch (Exception e) {
-                context.future().completeExceptionally(e);
                 if (!(e instanceof NoLogRequiredException)) {
                     throw wrapException(request, e);
                 }
             }
         } else {
             // rpc -- 监听future完成事件
-            context.future().whenComplete(new FutureListener<>(request, this));
             try {
                 final Object result = proxy.invoke(context, methodSpec);
                 if (result == context) {
                     return; // 用户使用了context返回结果
                 }
-                if (result instanceof CompletionStage<?>) {
+                if (result instanceof CompletionStage<?>) { // 异步获取结果
                     @SuppressWarnings("unchecked") CompletionStage<T> future = (CompletionStage<T>) result;
-                    FutureUtils.setFuture(context.future(), future);
+                    future.whenComplete(context);
                 } else {
                     // 立即得到了结果
-                    @SuppressWarnings("unchecked") T castResult = (T) result;
-                    context.future().complete(castResult);
+                    RpcResponse response = RpcResponse.newSucceedResponse(request, selfRpcAddr, result);
+                    sendResponseAndLog(response);
                 }
-            } catch (Exception e) {
-                context.future().completeExceptionally(e);
+            } catch (Throwable e) {
+                sendResponseAndLog(newFailedResponse(request, e));
                 if (!(e instanceof NoLogRequiredException)) {
                     throw wrapException(request, e);
                 }
@@ -352,14 +349,20 @@ public class DefaultRpcClient implements RpcClient {
 
         if (requestStub != null) {
             final int errorCode = response.getErrorCode();
+            @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.future;
             if (errorCode == 0) {
-                @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.future;
                 promise.complete(response.getResult());
-            } else if (RpcErrorCodes.isUserCode(errorCode)) {
-                requestStub.future.completeExceptionally(new ErrorCodeException(errorCode, response.getErrorMsg()));
             } else {
-                requestStub.future.completeExceptionally(RpcServerException.failed(errorCode, response.getErrorMsg()));
+                promise.completeExceptionally(newServerException(response, errorCode));
             }
+        }
+    }
+
+    private static RuntimeException newServerException(RpcResponse response, int errorCode) {
+        if (RpcErrorCodes.isUserCode(errorCode)) {
+            return new ErrorCodeException(errorCode, response.getErrorMsg());
+        } else {
+            return new RpcServerException(errorCode, response.getErrorMsg());
         }
     }
 
@@ -418,14 +421,14 @@ public class DefaultRpcClient implements RpcClient {
         }
     }
 
-    private static RuntimeException wrapException(RpcRequest request, Exception e) {
+    private static RuntimeException wrapException(RpcRequest request, Throwable e) {
         String msg = String.format("invoke caught exception, node %s, serviceId=%d, methodId=%d",
                 request.getSrcAddr(), request.getServiceId(), request.getMethodId());
         return new RuntimeException(msg, e);
     }
 
-    private <V> RpcResponse newSucceedResponse(RpcRequest request, V result) {
-        return RpcResponse.newSucceedResponse(request, selfRpcAddr, result);
+    private RpcResponse newFailedResponse(RpcRequest request, int errorCode, String msg) {
+        return RpcResponse.newFailedResponse(request, selfRpcAddr, errorCode, msg);
     }
 
     private RpcResponse newFailedResponse(RpcRequest request, Throwable e) {
@@ -461,14 +464,42 @@ public class DefaultRpcClient implements RpcClient {
         }
     }
 
-    private static class FutureListener<V> implements BiConsumer<V, Throwable> {
+    private static class RpcContextImpl<V> implements RpcContext<V>, BiConsumer<V, Throwable> {
 
         final RpcRequest request;
         final DefaultRpcClient rpcClient;
 
-        FutureListener(RpcRequest request, DefaultRpcClient rpcClient) {
+        RpcContextImpl(RpcRequest request, DefaultRpcClient rpcClient) {
             this.request = request;
             this.rpcClient = rpcClient;
+        }
+
+        @Override
+        public RpcRequest request() {
+            return request;
+        }
+
+        @Override
+        public RpcAddr remoteAddr() {
+            return request.srcAddr;
+        }
+
+        @Override
+        public RpcAddr localAddr() {
+            return request.destAddr;
+        }
+
+        @Override
+        public void sendResult(V result) {
+            RpcResponse response = RpcResponse.newSucceedResponse(request, rpcClient.selfRpcAddr, result);
+            rpcClient.sendResponseAndLog(response);
+        }
+
+        @Override
+        public void sendError(int errorCode, String msg) {
+            if (errorCode == 0) throw new IllegalArgumentException("errorCode == 0");
+            RpcResponse response = rpcClient.newFailedResponse(request, errorCode, msg);
+            rpcClient.sendResponseAndLog(response);
         }
 
         @Override
@@ -477,7 +508,7 @@ public class DefaultRpcClient implements RpcClient {
             if (throwable != null) {
                 response = rpcClient.newFailedResponse(request, throwable);
             } else {
-                response = rpcClient.newSucceedResponse(request, v);
+                response = RpcResponse.newSucceedResponse(request, rpcClient.selfRpcAddr, v);
             }
             rpcClient.sendResponseAndLog(response);
         }

@@ -20,16 +20,14 @@ import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
 import com.squareup.javapoet.*;
 
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wjybxx
@@ -102,22 +100,24 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
             parameters.remove(0);
         }
 
+        Map<String, AnnotationValue> annoValueMap = processor.getMethodAnnoValueMap(method);
         if (parameters.size() == 0) {
             // 无参时，使用 List.of();
             builder.addStatement("return new $T<>($L, $L, $T.of(), true)",
                     processor.methodSpecRawTypeName,
-                    serviceId, processor.getMethodId(method),
-                    AptUtils.CLASS_NAME_LIST);
+                    serviceId, processor.getMethodId(method, annoValueMap),
+                    AptUtils.CLSNAME_LIST);
         } else {
             // ArrayList<Object> _parameters = new ArrayList<>(2);
-            ClassName arrayListTypeName = AptUtils.CLASS_NAME_ARRAY_LIST;
+            ClassName arrayListTypeName = AptUtils.CLSNAME_ARRAY_LIST;
             builder.addStatement("$T<Object> _parameters = new $T<>($L)", arrayListTypeName, arrayListTypeName, parameters.size());
             for (ParameterSpec parameterSpec : parameters) {
                 builder.addStatement("_parameters.add($L)", parameterSpec.name);
             }
             builder.addStatement("return new $T<>($L, $L, _parameters, $L)",
                     processor.methodSpecRawTypeName,
-                    serviceId, processor.getMethodId(method), processor.isSharable(method));
+                    serviceId, processor.getMethodId(method, annoValueMap),
+                    processor.isSharable(method, annoValueMap));
         }
 
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有

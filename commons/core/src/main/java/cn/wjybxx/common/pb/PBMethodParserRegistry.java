@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.rpc;
+package cn.wjybxx.common.pb;
+
+import cn.wjybxx.common.annotation.StableName;
 
 /**
- * rpc执行时的上下文接口。
- * 1. 该接口提供了返回结果的方法。
- * 2. 当Rpc方法的第一个参数为该接口时，由用户自行控制结果的返回时机。
+ * rpc方法解析器注册表
  *
  * @author wjybxx
- * date 2023/4/1
+ * date - 2023/10/12
  */
-public interface RpcContext<V> extends RpcGenericContext {
+public interface PBMethodParserRegistry {
 
-    /** 发送正确结果 */
-    void sendResult(V result);
+    @StableName
+    void register(PBMethodParser<?, ?> parser);
 
-    /** 发送错误结果 */
-    void sendError(int errorCode, String msg);
+    PBMethodParser<?, ?> getParser(int serviceId, int methodId);
 
 }

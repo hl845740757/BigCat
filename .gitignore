@@ -46,3 +46,5 @@ hs_err_pid*
 temp-*
 *.flattened-pom.xml
 ~$*
+/commons/testres/temp/
+/commons/tools/src/test/java/cn/wjybxx/common/temp/

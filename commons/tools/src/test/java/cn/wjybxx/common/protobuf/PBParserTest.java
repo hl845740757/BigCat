@@ -16,31 +16,77 @@
 
 package cn.wjybxx.common.protobuf;
 
-import cn.wjybxx.common.tools.protobuf.PBFile;
+import cn.wjybxx.common.rpc.ExtensibleService;
 import cn.wjybxx.common.tools.protobuf.PBMethod;
 import cn.wjybxx.common.tools.protobuf.PBParser;
 import cn.wjybxx.common.tools.protobuf.PBParserOptions;
-import org.junit.jupiter.api.Test;
+import cn.wjybxx.common.tools.protobuf.PBRepository;
+import cn.wjybxx.common.tools.protobuf.gen.PBCompiler;
+import cn.wjybxx.common.tools.protobuf.gen.PBFileGenerator;
+import cn.wjybxx.common.tools.protobuf.gen.ParserExporterGenerator;
+import cn.wjybxx.common.tools.protobuf.gen.ServiceGenerator;
+import cn.wjybxx.common.tools.util.Utils;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
+ * 可运行该测试，查看生成的代码
+ *
  * @author wjybxx
  * date - 2023/10/9
  */
 public class PBParserTest {
 
-    private static final String resDir = new File(System.getProperty("user.dir")).getParent() + "/testres/";
-    private static final File file = new File(resDir + "/test.proto");
+    /** 该测试部走自动化测试 */
+    public static void main(String[] args) throws IOException {
+        File projectDir = getProjectDir();
 
-    @Test
-    void test() {
         PBParserOptions options = new PBParserOptions();
-        options.getCommons().add("common_struct");
-        options.setMethodDefMode(PBMethod.MODE_CONTEXT);
+        options.setProtoDir(projectDir.getPath() + "/commons/testres/")
+                .setTempDir(projectDir.getPath() + "/commons/testres/temp")
+                .setLineSeparator("\n")
+                .setHeaderLines(5)
+                .addCommon("common")
+                .setJavaMultipleFiles(true);
 
-        PBParser reader = new PBParser(file, options);
-        PBFile pbFile = reader.parse();
-        System.out.println(pbFile);
+        options.setJavaOut(projectDir.getPath() + "/commons/tools/src/test/java")
+                .setJavaPackage("cn.wjybxx.common.temp");
+
+        options.setMethodDefMode(PBMethod.MODE_CONTEXT)
+                .setUseCompleteStage(false)
+                .setServiceInterceptor(service -> {
+                    service.addSuperinterface(ExtensibleService.class.getCanonicalName());
+                });
+
+        File protoDir = new File(options.getProtoDir());
+        File tempDir = new File(options.getTempDir());
+        File javaOutDir = new File(options.getJavaOut());
+        // 清空旧文件
+        if (options.isCleanJavaPackage()) {
+            File javaPackageDir = new File(javaOutDir.getPath() + "/" + options.getJavaPackage().replace('.', '/'));
+            if (javaPackageDir.exists()) {
+                FileUtils.cleanDirectory(javaPackageDir);
+            }
+        }
+
+        PBRepository repository = new PBRepository();
+        Collection<File> protobufFiles = FileUtils.listFiles(protoDir, new String[]{"proto"}, false);
+        for (File file : protobufFiles) {
+            PBParser parser = new PBParser(file, options);
+            repository.addFile(parser.parse());
+            new PBFileGenerator(options, tempDir, parser).build();
+        }
+        new PBCompiler(options).build();
+        new ParserExporterGenerator(options, repository).build();
+        new ServiceGenerator(options, repository).build();
     }
+
+    /** 运行Main方法和运行Junit的WorkDir不同... */
+    private static File getProjectDir() {
+        return Utils.findProjectDir("BigCat");
+    }
+
 }

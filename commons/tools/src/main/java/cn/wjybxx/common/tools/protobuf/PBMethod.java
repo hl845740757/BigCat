@@ -35,7 +35,7 @@ public class PBMethod extends PBElement {
 
     /** 方法参数的类型 */
     private String argType;
-    /** 方法参数的名字 -- 可能为null，如果为null，则首字母小写作为参数名 */
+    /** 方法参数的名字 -- 默认值由parser赋值 */
     private String argName;
     /** 方法返回值的类型 */
     private String resultType;

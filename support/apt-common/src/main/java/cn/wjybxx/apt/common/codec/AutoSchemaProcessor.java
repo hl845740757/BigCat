@@ -390,7 +390,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
                         variableElement);
                 continue;
             }
-            fieldSpecList.add(FieldSpec.builder(AptUtils.CLASS_NAME_STRING, "names_" + fieldName, AptUtils.PUBLIC_STATIC_FINAL)
+            fieldSpecList.add(FieldSpec.builder(AptUtils.CLSNAME_STRING, "names_" + fieldName, AptUtils.PUBLIC_STATIC_FINAL)
                     .initializer("$S", dsonName)
                     .build()
             );

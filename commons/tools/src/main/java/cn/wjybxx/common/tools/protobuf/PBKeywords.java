@@ -16,6 +16,10 @@
 
 package cn.wjybxx.common.tools.protobuf;
 
+import cn.wjybxx.common.tools.util.Utils;
+
+import java.util.Map;
+
 /**
  * @author wjybxx
  * date - 2023/10/9
@@ -68,7 +72,6 @@ public class PBKeywords {
     public static final String JAVA_OUTER_CLASSNAME = "java_outer_classname";
     /**
      * 是否将顶级消息、枚举、和服务定义在包级，而不是在以 .proto 文件命名的外部类中
-     * 在我们拆分众多模块（文件）的情况下，一个文件中的消息数量不会太多，因为我们不启用该选项
      */
     public static final String JAVA_MULTIPLE_FILES = "java_multiple_files";
     /**
@@ -92,4 +95,27 @@ public class PBKeywords {
     public static final String ALLOW_ALIAS = "allow_alias";
 
     // endregion
+
+    private static final Map<String, Boolean> STRING_OPTION_VALUE_KEYWORDS = Map.of();
+
+    /** 是否是字符串可选项值 */
+    public static boolean isStringOptionValue(String name) {
+        // 特殊值
+        Boolean val = STRING_OPTION_VALUE_KEYWORDS.get(name);
+        if (val != null) {
+            return val;
+        }
+        // 规则值
+        return name.endsWith("package")
+                || name.endsWith("namespace")
+                || name.endsWith("name") // 包含classname
+                || name.endsWith("prefix")
+                || name.endsWith("comments");
+    }
+
+    /** 纠正选项值的引号 */
+    public static String correctQuoteForOptionValue(String name, String value) {
+        return isStringOptionValue(name) ? Utils.quote(value) : Utils.unquote(value);
+    }
+
 }

@@ -166,10 +166,7 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
     }
 
     private static void logCause(Throwable x) {
-        if (enableLogError
-                && !(x instanceof NoLogRequiredException) // 无需记录日志的异常
-                && !(x instanceof CompletionException && x.getCause() != null) // 通常是二次封装
-        ) {
+        if (enableLogError && !(x instanceof NoLogRequiredException)) {
             logger.info("future completed with exception", x);
         }
     }
@@ -745,7 +742,7 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
             try {
                 return src.apply(r);
             } catch (Throwable e) {
-                if (e != r) {
+                if (!isArg(e, r)) {
                     logCause(e);
                 }
                 throw e;
@@ -765,7 +762,7 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
             try {
                 src.accept(r);
             } catch (Throwable e) {
-                if (e != r) {
+                if (!isArg(e, r)) {
                     logCause(e);
                 }
                 throw e;
@@ -785,7 +782,7 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
             try {
                 return src.apply(r1, r2);
             } catch (Throwable e) {
-                if (e != r1 && e != r2) {
+                if (!isArg(e, r1, r2)) {
                     logCause(e);
                 }
                 throw e;
@@ -805,12 +802,37 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
             try {
                 src.accept(r1, r2);
             } catch (Throwable e) {
-                if (e != r1 && e != r2) {
+                if (!isArg(e, r1, r2)) {
                     logCause(e);
                 }
                 throw e;
             }
         }
     }
+
+    /** 判断异常是否是方法参数 */
+    private static boolean isArg(@Nonnull Throwable ex, Object arg1) {
+        if (ex == arg1) {
+            return true;
+        }
+        Throwable cause = ex.getCause();
+        if (cause == null) {
+            return false;
+        }
+        return cause == arg1;
+    }
+
+    /** 判断异常是否是方法参数 */
+    private static boolean isArg(@Nonnull Throwable ex, Object arg1, Object arg2) {
+        if (ex == arg1 || ex == arg2) { // 其实arg2为null也正确
+            return true;
+        }
+        Throwable cause = ex.getCause();
+        if (cause == null) {
+            return false;
+        }
+        return cause == arg1 || cause == arg2;
+    }
+
     // endregion
 }

@@ -34,36 +34,36 @@ public class DefaultRpcRegistry implements RpcRegistry {
      */
     private final Int2ObjectMap<RpcMethodProxy> proxyMap = new Int2ObjectOpenHashMap<>(512);
 
-    private static int calMethodKey(int serviceId, int methodId) {
-        // 使用乘法更直观，更有规律
-        return serviceId * 10000 + methodId;
-    }
-
     @Override
     public void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy) {
-        // rpc请求id不可以重复
-        final int methodKey = calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
         if (proxyMap.containsKey(methodKey)) {
-            throw new IllegalArgumentException("methodKey " + methodKey + " is already registered!");
+            throw new IllegalArgumentException("methodKey is duplicate, serviceId: %d, methodId: %d"
+                    .formatted(serviceId, methodId));
         }
         proxyMap.put(methodKey, proxy);
     }
 
     @Override
-    public void trustedRegister(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy) {
-        final int methodKey = calMethodKey(serviceId, methodId);
-        proxyMap.put(methodKey, proxy);
+    public void setProxyData(int serviceId, int methodId, String customData) {
+
     }
 
     @Override
     public RpcMethodProxy getProxy(int serviceId, int methodId) {
-        final int methodKey = calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
         return proxyMap.get(methodKey);
     }
 
     @Override
+    public RpcMethodProxy removeProxy(int serviceId, int methodId) {
+        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
+        return proxyMap.remove(methodKey);
+    }
+
+    @Override
     public boolean hasProxy(int serviceId, int methodId) {
-        final int methodKey = calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
         return proxyMap.containsKey(methodKey);
     }
 
@@ -81,7 +81,7 @@ public class DefaultRpcRegistry implements RpcRegistry {
     public IntSet export() {
         IntOpenHashSet result = new IntOpenHashSet(10);
         proxyMap.keySet().intStream()
-                .map(e -> e / 10000)
+                .map(RpcMethodKey::serviceIdOfKey)
                 .forEach(result::add);
         return result;
     }

@@ -54,7 +54,7 @@ import java.util.concurrent.CompletionStage;
  * @author wjybxx
  * date 2023/4/1
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
 public @interface RpcMethod {
 
@@ -71,7 +71,7 @@ public @interface RpcMethod {
      * 该属性主要用于进程内跨线程rpc调用时减少不必要的开销，比如：调用db接口。
      * <p>
      * 1.该属性用于配置默认值，以免所有调用者都需要调用{@link RpcMethodSpec#setSharable(boolean)}设置共享属性。
-     * 2.如果方法参数仅限：基本类型 + 包装类型 + String + {@link com.google.protobuf.Message}，则默认会设置为true。
+     * 2.如果方法参数仅限：基本类型 + 包装类型 + String，则默认会设置为true。
      * (项目未引入protobuf也是安全的)
      */
     boolean sharable() default false;

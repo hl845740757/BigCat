@@ -34,14 +34,19 @@ public interface RpcGenericContext {
 
     /**
      * 远端地址
-     * 可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
+     * 1.可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
+     * 2.本地进行模拟时，可以赋值{@link #localAddr()}
      */
-    RpcAddr remoteAddr();
+    default RpcAddr remoteAddr() {
+        return request().srcAddr;
+    }
 
     /**
      * 本地地址
      * 可用于校验 -- 对应{@link RpcRequest#destAddr}
      */
-    RpcAddr localAddr();
+    default RpcAddr localAddr() {
+        return request().destAddr;
+    }
 
 }

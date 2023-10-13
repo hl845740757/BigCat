@@ -1,15 +1,16 @@
 syntax = "proto3";
 import "common.proto";
 option java_outer_classname = "MsgTest";
-option java_package = "cn.wjybxx.gen.protobuf";
+option java_package = "cn.wjybxx.common.temp";
+option optimize_for = SPEED;
 
 //@RpcService{id: 1}
 service SearchService {
   //@RpcMethod {id: 1}
   rpc Search(SearchRequest) returns (SearchResponse);
 
-  //@RpcMethod {id: 1, mode: 2}
-  //@Sparam {}
+  //@RpcMethod {id: 2, mode: 2}
+  //@Sparam {interval: 500}
   rpc SearchAsync(SearchRequest) returns (SearchResponse);
 
   // 以下两种形式不符合proto的rpc语法，但符合我们的约定
@@ -35,6 +36,7 @@ message SearchRequest {
   int32 page_number = 2;
   int32 results_per_page = 3;
   Corpus corpus = 4;
+  BoxInt32 tag = 5;
 }
 
 message SearchResponse {

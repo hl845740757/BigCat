@@ -19,10 +19,9 @@ package cn.wjybxx.common.tools.protobuf;
 import cn.wjybxx.common.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,10 +34,32 @@ import java.util.stream.Collectors;
  */
 public class PBParserOptions {
 
+    /** proto文件夹路径 */
+    private String protoDir;
+    /**
+     * protoc的路径
+     * 如果不指定，则直接使用protoc命令；如果指定路径，则使用给定路径的protoc编译;
+     * 以Windows为例，需要指定到'protoc.exe'
+     */
+    private String protocPath;
     /** 预处理期间的临时文件夹 */
     private String tempDir = "./temp";
-    /** 语法类型 */
+    /** 换行符 - 生成临时文件用 */
+    private String lineSeparator = "\n";
+    /** 导出临时文件时保持前x行空白  -- 即import和option的结束行 */
+    private int headerLines = 0;
+
+    /** 语法类型 -- 如果文件指定了语法，则使用文件自身的 */
     private String syntax = "proto3";
+    /** 为文件追加的默认选项 -- 会自动追加到临时文件 */
+    private Map<String, String> defOptions = new LinkedHashMap<>();
+    /**
+     * 公共协议文件，不含proto后缀
+     * 1. 第一个文件为Root文件，Root不会依赖任何其它文件
+     * 2. 其它文件只依赖第一个公共文件，而不会互相依赖
+     * 3. 非commons文件则依赖这里的所有文件
+     */
+    private final LinkedHashSet<String> commons = new LinkedHashSet<>();
 
     /** java文件输出目录 */
     private String javaOut;
@@ -46,21 +67,15 @@ public class PBParserOptions {
     private String javaPackage;
     /** java外部类类名生成方式 - 参数为{@link PBFile#getSimpleName()} */
     private Function<String, String> outerClassNameFunc = PBParserOptions::outerClassName;
+    /** 生成java文件时是否不使用外部类包装 */
+    private boolean javaMultipleFiles;
+    /** 在导出java文件时，是否先清除package中的文件 */
+    private boolean cleanJavaPackage = true;
 
     /** csharp文件输出目录 */
     private String csharpOut;
     /** csharp文件命名空间 */
     private String csharpNamespace;
-
-    /**
-     * 公共协议文件，不含proto文件后缀
-     * 1. 第一个文件为Root文件，Root不会依赖任何其它文件
-     * 2. 其它文件只依赖第一个公共文件，而不会互相依赖
-     * 3. 非commons文件则依赖这里的所有文件
-     */
-    private final LinkedHashSet<String> commons = new LinkedHashSet<>();
-    /** 方法的默认模式 */
-    private int methodDefMode = PBMethod.MODE_NORMAL;
 
     /**
      * 服务预处理的拦截器
@@ -75,6 +90,11 @@ public class PBParserOptions {
      * 消息预处理拦截器
      */
     private Consumer<? super PBMessage> messageInterceptor = (message) -> {};
+
+    /** 方法的默认模式 */
+    private int methodDefMode = PBMethod.MODE_NORMAL;
+    /** 异步方法返回值是否类型声明为{@link CompletionStage}，如果为false，则声明为{@link CompletableFuture} */
+    private boolean useCompleteStage = false;
     /**
      * 方法参数名的生成方式 - 参数为{@link PBMethod#getArgType()}
      * 如果沿用Protobuf格式，方法参数仅类型无名字，可通过该函数根据类型名生成变量名。
@@ -83,12 +103,46 @@ public class PBParserOptions {
 
     //
 
+    public boolean isProto2() {
+        return syntax.equals("proto2");
+    }
+
     /** 获取根依赖文件 */
     public String getRoot() {
         if (commons.size() == 0) {
             return null;
         }
         return commons.getFirst();
+    }
+
+    /** 获取文件名对应的外部类类名 */
+    public String getOuterClassName(String fileSimpleName) {
+        return outerClassNameFunc.apply(fileSimpleName);
+    }
+
+    /** 获取方法参数的默认名 */
+    public String getArgName(String argType) {
+        return argNameFunc.apply(argType);
+    }
+
+    /**
+     * 添加默认的选项
+     *
+     * @param value 写入临时文件时会自动处理双引号问题
+     */
+    public PBParserOptions addDefOption(String name, String value) {
+        defOptions.put(name, value);
+        return this;
+    }
+
+    /** @param simpleName 要引入的公共文件，不包含proto后缀 */
+    public PBParserOptions addCommon(String simpleName) {
+        Objects.requireNonNull(simpleName);
+        if (simpleName.endsWith(".proto")) {
+            throw new IllegalArgumentException();
+        }
+        commons.add(simpleName);
+        return this;
     }
 
     //
@@ -99,6 +153,24 @@ public class PBParserOptions {
 
     public PBParserOptions setSyntax(String syntax) {
         this.syntax = syntax;
+        return this;
+    }
+
+    public String getProtocPath() {
+        return protocPath;
+    }
+
+    public PBParserOptions setProtocPath(String protocPath) {
+        this.protocPath = protocPath;
+        return this;
+    }
+
+    public int getHeaderLines() {
+        return headerLines;
+    }
+
+    public PBParserOptions setHeaderLines(int headerLines) {
+        this.headerLines = headerLines;
         return this;
     }
 
@@ -151,12 +223,48 @@ public class PBParserOptions {
         return this;
     }
 
+    public boolean isJavaMultipleFiles() {
+        return javaMultipleFiles;
+    }
+
+    public PBParserOptions setJavaMultipleFiles(boolean javaMultipleFiles) {
+        this.javaMultipleFiles = javaMultipleFiles;
+        return this;
+    }
+
+    public boolean isCleanJavaPackage() {
+        return cleanJavaPackage;
+    }
+
+    public PBParserOptions setCleanJavaPackage(boolean cleanJavaPackage) {
+        this.cleanJavaPackage = cleanJavaPackage;
+        return this;
+    }
+
+    public String getProtoDir() {
+        return protoDir;
+    }
+
+    public PBParserOptions setProtoDir(String protoDir) {
+        this.protoDir = protoDir;
+        return this;
+    }
+
     public String getTempDir() {
         return tempDir;
     }
 
     public PBParserOptions setTempDir(String tempDir) {
         this.tempDir = tempDir;
+        return this;
+    }
+
+    public String getLineSeparator() {
+        return lineSeparator;
+    }
+
+    public PBParserOptions setLineSeparator(String lineSeparator) {
+        this.lineSeparator = lineSeparator;
         return this;
     }
 
@@ -187,6 +295,15 @@ public class PBParserOptions {
         return this;
     }
 
+    public boolean isUseCompleteStage() {
+        return useCompleteStage;
+    }
+
+    public PBParserOptions setUseCompleteStage(boolean useCompleteStage) {
+        this.useCompleteStage = useCompleteStage;
+        return this;
+    }
+
     public Function<String, String> getArgNameFunc() {
         return argNameFunc;
     }
@@ -194,6 +311,15 @@ public class PBParserOptions {
     public PBParserOptions setArgNameFunc(Function<String, String> argNameFunc) {
         Objects.requireNonNull(argNameFunc);
         this.argNameFunc = argNameFunc;
+        return this;
+    }
+
+    public Map<String, String> getDefOptions() {
+        return defOptions;
+    }
+
+    public PBParserOptions setDefOptions(Map<String, String> defOptions) {
+        this.defOptions = defOptions;
         return this;
     }
 

@@ -80,7 +80,8 @@ public class CollectionUtils {
         if (elements == null || elements.isEmpty()) {
             return def;
         }
-        return elements.get(elements.size() - 1);
+        return elements.getLast();
+//        return elements.get(elements.size() - 1);
     }
 
     public static <E> E first(List<E> elements) {

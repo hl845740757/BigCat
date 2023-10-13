@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec;
+package cn.wjybxx.common.pb;
 
 import com.google.protobuf.*;
 

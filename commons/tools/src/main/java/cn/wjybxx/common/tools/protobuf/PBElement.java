@@ -32,7 +32,7 @@ public abstract class PBElement {
 
     /** 简单名 */
     private String simpleName;
-    /** 注释 -- 是否保留注解，取决于parser选项 */
+    /** 注释 -- 包含注解的原始注释 */
     private final List<String> comments = new ArrayList<>();
     /** 可选项 */
     private final Map<String, String> options = new LinkedHashMap<>();

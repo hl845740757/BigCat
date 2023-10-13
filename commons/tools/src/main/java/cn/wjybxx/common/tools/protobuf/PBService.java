@@ -17,7 +17,10 @@
 package cn.wjybxx.common.tools.protobuf;
 
 import javax.annotation.Nonnull;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * protobuf的rpc服务
@@ -29,10 +32,13 @@ public final class PBService extends PBTypeElement {
 
     /** 服务id -- 从注解中获得的缓存值 */
     private int serviceId;
-    /** 是否生成客户端用proxy -- 属性不在服务上配置，而是parser根据service的名字计算 */
+    /** 是否生成客户端用proxy -- 建议由parser根据service的名字计算 */
     private boolean genProxy = true;
     /** 是否生成服务端用exporter */
     private boolean genExporter = true;
+
+    /** 生成的Service接口需要继承的接口 -- 建议由parser根据service的名字计算 */
+    private final Set<String> superinterfaces = new LinkedHashSet<>();
 
     // region
 
@@ -40,6 +46,13 @@ public final class PBService extends PBTypeElement {
     @Override
     public PBElementKind getKind() {
         return PBElementKind.SERVICE;
+    }
+
+    /** @param name 接口全路径 */
+    public PBService addSuperinterface(String name) {
+        Objects.requireNonNull(name);
+        superinterfaces.add(name);
+        return this;
     }
 
     public List<PBMethod> getMethods() {
@@ -77,4 +90,7 @@ public final class PBService extends PBTypeElement {
         return this;
     }
 
+    public Set<String> getSuperinterfaces() {
+        return superinterfaces;
+    }
 }

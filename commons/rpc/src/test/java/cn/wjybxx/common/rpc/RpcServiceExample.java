@@ -38,7 +38,7 @@ public class RpcServiceExample implements ExtensibleService {
         this.rpcClient = rpcClient;
     }
 
-    @RpcMethod(methodId = 1)
+    @RpcMethod(methodId = 1, customData = "{interval : 500}")
     public String hello(String msg) {
         return msg;
     }
