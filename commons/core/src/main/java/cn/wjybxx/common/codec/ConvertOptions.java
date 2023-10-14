@@ -19,7 +19,10 @@ package cn.wjybxx.common.codec;
 import cn.wjybxx.common.OptionalBool;
 import cn.wjybxx.common.codec.binary.BinaryConverter;
 import cn.wjybxx.common.codec.document.codecs.MapCodec;
+import cn.wjybxx.dson.DsonReaderSettings;
+import cn.wjybxx.dson.DsonWriterSettings;
 import cn.wjybxx.dson.text.DsonMode;
+import cn.wjybxx.dson.text.DsonTextReaderSettings;
 import cn.wjybxx.dson.text.DsonTextWriterSettings;
 
 import javax.annotation.concurrent.Immutable;
@@ -32,11 +35,10 @@ import java.util.Objects;
 @Immutable
 public class ConvertOptions {
 
-    /** 递归深度限制 */
-    public final int recursionLimit;
     /** classId的写入策略 */
     public final ClassIdPolicy classIdPolicy;
-
+    /** protoBuf对应的二进制子类型 */
+    public final int pbBinaryType;
     /**
      * 是否写入对象基础类型字段的默认值
      * 1.数值类型默认值为0，bool类型默认值为false
@@ -68,31 +70,38 @@ public class ConvertOptions {
      */
     public final boolean encodeMapAsObject;
 
-    /** protoBuf对应的二进制子类型 */
-    public final int pbBinaryType;
     /** 数字classId的转换器 */
     public final ClassIdConverter classIdConverter;
-    /** 缓存池 */
+    /** 字节数组缓存池 */
     public final BufferPool bufferPool;
     /** 字符串缓存池 */
     public final StringBuilderPool stringBuilderPool;
+
+    /** 二进制解码设置 */
+    public final DsonReaderSettings binReaderSettings;
+    /** 二进制编码设置 */
+    public final DsonWriterSettings binWriterSettings;
+    /** 文本解码设置 */
+    public final DsonTextReaderSettings textReaderSettings;
     /** 文本编码设置 */
     public final DsonTextWriterSettings textWriterSettings;
     /** 类json文本编码 */
     public final DsonTextWriterSettings jsonWriterSettings;
 
     public ConvertOptions(Builder builder) {
-        this.recursionLimit = builder.recursionLimit;
         this.classIdPolicy = builder.classIdPolicy;
-
+        this.pbBinaryType = builder.pbBinaryType;
         this.appendDef = builder.appendDef.orElse(true);
         this.appendNull = builder.appendNull.orElse(true);
         this.encodeMapAsObject = builder.encodeMapAsObject.orElse(false);
 
-        this.pbBinaryType = builder.pbBinaryType;
         this.classIdConverter = builder.classIdConverter;
         this.bufferPool = builder.bufferPool;
         this.stringBuilderPool = builder.stringBuilderPool;
+
+        this.binReaderSettings = Objects.requireNonNull(builder.binReaderSettings);
+        this.binWriterSettings = Objects.requireNonNull(builder.binWriterSettings);
+        this.textReaderSettings = Objects.requireNonNull(builder.textReaderSettings);
         this.textWriterSettings = Objects.requireNonNull(builder.textWriterSettings);
         this.jsonWriterSettings = Objects.requireNonNull(builder.jsonWriterSettings);
 
@@ -113,28 +122,20 @@ public class ConvertOptions {
     public static class Builder {
 
         private ClassIdPolicy classIdPolicy = ClassIdPolicy.OPTIMIZED;
-        private int recursionLimit = 32;
-
+        private int pbBinaryType = 127;
         private OptionalBool appendDef = OptionalBool.TRUE;
         private OptionalBool appendNull = OptionalBool.TRUE;
         private OptionalBool encodeMapAsObject = OptionalBool.FALSE;
 
-        private int pbBinaryType = 127;
         private ClassIdConverter classIdConverter = new DefaultClassIdConverter();
         private BufferPool bufferPool = LocalPools.BUFFER_POOL;
         private StringBuilderPool stringBuilderPool = LocalPools.STRING_BUILDER_POOL;
+
+        private DsonReaderSettings binReaderSettings = DsonReaderSettings.DEFAULT;
+        private DsonWriterSettings binWriterSettings = DsonWriterSettings.DEFAULT;
+        private DsonTextReaderSettings textReaderSettings = DsonTextReaderSettings.DEFAULT;
         private DsonTextWriterSettings textWriterSettings = DsonTextWriterSettings.DEFAULT;
         private DsonTextWriterSettings jsonWriterSettings = DsonTextWriterSettings.RELAXED_DEFAULT;
-
-        public int getRecursionLimit() {
-            return recursionLimit;
-        }
-
-        public Builder setRecursionLimit(int recursionLimit) {
-            if (recursionLimit < 1) throw new IllegalArgumentException("invalid limit " + recursionLimit);
-            this.recursionLimit = recursionLimit;
-            return this;
-        }
 
         public ClassIdPolicy getClassIdPolicy() {
             return classIdPolicy;
@@ -205,6 +206,42 @@ public class ConvertOptions {
 
         public Builder setStringBuilderPool(StringBuilderPool stringBuilderPool) {
             this.stringBuilderPool = stringBuilderPool;
+            return this;
+        }
+
+        public ClassIdConverter getClassIdConverter() {
+            return classIdConverter;
+        }
+
+        public Builder setClassIdConverter(ClassIdConverter classIdConverter) {
+            this.classIdConverter = classIdConverter;
+            return this;
+        }
+
+        public DsonReaderSettings getBinReaderSettings() {
+            return binReaderSettings;
+        }
+
+        public Builder setBinReaderSettings(DsonReaderSettings binReaderSettings) {
+            this.binReaderSettings = binReaderSettings;
+            return this;
+        }
+
+        public DsonWriterSettings getBinWriterSettings() {
+            return binWriterSettings;
+        }
+
+        public Builder setBinWriterSettings(DsonWriterSettings binWriterSettings) {
+            this.binWriterSettings = binWriterSettings;
+            return this;
+        }
+
+        public DsonTextReaderSettings getTextReaderSettings() {
+            return textReaderSettings;
+        }
+
+        public Builder setTextReaderSettings(DsonTextReaderSettings textReaderSettings) {
+            this.textReaderSettings = textReaderSettings;
             return this;
         }
 

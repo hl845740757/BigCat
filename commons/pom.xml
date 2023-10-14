@@ -62,14 +62,14 @@
 
         <!-- 依赖版本 -->
         <jsr305.version>3.0.2</jsr305.version>
-        <fastutil.version>8.5.11</fastutil.version>
+        <fastutil.version>8.5.12</fastutil.version>
         <slf4j.version>2.0.7</slf4j.version>
         <logback.version>1.4.6</logback.version>
         <junit.version>5.9.2</junit.version>
 
         <annotations.version>1.0-SNAPSHOT</annotations.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
-        <dson.version>1.0.6</dson.version>
+        <dson.version>1.0.7</dson.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-codec.version>1.15</commons-codec.version>

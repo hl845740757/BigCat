@@ -111,7 +111,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (BinaryObjectWriter wrapper = new DefaultBinaryObjectWriter(this,
-                new DsonBinaryLiteWriter(options.recursionLimit, outputStream))) {
+                new DsonBinaryLiteWriter(options.binWriterSettings, outputStream))) {
             wrapper.writeObject(value, typeArgInfo);
             wrapper.flush();
         }
@@ -119,7 +119,7 @@ public class DefaultBinaryConverter implements BinaryConverter {
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
         try (BinaryObjectReader wrapper = new DefaultBinaryObjectReader(this,
-                new DsonBinaryLiteReader(options.recursionLimit, inputStream))) {
+                new DsonBinaryLiteReader(options.binReaderSettings, inputStream))) {
             return wrapper.readObject(typeArgInfo);
         }
     }

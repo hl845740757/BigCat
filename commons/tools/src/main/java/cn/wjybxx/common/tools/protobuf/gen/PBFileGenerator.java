@@ -79,11 +79,10 @@ public class PBFileGenerator {
         }
 
         // 填充空白行
-        for (int i = options.getHeaderLines() - lines.size(); i > 0; i--) {
+        for (int i = options.getHeaderLineCount() - lines.size(); i > 0; i--) {
             lines.add("");
         }
-
-        // 其它行直接写入 -- 前X行跳过
+        // 其它行直接写入
         for (Line line : processedLines) {
             lines.add(line.data);
         }

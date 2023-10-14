@@ -26,7 +26,7 @@ public class RpcMethodKey {
 
     private static final int FACTOR = 10000;
 
-    public static int calMethodKey(int serviceId, int methodId) {
+    public static int methodKey(int serviceId, int methodId) {
         if (methodId < 0 || methodId >= FACTOR) {
             throw new IllegalArgumentException("methodId must be between [0, 9999]");
         }

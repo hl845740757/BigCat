@@ -36,7 +36,7 @@ public class DefaultRpcRegistry implements RpcRegistry {
 
     @Override
     public void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy) {
-        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         if (proxyMap.containsKey(methodKey)) {
             throw new IllegalArgumentException("methodKey is duplicate, serviceId: %d, methodId: %d"
                     .formatted(serviceId, methodId));
@@ -51,19 +51,19 @@ public class DefaultRpcRegistry implements RpcRegistry {
 
     @Override
     public RpcMethodProxy getProxy(int serviceId, int methodId) {
-        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return proxyMap.get(methodKey);
     }
 
     @Override
     public RpcMethodProxy removeProxy(int serviceId, int methodId) {
-        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return proxyMap.remove(methodKey);
     }
 
     @Override
     public boolean hasProxy(int serviceId, int methodId) {
-        final int methodKey = RpcMethodKey.calMethodKey(serviceId, methodId);
+        final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return proxyMap.containsKey(methodKey);
     }
 

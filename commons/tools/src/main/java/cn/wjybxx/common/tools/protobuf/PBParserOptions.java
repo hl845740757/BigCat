@@ -46,8 +46,11 @@ public class PBParserOptions {
     private String tempDir = "./temp";
     /** 换行符 - 生成临时文件用 */
     private String lineSeparator = "\n";
-    /** 导出临时文件时保持前x行空白  -- 即import和option的结束行 */
-    private int headerLines = 0;
+    /**
+     * 导出临时文件时保持前n行为文件头
+     * 如果import和option行数不足将进行填充空白行，有助于减少临时文件与原文件的差异
+     */
+    private int headerLineCount = 0;
 
     /** 语法类型 -- 如果文件指定了语法，则使用文件自身的 */
     private String syntax = "proto3";
@@ -68,7 +71,7 @@ public class PBParserOptions {
     /** java外部类类名生成方式 - 参数为{@link PBFile#getSimpleName()} */
     private Function<String, String> outerClassNameFunc = PBParserOptions::outerClassName;
     /** 生成java文件时是否不使用外部类包装 */
-    private boolean javaMultipleFiles;
+    private boolean javaMultipleFiles = true;
     /** 在导出java文件时，是否先清除package中的文件 */
     private boolean cleanJavaPackage = true;
 
@@ -165,12 +168,12 @@ public class PBParserOptions {
         return this;
     }
 
-    public int getHeaderLines() {
-        return headerLines;
+    public int getHeaderLineCount() {
+        return headerLineCount;
     }
 
-    public PBParserOptions setHeaderLines(int headerLines) {
-        this.headerLines = headerLines;
+    public PBParserOptions setHeaderLineCount(int headerLineCount) {
+        this.headerLineCount = headerLineCount;
         return this;
     }
 

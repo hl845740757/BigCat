@@ -114,14 +114,14 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private void encodeObject(DsonOutput outputStream, @Nullable Object value, TypeArgInfo<?> typeArgInfo) {
         try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DsonBinaryWriter(options.recursionLimit, outputStream))) {
+                new DsonBinaryWriter(options.binWriterSettings, outputStream))) {
             wrapper.writeObject(value, typeArgInfo, null);
             wrapper.flush();
         }
     }
 
     private <U> U decodeObject(DsonInput inputStream, TypeArgInfo<U> typeArgInfo) {
-        try (DsonReader binaryReader = new DsonBinaryReader(options.recursionLimit, inputStream)) {
+        try (DsonReader binaryReader = new DsonBinaryReader(options.binReaderSettings, inputStream)) {
             DocumentObjectReader wrapper;
             if (!options.appendDef || !options.appendNull) { // 二进制数据不全
                 wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(binaryReader));
@@ -134,7 +134,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     private DsonObjectReader toDsonObjectReader(DsonReader dsonReader) {
         DsonValue dsonValue = Dsons.readTopDsonValue(dsonReader);
-        return new DsonObjectReader(options.recursionLimit, new DsonArray<String>().append(dsonValue));
+        return new DsonObjectReader(options.binReaderSettings, new DsonArray<String>().append(dsonValue));
     }
 
     @Nonnull
@@ -151,7 +151,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     @Override
     public <U> U readFromDson(CharSequence source, DsonMode dsonMode, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStringScanner(source, dsonMode));
+        try (DsonReader textReader = new DsonTextReader(options.textReaderSettings, Dsons.newStringScanner(source, dsonMode));
              DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
             return wrapper.readObject(typeArgInfo);
         }
@@ -162,7 +162,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
         Objects.requireNonNull(writer, "writer");
         DsonTextWriterSettings writerSettings = dsonMode == DsonMode.RELAXED ? options.jsonWriterSettings : options.textWriterSettings;
         try (DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this,
-                new DsonTextWriter(options.recursionLimit, writerSettings, writer))) {
+                new DsonTextWriter(writerSettings, writer))) {
             wrapper.writeObject(value, typeArgInfo, null);
             wrapper.flush();
         }
@@ -170,7 +170,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
 
     @Override
     public <U> U readFromDson(Reader source, DsonMode dsonMode, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        try (DsonReader textReader = new DsonTextReader(options.recursionLimit, Dsons.newStreamScanner(source, dsonMode, 256, true));
+        try (DsonReader textReader = new DsonTextReader(options.textReaderSettings, Dsons.newStreamScanner(source, dsonMode, 256, true));
              DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(textReader))) {
             return wrapper.readObject(typeArgInfo);
         }
@@ -180,7 +180,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
     public DsonValue writeAsDsonValue(Object value, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(value);
         DsonArray<String> outList = new DsonArray<>(1);
-        try (DsonWriter objectWriter = new DsonObjectWriter(options.recursionLimit, outList);
+        try (DsonWriter objectWriter = new DsonObjectWriter(options.binWriterSettings, outList);
              DocumentObjectWriter wrapper = new DefaultDocumentObjectWriter(this, objectWriter)) {
             wrapper.writeObject(value, typeArgInfo, ObjectStyle.INDENT);
             DsonValue dsonValue = outList.get(0);
@@ -196,7 +196,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
         if (!source.getDsonType().isContainer()) {
             throw new IllegalArgumentException("value must be container");
         }
-        try (DsonReader objectReader = new DsonObjectReader(options.recursionLimit, new DsonArray<String>().append(source));
+        try (DsonReader objectReader = new DsonObjectReader(options.binReaderSettings, new DsonArray<String>().append(source));
              DocumentObjectReader wrapper = new DefaultDocumentObjectReader(this, toDsonObjectReader(objectReader))) {
             return wrapper.readObject(typeArgInfo);
         }

@@ -43,10 +43,10 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/Dson)
 5. 表格对象和读取Excel工具
 6. 文件热更新管理 [文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/FileReload.md)
+7. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
 
 近日在研： 
 1. 近日在研究网络相关知识，协议的设计思路已有，但还未开始编码。
-2. 通过protobuf定义客户端与服务端的Rpc通信，适用于游戏业务。
 
 ### 资料
 

@@ -48,7 +48,7 @@ public class PBParserTest {
         options.setProtoDir(projectDir.getPath() + "/commons/testres/")
                 .setTempDir(projectDir.getPath() + "/commons/testres/temp")
                 .setLineSeparator("\n")
-                .setHeaderLines(5)
+                .setHeaderLineCount(5)
                 .addCommon("common")
                 .setJavaMultipleFiles(true);
 
