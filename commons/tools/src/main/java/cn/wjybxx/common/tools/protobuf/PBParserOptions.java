@@ -34,23 +34,16 @@ import java.util.stream.Collectors;
  */
 public class PBParserOptions {
 
-    /** proto文件夹路径 */
+    /** proto文件目录 */
     private String protoDir;
+    /** 预处理期间生成的临时文件的文件夹 -- 生成的临时proto文件在这里 */
+    private String tempDir = "./temp";
     /**
      * protoc的路径
      * 如果不指定，则直接使用protoc命令；如果指定路径，则使用给定路径的protoc编译;
      * 以Windows为例，需要指定到'protoc.exe'
      */
     private String protocPath;
-    /** 预处理期间的临时文件夹 */
-    private String tempDir = "./temp";
-    /** 换行符 - 生成临时文件用 */
-    private String lineSeparator = "\n";
-    /**
-     * 导出临时文件时保持前n行为文件头
-     * 如果import和option行数不足将进行填充空白行，有助于减少临时文件与原文件的差异
-     */
-    private int headerLineCount = 0;
 
     /** 语法类型 -- 如果文件指定了语法，则使用文件自身的 */
     private String syntax = "proto3";
@@ -63,6 +56,13 @@ public class PBParserOptions {
      * 3. 非commons文件则依赖这里的所有文件
      */
     private final LinkedHashSet<String> commons = new LinkedHashSet<>();
+    /** 换行符 - 生成临时文件用 */
+    private String lineSeparator = "\n";
+    /**
+     * 导出临时文件时保持前n行为文件头
+     * 如果import和option行数不足将进行填充空白行，有助于减少临时文件与原文件的差异
+     */
+    private int headerLineCount = 0;
 
     /** java文件输出目录 */
     private String javaOut;
@@ -96,6 +96,8 @@ public class PBParserOptions {
 
     /** 方法的默认模式 */
     private int methodDefMode = PBMethod.MODE_NORMAL;
+    /** 方法ctx选项的默认值 */
+    private boolean methodDefCtx = false;
     /** 异步方法返回值是否类型声明为{@link CompletionStage}，如果为false，则声明为{@link CompletableFuture} */
     private boolean useCompleteStage = false;
     /**
@@ -295,6 +297,15 @@ public class PBParserOptions {
 
     public PBParserOptions setMethodDefMode(int methodDefMode) {
         this.methodDefMode = methodDefMode;
+        return this;
+    }
+
+    public boolean isMethodDefCtx() {
+        return methodDefCtx;
+    }
+
+    public PBParserOptions setMethodDefCtx(boolean methodDefCtx) {
+        this.methodDefCtx = methodDefCtx;
         return this;
     }
 

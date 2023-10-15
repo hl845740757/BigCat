@@ -17,12 +17,11 @@
 package cn.wjybxx.common.tools.protobuf.gen;
 
 import cn.wjybxx.common.tools.protobuf.PBParserOptions;
+import cn.wjybxx.common.tools.util.Utils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,15 +60,14 @@ public class PBCompiler {
         try {
             int code = process.waitFor();
             if (code != 0) {
-                StringBuilder sb = new StringBuilder(1024);
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String line = reader.readLine();
-                    if (line != null) {
-                        sb.append(line).append("\n");
-                    }
-                }
-                throw new IOException("protoc compile caught exception, code: %d, info: %s"
-                        .formatted(code, sb.toString()));
+                StringBuilder sb = Utils.readProcessOutput(process);
+                throw new IOException(("""
+                        protoc compile caught exception,
+                        code: %d, tempDir: %s, info:
+                        -----------------------------
+                        %s
+                        -----------------------------""")
+                        .formatted(code, tempDirPath, sb.toString()));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

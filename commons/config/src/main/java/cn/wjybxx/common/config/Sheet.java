@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.config;
 
+import cn.wjybxx.common.CollectionUtils;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -92,20 +94,32 @@ public class Sheet {
         return valueRowList.isEmpty();
     }
 
-    /** 是否是参数表 */
+    /** 是否是普通表格 */
+    public boolean isNormalSheet() {
+        return !isParamSheet();
+    }
+
+    /**
+     * 是否是参数表
+     * <p>
+     * param表一行定义一个value及其header，因此具备以下特征：
+     * 1. header和value在同一行，即{@code Header.rowIndex == SheetValue.rowIndex}
+     * 2. 每行只有一个元素，即{@code SheetRow.size == 1}
+     * 3. header必不同行，即{@code header1.rowIndex != header2.rowIndex}
+     * 4. valueRowList一定不为空
+     */
     public boolean isParamSheet() {
-        assert headerMap.size() > 0;
-        // 只有普通表可以只有表头没有内容
+        if (headerMap.isEmpty()) {
+            throw new IllegalStateException("sheet is empty");
+        }
         if (valueRowList.isEmpty()) {
             return false;
         }
-        // 由于不同项目的起始行号可能不同，因此这里不测试第一行的编号
-        // header和value在同一行是的param表 -- 且一行只有一个Cell
-        SheetRow firstValueRow = valueRowList.iterator().next();
+        SheetRow firstValueRow = valueRowList.get(0);
         if (firstValueRow.getName2CellMap().size() != 1) {
             return false;
         }
-        SheetCell cell = firstValueRow.getName2CellMap().values().iterator().next();
+        SheetCell cell = CollectionUtils.first(firstValueRow.getName2CellMap().values());
         return cell.getHeader().getRowIndex() == firstValueRow.getRowIndex();
     }
 

@@ -18,7 +18,6 @@ package cn.wjybxx.common.config;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * 表格中的一行
@@ -50,10 +49,6 @@ public class SheetRow implements CellProvider {
 
     public Map<String, SheetCell> getName2CellMap() {
         return name2CellMap;
-    }
-
-    public Set<String> getNameSet() {
-        return name2CellMap.keySet();
     }
 
     @Override

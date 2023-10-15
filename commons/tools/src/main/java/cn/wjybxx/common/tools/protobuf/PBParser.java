@@ -20,6 +20,7 @@ import cn.wjybxx.common.CollectionUtils;
 import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.tools.util.Line;
 import cn.wjybxx.common.tools.util.LineIterator;
+import cn.wjybxx.common.tools.util.Utils;
 import cn.wjybxx.dson.DsonObject;
 import cn.wjybxx.dson.DsonValue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -385,6 +386,7 @@ public class PBParser {
 
     private void parseOption(PBElement element, LineInfo lineInfo) {
         final String content = lineInfo.content;
+        ensureEndWithSemicolon(lineInfo, content);
         int startIdx = content.indexOf(' '); // 跳过 'option'
         int eqIdx = content.indexOf('=');
         int endIdx = content.lastIndexOf(';');
@@ -435,6 +437,7 @@ public class PBParser {
     private PBMethod parseMethod(List<LineInfo> commentLines, LineInfo lineInfo) {
         // 'rpc Search(SearchRequest request) returns (SearchResponse);'
         final String content = lineInfo.content;
+        ensureEndWithSemicolon(lineInfo, content);
         String name;
         String argType;
         String argName;
@@ -509,14 +512,16 @@ public class PBParser {
             method.setMethodId(methodId);
 
             DsonValue mode = dsonValue.get("mode"); // 也可根据service的name或id计算
-            if (mode == null) {
-                method.setMode(options.getMethodDefMode());
-            } else {
+            if (mode != null) {
                 method.setMode(mode.asNumber().intValue());
+            } else {
+                method.setMode(options.getMethodDefMode());
             }
             DsonValue ctx = dsonValue.get("ctx");
             if (ctx != null) {
                 method.setCtx(ctx.asBool());
+            } else {
+                method.setCtx(options.isMethodDefCtx());
             }
         }
     }
@@ -556,6 +561,7 @@ public class PBParser {
     private PBField parseField(List<LineInfo> commentLines, LineInfo lineInfo) {
         // 为方便解析，会逐渐进行裁剪
         String content = lineInfo.content;
+        ensureEndWithSemicolon(lineInfo, content);
 
         Integer modifier;
         switch (lineInfo.keyword) {
@@ -620,6 +626,7 @@ public class PBParser {
 
     private PBEnumValue parseEnumValue(List<LineInfo> commentLines, LineInfo lineInfo) {
         final String content = lineInfo.content;
+        ensureEndWithSemicolon(lineInfo, content);
         int eqIdx = content.indexOf('=');
         int opIdx = content.indexOf('['); // 可选项开始符
 
@@ -727,6 +734,13 @@ public class PBParser {
     private static boolean isStartWith(LineInfo lineInfo, char c) {
         String content = lineInfo.content;
         return content.length() > 0 && content.charAt(0) == c;
+    }
+
+    /** 确保内容行以 ';' 结尾 */
+    private static void ensureEndWithSemicolon(LineInfo lineInfo, String content) {
+        if (Utils.lastChar(content) != ';') {
+            throw new PBParserException("expected ';', line: " + lineInfo);
+        }
     }
 
     /** 解析双引号内的值 */

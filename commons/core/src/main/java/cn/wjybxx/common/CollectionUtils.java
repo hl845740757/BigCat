@@ -84,15 +84,6 @@ public class CollectionUtils {
 //        return elements.get(elements.size() - 1);
     }
 
-    public static <E> E first(List<E> elements) {
-        return elements.get(0);
-    }
-
-    public static <E> E last(List<E> elements) {
-        return elements.getLast(); // jdk21
-//        return elements.get(elements.size() - 1);
-    }
-
     /** 删除list的前n个元素 */
     public static void removeFirstN(List<?> list, int n) {
         if (n <= 0) {
@@ -641,6 +632,15 @@ public class CollectionUtils {
         }
     }
 
+    /** @throws NoSuchElementException 如果map为空 */
+    public static <K, V> Map.Entry<K, V> firstEntry(Map<K, V> map) {
+        if (map instanceof SequencedMap<K, V> sequencedMap) {
+            return sequencedMap.firstEntry();
+        } else {
+            return map.entrySet().iterator().next();
+        }
+    }
+
     public static <K, V> Map<V, K> inverseMap(Map<K, V> src) {
         Map<V, K> out = newHashMap(src.size());
         src.forEach((k, v) -> out.put(v, k));
@@ -719,17 +719,25 @@ public class CollectionUtils {
         return Collections.disjoint(source, candidates);
     }
 
+    public static <E> E first(Collection<E> elements) {
+        if (elements instanceof SequencedCollection<E> sequenced) {
+            return sequenced.getFirst();
+        }
+        return elements.iterator().next();
+    }
+
+    public static <E> E last(SequencedCollection<E> elements) {
+        return elements.getLast(); // jdk21
+    }
+
     /** 如果集合不为空，则返回第一个元素，否则返回默认值 */
     @Nullable
     public static <E> E firstOrDefault(Collection<E> collection, E def) {
         if (collection == null || collection.isEmpty()) {
             return def;
         }
-        if (collection instanceof List) {
-            return ((List<E>) collection).get(0);
-        }
-        if (collection instanceof SortedSet) {
-            return ((SortedSet<E>) collection).first();
+        if (collection instanceof SequencedCollection<E> sequenced) {
+            return sequenced.getFirst();
         }
         return collection.iterator().next();
     }

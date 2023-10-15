@@ -24,8 +24,10 @@ import it.unimi.dsi.fastutil.chars.CharPredicate;
 import javax.annotation.Nonnull;
 import javax.annotation.processing.Generated;
 import javax.lang.model.element.Modifier;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -280,6 +282,25 @@ public class Utils extends ObjectUtils {
         return '"' + str + '"';
     }
 
+    /** 读取另一个进程的输出 */
+    public static StringBuilder readProcessOutput(Process process) throws IOException {
+        // 另一个进程的输出，对于当前进程而言就是可读取的（InputStream）
+        // 另一个进程的输入，对于当前进程而言就是可写入的（OutputStream）
+        StringBuilder sb = new StringBuilder(1024);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line = reader.readLine();
+            if (line != null) {
+                if (sb.length() > 0) {
+                    sb.append('\n');
+                }
+                sb.append(line);
+            }
+        }
+        return sb;
+    }
+    // region file
+
+    /** 获取当前工作目录 */
     public static File getUserWorkerDir() {
         return new File(System.getProperty("user.dir"));
     }
@@ -300,4 +321,7 @@ public class Utils extends ObjectUtils {
         }
         throw new AssertionError();
     }
+
+    // endregion
+
 }

@@ -91,7 +91,7 @@ public class ServiceGenerator extends AbstractGenerator {
                 AnnotationSpec.Builder annoBuilder = AnnotationSpec.builder(anno_rpcMethod)
                         .addMember("methodId", Integer.toString(method.getMethodId()))
                         .addMember("sharable", "true");
-                PBAnnotation sparam = method.getAnnotation("Sparam");
+                PBAnnotation sparam = method.getAnnotation(AnnotationTypes.SPARAM);
                 if (sparam != null) {
                     annoBuilder.addMember("customData", "$S", sparam.value);
                 }

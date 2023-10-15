@@ -25,6 +25,7 @@ import cn.wjybxx.common.codec.document.DocumentConverter;
 import cn.wjybxx.common.config.Sheet;
 import cn.wjybxx.common.config.SheetCodec;
 import cn.wjybxx.common.tools.excel.ExcelUtils;
+import cn.wjybxx.common.tools.util.Utils;
 import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.ObjectStyle;
 import org.junit.jupiter.api.Assertions;
@@ -42,8 +43,7 @@ public class ReadExcelTest {
 
     @Test
     void test() {
-        String userDir = System.getProperty("user.dir");
-        File projectRootDir = new File(userDir).getParentFile().getParentFile();
+        File projectRootDir = Utils.findProjectDir("BigCat");
 
         Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(projectRootDir.getPath() + "\\doc\\test.xlsx"));
         Sheet skillSheet = sheetMap.get("Skill");

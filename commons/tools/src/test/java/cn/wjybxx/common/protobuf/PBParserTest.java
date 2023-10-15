@@ -64,7 +64,11 @@ public class PBParserTest {
         File protoDir = new File(options.getProtoDir());
         File tempDir = new File(options.getTempDir());
         File javaOutDir = new File(options.getJavaOut());
+
         // 清空旧文件
+        if (tempDir.exists()) {
+            FileUtils.cleanDirectory(tempDir);
+        }
         if (options.isCleanJavaPackage()) {
             File javaPackageDir = new File(javaOutDir.getPath() + "/" + options.getJavaPackage().replace('.', '/'));
             if (javaPackageDir.exists()) {
