@@ -21,7 +21,7 @@ import cn.wjybxx.common.rpc.RpcGenericContext;
 import cn.wjybxx.common.rpc.RpcMethod;
 import cn.wjybxx.common.rpc.RpcService;
 import cn.wjybxx.common.tools.protobuf.*;
-import cn.wjybxx.common.tools.util.Utils;
+import cn.wjybxx.common.tools.util.GenClassUtils;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.Modifier;
@@ -49,7 +49,7 @@ public class ServiceGenerator extends AbstractGenerator {
     public ServiceGenerator(PBParserOptions options, PBRepository repository) {
         super(options, repository);
         this.javaOutDir = new File(options.getJavaOut());
-        this.generatorInfo = Utils.newGeneratorInfoAnnotation(getClass());
+        this.generatorInfo = GenClassUtils.newGeneratorInfoAnnotation(getClass());
     }
 
     public void build() throws IOException {
@@ -66,7 +66,7 @@ public class ServiceGenerator extends AbstractGenerator {
                 .addAnnotation(generatorInfo);
         // 继承的接口
         for (String superinterface : service.getSuperinterfaces()) {
-            ClassName className = Utils.classNameOfCanonicalName(superinterface);
+            ClassName className = GenClassUtils.classNameOfCanonicalName(superinterface);
             typeBuilder.addSuperinterface(className);
         }
         // service注解
@@ -113,7 +113,7 @@ public class ServiceGenerator extends AbstractGenerator {
         if (service.getComments().size() > 0) {
             typeBuilder.addJavadoc(buildComment(service.getComments()));
         }
-        Utils.writeToFile(javaOutDir, typeBuilder.build(), options.getJavaPackage());
+        GenClassUtils.writeToFile(javaOutDir, typeBuilder.build(), options.getJavaPackage());
     }
 
     private CodeBlock buildComment(List<String> comments) {
@@ -157,9 +157,9 @@ public class ServiceGenerator extends AbstractGenerator {
         if (method.getResultType() != null) {
             ClassName resultType = classNameOfType(method.getResultType());
             if (options.isUseCompleteStage()) {
-                returnType = ParameterizedTypeName.get(Utils.CLSNAME_STAGE, resultType);
+                returnType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_STAGE, resultType);
             } else {
-                returnType = ParameterizedTypeName.get(Utils.CLSNAME_FUTURE, resultType);
+                returnType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_FUTURE, resultType);
             }
         } else {
             returnType = TypeName.VOID;

@@ -33,10 +33,10 @@ public class ExportExcelTest {
 
     @Test
     void test() throws IOException {
-        File projectRootDir = Utils.findProjectDir("BigCat");
+        File projectDir = Utils.findProjectDir("BigCat");
         ExcelExporterOptions options = new ExcelExporterOptions()
-                .setExcelDir(projectRootDir.getPath() + "/doc")
-                .setOutDir(projectRootDir.getPath() + "/commons/testres/temp")
+                .setExcelDir(projectDir.getPath() + "/doc")
+                .setOutDir(projectDir.getPath() + "/commons/testres/temp")
                 .setWriteEmptyCell(false);
 
         ExecutorMgr executorMgr = new ExecutorMgr();

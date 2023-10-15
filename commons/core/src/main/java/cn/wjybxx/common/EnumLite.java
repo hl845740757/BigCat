@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common;
 
+import cn.wjybxx.common.annotation.StableName;
+
 /**
  * 轻量枚举
  * 相对于{@link Enum#ordinal()}和{@link Enum#name()}，我们自定义的{@link #getNumber()}会更加稳定。
@@ -26,6 +28,7 @@ package cn.wjybxx.common;
  */
 public interface EnumLite {
 
+    @StableName
     int getNumber();
 
 }

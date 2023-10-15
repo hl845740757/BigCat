@@ -61,6 +61,8 @@ public class ExcelExporter {
     /** 编解码器 */
     private final DocumentConverter converter;
 
+    private Map<String, Sheet> sheetMap;
+
     public ExcelExporter(ExcelExporterOptions options, ExecutorService executor) {
         this.options = options;
         this.executor = executor;
@@ -68,6 +70,17 @@ public class ExcelExporter {
                 List.of(new SheetCodec()),
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
                 ConvertOptions.DEFAULT);
+    }
+
+    /**
+     * 获取所有的表格数据，可用于生成其它数据
+     * 在{@link #build()}之后可调用
+     */
+    public Map<String, Sheet> getSheetMap() {
+        if (sheetMap == null) {
+            throw new IllegalStateException();
+        }
+        return sheetMap;
     }
 
     public void build() throws IOException {
@@ -78,7 +91,7 @@ public class ExcelExporter {
                         .and(NotTempFileFilter.INSTANCE),
                 HiddenFileFilter.VISIBLE);
         // 并发读取所有文件
-        Map<String, Sheet> sheetMap = readAllFile(excels);
+        sheetMap = readAllFile(excels);
 
         // 主线程检查文件（检查主键重复等）
         if (options.getValidator() != null) {
@@ -116,6 +129,11 @@ public class ExcelExporter {
     }
 
     private void exportAllFile(Map<String, Sheet> sheetMap) {
+        File outDir = new File(options.getOutDir());
+        if (!outDir.exists()) {
+            outDir.mkdirs();
+        }
+
         List<CompletableFuture<?>> writeTasks = new ArrayList<>(sheetMap.size());
         for (Sheet sheet : sheetMap.values()) {
             writeTasks.add(CompletableFuture.runAsync(() -> writeSheet(sheet), executor));

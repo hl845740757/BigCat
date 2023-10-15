@@ -17,6 +17,8 @@
 package cn.wjybxx.common;
 
 
+import cn.wjybxx.common.annotation.StableName;
+
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.List;
@@ -50,6 +52,7 @@ public interface EnumLiteMap<T extends EnumLite> {
      * @param number 枚举的唯一编号
      * @return T 如果不存在，则返回null，而不是抛出异常
      */
+    @StableName
     @Nullable
     T forNumber(int number);
 
@@ -60,6 +63,7 @@ public interface EnumLiteMap<T extends EnumLite> {
      * @return T number对应的枚举
      * @throws IllegalArgumentException 如果number对应的枚举不存在，则抛出异常
      */
+    @StableName
     default T checkedForNumber(int number) {
         final T result = forNumber(number);
         if (null == result) {
@@ -73,6 +77,7 @@ public interface EnumLiteMap<T extends EnumLite> {
      * @param def    默认值
      * @return T number对应的枚举或默认值
      */
+    @StableName
     default T forNumber(int number, T def) {
         final T result = forNumber(number);
         return result == null ? def : result;

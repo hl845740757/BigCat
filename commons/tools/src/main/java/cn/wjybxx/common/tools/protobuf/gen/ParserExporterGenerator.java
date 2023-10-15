@@ -19,7 +19,7 @@ package cn.wjybxx.common.tools.protobuf.gen;
 import cn.wjybxx.common.pb.PBMethodParser;
 import cn.wjybxx.common.pb.PBMethodParserRegistry;
 import cn.wjybxx.common.tools.protobuf.*;
-import cn.wjybxx.common.tools.util.Utils;
+import cn.wjybxx.common.tools.util.GenClassUtils;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
@@ -49,7 +49,7 @@ public class ParserExporterGenerator extends AbstractGenerator {
 
     public void build() throws IOException {
         MethodSpec.Builder exportBuilder = MethodSpec.methodBuilder("export")
-                .addModifiers(Utils.PUBLIC_STATIC)
+                .addModifiers(GenClassUtils.PUBLIC_STATIC)
                 .addParameter(PBMethodParserRegistry.class, "registry");
         ClassName className_methodParser = ClassName.get(PBMethodParser.class);
 
@@ -74,10 +74,10 @@ public class ParserExporterGenerator extends AbstractGenerator {
 
         TypeSpec typeSpec = TypeSpec.classBuilder(CLASS_NAME)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(Utils.newGeneratorInfoAnnotation(getClass()))
+                .addAnnotation(GenClassUtils.newGeneratorInfoAnnotation(getClass()))
                 .addMethod(exportBuilder.build())
                 .build();
-        Utils.writeToFile(new File(options.getJavaOut()), typeSpec, options.getJavaPackage());
+        GenClassUtils.writeToFile(new File(options.getJavaOut()), typeSpec, options.getJavaPackage());
     }
 
     private CodeBlock.Builder addParserStatement(String type, CodeBlock.Builder codeBuilder) {
