@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -41,14 +42,6 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
         Objects.requireNonNull(fn);
         final DefaultPromise<U> promise = newIncompletePromise();
         pushCompletionStack(new UniComposeApply<>(this, promise, fn));
-        return promise;
-    }
-
-    @Override
-    public <U> FluentFuture<U> thenComposeCall(Callable<? extends FluentFuture<U>> fn) {
-        Objects.requireNonNull(fn);
-        final DefaultPromise<U> promise = newIncompletePromise();
-        pushCompletionStack(new UniComposeCall<>(this, promise, fn));
         return promise;
     }
 
@@ -79,10 +72,10 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
     }
 
     @Override
-    public <U> FluentFuture<U> thenCall(Callable<U> fn) {
-        Objects.requireNonNull(fn);
-        final DefaultPromise<U> promise = newIncompletePromise();
-        pushCompletionStack(new UniCall<>(this, promise, fn));
+    public FluentFuture<Void> thenAccept(Consumer<? super V> action) {
+        Objects.requireNonNull(action);
+        final DefaultPromise<Void> promise = newIncompletePromise();
+        pushCompletionStack(new UniAccept<>(this, promise, action));
         return promise;
     }
 
@@ -192,43 +185,6 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
             return postFire(output, nested);
         }
 
-    }
-
-    private static class UniComposeCall<V, U> extends UniCompletion<V, U> {
-
-        Callable<? extends FluentFuture<U>> fn;
-
-        UniComposeCall(AbstractPromise<V> input, AbstractPromise<U> output,
-                       Callable<? extends FluentFuture<U>> fn) {
-            super(input, output);
-            this.fn = fn;
-        }
-
-        @Override
-        AbstractPromise<?> tryFire(boolean nested) {
-            if (output.isDone()) {
-                return null;
-            }
-
-            final Object r = input.result;
-            if (r instanceof AltResult) {
-                output.completeRelayThrowable((AltResult) r);
-            } else {
-                try {
-                    final FluentFuture<U> relay = fn.call();
-                    if (relay.isDone()) {
-                        // 返回的是一个已完成的Future
-                        UniRelay.completeRelay(output, relay);
-                    } else {
-                        relay.addListener(new UniRelay<>(relay, output));
-                        return null;
-                    }
-                } catch (Throwable e) {
-                    output.completeThrowable(e);
-                }
-            }
-            return postFire(output, nested);
-        }
     }
 
     private static class UniComposeCatching<V, X> extends UniCompletion<V, V> {
@@ -396,13 +352,13 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
 
     }
 
-    private static class UniCall<V, U> extends UniCompletion<V, U> {
+    private static class UniAccept<V> extends UniCompletion<V, Void> {
 
-        Callable<U> fn;
+        Consumer<? super V> action;
 
-        UniCall(AbstractPromise<V> input, AbstractPromise<U> output, Callable<U> fn) {
+        UniAccept(AbstractPromise<V> input, AbstractPromise<Void> output, Consumer<? super V> action) {
             super(input, output);
-            this.fn = fn;
+            this.action = action;
         }
 
         @Override
@@ -416,7 +372,9 @@ public class DefaultPromise<V> extends AbstractPromise<V> {
                 output.completeRelayThrowable((AltResult) r);
             } else {
                 try {
-                    output.completeValue(fn.call());
+                    V value = input.decodeValue(r);
+                    action.accept(value);
+                    output.completeValue(null);
                 } catch (Throwable ex) {
                     output.completeThrowable(ex);
                 }

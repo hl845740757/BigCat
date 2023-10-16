@@ -35,6 +35,8 @@ import java.util.function.BiConsumer;
 public abstract class AbstractPromise<V> implements FluentPromise<V> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractPromise.class);
+    /** 是否按照{@link CompletableFuture}的广播顺序进行广播 -- 先插入的后广播 */
+    private static final boolean asJdkOrder = Boolean.parseBoolean(System.getProperty("cn.wjybxx.common.async.promise.asjdkorder", "false"));
 
     /**
      * 当任务正常完成没有结果时，使用该对象表示
@@ -228,7 +230,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
         outer:
         while (true) {
             // 将当前future上的监听器添加到next前面
-            next = future.clearListeners(next);
+            next = asJdkOrder ? future.clearListenersAsJdkOrder(next) : future.clearListeners(next);
 
             while (next != null) {
                 Completion curr = next;
@@ -248,8 +250,36 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
         }
     }
 
+    private Completion detachStack() {
+        Completion r = this.stack;
+        if (r != null) {
+            this.stack = null;
+        }
+        return r;
+    }
+
+    /**
+     * 清空当前Future上的监听器，并
+     * （广播顺序为： 先插入的后广播 ）
+     */
+    private Completion clearListenersAsJdkOrder(Completion onto) {
+        Completion head = detachStack();
+        if (head == null) {
+            return onto;
+        }
+        // 将onto插在栈底
+        Completion bottom = head;
+        while (bottom.next != null) {
+            bottom = bottom.next;
+        }
+        bottom.next = onto;
+        // 返回栈顶
+        return head;
+    }
+
     /**
      * 清空当前{@code Future}上的监听器，并将当前{@code Future}上的监听器逆序方式插入到{@code onto}前面。
+     * （广播顺序为： 先插入的先广播 ）
      * <p>
      * Q: 这步操作是要干什么？<br>
      * A: 由于一个{@link Completion}在执行时可能使另一个{@code Future}进入完成状态，如果不做处理的话，则可能产生一个很深的递归，
@@ -276,7 +306,7 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
     private Completion clearListeners(Completion onto) {
         // 1. 将当前栈内元素逆序，因为即使在接口层进行了说明（不提供监听器执行时序保证），但仍然有人依赖于监听器的执行时序(期望先添加的先执行)
         // 2. 将逆序后的元素插入到'onto'前面，即插入到原本要被通知的下一个监听器的前面
-        Completion head = stack;
+        Completion head = detachStack();
         Completion ontoHead = onto;
 
         while (head != null) {
@@ -284,10 +314,19 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
             head = head.next;
 
             tmpHead.next = ontoHead;
-            ontoHead = tmpHead;
+            ontoHead = tmpHead; // 最终为栈底
         }
 
         return ontoHead;
+    }
+
+    final void pushCompletionStack(Completion completion) {
+        if (isDone()) {
+            completion.tryFire(false);
+        } else {
+            completion.next = stack;
+            stack = completion;
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -307,15 +346,6 @@ public abstract class AbstractPromise<V> implements FluentPromise<V> {
          */
         abstract AbstractPromise<?> tryFire(boolean nested);
 
-    }
-
-    final void pushCompletionStack(Completion completion) {
-        if (isDone()) {
-            completion.tryFire(false);
-        } else {
-            completion.next = stack;
-            stack = completion;
-        }
     }
 
     private static void logCause(Throwable x) {

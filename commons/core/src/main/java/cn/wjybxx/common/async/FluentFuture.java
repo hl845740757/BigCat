@@ -21,8 +21,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * 可参考{@link CompletableFuture}
@@ -126,17 +126,6 @@ public interface FluentFuture<V> {
     <U> FluentFuture<U> thenComposeApply(Function<? super V, ? extends FluentFuture<U>> fn);
 
     /**
-     * {@link #thenComposeApply(Function)}的特化版本，主要用于消除丑陋的void
-     * <p>
-     * 该方法返回一个新的{@code Future}，它的最终结果与指定的{@code Function}返回的{@code Future}结果相同。
-     * 如果当前{@code Future}执行失败，则返回的{@code Future}将以相同的原因失败，且指定的动作不会执行。
-     * 如果当前{@code Future}执行成功，则执行指定从操作。
-     * <p>
-     * 该方法在{@link CompletionStage}中也是不存在的。
-     */
-    <U> FluentFuture<U> thenComposeCall(Callable<? extends FluentFuture<U>> fn);
-
-    /**
      * 它表示能从从特定的异常中恢复，并异步返回一个正常结果。
      * <p>
      * 该方法返回一个新的{@code Future}，它的结果由当前{@code Future}驱动。
@@ -167,10 +156,9 @@ public interface FluentFuture<V> {
      * 如果当前{@code Future}执行失败，则返回的{@code Future}将以相同的原因失败，且指定的动作不会执行。
      * 如果当前{@code Future}执行成功，则当前{@code Future}的执行结果将作为指定操作的执行参数，返回的{@code Future}的结果取决于指定操作的执行结果。
      * <p>
-     * 这个API在{@link CompletionStage}中是没有对应方法的。
-     * 由于{@link Supplier#get()}方法名太特殊，因此使用{@link Callable#call()}。
+     * {@link CompletionStage#thenAccept(Consumer)}
      */
-    <U> FluentFuture<U> thenCall(Callable<U> fn);
+    FluentFuture<Void> thenAccept(Consumer<? super V> action);
 
     /**
      * 它表示能从从特定的异常中恢复，并返回一个正常结果。
