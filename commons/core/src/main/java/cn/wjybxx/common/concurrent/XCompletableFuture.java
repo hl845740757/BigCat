@@ -43,7 +43,7 @@ import java.util.function.*;
 public class XCompletableFuture<T> extends CompletableFuture<T> implements ICompletableFuture<T> {
 
     static final Logger logger = LoggerFactory.getLogger(XCompletableFuture.class);
-    static final boolean enableLogError = Boolean.parseBoolean(System.getProperty("cn.wjybxx.common.concurrent.XCompletableFuture.logError", "true"));
+    static final FutureExceptionLogger exceptionLogger = Objects.requireNonNullElse(FutureExceptionLoggerLoader.getExceptionLogger(), FutureExceptionLoggerLoader.DEFAULT_LOGGER);
 
     protected final FutureContext ctx;
 
@@ -166,8 +166,8 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
     }
 
     private static void logCause(Throwable x) {
-        if (enableLogError && !(x instanceof NoLogRequiredException)) {
-            logger.info("future completed with exception", x);
+        if (exceptionLogger.isEnable()) {
+            exceptionLogger.onCaughtException(x);
         }
     }
 
@@ -654,42 +654,42 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
     // 由于CompletableFuture捕获action的异常以后，调用的私有complete方法，我们无法直接记录异常日志，因此只能通过装饰器进行代理
 
     private static Runnable decorate(Runnable src) {
-        if (!enableLogError || src.getClass() == RunnableWrapper.class) {
+        if (!exceptionLogger.isEnable() || src.getClass() == RunnableWrapper.class) {
             return src;
         }
         return new RunnableWrapper(src);
     }
 
     private static <T> Supplier<T> decorate(Supplier<T> src) {
-        if (!enableLogError || src.getClass() == SupplierWrapper.class) {
+        if (!exceptionLogger.isEnable() || src.getClass() == SupplierWrapper.class) {
             return src;
         }
         return new SupplierWrapper<>(src);
     }
 
     private static <T, R> Function<T, R> decorate(Function<T, R> src) {
-        if (!enableLogError || src.getClass() == FunctionWrapper.class) {
+        if (!exceptionLogger.isEnable() || src.getClass() == FunctionWrapper.class) {
             return src;
         }
         return new FunctionWrapper<>(src);
     }
 
     private static <T> Consumer<T> decorate(Consumer<T> src) {
-        if (!enableLogError || src.getClass() == ConsumerWrapper.class) {
+        if (!exceptionLogger.isEnable() || src.getClass() == ConsumerWrapper.class) {
             return src;
         }
         return new ConsumerWrapper<>(src);
     }
 
     private static <T, U, R> BiFunction<T, U, R> decorate(BiFunction<T, U, R> src) {
-        if (!enableLogError || src.getClass() == BiFunctionWrapper.class) {
+        if (!exceptionLogger.isEnable() || src.getClass() == BiFunctionWrapper.class) {
             return src;
         }
         return new BiFunctionWrapper<>(src);
     }
 
     private static <T, U> BiConsumer<T, U> decorate(BiConsumer<T, U> src) {
-        if (!enableLogError || src.getClass() == BiConsumerWrapper.class) return src;
+        if (!exceptionLogger.isEnable() || src.getClass() == BiConsumerWrapper.class) return src;
         return new BiConsumerWrapper<>(src);
     }
 
