@@ -45,7 +45,7 @@ public interface MainModule extends WorkerModule {
     void afterMainLoop();
 
     /** 提交到Worker的事件 */
-    void onEvent(AgentEvent rawEvent);
+    void onEvent(AgentEvent rawEvent) throws Exception;
 
     // endregion
 

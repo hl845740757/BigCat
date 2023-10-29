@@ -47,7 +47,7 @@ public interface RpcRegistry {
      *
      * @param serviceId  服务id
      * @param methodId   方法id
-     * @param customData 自定义切面数据；也可用于指示是否可覆盖
+     * @param customData 自定义切面数据；也可用于指示是否可覆盖；若为null则表示删除
      */
     @StableName
     void setProxyData(int serviceId, int methodId, String customData);

@@ -40,6 +40,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
     private final MainModule mainModule;
     private final List<WorkerModule> moduleList;
     private volatile IntSet serviceIdSet = IntSets.emptySet();
+    private final WorkerCtx workerCtx;
 
     public WorkerImpl(WorkerBuilder.DisruptWorkerBuilder builder) {
         super(decorate(builder));
@@ -48,6 +49,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
 
         this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
+        this.workerCtx = builder.getWorkerCtx();
 
         // 初始化Module列表
         List<WorkerModule> moduleList = FxUtils.createModules(builder);
@@ -105,6 +107,11 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
     @Override
     public Worker select(int key) {
         return this;
+    }
+
+    @Override
+    public WorkerCtx workerCtx() {
+        return workerCtx;
     }
 
     private static class Agent implements EventLoopAgent<AgentEvent> {

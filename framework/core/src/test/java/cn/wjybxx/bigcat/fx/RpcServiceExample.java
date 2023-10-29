@@ -16,23 +16,31 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.concurrent.EventLoop;
-import cn.wjybxx.common.concurrent.EventLoopFactory;
-import cn.wjybxx.common.concurrent.EventLoopGroup;
+import cn.wjybxx.common.rpc.RpcMethod;
+import cn.wjybxx.common.rpc.RpcService;
+
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * @author wjybxx
- * date - 2023/10/4
+ * date 2023/10/29
  */
-public interface WorkerFactory extends EventLoopFactory {
+@RpcService(serviceId = 1)
+public class RpcServiceExample {
 
-    @Deprecated
-    @Override
-    default EventLoop newChild(EventLoopGroup parent, int index) {
-        return newChild((Node) parent, null, index);
+    @RpcMethod(methodId = 1, customData = "{interval : 500}")
+    public String echo(String msg) {
+        return msg;
     }
 
-    /** @param workerCtx node为worker分配的上下文 */
-    Worker newChild(Node parent, WorkerCtx workerCtx, int index);
+    @RpcMethod(methodId = 4)
+    public String join(List<String> args) {
+        StringJoiner joiner = new StringJoiner(",");
+        for (String arg : args) {
+            joiner.add(arg);
+        }
+        return joiner.toString();
+    }
 
 }

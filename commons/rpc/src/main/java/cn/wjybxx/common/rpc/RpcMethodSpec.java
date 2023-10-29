@@ -16,47 +16,40 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.codec.AutoSchema;
-import cn.wjybxx.common.codec.binary.BinarySerializable;
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
-
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * rpc方法描述信息
- * 1. 使用int类型的serviceId和methodId，可以大大减少数据传输量，而且定位方法更快
- * 2. 不记录方法参数类型，没有太大的意义
+ * 1.不记录方法参数类型，没有太大的意义
+ * 2.该对象为临时对象，不序列化
  *
  * @param <V> 用于捕获返回值类型
  * @author wjybxx
  * date 2023/4/1
  */
 @SuppressWarnings("unused")
-@AutoSchema
-@BinarySerializable
-public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
+public final class RpcMethodSpec<V> {
 
-    private int serviceId;
-    private int methodId;
-    private List<Object> parameters; // 要省开销的化，可以是Object类型，当方法参数大于1才扩展为List
+    private transient int serviceId;
+    private transient int methodId;
+    private List<Object> parameters;
+
+    /**
+     * 方法参数是否可共享
+     * 1.进程内调用特征值
+     * 2.再增加特性时可修该为int（mask）
+     */
     private transient boolean sharable;
 
-    public RpcMethodSpec() {
-        // 用于可能的序列化支持
-    }
-
     public RpcMethodSpec(int serviceId, int methodId, List<Object> parameters) {
-        this.serviceId = serviceId;
-        this.methodId = methodId;
-        this.parameters = Objects.requireNonNull(parameters);
+        this(serviceId, methodId, parameters, false);
     }
 
     public RpcMethodSpec(int serviceId, int methodId, List<Object> parameters, boolean sharable) {
         this.serviceId = serviceId;
         this.methodId = methodId;
-        this.parameters = parameters;
+        this.parameters = Objects.requireNonNull(parameters);
         this.sharable = sharable;
     }
 
@@ -132,26 +125,6 @@ public final class RpcMethodSpec<V> implements DebugLogFriendlyObject {
     }
 
     // endregion
-
-    @Nonnull
-    @Override
-    public String toSimpleLog() {
-        return '{' +
-                "serviceId=" + serviceId +
-                ", methodId=" + methodId +
-                ", paramCount=" + parameters.size() +
-                "}";
-    }
-
-    @Nonnull
-    @Override
-    public String toDetailLog() {
-        return '{' + "serviceId=" + serviceId +
-                ", methodId=" + methodId +
-                ", paramCount=" + parameters.size() +
-                ", params=" + parameters +
-                "}";
-    }
 
     @Override
     public String toString() {

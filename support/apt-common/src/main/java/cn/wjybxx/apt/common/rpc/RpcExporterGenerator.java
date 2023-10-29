@@ -170,6 +170,12 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         builder.addCode("$L.register($L, $L, ($L, $L) -> {\n",
                 varName_registry, serviceId, methodId, varName_context, varName_methodSpec);
 
+        // 可变性设置
+        if (processor.isResultSharable(method, annoValueMap)) {
+            builder.addStatement("    $L.setSharable(true)", varName_context);
+        }
+
+        // 执行方法调用
         FirstArgType firstArgType = processor.firstArgType(method);
         final InvokeStatement invokeStatement = genInvokeStatement(method, firstArgType);
         if (firstArgType == FirstArgType.CONTEXT) {

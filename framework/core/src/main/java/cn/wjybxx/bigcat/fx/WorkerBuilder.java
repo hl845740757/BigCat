@@ -53,6 +53,8 @@ public abstract class WorkerBuilder {
      */
     private final List<Class<? extends WorkerModule>> moduleClasses = new ArrayList<>();
 
+    /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
+    private WorkerCtx workerCtx;
     /** Builder之间不方便继承 */
     private final EventLoopBuilder delegateBuilder;
 
@@ -91,6 +93,15 @@ public abstract class WorkerBuilder {
 
     public WorkerBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
         delegateBuilder.setRejectedExecutionHandler(rejectedExecutionHandler);
+        return this;
+    }
+
+    public WorkerCtx getWorkerCtx() {
+        return workerCtx;
+    }
+
+    public WorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
+        this.workerCtx = workerCtx;
         return this;
     }
 

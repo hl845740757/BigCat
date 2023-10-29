@@ -47,7 +47,7 @@ public class FileDataProviders {
         private final Set<FilePath<?>> filePathSet;
         private Map<FilePath<?>, Object> cacheMap;
 
-        public LimitedProvider(FileDataProvider delegate, Set<FilePath<?>> filePathSet) {
+        private LimitedProvider(FileDataProvider delegate, Set<FilePath<?>> filePathSet) {
             ensureExist(delegate, filePathSet);
             this.delegate = delegate;
             this.filePathSet = filePathSet;
@@ -91,6 +91,9 @@ public class FileDataProviders {
     public static class EmptyProvider implements FileDataProvider {
 
         private static final EmptyProvider INSTANCE = new EmptyProvider();
+
+        private EmptyProvider() {
+        }
 
         @Override
         public <T> T get(@Nonnull FilePath<T> filePath) {

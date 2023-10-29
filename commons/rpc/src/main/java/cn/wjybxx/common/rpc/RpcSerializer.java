@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.fx;
+package cn.wjybxx.common.rpc;
 
-import cn.wjybxx.common.concurrent.EventLoop;
-import cn.wjybxx.common.concurrent.EventLoopFactory;
-import cn.wjybxx.common.concurrent.EventLoopGroup;
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
+ * 用于Rpc通信序列化对象
+ *
  * @author wjybxx
- * date - 2023/10/4
+ * date - 2023/10/28
  */
-public interface WorkerFactory extends EventLoopFactory {
+@ThreadSafe
+public interface RpcSerializer {
 
-    @Deprecated
-    @Override
-    default EventLoop newChild(EventLoopGroup parent, int index) {
-        return newChild((Node) parent, null, index);
-    }
+    /** 类型信息需要写入最终的bytes，进行自解释 */
+    @Nonnull
+    byte[] write(@Nonnull Object value);
 
-    /** @param workerCtx node为worker分配的上下文 */
-    Worker newChild(Node parent, WorkerCtx workerCtx, int index);
+    Object read(@Nonnull byte[] source);
 
 }

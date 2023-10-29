@@ -36,10 +36,10 @@ public class RpcErrorCodes {
     public static final int LOCAL_ROUTER_EXCEPTION = 1;
     /** 超时 */
     public static final int LOCAL_TIMEOUT = 2;
-    /** 本地发生了未知错误 */
-    public static final int LOCAL_UNKNOWN_EXCEPTION = 3;
     /** 本地中断了线程 */
-    public static final int LOCAL_INTERRUPTED = 4;
+    public static final int LOCAL_INTERRUPTED = 3;
+    /** 本地发生了未知错误 */
+    public static final int LOCAL_UNKNOWN_EXCEPTION = 4;
 
     // 11 - 20 表服务器异常
     /** 表示服务器调用出现异常的错误码 */

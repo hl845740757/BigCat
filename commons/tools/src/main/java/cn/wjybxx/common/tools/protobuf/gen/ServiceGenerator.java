@@ -83,14 +83,14 @@ public class ServiceGenerator extends AbstractGenerator {
         }
         // 方法列表
         for (PBMethod method : service.getMethods()) {
-
             MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(method.getSimpleName())
                     .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT); // 不太智能，需要显式添加
             // method注解 -- javapoet生成的注解格式不友好，又不能控制...
             {
                 AnnotationSpec.Builder annoBuilder = AnnotationSpec.builder(anno_rpcMethod)
                         .addMember("methodId", Integer.toString(method.getMethodId()))
-                        .addMember("sharable", "true");
+                        .addMember("argSharable", "true")
+                        .addMember("resultSharable", "true"); // 无参数和返回值时也设置为可共享，可避免不必要的序列化
                 PBAnnotation sparam = method.getAnnotation(AnnotationTypes.SPARAM);
                 if (sparam != null) {
                     annoBuilder.addMember("customData", "$S", sparam.value);

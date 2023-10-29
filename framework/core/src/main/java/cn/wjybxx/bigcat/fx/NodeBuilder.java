@@ -21,7 +21,6 @@ import cn.wjybxx.common.concurrent.EventLoopBuilder;
 import cn.wjybxx.common.concurrent.EventLoopChooserFactory;
 import cn.wjybxx.common.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.common.concurrent.ext.TimeoutSleepingWaitStrategy;
-import cn.wjybxx.common.rpc.RpcAddr;
 import com.google.inject.Injector;
 import com.lmax.disruptor.WaitStrategy;
 
@@ -38,7 +37,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
     private int numberChildren = 1;
     private WorkerFactory workerFactory;
     private EventLoopChooserFactory chooserFactory;
-    private RpcAddr nodeAddr;
+    private WorkerAddr nodeAddr;
 
     protected NodeBuilder(EventLoopBuilder delegateBuilder) {
         super(delegateBuilder);
@@ -63,6 +62,12 @@ public abstract class NodeBuilder extends WorkerBuilder {
     @Override
     public NodeBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
         super.setRejectedExecutionHandler(rejectedExecutionHandler);
+        return this;
+    }
+
+    @Override
+    public WorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
+        super.setWorkerCtx(workerCtx);
         return this;
     }
 
@@ -111,11 +116,11 @@ public abstract class NodeBuilder extends WorkerBuilder {
         return this;
     }
 
-    public RpcAddr getNodeAddr() {
+    public WorkerAddr getNodeAddr() {
         return nodeAddr;
     }
 
-    public NodeBuilder setNodeAddr(RpcAddr nodeAddr) {
+    public NodeBuilder setNodeAddr(WorkerAddr nodeAddr) {
         this.nodeAddr = nodeAddr;
         return this;
     }

@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.common.concurrent.*;
-import cn.wjybxx.common.rpc.RpcAddr;
 import cn.wjybxx.common.rpc.RpcRegistry;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.*;
@@ -40,11 +39,12 @@ public class NodeImpl extends DefaultEventLoop implements Node {
     private final Injector injector;
     private final MainModule mainModule;
     private final List<WorkerModule> moduleList;
-    private final RpcAddr nodeAddr;
+    private final WorkerAddr nodeAddr;
 
     private final Worker[] children;
     private final List<Worker> readonlyChildren;
     private final EventLoopChooser chooser;
+    private final WorkerCtx workerCtx = new WorkerCtx();
 
     private volatile IntSet serviceIdSet = IntSets.emptySet();
     private volatile Int2ObjectMap<ServiceInfo> serviceInfoMap = Int2ObjectMaps.emptyMap();
@@ -57,6 +57,9 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
         this.nodeAddr = Objects.requireNonNull(builder.getNodeAddr(), "nodeAddr");
+        if (nodeAddr.hasWorkerId()) {
+            throw new IllegalArgumentException("nodeAddr.workerId must be null, addr: " + nodeAddr);
+        }
 
         // 初始化Module列表
         List<WorkerModule> moduleList = FxUtils.createModules(builder);
@@ -77,8 +80,10 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         }
         children = new Worker[numberChildren];
         for (int i = 0; i < numberChildren; i++) {
-            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, i));
+            WorkerCtx workerCtx = new WorkerCtx();
+            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, workerCtx, i));
             if (eventLoop.parent() != this) throw new IllegalStateException("the parent of worker is illegal");
+            if (eventLoop.workerCtx() != workerCtx) throw new IllegalStateException("the ctx of worker is illegal");
             children[i] = eventLoop;
         }
         readonlyChildren = List.of(children);
@@ -128,7 +133,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
     }
 
     @Override
-    public RpcAddr nodeAddr() {
+    public WorkerAddr nodeAddr() {
         return nodeAddr;
     }
 
@@ -167,7 +172,12 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         }
         return null;
     }
+
     //
+    @Override
+    public WorkerCtx workerCtx() {
+        return workerCtx;
+    }
 
     @Nullable
     @Override
@@ -205,15 +215,23 @@ public class NodeImpl extends DefaultEventLoop implements Node {
 
             Worker.CURRENT_WORKER.set(node);
             Node.CURRENT_NODES.add(node);
+            initWorkerCtx();
             resolveDependence();
 
             // 需要先启动Node的模块和服务，Worker可能会在启动时使用
             mainModule.beforeWorkerStart();
             startModules();
-            exportServices();
+            exportServices(List.of()); // 此时先导出自己的服务，Worker可能需要使用
             startWorkers();
-            exportServiceInfoMap();
+            exportServices(node.readonlyChildren);
             mainModule.afterWorkerStart();
+        }
+
+        private void initWorkerCtx() {
+            node.workerCtx.init(node);
+            for (Worker worker : node.children) {
+                worker.workerCtx().init(worker);
+            }
         }
 
         private void resolveDependence() {
@@ -223,9 +241,26 @@ public class NodeImpl extends DefaultEventLoop implements Node {
             mainModule.resolveDependence();
         }
 
-        private void exportServices() {
-            RpcRegistry registry = node.injector.getInstance(RpcRegistry.class);
-            node.setServiceIdSet(registry.export());
+        private void exportServices(List<Worker> workers) {
+            IntSet nodeServiceIdSet = node.injector.getInstance(RpcRegistry.class).export();
+            node.setServiceIdSet(nodeServiceIdSet);
+
+            Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();
+            // Node自身的服务
+            nodeServiceIdSet.forEach((int serviceId) -> {
+                serviceInfoMap.put(serviceId, new ServiceInfo(serviceId, List.of(node)));
+            });
+            // 添加Worker上的服务 -- Worker不可包含Node同名服务
+            for (Worker worker : workers) {
+                worker.services().forEach((int serviceId) -> {
+                    if (nodeServiceIdSet.contains(serviceId)) {
+                        throw new IllegalArgumentException("The service in the worker conflicts with the service in the node, id " + serviceId);
+                    }
+                    serviceInfoMap.computeIfAbsent(serviceId, k -> new ServiceInfo(k, new ArrayList<>(2)))
+                            .addWorker(worker);
+                });
+            }
+            node.setServiceInfoMap(serviceInfoMap);
         }
 
         private void startModules() {
@@ -279,21 +314,6 @@ public class NodeImpl extends DefaultEventLoop implements Node {
                 child.shutdownNow();
             }
             aggregateFuture.join();
-        }
-
-        private void exportServiceInfoMap() {
-            Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();
-            // 需要包含Node自身的服务
-            node.serviceIdSet.forEach((int serviceId) -> {
-                serviceInfoMap.put(serviceId, new ServiceInfo(serviceId, List.of(node)));
-            });
-            // 添加Worker上的服务
-            for (Worker child : node.children) {
-                child.services().forEach((int serviceId) -> {
-                    serviceInfoMap.computeIfAbsent(serviceId, k -> new ServiceInfo(k, new ArrayList<>(2))).workers.add(child);
-                });
-            }
-            node.setServiceInfoMap(serviceInfoMap);
         }
 
         @Override

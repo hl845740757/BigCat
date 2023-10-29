@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.annotation.StableName;
+
 /**
  * rpc上下文基础接口。
  * 1. 该接口仅提供获取远端信息方案
@@ -48,5 +50,12 @@ public interface RpcGenericContext {
     default RpcAddr localAddr() {
         return request().destAddr;
     }
+
+    /** 当前返回值是否可共享 */
+    boolean isSharable();
+
+    /** 设置返回值是否可共享标记 */
+    @StableName
+    void setSharable(boolean sharable);
 
 }

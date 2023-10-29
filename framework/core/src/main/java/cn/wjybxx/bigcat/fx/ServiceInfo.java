@@ -28,19 +28,24 @@ import java.util.Objects;
 public class ServiceInfo {
 
     public final int serviceId;
-    public final List<Worker> workers;
+    public final List<Worker> workerList;
 
     /**
-     * @param serviceId 服务id
-     * @param workers   支持该服务的Worker
+     * @param serviceId  服务id
+     * @param workerList 支持该服务的Worker
      */
-    public ServiceInfo(int serviceId, List<Worker> workers) {
+    public ServiceInfo(int serviceId, List<Worker> workerList) {
         this.serviceId = serviceId;
-        this.workers = Objects.requireNonNull(workers);
+        this.workerList = Objects.requireNonNull(workerList);
     }
 
     public ServiceInfo toImmutable() {
-        return new ServiceInfo(serviceId, List.copyOf(workers));
+        return new ServiceInfo(serviceId, List.copyOf(workerList));
     }
 
+    public ServiceInfo addWorker(Worker worker) {
+        Objects.requireNonNull(worker);
+        workerList.add(worker);
+        return this;
+    }
 }

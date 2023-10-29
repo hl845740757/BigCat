@@ -185,7 +185,8 @@ public class RpcTest1 {
             this.executor = SameThreads.newScheduledExecutor(timeProvider);
 
             SimpleAddr role = SimpleAddr.SERVER;
-            rpcClient = new DefaultRpcClient(role.id, role, new TestRpcSender(), new DefaultRpcRegistry(),
+            rpcClient = new DefaultRpcClient(role.id, role,
+                    new TestRpcSender(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
 //            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
@@ -230,7 +231,8 @@ public class RpcTest1 {
             this.executor = SameThreads.newScheduledExecutor(timeProvider);
 
             SimpleAddr role = SimpleAddr.CLIENT;
-            rpcClient = new DefaultRpcClient(role.id, role, new TestRpcSender(), new DefaultRpcRegistry(),
+            rpcClient = new DefaultRpcClient(role.id, role,
+                    new TestRpcSender(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
 //            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }

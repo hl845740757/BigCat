@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.rpc;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -64,11 +63,12 @@ public class RpcClientException extends RpcException {
         return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "blockingTimeout", e, true, true);
     }
 
-    public static RpcClientException executionException(ExecutionException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "executionException", e, true, true);
-    }
-
     public static RpcClientException interrupted(InterruptedException e) {
         return new RpcClientException(RpcErrorCodes.LOCAL_INTERRUPTED, "interrupted", e, true, true);
     }
+
+    public static RpcClientException unknownException(Throwable e) {
+        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "unknownException", e, true, true);
+    }
+
 }

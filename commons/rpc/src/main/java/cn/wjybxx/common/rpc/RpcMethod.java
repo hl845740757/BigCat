@@ -68,13 +68,23 @@ public @interface RpcMethod {
 
     /**
      * 方法参数是否可共享
-     * 该属性主要用于进程内跨线程rpc调用时减少不必要的开销，比如：调用db接口。
+     * 当方法参数可共享时，序列化会延迟到IO线程 —— 理论上可做到进程内rpc不序列化。
      * <p>
      * 1.该属性用于配置默认值，以免所有调用者都需要调用{@link RpcMethodSpec#setSharable(boolean)}设置共享属性。
      * 2.如果方法参数仅限：基本类型 + 包装类型 + String，则默认会设置为true。
-     * (项目未引入protobuf也是安全的)
      */
-    boolean sharable() default false;
+    boolean argSharable() default false;
+
+    /**
+     * 方法返回值是否可共享
+     * 当返回值可共享时，序列化会延迟到IO线程
+     * <p>
+     * 1. 该属性用于配置默认值，以免方法的实现者调用{@link RpcGenericContext#setSharable(boolean)}.
+     * 2. 如果方法返回值为：基本类型 + 包装类型 + String，则默认会设置为true。
+     *
+     * @see #argSharable()
+     */
+    boolean resultSharable() default false;
 
     /**
      * 自定义扩展数据，通常是json或dson格式。

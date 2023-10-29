@@ -20,12 +20,17 @@ import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.rpc.RpcAddr;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
 /**
- * Worker地址，通常情况下我们只指定{@link #nodeId}，不关注Node内的情况；
- * 但如果期望和Node内某一个线程建立稳定连接时，可以指定{@link #workerId}
+ * Worker地址
+ * <h3>推荐方案</h3>
+ * 负数用于表示特殊地址，正数表示单播地址，0表示不指定。
+ * 1. {@link #serverType} 如果为-1，表示匹配所有类型的服务器
+ * 2. {@link #serverId} 如果为-1，表示匹配该类型所有服务器
+ * 3. {@link #workerId} 如果为null或空白，表示不指定Worker；如果为'*'，表示匹配所有worker
  *
  * @author wjybxx
  * date - 2023/10/4
@@ -34,30 +39,39 @@ import java.util.Objects;
 @BinarySerializable
 public class WorkerAddr implements RpcAddr {
 
-    /**
-     * 部分项目可能习惯{@code type + id}的形式，多数情况下是可以合成为一个int的。
-     */
-    public final int nodeId;
+    /** 服务器类型 */
+    public final int serverType;
+    /** 服务器id */
+    public final int serverId;
+    /** 线程id */
     public final String workerId;
 
-    public WorkerAddr(int nodeId) {
-        this.nodeId = nodeId;
-        this.workerId = null;
+    public WorkerAddr(int serverType, int serverId) {
+        this(serverType, serverId, null);
     }
 
-    /**
-     * @param nodeId   节点id
-     * @param workerId 如果为null，表示不指定Worker
-     */
-    public WorkerAddr(int nodeId, String workerId) {
-        this.nodeId = nodeId;
+    public WorkerAddr(int serverType, int serverId, String workerId) {
+        this.serverType = serverType;
+        this.serverId = serverId;
         this.workerId = workerId;
     }
 
     /** 解码函数 */
     public WorkerAddr(BinaryObjectReader reader) {
-        this.nodeId = reader.readInt(WorkerAddrSchema.numbers_nodeId);
+        this.serverType = reader.readInt(WorkerAddrSchema.numbers_serverType);
+        this.serverId = reader.readInt(WorkerAddrSchema.numbers_serverId);
         this.workerId = reader.readString(WorkerAddrSchema.numbers_workerId);
+    }
+
+    /** 是否有workerId */
+    public boolean hasWorkerId() {
+        return !StringUtils.isBlank(workerId);
+    }
+
+    /** 测试除worker以外的部分是否相同 */
+    public boolean equalsIgnoreWorker(WorkerAddr that) {
+        return serverType == that.serverType
+                && serverId == that.serverId;
     }
 
     @Override
@@ -67,13 +81,15 @@ public class WorkerAddr implements RpcAddr {
 
         WorkerAddr that = (WorkerAddr) o;
 
-        if (nodeId != that.nodeId) return false;
+        if (serverType != that.serverType) return false;
+        if (serverId != that.serverId) return false;
         return Objects.equals(workerId, that.workerId);
     }
 
     @Override
     public int hashCode() {
-        int result = nodeId;
+        int result = serverType;
+        result = 31 * result + serverId;
         result = 31 * result + (workerId != null ? workerId.hashCode() : 0);
         return result;
     }
@@ -81,7 +97,8 @@ public class WorkerAddr implements RpcAddr {
     @Override
     public String toString() {
         return "WorkerAddr{" +
-                "nodeId=" + nodeId +
+                "serverType=" + serverType +
+                ", serverId=" + serverId +
                 ", workerId='" + workerId + '\'' +
                 '}';
     }

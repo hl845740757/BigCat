@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.fx;
-
-import cn.wjybxx.common.rpc.RpcAddr;
+package cn.wjybxx.common;
 
 /**
- * 一些特殊的地址描述
+ * 可变性校验
  *
  * @author wjybxx
  * date - 2023/10/4
  */
-public enum StaticRpcAddr implements RpcAddr {
+public interface MutabilityValidator {
 
-    /** 当前线程/进程 */
-    LOCAL;
+    /**
+     * @throws UnsupportedOperationException if not mutable.
+     */
+    void ensureMutable();
+
+    MutabilityValidator IMMUTABLE = () -> {
+        throw new UnsupportedOperationException();
+    };
 
 }

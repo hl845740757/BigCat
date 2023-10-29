@@ -29,7 +29,7 @@ import java.util.List;
  * date - 2023/9/11
  */
 @SuppressWarnings("unused")
-public class RpcMessage extends RpcProtocol {
+public final class RpcMessage extends RpcProtocol {
 
     /** 服务id */
     private int serviceId;

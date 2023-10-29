@@ -102,7 +102,8 @@ public class RpcTest2 {
 
             SimpleAddr role = SimpleAddr.SERVER;
             RpcRegistry registry = new DefaultRpcRegistry();
-            rpcClient = new DefaultRpcClient(role.id, role, new TestRpcSender(), registry,
+            rpcClient = new DefaultRpcClient(role.id, role,
+                    new TestRpcSender(), registry,
                     timeProvider, 5 * 1000);
 //            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
@@ -144,7 +145,8 @@ public class RpcTest2 {
             this.mode = mode;
 
             SimpleAddr role = SimpleAddr.CLIENT;
-            rpcClient = new DefaultRpcClient(role.id, role, new TestRpcSender(), new DefaultRpcRegistry(),
+            rpcClient = new DefaultRpcClient(role.id, role,
+                    new TestRpcSender(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
 //            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }

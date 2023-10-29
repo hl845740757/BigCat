@@ -19,13 +19,19 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.concurrent.AgentEvent;
 import cn.wjybxx.common.concurrent.RingBufferEvent;
-import cn.wjybxx.common.rpc.DefaultRpcRegistry;
-import cn.wjybxx.common.rpc.RpcRegistry;
+import cn.wjybxx.common.rpc.*;
+import cn.wjybxx.common.time.Regulator;
+import cn.wjybxx.common.time.TimeProvider;
 import com.google.inject.*;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author wjybxx
@@ -34,38 +40,51 @@ import org.slf4j.LoggerFactory;
 public class NodeTest {
 
     private static final Logger logger = LoggerFactory.getLogger(NodeTest.class);
+    private static Node node;
 
-    Node node;
-
-    @BeforeEach
-    void setUp() {
+    @BeforeAll
+    static void setUp() {
         node = NodeBuilder.newDefaultNodeBuilder()
-                .setInjector(createInjector())
-                .setNodeAddr(StaticRpcAddr.LOCAL)
+                .setNodeAddr(new WorkerAddr(1, 1))
                 .setWorkerId("Node")
-                .setWorkerFactory((parent, index) -> {
+                // 初始化模块
+                .setInjector(createNodeInjector())
+                .addModule(WorkerRpcClient.class)
+                .addModule(NodeRpcSupport.class)
+                .addModule(TestRpcSender.class)
+                // 初始化Worker
+                .setWorkerFactory((parent, workerCtx, index) -> {
                     return WorkerBuilder.newDisruptorWorkerBuilder()
                             .setWorkerId("Worker-" + index)
                             .setParent(parent)
-                            .setInjector(createInjector())
+                            .setWorkerCtx(workerCtx)
+                            // 初始化模块
+                            .setInjector(createWorkerInjector())
+                            .addModule(WorkerRpcClient.class)
+                            .addModule(TestWorkerModule.class)
                             .build();
                 })
                 .build();
+
+        node.start().join();
+    }
+
+    @AfterAll
+    static void tearDown() {
+        if (node != null) {
+            node.shutdownNow();
+            node.terminationFuture().join();
+        }
     }
 
     @Test
     void test() {
-        node.start().join();
+        // 查看日志
         ThreadUtils.sleepQuietly(5000);
-
-        node.shutdown();
-        node.terminationFuture().join();
     }
 
     @Test
     void testFireEvent() {
-        node.start().join();
-
         for (int idx = 0; idx < 10; idx++) {
             RingBufferEvent event = new RingBufferEvent();
             event.setType(1);
@@ -74,21 +93,94 @@ public class NodeTest {
             node.execute(event);
             ThreadUtils.sleepQuietly(10);
         }
-
-        node.shutdown();
-        node.terminationFuture().join();
     }
 
-    private static Injector createInjector() {
+    private static Injector createNodeInjector() {
         return Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
                 super.configure();
+                binder().requireExplicitBindings(); // 获取未显式绑定的实例时抛出异常，避免获取到错误的实例
+
                 bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
+                bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
+                bind(WorkerRpcClient.class).in(Singleton.class);
                 bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
+                bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
                 bind(TimeModule.class).in(Singleton.class);
+
+                bind(NodeRpcSupport.class).in(Singleton.class);
+                bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
+
+                // 记得以前超类绑定到子类时指定Singleton，子类不需要单独声明Singleton，现在怎么不行了....
+                // 子类如果不单独绑定，则会创建一个新的实例，各种bug...
+                bind(NodeRpcSender.class).to(TestRpcSender.class).in(Singleton.class);
+                bind(TestRpcSender.class).in(Singleton.class);
             }
         });
+    }
+
+    private static Injector createWorkerInjector() {
+        return Guice.createInjector(new AbstractModule() {
+            @Override
+            protected void configure() {
+                super.configure();
+                binder().requireExplicitBindings();
+
+                bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
+                bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
+                bind(WorkerRpcClient.class).in(Singleton.class);
+                bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
+                bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);
+                bind(TimeModule.class).in(Singleton.class);
+
+                bind(TestWorkerModule.class).in(Singleton.class);
+            }
+        });
+    }
+
+    private static class TestWorkerModule implements WorkerModule {
+
+        final Regulator regulator = Regulator.newFixedDelay(1, 100);
+        Worker worker;
+        NodeRpcSupport rpcSupport;
+
+        @Inject
+        RpcRegistry registry;
+        @Inject
+        TimeModule timeModule;
+        @Inject
+        RpcClient rpcClient;
+
+        @Override
+        public void inject(Worker worker) {
+            this.worker = worker;
+            this.rpcSupport = Objects.requireNonNull(worker.parent()).injector().getInstance(NodeRpcSupport.class);
+        }
+
+        @Override
+        public void start() {
+            regulator.restart(timeModule.getTime());
+            RpcServiceExampleExporter.export(registry, new RpcServiceExample());
+        }
+
+        @Override
+        public void update() {
+            if (regulator.isReady(timeModule.getTime())) {
+                String msg = "time: " + regulator.getLastUpdateTime();
+                rpcClient.call(StaticRpcAddr.LOCAL, RpcServiceExampleProxy.echo(msg))
+                        .thenAccept(result -> {
+                            if (rpcSupport.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
+                                Assertions.assertSame(msg, result);
+                            } else {
+                                Assertions.assertEquals(msg, result);
+                            }
+                            Assertions.assertTrue(worker.inEventLoop(), "worker.inEventLoop");
+                            logger.info("rcv echo " + result);
+                        });
+            }
+        }
+
     }
 
     private static class TestMainModule implements MainModule {
@@ -123,7 +215,7 @@ public class NodeTest {
         }
 
         @Override
-        public void onEvent(AgentEvent rawEvent) {
+        public void onEvent(AgentEvent rawEvent) throws Exception {
             RingBufferEvent event = (RingBufferEvent) rawEvent;
             logger.info("eventType: {}, index: {}", event.getType(), event.intVal1);
         }
@@ -148,4 +240,59 @@ public class NodeTest {
             logger.info("afterWorkerShutdown: " + worker.workerId());
         }
     }
+
+    private static class TestRpcSender implements NodeRpcSender, WorkerModule {
+
+        private final ConcurrentLinkedQueue<RpcProtocol> protocolQueue = new ConcurrentLinkedQueue<>();
+        private volatile boolean shuttingDown;
+        private Thread thread;
+
+        @Inject
+        private NodeRpcSupport rpcSupport;
+
+        @Override
+        public void start() {
+            thread = new Thread(this::subThreadLoop);
+            thread.setName("RpcSender");
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        @Override
+        public boolean send(RpcProtocol proto) {
+            Objects.requireNonNull(proto);
+            protocolQueue.offer(proto);
+            return true;
+        }
+
+        @Override
+        public void stop() {
+            shuttingDown = true;
+            thread.interrupt();
+        }
+
+        // 该方法由子线程调用
+        private void onProtocol(RpcProtocol protocol) {
+            if (protocol instanceof RpcRequest request) {
+                rpcSupport.onRcvRequest(request);
+            } else if (protocol instanceof RpcResponse response) {
+                rpcSupport.onRcvResponse(response);
+            }
+        }
+
+        // 该方法为子线程循环，不能在主线程，否则无法支持同步rpc调用
+        private void subThreadLoop() {
+            RpcProtocol protocol;
+            while (!shuttingDown) {
+                protocol = protocolQueue.poll();
+                if (protocol == null) {
+                    ThreadUtils.sleepQuietly(1);
+                    continue;
+                }
+                onProtocol(protocol);
+            }
+        }
+
+    }
+
 }

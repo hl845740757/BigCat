@@ -117,7 +117,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
             builder.addStatement("return new $T<>($L, $L, _parameters, $L)",
                     processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method, annoValueMap),
-                    processor.isSharable(method, annoValueMap));
+                    processor.isArgSharable(method, annoValueMap));
         }
 
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有

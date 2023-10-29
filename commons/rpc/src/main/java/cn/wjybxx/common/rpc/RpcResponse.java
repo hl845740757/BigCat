@@ -18,10 +18,17 @@ package cn.wjybxx.common.rpc;
 
 
 import cn.wjybxx.common.codec.AutoSchema;
+import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.binary.BinaryObjectReader;
+import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.log.DebugLogFriendlyObject;
+import cn.wjybxx.dson.DsonType;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * rpc响应结构体
@@ -31,21 +38,31 @@ import javax.annotation.Nonnull;
  */
 @AutoSchema
 @BinarySerializable
-public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
+public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
 
     /** 请求的唯一id */
     private long requestId;
+
     /** 服务id -- 定位返回值类型，也可以用于校验 */
     private int serviceId;
     /** 方法id */
     private int methodId;
-    /** 错误码（0表示成功） -- 不使用枚举，以方便用户扩展 */
+    /**
+     * 错误码（0表示成功） -- 不使用枚举，以方便用户扩展
+     * 如果调用成功，result为对应的结果。
+     * 如果调用失败，result为错误信息，固定为字符串类型。
+     */
     private int errorCode;
     /**
-     * 如果调用成功，该值表示对应的结果。
-     * 如果调用失败，该值为对应的错误信息，为{@link String}类型。
+     * 方法结果
+     * 1.正确设值的情况下不为null，为{@link byte[]}或{@link List}
+     * 2.如果为bytes，表示已经序列化
+     * 3.如果为List，表示尚未序列化；兼容无返回值和返回null的情况，也有利于扩展
      */
-    private Object result;
+    private Object results;
+
+    /** 方法参数是否可共享 -- 详见{@link RpcResultSpec} */
+    private transient boolean sharable;
 
     public RpcResponse() {
         // 序列化支持
@@ -55,23 +72,18 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
         super(conId, srcAddr, destAddr);
     }
 
-    private RpcResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, Object result) {
+    public RpcResponse(RpcRequest request, RpcAddr selfAddr, RpcResultSpec resultSpec) {
         super(request.getConId(), selfAddr, request.getSrcAddr());
         this.requestId = request.getRequestId();
         this.serviceId = request.getServiceId();
         this.methodId = request.getMethodId();
-        this.errorCode = errorCode;
-        this.result = result;
+
+        this.errorCode = resultSpec.getErrorCode();
+        this.results = Objects.requireNonNull(resultSpec.getResults());
+        this.sharable = resultSpec.isSharable();
     }
 
-    public static RpcResponse newSucceedResponse(RpcRequest request, RpcAddr selfAddr, Object result) {
-        return new RpcResponse(request, selfAddr, 0, result);
-    }
-
-    public static RpcResponse newFailedResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, String msg) {
-        if (errorCode == 0) throw new IllegalArgumentException("invalid errorCode " + errorCode);
-        return new RpcResponse(request, selfAddr, errorCode, msg);
-    }
+    // region 业务方法
 
     public boolean isSuccess() {
         return errorCode == 0;
@@ -81,9 +93,41 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
         if (errorCode == 0) {
             throw new IllegalStateException("errorCode == 0");
         }
-        return (String) result;
+        return (String) listResult().get(0);
     }
-    //
+
+    public Object getResult() {
+        if (errorCode != 0) {
+            throw new IllegalStateException("errorCode != 0");
+        }
+        List<Object> results = listResult();
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /** 是否已序列化 */
+    public boolean isSerialized() {
+        return results instanceof byte[];
+    }
+
+    /** 是否已反序列化 */
+    public boolean isDeserialized() {
+        return results instanceof List<?>;
+    }
+
+    /** 结果转bytes */
+    public byte[] bytesResults() {
+        assert results != null;
+        return (byte[]) results;
+    }
+
+    /** 结果转List */
+    @SuppressWarnings("unchecked")
+    public List<Object> listResult() {
+        assert results != null;
+        return (List<Object>) results;
+    }
+
+    // endregion
 
     public long getRequestId() {
         return requestId;
@@ -121,12 +165,21 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
         return this;
     }
 
-    public Object getResult() {
-        return result;
+    public Object getResults() {
+        return results;
     }
 
-    public RpcResponse setResult(Object result) {
-        this.result = result;
+    public RpcResponse setResults(Object results) {
+        this.results = results;
+        return this;
+    }
+
+    public boolean isSharable() {
+        return sharable;
+    }
+
+    public RpcResponse setSharable(boolean sharable) {
+        this.sharable = sharable;
         return this;
     }
 
@@ -138,7 +191,8 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-                ", result=" + result +
+                ", results=" + results +
+                ", sharable=" + sharable +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
@@ -158,10 +212,43 @@ public class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-                ", result=" + result +
+                ", results=" + results +
+                ", sharable=" + sharable +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
                 '}';
     }
+
+    // region 序列化优化
+    // 1.自动处理延迟序列化问题
+    // 2.避免多态写入List类型信息
+
+    public void writeParameters(BinaryObjectWriter writer, int name) {
+        if (results == null) {
+            throw new IllegalStateException("results is null");
+        }
+        if (results instanceof byte[] bytes) {
+            writer.writeValueBytes(name, DsonType.ARRAY, bytes);
+        } else {
+            List<Object> results = listResult();
+            writer.writeStartArray(name, RpcRequest.getListTypeArgInfo(results));
+            for (Object ele : results) {
+                writer.writeObject(0, ele);
+            }
+            writer.writeEndArray();
+        }
+    }
+
+    public void readParameters(BinaryObjectReader reader, int name) {
+        List<Object> results = new ArrayList<>(1);
+        reader.readStartArray(name, TypeArgInfo.ARRAYLIST);
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            results.add(reader.readObject(0));
+        }
+        reader.readEndArray();
+        this.results = results;
+    }
+
+    // endregion
 }

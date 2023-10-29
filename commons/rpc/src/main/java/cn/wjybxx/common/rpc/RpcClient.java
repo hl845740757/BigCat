@@ -60,6 +60,7 @@ public interface RpcClient {
 
     /**
      * 发起一个rpc调用，可以监听调用结果。
+     * 注意：通常禁止在call返回的Future上进行阻塞调用。
      *
      * @param target     远程地址
      * @param methodSpec 要调用的方法信息
@@ -75,7 +76,7 @@ public interface RpcClient {
      * @return 方法返回值
      * @throws RpcException 执行错误时抛出异常
      */
-    <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec) throws InterruptedException;
+    <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec);
 
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回。
@@ -86,14 +87,6 @@ public interface RpcClient {
      * @return 执行结果
      * @throws RpcException 执行错误时抛出异常
      */
-    <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException;
-
-    /**
-     * 广播一个消息（广播一个调用）
-     *
-     * @param target     广播地址
-     * @param methodSpec 要调用的方法信息
-     */
-    void broadcast(RpcAddr target, RpcMethodSpec<?> methodSpec);
+    <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs);
 
 }

@@ -49,7 +49,8 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private static final String CNAME_RPC_METHOD = "cn.wjybxx.common.rpc.RpcMethod";
     private static final String PNAME_METHOD_ID = "methodId";
-    private static final String PNAME_SHARABLE = "sharable";
+    private static final String PNAME_ARG_SHARABLE = "argSharable";
+    private static final String PNAME_RESULT_SHARABLE = "resultSharable";
     private static final String PNAME_CUSTOM_DATA = "customData";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.common.rpc.RpcMethodSpec";
@@ -253,13 +254,34 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return (String) annotationValue.getValue();
     }
 
-    boolean isSharable(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
+    /** 方法参数是否可共享 */
+    boolean isArgSharable(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
         // 指定了属性则以属性为准
-        AnnotationValue annotationValue = annoValueMap.get(PNAME_SHARABLE);
+        AnnotationValue annotationValue = annoValueMap.get(PNAME_ARG_SHARABLE);
         if (annotationValue != null) {
             return (Boolean) annotationValue.getValue();
         }
 
+        // 如果所有参数都是不可变的，则默认true
+        List<? extends VariableElement> parameters = method.getParameters();
+        for (VariableElement parameter : parameters) {
+            if (isContext(parameter.asType()) || isGenericContext(parameter.asType())) {
+                continue;
+            }
+            if (!isImmutableType(parameter.asType())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 方法结果是否可共享 */
+    boolean isResultSharable(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
+        // 指定了属性则以属性为准
+        AnnotationValue annotationValue = annoValueMap.get(PNAME_RESULT_SHARABLE);
+        if (annotationValue != null) {
+            return (Boolean) annotationValue.getValue();
+        }
         // 如果所有参数都是不可变的，则默认true
         List<? extends VariableElement> parameters = method.getParameters();
         for (VariableElement parameter : parameters) {

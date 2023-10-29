@@ -17,13 +17,13 @@
 package cn.wjybxx.common.rpc;
 
 
+import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.concurrent.*;
 import cn.wjybxx.common.ex.ErrorCodeException;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
 import cn.wjybxx.common.time.TimeProvider;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +37,7 @@ import java.util.function.BiConsumer;
 
 /**
  * 默认的{@link RpcClient}实现，但仍建议你进行代理封装
+ * 默认实现不支持延迟序列化特性，是否延迟有{@link RpcSender}决定
  *
  * @author wjybxx
  * date 2023/4/1
@@ -45,10 +46,9 @@ import java.util.function.BiConsumer;
 public class DefaultRpcClient implements RpcClient {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultRpcClient.class);
-    private static final int INIT_REQUEST_GUID = 0;
 
-    private long sequencer = INIT_REQUEST_GUID;
-    private final Long2ObjectLinkedOpenHashMap<DefaultRpcRequestStub> requestStubMap = new Long2ObjectLinkedOpenHashMap<>(500);
+    private long sequencer = 0;
+    private final Long2ObjectLinkedOpenHashMap<RpcRequestStubImpl> requestStubMap = new Long2ObjectLinkedOpenHashMap<>(500);
     private final WatcherMgr<RpcResponse> watcherMgr = new SimpleWatcherMgr<>();
 
     private final long conId;
@@ -134,31 +134,7 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         if (!sender.send(request)) {
-            logger.warn("rpc router send failure, target " + target);
-        }
-    }
-
-    /**
-     * 广播一个消息给
-     *
-     * @param target     远程节点信息
-     * @param methodSpec 要调用的方法信息
-     */
-    @Override
-    public void broadcast(RpcAddr target, RpcMethodSpec<?> methodSpec) {
-        Objects.requireNonNull(target);
-        Objects.requireNonNull(methodSpec);
-
-        final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
-                requestId, RpcInvokeType.BROADCAST, methodSpec);
-
-        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
-            logBroadcastRequest(request);
-        }
-
-        if (!sender.send(request)) {
-            logger.warn("rpc router broadcast failure, scope " + target);
+            logger.info("rpc router send failure, target " + target);
         }
     }
 
@@ -181,15 +157,14 @@ public class DefaultRpcClient implements RpcClient {
         if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
         }
-
-        // 执行发送(routerHandler的实现很关键)
         if (!sender.send(request)) {
-            logger.warn("rpc router call failure, target " + target);
+            logger.info("rpc router call failure, target " + target);
         }
+
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
         final ICompletableFuture<V> promise = FutureUtils.newPromise();
-        final DefaultRpcRequestStub requestStub = new DefaultRpcRequestStub(promise, deadline, request);
+        final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(promise, deadline, request);
         requestStubMap.put(requestId, requestStub);
         return promise;
     }
@@ -202,7 +177,7 @@ public class DefaultRpcClient implements RpcClient {
      * @return rpc调用结果
      */
     @Override
-    public <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec) throws InterruptedException {
+    public <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec) {
         return syncCall(target, methodSpec, timeoutMs);
     }
 
@@ -215,7 +190,7 @@ public class DefaultRpcClient implements RpcClient {
      * @return rpc调用结果
      */
     @Override
-    public <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs) throws InterruptedException {
+    public <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
 
@@ -233,13 +208,13 @@ public class DefaultRpcClient implements RpcClient {
         try {
             // 执行发送(routerHandler的实现很关键)
             if (!sender.send(request)) {
-                logger.warn("rpc router call failure, target " + target);
+                logger.info("rpc router call failure, target " + target);
                 throw RpcClientException.routeFailed(target);
             }
 
             RpcResponse response = watcher.future.get(timeoutMs, TimeUnit.MILLISECONDS);
             if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
-                logRcvResponse(response, request);
+                logRcvResponse(response, false);
             }
 
             final int errorCode = response.getErrorCode();
@@ -247,12 +222,21 @@ public class DefaultRpcClient implements RpcClient {
                 @SuppressWarnings("unchecked") final V result = (V) response.getResult();
                 return result;
             } else {
-                throw newServerException(response, errorCode);
+                throw newServerException(response);
             }
         } catch (TimeoutException e) {
             throw RpcClientException.blockingTimeout(e);
+        } catch (InterruptedException e) {
+            ThreadUtils.recoveryInterrupted();
+            throw RpcClientException.interrupted(e);
         } catch (ExecutionException e) {
-            throw RpcClientException.executionException(e);
+            throw RpcClientException.unknownException(e.getCause());
+        } catch (Exception e) {
+            // 根据errorCode抛出的异常
+            if (e instanceof RpcException || e instanceof ErrorCodeException) {
+                throw e;
+            }
+            throw RpcClientException.unknownException(e);
         } finally {
             watcherMgr.cancelWatch(watcher); // 及时取消watcher
         }
@@ -279,14 +263,17 @@ public class DefaultRpcClient implements RpcClient {
 
         RpcMethodProxy proxy = registry.getProxy(request.getServiceId(), request.getMethodId());
         if (proxy == null) {
-            logger.warn("rcv unknown request, node {}, serviceId={}, methodId={}",
+            // 不存在的服务
+            logger.warn("unsupported interface, src {}, serviceId={}, methodId={}",
                     request.getSrcAddr(), request.getServiceId(), request.getMethodId());
+
             if (RpcInvokeType.isCall(request.getInvokeType())) {
                 final RpcResponse response = newFailedResponse(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
                 sendResponseAndLog(response);
             }
             return;
         }
+        // 拦截器测试
         int code = interceptor == null ? 0 : interceptor.test(request);
         if (code != 0) {
             if (RpcInvokeType.isCall(request.getInvokeType())) {
@@ -296,16 +283,14 @@ public class DefaultRpcClient implements RpcClient {
             return;
         }
 
-        RpcMethodSpec<?> methodSpec = new RpcMethodSpec<>(request.getServiceId(), request.getMethodId(), request.getParameters());
+        RpcMethodSpec<?> methodSpec = new RpcMethodSpec<>(request.getServiceId(), request.getMethodId(), request.listParameters());
         RpcContextImpl<T> context = new RpcContextImpl<>(request, this);
-        if (RpcInvokeType.isMessage(request.getInvokeType())) {
+        if (!RpcInvokeType.isCall(request.getInvokeType())) {
             // 单向消息 - 不需要结果
             try {
                 proxy.invoke(context, methodSpec);
-            } catch (Exception e) {
-                if (!(e instanceof NoLogRequiredException)) {
-                    throw wrapException(request, e);
-                }
+            } catch (Throwable e) {
+                logInvokeException(request, e);
             }
         } else {
             // rpc -- 监听future完成事件
@@ -319,14 +304,13 @@ public class DefaultRpcClient implements RpcClient {
                     future.whenComplete(context);
                 } else {
                     // 立即得到了结果
-                    RpcResponse response = RpcResponse.newSucceedResponse(request, selfRpcAddr, result);
-                    sendResponseAndLog(response);
+                    context.resultSpec.succeeded(result);
+                    sendResponseAndLog(new RpcResponse(request, selfRpcAddr, context.resultSpec));
                 }
             } catch (Throwable e) {
-                sendResponseAndLog(newFailedResponse(request, e));
-                if (!(e instanceof NoLogRequiredException)) {
-                    throw wrapException(request, e);
-                }
+                context.resultSpec.failed(e);
+                sendResponseAndLog(new RpcResponse(request, selfRpcAddr, context.resultSpec));
+                logInvokeException(request, e);
             }
         }
     }
@@ -342,9 +326,9 @@ public class DefaultRpcClient implements RpcClient {
             return;
         }
 
-        final DefaultRpcRequestStub requestStub = requestStubMap.remove(response.getRequestId());
+        final RpcRequestStubImpl requestStub = requestStubMap.remove(response.getRequestId());
         if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
-            logRcvResponse(response, requestStub);
+            logRcvResponse(response, requestStub == null);
         }
 
         if (requestStub != null) {
@@ -353,16 +337,8 @@ public class DefaultRpcClient implements RpcClient {
             if (errorCode == 0) {
                 promise.complete(response.getResult());
             } else {
-                promise.completeExceptionally(newServerException(response, errorCode));
+                promise.completeExceptionally(newServerException(response));
             }
-        }
-    }
-
-    private static RuntimeException newServerException(RpcResponse response, int errorCode) {
-        if (RpcErrorCodes.isUserCode(errorCode)) {
-            return new ErrorCodeException(errorCode, response.getErrorMsg());
-        } else {
-            return new RpcServerException(errorCode, response.getErrorMsg());
         }
     }
 
@@ -389,12 +365,12 @@ public class DefaultRpcClient implements RpcClient {
         final long curTime = timeProvider.getTime();
         while (requestStubMap.size() > 0) {
             final long requestId = requestStubMap.firstLongKey();
-            final DefaultRpcRequestStub requestStub = requestStubMap.get(requestId);
+            final RpcRequestStubImpl requestStub = requestStubMap.get(requestId);
             if (curTime < requestStub.deadline) {
                 return;
             }
 
-            logger.warn("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
+            logger.info("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
             requestStubMap.removeFirst();
             requestStub.future.completeExceptionally(RpcClientException.timeout());
         }
@@ -421,23 +397,24 @@ public class DefaultRpcClient implements RpcClient {
         }
     }
 
-    private static RuntimeException wrapException(RpcRequest request, Throwable e) {
-        String msg = String.format("invoke caught exception, node %s, serviceId=%d, methodId=%d",
-                request.getSrcAddr(), request.getServiceId(), request.getMethodId());
-        return new RuntimeException(msg, e);
+    private static void logInvokeException(RpcRequest request, Throwable e) {
+        if (!(e instanceof NoLogRequiredException)) {
+            logger.warn("invoke caught exception, src {}, serviceId={}, methodId={}",
+                    request.getSrcAddr(), request.getServiceId(), request.getMethodId(), e);
+        }
+    }
+
+    private static RuntimeException newServerException(RpcResponse response) {
+        int errorCode = response.getErrorCode();
+        if (RpcErrorCodes.isUserCode(errorCode)) {
+            return new ErrorCodeException(errorCode, response.getErrorMsg());
+        } else {
+            return new RpcServerException(errorCode, response.getErrorMsg());
+        }
     }
 
     private RpcResponse newFailedResponse(RpcRequest request, int errorCode, String msg) {
-        return RpcResponse.newFailedResponse(request, selfRpcAddr, errorCode, msg);
-    }
-
-    private RpcResponse newFailedResponse(RpcRequest request, Throwable e) {
-        e = FutureUtils.unwrapCompletionException(e);
-        if (e instanceof ErrorCodeException codeException) {
-            return RpcResponse.newFailedResponse(request, selfRpcAddr, codeException.getErrorCode(), codeException.getMessage());
-        } else {
-            return RpcResponse.newFailedResponse(request, selfRpcAddr, RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(e));
-        }
+        return new RpcResponse(request, selfRpcAddr, RpcResultSpec.newFailedResult(errorCode, msg));
     }
 
     @ThreadSafe
@@ -468,6 +445,7 @@ public class DefaultRpcClient implements RpcClient {
 
         final RpcRequest request;
         final DefaultRpcClient rpcClient;
+        final RpcResultSpec resultSpec = new RpcResultSpec();
 
         RpcContextImpl(RpcRequest request, DefaultRpcClient rpcClient) {
             this.request = request;
@@ -490,38 +468,46 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         @Override
+        public boolean isSharable() {
+            return resultSpec.isSharable();
+        }
+
+        @Override
+        public void setSharable(boolean sharable) {
+            resultSpec.setSharable(sharable);
+        }
+
+        @Override
         public void sendResult(V result) {
-            RpcResponse response = RpcResponse.newSucceedResponse(request, rpcClient.selfRpcAddr, result);
-            rpcClient.sendResponseAndLog(response);
+            resultSpec.succeeded(result);
+            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
         }
 
         @Override
         public void sendError(int errorCode, String msg) {
-            if (errorCode == 0) throw new IllegalArgumentException("errorCode == 0");
-            RpcResponse response = rpcClient.newFailedResponse(request, errorCode, msg);
-            rpcClient.sendResponseAndLog(response);
+            resultSpec.failed(errorCode, msg);
+            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
         }
 
         @Override
         public void accept(V v, Throwable throwable) {
-            final RpcResponse response;
             if (throwable != null) {
-                response = rpcClient.newFailedResponse(request, throwable);
+                resultSpec.failed(throwable);
             } else {
-                response = RpcResponse.newSucceedResponse(request, rpcClient.selfRpcAddr, v);
+                resultSpec.succeeded(v);
             }
-            rpcClient.sendResponseAndLog(response);
+            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
         }
 
     }
 
-    private static class DefaultRpcRequestStub implements RpcRequestStub {
+    private static class RpcRequestStubImpl implements RpcRequestStub {
 
         final ICompletableFuture<?> future;
         final long deadline;
         final RpcRequest request;
 
-        DefaultRpcRequestStub(ICompletableFuture<?> future, long deadline, RpcRequest request) {
+        RpcRequestStubImpl(ICompletableFuture<?> future, long deadline, RpcRequest request) {
             this.future = future;
             this.deadline = deadline;
             this.request = request;
@@ -552,11 +538,6 @@ public class DefaultRpcClient implements RpcClient {
                 DebugLogUtils.logOf(logConfig.getSndRequestLogLevel(), request));
     }
 
-    private void logBroadcastRequest(RpcRequest request) {
-        logger.info("broadcast rpc request, request {}",
-                DebugLogUtils.logOf(logConfig.getSndRequestLogLevel(), request));
-    }
-
     private void logSndResponse(RpcResponse response) {
         logger.info("snd rpc response, response {}",
                 DebugLogUtils.logOf(logConfig.getSndResponseLogLevel(), response));
@@ -567,20 +548,15 @@ public class DefaultRpcClient implements RpcClient {
                 DebugLogUtils.logOf(logConfig.getRcvRequestLogLevel(), request));
     }
 
-    private void logRcvResponse(RpcResponse response, DefaultRpcRequestStub requestStub) {
-        if (null == requestStub) {
+    private void logRcvResponse(RpcResponse response, boolean timeout) {
+        // 旧时的response中不包含serverId和methodId，因此参数有传stub和request
+        if (timeout) {
             logger.info("rcv rpc response, but request is timeout, response {}",
                     DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
         } else {
             logger.info("rcv rpc response, response {}",
                     DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
         }
-    }
-
-    private void logRcvResponse(RpcResponse response, RpcRequest request) {
-        logger.info("rcv rpc response, request {}, response {}",
-                DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), request),
-                DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
     }
 
     // endregion

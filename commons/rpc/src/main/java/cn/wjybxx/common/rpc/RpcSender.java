@@ -29,6 +29,8 @@ public interface RpcSender {
 
     /**
      * 发送一个协议
+     * 1.发送的时候不可以修改proto的内容
+     * 2.如果转发时要重定向等，应当先拷贝，再修改拷贝后的实例；或者不编码原始proto的目标地址{@link RpcProtocol#getDestAddr()}
      *
      * @param proto 要路由的协议
      * @return 如果不能发送，则返回false，请确保正确的进行了实现。

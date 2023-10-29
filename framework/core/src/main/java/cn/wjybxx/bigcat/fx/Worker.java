@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.common.annotation.Internal;
 import cn.wjybxx.common.concurrent.EventLoop;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -55,7 +56,7 @@ public interface Worker extends EventLoop {
 
     /**
      * Worker的id —— 员工编号
-     * 为线程分配数字id不易使用，我们
+     * 为线程分配数字id不易使用，我们使用字符串类型；在实际的rpc通信中，我们极少指定目标的workerId
      */
     String workerId();
 
@@ -79,6 +80,11 @@ public interface Worker extends EventLoop {
     IntSet services();
 
     //
+
+    /** 返回node设置的上下文 */
+    @Internal
+    WorkerCtx workerCtx();
+
     @Nullable
     @Override
     Node parent();
@@ -94,4 +100,5 @@ public interface Worker extends EventLoop {
     default Worker select(int key) {
         return this;
     }
+
 }

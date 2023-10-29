@@ -16,7 +16,9 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.rpc.RpcAddr;
+import cn.wjybxx.common.concurrent.EventLoop;
+import cn.wjybxx.common.concurrent.FutureUtils;
+import cn.wjybxx.common.time.TimeProvider;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -37,9 +39,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * 1. 同Worker一样，Node也通过挂载模块（Module）扩展，
  * 2. Node的业务应当保持简单，勿在Node上挂在非IO模块。
  * 3. 为保持架构的简单性，我们不支持Node在运行时添加Worker.
+ *
  * <h3>服务导出</h3>
  * 1. 当暴露服务到网络时，只能暴露服务支持的并发数，而不能暴露服务关联的Worker。
  * 2. Rpc客户端不能指定服务由哪个Worker处理 -- 避免不必要的依赖。
+ *
+ * <h3>建议</h3>
+ * 1. Node上的{@link TimeProvider}最好支持多线程读，可参考{@link FutureUtils#newTimeProvider(EventLoop, long)}
  *
  * @author wjybxx
  * date - 2023/10/4
@@ -55,8 +61,8 @@ public interface Node extends Worker {
      */
     CopyOnWriteArraySet<Node> CURRENT_NODES = new CopyOnWriteArraySet<>();
 
-    /** 节点地址 -- 用于Rpc通信；公司地址 */
-    RpcAddr nodeAddr();
+    /** 节点地址（不包含workerId） -- 用于Rpc通信；公司地址 */
+    WorkerAddr nodeAddr();
 
     /** 直接绑定在Node上的模块 */
     @Override
@@ -74,7 +80,7 @@ public interface Node extends Worker {
         Int2ObjectMap<ServiceInfo> servicedInfoMap = serviceInfoMap();
         Int2IntOpenHashMap result = new Int2IntOpenHashMap(servicedInfoMap.size());
         servicedInfoMap.values().forEach(serviceInfo -> {
-            result.put(serviceInfo.serviceId, serviceInfo.workers.size());
+            result.put(serviceInfo.serviceId, serviceInfo.workerList.size());
         });
         return result;
     }
@@ -82,7 +88,7 @@ public interface Node extends Worker {
     /** 获取指定服务的数量（并发数） */
     default int serviceCount(int serviceId) {
         ServiceInfo serviceInfo = serviceInfoMap().get(serviceId);
-        return serviceInfo == null ? 0 : serviceInfo.workers.size();
+        return serviceInfo == null ? 0 : serviceInfo.workerList.size();
     }
 
     // region worker管理
