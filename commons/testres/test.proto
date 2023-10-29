@@ -65,6 +65,7 @@ message Outer {// Level 0
   MiddleAA aa = 1;
   MiddleBB bb = 2;
   map<int32, int32> pairs = 3;
+  bytes data = 4;
 }
 
 enum EnumAllowingAlias {

@@ -35,8 +35,11 @@ import java.util.function.BiConsumer;
 public abstract class AbstractPromise<V> implements FluentPromise<V> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractPromise.class);
+
+    /** 方便测试 */
+    public static final String propKey = "cn.wjybxx.common.async.promise.asjdkorder";
     /** 是否按照{@link CompletableFuture}的广播顺序进行广播 -- 先插入的后广播 */
-    private static final boolean asJdkOrder = Boolean.parseBoolean(System.getProperty("cn.wjybxx.common.async.promise.asjdkorder", "false"));
+    private static final boolean asJdkOrder = Boolean.parseBoolean(System.getProperty(propKey, "false"));
 
     /**
      * 当任务正常完成没有结果时，使用该对象表示

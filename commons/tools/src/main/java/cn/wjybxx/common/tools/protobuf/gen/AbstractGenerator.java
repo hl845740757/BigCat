@@ -17,8 +17,10 @@
 package cn.wjybxx.common.tools.protobuf.gen;
 
 import cn.wjybxx.common.tools.protobuf.PBFile;
+import cn.wjybxx.common.tools.protobuf.PBKeywords;
 import cn.wjybxx.common.tools.protobuf.PBParserOptions;
 import cn.wjybxx.common.tools.protobuf.PBRepository;
+import cn.wjybxx.common.tools.util.Utils;
 import com.squareup.javapoet.ClassName;
 
 import java.util.Objects;
@@ -42,11 +44,24 @@ abstract class AbstractGenerator {
         if (pbFile == null) {
             throw new IllegalArgumentException("class not found, type " + type);
         }
-        if (options.isJavaMultipleFiles()) {
-            return ClassName.get(options.getJavaPackage(), type);
+        // 处理文件中定义了JavaPackage的情况
+        String javaPackage = pbFile.getOption(PBKeywords.JAVA_PACKAGE);
+        if (javaPackage != null) {
+            javaPackage = Utils.unquote(javaPackage);
+        } else {
+            javaPackage = options.getJavaPackage();
         }
-        String outerClassName = options.getOuterClassName(pbFile.getSimpleName());
-        return ClassName.get(options.getJavaPackage(), outerClassName, type);
+        if (options.isJavaMultipleFiles()) {
+            return ClassName.get(javaPackage, type);
+        }
+        // 处理文件中定义了OuterClassName的情况
+        String outerClassName = pbFile.getOption(PBKeywords.JAVA_OUTER_CLASSNAME);
+        if (outerClassName != null) {
+            outerClassName = Utils.unquote(outerClassName);
+        } else {
+            outerClassName = options.getOuterClassName(pbFile.getSimpleName());
+        }
+        return ClassName.get(javaPackage, outerClassName, type);
     }
 
 }

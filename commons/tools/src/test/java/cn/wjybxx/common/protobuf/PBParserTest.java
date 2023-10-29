@@ -42,18 +42,18 @@ public class PBParserTest {
 
     /** 该测试部走自动化测试 */
     public static void main(String[] args) throws IOException {
-        File projectDir = getProjectDir();
+        File projectDir = Utils.findProjectDir("BigCat");
 
         PBParserOptions options = new PBParserOptions();
         options.setProtoDir(projectDir.getPath() + "/commons/testres/")
-                .setTempDir(projectDir.getPath() + "/commons/testres/temp")
+                .setTempDir(projectDir.getPath() + "/commons/testres/temp/")
                 .setLineSeparator("\n")
                 .setHeaderLineCount(5)
                 .addCommon("common")
                 .setJavaMultipleFiles(true);
 
         options.setJavaOut(projectDir.getPath() + "/commons/tools/src/test/java")
-                .setJavaPackage("cn.wjybxx.common.temp");
+                .setJavaPackage("cn.wjybxx.common.temp.pb");
 
         options.setMethodDefMode(PBMethod.MODE_CONTEXT)
                 .setUseCompleteStage(false)
@@ -86,11 +86,6 @@ public class PBParserTest {
         new PBCompiler(options).build();
         new ParserExporterGenerator(options, repository).build();
         new ServiceGenerator(options, repository).build();
-    }
-
-    /** 运行Main方法和运行Junit的WorkDir不同... */
-    private static File getProjectDir() {
-        return Utils.findProjectDir("BigCat");
     }
 
 }

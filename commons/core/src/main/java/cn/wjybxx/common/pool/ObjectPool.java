@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 
 /**
  * 对象池
+ * (其实acquire和release是比较合适的命名; get和return通常也是一对，get更容易实现supplier接口)
  *
  * @author wjybxx
  * date 2023/4/1
@@ -39,15 +40,17 @@ public interface ObjectPool<T> extends Supplier<T> {
      *
      * @param object 要回收的对象
      */
-    void free(T object);
+    void returnOne(T object);
 
     /**
      * 将指定的对象放入池中 - 重置策略却决于{@link ResetPolicy}。
      *
      * @param objects 要回收的对象
      */
-    default void freeAll(Collection<? extends T> objects) {
-        objects.forEach(this::free);
+    default void returnAll(Collection<? extends T> objects) {
+        objects.forEach(e -> {
+            if (e != null) returnOne(e);
+        });
     }
 
     /**

@@ -128,10 +128,9 @@ public class ConstantGenerator {
             codeBuilder.endControlFlow();
 
             // SET初始化块
-            codeBuilder.beginControlFlow("");
-            codeBuilder.addStatement("$T tempSet = new $T(VALUE_MAP.values())", valueSetType, ClassName.get(IntOpenHashSet.class));
-            codeBuilder.addStatement("VALUE_SET = $T.unmodifiable(tempSet)", ClassName.get(IntSets.class));
-            codeBuilder.endControlFlow();
+            codeBuilder.addStatement("VALUE_SET = $T.unmodifiable(new $T(VALUE_MAP.values()))",
+                    ClassName.get(IntSets.class),
+                    ClassName.get(IntOpenHashSet.class));
             typeBuilder.addStaticBlock(codeBuilder.build());
         }
 
@@ -139,12 +138,12 @@ public class ConstantGenerator {
         typeBuilder.addMethod(MethodSpec.methodBuilder("isEmpty")
                 .addModifiers(GenClassUtils.PUBLIC_STATIC)
                 .returns(TypeName.BOOLEAN)
-                .addStatement("return VALUE_SET.isEmpty()")
+                .addStatement("return VALUE_MAP.isEmpty()")
                 .build());
         typeBuilder.addMethod(MethodSpec.methodBuilder("size")
                 .addModifiers(GenClassUtils.PUBLIC_STATIC)
                 .returns(TypeName.INT)
-                .addStatement("return VALUE_SET.size()")
+                .addStatement("return VALUE_MAP.size()")
                 .build());
         // containsKey
         typeBuilder.addMethod(MethodSpec.methodBuilder("containsKey")

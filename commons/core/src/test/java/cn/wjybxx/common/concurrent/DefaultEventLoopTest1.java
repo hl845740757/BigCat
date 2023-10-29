@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.Executor;
-
 /**
  * 测试正常使用{@link DefaultEventLoop#execute(Runnable)}提交任务的时序
  *

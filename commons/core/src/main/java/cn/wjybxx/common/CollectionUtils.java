@@ -808,7 +808,7 @@ public class CollectionUtils {
     // region 减少库依赖的方法
 
     public static int capacity(int expectedSize) {
-        Preconditions.checkPositive(expectedSize, "expectedSize");
+        Preconditions.checkNonNegative(expectedSize, "expectedSize");
         if (expectedSize < 3) {
             return 4;
         }

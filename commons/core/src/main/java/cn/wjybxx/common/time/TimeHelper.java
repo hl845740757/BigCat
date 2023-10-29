@@ -63,6 +63,16 @@ public final class TimeHelper {
         return new TimeHelper(zoneOffset);
     }
 
+    /** 获取时区偏移 */
+    public ZoneOffset getZoneOffset() {
+        return zoneOffset;
+    }
+
+    /** 获取时区的秒偏移量 */
+    public long getOffsetSeconds() {
+        return zoneOffset.getTotalSeconds();
+    }
+
     /** 获取时区的毫秒偏移量 */
     public long getOffsetMillis() {
         return zoneOffset.getTotalSeconds() * 1000L;
@@ -132,17 +142,6 @@ public final class TimeHelper {
     public String formatTime(long epochMilli, DateTimeFormatter formatter) {
         LocalDateTime localDateTime = toLocalDateTime(epochMilli);
         return formatter.format(localDateTime);
-    }
-
-    public String formatTime(LocalDateTime localDateTime, DateTimeFormatter formatter) {
-        return formatter.format(localDateTime);
-    }
-
-    /**
-     * 将字符串格式的时间转换为本地时间
-     */
-    public LocalDateTime parseLocalDateTime(String dateString, DateTimeFormatter formatter) {
-        return LocalDateTime.parse(dateString, formatter);
     }
 
     /**

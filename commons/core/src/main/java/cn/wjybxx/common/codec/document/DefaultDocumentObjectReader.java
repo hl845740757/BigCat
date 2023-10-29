@@ -102,7 +102,7 @@ public class DefaultDocumentObjectReader extends AbstractObjectReader implements
         KeyIterator keyItr = (KeyIterator) reader.attach(null);
         super.readEndObject();
 
-        keySetPool.free(keyItr.keyQueue);
+        keySetPool.returnOne(keyItr.keyQueue);
         keyItr.keyQueue = null;
     }
 

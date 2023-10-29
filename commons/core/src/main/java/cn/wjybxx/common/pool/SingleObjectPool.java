@@ -50,7 +50,7 @@ public class SingleObjectPool<T> implements ObjectPool<T> {
     }
 
     @Override
-    public void free(T object) {
+    public void returnOne(T object) {
         if (object == null) {
             throw new IllegalArgumentException("object cannot be null.");
         }
@@ -60,7 +60,7 @@ public class SingleObjectPool<T> implements ObjectPool<T> {
     }
 
     @Override
-    public void freeAll(Collection<? extends T> objects) {
+    public void returnAll(Collection<? extends T> objects) {
         if (objects == null) {
             throw new IllegalArgumentException("objects cannot be null.");
         }

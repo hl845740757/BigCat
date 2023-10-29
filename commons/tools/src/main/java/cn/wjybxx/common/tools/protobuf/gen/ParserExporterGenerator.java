@@ -56,11 +56,13 @@ public class ParserExporterGenerator extends AbstractGenerator {
         for (PBFile pbFile : repository.getSortedFiles()) {
             for (PBService service : pbFile.getServices()) {
                 for (PBMethod method : service.getMethods()) {
+                    // 增加一行注释，既用于分割代码，也方便检索
+                    exportBuilder.addComment("$L.$L", service.getSimpleName(), method.getSimpleName());
+
                     CodeBlock.Builder codeBuilder = CodeBlock.builder().add("registry.register(new $T<>($L, $L,",
                             className_methodParser,
                             service.getServiceId(),
                             method.getMethodId());
-
                     codeBuilder.add("\n");
                     addParserStatement(method.getArgType(), codeBuilder);
                     codeBuilder.add(",\n");

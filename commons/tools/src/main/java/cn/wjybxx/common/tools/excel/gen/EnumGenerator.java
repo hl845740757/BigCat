@@ -85,7 +85,7 @@ public class EnumGenerator {
         // VALUES, MIN_VALUE, MAX_VALUE
         TypeName valuesType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_LIST, selfClsName);
         typeBuilder.addField(FieldSpec.builder(valuesType, "VALUES", GenClassUtils.PUBLIC_STATIC_FINAL)
-                .initializer("MAPPER.values()") // 使用Mapper的缓存，勿调整定义顺序
+                .initializer("VALUE_MAP.values()") // 使用Mapper的缓存，勿调整定义顺序
                 .build());
         typeBuilder.addField(FieldSpec.builder(TypeName.INT, "MIN_VALUE", GenClassUtils.PUBLIC_STATIC_FINAL)
                 .initializer("$L", ConstantGenerator.minValue(enumValueList))

@@ -69,7 +69,7 @@ public class DefaultEventBus implements EventBus {
                     final ComposeEventKey composeEventKey = keyPool.get();
                     composeEventKey.init(masterKey, childKey);
                     EventBusUtils.postEvent(handlerMap, (Object) eventX, composeEventKey);
-                    keyPool.free(composeEventKey);
+                    keyPool.returnOne(composeEventKey);
                 }
             } else {
                 // 普通事件只支持class作为masterKey
@@ -121,7 +121,7 @@ public class DefaultEventBus implements EventBus {
                 composeEventKey.init(masterKey, childKey);
                 EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
             }
-            keyPool.free(composeEventKey);
+            keyPool.returnOne(composeEventKey);
         }
     }
 
@@ -133,7 +133,7 @@ public class DefaultEventBus implements EventBus {
             final ComposeEventKey composeEventKey = keyPool.get();
             composeEventKey.init(masterKey, childKey);
             boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-            keyPool.free(composeEventKey);
+            keyPool.returnOne(composeEventKey);
             return contains;
         }
     }

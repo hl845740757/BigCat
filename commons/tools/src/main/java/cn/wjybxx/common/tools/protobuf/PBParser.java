@@ -208,6 +208,10 @@ public class PBParser {
                 parseOption(context.container, lineInfo);
                 return;
             }
+            case PBKeywords.RESERVED -> {
+                context.clearCommentLines();
+                return;
+            }
             case null -> {
                 context.clearCommentLines(); // 可能是结束行，不返回
             }
@@ -297,6 +301,10 @@ public class PBParser {
             case PBKeywords.OPTION -> {
                 context.clearCommentLines();
                 parseOption(context.container, lineInfo);
+                return;
+            }
+            case PBKeywords.RESERVED -> {
+                context.clearCommentLines();
                 return;
             }
             case null -> {

@@ -74,7 +74,7 @@ public class DefaultEventBusX implements EventBus {
                 key.masterKey = event.getClass();
                 EventBusUtils.postEvent(handlerMap, event, key);
             }
-            keyPool.free(key);
+            keyPool.returnOne(key);
         } finally {
             recursionDepth--;
         }
@@ -128,7 +128,7 @@ public class DefaultEventBusX implements EventBus {
             composeEventKey.init(sourceKey, masterKey, childKey);
             EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
         }
-        keyPool.free(composeEventKey);
+        keyPool.returnOne(composeEventKey);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class DefaultEventBusX implements EventBus {
         final ComposeEventKey composeEventKey = keyPool.get();
         composeEventKey.init(sourceKey, masterKey, childKey);
         boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-        keyPool.free(composeEventKey);
+        keyPool.returnOne(composeEventKey);
         return contains;
     }
 

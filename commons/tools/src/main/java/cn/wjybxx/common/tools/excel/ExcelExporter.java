@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -57,13 +58,13 @@ public class ExcelExporter {
     /** 导表选项 */
     private final ExcelExporterOptions options;
     /** 线程池 -- 表格会被并发读取和并发导出 */
-    private final ExecutorService executor;
+    private final Executor executor;
     /** 编解码器 */
     private final DocumentConverter converter;
 
     private Map<String, Sheet> sheetMap;
 
-    public ExcelExporter(ExcelExporterOptions options, ExecutorService executor) {
+    public ExcelExporter(ExcelExporterOptions options, Executor executor) {
         this.options = options;
         this.executor = executor;
         this.converter = DefaultDocumentConverter.newInstance(

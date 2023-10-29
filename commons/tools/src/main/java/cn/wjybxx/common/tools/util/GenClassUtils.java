@@ -171,7 +171,12 @@ public class GenClassUtils {
         javaFile.writeTo(javaOutDir);
     }
 
-    /** 生成的类实现{@link EnumLite}接口 */
+    /**
+     * 生成的类实现{@link EnumLite}接口
+     * 1.生成的{@link EnumLiteMap}字段命名为{@code VALUE_MAP}
+     *
+     * @param numberFiledName number字段的名字；部分类可能不命名为number，以更贴近业务
+     */
     public static void implEnumLite(ClassName className, TypeSpec.Builder typeBuilder, String numberFiledName) {
         if (!CollectionUtils.containsRef(typeBuilder.superinterfaces, clsName_enumLite)) {
             typeBuilder.addSuperinterface(clsName_enumLite);
@@ -186,7 +191,7 @@ public class GenClassUtils {
 
         // mapper字段
         final TypeName mapperTypeName = ParameterizedTypeName.get(clsName_enumLiteMap, className);
-        typeBuilder.addField(FieldSpec.builder(mapperTypeName, "MAPPER", PUBLIC_STATIC_FINAL)
+        typeBuilder.addField(FieldSpec.builder(mapperTypeName, "VALUE_MAP", PUBLIC_STATIC_FINAL)
                 .initializer("$T.mapping(values())", clsName_enumUtils)
                 .build());
 
@@ -195,20 +200,20 @@ public class GenClassUtils {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(className)
                 .addParameter(TypeName.INT, "number")
-                .addStatement("return MAPPER.forNumber(number)")
+                .addStatement("return VALUE_MAP.forNumber(number)")
                 .build());
         typeBuilder.addMethod(MethodSpec.methodBuilder("forNumber")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(className)
                 .addParameter(TypeName.INT, "number")
                 .addParameter(className, "def")
-                .addStatement("return MAPPER.forNumber(number, def)")
+                .addStatement("return VALUE_MAP.forNumber(number, def)")
                 .build());
         typeBuilder.addMethod(MethodSpec.methodBuilder("checkedForNumber")
                 .returns(className)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(TypeName.INT, "number", Modifier.FINAL)
-                .addStatement("return MAPPER.checkedForNumber(number)")
+                .addStatement("return VALUE_MAP.checkedForNumber(number)")
                 .build());
     }
 }

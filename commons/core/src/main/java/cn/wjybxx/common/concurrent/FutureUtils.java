@@ -245,6 +245,11 @@ public class FutureUtils {
         }
     }
 
+    /** @see #newTimeProvider(EventLoop, long) */
+    public static CachedTimeProvider newTimeProvider(EventLoop eventLoop) {
+        return new EventLoopTimeProvider(eventLoop, System.currentTimeMillis());
+    }
+
     /**
      * 创建一个支持缓存的时间提供器，且可以多线程安全访问。
      * 你需要调用{@link CachedTimeProvider#setTime(long)}更新时间值，且应该只有一个线程调用更新方法。

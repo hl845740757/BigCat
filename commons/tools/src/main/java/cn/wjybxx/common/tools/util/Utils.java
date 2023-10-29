@@ -30,8 +30,6 @@ import java.io.InputStreamReader;
  */
 public class Utils extends ObjectUtils {
 
-    // region 代码生成
-
     // region 字符查找
 
     /** 查找第一个非给定char的元素的位置 */
@@ -171,21 +169,20 @@ public class Utils extends ObjectUtils {
         return new File(System.getProperty("user.dir"));
     }
 
-    /** 查找项目的根目录 */
+    /**
+     * 查找项目的根目录
+     * 1.可避免WorkDir不同，导致的资源定位问题，尤其是单元测试（Main方法和Junit就存在不同）
+     * 2.可以统一API
+     */
     public static File findProjectDir(String projectName) {
-        final File workdir = getUserWorkerDir();
-        if (workdir.getName().equalsIgnoreCase(projectName)) {
-            return workdir;
-        }
-        File currentDir = workdir;
-        File parentFile;
-        while ((parentFile = currentDir.getParentFile()) != null) {
-            if (parentFile.getName().equalsIgnoreCase(projectName)) {
-                return parentFile;
+        File currentDir = getUserWorkerDir();
+        do {
+            if (currentDir.getName().equalsIgnoreCase(projectName)) {
+                return currentDir;
             }
-            currentDir = parentFile;
-        }
-        throw new AssertionError();
+        } while ((currentDir = currentDir.getParentFile()) != null);
+
+        throw new IllegalArgumentException("invalid projectName: " + projectName);
     }
 
     // endregion

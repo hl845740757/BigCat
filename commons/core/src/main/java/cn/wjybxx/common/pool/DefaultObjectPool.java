@@ -24,6 +24,11 @@ import java.util.function.Supplier;
 
 /**
  * 对象池的默认实现
+ * <h3>队列 OR 栈</h3>
+ * 主要区别：栈结构会频繁使用栈顶元素，而队列结构的元素是平等的。
+ * 因此栈结构有以下特性：
+ * 1.如果复用对象存在bug，更容易发现。
+ * 2.如果池化的对象是List这类会扩容的对象，则只有栈顶部分的对象会扩容较大。
  *
  * @author wjybxx
  * date 2023/4/1
@@ -71,7 +76,7 @@ public final class DefaultObjectPool<T> implements ObjectPool<T> {
     }
 
     @Override
-    public void free(T object) {
+    public void returnOne(T object) {
         if (object == null) {
             throw new IllegalArgumentException("object cannot be null.");
         }
@@ -86,7 +91,7 @@ public final class DefaultObjectPool<T> implements ObjectPool<T> {
     }
 
     @Override
-    public void freeAll(Collection<? extends T> objects) {
+    public void returnAll(Collection<? extends T> objects) {
         if (objects == null) {
             throw new IllegalArgumentException("objects cannot be null.");
         }

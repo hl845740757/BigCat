@@ -93,6 +93,8 @@ public class PBKeywords {
      * 是否允许不同的枚举常量指向同一个值
      */
     public static final String ALLOW_ALIAS = "allow_alias";
+    /** 保留字段编号 */
+    public static final String RESERVED = "reserved";
 
     // endregion
 

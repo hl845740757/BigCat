@@ -40,6 +40,9 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
 
+    public SheetCodec() {
+    }
+
     @Nonnull
     @Override
     public Class<Sheet> getEncoderClass() {
@@ -61,13 +64,15 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         writer.writeString("fileName", sheet.getFileName());
         writer.writeString("sheetName", sheet.getSheetName());
         writer.writeInt("sheetIndex", sheet.getSheetIndex());
-        writeHeaderMap(writer, sheet.getHeaderMap());
-        writeValueRowList(writer, sheet.getValueRowList());
+
+        boolean isParamSheet = sheet.isParamSheet();
+        writeHeaderMap(writer, sheet.getHeaderMap(), isParamSheet);
+        writeValueRowList(writer, sheet.getValueRowList(), isParamSheet);
     }
 
     //
 
-    private static void writeHeaderMap(DocumentObjectWriter writer, Map<String, Header> headerMap) {
+    private void writeHeaderMap(DocumentObjectWriter writer, Map<String, Header> headerMap, boolean isParamSheet) {
         // 只写values
         writer.writeStartArray("headerMap", headerMap.values(), TypeArgInfo.ARRAYLIST);
         for (Header header : headerMap.values()) {
@@ -83,7 +88,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         writer.writeEndArray();
     }
 
-    private static Map<String, Header> readHeaderMap(DocumentObjectReader reader) {
+    private Map<String, Header> readHeaderMap(DocumentObjectReader reader) {
         Map<String, Header> headerMap = new LinkedHashMap<>();
         // headerMap写的是数组格式
         reader.readStartArray("headerMap", TypeArgInfo.ARRAYLIST);
@@ -103,7 +108,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
     }
 
     //
-    private static void writeValueRowList(DocumentObjectWriter writer, List<SheetRow> valueRowList) {
+    private void writeValueRowList(DocumentObjectWriter writer, List<SheetRow> valueRowList, boolean isParamSheet) {
         // 其实将rowIndex看做key写成对象会更有效，但兼容性可能不好
         writer.writeStartArray("valueRowList", valueRowList, TypeArgInfo.ARRAYLIST);
         for (SheetRow valueRow : valueRowList) {
@@ -111,7 +116,8 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
             writer.writeInt("rowIndex", valueRow.getRowIndex());
             {
                 // cellMap写为Map
-                writer.writeStartObject("cellMap", valueRow.getName2CellMap(), TypeArgInfo.STRING_HASHMAP);
+                ObjectStyle style = isParamSheet ? ObjectStyle.FLOW : ObjectStyle.INDENT;
+                writer.writeStartObject("cellMap", valueRow.getName2CellMap(), TypeArgInfo.STRING_HASHMAP, style);
                 for (SheetCell cell : valueRow.getName2CellMap().values()) {
                     writer.writeString(cell.getName(), cell.getValue(), StringStyle.QUOTE);
                 }
@@ -122,7 +128,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         writer.writeEndArray();
     }
 
-    private static List<SheetRow> readValueRowList(DocumentObjectReader reader, Map<String, Header> headerMap) {
+    private List<SheetRow> readValueRowList(DocumentObjectReader reader, Map<String, Header> headerMap) {
         // valueRowList写的是数组格式
         ArrayList<SheetRow> valueRowList = new ArrayList<>();
         reader.readStartArray("valueRowList", TypeArgInfo.ARRAYLIST);

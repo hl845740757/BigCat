@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * 2.如果存在Watcher，事件将调用{@link Watcher#test(Object)}方法测试事件。
  * 2.1 如果不是Watcher等待的事件，事件将被插入任务队列。
  * 2.2 如果是Watcher等待的事件，将删除Watcher，然后调用{@link Watcher#onEvent(Object)}方法处理事件 -- 即：Watcher是一次性的。
+ * 3.管理器中的watcher可能是多个，测试时将逐个测试
  * <p>
  * 一些指导：
  * 1.监听器应该设定超时时间，不可无限阻塞，否则可能有死锁风险，或者总是超时失败 -- 如果任务队列是有界的。
@@ -45,7 +46,7 @@ public interface WatcherMgr<E> {
 
     /**
      * 监听队列中的事件，直到某一个事件发生。
-     * 该方法通常由当前线程的代码调用
+     * （该方法通常由当前线程调用）
      *
      * @param watcher 监听器
      * @throws NullPointerException watcher is null
@@ -59,7 +60,7 @@ public interface WatcherMgr<E> {
      * 如果是监听者自身调用，则可以根据返回值检测到冲突，从而采取对应的行为，这时事件的生产者可能将调用{@link Watcher#onEvent(Object)}。
      *
      * @param watcher 用于判断是否是当前watcher
-     * @return 如果参数为null，则返回false；如果给定watcher是当前watcher则删除成功并返回true，否则不产生影响并返回false
+     * @return 如果参数为null，则返回false；如果watcher存在，则删除并返回true，否则返回false
      */
     boolean cancelWatch(Watcher<?> watcher);
 

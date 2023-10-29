@@ -44,4 +44,21 @@ public class PromiseTest {
         Assertions.assertEquals(count, counter.getValue());
     }
 
+    public static void main(String[] args) {
+        System.setProperty(AbstractPromise.propKey, "true");
+
+        final int count = 4;
+        FluentPromise<String> promise = SameThreads.newPromise();
+        MutableInt counter = new MutableInt(0);
+        IntStream.range(0, count).forEach(idx -> {
+            promise.thenAccept(s -> {
+                int expected = count - idx - 1;
+                Assertions.assertEquals(expected, counter.getValue());
+                counter.increment();
+            });
+        });
+
+        promise.complete("");
+        Assertions.assertEquals(count, counter.getValue());
+    }
 }

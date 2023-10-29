@@ -36,7 +36,7 @@ public class ConstGeneratorTest {
     void test() throws IOException {
         File projectDir = Utils.findProjectDir("BigCat");
         String javaOut = projectDir.getPath() + "/commons/tools/src/test/java";
-        String javaPackage = "cn.wjybxx.common.temp";
+        String javaPackage = "cn.wjybxx.common.temp.cfg2";
         {
             List<SheetEnumValue> enumValueList = List.of(new SheetEnumValue("ONE", "1", null),
                     new SheetEnumValue("TWO", "2", null),

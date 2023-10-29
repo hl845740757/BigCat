@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.bigcat.util;
 
+
+import cn.wjybxx.common.EnumLite;
+import cn.wjybxx.common.EnumLiteMap;
+import cn.wjybxx.common.EnumUtils;
+import cn.wjybxx.common.MathUtils;
+import cn.wjybxx.common.codec.binary.BinarySerializable;
 
 import javax.annotation.Nullable;
 
@@ -25,6 +31,7 @@ import javax.annotation.Nullable;
  * @author wjybxx
  * date - 2023/4/27
  */
+@BinarySerializable
 public enum RelationalOperator implements EnumLite {
 
     gt(1) {
