@@ -16,31 +16,24 @@
 
 package cn.wjybxx.common.concurrent;
 
+import java.util.concurrent.Executor;
+
 /**
- * 用于表示EventLoop在启动的过程中被关闭
+ * 单线程的Executor
  *
  * @author wjybxx
- * date - 2023/8/15
+ * date - 2023/11/6
  */
-public class ShuttingDownException extends RuntimeException {
+public interface SingleThreadExecutor extends Executor {
 
-    public ShuttingDownException() {
-    }
-
-    public ShuttingDownException(String message) {
-        super(message);
-    }
-
-    public ShuttingDownException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ShuttingDownException(Throwable cause) {
-        super(cause);
-    }
-
-    public ShuttingDownException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
+    /***
+     * 测试当前线程是否是{@link java.util.concurrent.Executor}所在线程。
+     * 主要作用:
+     * 1. 判断是否可访问线程封闭的数据。
+     * 2. 防止死锁。
+     * <p>
+     * 更多可参考{@link EventLoop#inEventLoop()}
+     */
+    boolean inEventLoop();
 
 }

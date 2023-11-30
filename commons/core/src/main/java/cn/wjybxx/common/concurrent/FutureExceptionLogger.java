@@ -30,6 +30,7 @@ public interface FutureExceptionLogger {
 
     boolean isEnable();
 
-    void onCaughtException(Throwable ex);
+    /** @param extraInfo 附加信息 */
+    void onCaughtException(Throwable ex, String extraInfo);
 
 }

@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.concurrent;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author wjybxx
  * date 2023/4/9
@@ -37,7 +39,7 @@ public class EventLoopFutureContext implements FutureContext {
     }
 
     @Override
-    public FutureContext downContext(XCompletableFuture<?> future) {
+    public FutureContext downContext(XCompletableFuture<?> future, Executor actionExecutor) {
         return this;
     }
 

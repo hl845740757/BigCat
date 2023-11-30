@@ -17,7 +17,7 @@
 package cn.wjybxx.common.concurrent;
 
 import cn.wjybxx.common.ThreadUtils;
-import cn.wjybxx.common.collect.IndexedPriorityQueue;
+import cn.wjybxx.common.collect.IndexedNode;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * date 2023/4/10
  */
 final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduledFuture<V>,
-        IndexedPriorityQueue.IndexedNode {
+        IndexedNode {
 
     /** 任务的唯一id - 如果构造时未传入，要小心可见性问题 */
     private long id;
@@ -36,10 +36,11 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     private long nextTriggerTime;
     /** 负数表示fixedDelay，正数表示fixedRate */
     private final long period;
-    /** 在队列中的下标 */
-    private int queueIndex = INDEX_NOT_IN_QUEUE;
+
     /** 所属的队列id */
     private int queueId;
+    /** 在队列中的下标 */
+    private int queueIndex = INDEX_NOT_IN_QUEUE;
 
     /** 超时信息 */
     private TimeSharingContext timeSharingContext;
@@ -52,23 +53,23 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
         this.id = id;
         this.nextTriggerTime = nanoTime;
         this.period = period;
-        this.flags = ScheduleFeature.defaultFlags;
+        this.flags = TaskFeature.defaultFlags;
     }
 
     static <V> XScheduledFutureTask<V> ofCallable(EventLoopFutureContext ctx, Callable<V> callable,
-                                                  long id, long nanoTime) {
-        return new XScheduledFutureTask<>(ctx, callable, id, nanoTime, 0);
+                                                  long id, long triggerTime) {
+        return new XScheduledFutureTask<>(ctx, callable, id, triggerTime, 0);
     }
 
     static <V> XScheduledFutureTask<V> ofRunnable(EventLoopFutureContext ctx, Runnable task,
-                                                  long id, long nanoTime) {
-        return new XScheduledFutureTask<>(ctx, FutureUtils.toCallable(task, null), id, nanoTime, 0);
+                                                  long id, long triggerTime) {
+        return new XScheduledFutureTask<>(ctx, FutureUtils.toCallable(task, null), id, triggerTime, 0);
     }
 
     static <V> XScheduledFutureTask<V> ofPeriodic(EventLoopFutureContext ctx, Runnable task,
-                                                  long id, long nanoTime, long period) {
+                                                  long id, long triggerTime, long period) {
         validatePeriod(period);
-        return new XScheduledFutureTask<>(ctx, FutureUtils.toCallable(task, null), id, nanoTime, period);
+        return new XScheduledFutureTask<>(ctx, FutureUtils.toCallable(task, null), id, triggerTime, period);
     }
 
     private static void validatePeriod(long period) {
@@ -129,16 +130,17 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
         return flags;
     }
 
-    long getDelayNanos(long tickNanoTime) {
-        return nextTriggerTime - tickNanoTime;
+    long getDelayNanos(long tickTime) {
+        return nextTriggerTime - tickTime;
     }
 
-    boolean isEnable(ScheduleFeature feature) {
+    boolean isEnable(TaskFeature feature) {
         return feature.enabledIn(flags);
     }
 
     //
 
+    @Override
     public boolean isPeriodic() {
         return period != 0;
     }
@@ -151,7 +153,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     @Override
     public void run() {
         AbstractScheduledEventLoop eventLoop = eventLoop();
-        if (isDone()) { // 未及时从队列删除
+        if (isDone()) { // 未及时从队列删除；不要尝试优化，可能尚未到触发时间
             eventLoop.removeScheduled(this);
             return;
         }
@@ -182,6 +184,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
                         internal_doCompleteExceptionally(TimeSharingTimeoutException.INSTANCE);
                     }
                 }
+                return false;
             } else if (!isDone()) {
                 TimeSharingContext timeSharingContext = this.timeSharingContext;
                 if (timeSharingContext != null) {
@@ -206,8 +209,8 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
         } catch (Throwable ex) {
             ThreadUtils.recoveryInterrupted(ex);
             if (period != 0 && !FutureUtils.isTimeSharing(task)) {
-                boolean caught = isEnable(ScheduleFeature.CAUGHT_THROWABLE)
-                        || (isEnable(ScheduleFeature.CAUGHT_EXCEPTION) && ex instanceof Exception);
+                boolean caught = isEnable(TaskFeature.CAUGHT_THROWABLE)
+                        || (isEnable(TaskFeature.CAUGHT_EXCEPTION) && ex instanceof Exception);
                 if (caught) {
                     logger.info("periodic task caught exception", ex);
                     setNextRunTime(tickTime, timeSharingContext);
@@ -222,7 +225,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     private void setNextRunTime(long tickTime, TimeSharingContext timeSharingContext) {
         long maxDelay = timeSharingContext != null ? timeSharingContext.getTimeLeft() : Long.MAX_VALUE;
         if (period > 0) {
-            nextTriggerTime += Math.min(maxDelay, period);
+            nextTriggerTime = nextTriggerTime + Math.min(maxDelay, period);
         } else {
             nextTriggerTime = tickTime + Math.min(maxDelay, -period);
         }
@@ -259,12 +262,12 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     }
 
     @Override
-    public int priorityQueueIndex(IndexedPriorityQueue<?> queue) {
+    public int queueIndex(Object queue) {
         return queueIndex;
     }
 
     @Override
-    public void priorityQueueIndex(IndexedPriorityQueue<?> queue, int index) {
+    public void queueIndex(Object queue, int index) {
         queueIndex = index;
     }
 

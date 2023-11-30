@@ -51,19 +51,6 @@ import java.util.concurrent.locks.LockSupport;
  */
 public class DefaultEventLoop extends AbstractScheduledEventLoop {
 
-    /** 初始状态，未启动状态 */
-    private static final int ST_NOT_STARTED = 0;
-    /** 启动中 */
-    private static final int ST_STARTING = 1;
-    /** 运行状态 */
-    private static final int ST_RUNNING = 2;
-    /** 正在关闭状态 */
-    private static final int ST_SHUTTING_DOWN = 3;
-    /** 已关闭状态，正在进行最后的清理 */
-    private static final int ST_SHUTDOWN = 4;
-    /** 终止状态 */
-    private static final int ST_TERMINATED = 5;
-
     private static final int MIN_BATCH_SIZE = 64;
     private static final int MAX_BATCH_SIZE = 64 * 1024;
 
@@ -100,8 +87,10 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     private final int taskBatchSize;
     /** 任务拒绝策略 */
     private final RejectedExecutionHandler rejectedExecutionHandler;
-    /** 用户自定义逻辑 */
-    private final EventLoopAgent<? super AgentEvent> agent;
+    /** 内部代理 */
+    private final EventLoopAgent agent;
+    /** 外部门面 */
+    private final EventLoopModule mainModule;
 
     private final Thread thread;
     private final Worker worker;
@@ -127,23 +116,22 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         this.taskBatchSize = MathUtils.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
         this.rejectedExecutionHandler = Objects.requireNonNull(builder.getRejectedExecutionHandler());
         this.agent = Objects.requireNonNullElse(builder.getAgent(), EmptyAgent.getInstance());
+        this.mainModule = builder.getMainModule();
 
         // 它不依赖于其它消费者，只依赖生产者的sequence
         worker = new Worker(sequencer.newBarrier());
         thread = Objects.requireNonNull(threadFactory.newThread(worker), "newThread");
         DefaultThreadFactory.checkUncaughtExceptionHandler(thread);
+
+        // 完成绑定
+        this.agent.inject(this);
     }
 
-    // region 生命周期
+    // region 状态查询
 
     @Override
     public State getState() {
         return State.valueOf(state);
-    }
-
-    @Override
-    public boolean isStarting() {
-        return state == ST_STARTING;
     }
 
     @Override
@@ -153,19 +141,11 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
 
     @Override
     public final boolean isShuttingDown() {
-        return isShuttingDown0(state);
-    }
-
-    private static boolean isShuttingDown0(int state) {
         return state >= ST_SHUTTING_DOWN;
     }
 
     @Override
     public final boolean isShutdown() {
-        return isShutdown0(state);
-    }
-
-    private static boolean isShutdown0(int state) {
         return state >= ST_SHUTDOWN;
     }
 
@@ -180,39 +160,6 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     }
 
     @Override
-    public void shutdown() {
-        if (!runningFuture.isDone()) {
-            FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException("Shutdown"));
-        }
-
-        int expectedState = state;
-        for (; ; ) {
-            if (isShuttingDown0(expectedState)) {
-                // 已被其它线程关闭
-                return;
-            }
-
-            int realState = compareAndExchangeState(expectedState, ST_SHUTTING_DOWN);
-            if (realState == expectedState) {
-                // CAS成功，当前线程负责了关闭
-                ensureThreadTerminable(expectedState);
-                return;
-            }
-            // retry
-            expectedState = realState;
-        }
-    }
-
-    @Nonnull
-    @Override
-    public List<Runnable> shutdownNow() {
-        shutdown();
-        advanceRunState(ST_SHUTDOWN);
-        // 这里不能操作ringBuffer中的数据，不能打破[多生产者单消费者]的架构
-        return Collections.emptyList();
-    }
-
-    @Override
     public final ICompletableFuture<?> terminationFuture() {
         return terminationFuture;
     }
@@ -223,9 +170,40 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     }
 
     @Override
-    public ICompletableFuture<?> start() {
-        ensureThreadStarted();
-        return runningFuture;
+    public final boolean inEventLoop() {
+        return thread == Thread.currentThread();
+    }
+
+    @Override
+    public final boolean inEventLoop(Thread thread) {
+        return this.thread == thread;
+    }
+
+    @Override
+    public final void wakeup() {
+        if (!inEventLoop() && thread.isAlive()) {
+            thread.interrupt();
+            agent.wakeup();
+        }
+    }
+
+    /**
+     * 当前任务数
+     * 注意：返回值是一个估算值
+     */
+    @Beta
+    public int taskCount() {
+        return ringBuffer.size();
+    }
+
+    /** EventLoop绑定的Agent（代理） */
+    public EventLoopAgent getAgent() {
+        return agent;
+    }
+
+    @Override
+    public EventLoopModule mainModule() {
+        return mainModule;
     }
 
     // endregion
@@ -251,7 +229,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
             }
             if (task instanceof XScheduledFutureTask<?> futureTask) {
                 futureTask.setId(sequence); // nice
-                if (futureTask.isEnable(ScheduleFeature.LOW_PRIORITY)) {
+                if (futureTask.isEnable(TaskFeature.LOW_PRIORITY)) {
                     futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
                 }
             }
@@ -284,44 +262,57 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     final void removeScheduled(XScheduledFutureTask<?> futureTask) {
         if (inEventLoop()) {
             scheduledTaskQueue.removeTyped(futureTask);
+        } else {
+            execute(() -> scheduledTaskQueue.removeTyped(futureTask));
         }
-        // else 下次tick时删除 -- 延迟删除可能存在内存泄漏，但压任务又可能导致阻塞
     }
-
-    /** 获取当前任务数，返回值是一个估算值 */
-    @Beta
-    public int taskCount() {
-        return ringBuffer.size();
-    }
-    // endregion
-
-    //
 
     @Override
     protected final long nanoTime() {
         return nanoTime;
     }
 
+    // endregion
+
+    // region 线程状态切换
+
     @Override
-    public final boolean inEventLoop() {
-        return thread == Thread.currentThread();
+    public ICompletableFuture<?> start() {
+        ensureThreadStarted();
+        return runningFuture;
     }
 
     @Override
-    public final boolean inEventLoop(Thread thread) {
-        return this.thread == thread;
-    }
+    public void shutdown() {
+        if (!runningFuture.isDone()) {
+            FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("Shutdown"));
+        }
 
-    @Override
-    public final void wakeup() {
-        if (!inEventLoop() && thread.isAlive()) {
-            thread.interrupt();
-            agent.wakeup();
+        int expectedState = state;
+        for (; ; ) {
+            if (expectedState >= ST_SHUTTING_DOWN) {
+                // 已被其它线程关闭
+                return;
+            }
+
+            int realState = compareAndExchangeState(expectedState, ST_SHUTTING_DOWN);
+            if (realState == expectedState) {
+                // CAS成功，当前线程负责了关闭
+                ensureThreadTerminable(expectedState);
+                return;
+            }
+            // retry
+            expectedState = realState;
         }
     }
 
-    public EventLoopAgent<? super AgentEvent> getAgent() {
-        return agent;
+    @Nonnull
+    @Override
+    public List<Runnable> shutdownNow() {
+        shutdown();
+        advanceRunState(ST_SHUTDOWN);
+        // 这里不能操作ringBuffer中的数据，不能打破[多生产者单消费者]的架构
+        return Collections.emptyList();
     }
 
     private void ensureThreadStarted() {
@@ -336,7 +327,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
             // TODO 是否需要启动线程，进行更彻底的清理？
             state = ST_TERMINATED;
 
-            FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException());
+            FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("Termination"));
             FutureUtils.completeTerminationFuture(terminationFuture);
         } else {
             // 等待策略是根据alert信号判断EventLoop是否已开始关闭的，因此即使inEventLoop也需要alert，否则可能丢失信号，在waitFor处无法停止
@@ -370,6 +361,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         return (int) STATE.compareAndExchange(this, expectedState, targetState);
     }
 
+    // endregion
 
     private class Worker implements Runnable {
 
@@ -388,7 +380,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
                 }
 
                 nanoTime = System.nanoTime();
-                agent.onStart(DefaultEventLoop.this);
+                agent.onStart();
 
                 advanceRunState(ST_RUNNING);
                 FutureUtils.completeTerminationFuture(runningFuture);
@@ -399,7 +391,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
             } catch (Throwable e) {
                 logger.error("thread exit due to exception!", e);
                 if (!runningFuture.isDone()) { // 启动失败
-                    FutureUtils.completeTerminationFuture(runningFuture, e);
+                    FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("StartFailed", e));
                 }
             } finally {
                 // 如果是非正常退出，需要切换到正在关闭状态 - 告知其它线程，已经开始关闭
@@ -458,7 +450,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
                             assert isShuttingDown();
                             break;
                         }
-                        safeLoopOnce();
+                        invokeAgentUpdate();
                     }
                 } catch (AlertException | InterruptedException e) {
                     // 请求了关闭 -- BatchEventProcessor实现中并没有处理等待过程中的中断异常
@@ -472,7 +464,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
                     }
                     nanoTime = System.nanoTime();
                     processScheduledQueue(nanoTime, taskBatchSize, false);
-                    safeLoopOnce();
+                    invokeAgentUpdate();
                 } catch (Throwable e) {
                     // 不好的等待策略实现
                     logger.error("bad waitStrategy impl", e);
@@ -480,7 +472,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
             }
         }
 
-        private void safeLoopOnce() {
+        private void invokeAgentUpdate() {
             try {
                 agent.update();
             } catch (Throwable t) {
@@ -493,7 +485,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         }
 
         /**
-         * 处理周期性任务，传入的限制只有在遇见低优先级任务的时候才生效
+         * 处理周期性任务，传入的限制只有在遇见低优先级任务的时候才生效，因此限制为0则表示遇见低优先级任务立即结束
          * (为避免时序错误，处理周期性任务期间不响应关闭，不容易安全实现)
          *
          * @param limit            批量执行的任务数限制
@@ -539,15 +531,20 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         /** @return curSequence */
         private long runTaskBatch(final long batchBeginSequence, final long batchEndSequence) {
             MpscUnboundedXaddArrayQueue2<Runnable> ringBuffer = DefaultEventLoop.this.ringBuffer;
-            EventLoopAgent<? super AgentEvent> agent = DefaultEventLoop.this.agent;
+            EventLoopAgent agent = DefaultEventLoop.this.agent;
 
             Runnable event;
             for (long curSequence = batchBeginSequence; curSequence <= batchEndSequence; curSequence++) {
                 event = ringBuffer.poll();
                 assert event != null;
                 try {
-                    if (event instanceof AgentEvent agentEvent) {
-                        agent.onEvent(agentEvent);
+                    if (event.getClass() == RingBufferEvent.class) { // 相对instanceOf更快
+                        RingBufferEvent agentEvent = (RingBufferEvent) event;
+                        if (agentEvent.getType() > 0) {
+                            agent.onEvent(agentEvent);
+                        } else {
+                            agentEvent.castObj0ToRunnable().run();
+                        }
                     } else if (event != _invalidRunnable) {
                         event.run();
                     } else {
@@ -569,7 +566,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         private void cleanRingBuffer() {
             final long startTimeMillis = System.currentTimeMillis();
             final MpscUnboundedXaddArrayQueue2<Runnable> ringBuffer = DefaultEventLoop.this.ringBuffer;
-            final EventLoopAgent<? super AgentEvent> agent = DefaultEventLoop.this.agent;
+            final EventLoopAgent agent = DefaultEventLoop.this.agent;
 
             // 处理延迟任务
             nanoTime = System.nanoTime();
@@ -586,8 +583,13 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
                     continue;
                 }
                 try {
-                    if (event instanceof AgentEvent agentEvent) {
-                        agent.onEvent(agentEvent);
+                    if (event.getClass() == RingBufferEvent.class) {
+                        RingBufferEvent agentEvent = (RingBufferEvent) event;
+                        if (agentEvent.getType() > 0) {
+                            agent.onEvent(agentEvent);
+                        } else {
+                            agentEvent.castObj0ToRunnable().run();
+                        }
                     } else if (event != _invalidRunnable) {
                         event.run();
                     }

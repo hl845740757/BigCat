@@ -29,41 +29,24 @@ import java.util.Queue;
  * @author wjybxx
  * date 2023/4/3
  */
-public interface IndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedNode> extends Queue<T> {
+public interface IndexedPriorityQueue<T extends IndexedNode> extends Queue<T> {
 
     boolean removeTyped(T node);
 
     boolean containsTyped(T node);
 
+    /**
+     * 队列中节点元素的优先级发生变化时，将通过该方法通知队列调整
+     *
+     * @param node 发生优先级变更的节点
+     */
     void priorityChanged(T node);
 
     /**
      * 清除队列中的所有元素，并不更新队列中节点的索引，通常用在最后清理释放内存的时候。
-     * 即在清理的时候不调用{@link IndexedNode#priorityQueueIndex(IndexedPriorityQueue, int)}方法进行进通知。
+     * 即在清理的时候不调用{@link IndexedNode#queueIndex(Object, int)}方法进行进通知。
      * (请确保调用该方法后，不会再访问该队列)
      */
     void clearIgnoringIndexes();
-
-    /** 优先级队列中的节点，为提高效率，缓存了其在队列中的索引，以提高查询效率 */
-    interface IndexedNode {
-
-        /** 注意：未插入的节点的所以必须初始化为该值 */
-        int INDEX_NOT_IN_QUEUE = -1;
-
-        /**
-         * 获取对象在队列中的索引；
-         *
-         * @param queue 考虑到一个元素可能在多个队列中，因此传入队列引用
-         */
-        int priorityQueueIndex(IndexedPriorityQueue<?> queue);
-
-        /**
-         * 设置其在队列中的索引
-         *
-         * @param index 如果是删除元素，则索引为-1
-         */
-        void priorityQueueIndex(IndexedPriorityQueue<?> queue, int index);
-
-    }
 
 }

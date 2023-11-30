@@ -53,7 +53,7 @@ public class DefaultChooserFactory implements EventLoopChooserFactory {
 
         @Nonnull
         @Override
-        public EventLoop next() {
+        public EventLoop select() {
             return eventLoop;
         }
 
@@ -77,7 +77,7 @@ public class DefaultChooserFactory implements EventLoopChooserFactory {
 
         @Nonnull
         @Override
-        public EventLoop next() {
+        public EventLoop select() {
             int key = idx.getAndIncrement();
             return executors[key & (executors.length - 1)];
         }
@@ -105,7 +105,7 @@ public class DefaultChooserFactory implements EventLoopChooserFactory {
 
         @Nonnull
         @Override
-        public EventLoop next() {
+        public EventLoop select() {
             int key = idx.getAndIncrement();
             return executors[Math.abs(key % executors.length)];
         }

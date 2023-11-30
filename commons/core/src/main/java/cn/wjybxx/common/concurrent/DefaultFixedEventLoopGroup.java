@@ -62,7 +62,7 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
             children[i] = eventLoop;
         }
         readonlyChildren = List.of(children);
-        chooser = chooserFactory.newChooser(children);
+        chooser = chooserFactory.newChooser(children.clone()); // 避免错误的实现修改引用
         terminationHook = builder.getTerminationHook();
 
         // 最后再监听，否则可能状态错误
@@ -128,8 +128,8 @@ public class DefaultFixedEventLoopGroup extends AbstractEventLoopGroup implement
 
     @Nonnull
     @Override
-    public EventLoop next() {
-        return chooser.next();
+    public EventLoop select() {
+        return chooser.select();
     }
 
     @Nonnull

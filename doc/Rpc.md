@@ -45,7 +45,7 @@ class RpcServiceExample {
 
     /** 测试异步返回 -- JDK的Future */
     @RpcMethod(methodId = 6)
-    public CompletableFuture<String> helloAsync1(String msg) {
+    public CompletableFuture<String> helloAsync(String msg) {
         return FutureUtils.newSucceededFuture(msg);
     }
 }

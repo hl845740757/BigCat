@@ -27,10 +27,13 @@ import javax.annotation.concurrent.ThreadSafe;
 @ThreadSafe
 public interface EventLoopChooser {
 
-    EventLoop next();
+    /**
+     * 按默认规则分配一个{@link EventLoop}
+     */
+    EventLoop select();
 
     /**
-     * 给定一个键，分配一个{@link EventLoop}。
+     * 通过给定键选择一个{@link EventLoop}
      *
      * @apiNote 同一个key的选择结果必须是相同的
      */

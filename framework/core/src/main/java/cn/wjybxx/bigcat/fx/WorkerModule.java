@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.common.concurrent.EventLoopModule;
+
 /**
  * WorkerModule是Worker的组件单元。
  * WorkerModule分为两类：Module 和 Service。
@@ -29,7 +31,7 @@ package cn.wjybxx.bigcat.fx;
  * @author wjybxx
  * date - 2023/10/4
  */
-public interface WorkerModule {
+public interface WorkerModule extends EventLoopModule {
 
     /** Worker会在启动所有的模块之前调用该方法，各模块可以在这里解决特殊的依赖问题 */
     default void inject(Worker worker) {
@@ -45,7 +47,7 @@ public interface WorkerModule {
      * Worker每帧会调用调用所有模块的Update方法
      * 注：只有重写了该方法的类才会被每帧调用。
      */
-    default void update() {
+    default void update() throws Exception{
 
     }
 

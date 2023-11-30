@@ -98,19 +98,12 @@ public interface IProperties extends Map<String, String> {
     default boolean getAsBool(String key) {
         final String value = getAsString(key);
         Objects.requireNonNull(value);
-        return parseBool(value);
+        return PropertiesUtils.toBoolean(value, false);
     }
 
     default boolean getAsBool(String key, final boolean defaultValue) {
         final String value = getAsString(key);
-        return value == null ? defaultValue : parseBool(value);
-    }
-
-    private static boolean parseBool(String value) {
-        return value.equals("1")
-                || value.equalsIgnoreCase("true")
-                || value.equalsIgnoreCase("y")
-                || value.equalsIgnoreCase("yes");
+        return PropertiesUtils.toBoolean(value, defaultValue);
     }
 
     default short getAsShort(String key) {

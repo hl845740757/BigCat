@@ -52,26 +52,21 @@ public class ConstantPool<T extends Constant<T>> {
     private final ConstantFactory<? extends T> factory;
     private final AtomicInteger idGenerator;
 
-    private ConstantPool(int firstId, ConstantFactory<? extends T> factory) {
+    private ConstantPool(ConstantFactory<? extends T> factory, int firstId) {
         this.factory = factory;
         this.idGenerator = new AtomicInteger(firstId);
     }
 
-    // JAVA什么时候出方法参数默认值啊.,.
-    public static <T extends Constant<T>> ConstantPool<T> newPool() {
-        return newPool(0, null);
-    }
-
     public static <T extends Constant<T>> ConstantPool<T> newPool(ConstantFactory<? extends T> factory) {
-        return newPool(0, factory);
+        return newPool(factory, 0);
     }
 
     /**
-     * @param firstId 第一个常量的id，如果常量的创建是无竞争的，那么id将是连续的
      * @param factory 可通过基础的Builder构建常量的工厂，通常是无额外数据的简单常量对象，factory通常是构造方法引用
+     * @param firstId 第一个常量的id，如果常量的创建是无竞争的，那么id将是连续的
      */
-    public static <T extends Constant<T>> ConstantPool<T> newPool(int firstId, ConstantFactory<? extends T> factory) {
-        return new ConstantPool<>(firstId, factory);
+    public static <T extends Constant<T>> ConstantPool<T> newPool(ConstantFactory<? extends T> factory, int firstId) {
+        return new ConstantPool<>(factory, firstId);
     }
 
     /**

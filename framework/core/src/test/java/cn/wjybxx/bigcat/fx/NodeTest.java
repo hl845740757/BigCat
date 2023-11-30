@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.common.ThreadUtils;
-import cn.wjybxx.common.concurrent.AgentEvent;
 import cn.wjybxx.common.concurrent.RingBufferEvent;
 import cn.wjybxx.common.rpc.*;
 import cn.wjybxx.common.time.Regulator;
@@ -100,7 +99,7 @@ public class NodeTest {
             @Override
             protected void configure() {
                 super.configure();
-                binder().requireExplicitBindings(); // 获取未显式绑定的实例时抛出异常，避免获取到错误的实例
+                binder().requireExplicitBindings(); // 获取未显式绑定的实例时抛出异常，避免获取到错误的实例；一定要声明，否则极易出bug
 
                 bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
@@ -215,7 +214,7 @@ public class NodeTest {
         }
 
         @Override
-        public void onEvent(AgentEvent rawEvent) throws Exception {
+        public void onEvent(RingBufferEvent rawEvent) throws Exception {
             RingBufferEvent event = (RingBufferEvent) rawEvent;
             logger.info("eventType: {}, index: {}", event.getType(), event.intVal1);
         }

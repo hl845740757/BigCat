@@ -34,7 +34,9 @@ public class RejectedExecutionHandlers {
     };
 
     private static final RejectedExecutionHandler CALLER_RUNS_POLICY = (r, eventLoop) -> {
-        r.run();
+        if (!eventLoop.isShuttingDown()) {
+            r.run();
+        }
     };
 
     private static final RejectedExecutionHandler DISCARD_POLICY = (r, eventLoop) -> {

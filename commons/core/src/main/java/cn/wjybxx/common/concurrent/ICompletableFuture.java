@@ -92,7 +92,7 @@ public interface ICompletableFuture<T> extends Future<T>, CompletionStage<T> {
 
     /**
      * 在一个链式调用中，取消常常达不到期望
-     * 如果期望取消整个链上的任务，用户通常应该让你的任务共享一个上下文，通过取消上下文来取消
+     * 如果期望取消整个链上的任务，通常应该让你的任务共享一个上下文，通过取消上下文来取消
      */
     @Override
     boolean cancel(boolean mayInterruptIfRunning);

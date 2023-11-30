@@ -147,16 +147,16 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
 
     @Override
     public <U> XCompletableFuture<U> newIncompleteFuture() {
-        XCompletableFuture<U> future = new XCompletableFuture<>(downContext());
+        // 现在newIncompleteFuture是不能传参的，因此我们暂无法获得用户传递的Executor参数
+        XCompletableFuture<U> future = new XCompletableFuture<>(downContext(null));
         if (ctx != null) {
             ctx.reportFuture(this, future);
         }
         return future;
     }
 
-    protected FutureContext downContext() {
-        FutureContext ctx = this.ctx;
-        return ctx != null ? ctx.downContext(this) : null;
+    protected FutureContext downContext(Executor executor) {
+        return ctx != null ? ctx.downContext(this, executor) : null;
     }
 
     protected void checkDeadLock(FutureContext ctx) {
@@ -167,7 +167,13 @@ public class XCompletableFuture<T> extends CompletableFuture<T> implements IComp
 
     private static void logCause(Throwable x) {
         if (exceptionLogger.isEnable()) {
-            exceptionLogger.onCaughtException(x);
+            exceptionLogger.onCaughtException(x, null);
+        }
+    }
+
+    private static void logCause(Throwable x, String extraInfo) {
+        if (exceptionLogger.isEnable()) {
+            exceptionLogger.onCaughtException(x, extraInfo);
         }
     }
 

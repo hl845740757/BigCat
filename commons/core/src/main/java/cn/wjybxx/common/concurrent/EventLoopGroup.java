@@ -19,6 +19,7 @@ package cn.wjybxx.common.concurrent;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -40,14 +41,18 @@ import java.util.concurrent.*;
  * date 2023/4/7
  */
 @ThreadSafe
-public interface EventLoopGroup extends ScheduledExecutorService {
+public interface EventLoopGroup extends ScheduledExecutorService, Iterable<EventLoop> {
 
     /**
-     * 返回一个 {@link EventLoop}用于接下来的调度
+     * 选择一个 {@link EventLoop}用于接下来的调度
      */
     @Nonnull
-    EventLoop next();
+    EventLoop select();
 
+    /** @implNote 实现时需要实现为不可变集合 */
+    @Nonnull
+    @Override
+    Iterator<EventLoop> iterator();
     // ------------------------------ 生命周期相关方法 ----------------------------
 
     /**
@@ -90,6 +95,8 @@ public interface EventLoopGroup extends ScheduledExecutorService {
     /**
      * 返回等待线程终止的future。
      * 返回的{@link CompletableFuture}会在该Group管理的所有{@link EventLoop}终止后收到通知.
+     * <p>
+     * （TODO Future是否可以返回所有被丢弃的任务，以修正shutdownNow？可能导致内存泄漏）
      */
     ICompletableFuture<?> terminationFuture();
 

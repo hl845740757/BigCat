@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.concurrent;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author wjybxx
  * date 2023/4/9
@@ -43,7 +45,7 @@ public class TerminateFutureContext extends EventLoopFutureContext {
     }
 
     @Override
-    public FutureContext downContext(XCompletableFuture<?> future) {
+    public FutureContext downContext(XCompletableFuture<?> future, Executor actionExecutor) {
         // 下游变为正常context，允许用户使future进入完成状态
         return new EventLoopFutureContext(eventLoop);
     }

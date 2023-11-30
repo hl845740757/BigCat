@@ -13,7 +13,7 @@
 ps：
 
 1. 这些限制主要为了降低解析的复杂度。
-2. 更完整的proto示例文件见testres目录下的`test.proto`文件
+2. 更完整的proto示例文件见`testres`目录下的`test.proto`文件
 3. 测试用例见`PBParserTest`类文件
 4. 建议使用proto3
 

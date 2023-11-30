@@ -41,8 +41,9 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
         Objects.requireNonNull(unit);
         delay = Math.max(0, delay);
 
-        return schedule(XScheduledFutureTask.ofRunnable(futureContext, command,
-                0, triggerTime(delay, unit)));
+        XScheduledFutureTask<Object> futureTask = XScheduledFutureTask.ofRunnable(futureContext, command, 0, triggerTime(delay, unit));
+        execute(futureTask);
+        return futureTask;
     }
 
     @Override
@@ -51,8 +52,9 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
         Objects.requireNonNull(unit);
         delay = Math.max(0, delay);
 
-        return schedule(XScheduledFutureTask.ofCallable(futureContext, callable,
-                0, triggerTime(delay, unit)));
+        XScheduledFutureTask<V> futureTask = XScheduledFutureTask.ofCallable(futureContext, callable, 0, triggerTime(delay, unit));
+        execute(futureTask);
+        return futureTask;
     }
 
     @Override
@@ -62,8 +64,10 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
         initialDelay = Math.max(0, initialDelay);
         ScheduleBuilder.validatePeriod(delay);
 
-        return schedule(XScheduledFutureTask.ofPeriodic(futureContext, command,
-                0, triggerTime(initialDelay, unit), -unit.toNanos(delay)));
+        XScheduledFutureTask<Object> futureTask = XScheduledFutureTask.ofPeriodic(futureContext, command,
+                0, triggerTime(initialDelay, unit), -unit.toNanos(delay));// fixedDelay将period转负
+        execute(futureTask);
+        return futureTask;
     }
 
     @Override
@@ -73,15 +77,18 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
         ScheduleBuilder.validateInitialDelay(initialDelay); // fixedRate禁止负延迟输入
         ScheduleBuilder.validatePeriod(period);
 
-        return schedule(XScheduledFutureTask.ofPeriodic(futureContext, command,
-                0, triggerTime(initialDelay, unit), unit.toNanos(period)));
+        XScheduledFutureTask<Object> futureTask = XScheduledFutureTask.ofPeriodic(futureContext, command,
+                0, triggerTime(initialDelay, unit), unit.toNanos(period)); // fixedRate保持period为正
+        execute(futureTask);
+        return futureTask;
     }
 
     @Override
     public <V> IScheduledFuture<V> schedule(ScheduleBuilder<V> builder) {
         Objects.requireNonNull(builder);
-        return schedule(XScheduledFutureTask.ofBuilder(futureContext, builder,
-                0, nanoTime()));
+        XScheduledFutureTask<V> futureTask = XScheduledFutureTask.ofBuilder(futureContext, builder, 0, nanoTime());
+        execute(futureTask);
+        return futureTask;
     }
 
     final long triggerTime(long delay, TimeUnit unit) {
@@ -95,18 +102,12 @@ abstract class AbstractScheduledEventLoop extends AbstractEventLoop {
      */
     protected abstract long nanoTime();
 
-    /** @implNote 需要在放入任务队列之前初始化id */
-    <V> IScheduledFuture<V> schedule(XScheduledFutureTask<V> futureTask) {
-        execute(futureTask);
-        return futureTask;
-    }
-
     /**
      * 请求将当前任务重新压入队列
      * 1.一定从当前线程调用
      * 2.如果无法继续调度任务，则取消任务
      *
-     * @param triggered 是否是执行之后压入队列
+     * @param triggered 是否是执行之后压入队列；通常用于在执行成功之后降低优先级
      */
     abstract void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered);
 

@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * 在{@link EventLoopGroup}的基础上，我们提供这样的时序保证：<br>
  * 1.如果 task1 的执行时间小于等于 task2 的执行时间，且 task1 先提交成功，则保证 task1 在 task2 之前执行。<br>
  * 它可以表述为：不保证后提交的高优先级的任务能先执行。<br>
- * 还可以表述为：消费者按照提交成功顺序执行是合法的。<br>*
+ * 还可以表述为：消费者按照提交成功顺序执行是合法的。<br>
  * （简单说，提高优先级是不保证的，但反向的优化——降低优先级，则是可以支持的）
  * <p>
  * 2.周期性任务的再提交 与 新任务的提交 之间不提供时序保证。<br>
@@ -57,14 +57,14 @@ import java.util.concurrent.CompletableFuture;
  * date 2023/4/7
  */
 @ThreadSafe
-public interface EventLoop extends FixedEventLoopGroup {
+public interface EventLoop extends FixedEventLoopGroup, SingleThreadExecutor {
 
     /**
      * @return this - 由于{@link EventLoop}表示单个线程，因此总是分配自己。
      */
     @Nonnull
     @Override
-    default EventLoop next() {
+    default EventLoop select() {
         return this;
     }
 
@@ -109,21 +109,31 @@ public interface EventLoop extends FixedEventLoopGroup {
      *
      * @return true/false
      */
+    @Override
     boolean inEventLoop();
 
     /**
      * 测试给定线程是否是当前事件循环线程
-     * EventLoop约定接口是单线程的，不会并发执行提交的任务，但不代表整个生命周期都绑定在同一个线程上，
+     * 1.注意：EventLoop接口约定是单线程的，不会并发执行提交的任务，但不约定整个生命周期都在同一个线程上，以允许在空闲的时候销毁线程。
      * 如果当前线程死亡，EventLoop是可以开启新的线程的，因此外部如果捕获了当前线程的引用，该引用可能失效。
+     * (有一个经典的示例：Netty的GlobalEventExecutor)
+     * 2.该方法可用于任务检测是否切换了线程，以确保任务运行在固定的线程中
      */
     boolean inEventLoop(Thread thread);
 
     /**
      * 唤醒线程
-     * 如果当前{@link EventLoop}线程陷入了阻塞状态，则将线程从阻塞中唤醒
+     * 如果当前{@link EventLoop}线程陷入了阻塞状态，则将线程从阻塞中唤醒；通常用于通知线程及时处理任务和响应关闭。
      * 如果线程已停止，则该方法不产生影响
      */
     void wakeup();
+
+    /**
+     * 事件循环的主模块
+     * 主模块是事件循环的外部策略实现，用于暴露特殊的业务接口
+     * （Agent对内，MainModule对外，都是为了避免继承扩展带来的局限性）
+     */
+    EventLoopModule mainModule();
 
     /**
      * 创建一个线程绑定的future以执行任务，返回的future将禁止在当前EventLoop上执行阻塞操作。
@@ -145,13 +155,14 @@ public interface EventLoop extends FixedEventLoopGroup {
         return promise;
     }
 
+    default void ensureInEventLoop() {
+        if (!inEventLoop()) throw new GuardedOperationException();
+    }
+
     // endregion
 
     /** @return EventLoop的当前状态 */
     State getState();
-
-    /** 是否处于启动中状态 */
-    boolean isStarting();
 
     /** 是否处于运行状态 */
     boolean isRunning();
@@ -175,6 +186,7 @@ public interface EventLoop extends FixedEventLoopGroup {
      */
     ICompletableFuture<?> start();
 
+    // region State枚举
     enum State {
 
         /** 初始状态 -- 已创建，但尚未启动 */
@@ -208,4 +220,19 @@ public interface EventLoop extends FixedEventLoopGroup {
             };
         }
     }
+
+    /** 初始状态，未启动状态 */
+    int ST_NOT_STARTED = 0;
+    /** 启动中 */
+    int ST_STARTING = 1;
+    /** 运行状态 */
+    int ST_RUNNING = 2;
+    /** 正在关闭状态 */
+    int ST_SHUTTING_DOWN = 3;
+    /** 已关闭状态，正在进行最后的清理 */
+    int ST_SHUTDOWN = 4;
+    /** 终止状态 */
+    int ST_TERMINATED = 5;
+
+    // endregion
 }

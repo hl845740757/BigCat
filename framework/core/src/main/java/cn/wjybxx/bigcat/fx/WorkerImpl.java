@@ -58,7 +58,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
     }
 
     private static EventLoopBuilder.DisruptorBuilder decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
-        return builder.getDelegateBuilder()
+        return builder.getDelegated()
                 .setAgent(new Agent());
     }
 
@@ -99,7 +99,13 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
 
     @Nonnull
     @Override
-    public Worker next() {
+    public Node node() {
+        return (Node) parent;
+    }
+
+    @Nonnull
+    @Override
+    public Worker select() {
         return this;
     }
 
@@ -114,7 +120,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
         return workerCtx;
     }
 
-    private static class Agent implements EventLoopAgent<AgentEvent> {
+    private static class Agent implements EventLoopAgent {
 
         WorkerImpl worker;
         MainModule mainModule; // 缓存
@@ -125,11 +131,15 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
         }
 
         @Override
-        public void onStart(EventLoop eventLoop) throws Exception {
+        public void inject(EventLoop eventLoop) {
+
+        }
+
+        @Override
+        public void onStart() throws Exception {
+            Worker.CURRENT_WORKER.set(worker);
             mainModule = worker.mainModule;
             updatableModuleList.addAll(FxUtils.filterUpdatableModules(worker.moduleList));
-
-            Worker.CURRENT_WORKER.set(worker);
             resolveDependence();
 
             mainModule.beforeWorkerStart();
@@ -172,7 +182,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
         }
 
         @Override
-        public void onEvent(AgentEvent event) throws Exception {
+        public void onEvent(RingBufferEvent event) throws Exception {
             mainModule.onEvent(event);
         }
 

@@ -17,7 +17,6 @@
 package cn.wjybxx.common.props;
 
 import cn.wjybxx.common.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.HashMap;
@@ -73,16 +72,6 @@ public class PropertiesUtils {
         return NumberUtils.toDouble(v, def);
     }
 
-    public static boolean getBool(Properties properties, String key) {
-        String v = properties.getProperty(key);
-        return BooleanUtils.toBoolean(v);
-    }
-
-    public static boolean getBool(Properties properties, String key, boolean def) {
-        String v = properties.getProperty(key);
-        return v != null ? BooleanUtils.toBoolean(v) : def;
-    }
-
     public static String getString(Properties properties, String key) {
         return properties.getProperty(key);
     }
@@ -109,6 +98,36 @@ public class PropertiesUtils {
     public static byte getByte(Properties properties, String key, byte def) {
         String v = properties.getProperty(key);
         return NumberUtils.toByte(v, def);
+    }
+
+    public static boolean getBool(Properties properties, String key) {
+        String v = properties.getProperty(key);
+        return toBoolean(v, false);
+    }
+
+    public static boolean getBool(Properties properties, String key, boolean def) {
+        String v = properties.getProperty(key);
+        return toBoolean(v, def);
+    }
+
+    public static boolean toBoolean(String value) {
+        return toBoolean(value, false);
+    }
+
+    // Commons3中对Bool的解析不符合我们的期望
+    public static boolean toBoolean(String value, boolean def) {
+        if (value == null || value.isEmpty()) {
+            return def;
+        }
+        value = value.trim().toLowerCase();
+        if (value.isEmpty()) {
+            return def;
+        }
+        return switch (value) {
+            case "true", "yes", "y", "1" -> true;
+            case "false", "no", "n", "0" -> false;
+            default -> def;
+        };
     }
 
     // endregion

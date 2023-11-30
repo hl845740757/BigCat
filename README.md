@@ -30,9 +30,9 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 
 ### 项目主要内容
 
-1. 基础工具集：Future、EventBus、Rpc、序列化、热更新、状态机、行为树....
-2. 网络库 - 可靠UDP协议
-3. 主循环框架
+1. 基础工具集：Future、EventBus、序列化、热更新、状态机、行为树....
+2. 网络库：Rpc，可靠UDP协议
+3. 主循环框架（线程框架）
 4. 角色和场景框架，技能框架...
 
 ### 已实现
@@ -41,9 +41,10 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 2. Rpc + 注解处理器 - [关于Rpc的设计解释](https://github.com/hl845740757/BigCat/blob/dev/doc/Rpc.md)
 3. EventBus + 注解处理器
 4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/Dson)
-5. 表格对象和读取Excel工具
+5. 配置抽象（Sheet） + 表格处理工具
 6. 文件热更新管理 [文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/FileReload.md)
 7. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
+8. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
 
 近日在研： 
 1. 近日在研究网络相关知识，协议的设计思路已有，但还未开始编码。

@@ -17,17 +17,27 @@
 package cn.wjybxx.common.concurrent;
 
 /**
- * 需要EventLoop转发给{@link EventLoopAgent}的事件，
- * 这些事件被以{@link Runnable}的形式提交给了{@link EventLoop}。
+ * 用于表示EventLoop启动失败
  *
  * @author wjybxx
- * date - 2023/8/31
+ * date - 2023/8/15
  */
-public interface AgentEvent extends Runnable {
+public class StartFailedException extends RuntimeException {
 
-    @Override
-    default void run() {
-        // do nothing
+    public StartFailedException(String message) {
+        super(message);
+    }
+
+    public StartFailedException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public StartFailedException(Throwable cause) {
+        super(cause);
+    }
+
+    public StartFailedException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 
 }

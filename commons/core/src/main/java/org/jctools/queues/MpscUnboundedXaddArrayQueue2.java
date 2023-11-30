@@ -96,7 +96,6 @@ public final class MpscUnboundedXaddArrayQueue2<E> extends MpUnboundedXaddArrayQ
         if (null == e) {
             throw new NullPointerException();
         }
-        // 竞争不那么激烈的情况下，几乎总会命中当前块；因为申请序号后的逻辑只是填充数据而已，没有耗时逻辑
         MpscUnboundedXaddChunk<E> pChunk = findProducerChunk(sequence);
         assert pChunk != null : sequence;
 
@@ -111,6 +110,7 @@ public final class MpscUnboundedXaddArrayQueue2<E> extends MpUnboundedXaddArrayQ
         MpscUnboundedXaddChunk<E> currentChunk = lvProducerChunk();
         long currentChunkIndex = currentChunk.lvIndex();
 
+        // 竞争不那么激烈的情况下，几乎总会命中当前块；因为申请序号后的逻辑只是填充数据而已，没有耗时逻辑
         if (currentChunkIndex == requiredChunkIndex) {
             return currentChunk;
         }

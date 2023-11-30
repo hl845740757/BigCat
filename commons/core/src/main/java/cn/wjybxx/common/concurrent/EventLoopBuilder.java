@@ -31,6 +31,10 @@ public abstract class EventLoopBuilder {
     private RejectedExecutionHandler rejectedExecutionHandler = RejectedExecutionHandlers.abort();
     private ThreadFactory threadFactory;
 
+    private EventLoopAgent agent;
+    private EventLoopModule mainModule;
+    private int batchSize = 8192;
+
     public abstract EventLoop build();
 
     public EventLoopGroup getParent() {
@@ -60,6 +64,32 @@ public abstract class EventLoopBuilder {
         return this;
     }
 
+    public EventLoopAgent getAgent() {
+        return agent;
+    }
+
+    public EventLoopBuilder setAgent(EventLoopAgent agent) {
+        this.agent = agent;
+        return this;
+    }
+
+    public EventLoopModule getMainModule() {
+        return mainModule;
+    }
+
+    public EventLoopBuilder setMainModule(EventLoopModule mainModule) {
+        this.mainModule = mainModule;
+        return this;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public EventLoopBuilder setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+        return this;
+    }
     //
 
     public static DisruptorBuilder newDisruptBuilder() {
@@ -73,9 +103,7 @@ public abstract class EventLoopBuilder {
 
     public static class DefaultBuilder extends EventLoopBuilder {
 
-        private EventLoopAgent<? super AgentEvent> agent;
         private WaitStrategy waitStrategy;
-        private int batchSize = 8192;
         private int chunkSize = 1024;
         private int maxPooledChunks = 8;
 
@@ -100,6 +128,23 @@ public abstract class EventLoopBuilder {
         }
 
         @Override
+        public DefaultBuilder setAgent(EventLoopAgent agent) {
+            super.setAgent(agent);
+            return this;
+        }
+
+        @Override
+        public DefaultBuilder setMainModule(EventLoopModule mainModule) {
+            super.setMainModule(mainModule);
+            return this;
+        }
+
+        public DefaultBuilder setBatchSize(int batchSize) {
+            super.setBatchSize(batchSize);
+            return this;
+        }
+
+        @Override
         public EventLoop build() {
             if (getThreadFactory() == null) {
                 setThreadFactory(new DefaultThreadFactory("DisruptorEventLoop"));
@@ -111,30 +156,12 @@ public abstract class EventLoopBuilder {
         }
         //
 
-        public EventLoopAgent<? super AgentEvent> getAgent() {
-            return agent;
-        }
-
-        public DefaultBuilder setAgent(EventLoopAgent<? super AgentEvent> agent) {
-            this.agent = agent;
-            return this;
-        }
-
         public WaitStrategy getWaitStrategy() {
             return waitStrategy;
         }
 
         public DefaultBuilder setWaitStrategy(WaitStrategy waitStrategy) {
             this.waitStrategy = waitStrategy;
-            return this;
-        }
-
-        public int getBatchSize() {
-            return batchSize;
-        }
-
-        public DefaultBuilder setBatchSize(int batchSize) {
-            this.batchSize = batchSize;
             return this;
         }
 
@@ -159,10 +186,8 @@ public abstract class EventLoopBuilder {
 
     public static class DisruptorBuilder extends EventLoopBuilder {
 
-        private EventLoopAgent<? super RingBufferEvent> agent;
         private int ringBufferSize = 8192;
         private WaitStrategy waitStrategy;
-        private int batchSize = 8192;
 
         //
 
@@ -185,6 +210,23 @@ public abstract class EventLoopBuilder {
         }
 
         @Override
+        public DisruptorBuilder setAgent(EventLoopAgent agent) {
+            super.setAgent(agent);
+            return this;
+        }
+
+        @Override
+        public DisruptorBuilder setMainModule(EventLoopModule mainModule) {
+            super.setMainModule(mainModule);
+            return this;
+        }
+
+        public DisruptorBuilder setBatchSize(int batchSize) {
+            super.setBatchSize(batchSize);
+            return this;
+        }
+
+        @Override
         public DisruptorEventLoop build() {
             if (getThreadFactory() == null) {
                 setThreadFactory(new DefaultThreadFactory("DisruptorEventLoop"));
@@ -196,15 +238,6 @@ public abstract class EventLoopBuilder {
         }
 
         //
-
-        public EventLoopAgent<? super RingBufferEvent> getAgent() {
-            return agent;
-        }
-
-        public DisruptorBuilder setAgent(EventLoopAgent<? super RingBufferEvent> agent) {
-            this.agent = agent;
-            return this;
-        }
 
         public int getRingBufferSize() {
             return ringBufferSize;
@@ -224,14 +257,6 @@ public abstract class EventLoopBuilder {
             return this;
         }
 
-        public int getBatchSize() {
-            return batchSize;
-        }
-
-        public DisruptorBuilder setBatchSize(int batchSize) {
-            this.batchSize = batchSize;
-            return this;
-        }
     }
 
 }

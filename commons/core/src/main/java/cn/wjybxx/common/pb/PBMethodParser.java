@@ -36,7 +36,7 @@ public class PBMethodParser<T extends MessageLite, U extends MessageLite> {
     public final Class<T> argType;
     public final Parser<T> argParser;
 
-    /** 方法结果类型 -- 可判断是否结果 */
+    /** 方法结果类型 -- 可判断是否有结果 */
     public final Class<U> resultType;
     public final Parser<U> resultParser;
 

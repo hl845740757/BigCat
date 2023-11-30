@@ -16,41 +16,18 @@
 
 package cn.wjybxx.common.concurrent;
 
+import cn.wjybxx.common.annotation.MarkInterface;
+
 /**
+ * 事件循环的模块
+ * 1.该接口为标记接口，具体的行为由子接口决定。
+ * 2.推荐将事件循环实现为模块化的
+ * 3.推荐由Agent驱动所有的模块，而不直接由EventLoop驱动
+ *
  * @author wjybxx
- * date 2023/4/11
+ * date - 2023/11/17
  */
-public final class EmptyAgent implements EventLoopAgent {
-
-    private static final EmptyAgent INSTANCE = new EmptyAgent();
-
-    public static EmptyAgent getInstance() {
-        return INSTANCE;
-    }
-
-    @Override
-    public void inject(EventLoop eventLoop) {
-
-    }
-
-    @Override
-    public void onStart() {
-
-    }
-
-    @Override
-    public void onEvent(RingBufferEvent event) throws Exception {
-
-    }
-
-    @Override
-    public void update() {
-
-    }
-
-    @Override
-    public void onShutdown() {
-
-    }
+@MarkInterface
+public interface EventLoopModule {
 
 }

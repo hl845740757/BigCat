@@ -25,7 +25,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * date 2023/4/13
  */
 @NotThreadSafe
-final class CounterAgent implements EventLoopAgent<RingBufferEvent> {
+final class CounterAgent implements EventLoopAgent {
 
     final Counter counter = new Counter();
 
@@ -34,7 +34,12 @@ final class CounterAgent implements EventLoopAgent<RingBufferEvent> {
     }
 
     @Override
-    public void onStart(EventLoop eventLoop) throws Exception {
+    public void inject(EventLoop eventLoop) {
+
+    }
+
+    @Override
+    public void onStart() throws Exception {
 
     }
 

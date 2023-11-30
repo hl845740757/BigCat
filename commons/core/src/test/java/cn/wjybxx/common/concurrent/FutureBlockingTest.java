@@ -51,10 +51,17 @@ public class FutureBlockingTest {
         consumer.terminationFuture().join();
     }
 
-    private static class Agent implements EventLoopAgent<RingBufferEvent> {
+    private static class Agent implements EventLoopAgent {
+
+        EventLoop eventLoop;
 
         @Override
-        public void onStart(EventLoop eventLoop) throws Exception {
+        public void inject(EventLoop eventLoop) {
+            this.eventLoop = eventLoop;
+        }
+
+        @Override
+        public void onStart() throws Exception {
             Assertions.assertThrowsExactly(BlockingOperationException.class, () -> {
                 eventLoop.newPromise().join();
             });

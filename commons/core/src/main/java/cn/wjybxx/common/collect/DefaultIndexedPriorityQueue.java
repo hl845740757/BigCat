@@ -19,13 +19,15 @@ package cn.wjybxx.common.collect;
 import javax.annotation.Nonnull;
 import java.util.*;
 
+import static cn.wjybxx.common.collect.IndexedNode.INDEX_NOT_IN_QUEUE;
+
 /**
  * 参考自Netty的实现
  *
  * @author wjybxx
  * date 2023/4/3
  */
-public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedNode> extends AbstractQueue<T>
+public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends AbstractQueue<T>
         implements IndexedPriorityQueue<T> {
 
     private static final IndexedNode[] EMPTY_ARRAY = new IndexedNode[0];
@@ -57,16 +59,18 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
 
     @Override
     public boolean contains(Object o) {
-        if (!(o instanceof IndexedNode)) {
+        if (!(o instanceof IndexedNode node)) { // 包含null
             return false;
         }
-        IndexedNode node = (IndexedNode) o;
-        return contains(node, node.priorityQueueIndex(this));
+        return contains(node, node.queueIndex(this));
     }
 
     @Override
     public boolean containsTyped(T node) {
-        return contains(node, node.priorityQueueIndex(this));
+        if (node == null) {
+            return false;
+        }
+        return contains(node, node.queueIndex(this));
     }
 
     @Override
@@ -74,7 +78,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
         for (int i = 0; i < size; ++i) {
             T node = queue[i];
             if (node != null) {
-                setChildIndex(node, IndexedNode.INDEX_NOT_IN_QUEUE);
+                setNodeIndex(node, INDEX_NOT_IN_QUEUE);
                 queue[i] = null;
             }
         }
@@ -89,9 +93,9 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
 
     @Override
     public boolean offer(T e) {
-        if (e.priorityQueueIndex(this) != IndexedNode.INDEX_NOT_IN_QUEUE) {
-            throw new IllegalArgumentException("e.priorityQueueIndex(): " + e.priorityQueueIndex(this) +
-                    " (expected: " + IndexedNode.INDEX_NOT_IN_QUEUE + ") + e: " + e);
+        if (e.queueIndex(this) != INDEX_NOT_IN_QUEUE) {
+            throw new IllegalArgumentException("e.queueIndex(): " + e.queueIndex(this) +
+                    " (expected: " + INDEX_NOT_IN_QUEUE + ") + e: " + e);
         }
 
         if (size >= queue.length) {
@@ -115,46 +119,51 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
 
     @Override
     public T peek() {
-        return (size == 0) ? null : queue[0];
+        if (size == 0) {
+            return null;
+        }
+        return queue[0];
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public boolean remove(Object o) {
-        if (!(o instanceof IndexedNode)) {
+        if (!(o instanceof IndexedNode)) { // 包含null
             return false;
         }
-
         final T node = (T) o;
         return removeTyped(node);
     }
 
     @Override
     public boolean removeTyped(T node) {
-        int i = node.priorityQueueIndex(this);
-        if (!contains(node, i)) {
+        if (node == null) {
             return false;
         }
-        removeAt(i, node);
+        int idx = node.queueIndex(this);
+        if (!contains(node, idx)) {
+            return false;
+        }
+        removeAt(idx, node);
         return true;
     }
 
     @Override
     public void priorityChanged(T node) {
-        int i = node.priorityQueueIndex(this);
-        if (!contains(node, i)) {
+        int idx = node.queueIndex(this); // NPE
+        if (!contains(node, idx)) {
             return;
         }
 
-        if (i == 0) {
-            bubbleDown(i, node);
+        if (idx == 0) { // 通常是队首元素的优先级变更
+            bubbleDown(idx, node);
         } else {
-            int iParent = (i - 1) >>> 1;
+            int iParent = (idx - 1) >>> 1;
             T parent = queue[iParent];
             if (comparator.compare(node, parent) < 0) {
-                bubbleUp(i, node);
+                bubbleUp(idx, node);
             } else {
-                bubbleDown(i, node);
+                bubbleDown(idx, node);
             }
         }
     }
@@ -165,6 +174,9 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
         return new PriorityQueueIterator();
     }
 
+    // region internal
+
+    /** 这里暂没有按照优先级迭代，实现较为麻烦 */
     private final class PriorityQueueIterator implements Iterator<T> {
 
         private int index;
@@ -184,9 +196,9 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
 
     }
 
-    private void setChildIndex(T child, int k) {
-        child.priorityQueueIndex(this, k);
-        assert child.priorityQueueIndex(this) == k : String.format("expected: %d, but found: %d", k, child.priorityQueueIndex(this));
+    private void setNodeIndex(T child, int idx) {
+        child.queueIndex(this, idx);
+        assert child.queueIndex(this) == idx : String.format("expected: %d, but found: %d", idx, child.queueIndex(this));
     }
 
     private boolean contains(IndexedNode node, int idx) {
@@ -195,7 +207,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
     }
 
     private void removeAt(int idx, T node) {
-        setChildIndex(node, IndexedNode.INDEX_NOT_IN_QUEUE);
+        setNodeIndex(node, INDEX_NOT_IN_QUEUE);
 
         int newSize = --size;
         if (newSize == idx) { // 如果删除的是最后一个元素则无需交换
@@ -229,13 +241,13 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
             }
 
             queue[k] = child;
-            setChildIndex(child, k);
+            setNodeIndex(child, k);
 
             k = iChild;
         }
 
         queue[k] = node;
-        setChildIndex(node, k);
+        setNodeIndex(node, k);
     }
 
     private void bubbleUp(int k, T node) {
@@ -249,13 +261,14 @@ public class DefaultIndexedPriorityQueue<T extends IndexedPriorityQueue.IndexedN
             }
 
             queue[k] = parent;
-            setChildIndex(parent, k);
+            setNodeIndex(parent, k);
 
             k = iParent;
         }
 
         queue[k] = node;
-        setChildIndex(node, k);
+        setNodeIndex(node, k);
     }
+    // endregion
 
 }

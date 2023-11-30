@@ -17,6 +17,7 @@
 package cn.wjybxx.common.concurrent;
 
 import cn.wjybxx.common.ThreadUtils;
+import cn.wjybxx.common.annotation.Internal;
 import cn.wjybxx.common.time.CachedTimeProvider;
 import org.apache.commons.lang3.mutable.MutableObject;
 
@@ -177,11 +178,13 @@ public class FutureUtils {
         return true; // 循环外isDone
     }
 
+    @Internal
     public static boolean completeTerminationFuture(XCompletableFuture<?> terminationFuture) {
         TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
         return terminationFutureCtx.terminate(terminationFuture);
     }
 
+    @Internal
     public static boolean completeTerminationFuture(XCompletableFuture<?> terminationFuture, Throwable cause) {
         TerminateFutureContext terminationFutureCtx = (TerminateFutureContext) terminationFuture.getCtx();
         return terminationFutureCtx.terminate(terminationFuture, cause);
@@ -309,7 +312,7 @@ public class FutureUtils {
         }
 
         @Override
-        public FutureContext downContext(XCompletableFuture<?> future) {
+        public FutureContext downContext(XCompletableFuture<?> future, Executor actionExecutor) {
             return downward ? this : null;
         }
 

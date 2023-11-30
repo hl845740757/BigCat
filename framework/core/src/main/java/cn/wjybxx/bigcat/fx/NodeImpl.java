@@ -91,7 +91,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
     }
 
     private static EventLoopBuilder.DefaultBuilder decorate(NodeBuilder.DefaultNodeBuilder builder) {
-        return builder.getDelegateBuilder()
+        return builder.getDelegated()
                 .setAgent(new Agent());
     }
 
@@ -154,7 +154,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
 
     @Override
     public Worker nextWorker() {
-        return (Worker) chooser.next();
+        return (Worker) chooser.select();
     }
 
     @Override
@@ -187,7 +187,13 @@ public class NodeImpl extends DefaultEventLoop implements Node {
 
     @Nonnull
     @Override
-    public Node next() {
+    public Node node() {
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public Node select() {
         return this;
     }
 
@@ -198,7 +204,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
     }
     //
 
-    private static class Agent implements EventLoopAgent<AgentEvent> {
+    private static class Agent implements EventLoopAgent {
 
         NodeImpl node;
         MainModule mainModule; // 缓存
@@ -209,12 +215,17 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         }
 
         @Override
-        public void onStart(EventLoop eventLoop) throws Exception {
+        public void inject(EventLoop eventLoop) {
+
+        }
+
+        @Override
+        public void onStart() throws Exception {
+            Worker.CURRENT_WORKER.set(node);
+            Node.CURRENT_NODES.add(node);
             mainModule = node.mainModule;
             updatableModuleList.addAll(FxUtils.filterUpdatableModules(node.moduleList));
 
-            Worker.CURRENT_WORKER.set(node);
-            Node.CURRENT_NODES.add(node);
             initWorkerCtx();
             resolveDependence();
 
@@ -317,7 +328,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         }
 
         @Override
-        public void onEvent(AgentEvent event) throws Exception {
+        public void onEvent(RingBufferEvent event) throws Exception {
             mainModule.onEvent(event);
         }
 

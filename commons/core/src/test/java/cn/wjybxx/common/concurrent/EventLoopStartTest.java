@@ -69,7 +69,7 @@ public class EventLoopStartTest {
         eventLoop.shutdownNow();
     }
 
-    private static class Agent implements EventLoopAgent<RingBufferEvent> {
+    private static class Agent implements EventLoopAgent {
 
         final boolean thr;
         final long delay;
@@ -81,7 +81,12 @@ public class EventLoopStartTest {
         }
 
         @Override
-        public void onStart(EventLoop eventLoop) throws Exception {
+        public void inject(EventLoop eventLoop) {
+
+        }
+
+        @Override
+        public void onStart() throws Exception {
             if (delay > 0) ThreadUtils.sleepQuietly(delay);
             if (thr) throw new RuntimeException();
         }

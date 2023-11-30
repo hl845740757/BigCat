@@ -31,7 +31,7 @@ public final class ScheduleBuilder<V> {
     private static final byte TYPE_FIXED_RATE = 2;
 
     private Callable<V> task;
-    private int flags = ScheduleFeature.defaultFlags;
+    private int flags = TaskFeature.defaultFlags;
 
     private byte scheduleType = 0;
     private long initialDelay;
@@ -163,12 +163,12 @@ public final class ScheduleBuilder<V> {
 
     // region 开关特效
 
-    public ScheduleBuilder<V> enable(ScheduleFeature feature) {
+    public ScheduleBuilder<V> enable(TaskFeature feature) {
         this.flags = feature.setEnable(flags, true);
         return this;
     }
 
-    public ScheduleBuilder<V> disable(ScheduleFeature feature) {
+    public ScheduleBuilder<V> disable(TaskFeature feature) {
         this.flags = feature.setEnable(flags, false);
         return this;
     }

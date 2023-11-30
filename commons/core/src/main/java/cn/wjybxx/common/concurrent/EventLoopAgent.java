@@ -17,26 +17,35 @@
 package cn.wjybxx.common.concurrent;
 
 /**
- * 用于将事件循环和用户循环绑定起来
+ * Agent是EventLoop的内部代理，是EventLoop的内部策略实现，通常不暴露给EventLoop外部
+ * <p>
+ * 1.Agent将事件循环和用户循环绑定起来
+ * 2.这里的方法只应由EventLoop调用，其它地方不应该调用
  *
  * @author wjybxx
  * date 2023/4/10
  */
-public interface EventLoopAgent<T> {
+public interface EventLoopAgent {
+
+    /**
+     * 在构造EventLoop的过程中将调用该方法注入实例
+     * 注意：此时EventLoop可能尚未完全初始化！
+     *
+     * @param eventLoop 绑定的事件循环
+     */
+    void inject(EventLoop eventLoop);
 
     /**
      * 当事件循环启动的时候将调用该方法
-     * 如果启动期间抛出任何异常，线程将终止
-     *
-     * @param eventLoop 绑定的eventLoop，你可以将其保存下来
+     * 注意：该方法抛出任何异常，都将导致事件循环线程终止！
      */
-    void onStart(EventLoop eventLoop) throws Exception;
+    void onStart() throws Exception;
 
     /***
      * 收到一个用户自定义事件或任务
      * {@link RingBufferEvent#getType()}大于0的事件
      */
-    void onEvent(T event) throws Exception;
+    void onEvent(RingBufferEvent event) throws Exception;
 
     /**
      * 当事件循环等待较长时间或处理完一批事件之后都将调用该方法

@@ -33,7 +33,7 @@ public class FilePathPool {
     }
 
     public static FilePathPool newPool() {
-        return new FilePathPool(ConstantPool.newPool());
+        return new FilePathPool(ConstantPool.newPool(null));
     }
 
     @SuppressWarnings("unchecked")

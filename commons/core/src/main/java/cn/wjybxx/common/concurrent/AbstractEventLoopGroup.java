@@ -31,50 +31,50 @@ public abstract class AbstractEventLoopGroup implements EventLoopGroup {
 
     @Override
     public void execute(@Nonnull Runnable command) {
-        next().execute(command);
+        select().execute(command);
     }
 
     @Nonnull
     @Override
     public ICompletableFuture<?> submit(@Nonnull Runnable task) {
-        return next().submit(task);
+        return select().submit(task);
     }
 
     @Nonnull
     @Override
     public <T> ICompletableFuture<T> submit(@Nonnull Runnable task, T result) {
-        return next().submit(task, result);
+        return select().submit(task, result);
     }
 
     @Nonnull
     @Override
     public <T> ICompletableFuture<T> submit(@Nonnull Callable<T> task) {
-        return next().submit(task);
+        return select().submit(task);
     }
 
     @Override
     public IScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return next().schedule(command, delay, unit);
+        return select().schedule(command, delay, unit);
     }
 
     @Override
     public <V> IScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return next().schedule(callable, delay, unit);
+        return select().schedule(callable, delay, unit);
     }
 
     @Override
     public IScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return next().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+        return select().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     @Override
     public IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return next().scheduleAtFixedRate(command, initialDelay, period, unit);
+        return select().scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
     public <V> IScheduledFuture<V> schedule(ScheduleBuilder<V> builder) {
-        return next().schedule(builder);
+        return select().schedule(builder);
     }
 
     // 以下API并不常用，因此不做优化
@@ -83,27 +83,27 @@ public abstract class AbstractEventLoopGroup implements EventLoopGroup {
     @Override
     public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks)
             throws InterruptedException {
-        return next().invokeAll(tasks);
+        return select().invokeAll(tasks);
     }
 
     @Nonnull
     @Override
     public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit)
             throws InterruptedException {
-        return next().invokeAll(tasks, timeout, unit);
+        return select().invokeAll(tasks, timeout, unit);
     }
 
     @Nonnull
     @Override
     public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks)
             throws InterruptedException, ExecutionException {
-        return next().invokeAny(tasks);
+        return select().invokeAny(tasks);
     }
 
     @Override
     public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        return next().invokeAny(tasks, timeout, unit);
+        return select().invokeAny(tasks, timeout, unit);
     }
 
 }

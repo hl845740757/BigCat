@@ -85,13 +85,17 @@ public interface Worker extends EventLoop {
     @Internal
     WorkerCtx workerCtx();
 
+    /** Node返回自身，Worker返回从属的Node */
+    @Nonnull
+    Node node();
+
     @Nullable
     @Override
     Node parent();
 
     @Nonnull
     @Override
-    default Worker next() {
+    default Worker select() {
         return this;
     }
 

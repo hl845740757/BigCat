@@ -16,9 +16,7 @@
 
 package cn.wjybxx.common.codec;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
  * 类型id的写入策略
@@ -54,10 +52,19 @@ public enum ClassIdPolicy {
                 if (encodeClass == declared) {
                     yield false;
                 }
-                // 默认解码类型的父类型无需写入
-                yield encodeClass != ArrayList.class
-                        && encodeClass != HashMap.class
-                        && encodeClass != LinkedHashMap.class;
+                // 默认解码类型的父类型无需写入，List/Map/Set
+                if (encodeClass == ArrayList.class) {
+                    yield false;
+                }
+                if ((encodeClass == HashMap.class || encodeClass == LinkedHashMap.class)
+                        && Map.class.isAssignableFrom(declared)) {
+                    yield false;
+                }
+                if ((encodeClass == HashSet.class || encodeClass == LinkedHashSet.class)
+                        && Set.class.isAssignableFrom(declared)) {
+                    yield false;
+                }
+                yield true;
             }
         };
     }

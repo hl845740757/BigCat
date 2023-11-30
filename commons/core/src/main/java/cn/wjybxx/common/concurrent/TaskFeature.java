@@ -17,12 +17,12 @@
 package cn.wjybxx.common.concurrent;
 
 /**
- * 调度的特征值
+ * 任务的特征值
  *
  * @author wjybxx
  * date 2023/4/14
  */
-public enum ScheduleFeature {
+public enum TaskFeature {
 
     /**
      * 是否是低优先级的任务
@@ -41,9 +41,10 @@ public enum ScheduleFeature {
     PRIORITY_DECREASABLE(false),
 
     /**
-     * 可以与其它线程无序
+     * 本地序（可以与其它线程无序）
+     * 对于EventLoop内部的任务，如果EventLoop的定时任务是无界的，该属性还可以避免阻塞或死锁。
      */
-    UNORDERED(false),
+    LOCAL_ORDER(false),
 
     /**
      * 捕获{@link Exception}类异常
@@ -54,12 +55,18 @@ public enum ScheduleFeature {
      * 捕获{@link Throwable}类异常，即所有的异常
      */
     CAUGHT_THROWABLE(false),
+
+    /**
+     * 在执行任务执行必须先处理一次定时任务队列
+     * EventLoop收到具有该特征的任务时，需要更新时间戳，尝试执行该任务之前的所有定时任务。
+     */
+    SCHEDULE_BARRIER(false),
     ;
 
     private final boolean _defaultState;
     private final int _mask;
 
-    ScheduleFeature(boolean defaultState) {
+    TaskFeature(boolean defaultState) {
         _defaultState = defaultState;
         _mask = (1 << ordinal());
     }
@@ -89,7 +96,7 @@ public enum ScheduleFeature {
 
     static {
         int flag = 0;
-        for (ScheduleFeature feature : values()) {
+        for (TaskFeature feature : values()) {
             flag = feature.setEnable(flag, feature._defaultState);
         }
         defaultFlags = flag;

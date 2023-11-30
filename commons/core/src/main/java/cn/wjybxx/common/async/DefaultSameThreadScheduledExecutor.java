@@ -19,6 +19,7 @@ package cn.wjybxx.common.async;
 import cn.wjybxx.common.NegativeChecker;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.collect.DefaultIndexedPriorityQueue;
+import cn.wjybxx.common.collect.IndexedNode;
 import cn.wjybxx.common.collect.IndexedPriorityQueue;
 import cn.wjybxx.common.concurrent.FutureUtils;
 import cn.wjybxx.common.concurrent.TimeSharingContext;
@@ -264,7 +265,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
     }
 
     private static class ScheduledFutureTask<V> extends DefaultPromise<V> implements ScheduledFluentFuture<V>, Runnable,
-            IndexedPriorityQueue.IndexedNode,
+            IndexedNode,
             Comparable<ScheduledFutureTask<?>> {
 
         private DefaultSameThreadScheduledExecutor executor;
@@ -305,12 +306,12 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         }
 
         @Override
-        public int priorityQueueIndex(IndexedPriorityQueue<?> queue) {
+        public int queueIndex(Object queue) {
             return queueIndex;
         }
 
         @Override
-        public void priorityQueueIndex(IndexedPriorityQueue<?> queue, int index) {
+        public void queueIndex(Object queue, int index) {
             queueIndex = index;
         }
 

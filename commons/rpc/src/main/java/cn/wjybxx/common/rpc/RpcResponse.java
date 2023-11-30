@@ -18,6 +18,7 @@ package cn.wjybxx.common.rpc;
 
 
 import cn.wjybxx.common.codec.AutoSchema;
+import cn.wjybxx.common.codec.FieldImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
@@ -59,6 +60,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
      * 2.如果为bytes，表示已经序列化
      * 3.如果为List，表示尚未序列化；兼容无返回值和返回null的情况，也有利于扩展
      */
+    @FieldImpl(writeProxy = "writeResults", readProxy = "readResults")
     private Object results;
 
     /** 方法参数是否可共享 -- 详见{@link RpcResultSpec} */
@@ -224,7 +226,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
     // 1.自动处理延迟序列化问题
     // 2.避免多态写入List类型信息
 
-    public void writeParameters(BinaryObjectWriter writer, int name) {
+    public void writeResults(BinaryObjectWriter writer, int name) {
         if (results == null) {
             throw new IllegalStateException("results is null");
         }
@@ -240,7 +242,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         }
     }
 
-    public void readParameters(BinaryObjectReader reader, int name) {
+    public void readResults(BinaryObjectReader reader, int name) {
         List<Object> results = new ArrayList<>(1);
         reader.readStartArray(name, TypeArgInfo.ARRAYLIST);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {

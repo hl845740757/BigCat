@@ -18,7 +18,6 @@ package cn.wjybxx.common.concurrent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.Iterator;
 
 /**
  * 固定数量{@link EventLoop}的事件循环线程组
@@ -28,11 +27,11 @@ import java.util.Iterator;
  * date 2023/4/7
  */
 @ThreadSafe
-public interface FixedEventLoopGroup extends EventLoopGroup, Iterable<EventLoop> {
+public interface FixedEventLoopGroup extends EventLoopGroup {
 
     /**
      * 通过一个键选择一个{@link EventLoop}
-     * 这提供了第二种绑定线程的方式，第一种方式是通过{@link #next()}分配一个线程，让业务对象持有{@link EventLoop}的引用。
+     * 这提供了第二种绑定线程的方式，第一种方式是通过{@link #select()}分配一个线程，让业务对象持有{@link EventLoop}的引用。
      * 现在，你可以为用户分配一个键，通过键建立虚拟绑定。
      *
      * @param key 计算索引的键；限定int可保证选择性能
@@ -45,10 +44,5 @@ public interface FixedEventLoopGroup extends EventLoopGroup, Iterable<EventLoop>
      * 返回{@link EventLoop}的数量。
      */
     int numChildren();
-
-    /** @implNote 实现时需要实现为不可变集合 */
-    @Nonnull
-    @Override
-    Iterator<EventLoop> iterator();
 
 }

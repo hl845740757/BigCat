@@ -43,33 +43,33 @@ public class RpcServiceExample implements ExtensibleService {
         return msg;
     }
 
-    /** 测试void返回值 */
+    /** 测试异步返回 */
     @RpcMethod(methodId = 2)
+    public CompletableFuture<String> helloAsync(String msg) {
+        return FutureUtils.newSucceededFuture(msg);
+    }
+
+    /** 测试void返回值 */
+    @RpcMethod(methodId = 3)
     public void hello2(String msg) {
     }
 
     /** 测试参数基本类型和返回值基本类型 */
-    @RpcMethod(methodId = 3)
+    @RpcMethod(methodId = 4)
     public int add(int a, int b) {
         return a + b;
     }
 
     /** 测试参数带泛型 */
-    @RpcMethod(methodId = 4)
+    @RpcMethod(methodId = 5)
     public String join(List<String> args) {
         return args.toString();
     }
 
     /** 测试返回值带泛型 */
-    @RpcMethod(methodId = 5)
+    @RpcMethod(methodId = 6)
     public List<String> split(String value) {
         return Arrays.stream(value.split(",")).toList();
-    }
-
-    /** 测试异步返回 */
-    @RpcMethod(methodId = 6)
-    public CompletableFuture<String> helloAsync(String msg) {
-        return FutureUtils.newSucceededFuture(msg);
     }
 
     /** 测试context的代码生成 */

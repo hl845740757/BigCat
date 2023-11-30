@@ -23,10 +23,10 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/4/3
  */
-public final class RefIndexedNode<E> implements IndexedPriorityQueue.IndexedNode {
+public final class RefIndexedNode<E> implements IndexedNode {
 
     private final E e;
-    private IndexedPriorityQueue<?> queue;
+    private Object queue;
     private int index = INDEX_NOT_IN_QUEUE;
 
     /** 封闭，允许未来切换实现 */
@@ -43,12 +43,12 @@ public final class RefIndexedNode<E> implements IndexedPriorityQueue.IndexedNode
     }
 
     @Override
-    public int priorityQueueIndex(IndexedPriorityQueue<?> queue) {
+    public int queueIndex(Object queue) {
         return this.queue == queue ? this.index : INDEX_NOT_IN_QUEUE;
     }
 
     @Override
-    public void priorityQueueIndex(IndexedPriorityQueue<?> queue, int index) {
+    public void queueIndex(Object queue, int index) {
         if (index >= 0) {
             assert this.queue == queue || this.queue == null;
             this.queue = queue;

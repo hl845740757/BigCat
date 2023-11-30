@@ -27,6 +27,11 @@ import java.util.concurrent.TimeUnit;
 public interface IScheduledFuture<V> extends ICompletableFuture<V>, ScheduledFuture<V> {
 
     /**
+     * 是否是周期性任务
+     */
+    boolean isPeriodic();
+
+    /**
      * {@inheritDoc}
      * 注意：该接口不对用户保证可见性，通常是无意义的；因为这是以消费者的时间轴计算的，在多线程/分布式下，服务方的时间与本地时间不能完全一致。
      */

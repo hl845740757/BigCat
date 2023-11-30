@@ -58,15 +58,14 @@ public class DefaultThreadFactory implements ThreadFactory {
         if (poolName == null) {
             throw new NullPointerException("poolName");
         }
-
         if (priority != UNASSIGNED_PRIORITY) {
             if (priority < Thread.MIN_PRIORITY || priority > Thread.MAX_PRIORITY) {
                 throw new IllegalArgumentException(
                         "priority: " + priority + " (expected: Thread.MIN_PRIORITY <= priority <= Thread.MAX_PRIORITY)");
             }
         }
-
-        prefix = "(Pool-" + poolId.incrementAndGet() + ")" + poolName + "-";
+        // Worker-1:MyThread-1
+        prefix = "Pool-" + poolId.incrementAndGet() + ":" + poolName + "-";
         this.daemon = daemon;
         this.priority = priority;
     }

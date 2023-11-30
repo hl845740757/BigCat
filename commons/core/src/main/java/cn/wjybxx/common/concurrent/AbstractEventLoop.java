@@ -55,7 +55,7 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
 
     @Nonnull
     @Override
-    public EventLoop next() {
+    public EventLoop select() {
         return this;
     }
 
@@ -75,7 +75,11 @@ public abstract class AbstractEventLoop extends AbstractExecutorService implemen
         return new XCompletableFuture<>(futureContext);
     }
 
-    // --------------------------------------- 任务提交 ----------------------------------------
+    @Override
+    public void ensureInEventLoop() {
+        if (!inEventLoop()) throw new GuardedOperationException();
+    }
+// --------------------------------------- 任务提交 ----------------------------------------
 
     @Override
     protected final <T> RunnableFuture<T> newTaskFor(@Nonnull Runnable runnable, T value) {

@@ -16,10 +16,11 @@
 
 package cn.wjybxx.common.concurrent;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * future运行时的上下文，进行一些逻辑控制
+ * future运行时的上下文，进行一些逻辑控制(比如：任务取消请求)
  * 如果链上的任务是可能在多线程运行的，Context的实现要小心线程安全问题
  *
  * @author wjybxx
@@ -32,21 +33,11 @@ public interface FutureContext {
      * 1.默认返回Null，比较安全
      * 2.如果期望返回自己或返回新的context，可以重写该实现 -- 返回自身时要小心线程安全问题。
      *
-     * @param future 当前future
+     * @param future         当前future
+     * @param actionExecutor 下一个行为关联的executor，可能为null
      */
-    default FutureContext downContext(XCompletableFuture<?> future) {
+    default FutureContext downContext(XCompletableFuture<?> future, Executor actionExecutor) {
         return null;
-    }
-
-    /**
-     * 创建了一个下游future
-     * 1.该方法可用于追踪调用链的尾部，用于异常处理等逻辑
-     *
-     * @param future     当前future
-     * @param downFuture 新的future
-     */
-    default void reportFuture(XCompletableFuture<?> future, XCompletableFuture<?> downFuture) {
-
     }
 
     /**
@@ -64,6 +55,18 @@ public interface FutureContext {
      */
     default boolean checkDeadlock(XCompletableFuture<?> future) {
         return false;
+    }
+
+    /**
+     * 创建了一个下游future
+     * 1.该方法可用于追踪调用链的尾部，用于异常处理等逻辑
+     * （以后重写Future的时候删除该接口）
+     *
+     * @param future     当前future
+     * @param downFuture 新的future
+     */
+    default void reportFuture(XCompletableFuture<?> future, XCompletableFuture<?> downFuture) {
+
     }
 
     // region 用户写操作检查

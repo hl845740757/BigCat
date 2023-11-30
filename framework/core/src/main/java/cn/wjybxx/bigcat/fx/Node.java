@@ -117,7 +117,13 @@ public interface Node extends Worker {
 
     @Nonnull
     @Override
-    default Node next() {
+    default Node node() {
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    default Node select() {
         return this;
     }
 

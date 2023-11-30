@@ -39,26 +39,13 @@ import java.util.concurrent.locks.LockSupport;
  * <p>
  * 关于时序正确性：
  * 1.由于{@link #scheduledTaskQueue}的任务都是从{@link #ringBuffer}中拉取出来的，因此都是先于{@link #ringBuffer}中剩余的任务的。
- * 2.我们总是先取得一个时间快照，然后先执行{@link #scheduledTaskQueue}中的任务，再执行{@link #ringBuffer}中的任务，因此满足先提交的任务先执行的约定
+ * 2.我们总是先取得一个时间快照，然后先执行{@link #scheduledTaskQueue}中的任务，再执行{@link #ringBuffer}中的任务，因此满足优先级相同时，先提交的任务先执行的约定
  * -- 反之，如果不使用时间快照，就可能导致后提交的任务先满足触发时间。
  *
  * @author wjybxx
  * date 2023/4/10
  */
 public class DisruptorEventLoop extends AbstractScheduledEventLoop {
-
-    /** 初始状态，未启动状态 */
-    private static final int ST_NOT_STARTED = 0;
-    /** 启动中 */
-    private static final int ST_STARTING = 1;
-    /** 运行状态 */
-    private static final int ST_RUNNING = 2;
-    /** 正在关闭状态 */
-    private static final int ST_SHUTTING_DOWN = 3;
-    /** 已关闭状态，正在进行最后的清理 */
-    private static final int ST_SHUTDOWN = 4;
-    /** 终止状态 */
-    private static final int ST_TERMINATED = 5;
 
     private static final int MIN_BATCH_SIZE = 64;
     private static final int MAX_BATCH_SIZE = 64 * 1024;
@@ -93,8 +80,10 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     private final int taskBatchSize;
     /** 任务拒绝策略 */
     private final RejectedExecutionHandler rejectedExecutionHandler;
-    /** 用户自定义逻辑 */
-    private final EventLoopAgent<? super RingBufferEvent> agent;
+    /** 内部代理 */
+    private final EventLoopAgent agent;
+    /** 外部门面 */
+    private final EventLoopModule mainModule;
 
     private final Thread thread;
     private final Worker worker;
@@ -119,6 +108,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         this.taskBatchSize = MathUtils.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
         this.rejectedExecutionHandler = Objects.requireNonNull(builder.getRejectedExecutionHandler());
         this.agent = Objects.requireNonNullElse(builder.getAgent(), EmptyAgent.getInstance());
+        this.mainModule = builder.getMainModule();
 
         // 它不依赖于其它消费者，只依赖生产者的sequence
         worker = new Worker(ringBuffer.newBarrier());
@@ -127,18 +117,16 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
         // 添加worker的sequence为网关sequence，生产者们会监听到线程的消费进度
         ringBuffer.addGatingSequences(worker.sequence);
+
+        // 完成绑定
+        this.agent.inject(this);
     }
 
-    // region 生命周期
+    // region 状态查询
 
     @Override
     public State getState() {
         return State.valueOf(state);
-    }
-
-    @Override
-    public boolean isStarting() {
-        return state == ST_STARTING;
     }
 
     @Override
@@ -148,19 +136,11 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     @Override
     public final boolean isShuttingDown() {
-        return isShuttingDown0(state);
-    }
-
-    private static boolean isShuttingDown0(int state) {
         return state >= ST_SHUTTING_DOWN;
     }
 
     @Override
     public final boolean isShutdown() {
-        return isShutdown0(state);
-    }
-
-    private static boolean isShutdown0(int state) {
         return state >= ST_SHUTDOWN;
     }
 
@@ -175,39 +155,6 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     }
 
     @Override
-    public void shutdown() {
-        if (!runningFuture.isDone()) {
-            FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException("Shutdown"));
-        }
-
-        int expectedState = state;
-        for (; ; ) {
-            if (isShuttingDown0(expectedState)) {
-                // 已被其它线程关闭
-                return;
-            }
-
-            int realState = compareAndExchangeState(expectedState, ST_SHUTTING_DOWN);
-            if (realState == expectedState) {
-                // CAS成功，当前线程负责了关闭
-                ensureThreadTerminable(expectedState);
-                return;
-            }
-            // retry
-            expectedState = realState;
-        }
-    }
-
-    @Nonnull
-    @Override
-    public List<Runnable> shutdownNow() {
-        shutdown();
-        advanceRunState(ST_SHUTDOWN);
-        // 这里不能操作ringBuffer中的数据，不能打破[多生产者单消费者]的架构
-        return Collections.emptyList();
-    }
-
-    @Override
     public final ICompletableFuture<?> terminationFuture() {
         return terminationFuture;
     }
@@ -218,9 +165,44 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     }
 
     @Override
-    public ICompletableFuture<?> start() {
-        ensureThreadStarted();
-        return runningFuture;
+    public final boolean inEventLoop() {
+        return thread == Thread.currentThread();
+    }
+
+    @Override
+    public final boolean inEventLoop(Thread thread) {
+        return this.thread == thread;
+    }
+
+    @Override
+    public final void wakeup() {
+        if (!inEventLoop() && thread.isAlive()) {
+            thread.interrupt();
+            agent.wakeup();
+        }
+    }
+
+    /**
+     * 当前任务数
+     * 注意：返回值是一个估算值！
+     */
+    @Beta
+    public int taskCount() {
+        long count = ringBuffer.getCursor() - worker.sequence.get();
+        if (count >= ringBuffer.getBufferSize()) {
+            return ringBuffer.getBufferSize();
+        }
+        return Math.max(0, (int) count);
+    }
+
+    /** EventLoop绑定的Agent（代理） */
+    public EventLoopAgent getAgent() {
+        return agent;
+    }
+
+    @Override
+    public EventLoopModule mainModule() {
+        return mainModule;
     }
 
     // endregion
@@ -268,12 +250,17 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
             rejectedExecutionHandler.rejected(task, this);
         } else {
             RingBufferEvent event = ringBuffer.get(sequence);
-            event.internal_setType(0);
-            event.obj0 = task;
-            if (task instanceof XScheduledFutureTask<?> futureTask) {
-                futureTask.setId(sequence); // nice
-                if (futureTask.isEnable(ScheduleFeature.LOW_PRIORITY)) {
-                    futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
+            if (task.getClass() == RingBufferEvent.class) { // 相对instanceof更快
+                RingBufferEvent userEvent = (RingBufferEvent) task;
+                event.copyFrom(userEvent);
+            } else {
+                event.internal_setType(0);
+                event.obj0 = task;
+                if (task instanceof XScheduledFutureTask<?> futureTask) {
+                    futureTask.setId(sequence); // nice
+                    if (futureTask.isEnable(TaskFeature.LOW_PRIORITY)) {
+                        futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
+                    }
                 }
             }
             ringBuffer.publish(sequence);
@@ -385,16 +372,6 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         }
     }
 
-    /** 获取当前任务数，返回值是一个估算值 */
-    @Beta
-    public int taskCount() {
-        long count = ringBuffer.getCursor() - worker.sequence.get();
-        if (count >= ringBuffer.getBufferSize()) {
-            return ringBuffer.getBufferSize();
-        }
-        return Math.max(0, (int) count);
-    }
-
     @Override
     final void reSchedulePeriodic(XScheduledFutureTask<?> futureTask, boolean triggered) {
         assert inEventLoop();
@@ -410,38 +387,55 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         if (inEventLoop()) {
             scheduledTaskQueue.removeTyped(futureTask);
         }
-        // else 下次tick时删除 -- 延迟删除可能存在内存泄漏，但压任务又可能导致阻塞
+        // else 等待任务超时弹出时再删除 -- 延迟删除可能存在内存泄漏，但压任务又可能导致阻塞（有界队列）
     }
-
-    // endregion
-
-    //
 
     @Override
     protected final long nanoTime() {
         return nanoTime;
     }
 
+    // endregion
+
+    // region 线程状态切换
+
     @Override
-    public final boolean inEventLoop() {
-        return thread == Thread.currentThread();
+    public ICompletableFuture<?> start() {
+        ensureThreadStarted();
+        return runningFuture;
     }
 
     @Override
-    public final boolean inEventLoop(Thread thread) {
-        return this.thread == thread;
-    }
+    public void shutdown() {
+        if (!runningFuture.isDone()) {
+            FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("Shutdown"));
+        }
 
-    @Override
-    public final void wakeup() {
-        if (!inEventLoop() && thread.isAlive()) {
-            thread.interrupt();
-            agent.wakeup();
+        int expectedState = state;
+        for (; ; ) {
+            if (expectedState >= ST_SHUTTING_DOWN) {
+                // 已被其它线程关闭
+                return;
+            }
+
+            int realState = compareAndExchangeState(expectedState, ST_SHUTTING_DOWN);
+            if (realState == expectedState) {
+                // CAS成功，当前线程负责了关闭
+                ensureThreadTerminable(expectedState);
+                return;
+            }
+            // retry
+            expectedState = realState;
         }
     }
 
-    public EventLoopAgent<? super RingBufferEvent> getAgent() {
-        return agent;
+    @Nonnull
+    @Override
+    public List<Runnable> shutdownNow() {
+        shutdown();
+        advanceRunState(ST_SHUTDOWN);
+        // 这里不能操作ringBuffer中的数据，不能打破[多生产者单消费者]的架构
+        return Collections.emptyList();
     }
 
     private void ensureThreadStarted() {
@@ -457,7 +451,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
             state = ST_TERMINATED;
             worker.removeFromGatingSequence(); // 防死锁
 
-            FutureUtils.completeTerminationFuture(runningFuture, new ShuttingDownException());
+            FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("Termination"));
             FutureUtils.completeTerminationFuture(terminationFuture);
         } else {
             // 等待策略是根据alert信号判断EventLoop是否已开始关闭的，因此即使inEventLoop也需要alert，否则可能丢失信号，在waitFor处无法停止
@@ -490,6 +484,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
     private int compareAndExchangeState(int expectedState, int targetState) {
         return (int) STATE.compareAndExchange(this, expectedState, targetState);
     }
+    // endregion
 
     /**
      * 实现{@link RingBuffer}的消费者，实现基本和{@link BatchEventProcessor}一致。
@@ -515,7 +510,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                 }
 
                 nanoTime = System.nanoTime();
-                agent.onStart(DisruptorEventLoop.this);
+                agent.onStart();
 
                 advanceRunState(ST_RUNNING);
                 FutureUtils.completeTerminationFuture(runningFuture);
@@ -526,7 +521,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
             } catch (Throwable e) {
                 logger.error("thread exit due to exception!", e);
                 if (!runningFuture.isDone()) { // 启动失败
-                    FutureUtils.completeTerminationFuture(runningFuture, e);
+                    FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("StartFailed", e));
                 }
             } finally {
                 // 如果是非正常退出，需要切换到正在关闭状态 - 告知其它线程，已经开始关闭
@@ -585,7 +580,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                             assert isShuttingDown();
                             break;
                         }
-                        safeLoopOnce();
+                        invokeAgentUpdate();
                     }
                 } catch (AlertException | InterruptedException e) {
                     // 请求了关闭 -- BatchEventProcessor实现中并没有处理等待过程中的中断异常
@@ -599,7 +594,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
                     }
                     nanoTime = System.nanoTime();
                     processScheduledQueue(nanoTime, taskBatchSize, false);
-                    safeLoopOnce();
+                    invokeAgentUpdate();
                 } catch (Throwable e) {
                     // 不好的等待策略实现
                     logger.error("bad waitStrategy impl", e);
@@ -607,7 +602,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
             }
         }
 
-        private void safeLoopOnce() {
+        private void invokeAgentUpdate() {
             try {
                 agent.update();
             } catch (Throwable t) {
@@ -620,7 +615,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         }
 
         /**
-         * 处理周期性任务，传入的限制只有在遇见低优先级任务的时候才生效
+         * 处理周期性任务，传入的限制只有在遇见低优先级任务的时候才生效，因此限制为0则表示遇见低优先级任务立即结束
          * (为避免时序错误，处理周期性任务期间不响应关闭，不容易安全实现)
          *
          * @param limit            批量执行的任务数限制
@@ -666,7 +661,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         /** @return curSequence */
         private long runTaskBatch(final long batchBeginSequence, final long batchEndSequence) {
             RingBuffer<RingBufferEvent> ringBuffer = DisruptorEventLoop.this.ringBuffer;
-            EventLoopAgent<? super RingBufferEvent> agent = DisruptorEventLoop.this.agent;
+            EventLoopAgent agent = DisruptorEventLoop.this.agent;
             RingBufferEvent event;
             for (long curSequence = batchBeginSequence; curSequence <= batchEndSequence; curSequence++) {
                 event = ringBuffer.get(curSequence);
@@ -710,7 +705,7 @@ public class DisruptorEventLoop extends AbstractScheduledEventLoop {
         private void cleanRingBuffer() {
             final long startTimeMillis = System.currentTimeMillis();
             final RingBuffer<RingBufferEvent> ringBuffer = DisruptorEventLoop.this.ringBuffer;
-            final EventLoopAgent<? super RingBufferEvent> agent = DisruptorEventLoop.this.agent;
+            final EventLoopAgent agent = DisruptorEventLoop.this.agent;
 
             // 处理延迟任务
             nanoTime = System.nanoTime();

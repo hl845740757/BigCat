@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.common.Preconditions;
 import cn.wjybxx.common.concurrent.DefaultThreadFactory;
 import cn.wjybxx.common.concurrent.EventLoopBuilder;
 import cn.wjybxx.common.concurrent.RejectedExecutionHandler;
@@ -52,47 +53,52 @@ public abstract class WorkerBuilder {
      * 3. 添加顺序很重要，Worker将按照添加顺序启动所有的Module
      */
     private final List<Class<? extends WorkerModule>> moduleClasses = new ArrayList<>();
+    /**
+     * Worker上挂载的服务类
+     * 1.作为配置会传递给MainModule
+     */
+    private final List<Class<?>> serviceClasses = new ArrayList<>();
 
     /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
     private WorkerCtx workerCtx;
     /** Builder之间不方便继承 */
-    private final EventLoopBuilder delegateBuilder;
+    protected final EventLoopBuilder delegated;
 
-    protected WorkerBuilder(EventLoopBuilder delegateBuilder) {
-        this.delegateBuilder = Objects.requireNonNull(delegateBuilder);
+    protected WorkerBuilder(EventLoopBuilder delegated) {
+        this.delegated = Objects.requireNonNull(delegated);
     }
 
-    public EventLoopBuilder getDelegateBuilder() {
-        return delegateBuilder;
+    public EventLoopBuilder getDelegated() {
+        return delegated;
     }
 
     //
     public abstract Worker build();
 
     public Node getParent() {
-        return (Node) delegateBuilder.getParent();
+        return (Node) delegated.getParent();
     }
 
     public WorkerBuilder setParent(Node parent) {
-        delegateBuilder.setParent(parent);
+        delegated.setParent(parent);
         return this;
     }
 
     public ThreadFactory getThreadFactory() {
-        return delegateBuilder.getThreadFactory();
+        return delegated.getThreadFactory();
     }
 
     public WorkerBuilder setThreadFactory(ThreadFactory threadFactory) {
-        delegateBuilder.setThreadFactory(threadFactory);
+        delegated.setThreadFactory(threadFactory);
         return this;
     }
 
     public RejectedExecutionHandler getRejectedExecutionHandler() {
-        return delegateBuilder.getRejectedExecutionHandler();
+        return delegated.getRejectedExecutionHandler();
     }
 
     public WorkerBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
-        delegateBuilder.setRejectedExecutionHandler(rejectedExecutionHandler);
+        delegated.setRejectedExecutionHandler(rejectedExecutionHandler);
         return this;
     }
 
@@ -135,6 +141,30 @@ public abstract class WorkerBuilder {
         return this;
     }
 
+    public WorkerBuilder addModules(List<Class<? extends WorkerModule>> moduleClazz) {
+        Preconditions.checkNullElements(moduleClazz);
+        moduleClasses.addAll(moduleClazz);
+        return this;
+    }
+
+    public List<Class<?>> getServiceClasses() {
+        return serviceClasses;
+    }
+
+    public WorkerBuilder addService(Class<?> serviceClass) {
+        Objects.requireNonNull(serviceClass);
+        serviceClasses.add(serviceClass);
+        return this;
+    }
+
+    public WorkerBuilder addServices(List<Class<?>> serviceClass) {
+        Preconditions.checkNullElements(serviceClass);
+        serviceClasses.addAll(serviceClass);
+        return this;
+    }
+
+    //
+
     public static DisruptWorkerBuilder newDisruptorWorkerBuilder() {
         return new DisruptWorkerBuilder();
     }
@@ -157,34 +187,98 @@ public abstract class WorkerBuilder {
         }
 
         @Override
-        public EventLoopBuilder.DisruptorBuilder getDelegateBuilder() {
-            return (EventLoopBuilder.DisruptorBuilder) super.getDelegateBuilder();
+        public EventLoopBuilder.DisruptorBuilder getDelegated() {
+            return (EventLoopBuilder.DisruptorBuilder) super.getDelegated();
         }
 
+        // region
+
+        @Override
+        public DisruptWorkerBuilder setParent(Node parent) {
+            super.setParent(parent);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder setThreadFactory(ThreadFactory threadFactory) {
+            super.setThreadFactory(threadFactory);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
+            super.setRejectedExecutionHandler(rejectedExecutionHandler);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
+            super.setWorkerCtx(workerCtx);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder setWorkerId(String workerId) {
+            super.setWorkerId(workerId);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder setInjector(Injector injector) {
+            super.setInjector(injector);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder addModule(Class<? extends WorkerModule> moduleClazz) {
+            super.addModule(moduleClazz);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder addService(Class<?> serviceClass) {
+            super.addService(serviceClass);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder addModules(List<Class<? extends WorkerModule>> moduleClazz) {
+            super.addModules(moduleClazz);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder addServices(List<Class<?>> serviceClass) {
+            super.addServices(serviceClass);
+            return this;
+        }
+
+        // endregion
+
         public int getRingBufferSize() {
-            return getDelegateBuilder().getRingBufferSize();
+            return getDelegated().getRingBufferSize();
         }
 
         public DisruptWorkerBuilder setRingBufferSize(int ringBufferSize) {
-            getDelegateBuilder().setRingBufferSize(ringBufferSize);
+            getDelegated().setRingBufferSize(ringBufferSize);
             return this;
         }
 
         public WaitStrategy getWaitStrategy() {
-            return getDelegateBuilder().getWaitStrategy();
+            return getDelegated().getWaitStrategy();
         }
 
         public DisruptWorkerBuilder setWaitStrategy(WaitStrategy waitStrategy) {
-            getDelegateBuilder().setWaitStrategy(waitStrategy);
+            getDelegated().setWaitStrategy(waitStrategy);
             return this;
         }
 
         public int getBatchSize() {
-            return getDelegateBuilder().getBatchSize();
+            return getDelegated().getBatchSize();
         }
 
         public DisruptWorkerBuilder setBatchSize(int batchSize) {
-            getDelegateBuilder().setBatchSize(batchSize);
+            getDelegated().setBatchSize(batchSize);
             return this;
         }
 

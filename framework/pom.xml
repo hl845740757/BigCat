@@ -56,7 +56,7 @@
 
         <!-- 依赖版本 -->
         <slf4j.version>2.0.7</slf4j.version>
-        <logback.version>1.4.6</logback.version>
+        <logback.version>1.4.11</logback.version>
         <junit.version>5.9.2</junit.version>
         <guice.version>7.0.0</guice.version>
 
@@ -64,6 +64,9 @@
         <commons.version>1.0-SNAPSHOT</commons.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
         <dson.version>1.0.4</dson.version>
+
+        <!-- netty真的更新太快 -->
+        <netty.version>4.1.101.Final</netty.version>
     </properties>
 
     <dependencies>
@@ -108,6 +111,19 @@
             <artifactId>apt-common</artifactId>
             <version>${apt.version}</version>
         </dependency>
+
+        <!-- netty, transport会引入所有基础模块 -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

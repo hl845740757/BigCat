@@ -24,6 +24,7 @@ import cn.wjybxx.common.concurrent.ext.TimeoutSleepingWaitStrategy;
 import com.google.inject.Injector;
 import com.lmax.disruptor.WaitStrategy;
 
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -43,9 +44,10 @@ public abstract class NodeBuilder extends WorkerBuilder {
         super(delegateBuilder);
     }
 
-    // region 重写返回值类型
     @Override
     public abstract Node build();
+
+    // region
 
     @Override
     public NodeBuilder setParent(Node parent) {
@@ -89,6 +91,27 @@ public abstract class NodeBuilder extends WorkerBuilder {
         return this;
     }
 
+    @Override
+    public NodeBuilder addService(Class<?> serviceClass) {
+        super.addService(serviceClass);
+        return this;
+    }
+
+    @Override
+    public NodeBuilder addModules(List<Class<? extends WorkerModule>> moduleClazz) {
+        super.addModules(moduleClazz);
+        return this;
+    }
+
+    @Override
+    public NodeBuilder addServices(List<Class<?>> serviceClass) {
+        super.addServices(serviceClass);
+        return this;
+    }
+
+    // endregion
+
+    // region
     public int getNumberChildren() {
         return numberChildren;
     }
@@ -124,7 +147,6 @@ public abstract class NodeBuilder extends WorkerBuilder {
         this.nodeAddr = nodeAddr;
         return this;
     }
-
     // endregion
 
     public static DefaultNodeBuilder newDefaultNodeBuilder() {
@@ -149,43 +171,46 @@ public abstract class NodeBuilder extends WorkerBuilder {
         }
 
         @Override
-        public EventLoopBuilder.DefaultBuilder getDelegateBuilder() {
-            return (EventLoopBuilder.DefaultBuilder) super.getDelegateBuilder();
+        public EventLoopBuilder.DefaultBuilder getDelegated() {
+            return (EventLoopBuilder.DefaultBuilder) super.getDelegated();
         }
+        // region
+
+        // endregion
 
         public WaitStrategy getWaitStrategy() {
-            return getDelegateBuilder().getWaitStrategy();
+            return getDelegated().getWaitStrategy();
         }
 
         public DefaultNodeBuilder setWaitStrategy(WaitStrategy waitStrategy) {
-            getDelegateBuilder().setWaitStrategy(waitStrategy);
+            getDelegated().setWaitStrategy(waitStrategy);
             return this;
         }
 
         public int getBatchSize() {
-            return getDelegateBuilder().getBatchSize();
+            return getDelegated().getBatchSize();
         }
 
         public DefaultNodeBuilder setBatchSize(int batchSize) {
-            getDelegateBuilder().setBatchSize(batchSize);
+            getDelegated().setBatchSize(batchSize);
             return this;
         }
 
         public int getChunkSize() {
-            return getDelegateBuilder().getChunkSize();
+            return getDelegated().getChunkSize();
         }
 
         public DefaultNodeBuilder setChunkSize(int chunkSize) {
-            getDelegateBuilder().setChunkSize(chunkSize);
+            getDelegated().setChunkSize(chunkSize);
             return this;
         }
 
         public int getMaxPooledChunks() {
-            return getDelegateBuilder().getMaxPooledChunks();
+            return getDelegated().getMaxPooledChunks();
         }
 
         public DefaultNodeBuilder setMaxPooledChunks(int maxPooledChunks) {
-            getDelegateBuilder().setMaxPooledChunks(maxPooledChunks);
+            getDelegated().setMaxPooledChunks(maxPooledChunks);
             return this;
         }
     }

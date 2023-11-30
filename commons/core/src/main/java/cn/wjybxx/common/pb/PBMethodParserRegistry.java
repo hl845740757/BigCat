@@ -56,10 +56,12 @@ public final class PBMethodParserRegistry {
         return mutable;
     }
 
+    /** 主线程注册完毕后调用 */
     public void setImmutable() {
         mutable = false;
     }
 
+    /** IO线程启动时调用 */
     public void ensureImmutable() {
         if (mutable) {
             throw new IllegalStateException("registry is mutable");

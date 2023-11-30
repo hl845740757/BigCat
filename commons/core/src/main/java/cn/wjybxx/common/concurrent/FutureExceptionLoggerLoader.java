@@ -25,8 +25,9 @@ import org.slf4j.LoggerFactory;
  */
 public class FutureExceptionLoggerLoader {
 
-    public static volatile FutureExceptionLogger exceptionLogger;
+    private static volatile FutureExceptionLogger exceptionLogger;
 
+    /** Future会在初始化的时候读取一次 */
     public static FutureExceptionLogger getExceptionLogger() {
         return exceptionLogger;
     }
@@ -36,24 +37,48 @@ public class FutureExceptionLoggerLoader {
     }
 
     //
+    public static final FutureExceptionLogger DEFAULT_LOGGER;
 
-    public static final FutureExceptionLogger DEFAULT_LOGGER = new DefaultExceptionLogger();
+    static {
+        final boolean enableLogError = Boolean.parseBoolean(System.getProperty("cn.wjybxx.common.concurrent.XCompletableFuture.logError", "true"));
+        if (enableLogError) {
+            DEFAULT_LOGGER = new DefaultExceptionLogger();
+        } else {
+            DEFAULT_LOGGER = new EmptyExceptionLogger();
+        }
+    }
 
     private static final class DefaultExceptionLogger implements FutureExceptionLogger {
 
-        static final boolean enableLogError = Boolean.parseBoolean(System.getProperty("cn.wjybxx.common.concurrent.XCompletableFuture.logError", "true"));
-        static final Logger logger = LoggerFactory.getLogger(DefaultExceptionLogger.class);
+        static final Logger logger = LoggerFactory.getLogger("cn.wjybxx.common.concurrent.XCompletableFuture"); // 默认和Future一个Logger
 
         @Override
         public boolean isEnable() {
-            return enableLogError;
+            return true;
         }
 
         @Override
-        public void onCaughtException(Throwable ex) {
-            if (enableLogError && !(ex instanceof NoLogRequiredException)) {
+        public void onCaughtException(Throwable ex, String extraInfo) {
+            if (!(ex instanceof NoLogRequiredException)) {
                 logger.info("future completed with exception", ex);
             }
         }
     }
+
+    private static final class EmptyExceptionLogger implements FutureExceptionLogger {
+
+        private EmptyExceptionLogger() {
+        }
+
+        @Override
+        public boolean isEnable() {
+            return false;
+        }
+
+        @Override
+        public void onCaughtException(Throwable ex, String extraInfo) {
+
+        }
+    }
+
 }
