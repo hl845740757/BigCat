@@ -51,6 +51,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
     public static final String MNAME_WRITE_EXTSTRING = "writeExtString";
     public static final String MNAME_WRITE_EXTINT32 = "writeExtInt32";
     public static final String MNAME_WRITE_EXTINT64 = "writeExtInt64";
+    public static final String MNAME_WRITE_EXTDOUBLE = "writeExtDouble";
 
     private static final Map<TypeKind, String> primitiveReadMethodNameMap = new EnumMap<>(TypeKind.class);
     private static final Map<TypeKind, String> primitiveWriteMethodNameMap = new EnumMap<>(TypeKind.class);
@@ -304,6 +305,13 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
                             MNAME_WRITE_EXTINT64, nameAccess, fieldName,
                             properties.dsonSubType, access,
                             processor.typeNameWireType, properties.wireType,
+                            processor.typeNameNumberStyle, properties.numberStyle);
+                }
+                case AptFieldImpl.TYPE_EXT_DOUBLE -> {
+                    // writer.writeExtDouble(Fields.FieldName, subType, instance.field, NumberStyle.SIMPLE)
+                    builder.addStatement("writer.$L($L$L, $L, instance.$L, $T.$L)",
+                            MNAME_WRITE_EXTDOUBLE, nameAccess, fieldName,
+                            properties.dsonSubType, access,
                             processor.typeNameNumberStyle, properties.numberStyle);
                 }
                 case AptFieldImpl.TYPE_EXT_STRING -> {

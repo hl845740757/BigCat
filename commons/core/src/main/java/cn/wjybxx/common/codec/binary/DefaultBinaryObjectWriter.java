@@ -188,6 +188,20 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
+    public void writeExtDouble(int name, DsonExtDouble value) {
+        if (value == null) {
+            writeNull(name);
+        } else {
+            writer.writeExtDouble(name, value);
+        }
+    }
+
+    @Override
+    public void writeExtDouble(int name, int type, double value) {
+        writer.writeExtDouble(name, new DsonExtDouble(type, value));
+    }
+
+    @Override
     public void writeExtString(int name, DsonExtString value) {
         if (value == null) {
             writeNull(name);

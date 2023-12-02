@@ -115,7 +115,7 @@ public @interface FieldImpl {
     /**
      * 数据关联的{@link DsonType}，配合{@link #dsonSubType()}使用
      * 1.可声明 byte[] 的子类型
-     * 2.可将普通的int32/int64/string声明为带标签的对应结构
+     * 2.可将普通的int32/int64/double/string声明为带标签的对应结构
      */
     DsonType dsonType() default DsonType.END_OF_OBJECT;
 

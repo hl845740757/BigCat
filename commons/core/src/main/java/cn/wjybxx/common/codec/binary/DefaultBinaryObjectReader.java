@@ -207,6 +207,11 @@ public class DefaultBinaryObjectReader implements BinaryObjectReader {
     }
 
     @Override
+    public DsonExtDouble readExtDouble(int name) {
+        return readName(name) ? CodecHelper.readExtDouble(reader, name) : null;
+    }
+
+    @Override
     public DsonExtString readExtString(int name) {
         return readName(name) ? CodecHelper.readExtString(reader, name) : null;
     }

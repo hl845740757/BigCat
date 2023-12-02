@@ -37,6 +37,7 @@ public class AptFieldImpl {
     public static final String TYPE_EXT_STRING = "EXT_STRING";
     public static final String TYPE_EXT_INT32 = "EXT_INT32";
     public static final String TYPE_EXT_INT64 = "EXT_INT64";
+    public static final String TYPE_EXT_DOUBLE = "EXT_DOUBLE";
 
     public static final String WIRE_TYPE_VARINT = "VARINT";
     public static final String STYLE_SIMPLE = "SIMPLE";

@@ -75,6 +75,10 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     void writeExtInt64(int name, int type, long value, WireType wireType);
 
+    void writeExtDouble(int name, DsonExtDouble value);
+
+    void writeExtDouble(int name, int type, double value);
+
     void writeExtString(int name, DsonExtString value);
 
     void writeExtString(int name, int type, @Nullable String value);
@@ -207,6 +211,10 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     default void writeExtInt64(int name, int type, long value, WireType wireType, INumberStyle ignore) {
         writeExtInt64(name, type, value, wireType);
+    }
+
+    default void writeExtDouble(int name, int type, double value, INumberStyle ignore) {
+        writeExtDouble(name, type, value);
     }
 
     default void writeExtString(int name, int type, String value, StringStyle ignore) {

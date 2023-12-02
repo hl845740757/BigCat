@@ -101,6 +101,7 @@ class CodecHelper {
                 reader.readNull(name);
                 yield 0;
             }
+            case EXT_DOUBLE -> reader.readExtDouble(name).getValue();
             default -> throw DsonCodecException.incompatible(Double.class, dsonType);
         };
     }
@@ -177,6 +178,19 @@ class CodecHelper {
                 yield null;
             }
             default -> throw DsonCodecException.incompatible(DsonExtInt64.class, dsonType);
+        };
+    }
+
+    static DsonExtDouble readExtDouble(DsonLiteReader reader, int name) {
+        DsonType dsonType = readOrGetDsonType(reader);
+        return switch (dsonType) {
+            case DOUBLE -> new DsonExtDouble(0, reader.readDouble(name));
+            case EXT_DOUBLE -> reader.readExtDouble(name);
+            case NULL -> {
+                reader.readNull(name);
+                yield null;
+            }
+            default -> throw DsonCodecException.incompatible(DsonExtDouble.class, dsonType);
         };
     }
 

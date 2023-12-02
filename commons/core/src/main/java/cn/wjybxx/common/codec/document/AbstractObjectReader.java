@@ -187,6 +187,11 @@ abstract class AbstractObjectReader implements DocumentObjectReader {
     }
 
     @Override
+    public DsonExtDouble readExtDouble(String name) {
+        return readName(name) ? CodecHelper.readExtDouble(reader, name) : null;
+    }
+
+    @Override
     public DsonExtString readExtString(String name) {
         return readName(name) ? CodecHelper.readExtString(reader, name) : null;
     }

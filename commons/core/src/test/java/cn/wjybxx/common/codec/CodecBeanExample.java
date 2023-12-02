@@ -53,6 +53,8 @@ public class CodecBeanExample {
 
     @FieldImpl(dsonType = DsonType.EXT_STRING, dsonSubType = 12)
     public String reg;
+    @FieldImpl(dsonType = DsonType.EXT_DOUBLE, dsonSubType = 12)
+    public double dv;
 
     public Map<Integer, String> age2NameMap;
     public Map<Sex, String> sex2NameMap1;

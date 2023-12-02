@@ -60,23 +60,26 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
-        <!-- 依赖版本 -->
+        <!-- 基础依赖-->
+        <slf4j.version>2.0.9</slf4j.version>
         <jsr305.version>3.0.2</jsr305.version>
-        <fastutil.version>8.5.12</fastutil.version>
-        <slf4j.version>2.0.7</slf4j.version>
-        <logback.version>1.4.11</logback.version>
-        <junit.version>5.9.2</junit.version>
 
+        <!-- 测试依赖 -->
+        <junit.version>5.10.1</junit.version>
+        <logback.version>1.4.13</logback.version>
+
+        <!-- 运行时依赖 -->
         <annotations.version>1.0-SNAPSHOT</annotations.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
-        <dson.version>1.0.7</dson.version>
+        <dson.version>1.0.8</dson.version>
 
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <commons-io.version>2.12.0</commons-io.version>
-        <guava.version>31.1-jre</guava.version>
+        <fastutil.version>8.5.12</fastutil.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <commons-codec.version>1.16.0</commons-codec.version>
+        <commons-io.version>2.15.1</commons-io.version>
+        <guava.version>32.1.3-jre</guava.version>
+        <pb.version>3.25.1</pb.version>
 
-        <pb.version>3.24.0</pb.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>4.0.1</jctools.version>
     </properties>

@@ -210,6 +210,20 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
+    public void writeExtDouble(String name, DsonExtDouble value, INumberStyle style) {
+        if (value == null) {
+            writeNull(name);
+        } else {
+            writer.writeExtDouble(name, value, style);
+        }
+    }
+
+    @Override
+    public void writeExtDouble(String name, int type, double value, INumberStyle style) {
+        writer.writeExtDouble(name, new DsonExtDouble(type, value), style);
+    }
+
+    @Override
     public void writeExtString(String name, DsonExtString value, StringStyle style) {
         if (value == null) {
             writeNull(name);

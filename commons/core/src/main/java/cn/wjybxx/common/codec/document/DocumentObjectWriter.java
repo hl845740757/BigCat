@@ -72,6 +72,10 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     void writeExtInt64(String name, int type, long value, WireType wireType, INumberStyle style);
 
+    void writeExtDouble(String name, DsonExtDouble value, INumberStyle style);
+
+    void writeExtDouble(String name, int type, double value, INumberStyle style);
+
     void writeExtString(String name, DsonExtString value, StringStyle style);
 
     void writeExtString(String name, int type, @Nullable String value, StringStyle style);
@@ -162,6 +166,10 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     default void writeExtInt64(String name, int type, long value, WireType wireType) {
         writeExtInt64(name, type, value, wireType, NumberStyle.SIMPLE);
+    }
+
+    default void writeExtDouble(String name, int type, double value) {
+        writeExtDouble(name, type, value, NumberStyle.SIMPLE);
     }
 
     default void writeExtString(String name, int type, String value) {

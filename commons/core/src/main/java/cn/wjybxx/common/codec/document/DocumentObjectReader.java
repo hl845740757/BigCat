@@ -66,6 +66,8 @@ public interface DocumentObjectReader extends AutoCloseable {
 
     DsonExtInt64 readExtInt64(String name);
 
+    DsonExtDouble readExtDouble(String name);
+
     DsonExtString readExtString(String name);
 
     ObjectRef readRef(String name);
