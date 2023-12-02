@@ -412,6 +412,9 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
 
     /** 是否是托管写的字段 */
     public boolean isAutoReadField(VariableElement variableElement, AptClassImpl aptClassImpl, AptFieldImpl aptFieldImpl) {
+        if (aptClassImpl.isSingleton) {
+            return false;
+        }
         // final必定或构造方法读
         if (variableElement.getModifiers().contains(Modifier.FINAL)) {
             return false;

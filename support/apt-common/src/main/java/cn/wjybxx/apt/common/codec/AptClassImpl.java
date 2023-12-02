@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 public class AptClassImpl {
 
     public boolean isAnnotationPresent = false;
+    public boolean isSingleton = false;
+
+    public String singleton;
     public Set<String> skipFields = Set.of();
 
     @Nonnull
@@ -44,6 +47,9 @@ public class AptClassImpl {
                 .orElse(null);
         if (annotationMirror != null) {
             properties.isAnnotationPresent = true;
+            properties.singleton = AptUtils.getAnnotationValueValue(annotationMirror, "singleton", "").trim();
+            properties.isSingleton = !AptUtils.isBlank(properties.singleton);
+
             // 字符串数组属性返回值为List - 数组都不是直接值...
             List<AnnotationValue> skipFields = AptUtils.getAnnotationValueValue(annotationMirror, "skipFields", List.of());
             if (skipFields.size() > 0) {

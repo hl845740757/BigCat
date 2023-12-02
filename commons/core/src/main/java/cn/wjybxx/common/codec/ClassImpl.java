@@ -51,6 +51,13 @@ public @interface ClassImpl {
     /** 序列化时的数字id */
     long classId() default 0;
 
+    /**
+     * 单例对象获取实例的静态方法
+     * 1.如果该属性不为空，则表示对象是单例，反序列化时直接返回单例。
+     * 2.用户可以通过实现Codec实现单例和特殊多例的解析，这里只是对常见情况提供快捷方式。
+     */
+    String singleton() default "";
+
     /** 序列化时的缩进格式 */
     ObjectStyle style() default ObjectStyle.INDENT;
 

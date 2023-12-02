@@ -208,6 +208,15 @@ public interface DelayedCompressList<E> {
 
     // region 辅助方法
 
+    /** 批量添加元素 */
+    default boolean addAll(@Nonnull Collection<? extends E> c) {
+        boolean r = false;
+        for (E e : c) {
+            r |= add(e);
+        }
+        return r;
+    }
+
     /**
      * 自定义index查询；自定义查询时不支持查找null
      *
@@ -290,18 +299,10 @@ public interface DelayedCompressList<E> {
         }
     }
 
-    default boolean addAll(@Nonnull Collection<? extends E> c) {
-        boolean r = false;
-        for (E e : c) {
-            r |= add(e);
-        }
-        return r;
-    }
-
     /**
      * 将List中的元素写入目标集合
      *
-     * @param out 接收元素的过程中不可修改当前List
+     * @param out 结果集
      * @return 添加的元素个数
      */
     default int collectTo(Collection<? super E> out) {

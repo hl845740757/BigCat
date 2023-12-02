@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.wjybxx.commons</groupId>
+        <artifactId>commons-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>btree</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- 我们的APT工具，默认不传递 -->
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>apt-common</artifactId>
+            <version>${apt.version}</version>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+</project>

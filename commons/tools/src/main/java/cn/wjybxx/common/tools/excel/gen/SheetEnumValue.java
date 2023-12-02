@@ -48,4 +48,8 @@ public class SheetEnumValue {
         this.comment = comment;
         this.number = -1;
     }
+
+    public final boolean isStringEnum() {
+        return value != null;
+    }
 }

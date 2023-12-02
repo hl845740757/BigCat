@@ -18,6 +18,8 @@ package cn.wjybxx.common;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
+import java.util.RandomAccess;
 
 import static cn.wjybxx.common.ObjectUtils.nullToDef;
 import static cn.wjybxx.common.ObjectUtils.toStringIfNotNull;
@@ -229,9 +231,18 @@ public class Preconditions {
 
     /** 检查集合里是否存在null，如果元素里存在null则抛出异常 */
     public static void checkNullElements(Collection<?> c) {
-        for (Object element : c) {
-            if (element == null) {
-                throw new IllegalArgumentException("collection contains null values");
+        if (c instanceof RandomAccess) {
+            List<?> list = (List<?>) c;
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i) == null) {
+                    throw new IllegalArgumentException("collection contains null values");
+                }
+            }
+        } else {
+            for (Object element : c) {
+                if (element == null) {
+                    throw new IllegalArgumentException("collection contains null values");
+                }
             }
         }
     }

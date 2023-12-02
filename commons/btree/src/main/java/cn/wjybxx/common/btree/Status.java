@@ -1,0 +1,62 @@
+package cn.wjybxx.common.btree;
+
+/**
+ * 行为树的Task的状态
+ * 1. 我们不再使用枚举值，使其能表达失败的原因；我们不封装为Result对象，以减少开销。
+ * 2. 0~10为保留状态码，用户扩展时从 11 开始。
+ *
+ * @author wjybxx
+ * date - 2023/11/25
+ */
+public final class Status {
+
+    /** 初始状态 */
+    public static final int NEW = 0;
+    /** 执行中 */
+    public static final int RUNNING = 1;
+    /** 执行成功 -- 最小的完成状态 */
+    public static final int SUCCESS = 2;
+
+    /** 被取消 -- 需要放在所有失败码的前面，用户可以可以通过比较大小判断；向上传播时要小心 */
+    public static final int CANCELLED = 3;
+    /** 默认失败码 -- 是最小的失败码 */
+    public static final int ERROR = 4;
+    /** 前置条件检查失败 -- 未运行的情况下直接失败；注意！该错误码不能向父节点传播 */
+    public static final int GUARD_FAILED = 5;
+    /** 执行超时 */
+    public static final int TIMEOUT = 6;
+
+    //
+    public static boolean isRunning(int status) {
+        return status == Status.RUNNING;
+    }
+
+    public static boolean isCompleted(int status) {
+        return status >= Status.SUCCESS;
+    }
+
+    public static boolean isSucceeded(int status) {
+        return status == Status.SUCCESS;
+    }
+
+    public static boolean isCancelled(int status) {
+        return status == Status.CANCELLED;
+    }
+
+    public static boolean isFailed(int status) {
+        return status > Status.CANCELLED;
+    }
+
+    public static boolean isFailedOrCancelled(int status) {
+        return status >= Status.CANCELLED;
+    }
+
+    //
+
+    /** 如果给定状态是失败码，则返回参数，否则返回默认失败码 */
+    public static int ToFailure(int status) {
+        //noinspection ManualMinMaxCalculation
+        return status < ERROR ? ERROR : status;
+    }
+
+}

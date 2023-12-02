@@ -163,15 +163,16 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
     protected abstract void gen();
 
     protected TypeSpec.Builder genCommons(String codecClassName) {
-        genNewInstanceMethod();
-        if (containsReadObjectMethod) {
+        AptClassImpl aptClassImpl = processor.parseClassImpl(typeElement);
+        genNewInstanceMethod(aptClassImpl);
+
+        if (!aptClassImpl.isSingleton && containsReadObjectMethod) {
             readFieldsMethodBuilder.addStatement("instance.$L(reader)", BinaryCodecProcessor.MNAME_READ_OBJECT);
         }
         if (containsWriteObjectMethod) {
             writeObjectMethodBuilder.addStatement("instance.$L(writer)", BinaryCodecProcessor.MNAME_WRITE_OBJECT);
         }
 
-        AptClassImpl aptClassImpl = processor.parseClassImpl(typeElement);
         for (Element element : allFieldsAndMethodWithInherit) {
             if (element.getKind() != ElementKind.FIELD) {
                 continue;
@@ -196,14 +197,13 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
                 .addAnnotations(processor.getAdditionalAnnotations(typeElement))
 
                 .superclass(TypeName.get(superDeclaredType))
+                .addMethod(processor.newGetEncoderClassMethod(superDeclaredType, rawTypeName))
                 .addMethod(newInstanceMethodBuilder.build())
                 .addMethod(readFieldsMethodBuilder.build())
-                .addMethod(writeObjectMethodBuilder.build())
-
-                .addMethod(processor.newGetEncoderClassMethod(superDeclaredType, rawTypeName));
+                .addMethod(writeObjectMethodBuilder.build());
 
         // afterDecode回调
-        if (processor.findAfterDecodeMethod(allFieldsAndMethodWithInherit) != null) {
+        if (!aptClassImpl.isSingleton && processor.findAfterDecodeMethod(allFieldsAndMethodWithInherit) != null) {
             afterDecodeMethodBuilder.addStatement("instance.$L()", CodecProcessor.MNAME_AFTER_DECODE);
             typeBuilder.addMethod(afterDecodeMethodBuilder.build());
         }
@@ -211,7 +211,11 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         return typeBuilder;
     }
 
-    private void genNewInstanceMethod() {
+    private void genNewInstanceMethod(AptClassImpl aptClassImpl) {
+        if (aptClassImpl.isSingleton) {
+            newInstanceMethodBuilder.addStatement("return $T.$L()", rawTypeName, aptClassImpl.singleton);
+            return;
+        }
         if (typeElement.getModifiers().contains(Modifier.ABSTRACT)) {// 抽象类或接口
             newInstanceMethodBuilder.addStatement("throw new $T()", UnsupportedOperationException.class);
             return;
