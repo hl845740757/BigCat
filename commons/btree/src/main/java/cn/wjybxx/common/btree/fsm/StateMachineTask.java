@@ -17,9 +17,7 @@ import java.util.Objects;
 
 /**
  * 状态机节点
- * 1.redo和undo是很有用的特性，因此我们在顶层给予支持，但默认的队列不会保存状态
- * 2.该类默认通过{@link #tempNextState}和for循环的方式，总是在当前状态{@link #execute()}返回后才考虑切换状态，以减少方法栈深度。
- * 一般来说不会有影响，但事无绝对，因此核心方法是可重写的。
+ * 1. redo和undo是很有用的特性，因此我们在顶层给予支持，但默认的队列不会保存状态
  *
  * @author wjybxx
  * date - 2023/12/1
@@ -137,7 +135,6 @@ public class StateMachineTask<E> extends Decorator<E> {
      */
     public final boolean undoChangeState() {
         return undoChangeState(DELAY_NONE);
-
     }
 
     /**
@@ -189,7 +186,13 @@ public class StateMachineTask<E> extends Decorator<E> {
      * 1.如果当前有一个待切换的状态，则会被悄悄丢弃(可以增加一个通知)
      * 2.无论何种模式，在当前状态进入完成状态时一定会触发
      * 3.如果状态机未运行，则仅仅保存在那里，等待下次运行的时候执行
-     * 4.如果需要取消当前状态，则应先调用{@link #cancelCurState(int)}
+     * 4.当前状态可先正常完成，然后再切换状态，就可以避免进入被取消状态；可参考{@link ChangeStateTask}
+     * <pre>{@code
+     *      Task<E> nextState = nextState();
+     *      setSuccess();
+     *      stateMachine.changeState(nextStata)
+     * }
+     * </pre>
      *
      * @param nextState 要进入的下一个状态
      * @param delayMode 延迟模式
@@ -256,7 +259,7 @@ public class StateMachineTask<E> extends Decorator<E> {
     @Override
     protected void beforeEnter() {
         super.beforeEnter();
-        noneChildStatus = Math.max(Status.RUNNING, noneChildStatus); // 兼容编辑器
+        noneChildStatus = Math.max(Status.RUNNING, noneChildStatus); // 兼容编辑器忘记赋值
         if (initState != null && initStateProps != null) {
             initState.setSharedProps(initStateProps);
         }
@@ -380,9 +383,9 @@ public class StateMachineTask<E> extends Decorator<E> {
             onNoChildRunning();
         } else {
             ControlData controlData = (ControlData) tempNextState.getControlData();
-           if (controlData != null) { // 需要保留命令
-               tempNextState.setControlData(controlData.withDelayMode(DELAY_NONE));
-           }
+            if (controlData != null) { // 需要保留命令
+                tempNextState.setControlData(controlData.withDelayMode(DELAY_NONE));
+            }
             if (isExecuting()) {
                 execute();
             } else {

@@ -1,6 +1,8 @@
 package cn.wjybxx.common.btree;
 
+import cn.wjybxx.common.btree.fsm.ChangeStateTask;
 import cn.wjybxx.common.btree.fsm.StateMachineTask;
+import cn.wjybxx.common.btree.leaf.Success;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,11 +16,13 @@ import javax.annotation.Nonnull;
 public class StateMachineTest {
 
     private static int global_count = 0;
+    private static boolean delayChange = false;
     private static final int queue_size = 5;
 
     @BeforeEach
     void setUp() {
         global_count = 0;
+        delayChange = false;
     }
 
     private static TaskEntry<Object> newStateMachineTree() {
@@ -34,10 +38,20 @@ public class StateMachineTest {
     }
 
     @Test
-    void test() {
+    void testCount() {
         TaskEntry<Object> taskEntry = newStateMachineTree();
         taskEntry.getRootStateMachine().changeState(new StateA<>());
         SingleRunningTest1.untilCompleted(taskEntry);
+        Assertions.assertEquals(3, global_count);
+    }
+
+    @Test
+    void testCountDelay() {
+        delayChange = true;
+        TaskEntry<Object> taskEntry = newStateMachineTree();
+        taskEntry.getRootStateMachine().changeState(new StateA<>());
+        SingleRunningTest1.untilCompleted(taskEntry);
+        Assertions.assertEquals(3, global_count);
     }
 
     @Test
@@ -75,6 +89,16 @@ public class StateMachineTest {
 
         SingleRunningTest1.untilCompleted(taskEntry);
         Assertions.assertEquals(0, global_count);
+    }
+
+    @Test
+    void testChangeStateTask() {
+        TaskEntry<Object> taskEntry = newStateMachineTree();
+        ChangeStateTask<Object> stateTask = new ChangeStateTask<>(new Success<>());
+        taskEntry.getRootStateMachine().changeState(stateTask);
+
+        SingleRunningTest1.untilCompleted(taskEntry);
+        Assertions.assertTrue(stateTask.isSucceeded(), "ChangeState task is cancelled? code: " + stateTask.getStatus());
     }
 
     private static class UndoState<E> extends ActionTask<E> {
@@ -128,7 +152,8 @@ public class StateMachineTest {
         @Override
         protected int executeImpl() {
             if (global_count++ == 0) {
-                StateMachineTask.findStateMachine(this).changeState(new StateB<>(), 0);
+                int delayMode = delayChange ? StateMachineTask.DELAY_CURRENT_COMPLETED : 0;
+                StateMachineTask.findStateMachine(this).changeState(new StateB<>(), delayMode);
             }
             return Status.SUCCESS;
         }
@@ -144,7 +169,8 @@ public class StateMachineTest {
         @Override
         protected int executeImpl() {
             if (global_count++ == 1) {
-                StateMachineTask.findStateMachine(this).changeState(new StateA<>(), 0);
+                int delayMode = delayChange ? StateMachineTask.DELAY_CURRENT_COMPLETED : 0;
+                StateMachineTask.findStateMachine(this).changeState(new StateA<>(), delayMode);
             }
             return Status.SUCCESS;
         }

@@ -29,6 +29,13 @@ public class ChangeStateTask<E> extends LeafTask<E> {
     /** 延迟模式 */
     private int delayMode;
 
+    public ChangeStateTask() {
+    }
+
+    public ChangeStateTask(Task<E> nextState) {
+        this.nextState = nextState;
+    }
+
     @Override
     protected void execute() {
         if (nextState == null) {
@@ -37,13 +44,11 @@ public class ChangeStateTask<E> extends LeafTask<E> {
         if (stateProps != null) {
             nextState.setSharedProps(stateProps);
         }
-
-        int rid = getReentryId();
-        StateMachineTask.findStateMachine(this, machineName).changeState(nextState, delayMode);
-        if (isExited(rid)) { // 正常情况下，该节点通常也是状态机的（非直接）子节点，因此调用changeState后该task任务会被父节点取消
-            return;
-        }
+        // 先设置成功，然后再切换状态，当前Task可保持为成功状态 -- 记得先把nextState保存下来，因为会先执行exit
+        assert !isDisableDelayNotify();
+        StateMachineTask<E> stateMachine = StateMachineTask.findStateMachine(this, machineName);
         setSuccess();
+        stateMachine.changeState(nextState, delayMode);
     }
 
     @Override

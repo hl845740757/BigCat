@@ -405,6 +405,8 @@ public abstract class Task<E> implements EventHandler<Object> {
         if (status == Status.RUNNING) {
             status = Status.CANCELLED;
             template_exit(MASK_STOP_EXIT); // 这里稍微特殊些，在ctl增加信息告知由stop退出
+        } else if (status != Status.NEW) {
+            ctl |= MASK_STOP_EXIT; // 被调用Stop的Child不能通知父节点
         }
     }
 
