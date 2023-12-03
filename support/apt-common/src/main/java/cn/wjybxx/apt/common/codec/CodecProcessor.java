@@ -398,7 +398,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     /** 是否是托管写的字段 */
-    public boolean isAutoWriteField(VariableElement variableElement, AptClassImpl aptClassImpl, AptFieldImpl aptFieldImpl) {
+    public static boolean isAutoWriteField(VariableElement variableElement, AptClassImpl aptClassImpl, AptFieldImpl aptFieldImpl) {
         // 优先判断skip属性
         if (aptClassImpl.skipFields.contains(variableElement.getSimpleName().toString())) {
             return false;
@@ -411,7 +411,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     /** 是否是托管写的字段 */
-    public boolean isAutoReadField(VariableElement variableElement, AptClassImpl aptClassImpl, AptFieldImpl aptFieldImpl) {
+    public static boolean isAutoReadField(VariableElement variableElement, AptClassImpl aptClassImpl, AptFieldImpl aptFieldImpl) {
         if (aptClassImpl.isSingleton) {
             return false;
         }

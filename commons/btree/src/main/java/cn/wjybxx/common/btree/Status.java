@@ -53,6 +53,14 @@ public final class Status {
 
     //
 
+    /** 将给定状态码归一化，所有的失败码将被转为{@link #ERROR} */
+    public static int normalize(int status) {
+        if (status < 0) return 0;
+        //noinspection ManualMinMaxCalculation
+        if (status > ERROR) return ERROR;
+        return status;
+    }
+
     /** 如果给定状态是失败码，则返回参数，否则返回默认失败码 */
     public static int ToFailure(int status) {
         //noinspection ManualMinMaxCalculation

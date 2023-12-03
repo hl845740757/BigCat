@@ -7,12 +7,13 @@ import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.codec.document.DocumentSerializable;
-import cn.wjybxx.common.collect.Dequeue;
+import cn.wjybxx.common.collect.AdjustMode;
 import cn.wjybxx.common.collect.EmptyDequeue;
 import cn.wjybxx.common.collect.SlidingDequeue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Deque;
 import java.util.Objects;
 
 /**
@@ -27,13 +28,6 @@ import java.util.Objects;
 @DocumentSerializable
 public class StateMachineTask<E> extends Decorator<E> {
 
-    /** 不延迟 */
-    public static final int DELAY_NONE = 0;
-    /** 仅在当前子节点完成的时候切换 -- 其它延迟模式也会触发；通常用于状态主动退出时； */
-    public static final int DELAY_CURRENT_COMPLETED = 1;
-    /** 下一帧执行 */
-    public static final int DELAY_NEXT_FRAME = 2;
-
     /** 状态机名字 */
     private String name;
     /** 无可用状态时状态码 */
@@ -44,10 +38,10 @@ public class StateMachineTask<E> extends Decorator<E> {
     private Object initStateProps;
 
     private transient Task<E> tempNextState;
-    private transient Dequeue<Task<E>> undoQueue = EmptyDequeue.getInstance();
-    private transient Dequeue<Task<E>> redoQueue = EmptyDequeue.getInstance();
+    private transient Deque<Task<E>> undoQueue = EmptyDequeue.getInstance();
+    private transient Deque<Task<E>> redoQueue = EmptyDequeue.getInstance();
 
-    private transient Listener<E> listener;
+    private transient StateMachineListener<E> listener;
     private transient StateMachineHandler<E> stateMachineHandler;
 
     // region
@@ -87,12 +81,12 @@ public class StateMachineTask<E> extends Decorator<E> {
     }
 
     /** 开放以允许填充 */
-    public final Dequeue<Task<E>> getUndoQueue() {
+    public final Deque<Task<E>> getUndoQueue() {
         return undoQueue;
     }
 
     /** 开放以允许填充 */
-    public final Dequeue<Task<E>> getRedoQueue() {
+    public final Deque<Task<E>> getRedoQueue() {
         return redoQueue;
     }
 
@@ -100,21 +94,21 @@ public class StateMachineTask<E> extends Decorator<E> {
      * @param maxSize 最大大小；0表示禁用；大于0启用
      * @return 最新的queue
      */
-    public final Dequeue<Task<E>> setUndoQueueSize(int maxSize) {
+    public final Deque<Task<E>> setUndoQueueSize(int maxSize) {
         if (maxSize < 0) throw new IllegalArgumentException("maxSize: " + maxSize);
-        return undoQueue = setQueueMaxSize(undoQueue, maxSize, true);
+        return undoQueue = setQueueMaxSize(undoQueue, maxSize, AdjustMode.DISCARD_HEAD);
     }
 
     /**
      * @param maxSize 最大大小；0表示禁用；大于0启用
      * @return 最新的queue
      */
-    public final Dequeue<Task<E>> setRedoQueueSize(int maxSize) {
+    public final Deque<Task<E>> setRedoQueueSize(int maxSize) {
         if (maxSize < 0) throw new IllegalArgumentException("maxSize: " + maxSize);
-        return redoQueue = setQueueMaxSize(redoQueue, maxSize, false);
+        return redoQueue = setQueueMaxSize(redoQueue, maxSize, AdjustMode.DISCARD_TAIL);
     }
 
-    private static <E> Dequeue<E> setQueueMaxSize(Dequeue<E> queue, int maxSize, boolean discardHead) {
+    private static <E> Deque<E> setQueueMaxSize(Deque<E> queue, int maxSize, AdjustMode adjustMode) {
         if (maxSize == 0) {
             queue.clear();
             return EmptyDequeue.getInstance();
@@ -123,7 +117,7 @@ public class StateMachineTask<E> extends Decorator<E> {
             return new SlidingDequeue<>(maxSize);
         } else {
             SlidingDequeue<E> slidingDequeue = (SlidingDequeue<E>) queue;
-            slidingDequeue.setMaxSize(maxSize, discardHead);
+            slidingDequeue.setMaxSize(maxSize, adjustMode);
             return queue;
         }
     }
@@ -134,21 +128,24 @@ public class StateMachineTask<E> extends Decorator<E> {
      * @return 如果有前一个状态则返回true
      */
     public final boolean undoChangeState() {
-        return undoChangeState(DELAY_NONE);
+        return undoChangeState(ChangeStateArgs.UNDO);
     }
 
     /**
      * 撤销到前一个状态
      *
-     * @param delayMode 延迟模式
+     * @param changeStateArgs 状态切换参数
      * @return 如果有前一个状态则返回true
      */
-    public final boolean undoChangeState(int delayMode) {
+    public final boolean undoChangeState(ChangeStateArgs changeStateArgs) {
+        if (!changeStateArgs.isUndo()) {
+            throw new IllegalArgumentException();
+        }
         Task<E> prevState = undoQueue.peekLast(); // 真正切换以后再删除
         if (prevState == null) {
             return false;
         }
-        changeState(prevState, newControlData(ControlData.CMD_UNDO, delayMode));
+        changeState(prevState, changeStateArgs);
         return true;
     }
 
@@ -158,27 +155,30 @@ public class StateMachineTask<E> extends Decorator<E> {
      * @return 如果有下一个状态则返回true
      */
     public final boolean redoChangeState() {
-        return redoChangeState(DELAY_NONE);
+        return redoChangeState(ChangeStateArgs.REDO);
     }
 
     /**
      * 重新进入到下一个状态
      *
-     * @param delayMode 延迟模式
+     * @param changeStateArgs 状态切换参数
      * @return 如果有下一个状态则返回true
      */
-    public final boolean redoChangeState(int delayMode) {
+    public final boolean redoChangeState(ChangeStateArgs changeStateArgs) {
+        if (!changeStateArgs.isRedo()) {
+            throw new IllegalArgumentException();
+        }
         Task<E> nextState = redoQueue.peekFirst();  // 真正切换以后再删除
         if (nextState == null) {
             return false;
         }
-        changeState(nextState, newControlData(ControlData.CMD_REDO, delayMode));
+        changeState(nextState, changeStateArgs);
         return true;
     }
 
     /** 切换状态 -- 如果状态机处于运行中，则立即切换 */
     public final void changeState(Task<E> nextState) {
-        changeState(nextState, ControlData.NONE);
+        changeState(nextState, ChangeStateArgs.PLAIN);
     }
 
     /***
@@ -195,26 +195,20 @@ public class StateMachineTask<E> extends Decorator<E> {
      * </pre>
      *
      * @param nextState 要进入的下一个状态
-     * @param delayMode 延迟模式
+     * @param changeStateArgs 状态切换参数
      */
-    public final void changeState(Task<E> nextState, int delayMode) {
-        changeState(nextState, newControlData(ControlData.CMD_NONE, delayMode));
-    }
-
-    protected void changeState(Task<E> nextState, ControlData controlData) {
+    public void changeState(Task<E> nextState, ChangeStateArgs changeStateArgs) {
         if (nextState == null) {
             throw new NullPointerException("nextState cant be null");
         }
-        int delayMode = controlData.delayMode;
-        checkDelayMode(delayMode);
+        changeStateArgs = checkArgs(changeStateArgs);
 
-        nextState.setControlData(controlData);
+        nextState.setControlData(changeStateArgs);
         tempNextState = nextState;
-        if (!isRunning()) { // 需要保留命令
-            nextState.setControlData(controlData.withDelayMode(DELAY_NONE));
+        if (!isRunning()) {
             return;
         }
-        if (delayMode == DELAY_NONE) {
+        if (changeStateArgs.delayMode == ChangeStateArgs.DELAY_NONE) {
             if (isExecuting()) {
                 execute();
             } else {
@@ -223,22 +217,22 @@ public class StateMachineTask<E> extends Decorator<E> {
         }
     }
 
-    protected final void checkDelayMode(int delayMode) {
-        if (delayMode < DELAY_NONE || delayMode > DELAY_NEXT_FRAME) {
-            throw new IllegalArgumentException("invalid delayMode: " + delayMode);
-        }
-    }
-
-    protected final ControlData newControlData(int cmd, int delayMode) {
-        if (delayMode == DELAY_NEXT_FRAME) {
-            if (getTaskEntry() == null) { // 尚未运行过
-                return new ControlData(cmd, delayMode, 0);
-            } else {
-                return new ControlData(cmd, delayMode, getCurFrame() + 1);
+    /** 检测正确性和自动初始化；不可修改掉cmd */
+    protected final ChangeStateArgs checkArgs(ChangeStateArgs changeStateArgs) {
+        // 当前未运行，不能指定延迟帧号
+        if (!isRunning()) {
+            if (changeStateArgs.delayMode == ChangeStateArgs.DELAY_NEXT_FRAME) {
+                throw new IllegalArgumentException("invalid args");
             }
-        } else {
-            return new ControlData(cmd, delayMode, 0);
+            return changeStateArgs.withDelayMode(ChangeStateArgs.DELAY_NONE);
         }
+        // 运行中一定可以拿到帧号
+        if (changeStateArgs.delayMode == ChangeStateArgs.DELAY_NEXT_FRAME) {
+            if (changeStateArgs.frame < 0) {
+                return changeStateArgs.withFrame(getCurFrame() + 1);
+            }
+        }
+        return changeStateArgs;
     }
     // endregion
 
@@ -285,6 +279,13 @@ public class StateMachineTask<E> extends Decorator<E> {
     }
 
     @Override
+    protected void enter(int reentryId) {
+        if (tempNextState != null && tempNextState.getControlData() == null) {
+            tempNextState.setControlData(ChangeStateArgs.PLAIN);
+        }
+    }
+
+    @Override
     protected void execute() {
         Task<E> curState = this.child;
         Task<E> nextState = this.tempNextState;
@@ -299,15 +300,15 @@ public class StateMachineTask<E> extends Decorator<E> {
                 if (curState != null) {
                     curState.stop();
                 }
-                ControlData controlData = (ControlData) Objects.requireNonNullElse(nextState.getControlData(), ControlData.NONE);
-                switch (controlData.cmd) {
-                    case ControlData.CMD_UNDO -> {
+                ChangeStateArgs changeStateArgs = (ChangeStateArgs) nextState.getControlData();
+                switch (changeStateArgs.cmd) {
+                    case ChangeStateArgs.CMD_UNDO -> {
                         undoQueue.pollLast();
                         if (curState != null) {
                             redoQueue.offerFirst(curState);
                         }
                     }
-                    case ControlData.CMD_REDO -> {
+                    case ChangeStateArgs.CMD_REDO -> {
                         redoQueue.pollFirst();
                         if (curState != null) {
                             undoQueue.offerLast(curState);
@@ -337,7 +338,7 @@ public class StateMachineTask<E> extends Decorator<E> {
             onNoChildRunning();
             return;
         }
-        template_runChildDirectly(curState); // 继续运行或新状态enter
+        template_runChildDirectly(curState); // 继续运行或新状态enter；在尾部才能保证安全
     }
 
     protected final void onNoChildRunning() {
@@ -352,15 +353,12 @@ public class StateMachineTask<E> extends Decorator<E> {
         if (curState == null) {
             return true;
         }
-        ControlData controlData = (ControlData) nextState.getControlData();
-        if (controlData == null) {// 可能是未初始化的
-            return true;
-        }
-        if (controlData.delayMode == DELAY_CURRENT_COMPLETED) {
+        ChangeStateArgs changeStateArgs = (ChangeStateArgs) nextState.getControlData();
+        if (changeStateArgs.delayMode == ChangeStateArgs.DELAY_CURRENT_COMPLETED) {
             return false;
         }
-        if (controlData.delayMode == DELAY_NEXT_FRAME) {
-            return getCurFrame() >= controlData.frame;
+        if (changeStateArgs.delayMode == ChangeStateArgs.DELAY_NEXT_FRAME) {
+            return getCurFrame() >= changeStateArgs.frame;
         }
         return true;
     }
@@ -382,9 +380,9 @@ public class StateMachineTask<E> extends Decorator<E> {
             notifyChangeState(child, null);
             onNoChildRunning();
         } else {
-            ControlData controlData = (ControlData) tempNextState.getControlData();
-            if (controlData != null) { // 需要保留命令
-                tempNextState.setControlData(controlData.withDelayMode(DELAY_NONE));
+            ChangeStateArgs changeStateArgs = (ChangeStateArgs) tempNextState.getControlData();
+            if (changeStateArgs != null) { // 需要保留命令
+                tempNextState.setControlData(changeStateArgs.withDelayMode(ChangeStateArgs.DELAY_NONE));
             }
             if (isExecuting()) {
                 execute();
@@ -446,48 +444,6 @@ public class StateMachineTask<E> extends Decorator<E> {
         return null;
     }
 
-    @FunctionalInterface
-    public interface Listener<E> {
-
-        /**
-         * 1.两个参数最多一个为null
-         * 2.可以设置新状态的黑板和其它数据
-         *
-         * @param stateMachineTask 状态机
-         * @param curState         当前状态
-         * @param nextState        下一个状态
-         */
-        void beforeChangeState(StateMachineTask<E> stateMachineTask, Task<E> curState, Task<E> nextState);
-
-    }
-
-    public interface StateMachineHandler<E> {
-
-        /**
-         * 下个状态的前置条件检查失败
-         *
-         * @param stateMachineTask 状态机
-         * @param nextState        下一个状态
-         */
-        default void onNextStateGuardFailed(StateMachineTask<E> stateMachineTask, Task<E> nextState) {
-
-        }
-
-        /**
-         * 当状态机没有下一个状态时调用该方法，以避免无可用状态
-         * 注意：
-         * 1.状态机启动时不会调用该方法
-         * 2.如果该方法返回后仍无可用状态，将触发无状态逻辑
-         * 3.【不可延迟新状态】，否则将导致错误；框架难以安全检测，由用户自身保证
-         *
-         * @param stateMachineTask 状态机
-         * @param preState         前一个状态
-         * @return 用户是否执行了状态切换操作
-         */
-        boolean onNextStateAbsent(StateMachineTask<E> stateMachineTask, Task<E> preState);
-
-    }
-
     // endregion
 
     //
@@ -523,11 +479,11 @@ public class StateMachineTask<E> extends Decorator<E> {
         this.noneChildStatus = noneChildStatus;
     }
 
-    public Listener<E> getListener() {
+    public StateMachineListener<E> getListener() {
         return listener;
     }
 
-    public void setListener(Listener<E> listener) {
+    public void setListener(StateMachineListener<E> listener) {
         this.listener = listener;
     }
 

@@ -44,11 +44,19 @@ public class ChangeStateTask<E> extends LeafTask<E> {
         if (stateProps != null) {
             nextState.setSharedProps(stateProps);
         }
-        // 先设置成功，然后再切换状态，当前Task可保持为成功状态 -- 记得先把nextState保存下来，因为会先执行exit
-        assert !isDisableDelayNotify();
         StateMachineTask<E> stateMachine = StateMachineTask.findStateMachine(this, machineName);
-        setSuccess();
-        stateMachine.changeState(nextState, delayMode);
+        if (isDisableDelayNotify()) { // 该路径基本不会走到，这里只是给个示例
+            int reentryId = getReentryId();
+            stateMachine.changeState(nextState, ChangeStateArgs.PLAIN.withDelayMode(delayMode));
+            if (!isExited(reentryId)) { // 当前任务如果未被取消则更新为成功
+                setSuccess();
+            }
+        } else {
+            // 先设置成功，然后再切换状态，当前Task可保持为成功状态；
+            // 记得先把nextState保存下来，因为会先执行exit；最好只在未禁用延迟通知的情况下采用
+            setSuccess();
+            stateMachine.changeState(nextState, ChangeStateArgs.PLAIN.withDelayMode(delayMode));
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package cn.wjybxx.common.btree;
 
+import cn.wjybxx.common.btree.fsm.ChangeStateArgs;
 import cn.wjybxx.common.btree.fsm.ChangeStateTask;
 import cn.wjybxx.common.btree.fsm.StateMachineTask;
 import cn.wjybxx.common.btree.leaf.Success;
@@ -37,19 +38,41 @@ public class StateMachineTest {
         return taskEntry;
     }
 
+    /** 不延迟的情况下，三个任务都会进入被取消状态 */
     @Test
     void testCount() {
         TaskEntry<Object> taskEntry = newStateMachineTree();
         taskEntry.getRootStateMachine().changeState(new StateA<>());
         SingleRunningTest1.untilCompleted(taskEntry);
+        taskEntry.getRootStateMachine().setListener((stateMachineTask, curState, nextState) -> {
+            Assertions.assertTrue(curState.isCancelled());
+        });
         Assertions.assertEquals(3, global_count);
     }
 
+    /** 延迟到当前状态退出后切换，三个任务都会进入成功完成状态 */
     @Test
     void testCountDelay() {
         delayChange = true;
         TaskEntry<Object> taskEntry = newStateMachineTree();
         taskEntry.getRootStateMachine().changeState(new StateA<>());
+        SingleRunningTest1.untilCompleted(taskEntry);
+        taskEntry.getRootStateMachine().setListener((stateMachineTask, curState, nextState) -> {
+            Assertions.assertTrue(curState.isSucceeded());
+        });
+        Assertions.assertEquals(3, global_count);
+    }
+
+    /** 测试同一个状态重入 */
+    @Test
+    void testReentry() {
+        TaskEntry<Object> taskEntry = newStateMachineTree();
+        StateA<Object> stateA = new StateA<>();
+        StateB<Object> stateB = new StateB<>();
+        stateA.nextState = stateB;
+        stateB.nextState = stateA;
+        taskEntry.getRootStateMachine().changeState(stateA);
+
         SingleRunningTest1.untilCompleted(taskEntry);
         Assertions.assertEquals(3, global_count);
     }
@@ -149,11 +172,20 @@ public class StateMachineTest {
 
     private static class StateA<E> extends ActionTask<E> {
 
+        Task<E> nextState;
+
+        public StateA() {
+
+        }
+
         @Override
         protected int executeImpl() {
             if (global_count++ == 0) {
-                int delayMode = delayChange ? StateMachineTask.DELAY_CURRENT_COMPLETED : 0;
-                StateMachineTask.findStateMachine(this).changeState(new StateB<>(), delayMode);
+                if (nextState == null) {
+                    nextState = new StateB<>();
+                }
+                ChangeStateArgs args = delayChange ? ChangeStateArgs.PLAIN_WHEN_COMPLETED : ChangeStateArgs.PLAIN;
+                StateMachineTask.findStateMachine(this).changeState(nextState, args);
             }
             return Status.SUCCESS;
         }
@@ -166,11 +198,20 @@ public class StateMachineTest {
 
     private static class StateB<E> extends ActionTask<E> {
 
+        Task<E> nextState;
+
+        public StateB() {
+
+        }
+
         @Override
         protected int executeImpl() {
             if (global_count++ == 1) {
-                int delayMode = delayChange ? StateMachineTask.DELAY_CURRENT_COMPLETED : 0;
-                StateMachineTask.findStateMachine(this).changeState(new StateA<>(), delayMode);
+                if (nextState == null) {
+                    nextState = new StateA<>();
+                }
+                ChangeStateArgs args = delayChange ? ChangeStateArgs.PLAIN_WHEN_COMPLETED : ChangeStateArgs.PLAIN;
+                StateMachineTask.findStateMachine(this).changeState(nextState, args);
             }
             return Status.SUCCESS;
         }

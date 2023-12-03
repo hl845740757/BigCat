@@ -127,11 +127,12 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
 
     /** 只处理实例字段 */
     private List<VariableElement> collectFields(TypeElement typeElement) {
-        AptClassImpl classImpl = AptClassImpl.parse(typeUtils, typeElement, anno_classImplTypeMirror);
         return BeanUtils.getAllFieldsWithInherit(typeElement).stream()
-                .filter(e -> !e.getModifiers().contains(Modifier.STATIC))
-                .filter(e -> !classImpl.skipFields.contains(e.getSimpleName().toString()))
                 .map(e -> (VariableElement) e)
+                .filter(e -> {
+                    return CodecProcessor.isSerializableField(typeUtils, elementUtils, e, anno_binIgnore)
+                            || CodecProcessor.isSerializableField(typeUtils, elementUtils, e, anno_docIgnore);
+                })
                 .collect(Collectors.toList());
     }
 

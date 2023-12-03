@@ -8,6 +8,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
+ * 非并行分支节点抽象
+ * 如果{@link #execute()}方法是有循环体的，那么一定要注意：
+ * 只有循环的尾部运行child才是安全的，如果在运行child后还读写其它数据，可能导致bug(小心递归)。
+ *
  * @author wjybxx
  * date - 2023/11/26
  */

@@ -182,10 +182,10 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
                 continue;
             }
             final AptFieldImpl aptFieldImpl = processor.parseFiledImpl(variableElement);
-            if (processor.isAutoWriteField(variableElement, aptClassImpl, aptFieldImpl)) {
+            if (CodecProcessor.isAutoWriteField(variableElement, aptClassImpl, aptFieldImpl)) {
                 addWriteStatement(variableElement, aptFieldImpl);
             }
-            if (processor.isAutoReadField(variableElement, aptClassImpl, aptFieldImpl)) {
+            if (CodecProcessor.isAutoReadField(variableElement, aptClassImpl, aptFieldImpl)) {
                 addReadStatement(variableElement, aptFieldImpl);
             }
         }

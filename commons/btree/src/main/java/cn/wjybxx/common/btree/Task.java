@@ -28,13 +28,14 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     protected static final Logger logger = LoggerFactory.getLogger(Task.class);
 
-    // 低4位暂保留
-    private static final int MASK_ENTER_EXECUTE = 1 << 4;
-    private static final int MASK_STOP_EXIT = 1 << 5;
-    private static final int MASK_STILLBORN = 1 << 6;
-    private static final int MASK_EXECUTING = 1 << 7;
-    private static final int MASK_RUNNING_FIRED = 1 << 8;
-    private static final int MASK_DISABLE_NOTIFY = 1 << 9;
+    /** 低6位记录前一次的运行结果，范围 [0, 63] */
+    private static final int MASK_PREV_STATUS = 63;
+    private static final int MASK_ENTER_EXECUTE = 1 << 6;
+    private static final int MASK_STOP_EXIT = 1 << 7;
+    private static final int MASK_STILLBORN = 1 << 8;
+    private static final int MASK_EXECUTING = 1 << 9;
+    private static final int MASK_RUNNING_FIRED = 1 << 10;
+    private static final int MASK_DISABLE_NOTIFY = 1 << 11;
     private static final int MASK_INHERITED_BLACKBOARD = 1 << 12;
     private static final int MASK_INHERITED_CANCEL_TOKEN = 1 << 13;
     private static final int MASK_INHERITED_PROPS = 1 << 14;
@@ -50,6 +51,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     public static final int MASK_DISABLE_AUTO_CHECK_CANCEL = 1 << 27;
     public static final int MASK_DISABLE_DELAY_NOTIFY = 1 << 28;
     public static final int MASK_AUTO_LISTEN_CANCEL = 29;
+    public static final int MASK_AUTO_RESET_CHILDREN = 30;
     public static final int MASK_CONTROL_FLOW_FLAGS = 0xFC00_0000; // 1111_1100
 
     /** 任务树的入口(缓存以避免递归查找) */
@@ -97,7 +99,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     private transient int enterFrame;
     /** 结束时的帧号 -- 每次运行时重置为0 */
     private transient int exitFrame;
-    /** 重入Id，只增不减 -- 用于事件驱动下检测冲突（递归）；reset时不重置 */
+    /** 重入Id，只增不减 -- 用于事件驱动下检测冲突（递归）；reset时不重置，甚至也增加 */
     private transient short reentryId;
 
     /**
@@ -191,6 +193,15 @@ public abstract class Task<E> implements EventHandler<Object> {
         return Math.min(status, Status.ERROR);
     }
 
+    /**
+     * 获取任务前一次的执行结果
+     * 1.取值范围[0,63] -- 其实只要能区分成功失败就够；
+     * 2.这并不是一个运行时必须的属性，而是为Debug和Ui视图用的；Java端暂不实现了，C#会实现
+     */
+    public final int getPrevStatus() {
+        return ctl & MASK_PREV_STATUS;
+    }
+
     public final int getEnterFrame() {
         return enterFrame;
     }
@@ -240,7 +251,8 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     /**
      * 该方法在Task进入运行状态时执行
-     * 如果enter既有初始化数据又有行为逻辑，建议将初始化迁移到{@link #beforeEnter()}方法
+     * 1.如果enter既有初始化数据又有行为逻辑，建议将初始化迁移到{@link #beforeEnter()}方法;
+     * 2.如果要初始化子节点，也放到{@link #beforeEnter()}方法;
      *
      * @param reentryId 用于判断父类是否使任务进入了完成状态；虽然也可先捕获再调用超类方法，但传入会方便许多。
      */
@@ -303,18 +315,14 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 1.该方法仅适用于control测试child的guard失败，令child在未运行的情况下直接失败的情况。
      * 2.对于运行中的child，如果发现child的guard失败，不能继续运行，应当取消子节点的执行（stop）。
      *
-     * @param control 传null可不接收通知
+     * @param control task由于未运行，control可能尚未赋值；传null可不接收通知
      */
     public final void setGuardFailed(Task<E> control) {
         assert status != Status.RUNNING;
         if (control != null) { //测试null，适用entry的guard失败
             setControl(control);
         }
-        this.status = Status.GUARD_FAILED;
-        this.reentryId++; // 未调用Exit的补偿
-        if (checkImmediateNotifyMask(ctl) && control != null) {
-            control.onChildCompleted(this);
-        }
+        setCompleted(Status.GUARD_FAILED, false);
     }
 
     /** 设置为完成 -- 通常用于通过子节点的结果设置自己 */
@@ -331,6 +339,9 @@ public abstract class Task<E> implements EventHandler<Object> {
             this.status = status;
             template_exit(0);
         } else {
+            // 未调用Exit，需要补偿
+            this.ctl |= MASK_STILLBORN;
+            this.ctl |= Math.min(MASK_PREV_STATUS, this.status);
             this.status = status;
             this.reentryId++;
         }
@@ -404,9 +415,9 @@ public abstract class Task<E> implements EventHandler<Object> {
     public final void stop() {
         if (status == Status.RUNNING) {
             status = Status.CANCELLED;
-            template_exit(MASK_STOP_EXIT); // 这里稍微特殊些，在ctl增加信息告知由stop退出
+            template_exit(MASK_STOP_EXIT); // 被显式调用stop的task一定不能通知父节点
         } else if (status != Status.NEW) {
-            ctl |= MASK_STOP_EXIT; // 被调用Stop的Child不能通知父节点
+            ctl |= MASK_STOP_EXIT; // 可能是一个先将自己更新为完成状态，又执行了逻辑的子节点；
         }
     }
 
@@ -451,6 +462,7 @@ public abstract class Task<E> implements EventHandler<Object> {
         ctl = 0;
         enterFrame = 0;
         exitFrame = 0;
+        reentryId++; // 上下文产生重大变更，需要增加
     }
 
     /**
@@ -572,21 +584,6 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     /**
-     * 告知模板方法否将{@link #enter(int)}和{@link #execute()}方法分开执行，
-     * 1.默认值由{@link #flags}中的信息指定，默认不禁用
-     * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
-     * 3.如果分帧执行，{@link #enter(int)}方法通常不应该使任务进入完成状态，也无需调用{@link #setRunning()}
-     * 4.该属性运行期间不应该调整
-     */
-    public final void setDisableEnterExecute(boolean disable) {
-        setCtlBit(MASK_DISABLE_ENTER_RUN, disable);
-    }
-
-    public final boolean isDisableEnterExecute() {
-        return (ctl & MASK_DISABLE_ENTER_RUN) != 0;
-    }
-
-    /**
      * 告知模板方法是否自动检测取消
      * 1.默认值由{@link #flags}中的信息指定，默认自动检测
      * 2.自动检测取消信号是一个动态的属性，可随时更改 -- 因此不要轻易缓存。
@@ -613,11 +610,41 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     /**
+     * 告知模板方法否将{@link #enter(int)}和{@link #execute()}方法分开执行，
+     * 1.默认值由{@link #flags}中的信息指定，默认不禁用
+     * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
+     * 3.如果分帧执行，{@link #enter(int)}方法通常不应该使任务进入完成状态，也无需调用{@link #setRunning()}
+     * 4.该属性运行期间不应该调整
+     */
+    public final void setDisableEnterExecute(boolean disable) {
+        setCtlBit(MASK_DISABLE_ENTER_RUN, disable);
+    }
+
+    public final boolean isDisableEnterExecute() {
+        return (ctl & MASK_DISABLE_ENTER_RUN) != 0;
+    }
+
+    /**
+     * 告知模板方法是否在{@link #enter(int)}前自动调用{@link #resetChildrenForRestart()}
+     * 1.默认值由{@link #flags}中的信息指定，默认不启用
+     * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
+     * 3.部分任务可能在调用{@link #resetForRestart()}之前不会再次运行
+     */
+    public final void setAutoResetChildren(boolean enable) {
+        setCtlBit(MASK_AUTO_RESET_CHILDREN, enable);
+    }
+
+    public final boolean isAutoResetChildren() {
+        return (ctl & MASK_AUTO_RESET_CHILDREN) != 0;
+    }
+
+    /**
      * 是否禁用延迟通知
      * 1.默认值由{@link #flags}中的信息指定，默认不禁用（即默认延迟通知）
      * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
      * 3.用于解决事件驱动模式下调用栈深度问题 -- 类似尾递归优化，可减少一半栈深度
-     * 4.该属性运行期间不应该调整
+     * 4.先更新自己为完成状态，再通知父节点，这有时候非常有用 -- 在状态机中，你的State可以感知自己是成功或是失败。
+     * 5.该属性运行期间不应该调整
      * <p>
      * 理论基础：99.99% 的情况下，Task在调用 setRunning 等方法后会立即return，那么在当前方法退出后再通知父节点就不会破坏时序。
      */
@@ -642,6 +669,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     // region 模板方法
 
     final void template_enterExecute(final Task<E> control, int initMask) {
+        initMask |= Math.min(MASK_PREV_STATUS, status); // 上次的运行结果
         initMask |= (flags & MASK_CONTROL_FLOW_FLAGS); // 控制流标记
         initMask |= (MASK_ENTER_EXECUTE | MASK_EXECUTING);
         if (control != null) {
@@ -665,6 +693,9 @@ public abstract class Task<E> implements EventHandler<Object> {
             }
 
             beforeEnter();
+            if (isAutoResetChildren()) {
+                resetChildrenForRestart();
+            }
             enter(reentryId);
             if (isExited(reentryId)) { // enter 可能导致结束
                 if (reentryId + 1 == this.reentryId && checkDelayNotifyMask(ctl) && control != null) {

@@ -23,7 +23,6 @@ import java.util.List;
 public class Join<E> extends Parallel<E> {
 
     private JoinPolicy<E> policy;
-    private boolean resetChildrenWhenEnter;
 
     /** 子节点的重入id -- 判断本轮是否需要执行 */
     protected transient int[] childReentryIds;
@@ -47,10 +46,6 @@ public class Join<E> extends Parallel<E> {
         }
         completedCount = 0;
         succeededCount = 0;
-        // 以前不能检测重入时每次都需要重置子节点为new状态
-        if (resetChildrenWhenEnter) {
-            resetChildrenForRestart();
-        }
         // policy的数据重置
         policy.beforeEnter(this);
     }
@@ -134,11 +129,4 @@ public class Join<E> extends Parallel<E> {
         this.policy = policy;
     }
 
-    public boolean isResetChildrenWhenEnter() {
-        return resetChildrenWhenEnter;
-    }
-
-    public void setResetChildrenWhenEnter(boolean resetChildrenWhenEnter) {
-        this.resetChildrenWhenEnter = resetChildrenWhenEnter;
-    }
 }
