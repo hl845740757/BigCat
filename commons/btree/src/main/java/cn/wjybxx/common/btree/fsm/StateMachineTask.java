@@ -190,7 +190,7 @@ public class StateMachineTask<E> extends Decorator<E> {
      * <pre>{@code
      *      Task<E> nextState = nextState();
      *      setSuccess();
-     *      stateMachine.changeState(nextStata)
+     *      stateMachine.changeState(nextState)
      * }
      * </pre>
      *
@@ -198,11 +198,10 @@ public class StateMachineTask<E> extends Decorator<E> {
      * @param changeStateArgs 状态切换参数
      */
     public void changeState(Task<E> nextState, ChangeStateArgs changeStateArgs) {
-        if (nextState == null) {
-            throw new NullPointerException("nextState cant be null");
-        }
-        changeStateArgs = checkArgs(changeStateArgs);
+        Objects.requireNonNull(nextState, "nextState");
+        Objects.requireNonNull(changeStateArgs, "changeStateArgs");
 
+        changeStateArgs = checkArgs(changeStateArgs);
         nextState.setControlData(changeStateArgs);
         tempNextState = nextState;
         if (!isRunning()) {
@@ -341,6 +340,34 @@ public class StateMachineTask<E> extends Decorator<E> {
         template_runChildDirectly(curState); // 继续运行或新状态enter；在尾部才能保证安全
     }
 
+    @Override
+    protected void onChildCompleted(Task<E> child) {
+        assert this.child == child;
+        cancelToken.removeChild(child.getCancelToken()); // 删除分配的子token
+        child.getCancelToken().clear();
+        child.setCancelToken(null);
+
+        if (tempNextState == null) {
+            if (stateMachineHandler != null && stateMachineHandler.onNextStateAbsent(this, child)) {
+                return;
+            }
+            undoQueue.offerLast(child);
+            removeChild(0);
+            notifyChangeState(child, null);
+            onNoChildRunning();
+        } else {
+            ChangeStateArgs changeStateArgs = (ChangeStateArgs) tempNextState.getControlData();
+            if (changeStateArgs != null) { // 需要保留命令
+                tempNextState.setControlData(changeStateArgs.withDelayMode(ChangeStateArgs.DELAY_NONE));
+            }
+            if (isExecuting()) {
+                execute();
+            } else {
+                template_execute();
+            }
+        }
+    }
+
     protected final void onNoChildRunning() {
         if (noneChildStatus == Status.RUNNING) {
             setRunning();
@@ -368,37 +395,23 @@ public class StateMachineTask<E> extends Decorator<E> {
         if (listener != null) listener.beforeChangeState(this, curState, nextState);
     }
 
-    @Override
-    protected void onChildCompleted(Task<E> child) {
-        assert this.child == child;
-        if (tempNextState == null) {
-            if (stateMachineHandler != null && stateMachineHandler.onNextStateAbsent(this, child)) {
-                return;
-            }
-            undoQueue.offerLast(child);
-            removeChild(0);
-            notifyChangeState(child, null);
-            onNoChildRunning();
-        } else {
-            ChangeStateArgs changeStateArgs = (ChangeStateArgs) tempNextState.getControlData();
-            if (changeStateArgs != null) { // 需要保留命令
-                tempNextState.setControlData(changeStateArgs.withDelayMode(ChangeStateArgs.DELAY_NONE));
-            }
-            if (isExecuting()) {
-                execute();
-            } else {
-                template_execute();
-            }
-        }
-    }
-
     // region
 
-    /** 查找task最近的状态机节点 -- 仅递归查询父节点 */
+    /**
+     * 查找task最近的状态机节点
+     * 1.仅递归查询父节点和长兄节点
+     * 2.优先查找附近的，然后测试长兄节点 - 状态机作为第一个节点的情况比较常见
+     */
     public static <E> StateMachineTask<E> findStateMachine(Task<E> task) {
         Task<E> control;
         while ((control = task.getControl()) != null) {
+            // 父节点
             if (control instanceof StateMachineTask<E> stateMachineTask) {
+                return stateMachineTask;
+            }
+            // 长兄节点
+            Task<E> eldestBrother = control.getChild(0);
+            if (eldestBrother instanceof StateMachineTask<E> stateMachineTask) {
                 return stateMachineTask;
             }
             task = control;
@@ -409,7 +422,7 @@ public class StateMachineTask<E> extends Decorator<E> {
     /**
      * 查找task最近的状态机节点
      * 1.名字不为空的情况下，支持从兄弟节点中查询
-     * 2.有限测试父节点，然后测试兄弟节点
+     * 2.优先测试父节点，然后测试兄弟节点
      */
     @Nonnull
     public static <E> StateMachineTask<E> findStateMachine(Task<E> task, String name) {
@@ -423,10 +436,9 @@ public class StateMachineTask<E> extends Decorator<E> {
             if ((stateMachine = castAsStateMachine(control, name)) != null) {
                 return stateMachine;
             }
-            // 兄弟节点（要排除自己）
+            // 兄弟节点
             for (int i = 0, n = control.getChildCount(); i < n; i++) {
                 final Task<E> brother = control.getChild(i);
-                if (task == brother) continue;
                 if ((stateMachine = castAsStateMachine(brother, name)) != null) {
                     return stateMachine;
                 }

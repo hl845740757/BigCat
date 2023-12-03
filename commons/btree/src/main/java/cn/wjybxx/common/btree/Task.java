@@ -91,7 +91,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      */
     transient Object controlData;
 
-    /** 任务的状态 -- {@link Status} */
+    /** 任务的状态 -- {@link Status}，使用int以支持用户返回更详细的错误码 */
     private transient int status;
     /** 任务运行时的控制信息(bits) -- 每次运行时会重置为0 */
     private transient int ctl;
@@ -413,9 +413,10 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 3.不命名为cancel，否则容易误用；我们设计的cancel是协作式的，可通过{@link #cancelToken}发出请求请求。
      */
     public final void stop() {
+        // 被显式调用stop的task一定不能通知父节点，只要任务执行过就需要标记
         if (status == Status.RUNNING) {
             status = Status.CANCELLED;
-            template_exit(MASK_STOP_EXIT); // 被显式调用stop的task一定不能通知父节点
+            template_exit(MASK_STOP_EXIT);
         } else if (status != Status.NEW) {
             ctl |= MASK_STOP_EXIT; // 可能是一个先将自己更新为完成状态，又执行了逻辑的子节点；
         }
@@ -445,7 +446,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 4. 有临时数据的Task都应该重写该方法，行为树通常是需要反复执行的。
      */
     public void resetForRestart() {
-        if (status == 0) {
+        if (status == Status.NEW) {
             return;
         }
         if (status == Status.RUNNING) {
@@ -470,40 +471,13 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 1.如果有需要重置的特殊子节点，可以重写该方法以确保无遗漏
      */
     protected void resetChildrenForRestart() {
-        for (int i = 0, n = getChildCount(); i < n; i++) {
-            getChild(i).resetForRestart();
+        // 逆序重置，与stop一致
+        for (int idx = getChildCount() - 1; idx >= 0; idx--) {
+            Task<E> child = getChild(idx);
+            if (child.status != Status.NEW) {
+                child.resetForRestart();
+            }
         }
-    }
-
-    /**
-     * 检查取消
-     *
-     * @return 任务是否已进入完成状态；如果返回true，调用者应立即退出
-     */
-    public final boolean checkCancel() {
-        if (isCompleted()) {
-            return true;
-        }
-        if (cancelToken.isCancelling()) {
-            setCancelled();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * @param rid 重入id；方法保存的局部变量
-     * @return 任务是否已进入完成状态；如果返回true，调用者应立即退出
-     */
-    public final boolean checkCancel(int rid) {
-        if (rid != this.reentryId) { // 不等时一定已完成
-            return true;
-        }
-        if (cancelToken.isCancelling()) {
-            setCancelled();
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -516,12 +490,31 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     /**
+     * 检查取消
+     *
+     * @param rid 重入id；方法保存的局部变量
+     * @return 任务是否已进入完成状态；如果返回true，调用者应立即退出
+     * @see #isExited(int)
+     */
+    public final boolean checkCancel(int rid) {
+        if (rid != this.reentryId) { // exit
+            return true;
+        }
+        if (cancelToken.isCancelling()) {
+            setCancelled();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * 重入id对应的任务是否已退出，即：是否已执行{@link #exit()}方法。
      * 1.如果已退出，当前逻辑应该立即退出。
-     * 2.通常在执行外部代码后都应该检测。
+     * 2.通常在执行外部代码后都应该检测，eg：运行子节点，派发事件，执行用户钩子...
      * 3.通常循环体中的代码应该调用{@link #checkCancel(int)}
      *
      * @param rid 重入id；方法保存的局部变量
+     * @return 重入id对应的任务是否已退出
      */
     public final boolean isExited(int rid) {
         return rid != this.reentryId;
@@ -537,21 +530,21 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     /**
-     * 任务是否未启动就失败了。常见原因：
-     * 1. 前置条件失败
-     * 2. 任务开始前检测到取消
-     */
-    public final boolean isStillborn() {
-        return (ctl & MASK_STILLBORN) != 0;
-    }
-
-    /**
      * 获取重入id
      * 1.重入id用于解决事件（或外部逻辑）可能使当前Task进入完成状态的问题。
      * 2.如果执行的外部逻辑可能触发状态切换，在执行外部逻辑前最好捕获重入id，再执行外部逻辑后以检查是否可进行运行。
      */
     public final int getReentryId() {
         return reentryId; // 勿修改返回值类型，以便以后扩展
+    }
+
+    /**
+     * 任务是否未启动就失败了。常见原因：
+     * 1. 前置条件失败
+     * 2. 任务开始前检测到取消
+     */
+    public final boolean isStillborn() {
+        return (ctl & MASK_STILLBORN) != 0;
     }
 
     /**
@@ -606,7 +599,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     public final boolean isAutoListenCancel() {
-        return (ctl & MASK_AUTO_LISTEN_CANCEL) == 0;
+        return (ctl & MASK_AUTO_LISTEN_CANCEL) != 0;
     }
 
     /**
@@ -669,7 +662,8 @@ public abstract class Task<E> implements EventHandler<Object> {
     // region 模板方法
 
     final void template_enterExecute(final Task<E> control, int initMask) {
-        initMask |= Math.min(MASK_PREV_STATUS, status); // 上次的运行结果
+        int prevStatus = Math.min(MASK_PREV_STATUS, status);
+        initMask |= prevStatus; // 上次的运行结果
         initMask |= (flags & MASK_CONTROL_FLOW_FLAGS); // 控制流标记
         initMask |= (MASK_ENTER_EXECUTE | MASK_EXECUTING);
         if (control != null) {
@@ -693,7 +687,7 @@ public abstract class Task<E> implements EventHandler<Object> {
             }
 
             beforeEnter();
-            if (isAutoResetChildren()) {
+            if (prevStatus != 0 && isAutoResetChildren()) {
                 resetChildrenForRestart();
             }
             enter(reentryId);
@@ -721,7 +715,7 @@ public abstract class Task<E> implements EventHandler<Object> {
                 return;
             }
             if (isAutoListenCancel()) {
-                cancelToken.addListener(this::onCancelRequested);
+                cancelToken.addListener(this);
             }
             execute();
             if (isExited(reentryId)) {
@@ -791,7 +785,7 @@ public abstract class Task<E> implements EventHandler<Object> {
         }
         exitFrame = taskEntry.getCurFrame();
         if (isAutoListenCancel()) {
-            cancelToken.removeListener(this::onCancelRequested);
+            cancelToken.removeListener(this);
         }
         try {
             stopRunningChildren();

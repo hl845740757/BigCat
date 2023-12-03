@@ -100,6 +100,10 @@ public class Join<E> extends Parallel<E> {
         if (child.isSucceeded()) {
             succeededCount++;
         }
+        cancelToken.removeChild(child.getCancelToken()); // 删除分配的token
+        child.getCancelToken().clear();
+        child.setCancelToken(null);
+
         policy.onChildCompleted(this, child);
     }
 

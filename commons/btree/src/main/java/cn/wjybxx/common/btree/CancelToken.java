@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 public final class CancelToken {
 
     private int cancelCode;
-    private final List<ListenerWrapper> listeners = new SmallArrayList<>();
+    private final List<Listener> listeners = new SmallArrayList<>();
 
     public CancelToken() {
     }
@@ -66,9 +66,15 @@ public final class CancelToken {
     public CancelToken newChild() {
         CancelToken child = new CancelToken(cancelCode);
         if (cancelCode <= 0) {
-            listeners.add(new ListenerWrapper(child));
+            listeners.add(new SubTokenListener(child));
         }
         return child;
+    }
+
+    /** 删除子token */
+    public boolean removeChild(CancelToken child) {
+        if (child == null) return false;
+        return removeByHandle(child);
     }
 
     /**
@@ -94,20 +100,59 @@ public final class CancelToken {
             }
             return 0;
         } else {
-            ListenerWrapper wrapper = new ListenerWrapper(action);
+            Listener wrapper = new ActionListener(action);
             listeners.add(wrapper);
             return wrapper.id;
         }
     }
 
-    /** 删除监听器 */
+    /**
+     * 删除监听器
+     * 注意：lambda可能无法正确匹配，因此建议使用{@link #removeListener(int)}
+     */
     public boolean removeListener(Consumer<? super CancelToken> action) {
         if (action == null) return false;
-        // 逆向查找更容易匹配和避免数组拷贝 -- 与Task的启动顺序和停止顺序相关
-        List<ListenerWrapper> listeners = this.listeners;
+        return removeByHandle(action);
+    }
+
+    /**
+     * 为Task定制的接口
+     * 1.可减少闭包，也更方便使用
+     * 2.如果Task被重入，不会被通知
+     *
+     * @return listener对应的id；返回 0 表示已通知，大于0表示注册成功；
+     */
+    public int addListener(Task<?> task) {
+        assert task.isRunning();
+        Objects.requireNonNull(task, "task");
+        if (cancelCode > 0) {
+            try {
+                task.onCancelRequested(this);
+            } catch (Exception | AssertionError e) {
+                logListenerException(task, e);
+            }
+            return 0;
+        } else {
+            Listener wrapper = new TaskListener(task);
+            listeners.add(wrapper);
+            return wrapper.id;
+        }
+    }
+
+    /** 删除task的监听 */
+    public boolean removeListener(Task<?> task) {
+        if (task == null) return false;
+        // task如果被重入，那么前一次注册的监听应当在exit的时候已删除，这里如果出现多个匹配的节点，则证明已出现了错误
+        return removeByHandle(task);
+    }
+
+    /** 通过分配的监听器id删除监听器 */
+    public boolean removeListener(int listenerId) {
+        if (listenerId <= 0) return false;
+        List<Listener> listeners = this.listeners;
         for (int idx = listeners.size() - 1; idx >= 0; idx--) {
-            ListenerWrapper wrapper = listeners.get(idx);
-            if (action.equals(wrapper.action)) {
+            Listener wrapper = listeners.get(idx);
+            if (wrapper.id == listenerId) {
                 listeners.remove(idx);
                 return true;
             }
@@ -115,13 +160,12 @@ public final class CancelToken {
         return false;
     }
 
-    /** 通过分配的监听器id删除监听器 */
-    public boolean removeListener(int listenerId) {
-        if (listenerId <= 0) return false;
-        List<ListenerWrapper> listeners = this.listeners;
+    private boolean removeByHandle(Object handle) {
+        // 逆向查找更容易匹配和避免数组拷贝 -- 与Task的启动顺序和停止顺序相关
+        List<Listener> listeners = this.listeners;
         for (int idx = listeners.size() - 1; idx >= 0; idx--) {
-            ListenerWrapper wrapper = listeners.get(idx);
-            if (wrapper.id == listenerId) {
+            Listener wrapper = listeners.get(idx);
+            if (handle.equals(wrapper.getHandle())) {
                 listeners.remove(idx);
                 return true;
             }
@@ -132,38 +176,37 @@ public final class CancelToken {
     // region internal
 
     private void notifyListeners() {
-        List<ListenerWrapper> listeners = this.listeners;
+        List<Listener> listeners = this.listeners;
         if (listeners.isEmpty()) {
             return;
         }
         for (int i = 0; i < listeners.size(); i++) {
-            ListenerWrapper wrapper = listeners.get(i);
-            if (wrapper.action instanceof CancelToken child) {
-                child.cancel(cancelCode);
-            } else {
-                @SuppressWarnings("unchecked") var action = (Consumer<? super CancelToken>) wrapper.action;
-                try {
-                    action.accept(this);
-                } catch (Exception | AssertionError e) {
-                    logListenerException(action, e);
-                }
+            Listener wrapper = listeners.get(i);
+            try {
+                wrapper.fire(this);
+            } catch (Exception | AssertionError e) {
+                logListenerException(wrapper.getHandle(), e);
             }
         }
+        listeners.clear();
     }
 
-    private void logListenerException(Consumer<? super CancelToken> action, Throwable e) {
+    private void logListenerException(Object action, Throwable e) {
         Task.logger.warn("action caught exception, actionType: " + action.getClass(), e);
     }
 
-    private static class ListenerWrapper {
+
+    private static abstract class Listener {
 
         final int id;
-        final Object action;
 
-        private ListenerWrapper(Object action) {
+        private Listener() {
             this.id = nextId();
-            this.action = action;
         }
+
+        abstract void fire(CancelToken token) throws Exception;
+
+        abstract Object getHandle();
 
         /** 使用静态的int是安全的，同一个token上的监听器id实践中不会重复 */
         private static int idSeq = 0;
@@ -177,6 +220,68 @@ public final class CancelToken {
             return r;
         }
     }
+
+    private static class ActionListener extends Listener {
+
+        final Consumer<? super CancelToken> action;
+
+        private ActionListener(Consumer<? super CancelToken> action) {
+            this.action = action;
+        }
+
+        @Override
+        void fire(CancelToken token) throws Exception {
+            action.accept(token);
+        }
+
+        @Override
+        public Object getHandle() {
+            return action;
+        }
+    }
+
+    private static class SubTokenListener extends Listener {
+
+        final CancelToken cancelToken;
+
+        private SubTokenListener(CancelToken cancelToken) {
+            this.cancelToken = cancelToken;
+        }
+
+        @Override
+        void fire(CancelToken token) throws Exception {
+            cancelToken.cancel(token.cancelCode);
+        }
+
+        @Override
+        Object getHandle() {
+            return cancelToken;
+        }
+    }
+
+    private static class TaskListener extends Listener {
+
+        final Task<?> task;
+        final int rid;
+
+        public TaskListener(Task<?> task) {
+            this.task = task;
+            this.rid = task.getReentryId();
+        }
+
+        @Override
+        void fire(CancelToken token) throws Exception {
+            if (!task.isExited(rid)) {
+                task.onCancelRequested(token);
+            }
+        }
+
+        @Override
+        Object getHandle() {
+            return task;
+        }
+    }
+
     // endregion
 
 }
