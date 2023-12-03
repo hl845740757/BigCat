@@ -1,9 +1,11 @@
 package cn.wjybxx.common.btree;
 
 import cn.wjybxx.common.CollectionUtils;
+import cn.wjybxx.common.annotation.VisibleForTesting;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -83,6 +85,18 @@ public abstract class BranchTask<E> extends Task<E> {
     // endregion
 
     // region child
+
+    /** 用于避免测试的子节点过于规律 */
+    @VisibleForTesting
+    public final void shuffleChild() {
+        Collections.shuffle(children);
+    }
+
+    @Override
+    public final void removeAllChild() {
+        children.forEach(Task::unsetControl);
+        children.clear();
+    }
 
     @Override
     public final int indexChild(Task<?> task) {

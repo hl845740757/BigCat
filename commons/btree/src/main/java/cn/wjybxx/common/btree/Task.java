@@ -46,7 +46,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     private static final int MASK_LOCK4 = 1 << 23;
     private static final int MASK_LOCK_ALL = MASK_LOCK1 | MASK_LOCK2 | MASK_LOCK3 | MASK_LOCK4;
 
-    // 高6位为控制流程相关bit，对外开放
+    // 高8位为控制流程相关bit，对外开放
     public static final int MASK_DISABLE_ENTER_RUN = 1 << 24;
     public static final int MASK_DISABLE_DELAY_NOTIFY = 1 << 25;
     public static final int MASK_DISABLE_AUTO_CHECK_CANCEL = 1 << 26;
@@ -1025,10 +1025,18 @@ public abstract class Task<E> implements EventHandler<Object> {
         return false;
     }
 
+    /** 删除指定索引的child */
     public final Task<E> removeChild(int index) {
         Task<E> child = removeChildImpl(index);
         child.unsetControl();
         return child;
+    }
+
+    /** 删除所有的child -- 不是个常用方法 */
+    public void removeAllChild() {
+        for (int idx = 0, size = getChildCount(); idx < size; idx++) {
+            removeChildImpl(idx).unsetControl();
+        }
     }
 
     /** @return index or -1 */

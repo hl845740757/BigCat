@@ -20,6 +20,13 @@ public class AlwaysFail<E> extends Decorator<E> {
 
     private int failureStatus;
 
+    public AlwaysFail() {
+    }
+
+    public AlwaysFail(Task<E> child) {
+        super(child);
+    }
+
     @Override
     protected void execute() {
         if (child == null) {

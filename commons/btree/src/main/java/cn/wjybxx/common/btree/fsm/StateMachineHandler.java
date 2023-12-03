@@ -26,7 +26,7 @@ public interface StateMachineHandler<E> {
      * 3.【不可延迟新状态】，否则将导致错误；框架难以安全检测，由用户自身保证
      *
      * @param stateMachineTask 状态机
-     * @param preState         前一个状态
+     * @param preState         前一个状态，用于计算下一个状态
      * @return 用户是否执行了状态切换操作
      */
     boolean onNextStateAbsent(StateMachineTask<E> stateMachineTask, Task<E> preState);

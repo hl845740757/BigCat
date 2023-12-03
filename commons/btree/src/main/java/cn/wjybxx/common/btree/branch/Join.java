@@ -25,7 +25,7 @@ public class Join<E> extends Parallel<E> {
     private JoinPolicy<E> policy;
 
     /** 子节点的重入id -- 判断本轮是否需要执行 */
-    protected transient int[] childReentryIds;
+    protected transient int[] childPrevReentryIds;
     /** 已进入完成状态的子节点 */
     protected transient int completedCount;
     /** 成功完成的子节点 */
@@ -58,13 +58,13 @@ public class Join<E> extends Parallel<E> {
 
     private void recordContext() {
         List<Task<E>> children = this.children;
-        if (childReentryIds == null || childReentryIds.length != children.size()) {
-            childReentryIds = new int[children.size()];
+        if (childPrevReentryIds == null || childPrevReentryIds.length != children.size()) {
+            childPrevReentryIds = new int[children.size()];
         }
         for (int i = 0; i < children.size(); i++) {
             Task<E> child = children.get(i);
             child.setCancelToken(cancelToken.newChild()); // child默认可读取取消
-            childReentryIds[i] = child.getReentryId();
+            childPrevReentryIds[i] = child.getReentryId();
         }
     }
 
@@ -75,12 +75,13 @@ public class Join<E> extends Parallel<E> {
             policy.onChildEmpty(this);
             return;
         }
-        final int[] childReentryIds = this.childReentryIds;
+        final int[] childPrevReentryIds = this.childPrevReentryIds;
         final int reentryId = getReentryId();
 
         for (int i = 0; i < children.size(); i++) {
-            Task<E> child = children.get(i);
-            if (child.isExited(childReentryIds[i])) {
+            final Task<E> child = children.get(i);
+            final boolean started = child.isExited(childPrevReentryIds[i]);
+            if (started && child.isCompleted()) { // 勿轻易调整
                 continue;
             }
             template_runChild(child);

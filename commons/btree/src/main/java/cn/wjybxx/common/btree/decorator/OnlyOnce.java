@@ -19,6 +19,13 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 @DocumentSerializable
 public class OnlyOnce<E> extends Decorator<E> {
 
+    public OnlyOnce() {
+    }
+
+    public OnlyOnce(Task<E> child) {
+        super(child);
+    }
+
     @Override
     protected void execute() {
         if (child.isCompleted()) {

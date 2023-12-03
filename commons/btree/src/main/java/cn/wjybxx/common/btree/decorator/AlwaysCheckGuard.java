@@ -18,6 +18,13 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 @DocumentSerializable
 public class AlwaysCheckGuard<E> extends Decorator<E> {
 
+    public AlwaysCheckGuard() {
+    }
+
+    public AlwaysCheckGuard(Task<E> child) {
+        super(child);
+    }
+
     @Override
     protected void execute() {
         if (template_checkGuard(child.getGuard())) {

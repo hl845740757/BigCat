@@ -21,6 +21,13 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 @DocumentSerializable
 public class Inverter<E> extends Decorator<E> {
 
+    public Inverter() {
+    }
+
+    public Inverter(Task<E> child) {
+        super(child);
+    }
+
     @Override
     protected void execute() {
         template_runChild(child);

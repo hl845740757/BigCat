@@ -28,7 +28,7 @@ public class SimpleRandom<E> extends LeafTask<E> {
     private float p;
 
     public SimpleRandom() {
-
+        p = 0.5f;
     }
 
     public SimpleRandom(float p) {
@@ -37,7 +37,7 @@ public class SimpleRandom<E> extends LeafTask<E> {
 
     @Override
     protected void execute() {
-        if (random.nextDouble() <= p) {
+        if (random.nextFloat() <= p) {
             setSuccess();
         } else {
             setFailed(Status.ERROR);

@@ -32,8 +32,8 @@ public class StateMachineTask<E> extends Decorator<E> {
 
     /** 状态机名字 */
     private String name;
-    /** 无可用状态时状态码 */
-    private int noneChildStatus = Status.RUNNING;
+    /** 无可用状态时状态码 -- 默认成功退出更安全 */
+    private int noneChildStatus = Status.SUCCESS;
     /** 初始状态 */
     private Task<E> initState;
     /** 初始状态的属性 */
@@ -254,7 +254,9 @@ public class StateMachineTask<E> extends Decorator<E> {
     @Override
     protected void beforeEnter() {
         super.beforeEnter();
-        noneChildStatus = Math.max(Status.RUNNING, noneChildStatus); // 兼容编辑器忘记赋值
+        if (noneChildStatus == 0) {  // 兼容编辑器忘记赋值，默认成功退出更安全
+            noneChildStatus = Status.SUCCESS;
+        }
         if (initState != null && initStateProps != null) {
             initState.setSharedProps(initStateProps);
         }

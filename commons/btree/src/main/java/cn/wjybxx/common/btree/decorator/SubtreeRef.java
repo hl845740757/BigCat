@@ -19,6 +19,13 @@ public class SubtreeRef<E> extends Decorator<E> {
 
     private String treeName;
 
+    public SubtreeRef() {
+    }
+
+    public SubtreeRef(String treeName) {
+        this.treeName = treeName;
+    }
+
     @Override
     protected void enter(int reentryId) {
         if (child == null) {

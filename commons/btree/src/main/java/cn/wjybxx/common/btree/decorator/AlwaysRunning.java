@@ -18,22 +18,34 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 @DocumentSerializable
 public class AlwaysRunning<E> extends Decorator<E> {
 
+    /** 记录子节点上次的重入id，这样不论enter和execute是否分开执行都不影响 */
+    private transient int childPrevReentryId;
+
+    @Override
+    protected void beforeEnter() {
+        super.beforeEnter();
+        if (child == null) {
+            childPrevReentryId = 0;
+        } else {
+            childPrevReentryId = child.getReentryId();
+        }
+    }
+
     @Override
     protected void execute() {
-        if (isExecuteTriggeredByEnter()) {
-            if (child != null) {
-                int reentryId = getReentryId();
-                template_runChild(child);
-                if (isExited(reentryId)) { // 被取消
-                    return;
-                }
+        if (child != null) {
+            final boolean started = child.isExited(childPrevReentryId);
+            if (started && child.isCompleted()) {  // 勿轻易调整
+                setRunning();
+                return;
             }
-            setRunning(); // 首帧设置running
-        } else {
-            if (child != null && child.isRunning()) {
-                template_runChild(child);
+            int reentryId = getReentryId();
+            template_runChild(child);
+            if (isExited(reentryId)) { // 被取消
+                return;
             }
         }
+        setRunning();
     }
 
     @Override

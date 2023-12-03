@@ -21,8 +21,7 @@ public class Failure<E> extends LeafTask<E> {
 
     @Override
     protected void execute() {
-        int status = Math.max(Status.ERROR, failureStatus);
-        setFailed(status);
+        setFailed(Status.ToFailure(failureStatus));
     }
 
     @Override

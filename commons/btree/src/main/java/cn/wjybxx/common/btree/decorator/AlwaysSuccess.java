@@ -17,6 +17,13 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 @DocumentSerializable
 public class AlwaysSuccess<E> extends Decorator<E> {
 
+    public AlwaysSuccess() {
+    }
+
+    public AlwaysSuccess(Task<E> child) {
+        super(child);
+    }
+
     @Override
     protected void execute() {
         if (child == null) {

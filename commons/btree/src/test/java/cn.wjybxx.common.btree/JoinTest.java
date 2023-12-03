@@ -3,6 +3,7 @@ package cn.wjybxx.common.btree;
 import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.btree.branch.JoinPolicy;
 import cn.wjybxx.common.btree.branch.join.*;
+import cn.wjybxx.common.ex.InfiniteLoopException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,10 @@ import org.junit.jupiter.api.Test;
 import javax.annotation.Nonnull;
 
 /**
+ * 测试join时要小心，不要通过{@link BtreeTestUtil#completedCount(Task)}
+ * 统计完成的子节点和成功的子节点，这可能统计到上一次的执行结果。
+ * 请直接通过{@link Join#getCompletedCount()}和{@link Join#getSucceededCount()}获取。
+ *
  * @author wjybxx
  * date - 2023/12/3
  */
@@ -36,8 +41,13 @@ public class JoinTest {
 
         @Override
         protected int executeImpl() {
-            globalCount++;
-            return Status.SUCCESS;
+            // 不能过于简单成功，否则无法覆盖所有情况
+            if (BtreeTestUtil.random.nextBoolean()) {
+                globalCount++;
+                setSuccess();
+                return Status.SUCCESS;
+            }
+            return Status.RUNNING;
         }
 
         @Override
@@ -80,16 +90,28 @@ public class JoinTest {
     @Test
     void testAnyOf() {
         TaskEntry<Blackboard> taskEntry = newJoinTree(JoinAnyOf.getInstance());
-
-        Task<Blackboard> rootTask = taskEntry.getRootTask();
-        for (int i = 0; i < childCount; i++) {
-            rootTask.addChild(new Counter<>());
+        Join<Blackboard> rootTask = (Join<Blackboard>) taskEntry.getRootTask();
+        // 需要测试子节点数量为0的情况
+        for (int i = 0; i <= childCount; i++) {
+            rootTask.removeAllChild();
+            for (int j = 0; j < i; j++) {
+                rootTask.addChild(new Counter<>());
+            }
+            if (i == 0) {
+                Assertions.assertThrowsExactly(InfiniteLoopException.class, () -> {
+                    BtreeTestUtil.untilCompleted(taskEntry);
+                });
+                taskEntry.stop(); // 需要进入完成状态
+                Assertions.assertTrue(taskEntry.isCancelled());
+            } else {
+                globalCount = 0;
+                BtreeTestUtil.untilCompleted(taskEntry);
+                // ... 这里有上次进入完成状态的子节点，直接遍历子节点进行统计不安全
+                Assertions.assertTrue(taskEntry.isSucceeded());
+                Assertions.assertEquals(1, rootTask.getCompletedCount());
+                Assertions.assertEquals(1, globalCount);
+            }
         }
-
-        BtreeTestUtil.untilCompleted(taskEntry);
-        Assertions.assertTrue(taskEntry.isSucceeded());
-        Assertions.assertEquals(1, BtreeTestUtil.completedCount(rootTask));
-        Assertions.assertEquals(1, globalCount);
     }
 
     @Test
@@ -103,71 +125,64 @@ public class JoinTest {
 
         BtreeTestUtil.untilCompleted(taskEntry);
         Assertions.assertTrue(taskEntry.isSucceeded());
-        Assertions.assertEquals(1, BtreeTestUtil.completedCount(rootTask));
-        Assertions.assertEquals(1, globalCount);
+        Assertions.assertTrue(rootTask.getChild(0).isSucceeded());
     }
 
     @Test
     void testSelector() {
         TaskEntry<Blackboard> taskEntry = newJoinTree(JoinSelector.getInstance());
+        Join<Blackboard> branch = (Join<Blackboard>) taskEntry.getRootTask();
+        for (int expcted = 0; expcted <= childCount; expcted++) {
+            BtreeTestUtil.initChildren(branch, childCount, expcted);
+            BtreeTestUtil.untilCompleted(taskEntry);
 
-        Task<Blackboard> rootTask = taskEntry.getRootTask();
-        for (int i = 0; i < childCount; i++) {
-            rootTask.addChild(new Counter<>());
+            if (expcted > 0) {
+                Assertions.assertTrue(taskEntry.isSucceeded(), "Task is unsuccessful, status " + taskEntry.getStatus());
+            } else {
+                Assertions.assertTrue(taskEntry.isFailed(), "Task is unfailed, status " + taskEntry.getStatus());
+            }
         }
-
-        BtreeTestUtil.untilCompleted(taskEntry);
-        Assertions.assertTrue(taskEntry.isSucceeded());
-        Assertions.assertEquals(1, BtreeTestUtil.completedCount(rootTask));
-        Assertions.assertEquals(1, globalCount);
-    }
-
-    @Test
-    void testSelectorN() {
-        final int expected = 3;
-        TaskEntry<Blackboard> taskEntry = newJoinTree(new JoinSelectorN<>(expected));
-
-        Task<Blackboard> rootTask = taskEntry.getRootTask();
-        for (int i = 0; i < childCount; i++) {
-            rootTask.addChild(new Counter<>());
-        }
-
-        BtreeTestUtil.untilCompleted(taskEntry);
-        Assertions.assertTrue(taskEntry.isSucceeded()); // 成功
-        Assertions.assertEquals(expected, BtreeTestUtil.completedCount(rootTask));
-        Assertions.assertEquals(expected, globalCount);
-    }
-
-    /** 测试选择超过子节点数量的child */
-    @Test
-    void testSelectorNOver() {
-        final int expected = childCount + 1;
-        TaskEntry<Blackboard> taskEntry = newJoinTree(new JoinSelectorN<>(expected));
-
-        Task<Blackboard> rootTask = taskEntry.getRootTask();
-        for (int i = 0; i < childCount; i++) {
-            rootTask.addChild(new Counter<>());
-        }
-
-        BtreeTestUtil.untilCompleted(taskEntry);
-        Assertions.assertTrue(taskEntry.isFailed()); // 失败
-        Assertions.assertEquals(childCount, BtreeTestUtil.completedCount(rootTask));
-        Assertions.assertEquals(childCount, globalCount);
     }
 
     @Test
     void testSequence() {
         TaskEntry<Blackboard> taskEntry = newJoinTree(JoinSequence.getInstance());
+        Join<Blackboard> branch = (Join<Blackboard>) taskEntry.getRootTask();
 
-        Task<Blackboard> rootTask = taskEntry.getRootTask();
-        for (int i = 0; i < childCount; i++) {
-            rootTask.addChild(new Counter<>());
+        for (int expcted = 0; expcted <= childCount; expcted++) {
+            BtreeTestUtil.initChildren(branch, childCount, expcted);
+            BtreeTestUtil.untilCompleted(taskEntry);
+
+            if (expcted < childCount) {
+                Assertions.assertTrue(taskEntry.isFailed(), "Task is unfailed, status " + taskEntry.getStatus());
+            } else {
+                Assertions.assertTrue(taskEntry.isSucceeded(), "Task is unsuccessful, status " + taskEntry.getStatus());
+            }
         }
+    }
 
-        BtreeTestUtil.untilCompleted(taskEntry);
-        Assertions.assertTrue(taskEntry.isSucceeded()); // 成功
-        Assertions.assertEquals(childCount, BtreeTestUtil.completedCount(rootTask));
-        Assertions.assertEquals(childCount, globalCount);
+    @Test
+    void testSelectorN() {
+        JoinSelectorN<Blackboard> policy = new JoinSelectorN<>();
+        TaskEntry<Blackboard> taskEntry = newJoinTree(policy);
+        Join<Blackboard> branch = (Join<Blackboard>) taskEntry.getRootTask();
+
+        for (int expcted = 0; expcted <= childCount + 1; expcted++) { // 期望成功的数量，需要包含边界外
+            policy.setRequired(expcted);
+            for (int real = 0; real <= childCount; real++) { // 真正成功的数量
+                BtreeTestUtil.initChildren(branch, childCount, real);
+                BtreeTestUtil.untilCompleted(taskEntry);
+
+                if (real >= expcted) {
+                    Assertions.assertTrue(taskEntry.isSucceeded(), "Task is unsuccessful, status " + taskEntry.getStatus());
+                } else {
+                    Assertions.assertTrue(taskEntry.isFailed(), "Task is unfailed, status " + taskEntry.getStatus());
+                }
+                if (expcted >= childCount) { // 所有子节点完成
+                    Assertions.assertEquals(childCount, branch.getCompletedCount());
+                }
+            }
+        }
     }
 
     // endregion

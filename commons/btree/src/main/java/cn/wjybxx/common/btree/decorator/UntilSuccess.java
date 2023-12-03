@@ -17,17 +17,13 @@ public class UntilSuccess<E> extends LoopDecorator<E> {
     public UntilSuccess() {
     }
 
-    public UntilSuccess(int maxLoopTimesPerFrame) {
-        super(maxLoopTimesPerFrame);
-    }
-
     @Override
     protected void onChildCompleted(Task<E> child) {
         if (child.isCancelled()) {
             setCancelled();
             return;
         }
-        if (child.isFailed()) {
+        if (child.isSucceeded()) {
             setSuccess();
         }
     }

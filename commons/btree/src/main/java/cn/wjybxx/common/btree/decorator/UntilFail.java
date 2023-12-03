@@ -20,10 +20,6 @@ public class UntilFail<E> extends LoopDecorator<E> {
     public UntilFail() {
     }
 
-    public UntilFail(int maxLoopTimesPerFrame) {
-        super(maxLoopTimesPerFrame);
-    }
-
     @Override
     protected void onChildCompleted(Task<E> child) {
         if (child.isCancelled()) {
