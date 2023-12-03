@@ -26,11 +26,11 @@ public class StateMachineTest {
         delayChange = false;
     }
 
-    private static TaskEntry<Object> newStateMachineTree() {
-        TaskEntry<Object> taskEntry = SingleRunningTest1.newTaskEntry();
+    private static TaskEntry<Blackboard> newStateMachineTree() {
+        TaskEntry<Blackboard> taskEntry = BtreeTestUtil.newTaskEntry();
         taskEntry.setRootTask(new StateMachineTask<>());
 
-        StateMachineTask<Object> stateMachineTask = taskEntry.getRootStateMachine();
+        StateMachineTask<Blackboard> stateMachineTask = taskEntry.getRootStateMachine();
         stateMachineTask.setName("RootStateMachine");
         stateMachineTask.setUndoQueueSize(queue_size);
         stateMachineTask.setRedoQueueSize(queue_size);
@@ -41,9 +41,9 @@ public class StateMachineTest {
     /** 不延迟的情况下，三个任务都会进入被取消状态 */
     @Test
     void testCount() {
-        TaskEntry<Object> taskEntry = newStateMachineTree();
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
         taskEntry.getRootStateMachine().changeState(new StateA<>());
-        SingleRunningTest1.untilCompleted(taskEntry);
+        BtreeTestUtil.untilCompleted(taskEntry);
         taskEntry.getRootStateMachine().setListener((stateMachineTask, curState, nextState) -> {
             Assertions.assertTrue(curState.isCancelled());
         });
@@ -54,9 +54,9 @@ public class StateMachineTest {
     @Test
     void testCountDelay() {
         delayChange = true;
-        TaskEntry<Object> taskEntry = newStateMachineTree();
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
         taskEntry.getRootStateMachine().changeState(new StateA<>());
-        SingleRunningTest1.untilCompleted(taskEntry);
+        BtreeTestUtil.untilCompleted(taskEntry);
         taskEntry.getRootStateMachine().setListener((stateMachineTask, curState, nextState) -> {
             Assertions.assertTrue(curState.isSucceeded());
         });
@@ -66,22 +66,22 @@ public class StateMachineTest {
     /** 测试同一个状态重入 */
     @Test
     void testReentry() {
-        TaskEntry<Object> taskEntry = newStateMachineTree();
-        StateA<Object> stateA = new StateA<>();
-        StateB<Object> stateB = new StateB<>();
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        StateA<Blackboard> stateA = new StateA<>();
+        StateB<Blackboard> stateB = new StateB<>();
         stateA.nextState = stateB;
         stateB.nextState = stateA;
         taskEntry.getRootStateMachine().changeState(stateA);
 
-        SingleRunningTest1.untilCompleted(taskEntry);
+        BtreeTestUtil.untilCompleted(taskEntry);
         Assertions.assertEquals(3, global_count);
     }
 
     @Test
     void testRedo() {
-        TaskEntry<Object> taskEntry = newStateMachineTree();
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
 
-        StateMachineTask<Object> stateMachine = taskEntry.getRootStateMachine();
+        StateMachineTask<Blackboard> stateMachine = taskEntry.getRootStateMachine();
         stateMachine.getRedoQueue().addLast(new RedoState<>(0));
         stateMachine.getRedoQueue().addLast(new RedoState<>(1));
         stateMachine.getRedoQueue().addLast(new RedoState<>(2));
@@ -91,16 +91,16 @@ public class StateMachineTest {
         stateMachine.setStateMachineHandler((stateMachineTask, preState) -> stateMachineTask.redoChangeState());
         stateMachine.redoChangeState(); // redo命令
 
-        SingleRunningTest1.untilCompleted(taskEntry);
+        BtreeTestUtil.untilCompleted(taskEntry);
         Assertions.assertEquals(queue_size, global_count);
     }
 
     @Test
     void testUndo() {
-        TaskEntry<Object> taskEntry = newStateMachineTree();
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
         global_count = queue_size;
 
-        StateMachineTask<Object> stateMachine = taskEntry.getRootStateMachine();
+        StateMachineTask<Blackboard> stateMachine = taskEntry.getRootStateMachine();
         stateMachine.getUndoQueue().addLast(new UndoState<>(1)); // addLast容易写
         stateMachine.getUndoQueue().addLast(new UndoState<>(2));
         stateMachine.getUndoQueue().addLast(new UndoState<>(3));
@@ -110,17 +110,17 @@ public class StateMachineTest {
         stateMachine.setStateMachineHandler((stateMachineTask, preState) -> stateMachineTask.undoChangeState());
         stateMachine.undoChangeState(); // undo命令
 
-        SingleRunningTest1.untilCompleted(taskEntry);
+        BtreeTestUtil.untilCompleted(taskEntry);
         Assertions.assertEquals(0, global_count);
     }
 
     @Test
     void testChangeStateTask() {
-        TaskEntry<Object> taskEntry = newStateMachineTree();
-        ChangeStateTask<Object> stateTask = new ChangeStateTask<>(new Success<>());
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        ChangeStateTask<Blackboard> stateTask = new ChangeStateTask<>(new Success<>());
         taskEntry.getRootStateMachine().changeState(stateTask);
 
-        SingleRunningTest1.untilCompleted(taskEntry);
+        BtreeTestUtil.untilCompleted(taskEntry);
         Assertions.assertTrue(stateTask.isSucceeded(), "ChangeState task is cancelled? code: " + stateTask.getStatus());
     }
 

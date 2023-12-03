@@ -1,5 +1,6 @@
 package cn.wjybxx.common.btree.branch.join;
 
+import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.btree.branch.JoinPolicy;
@@ -37,6 +38,11 @@ public class JoinMain<E> implements JoinPolicy<E> {
     @Override
     public void beforeEnter(Join<E> join) {
 
+    }
+
+    @Override
+    public void onChildEmpty(Join<E> join) {
+        join.setFailed(Status.CHILDLESS);
     }
 
     @Override

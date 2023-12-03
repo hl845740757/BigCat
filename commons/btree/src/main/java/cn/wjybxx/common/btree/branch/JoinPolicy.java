@@ -18,8 +18,12 @@ public interface JoinPolicy<E> {
     /** 启动前初始化 */
     void beforeEnter(Join<E> join);
 
+    /** 在任务运行前检测到子节点为空 */
+    void onChildEmpty(Join<E> join);
+
     /**
      * Join在调用该方法前更新了完成计数和成功计数
+     * 1.无需{@link Task#setRunning()}，Join会在循环的末尾自动处理
      *
      * @param child 进入完成状态的child
      */

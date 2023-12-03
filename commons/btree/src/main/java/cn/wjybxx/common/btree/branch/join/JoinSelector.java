@@ -40,12 +40,15 @@ public class JoinSelector<E> implements JoinPolicy<E> {
     }
 
     @Override
+    public void onChildEmpty(Join<E> join) {
+        join.setFailed(Status.CHILDLESS);
+    }
+
+    @Override
     public void onChildCompleted(Join<E> join, Task<E> child) {
         if (child.isSucceeded()) {
             join.setSuccess();
-            return;
-        }
-        if (join.isAllChildCompleted()) {
+        } else if (join.isAllChildCompleted()) {
             join.setFailed(Status.ERROR);
         }
     }

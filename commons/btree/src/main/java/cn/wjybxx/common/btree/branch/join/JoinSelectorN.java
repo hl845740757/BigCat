@@ -22,6 +22,13 @@ public class JoinSelectorN<E> implements JoinPolicy<E> {
 
     private int required = 1;
 
+    public JoinSelectorN() {
+    }
+
+    public JoinSelectorN(int required) {
+        this.required = required;
+    }
+
     @Override
     public void resetForRestart() {
 
@@ -33,12 +40,19 @@ public class JoinSelectorN<E> implements JoinPolicy<E> {
     }
 
     @Override
+    public void onChildEmpty(Join<E> join) {
+        if (required <= 0) {
+            join.setSuccess();
+        } else {
+            join.setFailed(Status.CHILDLESS);
+        }
+    }
+
+    @Override
     public void onChildCompleted(Join<E> join, Task<E> child) {
         if (join.getSucceededCount() >= required) {
             join.setSuccess();
-            return;
-        }
-        if (join.isAllChildCompleted()) {
+        } else if (join.isAllChildCompleted()) {
             join.setFailed(Status.ERROR);
         }
     }

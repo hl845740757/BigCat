@@ -39,6 +39,11 @@ public class JoinWaitAll<E> implements JoinPolicy<E> {
     }
 
     @Override
+    public void onChildEmpty(Join<E> join) {
+        join.setSuccess();
+    }
+
+    @Override
     public void onChildCompleted(Join<E> join, Task<E> child) {
         if (join.isAllChildCompleted()) {
             join.setSuccess();

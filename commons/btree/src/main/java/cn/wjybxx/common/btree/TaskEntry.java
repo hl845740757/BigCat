@@ -110,7 +110,10 @@ public class TaskEntry<E> extends Task<E> {
 
     // region logic
 
-    /** 获取根状态机 */
+    /**
+     * 获取根状态机
+     * 状态机太重要了，值得我们为其提供各种快捷方法
+     */
     public final StateMachineTask<E> getRootStateMachine() {
         if (rootTask instanceof StateMachineTask<E> stateMachine) {
             return stateMachine;

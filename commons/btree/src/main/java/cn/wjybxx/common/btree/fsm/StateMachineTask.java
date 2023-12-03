@@ -4,6 +4,7 @@ import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.btree.Decorator;
 import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
+import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.codec.document.DocumentSerializable;
@@ -18,7 +19,8 @@ import java.util.Objects;
 
 /**
  * 状态机节点
- * 1. redo和undo是很有用的特性，因此我们在顶层给予支持，但默认的队列不会保存状态
+ * 1.redo和undo是很有用的特性，因此我们在顶层给予支持，但默认的队列不会保存状态。
+ * 2.以我的经验来看，状态机是最重要的节点，{@link Join}则是是仅次于状态机的节点 -- 不能以使用数量而定。
  *
  * @author wjybxx
  * date - 2023/12/1
@@ -256,9 +258,11 @@ public class StateMachineTask<E> extends Decorator<E> {
         if (initState != null && initStateProps != null) {
             initState.setSharedProps(initStateProps);
         }
-
         if (tempNextState == null && initState != null) { // 允许运行前调用changeState
             tempNextState = initState;
+        }
+        if (tempNextState != null && tempNextState.getControlData() == null) {
+            tempNextState.setControlData(ChangeStateArgs.PLAIN);
         }
         if (child != null) {
             logger.warn("The child of StateMachine is not null");
@@ -275,13 +279,6 @@ public class StateMachineTask<E> extends Decorator<E> {
         undoQueue.clear();
         redoQueue.clear();
         super.exit();
-    }
-
-    @Override
-    protected void enter(int reentryId) {
-        if (tempNextState != null && tempNextState.getControlData() == null) {
-            tempNextState.setControlData(ChangeStateArgs.PLAIN);
-        }
     }
 
     @Override

@@ -40,19 +40,20 @@ public abstract class Task<E> implements EventHandler<Object> {
     private static final int MASK_INHERITED_CANCEL_TOKEN = 1 << 13;
     private static final int MASK_INHERITED_PROPS = 1 << 14;
 
-    private static final int MASK_LOCK1 = 1 << 22;
-    private static final int MASK_LOCK2 = 1 << 23;
-    private static final int MASK_LOCK3 = 1 << 24;
-    private static final int MASK_LOCK4 = 1 << 25;
+    private static final int MASK_LOCK1 = 1 << 20;
+    private static final int MASK_LOCK2 = 1 << 21;
+    private static final int MASK_LOCK3 = 1 << 22;
+    private static final int MASK_LOCK4 = 1 << 23;
     private static final int MASK_LOCK_ALL = MASK_LOCK1 | MASK_LOCK2 | MASK_LOCK3 | MASK_LOCK4;
 
     // 高6位为控制流程相关bit，对外开放
-    public static final int MASK_DISABLE_ENTER_RUN = 1 << 26;
-    public static final int MASK_DISABLE_AUTO_CHECK_CANCEL = 1 << 27;
-    public static final int MASK_DISABLE_DELAY_NOTIFY = 1 << 28;
-    public static final int MASK_AUTO_LISTEN_CANCEL = 29;
-    public static final int MASK_AUTO_RESET_CHILDREN = 30;
-    public static final int MASK_CONTROL_FLOW_FLAGS = 0xFC00_0000; // 1111_1100
+    public static final int MASK_DISABLE_ENTER_RUN = 1 << 24;
+    public static final int MASK_DISABLE_DELAY_NOTIFY = 1 << 25;
+    public static final int MASK_DISABLE_AUTO_CHECK_CANCEL = 1 << 26;
+    public static final int MASK_AUTO_LISTEN_CANCEL = 1 << 27;
+    public static final int MASK_RCV_EVENT_WHEN_CANCELLING = 1 << 28;
+    public static final int MASK_AUTO_RESET_CHILDREN = 1 << 29;
+    public static final int MASK_CONTROL_FLOW_FLAGS = 0xFF00_0000;
 
     /** 任务树的入口(缓存以避免递归查找) */
     transient TaskEntry<E> taskEntry;
@@ -113,7 +114,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 任务的自定义标识
      * 1.对任务进行标记是一个常见的需求，我们将其定义在顶层以简化使用
      * 2.在运行期间不应该变动
-     * 3.高6位为流程控制特征值，会在任务运行前拷贝到ctl -- 以支持在编辑器导出文件中指定。
+     * 3.高8位为流程控制特征值，会在任务运行前拷贝到ctl -- 以支持在编辑器导出文件中指定。
      */
     protected int flags;
 
@@ -140,7 +141,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     public final void setCancelToken(CancelToken cancelToken) {
-        this.cancelToken = Objects.requireNonNull(cancelToken);
+        this.cancelToken = cancelToken;
     }
 
     public final Object getControlData() {
@@ -339,9 +340,9 @@ public abstract class Task<E> implements EventHandler<Object> {
             this.status = status;
             template_exit(0);
         } else {
-            // 未调用Exit，需要补偿
-            this.ctl |= MASK_STILLBORN;
+            // 未调用Enter和Exit，需要补偿
             this.ctl |= Math.min(MASK_PREV_STATUS, this.status);
+            this.ctl |= MASK_STILLBORN;
             this.status = status;
             this.reentryId++;
         }
@@ -385,7 +386,8 @@ public abstract class Task<E> implements EventHandler<Object> {
      * ps: 如果想支持编辑器中测试事件属性，event通常需要实现为KV结构。
      */
     public boolean canHandleEvent(@Nonnull Object event) {
-        return status == Status.RUNNING && !cancelToken.isCancelling();
+        return status == Status.RUNNING &&
+                (!cancelToken.isCancelling() || isRcvEventWhenCancelling());
     }
 
     /**
@@ -600,6 +602,19 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     public final boolean isAutoListenCancel() {
         return (ctl & MASK_AUTO_LISTEN_CANCEL) != 0;
+    }
+
+    /**
+     * 告知超类模板方法是否在收到取消信号期间是否响应事件
+     * 1.默认值由{@link #flags}中的信息指定，默认不接收。
+     * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
+     */
+    public final void setRcvEventWhenCancelling(boolean enable) {
+        setCtlBit(MASK_RCV_EVENT_WHEN_CANCELLING, enable);
+    }
+
+    public final boolean isRcvEventWhenCancelling() {
+        return (ctl & MASK_RCV_EVENT_WHEN_CANCELLING) != 0;
     }
 
     /**

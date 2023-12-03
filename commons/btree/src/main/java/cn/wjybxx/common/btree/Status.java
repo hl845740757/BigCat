@@ -23,8 +23,10 @@ public final class Status {
     public static final int ERROR = 4;
     /** 前置条件检查失败 -- 未运行的情况下直接失败；注意！该错误码不能向父节点传播 */
     public static final int GUARD_FAILED = 5;
+    /** 没有子节点 */
+    public static final int CHILDLESS = 6;
     /** 执行超时 */
-    public static final int TIMEOUT = 6;
+    public static final int TIMEOUT = 7;
 
     //
     public static boolean isRunning(int status) {

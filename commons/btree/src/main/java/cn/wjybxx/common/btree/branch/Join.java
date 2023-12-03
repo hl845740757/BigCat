@@ -72,7 +72,7 @@ public class Join<E> extends Parallel<E> {
     protected void execute() {
         final List<Task<E>> children = this.children;
         if (children.isEmpty()) { // 放在这里更利于子类重写该类
-            setSuccess();
+            policy.onChildEmpty(this);
             return;
         }
         final int[] childReentryIds = this.childReentryIds;
@@ -88,9 +88,10 @@ public class Join<E> extends Parallel<E> {
                 return;
             }
         }
-
         if (completedCount >= children.size()) { // child全部执行，但没得出结果
             throw new IllegalStateException();
+        } else {
+            setRunning();
         }
     }
 
@@ -115,6 +116,10 @@ public class Join<E> extends Parallel<E> {
     @Override
     public boolean isAllChildCompleted() {
         return completedCount >= children.size();
+    }
+
+    public boolean isAllChildSucceeded() {
+        return succeededCount >= children.size();
     }
 
     public int getCompletedCount() {

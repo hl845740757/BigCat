@@ -1,5 +1,6 @@
 package cn.wjybxx.common.btree.branch.join;
 
+import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.btree.branch.JoinPolicy;
@@ -40,11 +41,16 @@ public class JoinSequence<E> implements JoinPolicy<E> {
     }
 
     @Override
+    public void onChildEmpty(Join<E> join) {
+        join.setFailed(Status.CHILDLESS);
+    }
+
+    @Override
     public void onChildCompleted(Join<E> join, Task<E> child) {
-        if (child.isSucceeded() && join.isAllChildCompleted()) {
-            join.setSuccess();
-        } else {
+        if (!child.isSucceeded()) {
             join.setCompleted(child.getStatus(), true);
+        } else if (join.isAllChildSucceeded()) {
+            join.setSuccess();
         }
     }
 
