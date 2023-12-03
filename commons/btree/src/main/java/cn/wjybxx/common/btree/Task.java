@@ -712,14 +712,9 @@ public abstract class Task<E> implements EventHandler<Object> {
                 }
                 return;
             }
-            if (isDisableEnterExecute()) { // 需要下一帧执行execute，自动setRunning
-                if (isDisableDelayNotify()) {
-                    setDisableDelayNotify(false);
-                    setRunning();
-                    setDisableDelayNotify(true);
-                } else {
-                    setRunning();
-                }
+            if (isDisableEnterExecute()) {
+                // 需要下一帧执行execute，需要自动setRunning
+                // 由于目前 checkFireRunning 包含了setRunning的逻辑，因此这里跳过setRunning
                 checkFireRunningAndCancel(control, cancelToken);
                 return;
             }

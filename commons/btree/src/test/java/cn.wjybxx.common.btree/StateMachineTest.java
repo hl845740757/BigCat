@@ -162,6 +162,39 @@ public class StateMachineTest {
         Assertions.assertTrue(stateTask.isSucceeded(), "ChangeState task is cancelled? code: " + stateTask.getStatus());
     }
 
+    @Test
+    void testDelayExecute() {
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        ClassicalState<Blackboard> nextState = new ClassicalState<>();
+        taskEntry.getRootStateMachine().changeState(nextState);
+        BtreeTestUtil.untilCompleted(taskEntry);
+
+        Assertions.assertTrue(nextState.isSucceeded());
+        Assertions.assertTrue(taskEntry.isSucceeded());
+    }
+
+    /** 传统状态机下的状态；期望enter和execute分开执行 */
+    private static class ClassicalState<E> extends LeafTask<E> {
+        @Override
+        protected void beforeEnter() {
+            super.beforeEnter();
+            setDisableEnterExecute(true);
+        }
+
+        @Override
+        protected void execute() {
+            if (getRunFrames() != 1) {
+                throw new IllegalStateException();
+            }
+            setSuccess();
+        }
+
+        @Override
+        protected void onEventImpl(@Nonnull Object event) throws Exception {
+
+        }
+    }
+
     private static class UndoState<E> extends ActionTask<E> {
 
         final int expected;
