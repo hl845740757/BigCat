@@ -39,7 +39,6 @@ public class SimpleParallel<E> extends Parallel<E> {
                 return;
             }
         }
-        setRunning();
     }
 
     @Override

@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  */
 public abstract class Task<E> implements EventHandler<Object> {
 
-    protected static final Logger logger = LoggerFactory.getLogger(Task.class);
+    public static final Logger logger = LoggerFactory.getLogger(Task.class);
 
     /** 低6位记录前一次的运行结果，范围 [0, 63] */
     private static final int MASK_PREV_STATUS = 63;
@@ -254,6 +254,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 该方法在Task进入运行状态时执行
      * 1.如果enter既有初始化数据又有行为逻辑，建议将初始化迁移到{@link #beforeEnter()}方法;
      * 2.如果要初始化子节点，也放到{@link #beforeEnter()}方法;
+     * 3.允许更新自己为完成状态
      *
      * @param reentryId 用于判断父类是否使任务进入了完成状态；虽然也可先捕获再调用超类方法，但传入会方便许多。
      */
@@ -264,7 +265,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     /**
      * Task的心跳方法，在Task进入完成状态之前会反复执行。
      * 1.可以根据{@link #isExecuteTriggeredByEnter()}判断是否是与{@link #enter(int)}连续执行的。
-     * 2.必须调用{@link #setRunning()}、{@link #setSuccess()}、{@link #setFailed(int)} ()}、{@link #setCancelled()} 4个方法中的一个。
+     * 2.运行中可通过{@link #setSuccess()}、{@link #setFailed(int)} ()}、{@link #setCancelled()}将自己更新为完成状态。
      * 3.不建议直接调用该方法，而是通过模板方法运行。
      */
     protected abstract void execute();
@@ -277,15 +278,6 @@ public abstract class Task<E> implements EventHandler<Object> {
      */
     protected void exit() {
 
-    }
-
-    /** 设置为运行状态 -- 运行期间可多次调用 */
-    public final void setRunning() {
-        assert this.status == Status.RUNNING;
-        if ((ctl & MASK_RUNNING_FIRED) == 0 && checkImmediateNotifyMask(ctl) && control != null) {
-            ctl |= MASK_RUNNING_FIRED; // 只能通知一次
-            control.onChildRunning(this);
-        }
     }
 
     /** 设置为运行成功 */
@@ -341,7 +333,7 @@ public abstract class Task<E> implements EventHandler<Object> {
             template_exit(0);
         } else {
             // 未调用Enter和Exit，需要补偿
-            this.ctl |= Math.min(MASK_PREV_STATUS, this.status);
+            this.ctl |= Math.min(MASK_PREV_STATUS, prevStatus);
             this.ctl |= MASK_STILLBORN;
             this.status = status;
             this.reentryId++;
@@ -351,7 +343,11 @@ public abstract class Task<E> implements EventHandler<Object> {
         }
     }
 
-    /** 子节点还需要继续运行 - 运行期间只会通知一次 */
+    /**
+     * 子节点还需要继续运行
+     * 1.child在运行期间只会通知一次
+     * 2.该方法永远不应该触发状态迁移，即不应该使自己进入完成状态
+     */
     protected abstract void onChildRunning(Task<E> child);
 
     /**
@@ -566,15 +562,16 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     /**
      * run方法是否是enter触发的
-     * 用于{@link #execute()}方法判断当前是否和{@link #enter(int)}在同一帧，以决定是否执行某些逻辑。
-     * 如果仅仅是想在下一帧运行{@link #execute()}的逻辑，可通过{@link #setDisableEnterExecute(boolean)} 实现。
+     * 1.用于{@link #execute()}方法判断当前是否和{@link #enter(int)}在同一帧，以决定是否执行某些逻辑。
+     * 2.如果仅仅是想在下一帧运行{@link #execute()}的逻辑，可通过{@link #setDisableEnterExecute(boolean)} 实现。
+     * 3.部分Task的{@link #execute()}可能在一帧内执行多次，因此不能通过运行帧数为0代替。
      */
-    protected final boolean isExecuteTriggeredByEnter() {
+    public final boolean isExecuteTriggeredByEnter() {
         return (ctl & MASK_ENTER_EXECUTE) != 0;
     }
 
     /** exit方法是否是由{@link #stop()}方法触发的 */
-    protected final boolean isExitTriggeredByStop() {
+    public final boolean isExitTriggeredByStop() {
         return (ctl & MASK_STOP_EXIT) != 0;
     }
 
@@ -621,8 +618,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 告知模板方法否将{@link #enter(int)}和{@link #execute()}方法分开执行，
      * 1.默认值由{@link #flags}中的信息指定，默认不禁用
      * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
-     * 3.如果分帧执行，{@link #enter(int)}方法通常不应该使任务进入完成状态，也无需调用{@link #setRunning()}
-     * 4.该属性运行期间不应该调整
+     * 3.该属性运行期间不应该调整
      */
     public final void setDisableEnterExecute(boolean disable) {
         setCtlBit(MASK_DISABLE_ENTER_RUN, disable);
@@ -662,6 +658,10 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     public final boolean isDisableDelayNotify() {
         return (ctl & MASK_DISABLE_DELAY_NOTIFY) != 0;
+    }
+
+    private static boolean checkRunningNotifyMask(int ctl) {
+        return (ctl & (MASK_DISABLE_NOTIFY | MASK_STOP_EXIT)) == 0; // 这里不检测stop其实可行，但检测不会增加运算
     }
 
     private static boolean checkDelayNotifyMask(int ctl) {
@@ -712,9 +712,7 @@ public abstract class Task<E> implements EventHandler<Object> {
                 }
                 return;
             }
-            if (isDisableEnterExecute()) {
-                // 需要下一帧执行execute，需要自动setRunning
-                // 由于目前 checkFireRunning 包含了setRunning的逻辑，因此这里跳过setRunning
+            if (isDisableEnterExecute()) { // 需要下一帧执行execute
                 checkFireRunningAndCancel(control, cancelToken);
                 return;
             }
@@ -742,6 +740,10 @@ public abstract class Task<E> implements EventHandler<Object> {
         }
     }
 
+    /**
+     * Q：为什么可以删除setRunning？
+     * A：setRunning不会导致control产生状态迁移，那么应当可在execute的任意位置通知，那么延迟也不会导致副作用；而且删除setRunning让实现Task更方便。
+     */
     private void checkFireRunningAndCancel(Task<E> control, CancelToken cancelToken) {
         // 在启用延迟通知的情况下，如果任务在execute的过程中先setRunning，然后又setSuccess；
         // 那么在execute返回后，我们检测到任务已完成，就会调用childCompleted，前面setRunning的通知就丢失了；
@@ -752,7 +754,7 @@ public abstract class Task<E> implements EventHandler<Object> {
             setCancelled();
             return;
         }
-        if ((ctl & MASK_RUNNING_FIRED) == 0 && checkDelayNotifyMask(ctl) && control != null) {
+        if ((ctl & MASK_RUNNING_FIRED) == 0 && checkRunningNotifyMask(ctl) && control != null) {
             ctl |= MASK_RUNNING_FIRED;
             control.onChildRunning(this);
         }

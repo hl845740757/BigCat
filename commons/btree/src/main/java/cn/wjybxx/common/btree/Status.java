@@ -28,6 +28,9 @@ public final class Status {
     /** 执行超时 */
     public static final int TIMEOUT = 7;
 
+    /** 这是Task类能捕获的最大前一个状态的值，超过该值时将被修正该值 */
+    public static final int MAX_PREV_STATUS = 63;
+
     //
     public static boolean isRunning(int status) {
         return status == Status.RUNNING;

@@ -31,8 +31,6 @@ public class WaitFrame<E> extends LeafTask<E> {
     protected void execute() {
         if (getRunFrames() >= required) {
             setSuccess();
-        } else {
-            setRunning();
         }
     }
 

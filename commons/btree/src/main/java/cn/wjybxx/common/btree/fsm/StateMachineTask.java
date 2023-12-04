@@ -368,9 +368,7 @@ public class StateMachineTask<E> extends Decorator<E> {
     }
 
     protected final void onNoChildRunning() {
-        if (noneChildStatus == Status.RUNNING) {
-            setRunning();
-        } else {
+        if (noneChildStatus != Status.RUNNING) {
             setCompleted(noneChildStatus, false);
         }
     }

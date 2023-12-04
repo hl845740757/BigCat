@@ -19,8 +19,8 @@ public class ChangeStateTask<E> extends LeafTask<E> {
 
     /** 下一个状态的guid -- 延迟加载 */
     private String nextStateGuid;
-    /** 下一个状态的引用 */
-    private Task<E> nextState;
+    /** 下一个状态的对象缓存，通常延迟加载以避免循环引用 */
+    private transient Task<E> nextState;
     /** 目标状态的属性 */
     private Object stateProps;
 

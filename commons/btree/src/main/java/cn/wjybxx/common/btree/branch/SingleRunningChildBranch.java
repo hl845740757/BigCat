@@ -111,10 +111,7 @@ public abstract class SingleRunningChildBranch<E> extends BranchTask<E> {
 
     @Override
     protected void onChildRunning(Task<E> child) {
-        if (runningChild == null) { // 部分实现可能未在选择child之后就赋值
-            runningChild = child;
-        }
-        setRunning();
+        runningChild = child; // 部分实现可能未在选择child之后就赋值
     }
 
     /**

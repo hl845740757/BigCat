@@ -45,7 +45,6 @@ public class DecoratorTest {
         @Override
         protected void execute() {
             if (!isGuard && getRunFrames() < 3 && random.nextBoolean()) { // 随机等待
-                setRunning();
                 return;
             }
 

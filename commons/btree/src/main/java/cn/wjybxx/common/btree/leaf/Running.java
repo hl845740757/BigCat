@@ -18,7 +18,7 @@ public class Running<E> extends LeafTask<E> {
 
     @Override
     protected void execute() {
-        setRunning();
+
     }
 
     @Override

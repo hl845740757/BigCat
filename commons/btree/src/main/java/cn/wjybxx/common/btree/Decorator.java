@@ -27,7 +27,7 @@ public abstract class Decorator<E> extends Task<E> {
 
     @Override
     protected void onChildRunning(Task<E> child) {
-        setRunning();
+
     }
 
     @Override

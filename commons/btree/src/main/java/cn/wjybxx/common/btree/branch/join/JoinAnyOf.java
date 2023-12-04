@@ -1,6 +1,5 @@
 package cn.wjybxx.common.btree.branch.join;
 
-import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.btree.branch.JoinPolicy;
@@ -41,7 +40,10 @@ public class JoinAnyOf<E> implements JoinPolicy<E> {
 
     @Override
     public void onChildEmpty(Join<E> join) {
-        join.setRunning(); // 不能成功，失败也不能
+        // 不能成功，失败也不能
+        if (join.isExecuteTriggeredByEnter()) {
+            Task.logger.info("JonAnyOf: children is empty");
+        }
     }
 
     @Override

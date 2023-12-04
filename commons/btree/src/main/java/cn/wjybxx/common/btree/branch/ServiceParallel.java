@@ -34,8 +34,6 @@ public class ServiceParallel<E> extends Parallel<E> {
 
         if (mainTask.isCompleted()) {
             setCompleted(mainTask.getStatus(), true);
-        } else {
-            setRunning();
         }
     }
 

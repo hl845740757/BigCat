@@ -91,8 +91,6 @@ public class Join<E> extends Parallel<E> {
         }
         if (completedCount >= children.size()) { // child全部执行，但没得出结果
             throw new IllegalStateException();
-        } else {
-            setRunning();
         }
     }
 

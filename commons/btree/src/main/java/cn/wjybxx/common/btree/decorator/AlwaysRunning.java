@@ -33,24 +33,14 @@ public class AlwaysRunning<E> extends Decorator<E> {
 
     @Override
     protected void execute() {
-        if (child != null) {
-            final boolean started = child.isExited(childPrevReentryId);
-            if (started && child.isCompleted()) {  // 勿轻易调整
-                setRunning();
-                return;
-            }
-            int reentryId = getReentryId();
-            template_runChild(child);
-            if (isExited(reentryId)) { // 被取消
-                return;
-            }
+        if (child == null) {
+            return;
         }
-        setRunning();
-    }
-
-    @Override
-    protected void onChildRunning(Task<E> child) {
-
+        final boolean started = child.isExited(childPrevReentryId);
+        if (started && child.isCompleted()) {  // 勿轻易调整
+            return;
+        }
+        template_runChild(child);
     }
 
     @Override

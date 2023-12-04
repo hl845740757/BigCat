@@ -141,7 +141,7 @@ public class TaskEntry<E> extends Task<E> {
 
     @Override
     protected void onChildRunning(Task<E> child) {
-        setRunning();
+
     }
 
     @Override
