@@ -71,6 +71,22 @@ public final class CancelToken {
         return child;
     }
 
+    /**
+     * @return 返回 0 表示已通知，大于0表示注册成功；
+     */
+    public int addChild(CancelToken child) {
+        Objects.requireNonNull(child, "child");
+        if (child == this) throw new IllegalArgumentException();
+        if (cancelCode > 0) {
+            child.cancel(cancelCode);
+            return 0;
+        } else {
+            SubTokenListener listener = new SubTokenListener(child);
+            listeners.add(listener);
+            return listener.id;
+        }
+    }
+
     /** 删除子token */
     public boolean removeChild(CancelToken child) {
         if (child == null) return false;
@@ -100,15 +116,15 @@ public final class CancelToken {
             }
             return 0;
         } else {
-            Listener wrapper = new ActionListener(action);
-            listeners.add(wrapper);
-            return wrapper.id;
+            Listener listener = new ActionListener(action);
+            listeners.add(listener);
+            return listener.id;
         }
     }
 
     /**
      * 删除监听器
-     * 注意：lambda可能无法正确匹配，因此建议使用{@link #removeListener(int)}
+     * 注意：lambda可能无法正确匹配，因此建议使用{@link #removeById(int)}
      */
     public boolean removeListener(Consumer<? super CancelToken> action) {
         if (action == null) return false;
@@ -147,7 +163,7 @@ public final class CancelToken {
     }
 
     /** 通过分配的监听器id删除监听器 */
-    public boolean removeListener(int listenerId) {
+    public boolean removeById(int listenerId) {
         if (listenerId <= 0) return false;
         List<Listener> listeners = this.listeners;
         for (int idx = listeners.size() - 1; idx >= 0; idx--) {

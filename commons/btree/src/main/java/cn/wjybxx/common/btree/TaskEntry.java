@@ -18,7 +18,7 @@ import java.util.stream.Stream;
  * 4. Entry默认不检查{@link #getGuard()}，如果需要由用户（逻辑上的control）检查。
  * 5. 如果要复用行为树，应当以树为单位整体复用，万莫以Task为单位复用 -- 节点之间的引用千丝万缕，容易内存泄漏。
  * 6. 该行为树虽然是事件驱动的，但心跳不是事件，仍需要每一帧调用{@link #update(int)}方法。
- * 7. 避免直接使用外部的{@link CancelToken}，可选择创建子token给Entry。
+ * 7. 避免直接使用外部的{@link CancelToken}，可将Entry的Token注册为外部的Child -- {@link CancelToken#addChild(CancelToken)}。
  *
  * @author wjybxx
  * date - 2023/11/25

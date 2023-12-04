@@ -1,6 +1,7 @@
 package cn.wjybxx.common.btree.fsm;
 
 import cn.wjybxx.common.btree.LeafTask;
+import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
@@ -23,6 +24,8 @@ public class ChangeStateTask<E> extends LeafTask<E> {
     private transient Task<E> nextState;
     /** 目标状态的属性 */
     private Object stateProps;
+    /** 为当前状态设置结果 -- 用于避免当前状态进入被取消状态 */
+    private int curStateResult;
 
     /** 目标状态机的名字，以允许切换更顶层的状态机 */
     private String machineName;
@@ -44,18 +47,25 @@ public class ChangeStateTask<E> extends LeafTask<E> {
         if (stateProps != null) {
             nextState.setSharedProps(stateProps);
         }
-        StateMachineTask<E> stateMachine = StateMachineTask.findStateMachine(this, machineName);
-        if (isDisableDelayNotify()) { // 该路径基本不会走到，这里只是给个示例
-            int reentryId = getReentryId();
-            stateMachine.changeState(nextState, ChangeStateArgs.PLAIN.withDelayMode(delayMode));
-            if (!isExited(reentryId)) { // 当前任务如果未被取消则更新为成功
-                setSuccess();
-            }
-        } else {
+        final StateMachineTask<E> stateMachine = StateMachineTask.findStateMachine(this, machineName);
+        final Task<E> curState = stateMachine.getCurState();
+        // 在切换状态前将当前状态标记为成功或失败；只有延迟通知的情况下才可以设置状态的结果，否则状态机会切换到其它状态
+        if (Status.isCompleted(curStateResult) && curState != null && !curState.isDisableDelayNotify()) {
+            curState.setCompleted(curStateResult, false);
+        }
+
+        if (!isDisableDelayNotify()) {
             // 先设置成功，然后再切换状态，当前Task可保持为成功状态；
             // 记得先把nextState保存下来，因为会先执行exit；最好只在未禁用延迟通知的情况下采用
             setSuccess();
             stateMachine.changeState(nextState, ChangeStateArgs.PLAIN.withDelayMode(delayMode));
+        } else {
+            // 该路径基本不会走到，这里只是给个示例
+            int reentryId = getReentryId();
+            stateMachine.changeState(nextState, ChangeStateArgs.PLAIN.withDelayMode(delayMode));
+            if (!isExited(reentryId)) {
+                setSuccess();
+            }
         }
     }
 
@@ -104,6 +114,14 @@ public class ChangeStateTask<E> extends LeafTask<E> {
 
     public void setDelayMode(int delayMode) {
         this.delayMode = delayMode;
+    }
+
+    public int getCurStateResult() {
+        return curStateResult;
+    }
+
+    public void setCurStateResult(int curStateResult) {
+        this.curStateResult = curStateResult;
     }
 
     // endregion

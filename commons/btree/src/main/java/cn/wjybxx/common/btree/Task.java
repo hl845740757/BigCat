@@ -15,6 +15,7 @@ import java.util.stream.Stream;
  * 1.取消默认是协作式的，依赖于任务自身检查；如果期望更及时的响应取消信号，则需要注册注册监听器。
  * 2.通常在执行外部代码后都应该检测.
  * 3.一般而言，不管理上下文的节点在子节点取消时都应该取消自己（因为是同一个CancelToken）
+ * 4.Task类默认只在心跳方法中检测取消信号，任何的回调和事件方法中都由用户自身检测。
  *
  * <h3>心跳+事件驱动</h3>
  * 1.心跳为主，事件为辅。
@@ -47,12 +48,11 @@ public abstract class Task<E> implements EventHandler<Object> {
     private static final int MASK_LOCK_ALL = MASK_LOCK1 | MASK_LOCK2 | MASK_LOCK3 | MASK_LOCK4;
 
     // 高8位为控制流程相关bit，对外开放
-    public static final int MASK_DISABLE_ENTER_RUN = 1 << 24;
+    public static final int MASK_DISABLE_ENTER_EXECUTE = 1 << 24;
     public static final int MASK_DISABLE_DELAY_NOTIFY = 1 << 25;
     public static final int MASK_DISABLE_AUTO_CHECK_CANCEL = 1 << 26;
     public static final int MASK_AUTO_LISTEN_CANCEL = 1 << 27;
-    public static final int MASK_RCV_EVENT_WHEN_CANCELLING = 1 << 28;
-    public static final int MASK_AUTO_RESET_CHILDREN = 1 << 29;
+    public static final int MASK_AUTO_RESET_CHILDREN = 1 << 28;
     public static final int MASK_CONTROL_FLOW_FLAGS = 0xFF00_0000;
 
     /** 任务树的入口(缓存以避免递归查找) */
@@ -240,11 +240,9 @@ public abstract class Task<E> implements EventHandler<Object> {
     // region core
 
     /**
-     * 该方法用于出初始化对象。
-     * 该方法用于解决{@link #enter(int)}中既包含初始化逻辑，又包含启动逻辑的问题。
-     * 超类的enter如果包含启动逻辑，则可能在子类尚未初始化完成的情况下启动。
-     * 简单的解决方案：先确保对象初始化，再启动逻辑。
-     * 不命名为init，是因为init通常让人觉得只调用一次。
+     * 该方法用于初始化对象。
+     * 1.不命名为init，是因为init通常让人觉得只调用一次。
+     * 2.该方法不可以使自身进入完成状态。
      */
     protected void beforeEnter() {
 
@@ -252,7 +250,7 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     /**
      * 该方法在Task进入运行状态时执行
-     * 1.如果enter既有初始化数据又有行为逻辑，建议将初始化迁移到{@link #beforeEnter()}方法;
+     * 1.数据初始化需要放在{@link #beforeEnter()}中，避免执行逻辑时对象未初始化完成。
      * 2.如果要初始化子节点，也放到{@link #beforeEnter()}方法;
      * 3.允许更新自己为完成状态
      *
@@ -332,8 +330,8 @@ public abstract class Task<E> implements EventHandler<Object> {
             this.status = status;
             template_exit(0);
         } else {
-            // 未调用Enter和Exit，需要补偿
-            this.ctl |= Math.min(MASK_PREV_STATUS, prevStatus);
+            // 未调用Enter和Exit，需要补偿；由于未运行，ctl需要覆盖
+            this.ctl = Math.min(MASK_PREV_STATUS, prevStatus);
             this.ctl |= MASK_STILLBORN;
             this.status = status;
             this.reentryId++;
@@ -346,7 +344,7 @@ public abstract class Task<E> implements EventHandler<Object> {
     /**
      * 子节点还需要继续运行
      * 1.child在运行期间只会通知一次
-     * 2.该方法永远不应该触发状态迁移，即不应该使自己进入完成状态
+     * 2.该方法不应该触发状态迁移，即不应该使自己进入完成状态
      */
     protected abstract void onChildRunning(Task<E> child);
 
@@ -358,6 +356,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 4.钩子任务和guard不会调用该方法
      * 5.{@link #isExecuting()}有助于检测冲突，减少调用栈深度
      * 6.同一子节点连续通知的情况下，completed的逻辑应当覆盖{@link #onChildRunning(Task)}的影响。
+     * 7.任何的回调和事件方法中都由用户自身检测取消信号
      */
     protected abstract void onChildCompleted(Task<E> child);
 
@@ -382,8 +381,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * ps: 如果想支持编辑器中测试事件属性，event通常需要实现为KV结构。
      */
     public boolean canHandleEvent(@Nonnull Object event) {
-        return status == Status.RUNNING &&
-                (!cancelToken.isCancelling() || isRcvEventWhenCancelling());
+        return status == Status.RUNNING;
     }
 
     /**
@@ -461,7 +459,7 @@ public abstract class Task<E> implements EventHandler<Object> {
         ctl = 0;
         enterFrame = 0;
         exitFrame = 0;
-        reentryId++; // 上下文产生重大变更，需要增加
+        reentryId++; // 上下文变动，和之前的执行分开
     }
 
     /**
@@ -602,30 +600,17 @@ public abstract class Task<E> implements EventHandler<Object> {
     }
 
     /**
-     * 告知超类模板方法是否在收到取消信号期间是否响应事件
-     * 1.默认值由{@link #flags}中的信息指定，默认不接收。
-     * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
-     */
-    public final void setRcvEventWhenCancelling(boolean enable) {
-        setCtlBit(MASK_RCV_EVENT_WHEN_CANCELLING, enable);
-    }
-
-    public final boolean isRcvEventWhenCancelling() {
-        return (ctl & MASK_RCV_EVENT_WHEN_CANCELLING) != 0;
-    }
-
-    /**
      * 告知模板方法否将{@link #enter(int)}和{@link #execute()}方法分开执行，
      * 1.默认值由{@link #flags}中的信息指定，默认不禁用
      * 2.要覆盖默认值应当在{@link #beforeEnter()}方法中调用
      * 3.该属性运行期间不应该调整
      */
     public final void setDisableEnterExecute(boolean disable) {
-        setCtlBit(MASK_DISABLE_ENTER_RUN, disable);
+        setCtlBit(MASK_DISABLE_ENTER_EXECUTE, disable);
     }
 
     public final boolean isDisableEnterExecute() {
-        return (ctl & MASK_DISABLE_ENTER_RUN) != 0;
+        return (ctl & MASK_DISABLE_ENTER_EXECUTE) != 0;
     }
 
     /**
@@ -660,8 +645,8 @@ public abstract class Task<E> implements EventHandler<Object> {
         return (ctl & MASK_DISABLE_DELAY_NOTIFY) != 0;
     }
 
-    private static boolean checkRunningNotifyMask(int ctl) {
-        return (ctl & (MASK_DISABLE_NOTIFY | MASK_STOP_EXIT)) == 0; // 这里不检测stop其实可行，但检测不会增加运算
+    private static boolean checkNotifyMask(int ctl) {
+        return (ctl & (MASK_DISABLE_NOTIFY | MASK_STOP_EXIT)) == 0;
     }
 
     private static boolean checkDelayNotifyMask(int ctl) {
@@ -676,6 +661,7 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     // region 模板方法
 
+    /** enter方法不暴露，否则以后难以改动 */
     final void template_enterExecute(final Task<E> control, int initMask) {
         int prevStatus = Math.min(MASK_PREV_STATUS, status);
         initMask |= prevStatus; // 上次的运行结果
@@ -684,25 +670,24 @@ public abstract class Task<E> implements EventHandler<Object> {
         if (control != null) {
             initMask |= captureContext(control);
         }
-
         ctl = initMask;
-        enterFrame = exitFrame = taskEntry.getCurFrame();
-        reentryId++; // 和上次执行的exit分开
         status = Status.RUNNING; // 先更新为running状态，以避免执行过程中外部查询task的状态时仍处于上一次的结束status
-
+        enterFrame = exitFrame = taskEntry.getCurFrame();
+        final int reentryId = ++this.reentryId;  // 和上次执行的exit分开
         final CancelToken cancelToken = this.cancelToken;
-        final int reentryId = this.reentryId;
         try {
             if (cancelToken.isCancelling() && isAutoCheckCancel()) { // 胎死腹中
                 ctl |= MASK_STILLBORN;
+                status = Status.CANCELLED; // 不能调用setCancelled，因为未调用enter
                 releaseContext();
-                setDisableDelayNotify(true);
-                setCancelled();
+                if (checkNotifyMask(initMask) && control != null) {
+                    control.onChildCompleted(this);
+                }
                 return;
             }
 
             beforeEnter();
-            if (prevStatus != 0 && isAutoResetChildren()) {
+            if (prevStatus != Status.NEW && isAutoResetChildren()) {
                 resetChildrenForRestart();
             }
             enter(reentryId);
@@ -740,22 +725,13 @@ public abstract class Task<E> implements EventHandler<Object> {
         }
     }
 
-    /**
-     * Q：为什么可以删除setRunning？
-     * A：setRunning不会导致control产生状态迁移，那么应当可在execute的任意位置通知，那么延迟也不会导致副作用；而且删除setRunning让实现Task更方便。
-     */
     private void checkFireRunningAndCancel(Task<E> control, CancelToken cancelToken) {
-        // 在启用延迟通知的情况下，如果任务在execute的过程中先setRunning，然后又setSuccess；
-        // 那么在execute返回后，我们检测到任务已完成，就会调用childCompleted，前面setRunning的通知就丢失了；
-        // 那么在execute返回后，如果任务没有完成，先检测取消会让逻辑更统一。
-        // 这通常没有问题，在连续通知的情况下，childCompleted 的逻辑应当覆盖 childRunning 的影响。
         if (cancelToken.isCancelling() && isAutoCheckCancel()) {
             setDisableDelayNotify(true);
             setCancelled();
             return;
         }
-        if ((ctl & MASK_RUNNING_FIRED) == 0 && checkRunningNotifyMask(ctl) && control != null) {
-            ctl |= MASK_RUNNING_FIRED;
+        if (checkNotifyMask(ctl) && control != null) {
             control.onChildRunning(this);
         }
     }
@@ -763,10 +739,10 @@ public abstract class Task<E> implements EventHandler<Object> {
     /**
      * execute模板方法
      * 注：
-     * 1.protected以允许子类调用，通常在处理事件的时候
-     * 2.该方法不可以递归执行，如果在正在执行的情况下想执行{@link #execute()}方法，就直接执行。
+     * 1.如果想减少方法调用，对于运行中的子节点，可直接调用子节点的模板方法。
+     * 2.该方法不可以递归执行，如果在正在执行的情况下想执行{@link #execute()}方法，就直接执行 -- {@link #isExecuting()}
      */
-    protected final void template_execute() {
+    public final void template_execute() {
         final CancelToken cancelToken = this.cancelToken;
         final int reentryId = this.reentryId;
         if (cancelToken.isCancelling() && isAutoCheckCancel()) {
@@ -787,7 +763,10 @@ public abstract class Task<E> implements EventHandler<Object> {
                 control.onChildCompleted(this);
             }
         } else {
-            checkFireRunningAndCancel(control, cancelToken);
+            if (cancelToken.isCancelling() && isAutoCheckCancel()) {
+                setDisableDelayNotify(true);
+                setCancelled();
+            }
         }
     }
 
