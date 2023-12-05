@@ -207,8 +207,18 @@ public abstract class Task<E> implements EventHandler<Object> {
         return enterFrame;
     }
 
+    /** 慎重调用 */
+    public void setEnterFrame(int enterFrame) {
+        this.enterFrame = enterFrame;
+    }
+
     public final int getExitFrame() {
         return exitFrame;
+    }
+
+    /** 慎重调用 */
+    public void setExitFrame(int exitFrame) {
+        this.exitFrame = exitFrame;
     }
 
     /** 获取行为树绑定的实体 -- 最好让Entity也在黑板中 */
@@ -306,7 +316,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 1.该方法仅适用于control测试child的guard失败，令child在未运行的情况下直接失败的情况。
      * 2.对于运行中的child，如果发现child的guard失败，不能继续运行，应当取消子节点的执行（stop）。
      *
-     * @param control task由于未运行，control可能尚未赋值；传null可不接收通知
+     * @param control 由于task未运行，其control可能尚未赋值，因此要传入；传null可不接收通知
      */
     public final void setGuardFailed(Task<E> control) {
         assert status != Status.RUNNING;
@@ -322,7 +332,7 @@ public abstract class Task<E> implements EventHandler<Object> {
         if (fromChild && status == Status.GUARD_FAILED) {
             status = Status.ERROR; // GUARD_FAILED 不能向上传播
         }
-        int prevStatus = this.status;
+        final int prevStatus = this.status;
         if (prevStatus == Status.RUNNING) {
             if (status == Status.GUARD_FAILED) {
                 throw new IllegalArgumentException("Running task cant fail with 'GUARD_FAILED'");
@@ -330,10 +340,12 @@ public abstract class Task<E> implements EventHandler<Object> {
             this.status = status;
             template_exit(0);
         } else {
-            // 未调用Enter和Exit，需要补偿；由于未运行，ctl需要覆盖
-            this.ctl = Math.min(MASK_PREV_STATUS, prevStatus);
-            this.ctl |= MASK_STILLBORN;
+            // 未调用Enter和Exit，需要补偿 -- 保留当前的ctl会更好
+            ctl &= ~MASK_PREV_STATUS;
+            ctl |= Math.min(MASK_PREV_STATUS, prevStatus);
+            ctl |= MASK_STILLBORN;
             this.status = status;
+            this.enterFrame = exitFrame;
             this.reentryId++;
         }
         if (checkImmediateNotifyMask(ctl) && control != null) {
@@ -549,13 +561,13 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 2.运行帧数是非常重要的统计属性，值得我们定义在顶层.
      */
     public final int getRunFrames() {
-        if (isCompleted()) {
-            return exitFrame - enterFrame;
+        if (status == Status.RUNNING) {
+            return taskEntry.getCurFrame() - enterFrame;
         }
         if (taskEntry == null) {
             return 0;
         }
-        return taskEntry.getCurFrame() - enterFrame;
+        return exitFrame - enterFrame;
     }
 
     /**
@@ -663,29 +675,28 @@ public abstract class Task<E> implements EventHandler<Object> {
 
     /** enter方法不暴露，否则以后难以改动 */
     final void template_enterExecute(final Task<E> control, int initMask) {
-        int prevStatus = Math.min(MASK_PREV_STATUS, status);
-        initMask |= prevStatus; // 上次的运行结果
-        initMask |= (flags & MASK_CONTROL_FLOW_FLAGS); // 控制流标记
-        initMask |= (MASK_ENTER_EXECUTE | MASK_EXECUTING);
+        initMask |= (flags & MASK_CONTROL_FLOW_FLAGS);
         if (control != null) {
             initMask |= captureContext(control);
         }
+        ctl = initMask; // 初始化基础上下文后才可以检测取消，包括控制流标记
+
+        final CancelToken cancelToken = this.cancelToken;
+        if (cancelToken.isCancelling() && isAutoCheckCancel()) { // 胎死腹中
+            releaseContext();
+            setCompleted(Status.CANCELLED, false);
+            return;
+        }
+
+        int prevStatus = this.status;
+        initMask |= Math.min(MASK_PREV_STATUS, prevStatus);
+        initMask |= (MASK_ENTER_EXECUTE | MASK_EXECUTING);
         ctl = initMask;
+
         status = Status.RUNNING; // 先更新为running状态，以避免执行过程中外部查询task的状态时仍处于上一次的结束status
         enterFrame = exitFrame = taskEntry.getCurFrame();
         final int reentryId = ++this.reentryId;  // 和上次执行的exit分开
-        final CancelToken cancelToken = this.cancelToken;
         try {
-            if (cancelToken.isCancelling() && isAutoCheckCancel()) { // 胎死腹中
-                ctl |= MASK_STILLBORN;
-                status = Status.CANCELLED; // 不能调用setCancelled，因为未调用enter
-                releaseContext();
-                if (checkNotifyMask(initMask) && control != null) {
-                    control.onChildCompleted(this);
-                }
-                return;
-            }
-
             beforeEnter();
             if (prevStatus != Status.NEW && isAutoResetChildren()) {
                 resetChildrenForRestart();
@@ -740,7 +751,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * execute模板方法
      * 注：
      * 1.如果想减少方法调用，对于运行中的子节点，可直接调用子节点的模板方法。
-     * 2.该方法不可以递归执行，如果在正在执行的情况下想执行{@link #execute()}方法，就直接执行 -- {@link #isExecuting()}
+     * 2.该方法不可以递归执行，如果在正在执行的情况下想执行{@link #execute()}方法，就直接调用 -- {@link #isExecuting()}
      */
     public final void template_execute() {
         final CancelToken cancelToken = this.cancelToken;

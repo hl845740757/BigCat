@@ -22,6 +22,7 @@ public class LeafTest {
         Assertions.assertEquals(expectedFrame, taskEntry.getCurFrame());
     }
 
+    /** 测试ctl中记录的上一次执行结果的正确性 */
     @Test
     void testPrevStatus() {
         PrevStatusTask<Blackboard> root = new PrevStatusTask<>();
@@ -38,6 +39,18 @@ public class LeafTest {
                 Assertions.assertEquals(prevStatus, taskEntry.getPrevStatus());
             }
         }
+    }
+
+    /** 测试启动前取消 */
+    @Test
+    void testStillborn() {
+        WaitFrame<Blackboard> waitFrame = new WaitFrame<>(10);
+        waitFrame.setCancelToken(new CancelToken(1)); // 提前赋值的token不会被覆盖和删除
+        TaskEntry<Blackboard> taskEntry = BtreeTestUtil.newTaskEntry(waitFrame);
+        BtreeTestUtil.untilCompleted(taskEntry);
+
+        Assertions.assertTrue(waitFrame.isStillborn());
+        Assertions.assertEquals(0, waitFrame.getPrevStatus());
     }
 
     private static class PrevStatusTask<E> extends ActionTask<E> {

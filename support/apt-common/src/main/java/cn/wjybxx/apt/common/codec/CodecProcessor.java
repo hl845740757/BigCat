@@ -195,11 +195,14 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     // region 普通类
 
     protected void checkNormalClass(TypeElement typeElement) {
-        checkAutoArgs(typeElement);
+        final AptClassImpl aptClassImpl = parseClassImpl(typeElement);
+        if (aptClassImpl.isSingleton) {
+            return;
+        }
+        checkAutoSchema(typeElement);
         checkConstructor(typeElement);
 
         final List<? extends Element> allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
-        final AptClassImpl aptClassImpl = parseClassImpl(typeElement);
         for (Element element : allFieldsAndMethodWithInherit) {
             if (element.getKind() != ElementKind.FIELD) {
                 continue;
@@ -242,7 +245,7 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     /** 检查是否包含了AutoSchema注解 */
-    public void checkAutoArgs(TypeElement typeElement) {
+    public void checkAutoSchema(TypeElement typeElement) {
         final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, autoSchemaTypeElement.asType())
                 .orElse(null);
         if (annotationMirror == null) {
@@ -399,6 +402,9 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
 
     /** 是否是托管写的字段 */
     public static boolean isAutoWriteField(VariableElement variableElement, AptClassImpl aptClassImpl, AptFieldImpl aptFieldImpl) {
+        if (aptClassImpl.isSingleton) {
+            return false;
+        }
         // 优先判断skip属性
         if (aptClassImpl.skipFields.contains(variableElement.getSimpleName().toString())) {
             return false;

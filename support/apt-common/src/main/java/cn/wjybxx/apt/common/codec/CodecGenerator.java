@@ -166,27 +166,29 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         AptClassImpl aptClassImpl = processor.parseClassImpl(typeElement);
         genNewInstanceMethod(aptClassImpl);
 
-        if (!aptClassImpl.isSingleton && containsReadObjectMethod) {
-            readFieldsMethodBuilder.addStatement("instance.$L(reader)", BinaryCodecProcessor.MNAME_READ_OBJECT);
-        }
-        if (containsWriteObjectMethod) {
-            writeObjectMethodBuilder.addStatement("instance.$L(writer)", BinaryCodecProcessor.MNAME_WRITE_OBJECT);
-        }
+        if (!aptClassImpl.isSingleton) {
+            if (containsReadObjectMethod) {
+                readFieldsMethodBuilder.addStatement("instance.$L(reader)", BinaryCodecProcessor.MNAME_READ_OBJECT);
+            }
+            if (containsWriteObjectMethod) {
+                writeObjectMethodBuilder.addStatement("instance.$L(writer)", BinaryCodecProcessor.MNAME_WRITE_OBJECT);
+            }
 
-        for (Element element : allFieldsAndMethodWithInherit) {
-            if (element.getKind() != ElementKind.FIELD) {
-                continue;
-            }
-            final VariableElement variableElement = (VariableElement) element;
-            if (!processor.isSerializableField(variableElement)) {
-                continue;
-            }
-            final AptFieldImpl aptFieldImpl = processor.parseFiledImpl(variableElement);
-            if (CodecProcessor.isAutoWriteField(variableElement, aptClassImpl, aptFieldImpl)) {
-                addWriteStatement(variableElement, aptFieldImpl);
-            }
-            if (CodecProcessor.isAutoReadField(variableElement, aptClassImpl, aptFieldImpl)) {
-                addReadStatement(variableElement, aptFieldImpl);
+            for (Element element : allFieldsAndMethodWithInherit) {
+                if (element.getKind() != ElementKind.FIELD) {
+                    continue;
+                }
+                final VariableElement variableElement = (VariableElement) element;
+                if (!processor.isSerializableField(variableElement)) {
+                    continue;
+                }
+                final AptFieldImpl aptFieldImpl = processor.parseFiledImpl(variableElement);
+                if (CodecProcessor.isAutoWriteField(variableElement, aptClassImpl, aptFieldImpl)) {
+                    addWriteStatement(variableElement, aptFieldImpl);
+                }
+                if (CodecProcessor.isAutoReadField(variableElement, aptClassImpl, aptFieldImpl)) {
+                    addReadStatement(variableElement, aptFieldImpl);
+                }
             }
         }
 
