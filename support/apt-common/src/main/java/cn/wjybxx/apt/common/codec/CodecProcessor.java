@@ -19,160 +19,339 @@ package cn.wjybxx.apt.common.codec;
 import cn.wjybxx.apt.AptUtils;
 import cn.wjybxx.apt.BeanUtils;
 import cn.wjybxx.apt.MyAbstractProcessor;
-import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
+import com.google.auto.service.AutoService;
+import com.squareup.javapoet.*;
 
+import javax.annotation.processing.Processor;
+import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author wjybxx
  * date 2023/4/13
  */
-public abstract class CodecProcessor extends MyAbstractProcessor {
+@AutoService(Processor.class)
+public class CodecProcessor extends MyAbstractProcessor {
 
+    // region 常量
     public static final String CNAME_FIELD_IMPL = "cn.wjybxx.common.codec.FieldImpl";
     public static final String CNAME_CLASS_IMPL = "cn.wjybxx.common.codec.ClassImpl";
-
+    public static final String CNAME_TYPEARG = "cn.wjybxx.common.codec.TypeArgInfo";
     public static final String CNAME_WireType = "cn.wjybxx.dson.WireType";
     public static final String CNAME_NumberStyle = "cn.wjybxx.dson.text.NumberStyle";
     public static final String CNAME_StringStyle = "cn.wjybxx.dson.text.StringStyle";
     public static final String CNAME_ObjectStyle = "cn.wjybxx.dson.text.ObjectStyle";
 
-    // CodecImpl
-    public static final String MNAME_GET_ENCODER_CLASS = "getEncoderClass";
-    public static final String MNAME_WRITE_OBJECT = "writeObject";
-    public static final String MNAME_READ_OBJECT = "readObject";
+    // Document
+    public static final String CNAME_DOC_SERIALIZABLE = "cn.wjybxx.common.codec.document.DocumentSerializable";
+    public static final String CNAME_DOC_IGNORE = "cn.wjybxx.common.codec.document.DocumentIgnore";
+    private static final String CNAME_DOC_READER = "cn.wjybxx.common.codec.document.DocumentObjectReader";
+    private static final String CNAME_DOC_WRITER = "cn.wjybxx.common.codec.document.DocumentObjectWriter";
+    private static final String CNAME_DOC_SCAN_IGNORE = "cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore";
+    // Binary
+    public static final String CNAME_BIN_SERIALIZABLE = "cn.wjybxx.common.codec.binary.BinarySerializable";
+    public static final String CNAME_BIN_IGNORE = "cn.wjybxx.common.codec.binary.BinaryIgnore";
+    private static final String CNAME_BIN_READER = "cn.wjybxx.common.codec.binary.BinaryObjectReader";
+    private static final String CNAME_BIN_WRITER = "cn.wjybxx.common.codec.binary.BinaryObjectWriter";
+    private static final String CNAME_BIN_SCAN_IGNORE = "cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore";
 
-    // AbstractCodecImpl
+    // PojoCodecImpl
+    public static final String CNAME_POJO_CODEC = "cn.wjybxx.common.codec.PojoCodecImpl";
+    public static final String MNAME_READ_OBJECT = "readObject";
+    public static final String MNAME_WRITE_OBJECT = "writeObject";
+    // AbstractPojoCodecImpl
+    private static final String CNAME_ABSTRACT_CODEC = "cn.wjybxx.common.codec.AbstractPojoCodecImpl";
+    public static final String MNAME_GET_ENCODER_CLASS = "getEncoderClass";
     public static final String MNAME_NEW_INSTANCE = "newInstance";
     public static final String MNAME_READ_FIELDS = "readFields";
     public static final String MNAME_AFTER_DECODE = "afterDecode";
-
+    // EnumLiteCode
+    private static final String CNAME_ENUM_CODEC = "cn.wjybxx.common.codec.codecs.EnumLiteCodec";
     public static final String CNAME_ENUM_LITE = "cn.wjybxx.common.EnumLite";
     public static final String MNAME_FOR_NUMBER = "forNumber";
     public static final String MNAME_GET_NUMBER = "getNumber";
 
-    public TypeElement anno_serializableTypeElement;
-    public TypeElement anno_ignoreTypeElement;
+    //endregion
 
-    public TypeElement readerTypeElement;
-    public TypeElement writerTypeElement;
-    public TypeElement enumCodecTypeElement;
-
-    // 要覆盖的方法缓存，减少大量查询
-    public TypeElement codecTypeElement;
-    public ExecutableElement getEncoderClassMethod;
-    public ExecutableElement writeObjectMethod;
-    public ExecutableElement readObjectMethod;
-
-    public TypeElement abstractCodecTypeElement;
-    public ExecutableElement newInstanceMethod;
-    public ExecutableElement readFieldsMethod;
-    public ExecutableElement afterDecodeMethod;
-
+    // region 字段
     public TypeMirror anno_fieldImplTypeMirror;
     public TypeMirror anno_classImplTypeMirror;
-    public TypeElement autoSchemaTypeElement;
+    public ClassName typeNameTypeArgInfo;
+    public ClassName typeNameWireType;
+    public ClassName typeNameNumberStyle;
+    public ClassName typeNameStringStyle;
+    public ClassName typeNameObjectStyle;
 
-    public TypeName typeNameWireType;
-    public TypeName typeNameNumberStyle;
-    public TypeName typeNameStringStyle;
-    public TypeName typeNameObjectStyle;
+    // document
+    public TypeElement anno_docSerializable;
+    public TypeMirror anno_docIgnore;
+    public TypeMirror docReaderTypeMirror;
+    public TypeMirror docWriterTypeMirror;
+    public AnnotationSpec docScanIgnoreAnnoSpec;
+    // binary
+    public TypeElement anno_binSerializable;
+    public TypeMirror anno_binIgnore;
+    public TypeMirror binReaderTypeMirror;
+    public TypeMirror binWriterTypeMirror;
+    public AnnotationSpec binScanIgnoreAnnoSpec;
 
-    public TypeMirror enumLiteTypeMirror;
+    // abstractCodec
+    public TypeElement abstractCodecTypeElement;
+    public ExecutableElement getEncoderClassMethod;
+    public ExecutableElement doc_newInstanceMethod;
+    public ExecutableElement doc_readFieldsMethod;
+    public ExecutableElement doc_afterDecodeMethod;
+    public ExecutableElement doc_writeObjectMethod;
+    public ExecutableElement bin_newInstanceMethod;
+    public ExecutableElement bin_readFieldsMethod;
+    public ExecutableElement bin_afterDecodeMethod;
+    public ExecutableElement bin_writeObjectMethod;
+    // enumLiteCodec
+    public TypeElement enumCodecTypeElement;
+
+    // 特殊类型依赖
+    // 基础类型
     public TypeMirror stringTypeMirror;
-    public TypeMirror enumTypeMirror;
+    public TypeMirror enumLiteTypeMirror;
+    // 集合类型
+    public TypeMirror mapTypeMirror;
+    public TypeMirror collectionTypeMirror;
+    public TypeMirror setTypeMirror;
+    public TypeMirror enumSetRawTypeMirror;
+    public TypeMirror enumMapRawTypeMirror;
+    public TypeMirror linkedHashMapTypeMirror;
+    public TypeMirror linkedHashSetTypeMirror;
+    public TypeMirror arrayListTypeMirror;
+
+    // endregion
 
     public CodecProcessor() {
     }
 
-    protected void ensureInited(String serializableCanonicalName, String ignoreCanonicalName,
-                                String readerCanonicalName, String writerCanonicalName,
-                                String codecCanonicalName, String abstractCodecCanonicalName,
-                                String enumCodecCanonicalName) {
-        if (anno_serializableTypeElement != null) {
-            return;
-        }
-        anno_serializableTypeElement = elementUtils.getTypeElement(serializableCanonicalName);
-        anno_ignoreTypeElement = elementUtils.getTypeElement(ignoreCanonicalName);
-        readerTypeElement = elementUtils.getTypeElement(readerCanonicalName);
-        writerTypeElement = elementUtils.getTypeElement(writerCanonicalName);
-        enumCodecTypeElement = elementUtils.getTypeElement(enumCodecCanonicalName);
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        return Set.of(CNAME_BIN_SERIALIZABLE, CNAME_DOC_SERIALIZABLE);
+    }
 
-        codecTypeElement = elementUtils.getTypeElement(codecCanonicalName);
-        getEncoderClassMethod = AptUtils.findMethodByName(codecTypeElement, MNAME_GET_ENCODER_CLASS);
-        writeObjectMethod = AptUtils.findMethodByName(codecTypeElement, MNAME_WRITE_OBJECT);
-        readObjectMethod = AptUtils.findMethodByName(codecTypeElement, MNAME_READ_OBJECT);
-
-        abstractCodecTypeElement = elementUtils.getTypeElement(abstractCodecCanonicalName);
-        newInstanceMethod = AptUtils.findMethodByName(abstractCodecTypeElement, MNAME_NEW_INSTANCE);
-        readFieldsMethod = AptUtils.findMethodByName(abstractCodecTypeElement, MNAME_READ_FIELDS);
-        afterDecodeMethod = AptUtils.findMethodByName(abstractCodecTypeElement, MNAME_AFTER_DECODE);
-
+    @Override
+    protected void ensureInited() {
+        if (typeNameWireType != null) return;
+        // common
         anno_fieldImplTypeMirror = elementUtils.getTypeElement(CNAME_FIELD_IMPL).asType();
         anno_classImplTypeMirror = elementUtils.getTypeElement(CNAME_CLASS_IMPL).asType();
-        autoSchemaTypeElement = elementUtils.getTypeElement(AutoSchemaProcessor.CNAME_AUTO);
-
+        typeNameTypeArgInfo = ClassName.get(elementUtils.getTypeElement(CNAME_TYPEARG));
         typeNameWireType = AptUtils.classNameOfCanonicalName(CNAME_WireType);
         typeNameNumberStyle = AptUtils.classNameOfCanonicalName(CNAME_NumberStyle);
         typeNameStringStyle = AptUtils.classNameOfCanonicalName(CNAME_StringStyle);
         typeNameObjectStyle = AptUtils.classNameOfCanonicalName(CNAME_ObjectStyle);
 
+        // document
+        anno_docSerializable = elementUtils.getTypeElement(CNAME_DOC_SERIALIZABLE);
+        anno_docIgnore = elementUtils.getTypeElement(CNAME_DOC_IGNORE).asType();
+        docReaderTypeMirror = elementUtils.getTypeElement(CNAME_DOC_READER).asType();
+        docWriterTypeMirror = elementUtils.getTypeElement(CNAME_DOC_WRITER).asType();
+        docScanIgnoreAnnoSpec = AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(CNAME_DOC_SCAN_IGNORE)))
+                .build();
+        // binary
+        anno_binSerializable = elementUtils.getTypeElement(CNAME_BIN_SERIALIZABLE);
+        anno_binIgnore = elementUtils.getTypeElement(CNAME_BIN_IGNORE).asType();
+        binReaderTypeMirror = elementUtils.getTypeElement(CNAME_BIN_READER).asType();
+        binWriterTypeMirror = elementUtils.getTypeElement(CNAME_BIN_WRITER).asType();
+        binScanIgnoreAnnoSpec = AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(CNAME_BIN_SCAN_IGNORE)))
+                .build();
+
+        // PojoCodec
+        TypeElement pojoCodecTypeElement = elementUtils.getTypeElement(CNAME_POJO_CODEC);
+        getEncoderClassMethod = AptUtils.findMethodByName(pojoCodecTypeElement, MNAME_GET_ENCODER_CLASS);
+        // abstractCodec
+        abstractCodecTypeElement = elementUtils.getTypeElement(CNAME_ABSTRACT_CODEC);
+        {
+            List<ExecutableElement> allMethodsWithInherit = BeanUtils.getAllMethodsWithInherit(abstractCodecTypeElement);
+            // doc
+            doc_newInstanceMethod = findCodecMethod(allMethodsWithInherit, MNAME_NEW_INSTANCE, docReaderTypeMirror);
+            doc_readFieldsMethod = findCodecMethod(allMethodsWithInherit, MNAME_READ_FIELDS, docReaderTypeMirror);
+            doc_afterDecodeMethod = findCodecMethod(allMethodsWithInherit, MNAME_AFTER_DECODE, docReaderTypeMirror);
+            doc_writeObjectMethod = findCodecMethod(allMethodsWithInherit, MNAME_WRITE_OBJECT, docWriterTypeMirror);
+            // bin
+            bin_newInstanceMethod = findCodecMethod(allMethodsWithInherit, MNAME_NEW_INSTANCE, binReaderTypeMirror);
+            bin_readFieldsMethod = findCodecMethod(allMethodsWithInherit, MNAME_READ_FIELDS, binReaderTypeMirror);
+            bin_afterDecodeMethod = findCodecMethod(allMethodsWithInherit, MNAME_AFTER_DECODE, binReaderTypeMirror);
+            bin_writeObjectMethod = findCodecMethod(allMethodsWithInherit, MNAME_WRITE_OBJECT, binWriterTypeMirror);
+        }
+        // enumLiteCodec
+        enumCodecTypeElement = elementUtils.getTypeElement(CNAME_ENUM_CODEC);
+
+        // 特殊类型依赖
+        // 基础类型
         stringTypeMirror = elementUtils.getTypeElement(String.class.getCanonicalName()).asType();
-        enumTypeMirror = elementUtils.getTypeElement(Enum.class.getCanonicalName()).asType();
         enumLiteTypeMirror = elementUtils.getTypeElement(CNAME_ENUM_LITE).asType();
+        // 集合
+        mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
+        collectionTypeMirror = elementUtils.getTypeElement(Collection.class.getCanonicalName()).asType();
+        setTypeMirror = elementUtils.getTypeElement(Set.class.getCanonicalName()).asType();
+        enumSetRawTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, EnumSet.class));
+        enumMapRawTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, EnumMap.class));
+        linkedHashMapTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, LinkedHashMap.class));
+        linkedHashSetTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, LinkedHashSet.class));
+        arrayListTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, ArrayList.class));
     }
 
-    public boolean isClassOrEnum(TypeElement typeElement) {
-        return typeElement.getKind() == ElementKind.CLASS
-                || typeElement.getKind() == ElementKind.ENUM;
+    private ExecutableElement findCodecMethod(List<ExecutableElement> allMethodsWithInherit,
+                                              String methodName, TypeMirror firstArg) {
+        return allMethodsWithInherit.stream()
+                .filter(e -> e.getKind() == ElementKind.METHOD && e.getSimpleName().toString().equals(methodName))
+                .map(e -> (ExecutableElement) e)
+                .filter(e -> e.getParameters().size() > 0
+                        && AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), firstArg)
+                )
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("method is absent, methodName: " + methodName));
     }
 
-    public boolean isString(TypeMirror typeMirror) {
-        return typeUtils.isSameType(typeMirror, stringTypeMirror);
+    @Override
+    protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        final Set<TypeElement> allTypeElements = AptUtils.selectSourceFileAny(roundEnv, elementUtils, anno_binSerializable, anno_docSerializable);
+        for (TypeElement typeElement : allTypeElements) {
+            try {
+                // 各种缓存，避免频繁解析类型信息
+                Context context = new Context(typeElement);
+                context.binSerialAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_binSerializable.asType())
+                        .orElse(null);
+                context.docSerialAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_docSerializable.asType())
+                        .orElse(null);
+                context.allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
+                cacheAptFieldImpl(context);
+                context.aptClassImpl = parseClassImpl(typeElement);
+
+                if (context.binSerialAnnoMirror != null) {
+                    context.serialTypeElement = anno_binSerializable;
+                    context.ignoreTypeMirror = anno_binIgnore;
+                    context.readerTypeMirror = binReaderTypeMirror;
+                    context.writerTypeMirror = binWriterTypeMirror;
+                    context.serialFields = new ArrayList<>();
+                    checkTypeElement(context);
+                    context.binSerialFields.addAll(context.serialFields);
+                }
+                if (context.docSerialAnnoMirror != null) {
+                    context.serialTypeElement = anno_docSerializable;
+                    context.ignoreTypeMirror = anno_docIgnore;
+                    context.readerTypeMirror = docReaderTypeMirror;
+                    context.writerTypeMirror = docWriterTypeMirror;
+                    context.serialFields = new ArrayList<>();
+                    checkTypeElement(context);
+                    context.docSerialFields.addAll(context.serialFields);
+                }
+
+                generateSerializer(context);
+            } catch (Throwable e) {
+                messager.printMessage(Diagnostic.Kind.ERROR, AptUtils.getStackTrace(e), typeElement);
+            }
+        }
+        return true;
     }
 
-    public boolean isByteArray(TypeMirror typeMirror) {
-        return AptUtils.isByteArray(typeMirror);
+    private void generateSerializer(Context context) {
+        TypeElement typeElement = context.typeElement;
+        if (isEnumLite(typeElement.asType())) {
+            DeclaredType superDeclaredType = typeUtils.getDeclaredType(enumCodecTypeElement, typeUtils.erasure(typeElement.asType()));
+            initTypeBuilder(context, typeElement, superDeclaredType);
+            //
+            new EnumCodecGenerator(this, typeElement, context).execute();
+        } else {
+            DeclaredType superDeclaredType = typeUtils.getDeclaredType(abstractCodecTypeElement, typeUtils.erasure(typeElement.asType()));
+            initTypeBuilder(context, typeElement, superDeclaredType);
+            // 先生成常量字段
+            SchemaGenerator schemaGenerator = new SchemaGenerator(this, context);
+            schemaGenerator.execute();
+            // 不论注解是否存在，所有方法都要实现
+            // Binary
+            {
+                context.serialTypeElement = anno_binSerializable;
+                context.ignoreTypeMirror = anno_binIgnore;
+                context.readerTypeMirror = binReaderTypeMirror;
+                context.writerTypeMirror = binWriterTypeMirror;
+                context.serialFields = context.binSerialFields;
+                context.serialAnnoMirror = context.binSerialAnnoMirror;
+                context.serialNameAccess = "numbers_";
+                context.scanIgnoreAnnoSpec = binScanIgnoreAnnoSpec;
+                new PojoCodecGenerator(this, context).execute();
+            }
+            // Document
+            {
+                context.serialAnnoMirror = context.docSerialAnnoMirror;
+                context.serialTypeElement = anno_docSerializable;
+                context.ignoreTypeMirror = anno_docIgnore;
+                context.readerTypeMirror = docReaderTypeMirror;
+                context.writerTypeMirror = docWriterTypeMirror;
+                context.serialFields = context.docSerialFields;
+                context.serialNameAccess = "names_";
+                context.scanIgnoreAnnoSpec = docScanIgnoreAnnoSpec;
+                new PojoCodecGenerator(this, context).execute();
+            }
+        }
+        // 写入文件
+        AptUtils.writeToFile(typeElement, context.typeBuilder, elementUtils, messager, filer);
     }
 
-    protected boolean isEnum(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, enumTypeMirror);
+    private void initTypeBuilder(Context context, TypeElement typeElement, DeclaredType superDeclaredType) {
+        context.superDeclaredType = superDeclaredType;
+        context.typeBuilder = TypeSpec.classBuilder(getCodecName(typeElement))
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
+                .addAnnotation(processorInfoAnnotation)
+                .superclass(TypeName.get(superDeclaredType));
     }
 
-    protected boolean isEnumLite(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, enumLiteTypeMirror);
+    private void cacheAptFieldImpl(Context context) {
+        context.allFields = context.allFieldsAndMethodWithInherit.stream()
+                .filter(e -> e.getKind() == ElementKind.FIELD)
+                .filter(e -> !e.getModifiers().contains(Modifier.STATIC))
+                .map(e -> (VariableElement) e)
+                .toList();
+
+        context.allFields.forEach(variableElement -> {
+            AptFieldImpl aptFieldImpl = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImplTypeMirror);
+            context.fieldImplMap.put(variableElement, aptFieldImpl);
+        });
     }
 
-    // region 枚举
+    protected String getCodecName(TypeElement typeElement) {
+        return AptUtils.getProxyClassName(elementUtils, typeElement, "Codec");
+    }
+
+    private void checkTypeElement(Context context) {
+        TypeElement typeElement = context.typeElement;
+        if (!isClassOrEnum(typeElement)) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "unsupported type", typeElement);
+            return;
+        }
+        if (typeElement.getKind() == ElementKind.ENUM) {
+            checkEnum(typeElement);
+        } else {
+            checkNormalClass(context);
+        }
+    }
+
+    // region 枚举检查
 
     /**
-     * 检查枚举 - 要序列化的枚举，必须实现 EnumLite 接口，否则无法序列化，或自己手写serializer。
+     * 检查枚举 - 要自动序列化的枚举，必须实现EnumLite接口且提供forNumber方法。
      */
-    public void checkEnum(TypeElement typeElement) {
+    private void checkEnum(TypeElement typeElement) {
         if (!isEnumLite(typeElement.asType())) {
             messager.printMessage(Diagnostic.Kind.ERROR,
                     "serializable enum must implement EnumLite",
                     typeElement);
             return;
         }
-        checkForNumberMethod(typeElement);
-    }
-
-    protected void checkForNumberMethod(TypeElement typeElement) {
         if (!containNotPrivateStaticForNumberMethod(typeElement)) {
             messager.printMessage(Diagnostic.Kind.ERROR,
-                    "serializable enum contains a not private 'static T forNumber(int)' method!",
+                    "serializable enum must contains a not private 'static T forNumber(int)' method!",
                     typeElement);
         }
     }
@@ -192,27 +371,29 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
     // endregion
 
-    // region 普通类
+    // region 普通类检查
 
-    protected void checkNormalClass(TypeElement typeElement) {
-        final AptClassImpl aptClassImpl = parseClassImpl(typeElement);
+    private void checkNormalClass(Context context) {
+        final AptClassImpl aptClassImpl = context.aptClassImpl;
         if (aptClassImpl.isSingleton) {
             return;
         }
-        checkAutoSchema(typeElement);
-        checkConstructor(typeElement);
+        TypeElement typeElement = context.typeElement;
+        checkConstructor(typeElement, context.readerTypeMirror);
 
-        final List<? extends Element> allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
+        final List<? extends Element> allFieldsAndMethodWithInherit = context.allFieldsAndMethodWithInherit;
         for (Element element : allFieldsAndMethodWithInherit) {
             if (element.getKind() != ElementKind.FIELD) {
                 continue;
             }
             final VariableElement variableElement = (VariableElement) element;
-            if (!isSerializableField(variableElement)) {
+            if (!isSerializableField(variableElement, context.ignoreTypeMirror)) {
                 continue;
             }
 
-            AptFieldImpl aptFieldImpl = parseFiledImpl(variableElement);
+            context.serialFields.add(variableElement);
+            AptFieldImpl aptFieldImpl = context.fieldImplMap.get(variableElement);
+
             if (isAutoWriteField(variableElement, aptClassImpl, aptFieldImpl)) {
                 if (aptFieldImpl.hasWriteProxy()) {
                     continue;
@@ -232,68 +413,57 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
                     continue;
                 }
                 // 工具读：需要提供可直接赋值或非private的setter方法
-                if (AptUtils.isBlank(aptFieldImpl.setter) &&
-                        !canSetDirectly(variableElement, typeElement)
+                if (AptUtils.isBlank(aptFieldImpl.setter)
+                        && !canSetDirectly(variableElement, typeElement)
                         && findNotPrivateSetter(variableElement, allFieldsAndMethodWithInherit) == null) {
                     messager.printMessage(Diagnostic.Kind.ERROR,
                             String.format("serializable field (%s) must contains a not private setter or canSetDirectly", variableElement.getSimpleName()),
-                            typeElement);
+                            typeElement); // 可能无法定位到超类字段，因此打印到Type
                     continue;
                 }
             }
         }
     }
 
-    /** 检查是否包含了AutoSchema注解 */
-    public void checkAutoSchema(TypeElement typeElement) {
-        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, autoSchemaTypeElement.asType())
-                .orElse(null);
-        if (annotationMirror == null) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "SerializableClass must contains AutoSchema annotation", typeElement);
-        }
-    }
-
     /** 检查是否包含无参构造方法或解析构造方法 */
-    protected void checkConstructor(TypeElement typeElement) {
+    private void checkConstructor(TypeElement typeElement, TypeMirror readerTypeMirror) {
         if (typeElement.getModifiers().contains(Modifier.ABSTRACT)) {
             return;
         }
         if (BeanUtils.containsNoArgsConstructor(typeElement)
-                || containsReaderConstructor(typeElement)) {
+                || containsReaderConstructor(typeElement, readerTypeMirror)) {
             return;
         }
-        String typeName = typeElement.getSimpleName().toString();
-        String readerName = readerTypeElement.getSimpleName().toString();
         messager.printMessage(Diagnostic.Kind.ERROR,
-                String.format("SerializableClass %s must contains no-args constructor or %s-args constructor!", typeName, readerName),
+                "SerializableClass %s must contains no-args constructor or reader-args constructor!",
                 typeElement);
     }
 
     /** 是否包含 T(Reader reader) 构造方法 */
-    public boolean containsReaderConstructor(TypeElement typeElement) {
-        return BeanUtils.containsOneArgsConstructor(typeUtils, typeElement, readerTypeElement.asType());
+    public boolean containsReaderConstructor(TypeElement typeElement, TypeMirror readerTypeMirror) {
+        return BeanUtils.containsOneArgsConstructor(typeUtils, typeElement, readerTypeMirror);
     }
 
     /** 是否包含 readerObject 实例方法 */
-    public boolean containsReadObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit) {
+    public boolean containsReadObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit, TypeMirror readerTypeMirror) {
         return allFieldsAndMethodWithInherit.stream()
                 .filter(e -> e.getKind() == ElementKind.METHOD)
                 .map(e -> (ExecutableElement) e)
                 .filter(e -> !e.getModifiers().contains(Modifier.PRIVATE) && !e.getModifiers().contains(Modifier.STATIC))
                 .filter(e -> e.getParameters().size() == 1)
                 .filter(e -> e.getSimpleName().toString().equals(MNAME_READ_OBJECT))
-                .anyMatch(e -> AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), readerTypeElement.asType()));
+                .anyMatch(e -> AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), readerTypeMirror));
     }
 
     /** 是否包含 writeObject 实例方法 */
-    public boolean containsWriteObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit) {
+    public boolean containsWriteObjectMethod(List<? extends Element> allFieldsAndMethodWithInherit, TypeMirror writerTypeMirror) {
         return allFieldsAndMethodWithInherit.stream()
                 .filter(e -> e.getKind() == ElementKind.METHOD)
                 .map(e -> (ExecutableElement) e)
                 .filter(e -> !e.getModifiers().contains(Modifier.PRIVATE) && !e.getModifiers().contains(Modifier.STATIC))
                 .filter(e -> e.getParameters().size() == 1)
                 .filter(e -> e.getSimpleName().toString().equals(MNAME_WRITE_OBJECT))
-                .anyMatch(e -> AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), writerTypeElement.asType()));
+                .anyMatch(e -> AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), writerTypeMirror));
     }
 
     /** 查找反序列化钩子方法 */
@@ -313,10 +483,6 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     // 字段处理
-
-    public AptFieldImpl parseFiledImpl(VariableElement variableElement) {
-        return AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImplTypeMirror);
-    }
 
     /**
      * 测试{@link TypeElement}是否可以直接读取字段。
@@ -365,7 +531,8 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
      *
      * @param allFieldsAndMethodWithInherit 所有的字段和方法，可能在父类中
      */
-    public ExecutableElement findNotPrivateGetter(final VariableElement variableElement, final List<? extends Element> allFieldsAndMethodWithInherit) {
+    public ExecutableElement findNotPrivateGetter(final VariableElement variableElement,
+                                                  final List<? extends Element> allFieldsAndMethodWithInherit) {
         return BeanUtils.findNotPrivateGetter(typeUtils, variableElement, allFieldsAndMethodWithInherit);
     }
 
@@ -374,26 +541,21 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
      *
      * @param allFieldsAndMethodWithInherit 所有的字段和方法，可能在父类中
      */
-    public ExecutableElement findNotPrivateSetter(final VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+    public ExecutableElement findNotPrivateSetter(final VariableElement variableElement,
+                                                  final List<? extends Element> allFieldsAndMethodWithInherit) {
         return BeanUtils.findNotPrivateSetter(typeUtils, variableElement, allFieldsAndMethodWithInherit);
     }
 
-    /**
-     * 是否是可序列化的字段
-     */
-    public boolean isSerializableField(VariableElement variableElement) {
-        return isSerializableField(typeUtils, elementUtils, variableElement, anno_ignoreTypeElement.asType());
-    }
-
-    public static boolean isSerializableField(Types typeUtils, Elements elementUtils, VariableElement variableElement, TypeMirror anno_ignoreMirror) {
+    /** 是否是可序列化的字段 */
+    public boolean isSerializableField(VariableElement variableElement, TypeMirror ignoreTypeMirror) {
         if (variableElement.getModifiers().contains(Modifier.STATIC)) {
             return false;
         }
         // 有注解的情况下，取决于注解的值
-        AnnotationMirror ignoreMirror = AptUtils.findAnnotation(typeUtils, variableElement, anno_ignoreMirror)
+        AnnotationMirror ignoreAnnoMirror = AptUtils.findAnnotation(typeUtils, variableElement, ignoreTypeMirror)
                 .orElse(null);
-        if (ignoreMirror != null) {
-            Boolean ignore = AptUtils.getAnnotationValueValueWithDefaults(elementUtils, ignoreMirror, "value");
+        if (ignoreAnnoMirror != null) {
+            Boolean ignore = AptUtils.getAnnotationValueValueWithDefaults(elementUtils, ignoreAnnoMirror, "value");
             return ignore != Boolean.TRUE;
         }
         // 无注解的情况下，默认忽略 transient 字段
@@ -438,7 +600,46 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
 
     // endregion
 
-    // region
+    // region 类型测试
+    protected boolean isClassOrEnum(TypeElement typeElement) {
+        return typeElement.getKind() == ElementKind.CLASS
+                || typeElement.getKind() == ElementKind.ENUM;
+    }
+
+    protected boolean isString(TypeMirror typeMirror) {
+        return typeUtils.isSameType(typeMirror, stringTypeMirror);
+    }
+
+    protected boolean isByteArray(TypeMirror typeMirror) {
+        return AptUtils.isByteArray(typeMirror);
+    }
+
+    protected boolean isEnumLite(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, enumLiteTypeMirror);
+    }
+
+    protected boolean isMap(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, mapTypeMirror);
+    }
+
+    protected boolean isCollection(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, collectionTypeMirror);
+    }
+
+    protected boolean isSet(TypeMirror typeMirror) {
+        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, setTypeMirror);
+    }
+
+    protected boolean isEnumSet(TypeMirror typeMirror) {
+        return typeMirror == enumSetRawTypeMirror || AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, typeMirror, enumSetRawTypeMirror);
+    }
+
+    protected boolean isEnumMap(TypeMirror typeMirror) {
+        return typeMirror == enumMapRawTypeMirror || AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, typeMirror, enumMapRawTypeMirror);
+    }
+    // endregion
+
+    // region overriding util
 
     public MethodSpec newGetEncoderClassMethod(DeclaredType superDeclaredType, TypeName rawTypeName) {
         return MethodSpec.overriding(getEncoderClassMethod, superDeclaredType, typeUtils)
@@ -447,28 +648,40 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
                 .build();
     }
 
-    public MethodSpec.Builder newWriteObjectMethodBuilder(DeclaredType superDeclaredType) {
-        return MethodSpec.overriding(writeObjectMethod, superDeclaredType, typeUtils);
+    public MethodSpec.Builder newNewInstanceMethodBuilder(DeclaredType superDeclaredType, TypeMirror readerTypeMirror) {
+        if (readerTypeMirror == binReaderTypeMirror) {
+            return MethodSpec.overriding(bin_newInstanceMethod, superDeclaredType, typeUtils);
+        } else {
+            return MethodSpec.overriding(doc_newInstanceMethod, superDeclaredType, typeUtils);
+        }
     }
 
-    public MethodSpec.Builder newReadObjectMethodBuilder(DeclaredType superDeclaredType) {
-        return MethodSpec.overriding(readObjectMethod, superDeclaredType, typeUtils);
+    public MethodSpec.Builder newReadFieldsMethodBuilder(DeclaredType superDeclaredType, TypeMirror readerTypeMirror) {
+        if (readerTypeMirror == binReaderTypeMirror) {
+            return MethodSpec.overriding(bin_readFieldsMethod, superDeclaredType, typeUtils);
+        } else {
+            return MethodSpec.overriding(doc_readFieldsMethod, superDeclaredType, typeUtils);
+        }
     }
 
-    public MethodSpec.Builder newNewInstanceMethodBuilder(DeclaredType superDeclaredType) {
-        return MethodSpec.overriding(newInstanceMethod, superDeclaredType, typeUtils);
+    public MethodSpec.Builder newAfterDecodeMethodBuilder(DeclaredType superDeclaredType, TypeMirror readerTypeMirror) {
+        if (readerTypeMirror == binReaderTypeMirror) {
+            return MethodSpec.overriding(bin_afterDecodeMethod, superDeclaredType, typeUtils);
+        } else {
+            return MethodSpec.overriding(doc_afterDecodeMethod, superDeclaredType, typeUtils);
+        }
     }
 
-    public MethodSpec.Builder newReadFieldsMethodBuilder(DeclaredType superDeclaredType) {
-        return MethodSpec.overriding(readFieldsMethod, superDeclaredType, typeUtils);
+    public MethodSpec.Builder newWriteObjectMethodBuilder(DeclaredType superDeclaredType, TypeMirror writerTypeMirror) {
+        if (writerTypeMirror == binWriterTypeMirror) {
+            return MethodSpec.overriding(bin_writeObjectMethod, superDeclaredType, typeUtils);
+        } else {
+            return MethodSpec.overriding(doc_writeObjectMethod, superDeclaredType, typeUtils);
+        }
     }
 
-    public MethodSpec.Builder newAfterDecodeMethodBuilder(DeclaredType superDeclaredType) {
-        return MethodSpec.overriding(afterDecodeMethod, superDeclaredType, typeUtils);
-    }
-
-    public List<AnnotationSpec> getAdditionalAnnotations(TypeElement typeElement) {
-        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_serializableTypeElement.asType())
+    public List<AnnotationSpec> getAdditionalAnnotations(TypeElement typeElement, TypeMirror serialTypeMirror) {
+        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, serialTypeMirror)
                 .orElseThrow();
 
         final List<? extends AnnotationValue> annotationsList = AptUtils.getAnnotationValueValue(annotationMirror, "annotations");
@@ -486,4 +699,5 @@ public abstract class CodecProcessor extends MyAbstractProcessor {
     }
 
     // endregion
+
 }

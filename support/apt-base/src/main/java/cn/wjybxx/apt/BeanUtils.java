@@ -112,21 +112,24 @@ public class BeanUtils {
     /**
      * 是否包含非private的setter方法
      */
-    public static boolean containsNotPrivateSetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+    public static boolean containsNotPrivateSetter(Types typeUtils, VariableElement variableElement,
+                                                   List<? extends Element> allFieldsAndMethodWithInherit) {
         return findNotPrivateSetter(typeUtils, variableElement, allFieldsAndMethodWithInherit) != null;
     }
 
     /**
      * 是否包含非private的getter方法
      */
-    public static boolean containsNotPrivateGetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+    public static boolean containsNotPrivateGetter(Types typeUtils, VariableElement variableElement,
+                                                   List<? extends Element> allFieldsAndMethodWithInherit) {
         return findNotPrivateGetter(typeUtils, variableElement, allFieldsAndMethodWithInherit) != null;
     }
 
     /**
      * 该方法会查询标准的setter命名，同时会查询{@code set + firstCharToUpperCase(fieldName)}格式的命名
      */
-    public static ExecutableElement findNotPrivateSetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+    public static ExecutableElement findNotPrivateSetter(Types typeUtils, VariableElement variableElement,
+                                                         List<? extends Element> allFieldsAndMethodWithInherit) {
         final String fieldName = variableElement.getSimpleName().toString();
         final String setterMethodName = BeanUtils.setterMethodName(fieldName, AptUtils.isPrimitiveBoolean(variableElement.asType()));
         final String setterMethodName2 = "set" + BeanUtils.firstCharToUpperCase(fieldName);
@@ -148,7 +151,8 @@ public class BeanUtils {
     /**
      * 该方法会查询标准的getter命名，同时会查询{@code get + firstCharToUpperCase(fieldName)}格式的命名
      */
-    public static ExecutableElement findNotPrivateGetter(Types typeUtils, VariableElement variableElement, List<? extends Element> allFieldsAndMethodWithInherit) {
+    public static ExecutableElement findNotPrivateGetter(Types typeUtils, VariableElement variableElement,
+                                                         List<? extends Element> allFieldsAndMethodWithInherit) {
         final String fieldName = variableElement.getSimpleName().toString();
         final String getterMethodName = BeanUtils.getterMethodName(fieldName, AptUtils.isPrimitiveBoolean(variableElement.asType()));
         final String getterMethodName2 = "get" + BeanUtils.firstCharToUpperCase(fieldName);

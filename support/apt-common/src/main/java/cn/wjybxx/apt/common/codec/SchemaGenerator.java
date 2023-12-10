@@ -1,145 +1,56 @@
-/*
- * Copyright 2023 wjybxx(845740757@qq.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package cn.wjybxx.apt.common.codec;
 
+import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
-import cn.wjybxx.apt.BeanUtils;
-import cn.wjybxx.apt.MyAbstractProcessor;
-import cn.wjybxx.apt.common.codec.binary.BinaryCodecProcessor;
-import cn.wjybxx.apt.common.codec.document.DocumentCodecProcessor;
-import com.google.auto.service.AutoService;
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 
-import javax.annotation.processing.Processor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * 方法对象
+ *
  * @author wjybxx
- * date 2023/4/6
+ * date - 2023/12/10
  */
-@AutoService(Processor.class)
-public class AutoSchemaProcessor extends MyAbstractProcessor {
+public class SchemaGenerator extends AbstractGenerator<CodecProcessor> {
 
-    public static final String CNAME_FIELD_IMPL = CodecProcessor.CNAME_FIELD_IMPL;
-    public static final String CNAME_CLASS_IMPL = CodecProcessor.CNAME_CLASS_IMPL;
+    private final Context context;
+    private final ClassName typeArgRawTypeName;
 
-    public static final String CNAME_AUTO = "cn.wjybxx.common.codec.AutoSchema";
-    public static final String CNAME_TYPEARG = "cn.wjybxx.common.codec.TypeArgInfo";
-
-    private TypeElement anno_autoTypeElement;
-    private TypeMirror anno_fieldImpTypeMirror;
-    public TypeMirror anno_classImplTypeMirror;
-    public TypeMirror anno_docIgnore;
-    public TypeMirror anno_binIgnore;
-    private ClassName typeArgRawTypeName;
-
-    public TypeMirror mapTypeMirror;
-    public TypeMirror collectionTypeMirror;
-    public TypeMirror setTypeMirror;
-    public TypeMirror enumSetRawTypeMirror;
-    public TypeMirror enumMapRawTypeMirror;
-    public TypeMirror linkedHashMapTypeMirror;
-    public TypeMirror linkedHashSetTypeMirror;
-    public TypeMirror arrayListTypeMirror;
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(CNAME_AUTO);
+    public SchemaGenerator(CodecProcessor processor, Context context) {
+        super(processor, context.typeElement);
+        this.context = context;
+        this.typeArgRawTypeName = processor.typeNameTypeArgInfo;
     }
 
     @Override
-    protected void ensureInited() {
-        if (anno_autoTypeElement != null) {
-            return;
-        }
-        anno_autoTypeElement = elementUtils.getTypeElement(CNAME_AUTO);
-        anno_fieldImpTypeMirror = elementUtils.getTypeElement(CNAME_FIELD_IMPL).asType();
-        anno_classImplTypeMirror = elementUtils.getTypeElement(CNAME_CLASS_IMPL).asType();
-        anno_docIgnore = elementUtils.getTypeElement(DocumentCodecProcessor.CNAME_IGNORE).asType();
-        anno_binIgnore = elementUtils.getTypeElement(BinaryCodecProcessor.CNAME_IGNORE).asType();
-        typeArgRawTypeName = ClassName.get(elementUtils.getTypeElement(CNAME_TYPEARG));
-
-        mapTypeMirror = elementUtils.getTypeElement(Map.class.getCanonicalName()).asType();
-        collectionTypeMirror = elementUtils.getTypeElement(Collection.class.getCanonicalName()).asType();
-        setTypeMirror = elementUtils.getTypeElement(Set.class.getCanonicalName()).asType();
-        enumSetRawTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, EnumSet.class));
-        enumMapRawTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, EnumMap.class));
-        linkedHashMapTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, LinkedHashMap.class));
-        linkedHashSetTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, LinkedHashSet.class));
-        arrayListTypeMirror = typeUtils.erasure(AptUtils.getTypeMirrorOfClass(elementUtils, ArrayList.class));
-    }
-
-    @Override
-    protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(anno_autoTypeElement);
-        for (Element element : annotatedClassSet) {
-            if (element.getKind() != ElementKind.CLASS) {
-                continue; // 忽略正常类以外的东西，比如record
-            }
-            try {
-                genTypeArgsClass((TypeElement) element);
-            } catch (Throwable e) {
-                messager.printMessage(Diagnostic.Kind.ERROR, AptUtils.getStackTrace(e), element);
-            }
-        }
-        return true;
-    }
-
-    private void genTypeArgsClass(TypeElement typeElement) {
-        final List<VariableElement> allFields = collectFields(typeElement);
-        final List<FieldSpec> typesFields = genTypeFields(typeElement, allFields);
-        final List<FieldSpec> numbersSpec = genNumbers(typeElement, allFields);
-        final List<FieldSpec> namesSpec = genNames(typeElement, allFields);
-
-        final TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(getProxyClassName(typeElement, elementUtils))
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
-                .addAnnotation(processorInfoAnnotation)
-                .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)))
-                .addFields(typesFields)
+    public void execute() {
+        final List<FieldSpec> typesFields = genTypeFields();
+        final List<FieldSpec> numbersSpec = genNumbers();
+        final List<FieldSpec> namesSpec = genNames();
+        context.typeBuilder.addFields(typesFields)
                 .addFields(numbersSpec)
                 .addFields(namesSpec);
-
-        // 写入文件
-        AptUtils.writeToFile(typeElement, typeBuilder, elementUtils, messager, filer);
-    }
-
-    /** 只处理实例字段 */
-    private List<VariableElement> collectFields(TypeElement typeElement) {
-        return BeanUtils.getAllFieldsWithInherit(typeElement).stream()
-                .map(e -> (VariableElement) e)
-                .filter(e -> {
-                    return CodecProcessor.isSerializableField(typeUtils, elementUtils, e, anno_binIgnore)
-                            || CodecProcessor.isSerializableField(typeUtils, elementUtils, e, anno_docIgnore);
-                })
-                .collect(Collectors.toList());
     }
 
     // region typeArgs
 
-    private List<FieldSpec> genTypeFields(TypeElement typeElement, List<VariableElement> allFields) {
-        return allFields.stream()
+    private List<FieldSpec> genTypeFields() {
+        // 需要去重
+        LinkedHashSet<VariableElement> allSerialFields = new LinkedHashSet<>();
+        allSerialFields.addAll(context.binSerialFields);
+        allSerialFields.addAll(context.docSerialFields);
+        return allSerialFields.stream()
                 .map(this::genTypeField)
                 .collect(Collectors.toList());
     }
@@ -155,7 +66,9 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
                     TypeName.get(typeUtils.erasure(variableElement.asType())));
         }
 
-        FieldSpec.Builder builder = FieldSpec.builder(fieldTypeName, variableElement.getSimpleName().toString(), AptUtils.PUBLIC_STATIC_FINAL);
+        String constName = "types_" + variableElement.getSimpleName().toString();
+        FieldSpec.Builder builder = FieldSpec.builder(fieldTypeName, constName, AptUtils.PUBLIC_STATIC_FINAL);
+
         TypeArgMirrors typeArgMirrors = parseTypeArgMirrors(variableElement);
         if (typeArgMirrors.value != null) { // map
             if (typeArgMirrors.impl == null) {
@@ -164,7 +77,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
                         TypeName.get(typeUtils.erasure(typeArgMirrors.declared)),
                         TypeName.get(typeUtils.erasure(typeArgMirrors.key)),
                         TypeName.get(typeUtils.erasure(typeArgMirrors.value)));
-            } else if (isEnumMap(typeArgMirrors.impl)) { // enumMap
+            } else if (processor.isEnumMap(typeArgMirrors.impl)) { // enumMap
                 builder.initializer("$T.ofEnumMap($T.class, $T.class, $T.class)",
                         typeArgRawTypeName,
                         TypeName.get(typeUtils.erasure(typeArgMirrors.declared)),
@@ -184,7 +97,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
                         typeArgRawTypeName,
                         TypeName.get(typeUtils.erasure(typeArgMirrors.declared)),
                         TypeName.get(typeUtils.erasure(typeArgMirrors.key)));
-            } else if (isEnumSet(typeArgMirrors.impl)) { // enumSet
+            } else if (processor.isEnumSet(typeArgMirrors.impl)) { // enumSet
                 builder.initializer("$T.ofEnumSet($T.class, $T.class)",
                         typeArgRawTypeName,
                         TypeName.get(typeUtils.erasure(typeArgMirrors.declared)),
@@ -212,11 +125,13 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
     }
 
     private TypeArgMirrors parseTypeArgMirrors(VariableElement variableElement) {
-        AptFieldImpl properties = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImpTypeMirror);
-        if (isMap(variableElement.asType())) {
+        AptFieldImpl properties = context.fieldImplMap.get(variableElement);
+        TypeMirror typeMirror = variableElement.asType();
+        if (processor.isMap(typeMirror)) {
             return parseMapTypeArgs(variableElement, properties);
         }
-        if (isCollection(variableElement.asType())) {
+        TypeMirror typeMirror1 = variableElement.asType();
+        if (processor.isCollection(typeMirror1)) {
             return parseCollectionTypeArgs(variableElement, properties);
         }
         // 普通类型字段
@@ -227,7 +142,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
         // 查找真实的实现类型，自身或EnumMap，或Impl属性
         final TypeMirror realImplMirror = parseMapVarImpl(variableElement, properties);
         // 查找传递给Map接口的KV泛型参数
-        final DeclaredType superTypeMirror = AptUtils.upwardToSuperTypeMirror(typeUtils, variableElement.asType(), mapTypeMirror);
+        final DeclaredType superTypeMirror = AptUtils.upwardToSuperTypeMirror(typeUtils, variableElement.asType(), processor.mapTypeMirror);
         final List<TypeMirror> kvTypeMirrors = new ArrayList<>(superTypeMirror.getTypeArguments());
         if (kvTypeMirrors.size() != 2) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Can't find key or value type of map", variableElement);
@@ -238,7 +153,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
     private TypeArgMirrors parseCollectionTypeArgs(VariableElement variableElement, AptFieldImpl properties) {
         TypeMirror realImplMirror = parseCollectionVarImpl(variableElement, properties);
         // 查找传递给Collection接口的E泛型参数
-        final DeclaredType superTypeMirror = AptUtils.upwardToSuperTypeMirror(typeUtils, variableElement.asType(), collectionTypeMirror);
+        final DeclaredType superTypeMirror = AptUtils.upwardToSuperTypeMirror(typeUtils, variableElement.asType(), processor.collectionTypeMirror);
         final List<? extends TypeMirror> typeArguments = superTypeMirror.getTypeArguments();
         if (typeArguments.size() != 1) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Can't find element type of collection", variableElement);
@@ -250,8 +165,9 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
         if (!AptUtils.isBlank(properties.readProxy)) {
             return null; // 有读代理，不需要解析
         }
-        if (isEnumMap(variableElement.asType())) {
-            return enumMapRawTypeMirror;
+        TypeMirror typeMirror = variableElement.asType();
+        if (processor.isEnumMap(typeMirror)) {
+            return processor.enumMapRawTypeMirror;
         }
         final DeclaredType declaredType = AptUtils.findDeclaredType(variableElement.asType());
         assert declaredType != null;
@@ -266,7 +182,7 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
             return declaredType;
         }
         // 如果是抽象的，并且不是LinkedHashMap的超类，则抛出异常
-        checkDefaultImpl(variableElement, linkedHashMapTypeMirror);
+        checkDefaultImpl(variableElement, processor.linkedHashMapTypeMirror);
         return null;
     }
 
@@ -274,8 +190,9 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
         if (!AptUtils.isBlank(properties.readProxy)) {
             return null; // 有读代理，不需要解析
         }
-        if (isEnumSet(variableElement.asType())) {
-            return enumSetRawTypeMirror;
+        TypeMirror typeMirror1 = variableElement.asType();
+        if (processor.isEnumSet(typeMirror1)) {
+            return processor.enumSetRawTypeMirror;
         }
         final DeclaredType declaredType = AptUtils.findDeclaredType(variableElement.asType());
         assert declaredType != null;
@@ -290,10 +207,11 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
             return declaredType;
         }
         // 如果是抽象的，并且不是ArrayList/LinkedHashSet的超类，则抛出异常
-        if (isSet(variableElement.asType())) {
-            checkDefaultImpl(variableElement, linkedHashSetTypeMirror);
+        TypeMirror typeMirror = variableElement.asType();
+        if (processor.isSet(typeMirror)) {
+            checkDefaultImpl(variableElement, processor.linkedHashSetTypeMirror);
         } else {
-            checkDefaultImpl(variableElement, arrayListTypeMirror);
+            checkDefaultImpl(variableElement, processor.arrayListTypeMirror);
         }
         return null;
     }
@@ -302,33 +220,9 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
     private void checkDefaultImpl(VariableElement variableElement, TypeMirror defImpl) {
         if (!AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, defImpl, variableElement.asType())) {
             messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Unknown abstract Map or Collection must contains impl annotation " + CNAME_FIELD_IMPL,
+                    "Unknown abstract Map or Collection must contains impl annotation " + CodecProcessor.CNAME_FIELD_IMPL,
                     variableElement);
         }
-    }
-
-    private boolean isMap(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, mapTypeMirror);
-    }
-
-    private boolean isCollection(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, collectionTypeMirror);
-    }
-
-    private boolean isSet(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, setTypeMirror);
-    }
-
-    private boolean isEnumSet(TypeMirror typeMirror) {
-        return typeMirror == enumSetRawTypeMirror || AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, typeMirror, enumSetRawTypeMirror);
-    }
-
-    private boolean isEnumMap(TypeMirror typeMirror) {
-        return typeMirror == enumMapRawTypeMirror || AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, typeMirror, enumMapRawTypeMirror);
-    }
-
-    public static String getProxyClassName(TypeElement typeElement, Elements elementUtils) {
-        return AptUtils.getProxyClassName(elementUtils, typeElement, "Schema");
     }
 
     private static class TypeArgMirrors {
@@ -368,16 +262,13 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
 
     // region names
 
-    private List<FieldSpec> genNames(TypeElement typeElement, List<VariableElement> allFields) {
-        final Set<String> dsonNameSet = new HashSet<>((int) (allFields.size() * 1.35f));
-        final List<FieldSpec> fieldSpecList = new ArrayList<>(allFields.size());
+    private List<FieldSpec> genNames() {
+        final List<VariableElement> serialFields = context.docSerialFields;
+        final Set<String> dsonNameSet = new HashSet<>((int) (serialFields.size() * 1.35f));
+        final List<FieldSpec> fieldSpecList = new ArrayList<>(serialFields.size());
 
-        for (VariableElement variableElement : allFields) {
-            // name其实可以都生成
-            if (!CodecProcessor.isSerializableField(typeUtils, elementUtils, variableElement, anno_docIgnore)) {
-                continue;
-            }
-            AptFieldImpl properties = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImpTypeMirror);
+        for (VariableElement variableElement : serialFields) {
+            AptFieldImpl properties = context.fieldImplMap.get(variableElement);
             String fieldName = variableElement.getSimpleName().toString();
             String dsonName;
             if (!AptUtils.isBlank(properties.name)) {
@@ -403,25 +294,21 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
 
     // region numbers
 
-    private List<FieldSpec> genNumbers(TypeElement typeElement, List<VariableElement> allFields) {
-        final Set<Integer> fullNumberSet = new HashSet<>((int) (allFields.size() * 1.35f));
-        final List<FieldSpec> fieldSpecList = new ArrayList<>(allFields.size());
+    private List<FieldSpec> genNumbers() {
+        final List<VariableElement> serialFields = context.binSerialFields;
+        final Set<Integer> fullNumberSet = new HashSet<>((int) (serialFields.size() * 1.35f));
+        final List<FieldSpec> fieldSpecList = new ArrayList<>(serialFields.size());
 
         int curIdep = -1;
         int curNumber = 0;
         TypeElement curTypeElement = null;
-        for (VariableElement variableElement : allFields) {
-            // number一定要进行过滤
-            if (!CodecProcessor.isSerializableField(typeUtils, elementUtils, variableElement, anno_binIgnore)) {
-                continue;
-            }
+        for (VariableElement variableElement : serialFields) {
             // idep必须在切换类时重新计算
             if (curTypeElement == null || !curTypeElement.equals(variableElement.getEnclosingElement())) {
                 curTypeElement = (TypeElement) variableElement.getEnclosingElement();
                 curIdep = calIdep(curTypeElement);
             }
-
-            AptFieldImpl properties = AptFieldImpl.parse(typeUtils, variableElement, anno_fieldImpTypeMirror);
+            AptFieldImpl properties = context.fieldImplMap.get(variableElement);
             if (properties.idep >= 0) {
                 curIdep = properties.idep;
             }
@@ -460,5 +347,4 @@ public class AutoSchemaProcessor extends MyAbstractProcessor {
     }
 
     // endregion
-
 }

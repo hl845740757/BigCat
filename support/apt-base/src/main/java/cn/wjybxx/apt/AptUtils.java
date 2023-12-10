@@ -140,8 +140,16 @@ public class AptUtils {
                 .build();
     }
 
-    public static Set<TypeElement> selectSourceFile(RoundEnvironment env, TypeElement annoType, Elements elementUtils) {
+    public static Set<TypeElement> selectSourceFile(RoundEnvironment env, Elements elementUtils, TypeElement annoType) {
         return env.getElementsAnnotatedWith(annoType).stream()
+                .filter(e -> e.getKind().isClass() || e.getKind().isInterface())
+                .map(e -> (TypeElement) e)
+                .filter(e -> isSourceFile(elementUtils, e))
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<TypeElement> selectSourceFileAny(RoundEnvironment env, Elements elementUtils, TypeElement... annoType) {
+        return env.getElementsAnnotatedWithAny(annoType).stream()
                 .filter(e -> e.getKind().isClass() || e.getKind().isInterface())
                 .map(e -> (TypeElement) e)
                 .filter(e -> isSourceFile(elementUtils, e))

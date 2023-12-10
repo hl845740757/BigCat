@@ -92,7 +92,7 @@ public class DefaultDocumentObjectReader extends AbstractObjectReader implements
 
         DsonObjectReader reader = (DsonObjectReader) this.reader;
         KeyIterator keyItr = new KeyIterator(reader.getkeySet(), keySetPool.get());
-        reader.setKeyItr(keyItr, DsonNull.INSTANCE);
+        reader.setKeyItr(keyItr, DsonNull.NULL);
         reader.attach(keyItr);
     }
 

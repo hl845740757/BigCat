@@ -19,10 +19,8 @@ package cn.wjybxx.apt.common.codec;
 import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
 import cn.wjybxx.apt.BeanUtils;
-import cn.wjybxx.apt.common.codec.binary.BinaryCodecProcessor;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import javax.lang.model.element.*;
@@ -38,31 +36,30 @@ import java.util.Map;
  * @author wjybxx
  * date 2023/4/13
  */
-public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractGenerator<T> {
+public class PojoCodecGenerator extends AbstractGenerator<CodecProcessor> {
 
     public static final String MNAME_READ_STRING = "readString";
     public static final String MNAME_READ_BYTES = "readBytes";
     public static final String MNAME_READ_OBJECT = "readObject";
 
     public static final String MNAME_WRITE_STRING = "writeString";
-    public static final String MNAME_WRITE_OBJECT = "writeObject";
-
     public static final String MNAME_WRITE_BYTES = "writeBytes";
-    public static final String MNAME_WRITE_EXTSTRING = "writeExtString";
-    public static final String MNAME_WRITE_EXTINT32 = "writeExtInt32";
-    public static final String MNAME_WRITE_EXTINT64 = "writeExtInt64";
-    public static final String MNAME_WRITE_EXTDOUBLE = "writeExtDouble";
+    public static final String MNAME_WRITE_OBJECT = "writeObject";
 
     private static final Map<TypeKind, String> primitiveReadMethodNameMap = new EnumMap<>(TypeKind.class);
     private static final Map<TypeKind, String> primitiveWriteMethodNameMap = new EnumMap<>(TypeKind.class);
 
+    private final Context context;
+    private final TypeSpec.Builder typeBuilder;
+    private final TypeElement serialTypeElement;
+    private final TypeMirror readerTypeMirror;
+    private final TypeMirror writerTypeMirror;
+    private final List<? extends Element> allFieldsAndMethodWithInherit;
+
     protected ClassName rawTypeName;
-    protected List<? extends Element> allFieldsAndMethodWithInherit;
     protected boolean containsReaderConstructor;
     protected boolean containsReadObjectMethod;
     protected boolean containsWriteObjectMethod;
-    protected String schemaClassName;
-    protected String nameAccess;
 
     protected DeclaredType superDeclaredType;
     protected MethodSpec.Builder newInstanceMethodBuilder;
@@ -81,57 +78,15 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         }
     }
 
-    public CodecGenerator(T processor, TypeElement typeElement) {
-        super(processor, typeElement);
+    public PojoCodecGenerator(CodecProcessor processor, Context context) {
+        super(processor, context.typeElement);
+        this.context = context;
+        this.typeBuilder = context.typeBuilder;
+        this.serialTypeElement = context.serialTypeElement;
+        this.readerTypeMirror = context.readerTypeMirror;
+        this.writerTypeMirror = context.writerTypeMirror;
+        this.allFieldsAndMethodWithInherit = context.allFieldsAndMethodWithInherit;
     }
-
-    // region
-    protected String getGetterName(VariableElement variableElement) {
-        return BeanUtils.getterMethodName(variableElement.getSimpleName().toString(), isPrimitiveBool(variableElement));
-    }
-
-    protected String getSetterName(VariableElement variableElement) {
-        return BeanUtils.setterMethodName(variableElement.getSimpleName().toString(), isPrimitiveBool(variableElement));
-    }
-
-    private static boolean isPrimitiveBool(VariableElement variableElement) {
-        return variableElement.asType().getKind() == TypeKind.BOOLEAN;
-    }
-
-    /** 获取writer写字段的方法名 */
-    protected String getWriteMethodName(VariableElement variableElement) {
-        TypeMirror typeMirror = variableElement.asType();
-        if (isPrimitiveType(typeMirror)) {
-            return primitiveWriteMethodNameMap.get(typeMirror.getKind());
-        }
-        if (processor.isString(typeMirror)) {
-            return MNAME_WRITE_STRING;
-        }
-        if (processor.isByteArray(typeMirror)) {
-            return MNAME_WRITE_BYTES;
-        }
-        return MNAME_WRITE_OBJECT;
-    }
-
-    /** 获取reader读字段的方法名 */
-    protected String getReadMethodName(VariableElement variableElement) {
-        TypeMirror typeMirror = variableElement.asType();
-        if (isPrimitiveType(typeMirror)) {
-            return primitiveReadMethodNameMap.get(typeMirror.getKind());
-        }
-        if (processor.isString(typeMirror)) {
-            return MNAME_READ_STRING;
-        }
-        if (processor.isByteArray(typeMirror)) {
-            return MNAME_READ_BYTES;
-        }
-        return MNAME_READ_OBJECT;
-    }
-
-    private static boolean isPrimitiveType(TypeMirror typeMirror) {
-        return typeMirror.getKind().isPrimitive();
-    }
-    // endregion
 
     // region codec
 
@@ -145,44 +100,42 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
     /** 子类需要初始化 fieldsClassName */
     protected void init() {
         rawTypeName = ClassName.get(typeElement);
-        allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
-        containsReaderConstructor = processor.containsReaderConstructor(typeElement);
-        containsReadObjectMethod = processor.containsReadObjectMethod(allFieldsAndMethodWithInherit);
-        containsWriteObjectMethod = processor.containsWriteObjectMethod(allFieldsAndMethodWithInherit);
-        schemaClassName = AutoSchemaProcessor.getProxyClassName(typeElement, elementUtils);
-        nameAccess = null;
+        containsReaderConstructor = processor.containsReaderConstructor(typeElement, readerTypeMirror);
+        containsReadObjectMethod = processor.containsReadObjectMethod(allFieldsAndMethodWithInherit, readerTypeMirror);
+        containsWriteObjectMethod = processor.containsWriteObjectMethod(allFieldsAndMethodWithInherit, writerTypeMirror);
 
         // 需要先初始化superDeclaredType
-        superDeclaredType = typeUtils.getDeclaredType(processor.abstractCodecTypeElement, typeUtils.erasure(typeElement.asType()));
-        newInstanceMethodBuilder = processor.newNewInstanceMethodBuilder(superDeclaredType);
-        readFieldsMethodBuilder = processor.newReadFieldsMethodBuilder(superDeclaredType);
-        afterDecodeMethodBuilder = processor.newAfterDecodeMethodBuilder(superDeclaredType);
-        writeObjectMethodBuilder = processor.newWriteObjectMethodBuilder(superDeclaredType);
+        superDeclaredType = context.superDeclaredType;
+        newInstanceMethodBuilder = processor.newNewInstanceMethodBuilder(superDeclaredType, readerTypeMirror);
+        readFieldsMethodBuilder = processor.newReadFieldsMethodBuilder(superDeclaredType, readerTypeMirror);
+        afterDecodeMethodBuilder = processor.newAfterDecodeMethodBuilder(superDeclaredType, readerTypeMirror);
+        writeObjectMethodBuilder = processor.newWriteObjectMethodBuilder(superDeclaredType, writerTypeMirror);
     }
 
-    protected abstract void gen();
+    protected void gen() {
+        // 当前生成的是不可序列化的类
+        if (context.serialAnnoMirror == null) {
+            newInstanceMethodBuilder.addStatement("throw new $T()", UnsupportedOperationException.class);
+            readFieldsMethodBuilder.addStatement("throw new $T()", UnsupportedOperationException.class);
+            writeObjectMethodBuilder.addStatement("throw new $T()", UnsupportedOperationException.class);
+            typeBuilder.addAnnotation(context.scanIgnoreAnnoSpec)
+                    .addMethod(newInstanceMethodBuilder.build())
+                    .addMethod(readFieldsMethodBuilder.build())
+                    .addMethod(writeObjectMethodBuilder.build());
+            return;
+        }
 
-    protected TypeSpec.Builder genCommons(String codecClassName) {
-        AptClassImpl aptClassImpl = processor.parseClassImpl(typeElement);
+        AptClassImpl aptClassImpl = context.aptClassImpl;
         genNewInstanceMethod(aptClassImpl);
-
         if (!aptClassImpl.isSingleton) {
             if (containsReadObjectMethod) {
-                readFieldsMethodBuilder.addStatement("instance.$L(reader)", BinaryCodecProcessor.MNAME_READ_OBJECT);
+                readFieldsMethodBuilder.addStatement("instance.$L(reader)", CodecProcessor.MNAME_READ_OBJECT);
             }
             if (containsWriteObjectMethod) {
-                writeObjectMethodBuilder.addStatement("instance.$L(writer)", BinaryCodecProcessor.MNAME_WRITE_OBJECT);
+                writeObjectMethodBuilder.addStatement("instance.$L(writer)", CodecProcessor.MNAME_WRITE_OBJECT);
             }
-
-            for (Element element : allFieldsAndMethodWithInherit) {
-                if (element.getKind() != ElementKind.FIELD) {
-                    continue;
-                }
-                final VariableElement variableElement = (VariableElement) element;
-                if (!processor.isSerializableField(variableElement)) {
-                    continue;
-                }
-                final AptFieldImpl aptFieldImpl = processor.parseFiledImpl(variableElement);
+            for (VariableElement variableElement : context.serialFields) {
+                final AptFieldImpl aptFieldImpl = context.fieldImplMap.get(variableElement);
                 if (CodecProcessor.isAutoWriteField(variableElement, aptClassImpl, aptFieldImpl)) {
                     addWriteStatement(variableElement, aptFieldImpl);
                 }
@@ -191,26 +144,31 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
                 }
             }
         }
-
-        TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(codecClassName)
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
-                .addAnnotation(processorInfoAnnotation)
-                .addAnnotations(processor.getAdditionalAnnotations(typeElement))
-
-                .superclass(TypeName.get(superDeclaredType))
-                .addMethod(processor.newGetEncoderClassMethod(superDeclaredType, rawTypeName))
-                .addMethod(newInstanceMethodBuilder.build())
-                .addMethod(readFieldsMethodBuilder.build())
-                .addMethod(writeObjectMethodBuilder.build());
-
+        typeBuilder.addAnnotations(processor.getAdditionalAnnotations(typeElement, serialTypeElement.asType()));
+        // getEncoder
+        if (!containsGetEncoderClass(typeBuilder)) {
+            typeBuilder.addMethod(processor.newGetEncoderClassMethod(superDeclaredType, rawTypeName));
+        }
+        typeBuilder.addMethod(newInstanceMethodBuilder.build())
+                .addMethod(readFieldsMethodBuilder.build());
         // afterDecode回调
-        if (!aptClassImpl.isSingleton && processor.findAfterDecodeMethod(allFieldsAndMethodWithInherit) != null) {
+        if (!aptClassImpl.isSingleton && !containsAfterDecode(typeBuilder)
+                && processor.findAfterDecodeMethod(allFieldsAndMethodWithInherit) != null) {
             afterDecodeMethodBuilder.addStatement("instance.$L()", CodecProcessor.MNAME_AFTER_DECODE);
             typeBuilder.addMethod(afterDecodeMethodBuilder.build());
         }
+        // writeObject
+        typeBuilder.addMethod(writeObjectMethodBuilder.build());
+    }
 
-        return typeBuilder;
+    private static boolean containsGetEncoderClass(TypeSpec.Builder typeBuilder) {
+        return typeBuilder.methodSpecs.stream()
+                .anyMatch(e -> e.name.equals(CodecProcessor.MNAME_GET_ENCODER_CLASS));
+    }
+
+    private static boolean containsAfterDecode(TypeSpec.Builder typeBuilder) {
+        return typeBuilder.methodSpecs.stream()
+                .anyMatch(e -> e.name.equals(CodecProcessor.MNAME_AFTER_DECODE));
     }
 
     private void genNewInstanceMethod(AptClassImpl aptClassImpl) {
@@ -234,7 +192,7 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         final String fieldName = variableElement.getSimpleName().toString();
         MethodSpec.Builder builder = readFieldsMethodBuilder;
         if (properties.hasReadProxy()) { // 自定义读
-            builder.addStatement("instance.$L(reader, $L$L)", properties.readProxy, nameAccess, fieldName);
+            builder.addStatement("instance.$L(reader, $L)", properties.readProxy, serialName(fieldName));
             return;
         }
         final String readMethodName = getReadMethodName(variableElement);
@@ -244,28 +202,26 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
             final String setterName = AptUtils.isBlank(properties.setter) ? setterMethod.getSimpleName().toString() : properties.setter;
             if (readMethodName.equals(MNAME_READ_OBJECT)) { // 读对象时要传入类型信息
                 // instance.setName(reader.readObject(XXFields.name, XXTypeArgs.name))
-                builder.addStatement("instance.$L(reader.$L($L$L, $L.$L))",
+                builder.addStatement("instance.$L(reader.$L($L, $L))",
                         setterName, readMethodName,
-                        nameAccess, fieldName,
-                        schemaClassName, fieldName);
+                        serialName(fieldName), serialTypeArg(fieldName));
             } else {
                 // instance.setName(reader.readString(XXFields.name))
-                builder.addStatement("instance.$L(reader.$L($L$L))",
+                builder.addStatement("instance.$L(reader.$L($L))",
                         setterName, readMethodName,
-                        nameAccess, fieldName);
+                        serialName(fieldName));
             }
         } else {
             if (readMethodName.equals(MNAME_READ_OBJECT)) { // 读对象时要传入类型信息
                 // instance.name = reader.readObject(XXFields.name, XXTypeArgs.name)
-                builder.addStatement("instance.$L = reader.$L($L$L, $L.$L)",
+                builder.addStatement("instance.$L = reader.$L($L, $L)",
                         fieldName, readMethodName,
-                        nameAccess, fieldName,
-                        schemaClassName, fieldName);
+                        serialName(fieldName), serialTypeArg(fieldName));
             } else {
                 // instance.name = reader.readString(XXFields.name)
-                builder.addStatement("instance.$L = reader.$L($L$L)",
+                builder.addStatement("instance.$L = reader.$L($L)",
                         fieldName, readMethodName,
-                        nameAccess, fieldName);
+                        serialName(fieldName));
             }
         }
     }
@@ -274,18 +230,18 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         final String fieldName = variableElement.getSimpleName().toString();
         MethodSpec.Builder builder = this.writeObjectMethodBuilder;
         if (properties.hasWriteProxy()) { // 自定义写
-            builder.addStatement("instance.$L(writer, $L$L)", properties.writeProxy, nameAccess, fieldName);
+            builder.addStatement("instance.$L(writer, $L)", properties.writeProxy, serialName(fieldName));
             return;
         }
         // 优先用getter，否则直接访问
-        String access;
+        String fieldAccess;
         ExecutableElement getterMethod = processor.findNotPrivateGetter(variableElement, allFieldsAndMethodWithInherit);
         if (!AptUtils.isBlank(properties.getter)) {
-            access = properties.getter + "()";
+            fieldAccess = properties.getter + "()";
         } else if (getterMethod != null) {
-            access = getterMethod.getSimpleName() + "()";
+            fieldAccess = getterMethod.getSimpleName() + "()";
         } else {
-            access = fieldName;
+            fieldAccess = fieldName;
         }
 
         // 先处理有子类型的类型
@@ -293,38 +249,37 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
             switch (properties.dsonType) {
                 case AptFieldImpl.TYPE_BINARY -> {
                     // writer.writeBytes(Fields.FieldName, subType, instance.field)
-                    builder.addStatement("writer.$L($L$L, $L, instance.$L)",
-                            MNAME_WRITE_BYTES, nameAccess, fieldName,
-                            properties.dsonSubType, access);
+                    builder.addStatement("writer.writeBytes($L, $L, instance.$L)",
+                            serialName(fieldName), properties.dsonSubType, fieldAccess);
                 }
                 case AptFieldImpl.TYPE_EXT_INT32 -> {
                     // writer.writeExtInt32(Fields.FieldName, subType, instance.field, WireType.VARINT, NumberStyle.SIMPLE)
-                    builder.addStatement("writer.$L($L$L, $L, instance.$L, $T.$L, $T.$L)",
-                            MNAME_WRITE_EXTINT32, nameAccess, fieldName,
-                            properties.dsonSubType, access,
+                    builder.addStatement("writer.writeExtInt32($L, $L, instance.$L, $T.$L, $T.$L)",
+                            serialName(fieldName),
+                            properties.dsonSubType, fieldAccess,
                             processor.typeNameWireType, properties.wireType,
                             processor.typeNameNumberStyle, properties.numberStyle);
                 }
                 case AptFieldImpl.TYPE_EXT_INT64 -> {
                     // writer.writeExtInt64(Fields.FieldName, subType, instance.field, WireType.VARINT, NumberStyle.SIMPLE)
-                    builder.addStatement("writer.$L($L$L, $L, instance.$L, $T.$L, $T.$L)",
-                            MNAME_WRITE_EXTINT64, nameAccess, fieldName,
-                            properties.dsonSubType, access,
+                    builder.addStatement("writer.writeExtInt64($L, $L, instance.$L, $T.$L, $T.$L)",
+                            serialName(fieldName),
+                            properties.dsonSubType, fieldAccess,
                             processor.typeNameWireType, properties.wireType,
                             processor.typeNameNumberStyle, properties.numberStyle);
                 }
                 case AptFieldImpl.TYPE_EXT_DOUBLE -> {
                     // writer.writeExtDouble(Fields.FieldName, subType, instance.field, NumberStyle.SIMPLE)
-                    builder.addStatement("writer.$L($L$L, $L, instance.$L, $T.$L)",
-                            MNAME_WRITE_EXTDOUBLE, nameAccess, fieldName,
-                            properties.dsonSubType, access,
+                    builder.addStatement("writer.writeExtDouble($L, $L, instance.$L, $T.$L)",
+                            serialName(fieldName),
+                            properties.dsonSubType, fieldAccess,
                             processor.typeNameNumberStyle, properties.numberStyle);
                 }
                 case AptFieldImpl.TYPE_EXT_STRING -> {
                     // writer.writeExtInt64(Fields.FieldName, subType, instance.field, StringStyle.AUTO)
-                    builder.addStatement("writer.$L($L$L, $L, instance.$L, $T.$L)",
-                            MNAME_WRITE_EXTSTRING, nameAccess, fieldName,
-                            properties.dsonSubType, access,
+                    builder.addStatement("writer.writeExtString($L, $L, instance.$L, $T.$L)",
+                            serialName(fieldName),
+                            properties.dsonSubType, fieldAccess,
                             processor.typeNameStringStyle, properties.stringStyle);
                 }
                 default -> {
@@ -339,44 +294,92 @@ public abstract class CodecGenerator<T extends CodecProcessor> extends AbstractG
         switch (variableElement.asType().getKind()) {
             case INT, LONG, SHORT, BYTE, CHAR -> {
                 // writer.writeInt(Fields.FieldName, instance.field, WireType.VARINT, NumberStyle.SIMPLE)
-                builder.addStatement("writer.$L($L$L, instance.$L, $T.$L, $T.$L)",
-                        writeMethodName, nameAccess, fieldName, access,
+                builder.addStatement("writer.$L($L, instance.$L, $T.$L, $T.$L)",
+                        writeMethodName, serialName(fieldName), fieldAccess,
                         processor.typeNameWireType, properties.wireType,
                         processor.typeNameNumberStyle, properties.numberStyle);
                 return;
             }
             case FLOAT, DOUBLE -> {
                 // writer.writeInt(Fields.FieldName, instance.field, NumberStyle.SIMPLE)
-                builder.addStatement("writer.$L($L$L, instance.$L, $T.$L)",
-                        writeMethodName, nameAccess, fieldName, access,
+                builder.addStatement("writer.$L($L, instance.$L, $T.$L)",
+                        writeMethodName, serialName(fieldName), fieldAccess,
                         processor.typeNameNumberStyle, properties.numberStyle);
                 return;
             }
         }
+        // 处理字符串
         if (writeMethodName.equals(MNAME_WRITE_STRING)) {
             // writer.writeString(XXFields.name, instance.getName(), StringStyle.AUTO)
-            builder.addStatement("writer.$L($L$L, instance.$L, $T.$L)",
-                    writeMethodName, nameAccess, fieldName, access,
+            builder.addStatement("writer.$L($L, instance.$L, $T.$L)",
+                    writeMethodName, serialName(fieldName), fieldAccess,
                     processor.typeNameStringStyle, properties.stringStyle);
-        } else if (writeMethodName.equals(MNAME_WRITE_OBJECT)) {
+            return;
+        }
+
+        if (writeMethodName.equals(MNAME_WRITE_OBJECT)) {
             // 写对象时传入类型信息和Style
             // writer.writeObject(XXFields.name, instance.getName(), XXTypeArgs.name, ObjectStyle.INDENT)
             if (properties.objectStyle != null) {
-                builder.addStatement("writer.$L($L$L, instance.$L, $L.$L, $T.$L)",
-                        writeMethodName, nameAccess, fieldName, access,
-                        schemaClassName, fieldName,
+                builder.addStatement("writer.$L($L, instance.$L, $L, $T.$L)",
+                        writeMethodName, serialName(fieldName), fieldAccess, serialTypeArg(fieldName),
                         processor.typeNameObjectStyle, properties.objectStyle);
             } else {
-                builder.addStatement("writer.$L($L$L, instance.$L, $L.$L, null)",
-                        writeMethodName, nameAccess, fieldName, access,
-                        schemaClassName, fieldName);
+                builder.addStatement("writer.$L($L, instance.$L, $L, null)",
+                        writeMethodName, serialName(fieldName), fieldAccess, serialTypeArg(fieldName));
             }
         } else {
             // writer.writeBoolean(XXFields.name, instance.getName())
-            builder.addStatement("writer.$L($L$L, instance.$L)",
-                    writeMethodName, nameAccess, fieldName, access);
+            builder.addStatement("writer.$L($L, instance.$L)",
+                    writeMethodName, serialName(fieldName), fieldAccess);
         }
     }
 
+    // endregion
+
+    // region
+
+    // 虽然多了临时字符串拼接，但可以大幅降低字符串模板的复杂度
+    private String serialName(String fieldName) {
+        return context.serialNameAccess + fieldName;
+    }
+
+    private String serialTypeArg(String fieldName) {
+        return "types_" + fieldName;
+    }
+
+    /** 获取writer写字段的方法名 */
+    private String getWriteMethodName(VariableElement variableElement) {
+        TypeMirror typeMirror = variableElement.asType();
+        if (isPrimitiveType(typeMirror)) {
+            return primitiveWriteMethodNameMap.get(typeMirror.getKind());
+        }
+        if (processor.isString(typeMirror)) {
+            return MNAME_WRITE_STRING;
+        }
+        if (processor.isByteArray(typeMirror)) {
+            return MNAME_WRITE_BYTES;
+        }
+        return MNAME_WRITE_OBJECT;
+    }
+
+    /** 获取reader读字段的方法名 */
+    private String getReadMethodName(VariableElement variableElement) {
+        TypeMirror typeMirror = variableElement.asType();
+        if (isPrimitiveType(typeMirror)) {
+            return primitiveReadMethodNameMap.get(typeMirror.getKind());
+        }
+        if (processor.isString(typeMirror)) {
+            return MNAME_READ_STRING;
+        }
+        if (processor.isByteArray(typeMirror)) {
+            return MNAME_READ_BYTES;
+        }
+        return MNAME_READ_OBJECT;
+    }
+
+    private static boolean isPrimitiveType(TypeMirror typeMirror) {
+        return typeMirror.getKind().isPrimitive();
+    }
     // endregion
 }

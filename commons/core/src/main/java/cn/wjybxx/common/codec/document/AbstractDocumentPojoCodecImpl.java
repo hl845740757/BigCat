@@ -20,6 +20,8 @@ import cn.wjybxx.common.codec.ConverterUtils;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.dson.text.ObjectStyle;
 
+import javax.annotation.Nonnull;
+
 /**
  * 生成的代码会继承该类
  *
@@ -27,6 +29,12 @@ import cn.wjybxx.dson.text.ObjectStyle;
  * date 2023/4/4
  */
 public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCodecImpl<T> {
+
+    // region
+
+    @Nonnull
+    @Override
+    public abstract Class<T> getEncoderClass();
 
     @Override
     public boolean isWriteAsArray() {
@@ -37,6 +45,10 @@ public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCo
     public boolean autoStartEnd() {
         return true;
     }
+
+    // endregion
+
+    // region doc
 
     @Override
     public final T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
@@ -67,4 +79,7 @@ public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCo
 
     @Override
     public abstract void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
+
+    // endregion
+
 }

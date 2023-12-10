@@ -12,6 +12,7 @@ import java.util.function.Supplier;
  * @author wjybxx
  * date - 2023/12/10
  */
+@SuppressWarnings("unused")
 public abstract class AbstractPojoCodecImpl<T> extends AbstractDocumentPojoCodecImpl<T> implements PojoCodecImpl<T> {
 
     @Override

@@ -56,9 +56,9 @@ public class WorkerAddr implements RpcAddr {
 
     /** 解码函数 */
     public WorkerAddr(BinaryObjectReader reader) {
-        this.serverType = reader.readInt(WorkerAddrSchema.numbers_serverType);
-        this.serverId = reader.readInt(WorkerAddrSchema.numbers_serverId);
-        this.workerId = reader.readString(WorkerAddrSchema.numbers_workerId);
+        this.serverType = reader.readInt(WorkerAddrCodec.numbers_serverType);
+        this.serverId = reader.readInt(WorkerAddrCodec.numbers_serverId);
+        this.workerId = reader.readString(WorkerAddrCodec.numbers_workerId);
     }
 
     /** 是否有workerId */
