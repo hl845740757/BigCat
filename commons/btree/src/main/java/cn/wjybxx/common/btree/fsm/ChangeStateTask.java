@@ -37,7 +37,7 @@ public class ChangeStateTask<E> extends LeafTask<E> {
     private transient Task<E> nextState;
     /** 目标状态的属性 */
     private Object stateProps;
-    /** 为当前状态设置结果 -- 用于避免当前状态进入被取消状态 */
+    /** 为当前状态设置结果 -- 用于避免当前状态进入被取消状态；使用该特性时避免curState为自身 */
     private int curStateResult;
 
     /** 目标状态机的名字，以允许切换更顶层的状态机 */

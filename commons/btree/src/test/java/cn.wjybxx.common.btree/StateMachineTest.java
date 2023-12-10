@@ -19,6 +19,7 @@ import cn.wjybxx.common.btree.fsm.ChangeStateArgs;
 import cn.wjybxx.common.btree.fsm.ChangeStateTask;
 import cn.wjybxx.common.btree.fsm.StateMachineTask;
 import cn.wjybxx.common.btree.leaf.Success;
+import cn.wjybxx.common.btree.leaf.WaitFrame;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +54,8 @@ public class StateMachineTest {
         stateMachineTask.setNoneChildStatus(Status.SUCCESS);
         return taskEntry;
     }
+
+    // region reentry
 
     /** 不延迟的情况下，三个任务都会进入被取消状态 */
     @Test
@@ -92,6 +95,54 @@ public class StateMachineTest {
         BtreeTestUtil.untilCompleted(taskEntry);
         Assertions.assertEquals(3, global_count);
     }
+
+    private static class StateA<E> extends ActionTask<E> {
+
+        Task<E> nextState;
+
+        @Override
+        protected int executeImpl() {
+            if (global_count++ == 0) {
+                if (nextState == null) {
+                    nextState = new StateB<>();
+                }
+                ChangeStateArgs args = delayChange ? ChangeStateArgs.PLAIN_WHEN_COMPLETED : ChangeStateArgs.PLAIN;
+                StateMachineTask.findStateMachine(this).changeState(nextState, args);
+            }
+            return Status.SUCCESS;
+        }
+
+        @Override
+        protected void onEventImpl(@Nonnull Object event) throws Exception {
+
+        }
+    }
+
+    private static class StateB<E> extends ActionTask<E> {
+
+        Task<E> nextState;
+
+        @Override
+        protected int executeImpl() {
+            if (global_count++ == 1) {
+                if (nextState == null) {
+                    nextState = new StateA<>();
+                }
+                ChangeStateArgs args = delayChange ? ChangeStateArgs.PLAIN_WHEN_COMPLETED : ChangeStateArgs.PLAIN;
+                StateMachineTask.findStateMachine(this).changeState(nextState, args);
+            }
+            return Status.SUCCESS;
+        }
+
+        @Override
+        protected void onEventImpl(@Nonnull Object event) throws Exception {
+
+        }
+    }
+    // endregion
+
+    // region redo/undo
+
 
     /** redo，计数从 0 加到 5 */
     @Test
@@ -163,53 +214,6 @@ public class StateMachineTest {
         Assertions.assertEquals(0, global_count);
     }
 
-    /**
-     * {@link ChangeStateTask}先更新为完成，然后再调用的{@link StateMachineTask#changeState(Task)}，
-     * 因此完成应该处于成功状态
-     */
-    @Test
-    void testChangeStateTask() {
-        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
-        ChangeStateTask<Blackboard> stateTask = new ChangeStateTask<>(new Success<>());
-        taskEntry.getRootStateMachine().changeState(stateTask);
-
-        BtreeTestUtil.untilCompleted(taskEntry);
-        Assertions.assertTrue(stateTask.isSucceeded(), "ChangeState task is cancelled? code: " + stateTask.getStatus());
-    }
-
-    @Test
-    void testDelayExecute() {
-        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
-        ClassicalState<Blackboard> nextState = new ClassicalState<>();
-        taskEntry.getRootStateMachine().changeState(nextState);
-        BtreeTestUtil.untilCompleted(taskEntry);
-
-        Assertions.assertTrue(nextState.isSucceeded());
-        Assertions.assertTrue(taskEntry.isSucceeded());
-    }
-
-    /** 传统状态机下的状态；期望enter和execute分开执行 */
-    private static class ClassicalState<E> extends LeafTask<E> {
-        @Override
-        protected void beforeEnter() {
-            super.beforeEnter();
-            setDisableEnterExecute(true);
-        }
-
-        @Override
-        protected void execute() {
-            if (getRunFrames() != 1) {
-                throw new IllegalStateException();
-            }
-            setSuccess();
-        }
-
-        @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
-
-        }
-    }
-
     private static class UndoState<E> extends ActionTask<E> {
 
         final int expected;
@@ -261,21 +265,35 @@ public class StateMachineTest {
 
         }
     }
+    // endregion
 
-    private static class StateA<E> extends ActionTask<E> {
+    // region 传统状态机样式
 
-        Task<E> nextState;
+    @Test
+    void testDelayExecute() {
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        ClassicalState<Blackboard> nextState = new ClassicalState<>();
+        taskEntry.getRootStateMachine().changeState(nextState);
+        BtreeTestUtil.untilCompleted(taskEntry);
+
+        Assertions.assertTrue(nextState.isSucceeded());
+        Assertions.assertTrue(taskEntry.isSucceeded());
+    }
+
+    /** 传统状态机下的状态；期望enter和execute分开执行 */
+    private static class ClassicalState<E> extends LeafTask<E> {
+        @Override
+        protected void beforeEnter() {
+            super.beforeEnter();
+            setDisableEnterExecute(true);
+        }
 
         @Override
-        protected int executeImpl() {
-            if (global_count++ == 0) {
-                if (nextState == null) {
-                    nextState = new StateB<>();
-                }
-                ChangeStateArgs args = delayChange ? ChangeStateArgs.PLAIN_WHEN_COMPLETED : ChangeStateArgs.PLAIN;
-                StateMachineTask.findStateMachine(this).changeState(nextState, args);
+        protected void execute() {
+            if (getRunFrames() != 1) {
+                throw new IllegalStateException();
             }
-            return Status.SUCCESS;
+            setSuccess();
         }
 
         @Override
@@ -283,26 +301,77 @@ public class StateMachineTest {
 
         }
     }
+    // endregion
 
-    private static class StateB<E> extends ActionTask<E> {
+    // region changeState
 
-        Task<E> nextState;
+    /**
+     * {@link ChangeStateTask}先更新为完成，然后再调用的{@link StateMachineTask#changeState(Task)}，
+     * 因此完成应该处于成功状态
+     */
+    @Test
+    void testChangeStateTask() {
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        ChangeStateTask<Blackboard> stateTask = new ChangeStateTask<>(new Success<>());
+        taskEntry.getRootStateMachine().changeState(stateTask);
 
-        @Override
-        protected int executeImpl() {
-            if (global_count++ == 1) {
-                if (nextState == null) {
-                    nextState = new StateA<>();
-                }
-                ChangeStateArgs args = delayChange ? ChangeStateArgs.PLAIN_WHEN_COMPLETED : ChangeStateArgs.PLAIN;
-                StateMachineTask.findStateMachine(this).changeState(nextState, args);
-            }
-            return Status.SUCCESS;
-        }
-
-        @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
-
-        }
+        BtreeTestUtil.untilCompleted(taskEntry);
+        Assertions.assertTrue(stateTask.isSucceeded(), "ChangeState task is cancelled? code: " + stateTask.getStatus());
     }
+
+    @Test
+    void testDelay_currentCompleted() {
+        final int runFrames = 10;
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        StateMachineTask<Blackboard> rootStateMachine = taskEntry.getRootStateMachine();
+        rootStateMachine.setListener((stateMachineTask, curState, nextState) -> {
+            if (curState != null && nextState != null) {
+                Assertions.assertEquals(runFrames, curState.getRunFrames());
+            }
+        });
+        rootStateMachine.changeState(new WaitFrame<>(runFrames));
+        taskEntry.update(0); // 启动任务树，使行为树处于运行状态
+
+        rootStateMachine.changeState(new WaitFrame<>(1), ChangeStateArgs.PLAIN_WHEN_COMPLETED);
+        BtreeTestUtil.untilCompleted(taskEntry);
+    }
+
+    @Test
+    void testDelay_nextFrame() {
+        final int runFrames = 10;
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        StateMachineTask<Blackboard> rootStateMachine = taskEntry.getRootStateMachine();
+        rootStateMachine.setListener((stateMachineTask, curState, nextState) -> {
+            if (curState != null && nextState != null) {
+                Assertions.assertEquals(1, curState.getRunFrames());
+            }
+        });
+        rootStateMachine.changeState(new WaitFrame<>(runFrames));
+        taskEntry.update(0); // 启动任务树，使行为树处于运行状态
+
+        rootStateMachine.changeState(new WaitFrame<>(1), ChangeStateArgs.PLAIN_NEXT_FRAME);
+        BtreeTestUtil.untilCompleted(taskEntry);
+    }
+
+    @Test
+    void testDelay_specialFrame() {
+        final int runFrames = 10;
+        final int spFrame = 5;
+        TaskEntry<Blackboard> taskEntry = newStateMachineTree();
+        StateMachineTask<Blackboard> rootStateMachine = taskEntry.getRootStateMachine();
+        rootStateMachine.setListener((stateMachineTask, curState, nextState) -> {
+            if (curState != null && nextState != null) {
+                Assertions.assertEquals(spFrame, curState.getRunFrames());
+            }
+        });
+        rootStateMachine.changeState(new WaitFrame<>(runFrames));
+        taskEntry.update(0); // 启动任务树，使行为树处于运行状态
+
+        rootStateMachine.changeState(new WaitFrame<>(1),
+                ChangeStateArgs.PLAIN_NEXT_FRAME.withFrame(spFrame)); // 在给定帧切换
+        BtreeTestUtil.untilCompleted(taskEntry);
+    }
+
+    // endregion
+
 }
