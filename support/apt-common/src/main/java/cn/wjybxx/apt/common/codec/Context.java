@@ -38,14 +38,21 @@ import java.util.Map;
 public class Context {
 
     final TypeElement typeElement;
+    // binary
     AnnotationMirror binSerialAnnoMirror;
+    List<AnnotationSpec> binAddAnnotations;
+    // document
     AnnotationMirror docSerialAnnoMirror;
+    List<AnnotationSpec> docAddAnnotations;
+    // linker
+    AnnotationMirror linkerGroupAnnoMirror;
+    List<AnnotationSpec> linkerAddAnnotations;
 
+    AptClassImpl aptClassImpl;
     List<? extends Element> allFieldsAndMethodWithInherit;
     List<VariableElement> allFields;
     final Map<VariableElement, AptFieldImpl> fieldImplMap = new HashMap<>(); // 字段的注解缓存
 
-    AptClassImpl aptClassImpl;
     final List<VariableElement> binSerialFields = new ArrayList<>();
     final List<VariableElement> docSerialFields = new ArrayList<>();
 
@@ -53,14 +60,16 @@ public class Context {
     TypeMirror ignoreTypeMirror;
     TypeMirror readerTypeMirror;
     TypeMirror writerTypeMirror;
-    List<VariableElement> serialFields; // 检测字段时将可序列化字段写入该List
+    List<VariableElement> serialFields; // 可序列化的字段；检测字段时将可序列化字段写入该List
     @Nullable
     AnnotationMirror serialAnnoMirror; // 为null则表示不可序列化
     AnnotationSpec scanIgnoreAnnoSpec;
+    List<AnnotationSpec> additionalAnnotations; // 生成代码附加注解
 
     TypeSpec.Builder typeBuilder;
     DeclaredType superDeclaredType;
     String serialNameAccess;
+    String outPackage; // 输出目录
 
     public Context(TypeElement typeElement) {
         this.typeElement = typeElement;

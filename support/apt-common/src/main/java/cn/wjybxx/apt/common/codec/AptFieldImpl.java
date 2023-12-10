@@ -21,6 +21,7 @@ import cn.wjybxx.apt.AptUtils;
 import javax.annotation.Nonnull;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -89,9 +90,9 @@ public class AptFieldImpl {
 
     //
     @Nonnull
-    public static AptFieldImpl parse(Types typeUtils, VariableElement variableElement, TypeMirror implMirror) {
+    public static AptFieldImpl parse(Types typeUtils, Element element, TypeMirror implMirror) {
         final AptFieldImpl properties = new AptFieldImpl();
-        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, variableElement, implMirror)
+        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, element, implMirror)
                 .orElse(null);
         if (annotationMirror != null) {
             properties.isAnnotationPresent = true;

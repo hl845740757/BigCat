@@ -623,13 +623,21 @@ public class AptUtils {
     }
 
     /**
-     * @param originTypeElement 原始类文件，用于获取包名，以及打印错误
+     * @param sourceElement 原始类文件，用于获取包名，以及打印错误
      */
-    public static void writeToFile(final TypeElement originTypeElement, final TypeSpec.Builder typeBuilder,
+    public static void writeToFile(final TypeElement sourceElement, final TypeSpec.Builder typeBuilder,
                                    final Elements elementUtils, final Messager messager, final Filer filer) {
+        writeToFile(sourceElement, typeBuilder,
+                getPackageName(sourceElement, elementUtils),
+                messager, filer);
+    }
+
+    /** @param outPackage 输出的文件目录 */
+    public static void writeToFile(final Element sourceElement, final TypeSpec.Builder typeBuilder,
+                                   final String outPackage, final Messager messager, final Filer filer) {
         final TypeSpec typeSpec = typeBuilder.build();
         final JavaFile javaFile = JavaFile
-                .builder(getPackageName(originTypeElement, elementUtils), typeSpec)
+                .builder(outPackage, typeSpec)
                 // 不用导入java.lang包
                 .skipJavaLangImports(true)
                 // 4空格缩进
@@ -640,7 +648,7 @@ public class AptUtils {
             // 如果自己指定路径，可以生成源码到指定路径，但是可能无法被编译器检测到，本轮无法参与编译，需要再进行一次编译
             javaFile.writeTo(filer);
         } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, getStackTrace(e), originTypeElement);
+            messager.printMessage(Diagnostic.Kind.ERROR, getStackTrace(e), sourceElement);
         }
     }
 

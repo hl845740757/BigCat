@@ -59,6 +59,11 @@ public class CodecProcessor extends MyAbstractProcessor {
     private static final String CNAME_BIN_READER = "cn.wjybxx.common.codec.binary.BinaryObjectReader";
     private static final String CNAME_BIN_WRITER = "cn.wjybxx.common.codec.binary.BinaryObjectWriter";
     private static final String CNAME_BIN_SCAN_IGNORE = "cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore";
+    // Linker
+    private static final String CNAME_CODEC_LINKER_GROUP = "cn.wjybxx.common.codec.CodecLinkerGroup";
+    private static final String CNAME_CODEC_LINKER = "cn.wjybxx.common.codec.CodecLinker";
+    private static final String MNAME_OUTPUT = "outputPackage";
+    private static final String MNAME_CLASSIMPL = "classImpl";
 
     // PojoCodecImpl
     public static final String CNAME_POJO_CODEC = "cn.wjybxx.common.codec.PojoCodecImpl";
@@ -99,6 +104,9 @@ public class CodecProcessor extends MyAbstractProcessor {
     public TypeMirror binReaderTypeMirror;
     public TypeMirror binWriterTypeMirror;
     public AnnotationSpec binScanIgnoreAnnoSpec;
+    // linker
+    public TypeElement anno_codecLinkerGroup;
+    public TypeElement anno_codecLinker;
 
     // abstractCodec
     public TypeElement abstractCodecTypeElement;
@@ -164,6 +172,9 @@ public class CodecProcessor extends MyAbstractProcessor {
         binWriterTypeMirror = elementUtils.getTypeElement(CNAME_BIN_WRITER).asType();
         binScanIgnoreAnnoSpec = AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(CNAME_BIN_SCAN_IGNORE)))
                 .build();
+        // linker
+        anno_codecLinkerGroup = elementUtils.getTypeElement(CNAME_CODEC_LINKER_GROUP);
+        anno_codecLinker = elementUtils.getTypeElement(CNAME_CODEC_LINKER);
 
         // PojoCodec
         TypeElement pojoCodecTypeElement = elementUtils.getTypeElement(CNAME_POJO_CODEC);
@@ -205,7 +216,6 @@ public class CodecProcessor extends MyAbstractProcessor {
                                               String methodName, TypeMirror firstArg) {
         return allMethodsWithInherit.stream()
                 .filter(e -> e.getKind() == ElementKind.METHOD && e.getSimpleName().toString().equals(methodName))
-                .map(e -> (ExecutableElement) e)
                 .filter(e -> e.getParameters().size() > 0
                         && AptUtils.isSameTypeIgnoreTypeParameter(typeUtils, e.getParameters().get(0).asType(), firstArg)
                 )
@@ -215,7 +225,8 @@ public class CodecProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<TypeElement> allTypeElements = AptUtils.selectSourceFileAny(roundEnv, elementUtils, anno_binSerializable, anno_docSerializable);
+        final Set<TypeElement> allTypeElements = AptUtils.selectSourceFileAny(roundEnv, elementUtils,
+                anno_binSerializable, anno_docSerializable, anno_codecLinkerGroup);
         for (TypeElement typeElement : allTypeElements) {
             try {
                 // 各种缓存，避免频繁解析类型信息
@@ -224,30 +235,19 @@ public class CodecProcessor extends MyAbstractProcessor {
                         .orElse(null);
                 context.docSerialAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_docSerializable.asType())
                         .orElse(null);
+                context.linkerGroupAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_codecLinkerGroup.asType())
+                        .orElse(null);
+
+                context.aptClassImpl = AptClassImpl.parse(typeUtils, typeElement, anno_classImplTypeMirror);
                 context.allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
                 cacheAptFieldImpl(context);
-                context.aptClassImpl = parseClassImpl(typeElement);
 
-                if (context.binSerialAnnoMirror != null) {
-                    context.serialTypeElement = anno_binSerializable;
-                    context.ignoreTypeMirror = anno_binIgnore;
-                    context.readerTypeMirror = binReaderTypeMirror;
-                    context.writerTypeMirror = binWriterTypeMirror;
-                    context.serialFields = new ArrayList<>();
-                    checkTypeElement(context);
-                    context.binSerialFields.addAll(context.serialFields);
+                if (context.linkerGroupAnnoMirror != null) {
+                    // 不是为自己生成，而是为字段生成
+                    processLinkerGroup(context);
+                } else {
+                    processDirectType(context);
                 }
-                if (context.docSerialAnnoMirror != null) {
-                    context.serialTypeElement = anno_docSerializable;
-                    context.ignoreTypeMirror = anno_docIgnore;
-                    context.readerTypeMirror = docReaderTypeMirror;
-                    context.writerTypeMirror = docWriterTypeMirror;
-                    context.serialFields = new ArrayList<>();
-                    checkTypeElement(context);
-                    context.docSerialFields.addAll(context.serialFields);
-                }
-
-                generateSerializer(context);
             } catch (Throwable e) {
                 messager.printMessage(Diagnostic.Kind.ERROR, AptUtils.getStackTrace(e), typeElement);
             }
@@ -255,7 +255,89 @@ public class CodecProcessor extends MyAbstractProcessor {
         return true;
     }
 
-    private void generateSerializer(Context context) {
+    private void processLinkerGroup(Context groupContext) {
+        final String outPackage = AptUtils.getAnnotationValueValue(groupContext.linkerGroupAnnoMirror, MNAME_OUTPUT);
+        Objects.requireNonNull(outPackage, "outPackage");
+
+        for (VariableElement variableElement : groupContext.allFields) {
+            AnnotationMirror linkerAnnoMirror = AptUtils.findAnnotation(typeUtils, variableElement, anno_codecLinker.asType())
+                    .orElse(null);
+            if (linkerAnnoMirror == null) { // 不需要链接的字段
+                continue;
+            }
+            DeclaredType declaredType = AptUtils.findDeclaredType(variableElement.asType());
+            if (declaredType == null) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "Bad Linker Target", variableElement);
+                continue;
+            }
+
+            AnnotationValue classImplAnnoValue = AptUtils.getAnnotationValue(linkerAnnoMirror, MNAME_CLASSIMPL);
+            Objects.requireNonNull(classImplAnnoValue, "classImp props is absent");
+            AptClassImpl aptClassImpl = AptClassImpl.parse((AnnotationMirror) classImplAnnoValue.getValue());
+
+            // 创建模拟数据
+            TypeElement typeElement = (TypeElement) declaredType.asElement();
+            Context context = new Context(typeElement);
+            context.linkerAddAnnotations = getAdditionalAnnotations(linkerAnnoMirror);
+            context.binSerialAnnoMirror = context.docSerialAnnoMirror = linkerAnnoMirror;
+            context.binAddAnnotations = context.docAddAnnotations = context.linkerAddAnnotations;
+
+            context.aptClassImpl = aptClassImpl;
+            context.allFieldsAndMethodWithInherit = BeanUtils.getAllFieldsAndMethodsWithInherit(typeElement);
+            cacheAptFieldImpl(context);
+            // binary
+            {
+                context.serialTypeElement = anno_binSerializable;
+                context.ignoreTypeMirror = anno_binIgnore;
+                context.readerTypeMirror = binReaderTypeMirror;
+                context.writerTypeMirror = binWriterTypeMirror;
+
+                context.serialFields = new ArrayList<>();
+                checkTypeElement(context);
+                context.binSerialFields.addAll(context.serialFields);
+            }
+            // document
+            {
+                context.serialTypeElement = anno_docSerializable;
+                context.ignoreTypeMirror = anno_docIgnore;
+                context.readerTypeMirror = docReaderTypeMirror;
+                context.writerTypeMirror = docWriterTypeMirror;
+
+                context.serialFields = new ArrayList<>();
+                checkTypeElement(context);
+                context.docSerialFields.addAll(context.serialFields);
+            }
+            generateCodec(context);
+        }
+    }
+
+    private void processDirectType(Context context) {
+        if (context.binSerialAnnoMirror != null) {
+            context.binAddAnnotations = getAdditionalAnnotations(context.binSerialAnnoMirror);
+            context.serialTypeElement = anno_binSerializable;
+            context.ignoreTypeMirror = anno_binIgnore;
+            context.readerTypeMirror = binReaderTypeMirror;
+            context.writerTypeMirror = binWriterTypeMirror;
+
+            context.serialFields = new ArrayList<>();
+            checkTypeElement(context);
+            context.binSerialFields.addAll(context.serialFields);
+        }
+        if (context.docSerialAnnoMirror != null) {
+            context.docAddAnnotations = getAdditionalAnnotations(context.docSerialAnnoMirror);
+            context.serialTypeElement = anno_docSerializable;
+            context.ignoreTypeMirror = anno_docIgnore;
+            context.readerTypeMirror = docReaderTypeMirror;
+            context.writerTypeMirror = docWriterTypeMirror;
+
+            context.serialFields = new ArrayList<>();
+            checkTypeElement(context);
+            context.docSerialFields.addAll(context.serialFields);
+        }
+        generateCodec(context);
+    }
+
+    private void generateCodec(Context context) {
         TypeElement typeElement = context.typeElement;
         if (isEnumLite(typeElement.asType())) {
             DeclaredType superDeclaredType = typeUtils.getDeclaredType(enumCodecTypeElement, typeUtils.erasure(typeElement.asType()));
@@ -271,41 +353,42 @@ public class CodecProcessor extends MyAbstractProcessor {
             // 不论注解是否存在，所有方法都要实现
             // Binary
             {
+                context.serialAnnoMirror = context.binSerialAnnoMirror;
+                context.scanIgnoreAnnoSpec = binScanIgnoreAnnoSpec;
+                context.additionalAnnotations = context.binAddAnnotations;
+
                 context.serialTypeElement = anno_binSerializable;
                 context.ignoreTypeMirror = anno_binIgnore;
                 context.readerTypeMirror = binReaderTypeMirror;
                 context.writerTypeMirror = binWriterTypeMirror;
                 context.serialFields = context.binSerialFields;
-                context.serialAnnoMirror = context.binSerialAnnoMirror;
                 context.serialNameAccess = "numbers_";
-                context.scanIgnoreAnnoSpec = binScanIgnoreAnnoSpec;
                 new PojoCodecGenerator(this, context).execute();
             }
             // Document
             {
                 context.serialAnnoMirror = context.docSerialAnnoMirror;
+                context.scanIgnoreAnnoSpec = docScanIgnoreAnnoSpec;
+                context.additionalAnnotations = context.docAddAnnotations;
+
                 context.serialTypeElement = anno_docSerializable;
                 context.ignoreTypeMirror = anno_docIgnore;
                 context.readerTypeMirror = docReaderTypeMirror;
                 context.writerTypeMirror = docWriterTypeMirror;
                 context.serialFields = context.docSerialFields;
                 context.serialNameAccess = "names_";
-                context.scanIgnoreAnnoSpec = docScanIgnoreAnnoSpec;
                 new PojoCodecGenerator(this, context).execute();
             }
         }
         // 写入文件
-        AptUtils.writeToFile(typeElement, context.typeBuilder, elementUtils, messager, filer);
+        if (context.outPackage != null) {
+            AptUtils.writeToFile(typeElement, context.typeBuilder, context.outPackage, messager, filer);
+        } else {
+            AptUtils.writeToFile(typeElement, context.typeBuilder, elementUtils, messager, filer);
+        }
     }
 
-    private void initTypeBuilder(Context context, TypeElement typeElement, DeclaredType superDeclaredType) {
-        context.superDeclaredType = superDeclaredType;
-        context.typeBuilder = TypeSpec.classBuilder(getCodecName(typeElement))
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
-                .addAnnotation(processorInfoAnnotation)
-                .superclass(TypeName.get(superDeclaredType));
-    }
+    // region
 
     private void cacheAptFieldImpl(Context context) {
         context.allFields = context.allFieldsAndMethodWithInherit.stream()
@@ -320,9 +403,36 @@ public class CodecProcessor extends MyAbstractProcessor {
         });
     }
 
-    protected String getCodecName(TypeElement typeElement) {
+    private List<AnnotationSpec> getAdditionalAnnotations(AnnotationMirror annotationMirror) {
+        if (annotationMirror == null) {
+            return List.of();
+        }
+        final List<? extends AnnotationValue> annotationsList = AptUtils.getAnnotationValueValue(annotationMirror, "annotations");
+        if (annotationsList == null || annotationsList.isEmpty()) {
+            return List.of();
+        }
+        List<AnnotationSpec> result = new ArrayList<>(annotationsList.size());
+        for (final AnnotationValue annotationValue : annotationsList) {
+            final TypeMirror typeMirror = AptUtils.getAnnotationValueTypeMirror(annotationValue);
+            result.add(AnnotationSpec.builder((ClassName) ClassName.get(typeMirror))
+                    .build());
+        }
+        return result;
+    }
+
+    private void initTypeBuilder(Context context, TypeElement typeElement, DeclaredType superDeclaredType) {
+        context.superDeclaredType = superDeclaredType;
+        context.typeBuilder = TypeSpec.classBuilder(getCodecName(typeElement))
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
+                .addAnnotation(processorInfoAnnotation)
+                .superclass(TypeName.get(superDeclaredType));
+    }
+
+    private String getCodecName(TypeElement typeElement) {
         return AptUtils.getProxyClassName(elementUtils, typeElement, "Codec");
     }
+    // endregion
 
     private void checkTypeElement(Context context) {
         TypeElement typeElement = context.typeElement;
@@ -439,6 +549,8 @@ public class CodecProcessor extends MyAbstractProcessor {
                 typeElement);
     }
 
+    // region 钩子方法检查
+
     /** 是否包含 T(Reader reader) 构造方法 */
     public boolean containsReaderConstructor(TypeElement typeElement, TypeMirror readerTypeMirror) {
         return BeanUtils.containsOneArgsConstructor(typeUtils, typeElement, readerTypeMirror);
@@ -477,12 +589,9 @@ public class CodecProcessor extends MyAbstractProcessor {
                 .findFirst()
                 .orElse(null);
     }
+    // endregion
 
-    public AptClassImpl parseClassImpl(TypeElement typeElement) {
-        return AptClassImpl.parse(typeUtils, typeElement, anno_classImplTypeMirror);
-    }
-
-    // 字段处理
+    // region 字段检查
 
     /**
      * 测试{@link TypeElement}是否可以直接读取字段。
@@ -597,6 +706,7 @@ public class CodecProcessor extends MyAbstractProcessor {
         }
         return true;
     }
+    // endregion
 
     // endregion
 
@@ -678,24 +788,6 @@ public class CodecProcessor extends MyAbstractProcessor {
         } else {
             return MethodSpec.overriding(doc_writeObjectMethod, superDeclaredType, typeUtils);
         }
-    }
-
-    public List<AnnotationSpec> getAdditionalAnnotations(TypeElement typeElement, TypeMirror serialTypeMirror) {
-        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, serialTypeMirror)
-                .orElseThrow();
-
-        final List<? extends AnnotationValue> annotationsList = AptUtils.getAnnotationValueValue(annotationMirror, "annotations");
-        if (annotationsList == null || annotationsList.isEmpty()) {
-            return List.of();
-        }
-
-        List<AnnotationSpec> result = new ArrayList<>(annotationsList.size());
-        for (final AnnotationValue annotationValue : annotationsList) {
-            final TypeMirror typeMirror = AptUtils.getAnnotationValueTypeMirror(annotationValue);
-            result.add(AnnotationSpec.builder((ClassName) ClassName.get(typeMirror))
-                    .build());
-        }
-        return result;
     }
 
     // endregion

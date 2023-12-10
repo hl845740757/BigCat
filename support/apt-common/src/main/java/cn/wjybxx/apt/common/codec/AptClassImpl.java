@@ -21,10 +21,11 @@ import cn.wjybxx.apt.AptUtils;
 import javax.annotation.Nonnull;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,23 +41,32 @@ public class AptClassImpl {
     public String singleton;
     public Set<String> skipFields = Set.of();
 
-    @Nonnull
-    public static AptClassImpl parse(Types typeUtils, TypeElement typeElement, TypeMirror implMirror) {
-        final AptClassImpl properties = new AptClassImpl();
-        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, implMirror)
-                .orElse(null);
-        if (annotationMirror != null) {
-            properties.isAnnotationPresent = true;
-            properties.singleton = AptUtils.getAnnotationValueValue(annotationMirror, "singleton", "").trim();
-            properties.isSingleton = !AptUtils.isBlank(properties.singleton);
+    public AptClassImpl() {
+    }
 
-            // 字符串数组属性返回值为List - 数组都不是直接值...
-            List<AnnotationValue> skipFields = AptUtils.getAnnotationValueValue(annotationMirror, "skipFields", List.of());
-            if (skipFields.size() > 0) {
-                properties.skipFields = skipFields.stream()
-                        .map(e -> (String) e.getValue())
-                        .collect(Collectors.toSet());
-            }
+    @Nonnull
+    public static AptClassImpl parse(Types typeUtils, Element element, TypeMirror implMirror) {
+        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, element, implMirror)
+                .orElse(null);
+        if (annotationMirror == null) {
+            return new AptClassImpl();
+        }
+        return parse(annotationMirror);
+    }
+
+    public static AptClassImpl parse(AnnotationMirror annotationMirror) {
+        Objects.requireNonNull(annotationMirror, "annotationMirror");
+        final AptClassImpl properties = new AptClassImpl();
+        properties.isAnnotationPresent = true;
+        properties.singleton = AptUtils.getAnnotationValueValue(annotationMirror, "singleton", "").trim();
+        properties.isSingleton = !AptUtils.isBlank(properties.singleton);
+
+        // 字符串数组属性返回值为List - 数组都不是直接值...
+        List<AnnotationValue> skipFields = AptUtils.getAnnotationValueValue(annotationMirror, "skipFields", List.of());
+        if (skipFields.size() > 0) {
+            properties.skipFields = skipFields.stream()
+                    .map(e -> (String) e.getValue())
+                    .collect(Collectors.toSet());
         }
         return properties;
     }

@@ -51,7 +51,6 @@ public class PojoCodecGenerator extends AbstractGenerator<CodecProcessor> {
 
     private final Context context;
     private final TypeSpec.Builder typeBuilder;
-    private final TypeElement serialTypeElement;
     private final TypeMirror readerTypeMirror;
     private final TypeMirror writerTypeMirror;
     private final List<? extends Element> allFieldsAndMethodWithInherit;
@@ -82,7 +81,6 @@ public class PojoCodecGenerator extends AbstractGenerator<CodecProcessor> {
         super(processor, context.typeElement);
         this.context = context;
         this.typeBuilder = context.typeBuilder;
-        this.serialTypeElement = context.serialTypeElement;
         this.readerTypeMirror = context.readerTypeMirror;
         this.writerTypeMirror = context.writerTypeMirror;
         this.allFieldsAndMethodWithInherit = context.allFieldsAndMethodWithInherit;
@@ -144,7 +142,9 @@ public class PojoCodecGenerator extends AbstractGenerator<CodecProcessor> {
                 }
             }
         }
-        typeBuilder.addAnnotations(processor.getAdditionalAnnotations(typeElement, serialTypeElement.asType()));
+        if (context.additionalAnnotations != null) {
+            typeBuilder.addAnnotations(context.additionalAnnotations);
+        }
         // getEncoder
         if (!containsGetEncoderClass(typeBuilder)) {
             typeBuilder.addMethod(processor.newGetEncoderClassMethod(superDeclaredType, rawTypeName));
