@@ -30,7 +30,6 @@ import java.util.IdentityHashMap;
  * @author wjybxx
  * date 2023/4/14
  */
-@AutoSchema
 @ClassImpl(skipFields = "size")
 @BinarySerializable(annotations = BinaryPojoCodecScanIgnore.class)
 public class CustomMapCodecTest<K, V> extends IdentityHashMap<K, V> {

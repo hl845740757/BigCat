@@ -21,9 +21,8 @@ import cn.wjybxx.common.codec.TypeMeta;
 import cn.wjybxx.common.codec.TypeMetaRegistries;
 import cn.wjybxx.common.codec.TypeMetaRegistry;
 import cn.wjybxx.common.codec.codecs.*;
-import cn.wjybxx.common.codec.document.codecs.*;
 import cn.wjybxx.common.pb.ProtobufUtils;
-import cn.wjybxx.dson.internal.InternalUtils;
+import cn.wjybxx.common.props.PropertiesUtils;
 import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;
@@ -56,7 +55,7 @@ public class DocumentConverterUtils extends ConverterUtils {
 
     static {
         Properties properties = System.getProperties();
-        NAME_CACHE_SIZE = InternalUtils.getInt(properties, "cn.wjybxx.common.codec.document.namecachesize", 200);
+        NAME_CACHE_SIZE = PropertiesUtils.getInt(properties, "cn.wjybxx.common.codec.document.namecachesize", 200);
 
         String[] nameCache = arrayElementNameCache = new String[NAME_CACHE_SIZE];
         for (int idx = 0; idx < nameCache.length; idx++) {

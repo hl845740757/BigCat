@@ -42,7 +42,6 @@ import java.util.*;
  * @author wjybxx
  * date 2023/4/7
  */
-@AutoSchema
 @DocumentSerializable
 @BinarySerializable
 public class CodecBeanExample {

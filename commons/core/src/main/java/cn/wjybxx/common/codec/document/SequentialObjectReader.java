@@ -21,6 +21,7 @@ import cn.wjybxx.dson.DsonReader;
 import cn.wjybxx.dson.DsonType;
 
 /**
+ * 顺序解码没有额外的开销，但数据兼容性会变差。
  * 如果觉得{@link DefaultDocumentObjectReader}的开销有点大，可以选择顺序解码模式
  *
  * @author wjybxx

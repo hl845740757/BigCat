@@ -17,7 +17,6 @@
 package cn.wjybxx.common.rpc;
 
 
-import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.FieldImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
@@ -37,7 +36,6 @@ import java.util.List;
  * @author wjybxx
  * date 2023/4/1
  */
-@AutoSchema
 @BinarySerializable
 public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObject {
 

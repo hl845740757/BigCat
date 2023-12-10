@@ -2,7 +2,6 @@ package cn.wjybxx.common.btree.branch;
 
 import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
-import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.codec.document.DocumentSerializable;
 
@@ -13,7 +12,7 @@ import java.util.List;
  * @author wjybxx
  * date - 2023/11/26
  */
-@AutoSchema
+
 @BinarySerializable
 @DocumentSerializable
 public class Selector<E> extends SingleRunningChildBranch<E> {

@@ -85,7 +85,6 @@ public class RandomReadTest {
         Assertions.assertEquals(bean, converter.cloneObject(bean, TypeArgInfo.OBJECT));
     }
 
-    @AutoSchema
     public static class Bean {
         public int iv1;
         public int iv2;
@@ -138,13 +137,7 @@ public class RandomReadTest {
     }
 
 
-    private static class BeanDocCodec extends AbstractPojoCodecImpl<RandomReadTest.Bean> {
-
-        @Override
-        protected RandomReadTest.Bean newInstance(DocumentObjectReader reader,
-                                                  TypeArgInfo<?> typeArgInfo) {
-            return new RandomReadTest.Bean();
-        }
+    private static class BeanDocCodec extends AbstractDocumentPojoCodecImpl<Bean> {
 
         @Override
         @Nonnull
@@ -153,7 +146,13 @@ public class RandomReadTest {
         }
 
         @Override
-        public void readFields(RandomReadTest.Bean instance, DocumentObjectReader reader,
+        protected RandomReadTest.Bean newInstance(DocumentObjectReader reader,
+                                                  TypeArgInfo<?> typeArgInfo) {
+            return new RandomReadTest.Bean();
+        }
+
+        @Override
+        public void readFields(DocumentObjectReader reader, RandomReadTest.Bean instance,
                                TypeArgInfo<?> typeArgInfo) {
             instance.iv1 = reader.readInt("iv1");
             instance.iv2 = reader.readInt("iv2");
@@ -185,6 +184,12 @@ public class RandomReadTest {
     }
 
     private static class BeanBinCodec extends AbstractBinaryPojoCodecImpl<Bean> {
+
+        @Override
+        @Nonnull
+        public Class<RandomReadTest.Bean> getEncoderClass() {
+            return RandomReadTest.Bean.class;
+        }
 
         @Override
         protected RandomReadTest.Bean newInstance(BinaryObjectReader reader,
@@ -219,12 +224,6 @@ public class RandomReadTest {
             writer.writeDouble(DsonLites.makeFullNumber(0, 7), instance.dv2, NumberStyle.SIMPLE);
             writer.writeBoolean(DsonLites.makeFullNumber(0, 8), instance.bv1);
             writer.writeBoolean(DsonLites.makeFullNumber(0, 9), instance.bv2);
-        }
-
-        @Override
-        @Nonnull
-        public Class<RandomReadTest.Bean> getEncoderClass() {
-            return RandomReadTest.Bean.class;
         }
     }
 }
