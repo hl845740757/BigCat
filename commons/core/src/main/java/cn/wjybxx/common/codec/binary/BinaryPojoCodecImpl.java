@@ -54,7 +54,7 @@ public interface BinaryPojoCodecImpl<T> {
      *
      * @param typeArgInfo 类型描述信息，用于判断元素的类型是否写入，是一个上下文
      */
-    void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo);
+    void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 从输入流中解析指定对象。

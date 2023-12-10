@@ -18,7 +18,7 @@ package cn.wjybxx.common.codec;
 
 import cn.wjybxx.common.OptionalBool;
 import cn.wjybxx.common.codec.binary.BinaryConverter;
-import cn.wjybxx.common.codec.document.codecs.MapCodec;
+import cn.wjybxx.common.codec.codecs.MapCodec;
 import cn.wjybxx.dson.DsonReaderSettings;
 import cn.wjybxx.dson.DsonWriterSettings;
 import cn.wjybxx.dson.text.DsonMode;

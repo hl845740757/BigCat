@@ -55,7 +55,7 @@ public interface DocumentPojoCodecImpl<T> {
      *
      * @param style 外部期望的输出格式
      */
-    void writeObject(T instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
+    void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 
     /**
      * 从输入流中解析指定对象。

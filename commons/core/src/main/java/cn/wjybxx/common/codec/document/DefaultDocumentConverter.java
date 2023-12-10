@@ -67,7 +67,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     @Override
-    public void write(Object value, Chunk chunk, TypeArgInfo<?> typeArgInfo) {
+    public void write(Object value, DsonChunk chunk, TypeArgInfo<?> typeArgInfo) {
         Objects.requireNonNull(value);
         final DsonOutput outputStream = DsonOutputs.newInstance(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
         encodeObject(outputStream, value, typeArgInfo);
@@ -75,7 +75,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
     }
 
     @Override
-    public <U> U read(Chunk chunk, TypeArgInfo<U> typeArgInfo) {
+    public <U> U read(DsonChunk chunk, TypeArgInfo<U> typeArgInfo) {
         final DsonInput inputStream = DsonInputs.newInstance(chunk.getBuffer(), chunk.getOffset(), chunk.getLength());
         return decodeObject(inputStream, typeArgInfo);
     }
@@ -86,7 +86,7 @@ public class DefaultDocumentConverter implements DocumentConverter {
         Objects.requireNonNull(value);
         final byte[] localBuffer = options.bufferPool.alloc();
         try {
-            final Chunk chunk = new Chunk(localBuffer);
+            final DsonChunk chunk = new DsonChunk(localBuffer);
             write(value, chunk, typeArgInfo);
 
             final byte[] result = new byte[chunk.getUsed()];

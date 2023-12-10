@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary.codecs;
+package cn.wjybxx.common.codec.codecs;
 
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.codec.document.DocumentObjectReader;
+import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
 import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 import javax.annotation.Nonnull;
@@ -31,7 +35,8 @@ import javax.annotation.Nonnull;
  * date 2023/4/4
  */
 @BinaryPojoCodecScanIgnore
-public class LongArrayCodec implements BinaryPojoCodecImpl<long[]> {
+@DocumentPojoCodecScanIgnore
+public class LongArrayCodec implements PojoCodecImpl<long[]> {
 
     @Nonnull
     @Override
@@ -40,7 +45,7 @@ public class LongArrayCodec implements BinaryPojoCodecImpl<long[]> {
     }
 
     @Override
-    public void writeObject(long[] instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, long[] instance, TypeArgInfo<?> typeArgInfo) {
         for (long e : instance) {
             writer.writeLong(0, e);
         }
@@ -51,6 +56,22 @@ public class LongArrayCodec implements BinaryPojoCodecImpl<long[]> {
         LongArrayList result = new LongArrayList();
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readLong(0));
+        }
+        return result.toLongArray();
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, long[] instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        for (long e : instance) {
+            writer.writeLong(null, e);
+        }
+    }
+
+    @Override
+    public long[] readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        LongArrayList result = new LongArrayList();
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            result.add(reader.readLong(null));
         }
         return result.toLongArray();
     }

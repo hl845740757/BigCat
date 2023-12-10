@@ -1,33 +1,18 @@
-/*
- * Copyright 2023 wjybxx(845740757@qq.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package cn.wjybxx.common.codec;
 
-package cn.wjybxx.common.codec.binary;
-
-import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.binary.BinaryObjectReader;
+import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
+import cn.wjybxx.common.codec.document.AbstractDocumentPojoCodecImpl;
 
 import java.util.function.Supplier;
 
 /**
- * 生成的代码会继承该类
+ * 继承{@link AbstractDocumentPojoCodecImpl}而不是二进制的模板类，是因我们自定义解析文档型编码的情况更多。
  *
  * @author wjybxx
- * date 2023/3/31
+ * date - 2023/12/10
  */
-@SuppressWarnings("unused")
-public abstract class AbstractBinaryPojoCodecImpl<T> implements BinaryPojoCodecImpl<T> {
+public abstract class AbstractPojoCodecImpl<T> extends AbstractDocumentPojoCodecImpl<T> implements PojoCodecImpl<T> {
 
     @Override
     public final T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
@@ -61,5 +46,8 @@ public abstract class AbstractBinaryPojoCodecImpl<T> implements BinaryPojoCodecI
     protected void afterDecode(BinaryObjectReader reader, T instance, TypeArgInfo<?> typeArgInfo) {
 
     }
+
+    @Override
+    public abstract void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo);
 
 }

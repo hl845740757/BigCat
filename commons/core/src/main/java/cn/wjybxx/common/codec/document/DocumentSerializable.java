@@ -18,7 +18,6 @@ package cn.wjybxx.common.codec.document;
 
 import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.EnumUtils;
-import cn.wjybxx.common.codec.AutoSchema;
 import cn.wjybxx.common.codec.ClassImpl;
 import cn.wjybxx.common.codec.FieldImpl;
 
@@ -33,7 +32,6 @@ import java.lang.annotation.*;
  * 2. 如果是普通类，必须提供<b>非私有无参构造方法</b>，或提供非私有的{@link DocumentObjectReader}的单参构造方法。
  * 3. 对于普通类，所有托管给生成代码读的字段，必须提供setter或直接写权限。
  * 4. 对于普通类，所有托管给生成代码写的字段，必须提供getter或直接读权限。
- * 5. 对于普通类，必须同时使用{@link AutoSchema}注解。
  * <p>
  * 普通类钩子方法：
  * 1. 如果类提供了非私有的{@link DocumentObjectReader}的单参构造方法，将自动调用 -- 该方法可用于final和忽略字段。
@@ -68,7 +66,7 @@ import java.lang.annotation.*;
  * 2. 并不建议都实现为javabean格式。
  * *
  * <h3>辅助类类名</h3>
- * 生成的辅助类为{@code XXXDocCodec}
+ * 生成的辅助类为{@code XXXCodec}
  *
  * @author wjybxx
  * date 2023/3/31

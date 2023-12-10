@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary.codecs;
+package cn.wjybxx.common.codec.codecs;
 
 import cn.wjybxx.common.codec.ConverterUtils;
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.codec.document.DocumentObjectReader;
+import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
 import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -32,7 +36,8 @@ import java.util.ArrayList;
  * date 2023/4/4
  */
 @BinaryPojoCodecScanIgnore
-public class BooleanArrayCodec implements BinaryPojoCodecImpl<boolean[]> {
+@DocumentPojoCodecScanIgnore
+public class BooleanArrayCodec implements PojoCodecImpl<boolean[]> {
 
     @Nonnull
     @Override
@@ -41,7 +46,7 @@ public class BooleanArrayCodec implements BinaryPojoCodecImpl<boolean[]> {
     }
 
     @Override
-    public void writeObject(boolean[] instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, boolean[] instance, TypeArgInfo<?> typeArgInfo) {
         for (boolean e : instance) {
             writer.writeBoolean(0, e);
         }
@@ -52,6 +57,22 @@ public class BooleanArrayCodec implements BinaryPojoCodecImpl<boolean[]> {
         ArrayList<Boolean> result = new ArrayList<>();
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readBoolean(0));
+        }
+        return ConverterUtils.convertList2Array(result, boolean[].class);
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, boolean[] instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        for (boolean e : instance) {
+            writer.writeBoolean(null, e);
+        }
+    }
+
+    @Override
+    public boolean[] readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        ArrayList<Boolean> result = new ArrayList<>();
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            result.add(reader.readBoolean(null));
         }
         return ConverterUtils.convertList2Array(result, boolean[].class);
     }

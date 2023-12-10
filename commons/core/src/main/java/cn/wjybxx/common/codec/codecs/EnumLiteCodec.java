@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary.codecs;
+package cn.wjybxx.common.codec.codecs;
 
 import cn.wjybxx.common.EnumLite;
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
+import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.codec.document.DocumentObjectReader;
+import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -33,7 +39,9 @@ import java.util.function.IntFunction;
  * @author wjybxx
  * date - 2023/4/24
  */
-public class EnumLiteCodec<T extends EnumLite> implements BinaryPojoCodecImpl<T> {
+@BinaryPojoCodecScanIgnore
+@DocumentPojoCodecScanIgnore
+public class EnumLiteCodec<T extends EnumLite> implements PojoCodecImpl<T> {
 
     private final Class<T> encoderClass;
     private final IntFunction<T> mapper;
@@ -57,12 +65,22 @@ public class EnumLiteCodec<T extends EnumLite> implements BinaryPojoCodecImpl<T>
     }
 
     @Override
-    public void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
         writer.writeInt(0, instance.getNumber());
     }
 
     @Override
     public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         return mapper.apply(reader.readInt(0));
+    }
+
+    @Override
+    public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        return mapper.apply(reader.readInt("number"));
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        writer.writeInt("number", instance.getNumber());
     }
 }

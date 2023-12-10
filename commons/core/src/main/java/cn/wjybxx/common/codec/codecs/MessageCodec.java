@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary.codecs;
+package cn.wjybxx.common.codec.codecs;
 
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.codec.document.DocumentObjectReader;
+import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
 import cn.wjybxx.dson.DsonBinary;
+import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
@@ -34,7 +38,8 @@ import javax.annotation.Nonnull;
  * date 2023/4/2
  */
 @BinaryPojoCodecScanIgnore
-public class MessageCodec<T extends MessageLite> implements BinaryPojoCodecImpl<T> {
+@DocumentPojoCodecScanIgnore
+public class MessageCodec<T extends MessageLite> implements PojoCodecImpl<T> {
 
     private final Class<T> clazz;
     private final Parser<T> parser;
@@ -51,13 +56,23 @@ public class MessageCodec<T extends MessageLite> implements BinaryPojoCodecImpl<
     }
 
     @Override
-    public void writeObject(T instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
         writer.writeMessage(0, writer.options().pbBinaryType, instance);
     }
 
     @Override
     public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         return reader.readMessage(0, reader.options().pbBinaryType, parser);
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        writer.writeMessage("value", writer.options().pbBinaryType, instance);
+    }
+
+    @Override
+    public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        return reader.readMessage("value", reader.options().pbBinaryType, parser);
     }
 
 }

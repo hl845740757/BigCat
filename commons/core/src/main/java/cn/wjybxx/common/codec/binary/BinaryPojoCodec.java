@@ -17,7 +17,7 @@
 package cn.wjybxx.common.codec.binary;
 
 import cn.wjybxx.common.codec.TypeArgInfo;
-import cn.wjybxx.common.codec.binary.codecs.EnumLiteCodec;
+import cn.wjybxx.common.codec.codecs.EnumLiteCodec;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -73,15 +73,15 @@ public class BinaryPojoCodec<T> {
         if (codecImpl.autoStartEnd()) {
             if (isArray) {
                 writer.writeStartArray(instance, typeArgInfo);
-                codecImpl.writeObject(instance, writer, typeArgInfo);
+                codecImpl.writeObject(writer, instance, typeArgInfo);
                 writer.writeEndArray();
             } else {
                 writer.writeStartObject(instance, typeArgInfo);
-                codecImpl.writeObject(instance, writer, typeArgInfo);
+                codecImpl.writeObject(writer, instance, typeArgInfo);
                 writer.writeEndObject();
             }
         } else {
-            codecImpl.writeObject(instance, writer, typeArgInfo);
+            codecImpl.writeObject(writer, instance, typeArgInfo);
         }
     }
 

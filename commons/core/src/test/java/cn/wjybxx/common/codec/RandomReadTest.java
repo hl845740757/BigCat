@@ -138,12 +138,18 @@ public class RandomReadTest {
     }
 
 
-    private static class BeanDocCodec extends AbstractDocumentPojoCodecImpl<RandomReadTest.Bean> {
+    private static class BeanDocCodec extends AbstractPojoCodecImpl<RandomReadTest.Bean> {
 
         @Override
         protected RandomReadTest.Bean newInstance(DocumentObjectReader reader,
                                                   TypeArgInfo<?> typeArgInfo) {
             return new RandomReadTest.Bean();
+        }
+
+        @Override
+        @Nonnull
+        public Class<RandomReadTest.Bean> getEncoderClass() {
+            return RandomReadTest.Bean.class;
         }
 
         @Override
@@ -162,7 +168,7 @@ public class RandomReadTest {
         }
 
         @Override
-        public void writeObject(RandomReadTest.Bean instance, DocumentObjectWriter writer,
+        public void writeObject(DocumentObjectWriter writer, Bean instance,
                                 TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
             writer.writeInt("iv1", instance.iv1, WireType.VARINT, NumberStyle.SIMPLE);
             writer.writeInt("iv2", instance.iv2, WireType.VARINT, NumberStyle.SIMPLE);
@@ -176,11 +182,6 @@ public class RandomReadTest {
             writer.writeBoolean("bv2", instance.bv2);
         }
 
-        @Override
-        @Nonnull
-        public Class<RandomReadTest.Bean> getEncoderClass() {
-            return RandomReadTest.Bean.class;
-        }
     }
 
     private static class BeanBinCodec extends AbstractBinaryPojoCodecImpl<Bean> {
@@ -192,7 +193,7 @@ public class RandomReadTest {
         }
 
         @Override
-        public void readFields(RandomReadTest.Bean instance, BinaryObjectReader reader,
+        public void readFields(BinaryObjectReader reader, Bean instance,
                                TypeArgInfo<?> typeArgInfo) {
             instance.iv1 = reader.readInt(DsonLites.makeFullNumber(0, 0));
             instance.iv2 = reader.readInt(DsonLites.makeFullNumber(0, 1));
@@ -207,7 +208,7 @@ public class RandomReadTest {
         }
 
         @Override
-        public void writeObject(RandomReadTest.Bean instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+        public void writeObject(BinaryObjectWriter writer, Bean instance, TypeArgInfo<?> typeArgInfo) {
             writer.writeInt(DsonLites.makeFullNumber(0, 0), instance.iv1, WireType.VARINT, NumberStyle.SIMPLE);
             writer.writeInt(DsonLites.makeFullNumber(0, 1), instance.iv2, WireType.VARINT, NumberStyle.SIMPLE);
             writer.writeLong(DsonLites.makeFullNumber(0, 2), instance.lv1, WireType.VARINT, NumberStyle.SIMPLE);

@@ -19,7 +19,7 @@ package cn.wjybxx.common.codec.document;
 import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.dson.*;
-import cn.wjybxx.dson.io.Chunk;
+import cn.wjybxx.dson.io.DsonChunk;
 import cn.wjybxx.dson.text.*;
 import cn.wjybxx.dson.types.ObjectRef;
 import cn.wjybxx.dson.types.OffsetTimestamp;
@@ -59,7 +59,7 @@ public interface DocumentObjectWriter extends AutoCloseable {
 
     void writeBytes(String name, int type, byte[] value);
 
-    void writeBytes(String name, int type, @Nonnull Chunk chunk);
+    void writeBytes(String name, int type, @Nonnull DsonChunk chunk);
 
     void writeBinary(String name, DsonBinary binary);
 

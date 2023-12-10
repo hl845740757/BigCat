@@ -18,7 +18,7 @@ package cn.wjybxx.common.codec.binary;
 
 import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
-import cn.wjybxx.dson.io.Chunk;
+import cn.wjybxx.dson.io.DsonChunk;
 import com.google.protobuf.MessageLite;
 
 import javax.annotation.Nonnull;
@@ -146,7 +146,7 @@ public class DefaultBinaryObjectWriter implements BinaryObjectWriter {
     }
 
     @Override
-    public void writeBytes(int name, int type, @Nonnull Chunk chunk) {
+    public void writeBytes(int name, int type, @Nonnull DsonChunk chunk) {
         writer.writeBinary(name, type, chunk);
     }
 

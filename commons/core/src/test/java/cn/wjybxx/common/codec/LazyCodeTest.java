@@ -102,7 +102,7 @@ public class LazyCodeTest {
         }
 
         @Override
-        public void writeObject(MyStruct instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+        public void writeObject(BinaryObjectWriter writer, MyStruct instance, TypeArgInfo<?> typeArgInfo) {
             writer.writeString(DsonLites.makeFullNumber(0, 0), instance.strVal);
             if (role == Role.ROUTER) {
                 writer.writeValueBytes(DsonLites.makeFullNumber(0, 1), DsonType.OBJECT, (byte[]) instance.nestStruct);

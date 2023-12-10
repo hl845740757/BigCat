@@ -72,7 +72,7 @@
         <!-- 运行时依赖 -->
         <annotations.version>1.0-SNAPSHOT</annotations.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
-        <dson.version>1.0.8</dson.version>
+        <dson.version>1.1.0</dson.version>
 
         <fastutil.version>8.5.12</fastutil.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>

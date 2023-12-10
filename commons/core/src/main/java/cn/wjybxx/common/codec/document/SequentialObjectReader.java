@@ -21,7 +21,7 @@ import cn.wjybxx.dson.DsonReader;
 import cn.wjybxx.dson.DsonType;
 
 /**
- * 如果觉得{@link DefaultDocumentObjectReader}的开销有点大，以后可以支持双模式
+ * 如果觉得{@link DefaultDocumentObjectReader}的开销有点大，可以选择顺序解码模式
  *
  * @author wjybxx
  * date - 2023/4/23

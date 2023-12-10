@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.codec;
 
-import cn.wjybxx.dson.io.Chunk;
+import cn.wjybxx.dson.io.DsonChunk;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -48,22 +48,22 @@ public interface Converter {
      * @param typeArgInfo 要读取的目标类型信息，部分实现支持投影
      */
     default <U> U read(byte[] source, @Nonnull TypeArgInfo<U> typeArgInfo) {
-        return read(new Chunk(source), typeArgInfo);
+        return read(new DsonChunk(source), typeArgInfo);
     }
 
     /**
      * @param value       要写入的对象
-     * @param chunk       二进制块，写入的字节数设置到{@link Chunk}
+     * @param chunk       二进制块，写入的字节数设置到{@link DsonChunk}
      * @param typeArgInfo 类型参数信息
      */
-    void write(Object value, Chunk chunk, TypeArgInfo<?> typeArgInfo);
+    void write(Object value, DsonChunk chunk, TypeArgInfo<?> typeArgInfo);
 
     /**
-     * @param chunk       二进制块，读取的字节数设置到{@link Chunk}
+     * @param chunk       二进制块，读取的字节数设置到{@link DsonChunk}
      * @param typeArgInfo 类型参数信息
      * @return 解码结果，顶层对象不应该是null
      */
-    <U> U read(Chunk chunk, TypeArgInfo<U> typeArgInfo);
+    <U> U read(DsonChunk chunk, TypeArgInfo<U> typeArgInfo);
 
     @Nonnull
     default byte[] write(Object value) {
@@ -80,7 +80,7 @@ public interface Converter {
      * @return 写入的字节数
      */
     default int write(Object value, byte[] buffer, TypeArgInfo<?> typeArgInfo) {
-        Chunk chunk = new Chunk(buffer);
+        DsonChunk chunk = new DsonChunk(buffer);
         write(value, chunk, typeArgInfo);
         return chunk.getUsed();
     }

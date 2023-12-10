@@ -17,7 +17,7 @@
 package cn.wjybxx.common.codec.binary;
 
 import cn.wjybxx.common.codec.*;
-import cn.wjybxx.common.codec.binary.codecs.*;
+import cn.wjybxx.common.codec.codecs.*;
 import cn.wjybxx.common.pb.ProtobufUtils;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.ProtocolMessageEnum;

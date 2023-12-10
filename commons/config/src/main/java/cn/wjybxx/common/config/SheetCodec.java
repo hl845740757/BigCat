@@ -60,7 +60,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
     }
 
     @Override
-    public void writeObject(Sheet sheet, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeObject(DocumentObjectWriter writer, Sheet sheet, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeString("fileName", sheet.getFileName());
         writer.writeString("sheetName", sheet.getSheetName());
         writer.writeInt("sheetIndex", sheet.getSheetIndex());

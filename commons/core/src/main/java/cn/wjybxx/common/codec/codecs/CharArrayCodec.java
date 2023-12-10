@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary.codecs;
+package cn.wjybxx.common.codec.codecs;
 
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.codec.document.DocumentObjectReader;
+import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
 import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 
 import javax.annotation.Nonnull;
@@ -31,7 +35,8 @@ import javax.annotation.Nonnull;
  * date 2023/4/4
  */
 @BinaryPojoCodecScanIgnore
-public class CharArrayCodec implements BinaryPojoCodecImpl<char[]> {
+@DocumentPojoCodecScanIgnore
+public class CharArrayCodec implements PojoCodecImpl<char[]> {
 
     @Nonnull
     @Override
@@ -40,7 +45,7 @@ public class CharArrayCodec implements BinaryPojoCodecImpl<char[]> {
     }
 
     @Override
-    public void writeObject(char[] instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, char[] instance, TypeArgInfo<?> typeArgInfo) {
         for (char e : instance) {
             writer.writeChar(0, e);
         }
@@ -51,6 +56,22 @@ public class CharArrayCodec implements BinaryPojoCodecImpl<char[]> {
         CharArrayList result = new CharArrayList();
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readChar(0));
+        }
+        return result.toCharArray();
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, char[] instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        for (char e : instance) {
+            writer.writeChar(null, e);
+        }
+    }
+
+    @Override
+    public char[] readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        CharArrayList result = new CharArrayList();
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            result.add(reader.readChar(null));
         }
         return result.toCharArray();
     }

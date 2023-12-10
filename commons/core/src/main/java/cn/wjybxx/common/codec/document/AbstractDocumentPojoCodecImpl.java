@@ -16,7 +16,9 @@
 
 package cn.wjybxx.common.codec.document;
 
+import cn.wjybxx.common.codec.ConverterUtils;
 import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 /**
  * 生成的代码会继承该类
@@ -24,14 +26,23 @@ import cn.wjybxx.common.codec.TypeArgInfo;
  * @author wjybxx
  * date 2023/4/4
  */
-@SuppressWarnings("unused")
 public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCodecImpl<T> {
+
+    @Override
+    public boolean isWriteAsArray() {
+        return ConverterUtils.isEncodeAsArray(getEncoderClass());
+    }
+
+    @Override
+    public boolean autoStartEnd() {
+        return true;
+    }
 
     @Override
     public final T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         final T instance = newInstance(reader, typeArgInfo);
-        readFields(instance, reader, typeArgInfo);
-        afterDecode(instance, reader, typeArgInfo);
+        readFields(reader, instance, typeArgInfo);
+        afterDecode(reader, instance, typeArgInfo);
         return instance;
     }
 
@@ -45,13 +56,15 @@ public abstract class AbstractDocumentPojoCodecImpl<T> implements DocumentPojoCo
      *
      * @param instance 可以是子类实例
      */
-    public abstract void readFields(T instance, DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo);
+    public abstract void readFields(DocumentObjectReader reader, T instance, TypeArgInfo<?> typeArgInfo);
 
     /**
      * 用于执行用户序列化完成的钩子方法
      */
-    protected void afterDecode(T instance, DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+    protected void afterDecode(DocumentObjectReader reader, T instance, TypeArgInfo<?> typeArgInfo) {
 
     }
 
+    @Override
+    public abstract void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style);
 }

@@ -19,7 +19,7 @@ package cn.wjybxx.common.codec.binary;
 import cn.wjybxx.common.codec.ConvertOptions;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.dson.*;
-import cn.wjybxx.dson.io.Chunk;
+import cn.wjybxx.dson.io.DsonChunk;
 import cn.wjybxx.dson.text.INumberStyle;
 import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
@@ -62,7 +62,7 @@ public interface BinaryObjectWriter extends AutoCloseable {
 
     void writeBytes(int name, int type, byte[] value);
 
-    void writeBytes(int name, int type, @Nonnull Chunk chunk);
+    void writeBytes(int name, int type, @Nonnull DsonChunk chunk);
 
     void writeBinary(int name, DsonBinary binary);
 

@@ -19,7 +19,7 @@ package cn.wjybxx.common.codec.document;
 import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.codec.*;
 import cn.wjybxx.dson.*;
-import cn.wjybxx.dson.io.Chunk;
+import cn.wjybxx.dson.io.DsonChunk;
 import cn.wjybxx.dson.text.INumberStyle;
 import cn.wjybxx.dson.text.IStyle;
 import cn.wjybxx.dson.text.ObjectStyle;
@@ -168,7 +168,7 @@ public class DefaultDocumentObjectWriter implements DocumentObjectWriter {
     }
 
     @Override
-    public void writeBytes(String name, int type, @Nonnull Chunk chunk) {
+    public void writeBytes(String name, int type, @Nonnull DsonChunk chunk) {
         writer.writeBinary(name, type, chunk);
     }
 

@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.document.codecs;
+package cn.wjybxx.common.codec.codecs;
 
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
+import cn.wjybxx.common.codec.binary.BinaryObjectReader;
+import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
+import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
 import cn.wjybxx.common.codec.document.DocumentObjectReader;
 import cn.wjybxx.common.codec.document.DocumentObjectWriter;
-import cn.wjybxx.common.codec.document.DocumentPojoCodecImpl;
 import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.NumberStyle;
@@ -32,8 +35,9 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/4
  */
+@BinaryPojoCodecScanIgnore
 @DocumentPojoCodecScanIgnore
-public class FloatArrayCodec implements DocumentPojoCodecImpl<float[]> {
+public class FloatArrayCodec implements PojoCodecImpl<float[]> {
 
     @Nonnull
     @Override
@@ -42,7 +46,23 @@ public class FloatArrayCodec implements DocumentPojoCodecImpl<float[]> {
     }
 
     @Override
-    public void writeObject(float[] instance, DocumentObjectWriter writer, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeObject(BinaryObjectWriter writer, float[] instance, TypeArgInfo<?> typeArgInfo) {
+        for (float e : instance) {
+            writer.writeFloat(0, e);
+        }
+    }
+
+    @Override
+    public float[] readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        FloatArrayList result = new FloatArrayList();
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            result.add(reader.readFloat(0));
+        }
+        return result.toFloatArray();
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, float[] instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         for (float e : instance) {
             writer.writeFloat(null, e, NumberStyle.SIMPLE);
         }

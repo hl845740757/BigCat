@@ -28,7 +28,9 @@ import java.util.Map;
 /**
  * @author wjybxx
  * date - 2023/9/27
+ * @deprecated 转换规则与项目相关
  */
+@Deprecated
 public class Bson2DsonUtils {
 
     public static DsonObject<String> toDsonObject(BsonDocument document) {
@@ -130,7 +132,7 @@ public class Bson2DsonUtils {
             }
             case TIMESTAMP -> {
                 OffsetTimestamp timestamp = dsonValue.asTimestamp();
-                long millis = TimeUtils.toMillis(timestamp.getSeconds(), timestamp.getMillisOfNanos());
+                long millis = TimeUtils.toMillis(timestamp.getSeconds(), timestamp.convertNanosToMillis());
                 yield new BsonDateTime(millis);
             }
             case ARRAY -> toBsonArray(dsonValue.asArray());
@@ -141,7 +143,7 @@ public class Bson2DsonUtils {
 
     private static DsonValue toDsonValue(BsonValue bsonValue) {
         return switch (bsonValue.getBsonType()) {
-            case NULL -> DsonNull.INSTANCE;
+            case NULL -> DsonNull.NULL;
             case INT32 -> new DsonInt32(bsonValue.asInt32().getValue());
             case INT64 -> new DsonInt64(bsonValue.asInt64().getValue());
             case DOUBLE -> new DsonDouble(bsonValue.asDouble().getValue());

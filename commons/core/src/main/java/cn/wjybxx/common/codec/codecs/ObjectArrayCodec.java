@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.codec.binary.codecs;
+package cn.wjybxx.common.codec.codecs;
 
 import cn.wjybxx.common.codec.ConverterUtils;
+import cn.wjybxx.common.codec.PojoCodecImpl;
 import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.common.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.common.codec.binary.BinaryPojoCodecScanIgnore;
+import cn.wjybxx.common.codec.document.DocumentObjectReader;
+import cn.wjybxx.common.codec.document.DocumentObjectWriter;
+import cn.wjybxx.common.codec.document.DocumentPojoCodecScanIgnore;
 import cn.wjybxx.dson.DsonType;
+import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -32,7 +36,8 @@ import java.util.ArrayList;
  * date 2023/4/4
  */
 @BinaryPojoCodecScanIgnore
-public class ObjectArrayCodec implements BinaryPojoCodecImpl<Object[]> {
+@DocumentPojoCodecScanIgnore
+public class ObjectArrayCodec implements PojoCodecImpl<Object[]> {
 
     @Nonnull
     @Override
@@ -41,7 +46,7 @@ public class ObjectArrayCodec implements BinaryPojoCodecImpl<Object[]> {
     }
 
     @Override
-    public void writeObject(Object[] instance, BinaryObjectWriter writer, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(BinaryObjectWriter writer, Object[] instance, TypeArgInfo<?> typeArgInfo) {
         TypeArgInfo<?> componentArgInfo = ConverterUtils.findComponentTypeArg(typeArgInfo.declaredType);
         for (Object e : instance) {
             writer.writeObject(0, e, componentArgInfo);
@@ -54,6 +59,25 @@ public class ObjectArrayCodec implements BinaryPojoCodecImpl<Object[]> {
         TypeArgInfo<?> componentArgInfo = ConverterUtils.findComponentTypeArg(typeArgInfo.declaredType);
         while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
             result.add(reader.readObject(0, componentArgInfo));
+        }
+        // 一定不是基础类型数组
+        return (Object[]) ConverterUtils.convertList2Array(result, typeArgInfo.declaredType);
+    }
+
+    @Override
+    public void writeObject(DocumentObjectWriter writer, Object[] instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+        TypeArgInfo<?> componentArgInfo = ConverterUtils.findComponentTypeArg(typeArgInfo.declaredType);
+        for (Object e : instance) {
+            writer.writeObject(null, e, componentArgInfo, null);
+        }
+    }
+
+    @Override
+    public Object[] readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+        ArrayList<Object> result = new ArrayList<>();
+        TypeArgInfo<?> componentArgInfo = ConverterUtils.findComponentTypeArg(typeArgInfo.declaredType);
+        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
+            result.add(reader.readObject(null, componentArgInfo));
         }
         // 一定不是基础类型数组
         return (Object[]) ConverterUtils.convertList2Array(result, typeArgInfo.declaredType);

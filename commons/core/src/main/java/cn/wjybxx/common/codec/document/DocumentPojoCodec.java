@@ -17,7 +17,7 @@
 package cn.wjybxx.common.codec.document;
 
 import cn.wjybxx.common.codec.TypeArgInfo;
-import cn.wjybxx.common.codec.document.codecs.EnumLiteCodec;
+import cn.wjybxx.common.codec.codecs.EnumLiteCodec;
 import cn.wjybxx.dson.text.ObjectStyle;
 
 import javax.annotation.Nonnull;
@@ -73,15 +73,15 @@ public class DocumentPojoCodec<T> {
         if (codecImpl.autoStartEnd()) {
             if (isArray) {
                 writer.writeStartArray(instance, typeArgInfo, style);
-                codecImpl.writeObject(instance, writer, typeArgInfo, style);
+                codecImpl.writeObject(writer, instance, typeArgInfo, style);
                 writer.writeEndArray();
             } else {
                 writer.writeStartObject(instance, typeArgInfo, style);
-                codecImpl.writeObject(instance, writer, typeArgInfo, style);
+                codecImpl.writeObject(writer, instance, typeArgInfo, style);
                 writer.writeEndObject();
             }
         } else {
-            codecImpl.writeObject(instance, writer, typeArgInfo, style);
+            codecImpl.writeObject(writer, instance, typeArgInfo, style);
         }
     }
 
