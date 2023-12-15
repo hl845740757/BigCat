@@ -50,6 +50,7 @@ public final class RpcMessage extends RpcProtocol {
         this.serviceId = methodSpec.getServiceId();
         this.methodId = methodSpec.getMethodId();
         this.parameters = methodSpec.getParameters();
+        setSharable(methodSpec.isSharable());
     }
 
     public int getServiceId() {

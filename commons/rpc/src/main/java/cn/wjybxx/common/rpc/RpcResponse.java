@@ -61,9 +61,6 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
     @FieldImpl(writeProxy = "writeResults", readProxy = "readResults")
     private Object results;
 
-    /** 方法参数是否可共享 -- 详见{@link RpcResultSpec} */
-    private transient boolean sharable;
-
     public RpcResponse() {
         // 序列化支持
     }
@@ -80,7 +77,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
 
         this.errorCode = resultSpec.getErrorCode();
         this.results = Objects.requireNonNull(resultSpec.getResults());
-        this.sharable = resultSpec.isSharable();
+        setSharable(resultSpec.isSharable());
     }
 
     // region 业务方法
@@ -129,6 +126,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
 
     // endregion
 
+    // region getter/setter
     public long getRequestId() {
         return requestId;
     }
@@ -173,15 +171,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         this.results = results;
         return this;
     }
-
-    public boolean isSharable() {
-        return sharable;
-    }
-
-    public RpcResponse setSharable(boolean sharable) {
-        this.sharable = sharable;
-        return this;
-    }
+    // endregion
 
     @Nonnull
     @Override
@@ -192,7 +182,6 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
                 ", results=" + results +
-                ", sharable=" + sharable +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
@@ -213,7 +202,6 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
                 ", results=" + results +
-                ", sharable=" + sharable +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +

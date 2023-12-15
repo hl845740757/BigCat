@@ -57,9 +57,6 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
     @FieldImpl(writeProxy = "writeParameters", readProxy = "readParameters")
     private Object parameters;
 
-    /** 方法参数是否可共享 -- 详见{@link RpcMethodSpec} */
-    private transient boolean sharable;
-
     public RpcRequest() {
         // 可能的序列化支持
     }
@@ -76,7 +73,7 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
         this.serviceId = methodSpec.getServiceId();
         this.methodId = methodSpec.getMethodId();
         this.parameters = methodSpec.getParameters();
-        this.sharable = methodSpec.isSharable();
+        setSharable(methodSpec.isSharable());
     }
 
     // region 业务方法
@@ -153,14 +150,6 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
         return this;
     }
 
-    public boolean isSharable() {
-        return sharable;
-    }
-
-    public RpcRequest setSharable(boolean sharable) {
-        this.sharable = sharable;
-        return this;
-    }
     // endregion
 
     @Nonnull

@@ -35,7 +35,7 @@ import java.util.List;
 @DocumentSerializable
 public class Join<E> extends Parallel<E> {
 
-    private JoinPolicy<E> policy;
+    protected JoinPolicy<E> policy;
 
     /** 子节点的重入id -- 判断本轮是否需要执行 */
     protected transient int[] childPrevReentryIds;
@@ -67,6 +67,7 @@ public class Join<E> extends Parallel<E> {
     protected void enter(int reentryId) {
         // 记录子类上下文 -- 由于beforeEnter可能改变子节点信息，因此在enter时处理
         recordContext();
+        policy.enter(this);
     }
 
     private void recordContext() {
@@ -84,13 +85,9 @@ public class Join<E> extends Parallel<E> {
     @Override
     protected void execute() {
         final List<Task<E>> children = this.children;
-        if (children.isEmpty()) { // 放在这里更利于子类重写该类
-            policy.onChildEmpty(this);
-            return;
-        }
         final int[] childPrevReentryIds = this.childPrevReentryIds;
-        final int reentryId = getReentryId();
 
+        final int reentryId = getReentryId();
         for (int i = 0; i < children.size(); i++) {
             final Task<E> child = children.get(i);
             final boolean started = child.isExited(childPrevReentryIds[i]);
@@ -125,6 +122,7 @@ public class Join<E> extends Parallel<E> {
         policy.onEvent(this, event);
     }
 
+    // region
     @Override
     public boolean isAllChildCompleted() {
         return completedCount >= children.size();
@@ -141,6 +139,7 @@ public class Join<E> extends Parallel<E> {
     public int getSucceededCount() {
         return succeededCount;
     }
+    // endregion
 
     public JoinPolicy<E> getPolicy() {
         return policy;

@@ -34,6 +34,7 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 public class JoinSelectorN<E> implements JoinPolicy<E> {
 
     private int required = 1;
+    private boolean failFast;
 
     public JoinSelectorN() {
     }
@@ -53,11 +54,13 @@ public class JoinSelectorN<E> implements JoinPolicy<E> {
     }
 
     @Override
-    public void onChildEmpty(Join<E> join) {
+    public void enter(Join<E> join) {
         if (required <= 0) {
             join.setSuccess();
-        } else {
+        } else if (join.getChildCount() == 0) {
             join.setFailed(Status.CHILDLESS);
+        } else if (checkFailFast(join)) {
+            join.setFailed(Status.INSUFFICIENT_CHILD);
         }
     }
 
@@ -65,9 +68,13 @@ public class JoinSelectorN<E> implements JoinPolicy<E> {
     public void onChildCompleted(Join<E> join, Task<E> child) {
         if (join.getSucceededCount() >= required) {
             join.setSuccess();
-        } else if (join.isAllChildCompleted()) {
+        } else if (join.isAllChildCompleted() || checkFailFast(join)) {
             join.setFailed(Status.ERROR);
         }
+    }
+
+    private boolean checkFailFast(Join<E> join) {
+        return failFast && (join.getChildCount() - join.getCompletedCount()) < required - join.getSucceededCount();
     }
 
     @Override
@@ -83,4 +90,11 @@ public class JoinSelectorN<E> implements JoinPolicy<E> {
         this.required = required;
     }
 
+    public boolean isFailFast() {
+        return failFast;
+    }
+
+    public void setFailFast(boolean failFast) {
+        this.failFast = failFast;
+    }
 }

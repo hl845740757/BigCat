@@ -39,6 +39,7 @@ import java.util.List;
 public class SelectorN<E> extends SingleRunningChildBranch<E> {
 
     private int required = 1;
+    private boolean failFast;
     private transient int count;
 
     public SelectorN() {
@@ -69,6 +70,10 @@ public class SelectorN<E> extends SingleRunningChildBranch<E> {
         super.enter(reentryId);
         if (required < 1) {
             setSuccess();
+        } else if (getChildCount() == 0) {
+            setFailed(Status.CHILDLESS);
+        } else if (checkFailFast()) {
+            setFailed(Status.INSUFFICIENT_CHILD);
         }
     }
 
@@ -81,11 +86,15 @@ public class SelectorN<E> extends SingleRunningChildBranch<E> {
         }
         if (child.isSucceeded() && ++count >= required) {
             setSuccess();
-        } else if (isAllChildCompleted()) {
+        } else if (isAllChildCompleted() || checkFailFast()) {
             setFailed(Status.ERROR);
         } else if (!isExecuting()) {
             template_execute();
         }
+    }
+
+    private boolean checkFailFast() {
+        return failFast && (children.size() - getCompletedCount()) < required - count;
     }
 
     public int getRequired() {
@@ -94,5 +103,14 @@ public class SelectorN<E> extends SingleRunningChildBranch<E> {
 
     public void setRequired(int required) {
         this.required = required;
+    }
+
+    public boolean isFailFast() {
+        return failFast;
+    }
+
+    public SelectorN<E> setFailFast(boolean failFast) {
+        this.failFast = failFast;
+        return this;
     }
 }

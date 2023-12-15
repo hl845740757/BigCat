@@ -53,8 +53,10 @@ public class JoinSelector<E> implements JoinPolicy<E> {
     }
 
     @Override
-    public void onChildEmpty(Join<E> join) {
-        join.setFailed(Status.CHILDLESS);
+    public void enter(Join<E> join) {
+        if (join.getChildCount() == 0) {
+            join.setFailed(Status.CHILDLESS);
+        }
     }
 
     @Override

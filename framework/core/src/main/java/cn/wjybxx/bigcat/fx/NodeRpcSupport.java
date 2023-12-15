@@ -513,7 +513,7 @@ public class NodeRpcSupport implements WorkerModule {
         Objects.requireNonNull(response);
         if (response.getConId() != conId) {
             // 收到旧进程的rpc响应，常见于使用MQ通信的服务器
-            logger.info("rcv old process rpc response");
+            logger.info("rcv old process rpc response, remote {}", response.getSrcAddr());
             return;
         }
         // watcher需要在IO线程测试

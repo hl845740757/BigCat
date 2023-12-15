@@ -40,8 +40,10 @@ public final class Status {
     public static final int GUARD_FAILED = 5;
     /** 没有子节点 */
     public static final int CHILDLESS = 6;
+    /** 子节点不足 */
+    public static final int INSUFFICIENT_CHILD = 7;
     /** 执行超时 */
-    public static final int TIMEOUT = 7;
+    public static final int TIMEOUT = 8;
 
     /** 这是Task类能捕获的最大前一个状态的值，超过该值时将被修正该值 */
     public static final int MAX_PREV_STATUS = 63;

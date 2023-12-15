@@ -52,9 +52,9 @@ public class JoinAnyOf<E> implements JoinPolicy<E> {
     }
 
     @Override
-    public void onChildEmpty(Join<E> join) {
+    public void enter(Join<E> join) {
         // 不能成功，失败也不能
-        if (join.isExecuteTriggeredByEnter()) {
+        if (join.getChildCount() == 0) {
             Task.logger.info("JonAnyOf: children is empty");
         }
     }

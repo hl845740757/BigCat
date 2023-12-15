@@ -52,8 +52,10 @@ public class JoinWaitAll<E> implements JoinPolicy<E> {
     }
 
     @Override
-    public void onChildEmpty(Join<E> join) {
-        join.setSuccess();
+    public void enter(Join<E> join) {
+        if (join.getChildCount() == 0) {
+            join.setSuccess();
+        }
     }
 
     @Override

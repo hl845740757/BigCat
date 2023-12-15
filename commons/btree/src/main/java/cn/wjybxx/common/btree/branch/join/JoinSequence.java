@@ -15,7 +15,6 @@
  */
 package cn.wjybxx.common.btree.branch.join;
 
-import cn.wjybxx.common.btree.Status;
 import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.btree.branch.JoinPolicy;
@@ -26,7 +25,7 @@ import cn.wjybxx.common.codec.document.DocumentSerializable;
 
 /**
  * {@link Sequence}
- * 相当于并发编程中的WhenAll
+ * 相当于并发编程中的WhenAll/AllOf
  *
  * @author wjybxx
  * date - 2023/12/2
@@ -54,8 +53,10 @@ public class JoinSequence<E> implements JoinPolicy<E> {
     }
 
     @Override
-    public void onChildEmpty(Join<E> join) {
-        join.setFailed(Status.CHILDLESS);
+    public void enter(Join<E> join) {
+        if (join.getChildCount() == 0) {
+            join.setSuccess();
+        }
     }
 
     @Override

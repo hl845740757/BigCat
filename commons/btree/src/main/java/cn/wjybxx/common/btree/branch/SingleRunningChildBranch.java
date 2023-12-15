@@ -48,15 +48,24 @@ public abstract class SingleRunningChildBranch<E> extends BranchTask<E> {
         super(first, second);
     }
 
+    // region open
+
     /** 允许外部在结束后查询 */
     public final int getRunningIndex() {
         return runningIndex;
+    }
+
+    /** 已完成的子节点数量 */
+    public int getCompletedCount() {
+        return runningIndex + 1;
     }
 
     @Override
     public boolean isAllChildCompleted() {
         return runningIndex + 1 >= children.size();
     }
+
+    // endregion
 
     @Override
     public void resetForRestart() {

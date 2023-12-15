@@ -33,6 +33,9 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
     /** 接收方节点id -- 如果是广播，接收方字段是否有值取决于实现 */
     protected RpcAddr destAddr;
 
+    /** 不序列化；未来可能在注解上配置 */
+    private transient int ctl;
+
     public RpcProtocol() {
     }
 
@@ -42,6 +45,24 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
         this.destAddr = destAddr;
     }
 
+    /** 方法参数或结果是否可共享 */
+    public final boolean isSharable() {
+        return ctl > 0;
+    }
+
+    public final void setSharable(boolean value) {
+        ctl = value ? 1 : 0;
+    }
+
+    public int getCtl() {
+        return ctl;
+    }
+
+    public void setCtl(int ctl) {
+        this.ctl = ctl;
+    }
+
+    // region getter/setter
     public long getConId() {
         return conId;
     }
@@ -68,4 +89,5 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
         this.destAddr = destAddr;
         return this;
     }
+    // endregion
 }

@@ -33,8 +33,8 @@ public interface JoinPolicy<E> {
     /** 启动前初始化 */
     void beforeEnter(Join<E> join);
 
-    /** 在任务运行前检测到子节点为空 */
-    void onChildEmpty(Join<E> join);
+    /** 启动 */
+    void enter(Join<E> join);
 
     /**
      * Join在调用该方法前更新了完成计数和成功计数
