@@ -85,8 +85,10 @@ public class Join<E> extends Parallel<E> {
     @Override
     protected void execute() {
         final List<Task<E>> children = this.children;
+        if (children.isEmpty()) {
+            return;
+        }
         final int[] childPrevReentryIds = this.childPrevReentryIds;
-
         final int reentryId = getReentryId();
         for (int i = 0; i < children.size(); i++) {
             final Task<E> child = children.get(i);
