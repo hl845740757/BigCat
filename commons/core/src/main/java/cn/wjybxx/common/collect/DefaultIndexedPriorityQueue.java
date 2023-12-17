@@ -91,11 +91,12 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
         size = 0;
     }
 
+    // region queue
     @Override
     public boolean offer(T e) {
         if (e.queueIndex(this) != INDEX_NOT_IN_QUEUE) {
-            throw new IllegalArgumentException("e.queueIndex(): " + e.queueIndex(this) +
-                    " (expected: " + INDEX_NOT_IN_QUEUE + ") + e: " + e);
+            throw new IllegalArgumentException("e.queueIndex(): %d (expected: %d) + e: %s"
+                    .formatted(e.queueIndex(this), INDEX_NOT_IN_QUEUE, e));
         }
 
         if (size >= queue.length) {
@@ -124,6 +125,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
         }
         return queue[0];
     }
+    // endregion
 
     @SuppressWarnings("unchecked")
     @Override
@@ -176,29 +178,10 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
 
     // region internal
 
-    /** 这里暂没有按照优先级迭代，实现较为麻烦 */
-    private final class PriorityQueueIterator implements Iterator<T> {
-
-        private int index;
-
-        @Override
-        public boolean hasNext() {
-            return index < size;
-        }
-
-        @Override
-        public T next() {
-            if (index >= size) {
-                throw new NoSuchElementException();
-            }
-            return queue[index++];
-        }
-
-    }
-
     private void setNodeIndex(T child, int idx) {
         child.queueIndex(this, idx);
-        assert child.queueIndex(this) == idx : String.format("expected: %d, but found: %d", idx, child.queueIndex(this));
+        assert child.queueIndex(this) == idx
+                : String.format("set queueIndex failed, expected: %d, but found: %d", idx, child.queueIndex(this));
     }
 
     private boolean contains(IndexedNode node, int idx) {
@@ -268,6 +251,26 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
 
         queue[k] = node;
         setNodeIndex(node, k);
+    }
+
+    /** 这里暂没有按照优先级迭代，实现较为麻烦 */
+    private final class PriorityQueueIterator implements Iterator<T> {
+
+        private int index;
+
+        @Override
+        public boolean hasNext() {
+            return index < size;
+        }
+
+        @Override
+        public T next() {
+            if (index >= size) {
+                throw new NoSuchElementException();
+            }
+            return queue[index++];
+        }
+
     }
     // endregion
 
