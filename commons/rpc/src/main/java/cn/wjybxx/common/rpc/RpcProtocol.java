@@ -50,15 +50,16 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
         return ctl > 0;
     }
 
-    public final void setSharable(boolean value) {
+    public final RpcProtocol setSharable(boolean value) {
         ctl = value ? 1 : 0;
+        return this;
     }
 
     public int getCtl() {
         return ctl;
     }
 
-    public void setCtl(int ctl) {
+    public final void setCtl(int ctl) {
         this.ctl = ctl;
     }
 

@@ -222,13 +222,14 @@ public class NodeRpcSupport implements WorkerModule {
 
     /** 克隆rpc请求 -- 参数应尚未解码 */
     private RpcRequest clone(RpcRequest src) {
-        return new RpcRequest(src.getConId(), src.getSrcAddr(), src.getDestAddr())
+        RpcRequest request = new RpcRequest(src.getConId(), src.getSrcAddr(), src.getDestAddr())
                 .setRequestId(src.getRequestId())
                 .setInvokeType(src.getInvokeType())
                 .setServiceId(src.getServiceId())
                 .setMethodId(src.getMethodId())
-                .setParameters(src.getParameters())
-                .setSharable(false);
+                .setParameters(src.getParameters());
+        request.setSharable(false);
+        return request;
     }
 
     /** 序列化rpc参数 */
