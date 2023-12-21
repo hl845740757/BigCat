@@ -17,7 +17,7 @@
 package cn.wjybxx.common.concurrent;
 
 import cn.wjybxx.common.ThreadUtils;
-import cn.wjybxx.common.collect.IndexedNode;
+import cn.wjybxx.common.collect.IndexedElement;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * date 2023/4/10
  */
 final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduledFuture<V>,
-        IndexedNode {
+        IndexedElement {
 
     /** 任务的唯一id - 如果构造时未传入，要小心可见性问题 */
     private long id;
@@ -40,7 +40,7 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     /** 所属的队列id */
     private int queueId;
     /** 在队列中的下标 */
-    private int queueIndex = INDEX_NOT_IN_QUEUE;
+    private int queueIndex = INDEX_NOT_FOUNT;
 
     /** 超时信息 */
     private TimeSharingContext timeSharingContext;
@@ -262,12 +262,12 @@ final class XScheduledFutureTask<V> extends XFutureTask<V> implements IScheduled
     }
 
     @Override
-    public int queueIndex(Object queue) {
+    public int collectionIndex(Object collection) {
         return queueIndex;
     }
 
     @Override
-    public void queueIndex(Object queue, int index) {
+    public void collectionIndex(Object collection, int index) {
         queueIndex = index;
     }
 

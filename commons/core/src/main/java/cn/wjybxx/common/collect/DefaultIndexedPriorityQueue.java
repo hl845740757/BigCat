@@ -19,7 +19,7 @@ package cn.wjybxx.common.collect;
 import javax.annotation.Nonnull;
 import java.util.*;
 
-import static cn.wjybxx.common.collect.IndexedNode.INDEX_NOT_IN_QUEUE;
+import static cn.wjybxx.common.collect.IndexedElement.INDEX_NOT_FOUNT;
 
 /**
  * 参考自Netty的实现
@@ -27,10 +27,10 @@ import static cn.wjybxx.common.collect.IndexedNode.INDEX_NOT_IN_QUEUE;
  * @author wjybxx
  * date 2023/4/3
  */
-public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends AbstractQueue<T>
+public class DefaultIndexedPriorityQueue<T extends IndexedElement> extends AbstractQueue<T>
         implements IndexedPriorityQueue<T> {
 
-    private static final IndexedNode[] EMPTY_ARRAY = new IndexedNode[0];
+    private static final IndexedElement[] EMPTY_ARRAY = new IndexedElement[0];
     private static final int DEFAULT_CAPACITY = 16;
 
     private final Comparator<? super T> comparator;
@@ -44,7 +44,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
     @SuppressWarnings("unchecked")
     public DefaultIndexedPriorityQueue(Comparator<? super T> comparator, int initialSize) {
         this.comparator = Objects.requireNonNull(comparator, "comparator");
-        queue = (T[]) (initialSize != 0 ? new IndexedNode[initialSize] : EMPTY_ARRAY);
+        queue = (T[]) (initialSize != 0 ? new IndexedElement[initialSize] : EMPTY_ARRAY);
     }
 
     @Override
@@ -59,10 +59,10 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
 
     @Override
     public boolean contains(Object o) {
-        if (!(o instanceof IndexedNode node)) { // 包含null
+        if (!(o instanceof IndexedElement node)) { // 包含null
             return false;
         }
-        return contains(node, node.queueIndex(this));
+        return contains(node, node.collectionIndex(this));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
         if (node == null) {
             return false;
         }
-        return contains(node, node.queueIndex(this));
+        return contains(node, node.collectionIndex(this));
     }
 
     @Override
@@ -78,7 +78,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
         for (int i = 0; i < size; ++i) {
             T node = queue[i];
             if (node != null) {
-                setNodeIndex(node, INDEX_NOT_IN_QUEUE);
+                setNodeIndex(node, INDEX_NOT_FOUNT);
                 queue[i] = null;
             }
         }
@@ -94,9 +94,9 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
     // region queue
     @Override
     public boolean offer(T e) {
-        if (e.queueIndex(this) != INDEX_NOT_IN_QUEUE) {
+        if (e.collectionIndex(this) != INDEX_NOT_FOUNT) {
             throw new IllegalArgumentException("e.queueIndex(): %d (expected: %d) + e: %s"
-                    .formatted(e.queueIndex(this), INDEX_NOT_IN_QUEUE, e));
+                    .formatted(e.collectionIndex(this), INDEX_NOT_FOUNT, e));
         }
 
         if (size >= queue.length) {
@@ -130,7 +130,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
     @SuppressWarnings("unchecked")
     @Override
     public boolean remove(Object o) {
-        if (!(o instanceof IndexedNode)) { // 包含null
+        if (!(o instanceof IndexedElement)) { // 包含null
             return false;
         }
         final T node = (T) o;
@@ -142,7 +142,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
         if (node == null) {
             return false;
         }
-        int idx = node.queueIndex(this);
+        int idx = node.collectionIndex(this);
         if (!contains(node, idx)) {
             return false;
         }
@@ -152,7 +152,7 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
 
     @Override
     public void priorityChanged(T node) {
-        int idx = node.queueIndex(this); // NPE
+        int idx = node.collectionIndex(this); // NPE
         if (!contains(node, idx)) {
             return;
         }
@@ -179,18 +179,18 @@ public class DefaultIndexedPriorityQueue<T extends IndexedNode> extends Abstract
     // region internal
 
     private void setNodeIndex(T child, int idx) {
-        child.queueIndex(this, idx);
-        assert child.queueIndex(this) == idx
-                : String.format("set queueIndex failed, expected: %d, but found: %d", idx, child.queueIndex(this));
+        child.collectionIndex(this, idx);
+        assert child.collectionIndex(this) == idx
+                : String.format("set queueIndex failed, expected: %d, but found: %d", idx, child.collectionIndex(this));
     }
 
-    private boolean contains(IndexedNode node, int idx) {
+    private boolean contains(IndexedElement node, int idx) {
         // 使用equals是无意义的，如果要使用equals，那么索引i会导致漏判断
         return idx >= 0 && idx < size && node == queue[idx];
     }
 
     private void removeAt(int idx, T node) {
-        setNodeIndex(node, INDEX_NOT_IN_QUEUE);
+        setNodeIndex(node, INDEX_NOT_FOUNT);
 
         int newSize = --size;
         if (newSize == idx) { // 如果删除的是最后一个元素则无需交换

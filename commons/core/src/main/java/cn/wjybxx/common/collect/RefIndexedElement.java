@@ -23,19 +23,19 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/4/3
  */
-public final class RefIndexedNode<E> implements IndexedNode {
+public final class RefIndexedElement<E> implements IndexedElement {
 
     private final E e;
     private Object queue;
-    private int index = INDEX_NOT_IN_QUEUE;
+    private int index = INDEX_NOT_FOUNT;
 
     /** 封闭，允许未来切换实现 */
-    private RefIndexedNode(E e) {
+    private RefIndexedElement(E e) {
         this.e = Objects.requireNonNull(e);
     }
 
-    public static <E> RefIndexedNode<E> of(E e) {
-        return new RefIndexedNode<>(e);
+    public static <E> RefIndexedElement<E> of(E e) {
+        return new RefIndexedElement<>(e);
     }
 
     public E get() {
@@ -43,27 +43,27 @@ public final class RefIndexedNode<E> implements IndexedNode {
     }
 
     @Override
-    public int queueIndex(Object queue) {
-        return this.queue == queue ? this.index : INDEX_NOT_IN_QUEUE;
+    public int collectionIndex(Object collection) {
+        return this.queue == collection ? this.index : INDEX_NOT_FOUNT;
     }
 
     @Override
-    public void queueIndex(Object queue, int index) {
+    public void collectionIndex(Object collection, int index) {
         if (index >= 0) {
-            assert this.queue == queue || this.queue == null;
-            this.queue = queue;
+            assert this.queue == collection || this.queue == null;
+            this.queue = collection;
             this.index = index;
         } else {
             this.queue = null;
-            this.index = INDEX_NOT_IN_QUEUE;
+            this.index = INDEX_NOT_FOUNT;
         }
     }
 
-    public static <E> Comparator<RefIndexedNode<E>> wrapComparator(Comparator<? super E> comparator) {
+    public static <E> Comparator<RefIndexedElement<E>> wrapComparator(Comparator<? super E> comparator) {
         return new ComparatorAdapter<>(Objects.requireNonNull(comparator));
     }
 
-    private static class ComparatorAdapter<E> implements Comparator<RefIndexedNode<E>> {
+    private static class ComparatorAdapter<E> implements Comparator<RefIndexedElement<E>> {
 
         private final Comparator<? super E> adaptee;
 
@@ -72,7 +72,7 @@ public final class RefIndexedNode<E> implements IndexedNode {
         }
 
         @Override
-        public int compare(RefIndexedNode<E> o1, RefIndexedNode<E> o2) {
+        public int compare(RefIndexedElement<E> o1, RefIndexedElement<E> o2) {
             return adaptee.compare(o1.get(), o2.get());
         }
     }

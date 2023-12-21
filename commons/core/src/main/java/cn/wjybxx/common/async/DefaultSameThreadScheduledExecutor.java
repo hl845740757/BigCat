@@ -19,7 +19,7 @@ package cn.wjybxx.common.async;
 import cn.wjybxx.common.NegativeChecker;
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.collect.DefaultIndexedPriorityQueue;
-import cn.wjybxx.common.collect.IndexedNode;
+import cn.wjybxx.common.collect.IndexedElement;
 import cn.wjybxx.common.collect.IndexedPriorityQueue;
 import cn.wjybxx.common.concurrent.FutureUtils;
 import cn.wjybxx.common.concurrent.TimeSharingContext;
@@ -265,7 +265,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
     }
 
     private static class ScheduledFutureTask<V> extends DefaultPromise<V> implements ScheduledFluentFuture<V>, Runnable,
-            IndexedNode,
+            IndexedElement,
             Comparable<ScheduledFutureTask<?>> {
 
         private DefaultSameThreadScheduledExecutor executor;
@@ -278,7 +278,7 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         /** 负数表示fixedDelay，正数表示fixedRate */
         private final long period;
         /** 队列中的下标缓存 */
-        private int queueIndex = INDEX_NOT_IN_QUEUE;
+        private int queueIndex = INDEX_NOT_FOUNT;
 
         ScheduledFutureTask(DefaultSameThreadScheduledExecutor executor, Callable<V> task,
                             TimeSharingContext timeSharingContext,
@@ -306,12 +306,12 @@ public class DefaultSameThreadScheduledExecutor implements SameThreadScheduledEx
         }
 
         @Override
-        public int queueIndex(Object queue) {
+        public int collectionIndex(Object collection) {
             return queueIndex;
         }
 
         @Override
-        public void queueIndex(Object queue, int index) {
+        public void collectionIndex(Object collection, int index) {
             queueIndex = index;
         }
 

@@ -16,26 +16,23 @@
 
 package cn.wjybxx.common.collect;
 
-import java.util.Queue;
+import java.util.Collection;
 
 /**
- * 参考自netty的实现
- * 由于{@link java.util.Collection}中的API是基于Object的，不利于查询性能，添加了一些限定类型的方法。
+ * 在元素身上存储了索引信息的集合。
+ * 1.这类集合禁止重复添加元素，且使用引用相等判断重复
+ * 2.更多用于非连续存储的集合。
  *
  * @author wjybxx
- * date 2023/4/3
+ * date - 2023/12/21
  */
-public interface IndexedPriorityQueue<T extends IndexedElement> extends Queue<T>, IndexedCollection<T> {
-
-    boolean removeTyped(T node);
-
-    boolean containsTyped(T node);
+public interface IndexedCollection<E extends IndexedElement> extends Collection<E> {
 
     /**
-     * 队列中节点元素的优先级发生变化时，将通过该方法通知队列调整
-     *
-     * @param node 发生优先级变更的节点
+     * 清除队列中的所有元素，并不更新队列中节点的索引，通常用在最后清理释放内存的时候。
+     * 即在清理的时候不调用{@link IndexedElement#collectionIndex(Object, int)}方法进行进通知。
+     * (请确保调用该方法后，不会再访问该集合)
      */
-    void priorityChanged(T node);
+    void clearIgnoringIndexes();
 
 }
