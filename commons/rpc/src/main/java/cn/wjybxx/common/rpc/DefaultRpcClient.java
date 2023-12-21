@@ -164,7 +164,7 @@ public class DefaultRpcClient implements RpcClient {
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
         final ICompletableFuture<V> promise = FutureUtils.newPromise();
-        final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(promise, deadline, request);
+        final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(request, deadline, promise);
         requestStubMap.put(requestId, requestStub);
         return promise;
     }
@@ -503,11 +503,11 @@ public class DefaultRpcClient implements RpcClient {
 
     private static class RpcRequestStubImpl implements RpcRequestStub {
 
-        final ICompletableFuture<?> future;
-        final long deadline;
         final RpcRequest request;
+        final long deadline;
+        final ICompletableFuture<?> future;
 
-        RpcRequestStubImpl(ICompletableFuture<?> future, long deadline, RpcRequest request) {
+        RpcRequestStubImpl(RpcRequest request, long deadline, ICompletableFuture<?> future) {
             this.future = future;
             this.deadline = deadline;
             this.request = request;
@@ -549,7 +549,6 @@ public class DefaultRpcClient implements RpcClient {
     }
 
     private void logRcvResponse(RpcResponse response, boolean timeout) {
-        // 旧时的response中不包含serverId和methodId，因此参数有传stub和request
         if (timeout) {
             logger.info("rcv rpc response, but request is timeout, response {}",
                     DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));

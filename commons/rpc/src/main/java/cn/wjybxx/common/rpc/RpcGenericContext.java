@@ -54,7 +54,7 @@ public interface RpcGenericContext {
     /** 当前返回值是否可共享 */
     boolean isSharable();
 
-    /** 设置返回值是否可共享标记 */
+    /** 设置返回值是否可共享标记 -- 不论是否托管返回时机，都可以设置 */
     @StableName
     void setSharable(boolean sharable);
 

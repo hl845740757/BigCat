@@ -315,7 +315,7 @@ public class NodeRpcSupport implements WorkerModule {
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
         final ICompletableFuture<V> promise = node.newPromise(); // 不可在node上阻塞
-        final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(promise, deadline, request);
+        final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(request, deadline, promise);
         requestStubMap.put(request.getRequestId(), requestStub);
         return promise;
     }
@@ -409,7 +409,7 @@ public class NodeRpcSupport implements WorkerModule {
 
     // endregion
 
-    /** 该方法由IO线程调用 */
+    /** 该方法由IO线程调用(由RpcRouter类调用) */
     public void onRcvRequest(final RpcRequest request) {
         Objects.requireNonNull(request);
         if (!node.inEventLoop()) {
@@ -509,7 +509,7 @@ public class NodeRpcSupport implements WorkerModule {
         }
     }
 
-    /** 该方法由IO线程调用 */
+    /** 该方法由IO线程调用(由RpcRouter类调用) */
     public void onRcvResponse(RpcResponse response) {
         Objects.requireNonNull(response);
         if (response.getConId() != conId) {
@@ -606,7 +606,9 @@ public class NodeRpcSupport implements WorkerModule {
     }
 
     private RpcResponse newFailedResponse(RpcRequest request, int errorCode, String msg) {
-        return new RpcResponse(request, selfRpcAddr, RpcResultSpec.newFailedResult(errorCode, msg));
+        RpcResponse response = new RpcResponse(request, selfRpcAddr, errorCode, List.of(msg));
+        response.setSharable(true);
+        return response;
     }
 
     @ThreadSafe
@@ -694,11 +696,11 @@ public class NodeRpcSupport implements WorkerModule {
 
     private static class RpcRequestStubImpl implements RpcRequestStub {
 
-        final ICompletableFuture<?> future;
-        final long deadline;
         final RpcRequest request;
+        final long deadline;
+        final ICompletableFuture<?> future;
 
-        RpcRequestStubImpl(ICompletableFuture<?> future, long deadline, RpcRequest request) {
+        RpcRequestStubImpl(RpcRequest request, long deadline, ICompletableFuture<?> future) {
             this.future = future;
             this.deadline = deadline;
             this.request = request;

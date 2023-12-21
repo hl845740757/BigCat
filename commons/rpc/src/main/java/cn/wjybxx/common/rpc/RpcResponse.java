@@ -69,6 +69,16 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         super(conId, srcAddr, destAddr);
     }
 
+
+    public RpcResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, List<Object> results) {
+        super(request.getConId(), selfAddr, request.getSrcAddr());
+        this.requestId = request.getRequestId();
+        this.serviceId = request.getServiceId();
+        this.methodId = request.getMethodId();
+        this.errorCode = errorCode;
+        this.results = Objects.requireNonNull(results);
+    }
+
     public RpcResponse(RpcRequest request, RpcAddr selfAddr, RpcResultSpec resultSpec) {
         super(request.getConId(), selfAddr, request.getSrcAddr());
         this.requestId = request.getRequestId();

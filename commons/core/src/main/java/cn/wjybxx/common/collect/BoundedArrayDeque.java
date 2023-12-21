@@ -16,56 +16,57 @@ import java.util.stream.Stream;
  * @author wjybxx
  * date 2023/12/1
  */
-public class SlidingDequeue<E> implements Deque<E> {
+public class BoundedArrayDeque<E> implements Deque<E> {
 
-    private int maxSize;
+    private int capacity;
+    private final DequeOverflowBehavior overflowBehavior;
     private final ArrayDeque<E> arrayDeque;
 
-    public SlidingDequeue(int maxSize) {
-        if (maxSize < 0) throw new IllegalArgumentException("maxSize: " + maxSize);
-        this.maxSize = maxSize;
-        if (maxSize <= 10) {
-            this.arrayDeque = new ArrayDeque<>(maxSize);
+    public BoundedArrayDeque(int capacity, DequeOverflowBehavior overflowBehavior) {
+        if (capacity < 0) throw new IllegalArgumentException("maxSize: " + capacity);
+        this.capacity = capacity;
+        this.overflowBehavior = overflowBehavior;
+        if (capacity <= 10) {
+            this.arrayDeque = new ArrayDeque<>(capacity);
         } else {
             this.arrayDeque = new ArrayDeque<>();
         }
     }
 
     /**
-     * @param maxSize    新的size限制
-     * @param adjustMode 容量变小时的方案
+     * @param capacity         新的容量
+     * @param overflowBehavior 容量缩小时的策略，不会保存
      */
-    public void setMaxSize(int maxSize, AdjustMode adjustMode) {
-        Objects.requireNonNull(adjustMode);
-        if (maxSize < 0) {
-            throw new IllegalArgumentException("maxSize: " + maxSize);
+    public void setCapacity(int capacity, DequeOverflowBehavior overflowBehavior) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("maxSize: " + capacity);
         }
-        if (this.maxSize == maxSize) {
+        if (this.capacity == capacity) {
             return;
         }
-        if (maxSize < arrayDeque.size()) {
-            switch (adjustMode) {
-                case ABORT -> throw new IllegalStateException();
+        if (capacity < arrayDeque.size()) {
+            switch (overflowBehavior) {
                 case DISCARD_HEAD -> {
-                    while (arrayDeque.size() > maxSize) {
+                    while (arrayDeque.size() > capacity) {
                         arrayDeque.pollFirst();
                     }
                 }
                 case DISCARD_TAIL -> {
-                    while (arrayDeque.size() > maxSize) {
+                    while (arrayDeque.size() > capacity) {
                         arrayDeque.pollLast();
                     }
                 }
+                default -> throw new IllegalStateException();
             }
         }
-        this.maxSize = maxSize;
+        this.capacity = capacity;
     }
 
     // region queue
 
     @Override
     public boolean offer(E e) {
-        return false;
+        return offerLast(e);
     }
 
     @Override
@@ -91,7 +92,7 @@ public class SlidingDequeue<E> implements Deque<E> {
     /** @throws IllegalStateException 队列已满 */
     @Override
     public boolean add(E e) {
-        if (maxSize == 0) {
+        if (capacity == 0) {
             return false;
         }
         addLast(e);
@@ -101,7 +102,7 @@ public class SlidingDequeue<E> implements Deque<E> {
     /** @throws IllegalStateException 队列已满 */
     @Override
     public boolean addAll(@Nonnull Collection<? extends E> c) {
-        if (maxSize == 0 || c.isEmpty()) {
+        if (capacity == 0 || c.isEmpty()) {
             return false;
         }
         for (E e : c) {
@@ -117,49 +118,39 @@ public class SlidingDequeue<E> implements Deque<E> {
     /** @throws IllegalStateException 队列已满 */
     @Override
     public void addFirst(E e) {
-        Objects.requireNonNull(e);
-        if (maxSize == 0) {
-            throw new IllegalStateException();
+        if (!offerFirst(e)) {
+            throw new IllegalStateException("Queue is full");
         }
-        if (arrayDeque.size() == maxSize) {
-            arrayDeque.pollLast();
+    }
+
+    /** @throws IllegalStateException 队列已满 */
+    @Override
+    public void addLast(E e) {
+        if (!offerLast(e)) {
+            throw new IllegalStateException("Queue is full");
         }
-        arrayDeque.offerFirst(e);
     }
 
     @Override
     public boolean offerFirst(E e) {
         Objects.requireNonNull(e);
-        if (maxSize == 0) {
-            return false;
-        }
-        if (arrayDeque.size() == maxSize) {
+        if (arrayDeque.size() == capacity) {
+            if (!overflowBehavior.allowDiscardTail()) {
+                return false;
+            }
             arrayDeque.pollLast();
         }
         arrayDeque.offerFirst(e);
         return true;
     }
 
-    /** @throws IllegalStateException 队列已满 */
-    @Override
-    public void addLast(E e) {
-        Objects.requireNonNull(e);
-        if (maxSize == 0) {
-            throw new IllegalStateException();
-        }
-        if (arrayDeque.size() == maxSize) {
-            arrayDeque.pollFirst();
-        }
-        arrayDeque.offerLast(e);
-    }
-
     @Override
     public boolean offerLast(E e) {
         Objects.requireNonNull(e);
-        if (maxSize == 0) {
-            return false;
-        }
-        if (arrayDeque.size() == maxSize) {
+        if (arrayDeque.size() == capacity) {
+            if (!overflowBehavior.allowDiscardHead()) {
+                return false;
+            }
             arrayDeque.pollFirst();
         }
         arrayDeque.offerLast(e);
@@ -217,12 +208,12 @@ public class SlidingDequeue<E> implements Deque<E> {
 
     @Override
     public E pop() {
-        return removeFirst();
+        return arrayDeque.pop();
     }
 
     // endregion
 
-    // region
+    // region forward
 
     @Override
     public int size() {

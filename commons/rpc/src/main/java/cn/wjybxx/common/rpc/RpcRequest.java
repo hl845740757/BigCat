@@ -39,11 +39,10 @@ import java.util.List;
 @BinarySerializable
 public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObject {
 
-    /** 请求id */
-    private long requestId;
     /** 调用类型 */
     private int invokeType;
-
+    /** 请求id */
+    private long requestId;
     /** 服务id */
     private int serviceId;
     /** 方法id */

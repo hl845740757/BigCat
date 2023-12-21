@@ -52,6 +52,12 @@ public final class RpcResultSpec {
 
     // region 业务方法
 
+    /** 没有返回值 */
+    public void succeeded() {
+        errorCode = 0;
+        results = List.of();
+    }
+
     public void succeeded(Object result) {
         errorCode = 0;
         results = List.of(result);

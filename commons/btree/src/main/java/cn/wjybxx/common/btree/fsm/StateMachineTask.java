@@ -22,9 +22,9 @@ import cn.wjybxx.common.btree.Task;
 import cn.wjybxx.common.btree.branch.Join;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.codec.document.DocumentSerializable;
-import cn.wjybxx.common.collect.AdjustMode;
+import cn.wjybxx.common.collect.BoundedArrayDeque;
+import cn.wjybxx.common.collect.DequeOverflowBehavior;
 import cn.wjybxx.common.collect.EmptyDequeue;
-import cn.wjybxx.common.collect.SlidingDequeue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -111,7 +111,7 @@ public class StateMachineTask<E> extends Decorator<E> {
      */
     public final Deque<Task<E>> setUndoQueueSize(int maxSize) {
         if (maxSize < 0) throw new IllegalArgumentException("maxSize: " + maxSize);
-        return undoQueue = setQueueMaxSize(undoQueue, maxSize, AdjustMode.DISCARD_HEAD);
+        return undoQueue = setQueueMaxSize(undoQueue, maxSize, DequeOverflowBehavior.DISCARD_HEAD);
     }
 
     /**
@@ -120,19 +120,19 @@ public class StateMachineTask<E> extends Decorator<E> {
      */
     public final Deque<Task<E>> setRedoQueueSize(int maxSize) {
         if (maxSize < 0) throw new IllegalArgumentException("maxSize: " + maxSize);
-        return redoQueue = setQueueMaxSize(redoQueue, maxSize, AdjustMode.DISCARD_TAIL);
+        return redoQueue = setQueueMaxSize(redoQueue, maxSize, DequeOverflowBehavior.DISCARD_TAIL);
     }
 
-    private static <E> Deque<E> setQueueMaxSize(Deque<E> queue, int maxSize, AdjustMode adjustMode) {
+    private static <E> Deque<E> setQueueMaxSize(Deque<E> queue, int maxSize, DequeOverflowBehavior overflowBehavior) {
         if (maxSize == 0) {
             queue.clear();
             return EmptyDequeue.getInstance();
         }
         if (queue == EmptyDequeue.INSTANCE) {
-            return new SlidingDequeue<>(maxSize);
+            return new BoundedArrayDeque<>(maxSize, overflowBehavior);
         } else {
-            SlidingDequeue<E> slidingDequeue = (SlidingDequeue<E>) queue;
-            slidingDequeue.setMaxSize(maxSize, adjustMode);
+            BoundedArrayDeque<E> boundedArrayDeque = (BoundedArrayDeque<E>) queue;
+            boundedArrayDeque.setCapacity(maxSize, overflowBehavior);
             return queue;
         }
     }
