@@ -19,7 +19,6 @@ package cn.wjybxx.common.rpc;
 
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.concurrent.*;
-import cn.wjybxx.common.ex.ErrorCodeException;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
 import cn.wjybxx.common.time.TimeProvider;
@@ -32,7 +31,9 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 /**
@@ -52,7 +53,7 @@ public class DefaultRpcClient implements RpcClient {
     private final WatcherMgr<RpcResponse> watcherMgr = new SimpleWatcherMgr<>();
 
     private final long conId;
-    private final RpcAddr selfRpcAddr;
+    private final RpcAddr selfAddr;
     private final RpcSender sender;
     private final RpcRegistry registry;
     private final TimeProvider timeProvider;
@@ -65,17 +66,17 @@ public class DefaultRpcClient implements RpcClient {
 
     /**
      * @param conId        连接id
-     * @param selfRpcAddr  当前服务器的描述信息
+     * @param selfAddr     当前服务器的描述信息
      * @param sender       路由实现
      * @param registry     rpc调用派发实现
      * @param timeProvider 用于获取当前时间
      * @param timeoutMs    rpc超时时间
      */
-    public DefaultRpcClient(long conId, RpcAddr selfRpcAddr,
+    public DefaultRpcClient(long conId, RpcAddr selfAddr,
                             RpcSender sender, RpcRegistry registry,
                             TimeProvider timeProvider, long timeoutMs) {
         this.conId = conId;
-        this.selfRpcAddr = Objects.requireNonNull(selfRpcAddr);
+        this.selfAddr = Objects.requireNonNull(selfAddr);
         this.sender = Objects.requireNonNull(sender);
         this.registry = Objects.requireNonNull(registry);
         this.timeProvider = Objects.requireNonNull(timeProvider);
@@ -112,6 +113,36 @@ public class DefaultRpcClient implements RpcClient {
         return requestStubMap.get(requestId);
     }
 
+    // region 流程
+
+    /**
+     * 服务器需要每帧调用该方法，以检测超时等
+     */
+    public void tick() {
+        // 并不需要检查全部的rpc请求，只要第一个未超时，即可停止。
+        // 因为我们没打算支持每个请求单独设立超时时间，且我们的map是保持插入序的，因此先发送的请求一定先超时
+        final long curTime = timeProvider.getTime();
+        while (requestStubMap.size() > 0) {
+            final long requestId = requestStubMap.firstLongKey();
+            final RpcRequestStubImpl requestStub = requestStubMap.get(requestId);
+            if (curTime < requestStub.deadline) {
+                return;
+            }
+
+            logger.info("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
+            requestStubMap.removeFirst();
+            requestStub.future.completeExceptionally(RpcClientException.timeout());
+        }
+    }
+
+    /**
+     * 清除所有的rpc调用（慎重调用）
+     */
+    public void clear() {
+        requestStubMap.clear();
+    }
+    // endregion
+
     // region 发送
 
     /**
@@ -126,7 +157,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfAddr, target,
                 requestId, RpcInvokeType.ONEWAY, methodSpec);
 
         if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -151,7 +182,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfAddr, target,
                 requestId, RpcInvokeType.CALL, methodSpec);
 
         if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -195,7 +226,7 @@ public class DefaultRpcClient implements RpcClient {
         Objects.requireNonNull(methodSpec);
 
         final long requestId = ++sequencer;
-        final RpcRequest request = new RpcRequest(conId, selfRpcAddr, target,
+        final RpcRequest request = new RpcRequest(conId, selfAddr, target,
                 requestId, RpcInvokeType.SYNC_CALL, methodSpec);
 
         if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
@@ -213,6 +244,7 @@ public class DefaultRpcClient implements RpcClient {
             }
 
             RpcResponse response = watcher.future.get(timeoutMs, TimeUnit.MILLISECONDS);
+            decodeResult(response);
             if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
                 logRcvResponse(response, false);
             }
@@ -222,21 +254,11 @@ public class DefaultRpcClient implements RpcClient {
                 @SuppressWarnings("unchecked") final V result = (V) response.getResult();
                 return result;
             } else {
-                throw newServerException(response);
+                throw RpcServerException.newServerException(response);
             }
-        } catch (TimeoutException e) {
-            throw RpcClientException.blockingTimeout(e);
-        } catch (InterruptedException e) {
-            ThreadUtils.recoveryInterrupted();
-            throw RpcClientException.interrupted(e);
-        } catch (ExecutionException e) {
-            throw RpcClientException.unknownException(e.getCause());
         } catch (Exception e) {
-            // 根据errorCode抛出的异常
-            if (e instanceof RpcException || e instanceof ErrorCodeException) {
-                throw e;
-            }
-            throw RpcClientException.unknownException(e);
+            ThreadUtils.recoveryInterrupted(e);
+            throw RpcClientException.wrapOrRethrow(e);
         } finally {
             watcherMgr.cancelWatch(watcher); // 及时取消watcher
         }
@@ -304,12 +326,11 @@ public class DefaultRpcClient implements RpcClient {
                     future.whenComplete(context);
                 } else {
                     // 立即得到了结果
-                    context.resultSpec.succeeded(result);
-                    sendResponseAndLog(new RpcResponse(request, selfRpcAddr, context.resultSpec));
+                    @SuppressWarnings("unchecked") T castResult = (T) result;
+                    context.sendResult(castResult);
                 }
             } catch (Throwable e) {
-                context.resultSpec.failed(e);
-                sendResponseAndLog(new RpcResponse(request, selfRpcAddr, context.resultSpec));
+                context.sendError(e);
                 logInvokeException(request, e);
             }
         }
@@ -326,6 +347,7 @@ public class DefaultRpcClient implements RpcClient {
             return;
         }
 
+        decodeResult(response);
         final RpcRequestStubImpl requestStub = requestStubMap.remove(response.getRequestId());
         if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
             logRcvResponse(response, requestStub == null);
@@ -337,7 +359,7 @@ public class DefaultRpcClient implements RpcClient {
             if (errorCode == 0) {
                 promise.complete(response.getResult());
             } else {
-                promise.completeExceptionally(newServerException(response));
+                promise.completeExceptionally(RpcServerException.newServerException(response));
             }
         }
     }
@@ -354,44 +376,21 @@ public class DefaultRpcClient implements RpcClient {
 
     // endregion
 
-    //
+    // region 内部实现
 
-    /**
-     * 服务器需要每帧调用该方法，以检测超时等
-     */
-    public void tick() {
-        // 并不需要检查全部的rpc请求，只要第一个未超时，即可停止。
-        // 因为我们没打算支持每个请求单独设立超时时间，且我们的map是保持插入序的，因此先发送的请求一定先超时
-        final long curTime = timeProvider.getTime();
-        while (requestStubMap.size() > 0) {
-            final long requestId = requestStubMap.firstLongKey();
-            final RpcRequestStubImpl requestStub = requestStubMap.get(requestId);
-            if (curTime < requestStub.deadline) {
-                return;
-            }
-
-            logger.info("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
-            requestStubMap.removeFirst();
-            requestStub.future.completeExceptionally(RpcClientException.timeout());
+    private void decodeResult(RpcResponse response) {
+        if (response.getErrorCode() == RpcErrorCodes.RESULT_NULL) {
+            response.setErrorCode(0);
+            response.setResult(null);
+        } else if (response.getErrorCode() == RpcErrorCodes.RESULT_BYTES) {
+            response.setErrorCode(0);
         }
     }
-
-    /**
-     * 清除所有的rpc调用（慎重调用）
-     */
-    public void clear() {
-        requestStubMap.clear();
-    }
-
-    //
-
-    // region 内部实现
 
     private void sendResponseAndLog(RpcResponse response) {
         if (logConfig.getSndResponseLogLevel() > DebugLogLevel.NONE) {
             logSndResponse(response);
         }
-
         if (!sender.send(response)) {
             logger.warn("rpc send response failure, dest {}", response.getDestAddr());
         }
@@ -404,17 +403,8 @@ public class DefaultRpcClient implements RpcClient {
         }
     }
 
-    private static RuntimeException newServerException(RpcResponse response) {
-        int errorCode = response.getErrorCode();
-        if (RpcErrorCodes.isUserCode(errorCode)) {
-            return new ErrorCodeException(errorCode, response.getErrorMsg());
-        } else {
-            return new RpcServerException(errorCode, response.getErrorMsg());
-        }
-    }
-
     private RpcResponse newFailedResponse(RpcRequest request, int errorCode, String msg) {
-        return new RpcResponse(request, selfRpcAddr, RpcResultSpec.newFailedResult(errorCode, msg));
+        return new RpcResponse(request, selfAddr, errorCode, msg);
     }
 
     @ThreadSafe
@@ -445,7 +435,7 @@ public class DefaultRpcClient implements RpcClient {
 
         final RpcRequest request;
         final DefaultRpcClient rpcClient;
-        final RpcResultSpec resultSpec = new RpcResultSpec();
+        boolean sharable = false;
 
         RpcContextImpl(RpcRequest request, DefaultRpcClient rpcClient) {
             this.request = request;
@@ -469,34 +459,56 @@ public class DefaultRpcClient implements RpcClient {
 
         @Override
         public boolean isSharable() {
-            return resultSpec.isSharable();
+            return sharable;
         }
 
         @Override
         public void setSharable(boolean sharable) {
-            resultSpec.setSharable(sharable);
+            this.sharable = sharable;
         }
 
         @Override
         public void sendResult(V result) {
-            resultSpec.succeeded(result);
-            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setSharable(sharable);
+            response.setSuccess(result);
+            rpcClient.sendResponseAndLog(response);
         }
 
         @Override
         public void sendError(int errorCode, String msg) {
-            resultSpec.failed(errorCode, msg);
-            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
+            if (!RpcErrorCodes.isUserCode(errorCode)) {
+                throw new IllegalArgumentException("invalid errorCode: " + errorCode);
+            }
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setFailed(errorCode, msg);
+            rpcClient.sendResponseAndLog(response);
+        }
+
+        @Override
+        public void sendError(Throwable ex) {
+            Objects.requireNonNull(ex);
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setFailed(ex);
+            rpcClient.sendResponseAndLog(response);
+        }
+
+        @Override
+        public void sendEncodedResult(byte[] result) {
+            Objects.requireNonNull(result);
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setSuccess(result);
+            response.setErrorCode(0);
+            rpcClient.sendResponseAndLog(response);
         }
 
         @Override
         public void accept(V v, Throwable throwable) {
-            if (throwable != null) {
-                resultSpec.failed(throwable);
+            if (throwable == null) {
+                sendResult(v);
             } else {
-                resultSpec.succeeded(v);
+                sendError(throwable);
             }
-            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
         }
 
     }

@@ -58,7 +58,8 @@ public interface NodeRpcSender extends RpcSender {
 
     /**
      * 测试给定的地址是否是跨语言的rpc节点
-     * 如果是跨语言的节点通信，方法参数和结果必须是protobuf的消息
+     * 1.如果是跨语言的节点通信，方法参数和结果必须是protobuf的消息
+     * 2.通常用于客户端和服务器的rpc通信
      */
     default boolean isCrossLanguageAddr(RpcAddr addr) {
         return false;

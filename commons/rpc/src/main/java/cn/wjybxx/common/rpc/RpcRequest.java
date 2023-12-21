@@ -75,17 +75,7 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
         setSharable(methodSpec.isSharable());
     }
 
-    // region 业务方法
-
-    /** 是否已序列化 */
-    public boolean isSerialized() {
-        return parameters instanceof byte[];
-    }
-
-    /** 是否已反序列化 */
-    public boolean isDeserialized() {
-        return parameters instanceof List<?>;
-    }
+    // region internal
 
     /** 参数转bytes */
     public byte[] bytesParameters() {

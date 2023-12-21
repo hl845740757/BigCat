@@ -31,23 +31,34 @@ public class RpcErrorCodes {
     /** 调用成功的错误码 */
     public static final int SUCCESS = 0;
 
-    // 1 - 10 表客户端异常
-    /** 路由失败异常 */
-    public static final int LOCAL_ROUTER_EXCEPTION = 1;
-    /** 超时 */
-    public static final int LOCAL_TIMEOUT = 2;
-    /** 本地中断了线程 */
-    public static final int LOCAL_INTERRUPTED = 3;
-    /** 本地发生了未知错误 */
-    public static final int LOCAL_UNKNOWN_EXCEPTION = 4;
+    // 1 - 10 为特殊状态码，应用层不可见
+    /** 结果为null -- 不区分null和void，因为void只能通知为null；另外，用户还可以监听void函数的结果 */
+    public static final int RESULT_NULL = 1;
+    /** 结果为bytes  */
+    public static final int RESULT_BYTES = 2;
 
-    // 11 - 20 表服务器异常
+    /** 是否是任意的成功码 -- 用户不必调用该方法进行测试，应用层只需要测试{@link #SUCCESS} */
+    public static boolean isSuccess(int code) {
+        return code >= 0 && code <= RESULT_BYTES;
+    }
+
+    // 11 - 30 表客户端异常
+    /** 路由失败异常 */
+    public static final int LOCAL_ROUTER_EXCEPTION = 11;
+    /** 超时 */
+    public static final int LOCAL_TIMEOUT = 12;
+    /** 本地中断了线程 */
+    public static final int LOCAL_INTERRUPTED = 13;
+    /** 本地发生了未知错误 */
+    public static final int LOCAL_UNKNOWN_EXCEPTION = 14;
+
+    // 31 - 50 表服务器异常
     /** 表示服务器调用出现异常的错误码 */
-    public static final int SERVER_EXCEPTION = 11;
+    public static final int SERVER_EXCEPTION = 31;
     /** 不支持的接口调用 */
-    public static final int SERVER_UNSUPPORTED_INTERFACE = 12;
+    public static final int SERVER_UNSUPPORTED_INTERFACE = 32;
     /** 连接状态错误 */
-    public static final int SERVER_CONNECTION_STATE_ERROR = 13;
+    public static final int SERVER_CONNECTION_STATE_ERROR = 33;
 
     public static boolean isUserCode(int code) {
         return code > 100;

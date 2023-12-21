@@ -32,4 +32,14 @@ public interface RpcContext<V> extends RpcGenericContext {
     /** 发送错误结果 */
     void sendError(int errorCode, String msg);
 
+    /** 发送错误结果 */
+    void sendError(Throwable ex);
+
+    /**
+     * 发送已编码的正确结果，避免中途解码
+     * 1.基于protobuf通信时，即为protobuf消息的序列化结果
+     * 2.非pb通信时，原始结果不可以是bytes，否则无法还原
+     * 3.如果需避免拷贝，发送之前还需调用{@link #setSharable(boolean)}
+     */
+    void sendEncodedResult(byte[] result);
 }

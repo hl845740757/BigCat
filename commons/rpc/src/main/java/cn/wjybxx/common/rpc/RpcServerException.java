@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.ex.ErrorCodeException;
+
 /**
  * 表示服务器的异常
  *
@@ -34,8 +36,12 @@ public class RpcServerException extends RpcException {
         return this;
     }
 
-    public static RpcServerException failed(int errorCode, String message) {
-        return new RpcServerException(errorCode, message);
+    public static RuntimeException newServerException(RpcResponse response) {
+        int errorCode = response.getErrorCode();
+        if (RpcErrorCodes.isUserCode(errorCode)) {
+            return new ErrorCodeException(errorCode, response.getErrorMsg());
+        } else {
+            return new RpcServerException(errorCode, response.getErrorMsg());
+        }
     }
-
 }

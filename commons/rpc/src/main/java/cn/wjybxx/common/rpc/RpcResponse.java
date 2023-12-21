@@ -17,18 +17,18 @@
 package cn.wjybxx.common.rpc;
 
 
+import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.codec.FieldImpl;
-import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
+import cn.wjybxx.common.concurrent.FutureUtils;
+import cn.wjybxx.common.ex.ErrorCodeException;
 import cn.wjybxx.common.log.DebugLogFriendlyObject;
-import cn.wjybxx.dson.DsonType;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * rpc响应结构体
@@ -41,7 +41,6 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
 
     /** 请求的唯一id */
     private long requestId;
-
     /** 服务id -- 定位返回值类型，也可以用于校验 */
     private int serviceId;
     /** 方法id */
@@ -59,7 +58,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
      * 3.如果为List，表示尚未序列化；兼容无返回值和返回null的情况，也有利于扩展
      */
     @FieldImpl(writeProxy = "writeResults", readProxy = "readResults")
-    private Object results;
+    private Object result;
 
     public RpcResponse() {
         // 序列化支持
@@ -69,28 +68,52 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         super(conId, srcAddr, destAddr);
     }
 
+    public RpcResponse(RpcRequest request, RpcAddr selfAddr) {
+        super(request.getConId(), selfAddr, request.getSrcAddr());
+        this.requestId = request.getRequestId();
+        this.serviceId = request.getServiceId();
+        this.methodId = request.getMethodId();
+    }
 
-    public RpcResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, List<Object> results) {
+    public RpcResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, Object result) {
         super(request.getConId(), selfAddr, request.getSrcAddr());
         this.requestId = request.getRequestId();
         this.serviceId = request.getServiceId();
         this.methodId = request.getMethodId();
         this.errorCode = errorCode;
-        this.results = Objects.requireNonNull(results);
+        this.result = result;
     }
 
-    public RpcResponse(RpcRequest request, RpcAddr selfAddr, RpcResultSpec resultSpec) {
-        super(request.getConId(), selfAddr, request.getSrcAddr());
-        this.requestId = request.getRequestId();
-        this.serviceId = request.getServiceId();
-        this.methodId = request.getMethodId();
+    // region 业务
 
-        this.errorCode = resultSpec.getErrorCode();
-        this.results = Objects.requireNonNull(resultSpec.getResults());
-        setSharable(resultSpec.isSharable());
+    public void setSuccess(Object result) {
+        if (result == null) {
+            this.errorCode = RpcErrorCodes.RESULT_NULL;
+        } else if (result.getClass() == byte[].class) {
+            this.errorCode = RpcErrorCodes.RESULT_BYTES;
+        } else {
+            this.errorCode = RpcErrorCodes.SUCCESS;
+        }
+        this.result = result;
     }
 
-    // region 业务方法
+    public void setFailed(int errorCode, String msg) {
+        assert !RpcErrorCodes.isSuccess(errorCode);
+        this.errorCode = errorCode;
+        this.result = ObjectUtils.nullToDef(msg, "");
+        this.setSharable(true); // 字符串总是可共享
+    }
+
+    public void setFailed(Throwable ex) {
+        ex = FutureUtils.unwrapCompletionException(ex);
+        if (ex instanceof ErrorCodeException codeException) {
+            setFailed(codeException.getErrorCode(), codeException.getMessage());
+        } else if (ex instanceof RpcException rpcException) {
+            setFailed(rpcException.getErrorCode(), rpcException.getMessage());
+        } else {
+            setFailed(RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(ex));
+        }
+    }
 
     public boolean isSuccess() {
         return errorCode == 0;
@@ -100,40 +123,8 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         if (errorCode == 0) {
             throw new IllegalStateException("errorCode == 0");
         }
-        return (String) listResult().get(0);
+        return (String) result;
     }
-
-    public Object getResult() {
-        if (errorCode != 0) {
-            throw new IllegalStateException("errorCode != 0");
-        }
-        List<Object> results = listResult();
-        return results.isEmpty() ? null : results.get(0);
-    }
-
-    /** 是否已序列化 */
-    public boolean isSerialized() {
-        return results instanceof byte[];
-    }
-
-    /** 是否已反序列化 */
-    public boolean isDeserialized() {
-        return results instanceof List<?>;
-    }
-
-    /** 结果转bytes */
-    public byte[] bytesResults() {
-        assert results != null;
-        return (byte[]) results;
-    }
-
-    /** 结果转List */
-    @SuppressWarnings("unchecked")
-    public List<Object> listResult() {
-        assert results != null;
-        return (List<Object>) results;
-    }
-
     // endregion
 
     // region getter/setter
@@ -173,12 +164,12 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         return this;
     }
 
-    public Object getResults() {
-        return results;
+    public Object getResult() {
+        return result;
     }
 
-    public RpcResponse setResults(Object results) {
-        this.results = results;
+    public RpcResponse setResult(Object result) {
+        this.result = result;
         return this;
     }
     // endregion
@@ -191,7 +182,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-                ", results=" + results +
+                ", results=" + result +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
@@ -211,7 +202,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-                ", results=" + results +
+                ", results=" + result +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
@@ -220,32 +211,25 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
 
     // region 序列化优化
     // 1.自动处理延迟序列化问题
-    // 2.避免多态写入List类型信息
 
     public void writeResults(BinaryObjectWriter writer, int name) {
-        if (results == null) {
-            throw new IllegalStateException("results is null");
-        }
-        if (results instanceof byte[] bytes) {
-            writer.writeValueBytes(name, DsonType.ARRAY, bytes);
+        if (errorCode == RpcErrorCodes.RESULT_NULL) {
+            // null不写
+        } else if (errorCode == RpcErrorCodes.RESULT_BYTES) {
+            writer.writeBytes(name, (byte[]) result);
         } else {
-            List<Object> results = listResult();
-            writer.writeStartArray(name, RpcRequest.getListTypeArgInfo(results));
-            for (Object ele : results) {
-                writer.writeObject(0, ele);
-            }
-            writer.writeEndArray();
+            writer.writeObject(name, result);
         }
     }
 
     public void readResults(BinaryObjectReader reader, int name) {
-        List<Object> results = new ArrayList<>(1);
-        reader.readStartArray(name, TypeArgInfo.ARRAYLIST);
-        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
-            results.add(reader.readObject(0));
+        if (errorCode == RpcErrorCodes.RESULT_NULL) {
+            // null不读
+        } else if (errorCode == RpcErrorCodes.RESULT_BYTES) {
+            result = reader.readBytes(name);
+        } else {
+            result = reader.readObject(name);
         }
-        reader.readEndArray();
-        this.results = results;
     }
 
     // endregion

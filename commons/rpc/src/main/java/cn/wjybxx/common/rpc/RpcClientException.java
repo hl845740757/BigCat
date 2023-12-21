@@ -16,6 +16,10 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.concurrent.FutureUtils;
+import cn.wjybxx.common.ex.ErrorCodeException;
+
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -69,6 +73,23 @@ public class RpcClientException extends RpcException {
 
     public static RpcClientException unknownException(Throwable e) {
         return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "unknownException", e, true, true);
+    }
+
+    public static RuntimeException wrapOrRethrow(Throwable e) {
+        if (e instanceof ErrorCodeException || e instanceof RpcException) {
+            return (RuntimeException) e;
+        }
+        if (e instanceof TimeoutException timeoutException) {
+            return blockingTimeout(timeoutException);
+        }
+        if (e instanceof InterruptedException ie) {
+            return interrupted(ie);
+        }
+        if (e instanceof ExecutionException) {
+            return RpcClientException.unknownException(e.getCause());
+        }
+        e = FutureUtils.unwrapCompletionException(e);
+        return unknownException(e);
     }
 
 }

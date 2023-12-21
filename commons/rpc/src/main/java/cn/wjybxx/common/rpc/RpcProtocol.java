@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.rpc;
 
+import cn.wjybxx.common.Bits;
 import cn.wjybxx.common.log.DebugLogFriendlyObject;
 
 /**
@@ -25,6 +26,10 @@ import cn.wjybxx.common.log.DebugLogFriendlyObject;
  * date - 2023/9/11
  */
 public abstract class RpcProtocol implements DebugLogFriendlyObject {
+
+    private static final int MASK_SHARABLE = 1;
+    private static final int MASK_SERIALIZED = 1 << 1;
+    private static final int MASK_DESERIALIZED = 1 << 2;
 
     /** 连接id */
     protected long conId;
@@ -45,23 +50,38 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
         this.destAddr = destAddr;
     }
 
+    // region internal
+
     /** 方法参数或结果是否可共享 */
     public final boolean isSharable() {
-        return ctl > 0;
+        return (ctl & MASK_SHARABLE) != 0;
     }
 
     public final RpcProtocol setSharable(boolean value) {
-        ctl = value ? 1 : 0;
+        ctl = Bits.set(ctl, MASK_SHARABLE, value);
         return this;
     }
 
-    public int getCtl() {
-        return ctl;
+    /** 方法参数或结果是否已序列化 */
+    public final boolean isSerialized() {
+        return (ctl & MASK_SERIALIZED) != 0;
     }
 
-    public final void setCtl(int ctl) {
-        this.ctl = ctl;
+    public final RpcProtocol setSerialized() {
+        ctl = Bits.set(ctl, MASK_SERIALIZED, true);
+        return this;
     }
+
+    /** 方法参数或结果是否反序列化 */
+    public final boolean isDeserialized() {
+        return (ctl & MASK_DESERIALIZED) != 0;
+    }
+
+    public final RpcProtocol setDeserialized() {
+        ctl = Bits.set(ctl, MASK_DESERIALIZED, true);
+        return this;
+    }
+    // endregion
 
     // region getter/setter
     public long getConId() {

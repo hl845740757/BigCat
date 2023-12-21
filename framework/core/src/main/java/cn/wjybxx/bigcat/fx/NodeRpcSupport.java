@@ -21,7 +21,6 @@ import cn.wjybxx.common.concurrent.ICompletableFuture;
 import cn.wjybxx.common.concurrent.NoLogRequiredException;
 import cn.wjybxx.common.concurrent.WatcherMgr;
 import cn.wjybxx.common.concurrent.XCompletableFuture;
-import cn.wjybxx.common.ex.ErrorCodeException;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
 import cn.wjybxx.common.pb.PBMethodInfo;
@@ -37,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,6 +50,7 @@ import java.util.function.BiConsumer;
  * @author wjybxx
  * date - 2023/10/28
  */
+@SuppressWarnings("unused")
 public class NodeRpcSupport implements WorkerModule {
 
     private static final Logger logger = LoggerFactory.getLogger(NodeRpcSupport.class);
@@ -77,9 +78,9 @@ public class NodeRpcSupport implements WorkerModule {
     private final Map<Long, WatcherMgr.Watcher<RpcResponse>> watcherMap = new ConcurrentHashMap<>(8);
 
     private Node node;
-    private WorkerAddr selfRpcAddr;
+    private WorkerAddr selfAddr;
     private RpcSerializer serializer;
-    private PBMethodInfoRegistry parserRegistry;
+    private PBMethodInfoRegistry methodInfoRegistry;
     private NodeRpcSender sender;
     private TimeProvider timeProvider;
 
@@ -140,10 +141,10 @@ public class NodeRpcSupport implements WorkerModule {
             throw new IllegalStateException();
         }
         this.node = node;
-        this.selfRpcAddr = node.nodeAddr();
+        this.selfAddr = node.nodeAddr();
         this.timeProvider = node.injector().getInstance(TimeProvider.class);
         this.serializer = node.injector().getInstance(RpcSerializer.class);
-        this.parserRegistry = node.injector().getInstance(PBMethodInfoRegistry.class);
+        this.methodInfoRegistry = node.injector().getInstance(PBMethodInfoRegistry.class);
         this.sender = node.injector().getInstance(NodeRpcSender.class);
     }
 
@@ -178,169 +179,6 @@ public class NodeRpcSupport implements WorkerModule {
     }
 
     // endregion
-
-    // region rpc
-
-    /** worker线程调用 -- worker可能是node自身 */
-    private RpcRequest newRequest(RpcAddr target, RpcMethodSpec<?> methodSpec, int invokeType) {
-//        assert !mutable;
-        RpcRequest request = new RpcRequest(conId, selfRpcAddr, target, 0, invokeType, methodSpec);
-        if (!request.isSharable()) { // 参数不可共享时在请求线程序列化
-            encodeParameters(request);
-        }
-        return request;
-    }
-
-    /** node线程调用，分配请求id和检查序列化 */
-    private void fillRequest(RpcRequest request) {
-//        assert node.inEventLoop();
-        request.setRequestId(++idSequencer);
-
-        // 检测可共享的数据是否需要序列化
-        if (!request.isSharable() || !enableLocalShare || !isLocalUnicastAddr(request.getDestAddr())) {
-            encodeParameters(request);
-        }
-    }
-
-    /** 判断是否是单播地址 */
-    private boolean isUnicastAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return sender.isUnicastAddr(workerAddr);
-        }
-        return addr == StaticRpcAddr.LOCAL;
-    }
-
-    /** 判断是否是本地单播地址 */
-    private boolean isLocalUnicastAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return selfRpcAddr.equalsIgnoreWorker(workerAddr)
-                    && sender.isUnicastWorkerAddr(workerAddr);
-        }
-        return addr == StaticRpcAddr.LOCAL;
-    }
-
-    /** 判断是否是本地广播地址 */
-    private boolean isBroadcastWorkerAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return sender.isBroadcastWorkerAddr(workerAddr);
-        }
-        return addr == StaticRpcAddr.LOCAL_BROADCAST;
-    }
-
-    /** 克隆rpc请求 -- 参数应尚未解码 */
-    private RpcRequest clone(RpcRequest src) {
-        RpcRequest request = new RpcRequest(src.getConId(), src.getSrcAddr(), src.getDestAddr())
-                .setRequestId(src.getRequestId())
-                .setInvokeType(src.getInvokeType())
-                .setServiceId(src.getServiceId())
-                .setMethodId(src.getMethodId())
-                .setParameters(src.getParameters());
-        request.setSharable(false);
-        return request;
-    }
-
-    /** 序列化rpc参数 */
-    private void encodeParameters(RpcRequest request) {
-        if (request.isSerialized()) {
-            return;
-        }
-        List<Object> parameters = request.listParameters();
-        if (sender.isCrossLanguageAddr(request.getDestAddr())) {
-            if (parameters.size() == 0 || parameters.get(0) == null) {
-                request.setParameters(ArrayUtils.EMPTY_BYTE_ARRAY);
-            } else {
-                Message message = (Message) parameters.get(0);
-                request.setParameters(message.toByteArray());
-            }
-        } else {
-            request.setParameters(serializer.write(parameters));
-        }
-    }
-
-    /** 反序列化rpc参数 */
-    private boolean decodeParameters(RpcRequest request) {
-        if (request.isDeserialized()) {
-            return true;
-        }
-        byte[] parameters = request.bytesParameters();
-        if (sender.isCrossLanguageAddr(request.getSrcAddr())) {
-            PBMethodInfo<?, ?> methodInfo = parserRegistry.getParser(request.getServiceId(), request.getMethodId());
-            if (methodInfo == null) {
-                return false;
-            }
-            if (methodInfo.argParser == null) {
-                // 无参
-                request.setParameters(List.of());
-                return true;
-            }
-            try {
-                // 单参-pb支持空数组
-                Object argument = methodInfo.argParser.parseFrom(parameters);
-                request.setParameters(List.of(argument));
-                return true;
-            } catch (Exception e) {
-                logger.info("decode parameters caught exception", e);
-                return false; // 外部会打印方法信息
-            }
-        } else {
-            try {
-                request.setParameters(serializer.read(parameters));
-                return true;
-            } catch (Exception e) {
-                logger.info("decode parameters caught exception", e);
-                return false;
-            }
-        }
-    }
-
-    private void encodeResult(RpcResponse response) {
-        if (response.isSerialized()) {
-            return;
-        }
-        List<Object> results = response.listResult();
-        if (sender.isCrossLanguageAddr(response.getDestAddr())) {
-            if (results.size() == 0 || results.get(0) == null) {
-                response.setResults(ArrayUtils.EMPTY_BYTE_ARRAY);
-            } else {
-                Message message = (Message) results.get(0);
-                response.setResults(message.toByteArray());
-            }
-        } else {
-            response.setResults(serializer.write(results));
-        }
-    }
-
-    private boolean decodeResult(RpcResponse response) {
-        if (response.isDeserialized()) {
-            return true;
-        }
-        byte[] results = response.bytesResults();
-        if (sender.isCrossLanguageAddr(response.getSrcAddr())) {
-            PBMethodInfo<?, ?> methodInfo = parserRegistry.getParser(response.getServiceId(), response.getMethodId());
-            assert methodInfo != null;
-            if (methodInfo.resultParser == null) {
-                // 无结果
-                response.setResults(List.of());
-                return true;
-            }
-            try {
-                Object result = methodInfo.resultParser.parseFrom(results);
-                response.setResults(List.of(result));
-                return true;
-            } catch (InvalidProtocolBufferException e) {
-                logger.info("decode results caught exception", e);
-                return false; // 外部会打印方法信息
-            }
-        } else {
-            try {
-                response.setResults(serializer.read(results));
-                return true;
-            } catch (Exception e) {
-                logger.info("decode results caught exception", e);
-                return false;
-            }
-        }
-    }
 
     // region send
 
@@ -434,7 +272,6 @@ public class NodeRpcSupport implements WorkerModule {
                         .toCompletableFuture()
                         .get(timeoutMs, TimeUnit.MILLISECONDS);
             }
-            // 走到这里，watcher一定从map中删除了
             decodeResult(response);
             if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
                 logRcvResponse(response, false);
@@ -444,21 +281,11 @@ public class NodeRpcSupport implements WorkerModule {
                 @SuppressWarnings("unchecked") V result = (V) response.getResult();
                 return result;
             } else {
-                throw newServerException(response);
+                throw RpcServerException.newServerException(response);
             }
-        } catch (TimeoutException e) {
-            throw RpcClientException.blockingTimeout(e);
-        } catch (InterruptedException e) {
-            ThreadUtils.recoveryInterrupted();
-            throw RpcClientException.interrupted(e);
-        } catch (ExecutionException e) {
-            throw RpcClientException.unknownException(e.getCause());
         } catch (Exception e) {
-            // 根据errorCode抛出的异常
-            if (e instanceof RpcException || e instanceof ErrorCodeException) {
-                throw e;
-            }
-            throw RpcClientException.unknownException(e);
+            ThreadUtils.recoveryInterrupted(e);
+            throw RpcClientException.wrapOrRethrow(e);
         } finally {
             // 即时删除watcher -- 注意！当前线程可能看不见Node线程分配的requestId，而在node线程下一定可见
             if (response == null) {
@@ -496,6 +323,8 @@ public class NodeRpcSupport implements WorkerModule {
 
     // endregion
 
+    // region rcvRequest
+
     /** 该方法由IO线程调用(由RpcRouter类调用) */
     public void onRcvRequest(final RpcRequest request) {
         Objects.requireNonNull(request);
@@ -508,7 +337,6 @@ public class NodeRpcSupport implements WorkerModule {
             logger.warn("rcv bad request, info: " + request.toSimpleLog());
             return;
         }
-
         if (logConfig.getRcvRequestLogLevel() > DebugLogLevel.NONE) {
             logRcvRequest(request);
         }
@@ -588,16 +416,38 @@ public class NodeRpcSupport implements WorkerModule {
                     future.whenComplete(context);
                 } else {
                     // 立即得到了结果
-                    context.resultSpec.succeeded(result);
-                    sendResponseAndLog(new RpcResponse(request, selfRpcAddr, context.resultSpec));
+                    @SuppressWarnings("unchecked") T castReult = (T) result;
+                    context.sendResult(castReult);
                 }
             } catch (Throwable e) {
-                context.resultSpec.failed(e);
-                sendResponseAndLog(new RpcResponse(request, selfRpcAddr, context.resultSpec));
+                context.sendError(e);
                 logInvokeException(request, e);
             }
         }
     }
+
+    private void unsupportedInterface(RpcRequest request) {
+        // 不存在的服务
+        logger.warn("unsupported interface, src {}, serviceId={}, methodId={}",
+                request.getSrcAddr(), request.getServiceId(), request.getMethodId());
+
+        // 需要返回结果
+        if (RpcInvokeType.isCall(request.getInvokeType())) {
+            final RpcResponse response = newFailedResponse(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
+            sendResponseAndLog(response);
+        }
+    }
+
+    private static void logInvokeException(RpcRequest request, Throwable e) {
+        if (!(e instanceof NoLogRequiredException)) {
+            logger.warn("invoke caught exception, src {}, serviceId={}, methodId={}",
+                    request.getSrcAddr(), request.getServiceId(), request.getMethodId(), e);
+        }
+    }
+
+    // endregion
+
+    // region rcvResponse
 
     /** 该方法由IO线程调用(由RpcRouter类调用) */
     public void onRcvResponse(RpcResponse response) {
@@ -637,7 +487,7 @@ public class NodeRpcSupport implements WorkerModule {
             if (errorCode == 0) {
                 future.complete(response.getResult());
             } else {
-                future.completeExceptionally(newServerException(response));
+                future.completeExceptionally(RpcServerException.newServerException(response));
             }
         }
     }
@@ -652,8 +502,13 @@ public class NodeRpcSupport implements WorkerModule {
             return;
         }
         // 检测可共享的数据是否需要序列化
-        if (!response.isSharable() || !enableLocalShare || !isLocalUnicastAddr(response.getDestAddr())) {
-            encodeResult(response);
+        if (response.isSharable()) {
+            if (enableLocalShare && isLocalUnicastAddr(response.getDestAddr())) {
+                response.setSerialized();
+                response.setDeserialized();
+            } else {
+                encodeResult(response);
+            }
         }
         if (logConfig.getSndResponseLogLevel() > DebugLogLevel.NONE) {
             logSndResponse(response);
@@ -663,43 +518,242 @@ public class NodeRpcSupport implements WorkerModule {
         }
     }
 
-    // endregion
-
-    // region 内部实现
-
-    private void unsupportedInterface(RpcRequest request) {
-        // 不存在的服务
-        logger.warn("unsupported interface, src {}, serviceId={}, methodId={}",
-                request.getSrcAddr(), request.getServiceId(), request.getMethodId());
-
-        // 需要返回结果
-        if (RpcInvokeType.isCall(request.getInvokeType())) {
-            final RpcResponse response = newFailedResponse(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, "");
-            sendResponseAndLog(response);
-        }
-    }
-
-    private static void logInvokeException(RpcRequest request, Throwable e) {
-        if (!(e instanceof NoLogRequiredException)) {
-            logger.warn("invoke caught exception, src {}, serviceId={}, methodId={}",
-                    request.getSrcAddr(), request.getServiceId(), request.getMethodId(), e);
-        }
-    }
-
-    private static RuntimeException newServerException(RpcResponse response) {
-        int errorCode = response.getErrorCode();
-        if (RpcErrorCodes.isUserCode(errorCode)) {
-            return new ErrorCodeException(errorCode, response.getErrorMsg());
-        } else {
-            return new RpcServerException(errorCode, response.getErrorMsg());
-        }
-    }
-
     private RpcResponse newFailedResponse(RpcRequest request, int errorCode, String msg) {
-        RpcResponse response = new RpcResponse(request, selfRpcAddr, errorCode, List.of(msg));
+        RpcResponse response = new RpcResponse(request, selfAddr, errorCode, List.of(msg));
         response.setSharable(true);
         return response;
     }
+
+    // endregion
+
+    // region request
+
+    /** worker线程调用 -- worker可能是node自身 */
+    private RpcRequest newRequest(RpcAddr target, RpcMethodSpec<?> methodSpec, int invokeType) {
+//        assert !mutable;
+        RpcRequest request = new RpcRequest(conId, selfAddr, target, 0, invokeType, methodSpec);
+        // 参数不可共享时在请求线程序列化 -- 不论是否本地
+        if (!request.isSharable()) {
+            encodeParameters(request);
+        }
+        return request;
+    }
+
+    /** node线程调用，分配请求id和检查序列化 */
+    private void fillRequest(RpcRequest request) {
+//        assert node.inEventLoop();
+        request.setRequestId(++idSequencer);
+        // 检测可共享的数据是否需要（延迟）序列化 -- 不可共享的数据已序列化
+        if (request.isSharable()) {
+            if (enableLocalShare && isLocalUnicastAddr(request.getDestAddr())) {
+                request.setSerialized();
+                request.setDeserialized();
+            } else {
+                encodeParameters(request);
+            }
+        }
+    }
+
+    /** 判断是否是单播地址 */
+    private boolean isUnicastAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return sender.isUnicastAddr(workerAddr);
+        }
+        return addr == StaticRpcAddr.LOCAL;
+    }
+
+    /** 判断是否是本地单播地址 */
+    private boolean isLocalUnicastAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return selfAddr.equalsIgnoreWorker(workerAddr)
+                    && sender.isUnicastWorkerAddr(workerAddr);
+        }
+        return addr == StaticRpcAddr.LOCAL;
+    }
+
+    /** 判断是否是本地广播地址 */
+    private boolean isBroadcastWorkerAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return sender.isBroadcastWorkerAddr(workerAddr);
+        }
+        return addr == StaticRpcAddr.LOCAL_BROADCAST;
+    }
+
+    /** 克隆rpc请求 -- 参数应尚未解码 */
+    private RpcRequest clone(RpcRequest src) {
+        // 控制标识(ctl)不会被拷贝
+        return new RpcRequest(src.getConId(), src.getSrcAddr(), src.getDestAddr())
+                .setRequestId(src.getRequestId())
+                .setInvokeType(src.getInvokeType())
+                .setServiceId(src.getServiceId())
+                .setMethodId(src.getMethodId())
+                .setParameters(src.getParameters());
+    }
+    // endregion
+
+    // region 编解码
+
+    /** 序列化rpc参数 */
+    private void encodeParameters(RpcRequest request) {
+        if (request.isSerialized()) {
+            return;
+        }
+        request.setSerialized();
+
+        List<Object> parameters = request.listParameters();
+        if (sender.isCrossLanguageAddr(request.getDestAddr())) {
+            if (parameters.size() == 0) {
+                request.setParameters(ArrayUtils.EMPTY_BYTE_ARRAY);
+                return;
+            }
+            Message message = (Message) parameters.get(0);
+            if (message == null) { // null参数警告
+                logger.info("rpc argument is null, it will be replaced with an empty message, serviceId: {}, {}",
+                        request.getServiceId(), request.getMethodId());
+                request.setParameters(ArrayUtils.EMPTY_BYTE_ARRAY);
+            } else {
+                request.setParameters(message.toByteArray());
+            }
+        } else {
+            request.setParameters(serializer.write(parameters));
+        }
+    }
+
+    /** 反序列化rpc参数 */
+    private boolean decodeParameters(RpcRequest request) {
+        if (request.isDeserialized()) {
+            return true;
+        }
+        request.setDeserialized();
+
+        byte[] parameters = request.bytesParameters();
+        if (sender.isCrossLanguageAddr(request.getSrcAddr())) {
+            PBMethodInfo<?, ?> methodInfo = methodInfoRegistry.getParser(request.getServiceId(), request.getMethodId());
+            if (methodInfo == null) {
+                return false;
+            }
+            if (methodInfo.argParser == null) {
+                // 无参
+                request.setParameters(List.of());
+                return true;
+            }
+            try {
+                // 单参-(空数组将被解析为空消息)
+                Object argument = methodInfo.argParser.parseFrom(parameters);
+                request.setParameters(List.of(argument));
+                return true;
+            } catch (Exception e) {
+                logger.info("decode parameters caught exception", e);
+                return false; // 外部会打印方法信息
+            }
+        } else {
+            try {
+                request.setParameters(serializer.read(parameters));
+                return true;
+            } catch (Exception e) {
+                logger.info("decode parameters caught exception", e);
+                return false;
+            }
+        }
+    }
+
+    private void encodeResult(RpcResponse response) {
+        if (response.isSerialized()) { // 已序列化，含bytes和null的特殊处理
+            return;
+        }
+        response.setSerialized();
+
+        if (!RpcErrorCodes.isSuccess(response.getErrorCode())) { // 失败结果
+            response.setResult(response.getErrorMsg().getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+        if (sender.isCrossLanguageAddr(response.getDestAddr())) {
+            if (response.getErrorCode() == RpcErrorCodes.RESULT_NULL) {
+                // null结果警告
+                if (methodInfoRegistry.getParser(response.getServiceId(), response.getMethodId()) != null) {
+                    logger.info("rpc result is null, it will be replaced with an empty message, serviceId: {}, {}",
+                            response.getServiceId(), response.getMethodId());
+                }
+                response.setResult(ArrayUtils.EMPTY_BYTE_ARRAY); // 替换为空数组，然后替换为普通值
+                response.setErrorCode(RpcErrorCodes.SUCCESS);
+            } else if (response.getErrorCode() == RpcErrorCodes.RESULT_BYTES) {
+                // 允许发送bytes以减少拷贝，但打印警告
+                logger.info("rpc result is bytes, serviceId: {}, {}",
+                        response.getServiceId(), response.getMethodId());
+
+                byte[] rawBytes = (byte[]) response.getResult();
+                response.setResult(rawBytes.clone()); // 需要拷贝下来，然后替换为普通值
+                response.setErrorCode(RpcErrorCodes.SUCCESS);
+            } else {
+                Message message = (Message) response.getResult();
+                response.setResult(message.toByteArray());
+            }
+        } else {
+            if (response.getErrorCode() == RpcErrorCodes.RESULT_NULL) {
+                response.setResult(ArrayUtils.EMPTY_BYTE_ARRAY);
+            } else if (response.getErrorCode() == RpcErrorCodes.RESULT_BYTES) {
+                byte[] rawBytes = (byte[]) response.getResult();
+                response.setResult(rawBytes.clone()); // 需要拷贝下来，保持为bytes
+            } else {
+                response.setResult(serializer.write(response.getResult()));
+            }
+        }
+    }
+
+    private boolean decodeResult(RpcResponse response) {
+        if (response.isDeserialized()) {
+            return true;
+        }
+        response.setDeserialized();
+
+        if (!RpcErrorCodes.isSuccess(response.getErrorCode())) { // 失败结果
+            String msg = new String((byte[]) response.getResult(), StandardCharsets.UTF_8);
+            response.setResult(msg);
+            return true;
+        }
+        byte[] result = (byte[]) response.getResult();
+        if (sender.isCrossLanguageAddr(response.getSrcAddr())) {
+            PBMethodInfo<?, ?> methodInfo = methodInfoRegistry.getParser(response.getServiceId(), response.getMethodId());
+            if (methodInfo == null) {
+                logger.info("receive result, but methodInfo is null, serviceId: {}, methodId: {}",
+                        response.getServiceId(), response.getMethodId());
+                return false;
+            }
+            if (methodInfo.resultParser == null) {
+                // 无结果
+                response.setResult(null);
+                return true;
+            }
+            try {
+                // 单结果 -(空数组将被解析为空消息)
+                response.setResult(methodInfo.resultParser.parseFrom(result));
+                return true;
+            } catch (InvalidProtocolBufferException e) {
+                logger.info("decode result caught exception", e);
+                return false; // 外部会打印方法信息
+            }
+        } else {
+            if (response.getErrorCode() == RpcErrorCodes.RESULT_NULL) {
+                response.setErrorCode(0);
+                response.setResult(null);
+                return true;
+            }
+            if (response.getErrorCode() == RpcErrorCodes.RESULT_BYTES) {
+                response.setErrorCode(0);
+                return true;
+            }
+            try {
+                response.setResult(serializer.read(result));
+                return true;
+            } catch (Exception e) {
+                logger.info("decode result caught exception", e);
+                return false;
+            }
+        }
+    }
+    // endregion
+
+    // region
 
     @ThreadSafe
     private static class RpcResponseWatcher implements WatcherMgr.Watcher<RpcResponse> {
@@ -729,7 +783,7 @@ public class NodeRpcSupport implements WorkerModule {
 
         final RpcRequest request;
         final NodeRpcSupport rpcClient;
-        final RpcResultSpec resultSpec = new RpcResultSpec();
+        boolean sharable = false;
 
         RpcContextImpl(RpcRequest request, NodeRpcSupport rpcClient) {
             this.request = request;
@@ -753,34 +807,59 @@ public class NodeRpcSupport implements WorkerModule {
 
         @Override
         public boolean isSharable() {
-            return resultSpec.isSharable();
+            return sharable;
         }
 
         @Override
         public void setSharable(boolean sharable) {
-            resultSpec.setSharable(sharable);
+            this.sharable = sharable;
         }
 
         @Override
         public void sendResult(V result) {
-            resultSpec.succeeded(result);
-            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setSharable(sharable);
+            response.setSuccess(result);
+            rpcClient.sendResponseAndLog(response);
         }
 
         @Override
         public void sendError(int errorCode, String msg) {
-            resultSpec.failed(errorCode, msg);
-            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
+            if (!RpcErrorCodes.isUserCode(errorCode)) {
+                throw new IllegalArgumentException("invalid errorCode: " + errorCode);
+            }
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setFailed(errorCode, msg);
+            rpcClient.sendResponseAndLog(response);
+        }
+
+        @Override
+        public void sendError(Throwable ex) {
+            Objects.requireNonNull(ex);
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setFailed(ex);
+            rpcClient.sendResponseAndLog(response);
+        }
+
+        @Override
+        public void sendEncodedResult(byte[] result) {
+            Objects.requireNonNull(result);
+            RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
+            response.setSuccess(result);
+            // 非基于protobuf通信时，原始类型不能是bytes
+            if (!rpcClient.sender.isCrossLanguageAddr(response.getDestAddr())) {
+                response.setErrorCode(0);
+            }
+            rpcClient.sendResponseAndLog(response);
         }
 
         @Override
         public void accept(V v, Throwable throwable) {
-            if (throwable != null) {
-                resultSpec.failed(throwable);
+            if (throwable == null) {
+                sendResult(v);
             } else {
-                resultSpec.succeeded(v);
+                sendError(throwable);
             }
-            rpcClient.sendResponseAndLog(new RpcResponse(request, rpcClient.selfRpcAddr, resultSpec));
         }
     }
 
