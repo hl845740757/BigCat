@@ -434,7 +434,7 @@ public class PBParser {
             if (srcLine.ln > endLn) {
                 return;
             }
-            int firstCharNonWhitespace = ObjectUtils.firstCharNonWhitespace(srcLine.data);
+            int firstCharNonWhitespace = Utils.firstCharNonWhitespace(srcLine.data);
             if (firstCharNonWhitespace == -1 || firstCharNonWhitespace == '/') { // 空行和注释行
                 continue;
             }
@@ -691,7 +691,7 @@ public class PBParser {
     private PBAnnotation tryParseAnnotation(LineInfo lineInfo) throws PBParserException {
         // '//@RpcService {}'
         String comment = lineInfo.comment;
-        int startIndex = ObjectUtils.indexOfNonWhitespace(comment, 2);
+        int startIndex = Utils.indexOfNonWhitespace(comment, 2);
         if (startIndex < 0 || comment.charAt(startIndex) != '@') {
             return null; // @前面有其它内容
         }
@@ -718,7 +718,7 @@ public class PBParser {
 
     /** 测试注释是否是注解 */
     public static boolean isAnnotationComment(String comment) {
-        int startIndex = ObjectUtils.indexOfNonWhitespace(comment, 2);
+        int startIndex = Utils.indexOfNonWhitespace(comment, 2);
         if (startIndex < 0 || comment.charAt(startIndex) != '@') {
             return false; // @前面有其它内容
         }

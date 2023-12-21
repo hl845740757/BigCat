@@ -76,8 +76,8 @@ public class FxUtils {
 
         List<WorkerModule> moduleList = new ArrayList<>(builder.getModuleClasses().size() + 1);
         moduleList.add(mainModule);
-        for (Class<? extends WorkerModule> moduleClass : builder.getModuleClasses()) {
-            WorkerModule workerModule = injector.getInstance(moduleClass);
+        for (Class<?> moduleClass : builder.getModuleClasses()) {
+            WorkerModule workerModule = (WorkerModule) injector.getInstance(moduleClass);
             if (CollectionUtils.containsRef(moduleList, workerModule)) {
                 throw new IllegalArgumentException("Duplicate Module: " + moduleClass);
             }

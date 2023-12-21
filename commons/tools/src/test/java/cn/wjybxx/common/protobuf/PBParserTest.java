@@ -23,7 +23,7 @@ import cn.wjybxx.common.tools.protobuf.PBParserOptions;
 import cn.wjybxx.common.tools.protobuf.PBRepository;
 import cn.wjybxx.common.tools.protobuf.gen.PBCompiler;
 import cn.wjybxx.common.tools.protobuf.gen.PBFileGenerator;
-import cn.wjybxx.common.tools.protobuf.gen.ParserExporterGenerator;
+import cn.wjybxx.common.tools.protobuf.gen.MethodInfoExporterGenerator;
 import cn.wjybxx.common.tools.protobuf.gen.ServiceGenerator;
 import cn.wjybxx.common.tools.util.Utils;
 import org.apache.commons.io.FileUtils;
@@ -84,7 +84,7 @@ public class PBParserTest {
             new PBFileGenerator(options, tempDir, parser).build();
         }
         new PBCompiler(options).build();
-        new ParserExporterGenerator(options, repository).build();
+        new MethodInfoExporterGenerator(options, repository).build();
         new ServiceGenerator(options, repository).build();
     }
 

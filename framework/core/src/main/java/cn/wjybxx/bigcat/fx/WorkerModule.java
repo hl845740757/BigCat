@@ -47,7 +47,7 @@ public interface WorkerModule extends EventLoopModule {
      * Worker每帧会调用调用所有模块的Update方法
      * 注：只有重写了该方法的类才会被每帧调用。
      */
-    default void update() throws Exception{
+    default void update() throws Exception {
 
     }
 

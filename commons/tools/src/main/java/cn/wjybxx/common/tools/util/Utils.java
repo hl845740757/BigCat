@@ -30,6 +30,106 @@ import java.io.InputStreamReader;
  */
 public class Utils extends ObjectUtils {
 
+    // region 空白字符
+
+    /**
+     * 查找首个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int firstCharNonWhitespace(CharSequence cs) {
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = 0; i < length; i++) {
+            char c = cs.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return c;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * 查找最后一个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int lastCharNonWhitespace(CharSequence cs) {
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = length - 1; i >= 0; i--) {
+            char c = cs.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return c;
+            }
+        }
+        return -1;
+    }
+
+    /** 索引首个非空白字符的 */
+    public static int indexOfNonWhitespace(CharSequence cs) {
+        return indexOfNonWhitespace(cs, 0);
+    }
+
+    /** 索引首个非空白字符 */
+    public static int indexOfNonWhitespace(CharSequence cs, final int startIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = startIndex; i < length; i++) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** 逆向索引首个非空白字符 */
+    public static int lastIndexOfNonWhitespace(CharSequence cs) {
+        return lastIndexOfNonWhitespace(cs, -1);
+    }
+
+    /**
+     * 逆向索引首个非空白字符
+     *
+     * @param startIndex 开始下标，-1表示从最后一个字符开始
+     * @return -1表示查找失败
+     */
+    public static int lastIndexOfNonWhitespace(CharSequence cs, int startIndex) {
+        if (startIndex < -1) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+
+        if (startIndex == -1) {
+            startIndex = length - 1;
+        } else if (startIndex >= length) {
+            startIndex = length - 1;
+        }
+
+        for (int i = startIndex; i >= 0; i--) {
+            if (!Character.isWhitespace(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // endregion
+
     // region 字符查找
 
     /** 查找第一个非给定char的元素的位置 */

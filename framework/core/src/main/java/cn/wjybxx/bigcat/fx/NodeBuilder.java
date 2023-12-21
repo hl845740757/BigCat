@@ -86,7 +86,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
     }
 
     @Override
-    public NodeBuilder addModule(Class<? extends WorkerModule> moduleClazz) {
+    public NodeBuilder addModule(Class<?> moduleClazz) {
         super.addModule(moduleClazz);
         return this;
     }
@@ -98,7 +98,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
     }
 
     @Override
-    public NodeBuilder addModules(List<Class<? extends WorkerModule>> moduleClazz) {
+    public NodeBuilder addModules(List<Class<?>> moduleClazz) {
         super.addModules(moduleClazz);
         return this;
     }

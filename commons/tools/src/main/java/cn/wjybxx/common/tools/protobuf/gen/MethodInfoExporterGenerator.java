@@ -16,8 +16,8 @@
 
 package cn.wjybxx.common.tools.protobuf.gen;
 
-import cn.wjybxx.common.pb.PBMethodParser;
-import cn.wjybxx.common.pb.PBMethodParserRegistry;
+import cn.wjybxx.common.pb.PBMethodInfo;
+import cn.wjybxx.common.pb.PBMethodInfoRegistry;
 import cn.wjybxx.common.tools.protobuf.*;
 import cn.wjybxx.common.tools.util.GenClassUtils;
 import com.squareup.javapoet.ClassName;
@@ -30,19 +30,19 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * 生成辅助类，辅助类中注册所有的{@link PBMethodParser}到{@link PBMethodParserRegistry}
+ * 生成辅助类，辅助类中注册所有的{@link PBMethodInfo}到{@link PBMethodInfoRegistry}
  *
  * @author wjybxx
  * date - 2023/10/12
  */
-public class ParserExporterGenerator extends AbstractGenerator {
+public class MethodInfoExporterGenerator extends AbstractGenerator {
 
     /** 生成的类名 */
-    private static final String CLASS_NAME = "PBMethodParserExporter";
+    private static final String CLASS_NAME = "PBMethodInfoExporter";
 
     private final boolean isProto2;
 
-    public ParserExporterGenerator(PBParserOptions options, PBRepository repository) {
+    public MethodInfoExporterGenerator(PBParserOptions options, PBRepository repository) {
         super(options, repository);
         this.isProto2 = options.isProto2();
     }
@@ -50,8 +50,8 @@ public class ParserExporterGenerator extends AbstractGenerator {
     public void build() throws IOException {
         MethodSpec.Builder exportBuilder = MethodSpec.methodBuilder("export")
                 .addModifiers(GenClassUtils.PUBLIC_STATIC)
-                .addParameter(PBMethodParserRegistry.class, "registry");
-        ClassName className_methodParser = ClassName.get(PBMethodParser.class);
+                .addParameter(PBMethodInfoRegistry.class, "registry");
+        ClassName className_methodInfo = ClassName.get(PBMethodInfo.class);
 
         for (PBFile pbFile : repository.getSortedFiles()) {
             for (PBService service : pbFile.getServices()) {
@@ -60,7 +60,7 @@ public class ParserExporterGenerator extends AbstractGenerator {
                     exportBuilder.addComment("$L.$L", service.getSimpleName(), method.getSimpleName());
 
                     CodeBlock.Builder codeBuilder = CodeBlock.builder().add("registry.register(new $T<>($L, $L,",
-                            className_methodParser,
+                            className_methodInfo,
                             service.getServiceId(),
                             method.getMethodId());
                     codeBuilder.add("\n");

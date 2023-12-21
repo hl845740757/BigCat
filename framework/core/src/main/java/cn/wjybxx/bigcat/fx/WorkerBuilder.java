@@ -51,8 +51,9 @@ public abstract class WorkerBuilder {
      * 1. 需要能通过{@link #injector}获取实例
      * 2. 无需包含{@link MainModule}
      * 3. 添加顺序很重要，Worker将按照添加顺序启动所有的Module
+     * 4. 实现类必须是{@link WorkerModule}的子类
      */
-    private final List<Class<? extends WorkerModule>> moduleClasses = new ArrayList<>();
+    private final List<Class<?>> moduleClasses = new ArrayList<>();
     /**
      * Worker上挂载的服务类
      * 1.作为配置会传递给MainModule
@@ -131,17 +132,17 @@ public abstract class WorkerBuilder {
         return this;
     }
 
-    public List<Class<? extends WorkerModule>> getModuleClasses() {
+    public List<Class<?>> getModuleClasses() {
         return moduleClasses;
     }
 
-    public WorkerBuilder addModule(Class<? extends WorkerModule> moduleClazz) {
+    public WorkerBuilder addModule(Class<?> moduleClazz) {
         Objects.requireNonNull(moduleClazz);
         moduleClasses.add(moduleClazz);
         return this;
     }
 
-    public WorkerBuilder addModules(List<Class<? extends WorkerModule>> moduleClazz) {
+    public WorkerBuilder addModules(List<Class<?>> moduleClazz) {
         Preconditions.checkNullElements(moduleClazz);
         moduleClasses.addAll(moduleClazz);
         return this;
@@ -230,7 +231,7 @@ public abstract class WorkerBuilder {
         }
 
         @Override
-        public DisruptWorkerBuilder addModule(Class<? extends WorkerModule> moduleClazz) {
+        public DisruptWorkerBuilder addModule(Class<?> moduleClazz) {
             super.addModule(moduleClazz);
             return this;
         }
@@ -242,7 +243,7 @@ public abstract class WorkerBuilder {
         }
 
         @Override
-        public DisruptWorkerBuilder addModules(List<Class<? extends WorkerModule>> moduleClazz) {
+        public DisruptWorkerBuilder addModules(List<Class<?>> moduleClazz) {
             super.addModules(moduleClazz);
             return this;
         }

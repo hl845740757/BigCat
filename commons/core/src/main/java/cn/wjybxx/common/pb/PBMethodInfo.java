@@ -19,15 +19,17 @@ package cn.wjybxx.common.pb;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
-import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * 用于rpc方法解析参数和结果
  *
+ * @param <T> 方法参数类型，{@link Void}表示无
+ * @param <R> 方法结果类型，{@link Void}表示无
  * @author wjybxx
  * date - 2023/10/12
  */
-public class PBMethodParser<T extends MessageLite, U extends MessageLite> {
+public class PBMethodInfo<T, R> {
 
     public final int serviceId;
     public final int methodId;
@@ -37,10 +39,10 @@ public class PBMethodParser<T extends MessageLite, U extends MessageLite> {
     public final Parser<T> argParser;
 
     /** 方法结果类型 -- 可判断是否有结果 */
-    public final Class<U> resultType;
-    public final Parser<U> resultParser;
+    public final Class<R> resultType;
+    public final Parser<R> resultParser;
 
-    public PBMethodParser(int serviceId, int methodId, Class<T> argType, Class<U> resultType) {
+    public PBMethodInfo(int serviceId, int methodId, @Nullable Class<T> argType, @Nullable Class<R> resultType) {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.argType = argType;
@@ -50,20 +52,25 @@ public class PBMethodParser<T extends MessageLite, U extends MessageLite> {
         this.resultParser = findParser(resultType);
     }
 
-    public PBMethodParser(int serviceId, int methodId,
-                          Class<T> argType, Parser<T> argParser,
-                          Class<U> resultType, Parser<U> resultParser) {
+    public PBMethodInfo(int serviceId, int methodId,
+                        Class<T> argType, Parser<T> argParser,
+                        Class<R> resultType, Parser<R> resultParser) {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.argType = argType;
         this.resultType = resultType;
 
-        this.argParser = argType != null ? Objects.requireNonNull(argParser) : null;
-        this.resultParser = resultType != null ? Objects.requireNonNull(resultParser) : null;
+        this.argParser = argParser;
+        this.resultParser = resultParser;
     }
 
-    private static <T extends MessageLite> Parser<T> findParser(Class<T> argType) {
-        return argType == null ? null : ProtobufUtils.findParser(argType);
+    @SuppressWarnings("unchecked")
+    private static <M> Parser<M> findParser(Class<M> argType) {
+        if (argType == null || argType == Void.class) {
+            return null;
+        }
+        Class<? extends MessageLite> clazz = (Class<? extends MessageLite>) argType;
+        return (Parser<M>) ProtobufUtils.findParser(clazz);
     }
 
 }

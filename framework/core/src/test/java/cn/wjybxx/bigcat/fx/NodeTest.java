@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.concurrent.RingBufferEvent;
+import cn.wjybxx.common.pb.PBMethodInfoRegistry;
 import cn.wjybxx.common.rpc.*;
 import cn.wjybxx.common.time.Regulator;
 import cn.wjybxx.common.time.TimeProvider;
@@ -110,6 +111,7 @@ public class NodeTest {
 
                 bind(NodeRpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
+                bind(PBMethodInfoRegistry.class).in(Singleton.class);
 
                 // 记得以前超类绑定到子类时指定Singleton，子类不需要单独声明Singleton，现在怎么不行了....
                 // 子类如果不单独绑定，则会创建一个新的实例，各种bug...

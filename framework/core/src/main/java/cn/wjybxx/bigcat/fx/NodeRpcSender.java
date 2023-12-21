@@ -16,10 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.rpc.RpcProtocol;
-import cn.wjybxx.common.rpc.RpcRequest;
-import cn.wjybxx.common.rpc.RpcResponse;
-import cn.wjybxx.common.rpc.RpcSender;
+import cn.wjybxx.common.rpc.*;
 
 /**
  * Node线程发送Rpc协议的实现
@@ -57,6 +54,14 @@ public interface NodeRpcSender extends RpcSender {
      */
     default boolean isBroadcastWorkerAddr(WorkerAddr workerAddr) {
         return "*".equals(workerAddr.workerId);
+    }
+
+    /**
+     * 测试给定的地址是否是跨语言的rpc节点
+     * 如果是跨语言的节点通信，方法参数和结果必须是protobuf的消息
+     */
+    default boolean isCrossLanguageAddr(RpcAddr addr) {
+        return false;
     }
 
 }

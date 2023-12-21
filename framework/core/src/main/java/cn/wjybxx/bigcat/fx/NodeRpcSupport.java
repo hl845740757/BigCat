@@ -24,9 +24,14 @@ import cn.wjybxx.common.concurrent.XCompletableFuture;
 import cn.wjybxx.common.ex.ErrorCodeException;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
+import cn.wjybxx.common.pb.PBMethodInfo;
+import cn.wjybxx.common.pb.PBMethodInfoRegistry;
 import cn.wjybxx.common.rpc.*;
 import cn.wjybxx.common.time.TimeProvider;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Message;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +79,7 @@ public class NodeRpcSupport implements WorkerModule {
     private Node node;
     private WorkerAddr selfRpcAddr;
     private RpcSerializer serializer;
+    private PBMethodInfoRegistry parserRegistry;
     private NodeRpcSender sender;
     private TimeProvider timeProvider;
 
@@ -137,6 +143,7 @@ public class NodeRpcSupport implements WorkerModule {
         this.selfRpcAddr = node.nodeAddr();
         this.timeProvider = node.injector().getInstance(TimeProvider.class);
         this.serializer = node.injector().getInstance(RpcSerializer.class);
+        this.parserRegistry = node.injector().getInstance(PBMethodInfoRegistry.class);
         this.sender = node.injector().getInstance(NodeRpcSender.class);
     }
 
@@ -175,7 +182,7 @@ public class NodeRpcSupport implements WorkerModule {
     // region rpc
 
     /** worker线程调用 -- worker可能是node自身 */
-    private RpcRequest newRpcRequest(RpcAddr target, RpcMethodSpec<?> methodSpec, int invokeType) {
+    private RpcRequest newRequest(RpcAddr target, RpcMethodSpec<?> methodSpec, int invokeType) {
 //        assert !mutable;
         RpcRequest request = new RpcRequest(conId, selfRpcAddr, target, 0, invokeType, methodSpec);
         if (!request.isSharable()) { // 参数不可共享时在请求线程序列化
@@ -234,27 +241,104 @@ public class NodeRpcSupport implements WorkerModule {
 
     /** 序列化rpc参数 */
     private void encodeParameters(RpcRequest request) {
-        if (!request.isSerialized()) {
-            request.setParameters(serializer.write(request.getParameters()));
+        if (request.isSerialized()) {
+            return;
+        }
+        List<Object> parameters = request.listParameters();
+        if (sender.isCrossLanguageAddr(request.getDestAddr())) {
+            if (parameters.size() == 0 || parameters.get(0) == null) {
+                request.setParameters(ArrayUtils.EMPTY_BYTE_ARRAY);
+            } else {
+                Message message = (Message) parameters.get(0);
+                request.setParameters(message.toByteArray());
+            }
+        } else {
+            request.setParameters(serializer.write(parameters));
         }
     }
 
     /** 反序列化rpc参数 */
-    private void decodeParameters(RpcRequest request) {
-        if (request.isSerialized()) {
-            request.setParameters(serializer.read(request.bytesParameters()));
+    private boolean decodeParameters(RpcRequest request) {
+        if (request.isDeserialized()) {
+            return true;
+        }
+        byte[] parameters = request.bytesParameters();
+        if (sender.isCrossLanguageAddr(request.getSrcAddr())) {
+            PBMethodInfo<?, ?> methodInfo = parserRegistry.getParser(request.getServiceId(), request.getMethodId());
+            if (methodInfo == null) {
+                return false;
+            }
+            if (methodInfo.argParser == null) {
+                // 无参
+                request.setParameters(List.of());
+                return true;
+            }
+            try {
+                // 单参-pb支持空数组
+                Object argument = methodInfo.argParser.parseFrom(parameters);
+                request.setParameters(List.of(argument));
+                return true;
+            } catch (Exception e) {
+                logger.info("decode parameters caught exception", e);
+                return false; // 外部会打印方法信息
+            }
+        } else {
+            try {
+                request.setParameters(serializer.read(parameters));
+                return true;
+            } catch (Exception e) {
+                logger.info("decode parameters caught exception", e);
+                return false;
+            }
         }
     }
 
     private void encodeResult(RpcResponse response) {
-        if (!response.isSerialized()) {
-            response.setResults(serializer.write(response.getResults()));
+        if (response.isSerialized()) {
+            return;
+        }
+        List<Object> results = response.listResult();
+        if (sender.isCrossLanguageAddr(response.getDestAddr())) {
+            if (results.size() == 0 || results.get(0) == null) {
+                response.setResults(ArrayUtils.EMPTY_BYTE_ARRAY);
+            } else {
+                Message message = (Message) results.get(0);
+                response.setResults(message.toByteArray());
+            }
+        } else {
+            response.setResults(serializer.write(results));
         }
     }
 
-    private void decodeResult(RpcResponse response) {
-        if (response.isSerialized()) {
-            response.setResults(serializer.read(response.bytesResults()));
+    private boolean decodeResult(RpcResponse response) {
+        if (response.isDeserialized()) {
+            return true;
+        }
+        byte[] results = response.bytesResults();
+        if (sender.isCrossLanguageAddr(response.getSrcAddr())) {
+            PBMethodInfo<?, ?> methodInfo = parserRegistry.getParser(response.getServiceId(), response.getMethodId());
+            assert methodInfo != null;
+            if (methodInfo.resultParser == null) {
+                // 无结果
+                response.setResults(List.of());
+                return true;
+            }
+            try {
+                Object result = methodInfo.resultParser.parseFrom(results);
+                response.setResults(List.of(result));
+                return true;
+            } catch (InvalidProtocolBufferException e) {
+                logger.info("decode results caught exception", e);
+                return false; // 外部会打印方法信息
+            }
+        } else {
+            try {
+                response.setResults(serializer.read(results));
+                return true;
+            } catch (Exception e) {
+                logger.info("decode results caught exception", e);
+                return false;
+            }
         }
     }
 
@@ -264,7 +348,7 @@ public class NodeRpcSupport implements WorkerModule {
         Objects.requireNonNull(worker, "worker");
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(methodSpec, "methodSpec");
-        final RpcRequest request = newRpcRequest(target, methodSpec, RpcInvokeType.ONEWAY);
+        final RpcRequest request = newRequest(target, methodSpec, RpcInvokeType.ONEWAY);
         if (!node.inEventLoop()) {
             node.execute(() -> w2n_send(worker, request));
         } else {
@@ -290,11 +374,12 @@ public class NodeRpcSupport implements WorkerModule {
         Objects.requireNonNull(worker, "worker");
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(methodSpec, "methodSpec");
-        final RpcRequest request = newRpcRequest(target, methodSpec, RpcInvokeType.CALL);
+        final RpcRequest request = newRequest(target, methodSpec, RpcInvokeType.CALL);
         if (!node.inEventLoop()) {
             return (ICompletableFuture<V>) node.submit(() -> w2n_call(worker, request))
                     .thenCompose(e -> e) // 这里不能调用composeAsync，composeAsync如果返回的future尚未完成，则会在触发其完成的线程触发业务回调
-                    .whenCompleteAsync((v, t) -> {}, worker); // 需要回到worker线程
+                    .whenCompleteAsync((v, t) -> {
+                    }, worker); // 需要回到worker线程
         } else {
             return w2n_call(worker, request);
         }
@@ -336,7 +421,7 @@ public class NodeRpcSupport implements WorkerModule {
             timeoutMs = this.timeoutMs;
         }
         // 只阻塞发起调用的线程 -- 注意！这里尚无requestId
-        RpcRequest request = newRpcRequest(target, methodSpec, RpcInvokeType.SYNC_CALL);
+        RpcRequest request = newRequest(target, methodSpec, RpcInvokeType.SYNC_CALL);
         RpcResponse response = null;
         try {
             if (!node.inEventLoop()) {
@@ -349,10 +434,12 @@ public class NodeRpcSupport implements WorkerModule {
                         .toCompletableFuture()
                         .get(timeoutMs, TimeUnit.MILLISECONDS);
             }
-            // 这里watcher一定从map中删除了
+            // 走到这里，watcher一定从map中删除了
+            decodeResult(response);
             if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
                 logRcvResponse(response, false);
             }
+
             if (response.getErrorCode() == 0) {
                 @SuppressWarnings("unchecked") V result = (V) response.getResult();
                 return result;
@@ -417,7 +504,10 @@ public class NodeRpcSupport implements WorkerModule {
             return;
         }
         // 在使用之前需要先反序列化
-        decodeParameters(request);
+        if (!decodeParameters(request)) {
+            logger.warn("rcv bad request, info: " + request.toSimpleLog());
+            return;
+        }
 
         if (logConfig.getRcvRequestLogLevel() > DebugLogLevel.NONE) {
             logRcvRequest(request);
@@ -535,17 +625,17 @@ public class NodeRpcSupport implements WorkerModule {
         // 在使用之前需要先反序列化
         decodeResult(response);
 
-        // 收到消息的时候，本地stub可能已超时
         final RpcRequestStubImpl requestStub = requestStubMap.remove(response.getRequestId());
         if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
             logRcvResponse(response, requestStub == null);
         }
 
         if (requestStub != null) {
+            // future的跨线程问题是在call的时候处理的
             @SuppressWarnings("unchecked") CompletableFuture<Object> future = (CompletableFuture<Object>) requestStub.future;
             final int errorCode = response.getErrorCode();
             if (errorCode == 0) {
-                future.complete(response.getResult()); // 线程切换在call的时候处理了
+                future.complete(response.getResult());
             } else {
                 future.completeExceptionally(newServerException(response));
             }
