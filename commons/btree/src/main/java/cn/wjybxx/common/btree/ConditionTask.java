@@ -44,7 +44,7 @@ public abstract class ConditionTask<E> extends LeafTask<E> {
 
     /** 条件节点正常情况下不会触发事件 */
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
 
     }
 

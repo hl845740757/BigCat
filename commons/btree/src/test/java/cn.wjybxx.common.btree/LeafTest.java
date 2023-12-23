@@ -81,7 +81,7 @@ public class LeafTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }

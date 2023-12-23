@@ -15,20 +15,22 @@
  */
 package cn.wjybxx.common.concurrent;
 
-import java.util.concurrent.TimeoutException;
+import cn.wjybxx.common.ex.NoLogRequiredException;
+
+import java.util.concurrent.CancellationException;
 
 /**
  * @author wjybxx
  * date 2023/4/3
  */
-public class StacklessTimeoutException extends TimeoutException implements NoLogRequiredException {
+public class StacklessCancellationException extends CancellationException implements NoLogRequiredException {
 
-    public static StacklessTimeoutException INSTANCE = new StacklessTimeoutException();
+    public static StacklessCancellationException INSTANCE = new StacklessCancellationException();
 
-    public StacklessTimeoutException() {
+    public StacklessCancellationException() {
     }
 
-    public StacklessTimeoutException(String message) {
+    public StacklessCancellationException(String message) {
         super(message);
     }
 

@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package cn.wjybxx.common.concurrent;
+
+import cn.wjybxx.common.ex.NoLogRequiredException;
 
 import java.util.concurrent.TimeoutException;
 
 /**
- * 该异常表示一个可分时运行的任务超时了。
- *
  * @author wjybxx
  * date 2023/4/3
  */
-public class TimeSharingTimeoutException extends TimeoutException implements NoLogRequiredException {
+public class StacklessTimeoutException extends TimeoutException implements NoLogRequiredException {
 
-    public static final TimeSharingTimeoutException INSTANCE = new TimeSharingTimeoutException("task is timeout");
+    public static StacklessTimeoutException INSTANCE = new StacklessTimeoutException();
 
-    public TimeSharingTimeoutException() {
+    public StacklessTimeoutException() {
     }
 
-    public TimeSharingTimeoutException(String message) {
+    public StacklessTimeoutException(String message) {
         super(message);
     }
 

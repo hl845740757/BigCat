@@ -15,7 +15,6 @@
  */
 package cn.wjybxx.common.btree;
 
-import cn.wjybxx.common.eventbus.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +38,7 @@ import java.util.stream.Stream;
  * @author wjybxx
  * date - 2023/11/25
  */
-public abstract class Task<E> implements EventHandler<Object> {
+public abstract class Task<E> {
 
     public static final Logger logger = LoggerFactory.getLogger(Task.class);
 
@@ -386,8 +385,12 @@ public abstract class Task<E> implements EventHandler<Object> {
      */
     protected abstract void onChildCompleted(Task<E> child);
 
-    @Override
-    public final void onEvent(@Nonnull Object event) throws Exception {
+    /**
+     * Task收到外部事件
+     *
+     * @see #onEventImpl(Object)
+     */
+    public final void onEvent(@Nonnull Object event) {
         if (canHandleEvent(event)) {
             onEventImpl(event);
         }
@@ -418,7 +421,7 @@ public abstract class Task<E> implements EventHandler<Object> {
      * 2.在AI这样的领域中，建议将事件转化为信息存储在Task或黑板中，而不是尝试立即做出反应。
      * 3.{@link #isExecuting()}方法很重要
      */
-    protected abstract void onEventImpl(@Nonnull Object event) throws Exception;
+    protected abstract void onEventImpl(@Nonnull Object event);
 
     /**
      * 取消令牌的回调方法

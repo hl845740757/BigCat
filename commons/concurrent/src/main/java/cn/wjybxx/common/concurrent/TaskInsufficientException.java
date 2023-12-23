@@ -13,27 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package cn.wjybxx.common.concurrent;
 
-import java.util.concurrent.CancellationException;
+import cn.wjybxx.common.ex.NoLogRequiredException;
 
 /**
+ * 该异常表示{@link FutureCombiner}监听的任务数不足以到达成功条件
+ *
  * @author wjybxx
- * date 2023/4/3
+ * date 2023/4/12
  */
-public class StacklessCancellationException extends CancellationException implements NoLogRequiredException {
+public class TaskInsufficientException extends RuntimeException implements NoLogRequiredException {
 
-    public static StacklessCancellationException INSTANCE = new StacklessCancellationException();
-
-    public StacklessCancellationException() {
+    public TaskInsufficientException() {
     }
 
-    public StacklessCancellationException(String message) {
+    public TaskInsufficientException(String message) {
         super(message);
     }
 
     public final Throwable fillInStackTrace() {
         return this;
+    }
+
+    public static TaskInsufficientException create(int futureCount, int doneCount, int succeedCount, int successRequire) {
+        final String msg = String.format("futureCount :%d, doneCount %d, succeedCount: %d, successRequire :%d",
+                futureCount, doneCount, succeedCount, successRequire);
+        return new TaskInsufficientException(msg);
     }
 
 }

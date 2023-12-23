@@ -16,8 +16,6 @@
 
 package cn.wjybxx.common.ex;
 
-import cn.wjybxx.common.concurrent.NoLogRequiredException;
-
 /**
  * 用于返回一个错误码结果，Rpc底层会对此做特殊支持
  *

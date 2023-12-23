@@ -16,15 +16,12 @@
 
 package cn.wjybxx.common.concurrent;
 
-import cn.wjybxx.common.MathUtils;
+import cn.wjybxx.common.MathCommon;
+import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.annotation.Beta;
 import cn.wjybxx.common.collect.DefaultIndexedPriorityQueue;
 import cn.wjybxx.common.collect.IndexedPriorityQueue;
-import cn.wjybxx.common.concurrent.ext.MpscSequenceBarrier;
 import com.lmax.disruptor.*;
-import org.jctools.queues.IndexedQueueSizeUtil;
-import org.jctools.queues.MpscUnboundedXaddArrayQueue;
-import org.jctools.queues.MpscUnboundedXaddArrayQueue2;
 
 import javax.annotation.Nonnull;
 import java.lang.invoke.MethodHandles;
@@ -37,26 +34,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * 基于{@link MpscUnboundedXaddArrayQueue}实现的无界事件循环
- * 一个无界的事件循环通常是必须的，以避免死锁问题；不过，单方面无界有时也不能·完全避免死锁，与之交互的线程如果是有界队列，仍可能产生问题。
- * 这里对Disruptor中的等待机制进行了适配，以便用户使用相同的接口等待事件。
- *
- * <h3>无界队列</h3>
- * 1. 事件队列不能使用{@link RingBufferEvent}
- * 2. 任务的取消是不安全的
- * 3. 只有消费者等生产者的情况，没有生产者等消费者的情况。
+ * 基于Disruptor框架的事件循环。
+ * 这个实现持有私有的RingBuffer，可以有最好的性能。
+ * <p>
+ * 关于时序正确性：
+ * 1.由于{@link #scheduledTaskQueue}的任务都是从{@link #ringBuffer}中拉取出来的，因此都是先于{@link #ringBuffer}中剩余的任务的。
+ * 2.我们总是先取得一个时间快照，然后先执行{@link #scheduledTaskQueue}中的任务，再执行{@link #ringBuffer}中的任务，因此满足优先级相同时，先提交的任务先执行的约定
+ * -- 反之，如果不使用时间快照，就可能导致后提交的任务先满足触发时间。
  *
  * @author wjybxx
  * date 2023/4/10
  */
-public class DefaultEventLoop extends AbstractScheduledEventLoop {
+public class DisruptorEventLoop extends AbstractScheduledEventLoop {
 
     private static final int MIN_BATCH_SIZE = 64;
     private static final int MAX_BATCH_SIZE = 64 * 1024;
+    private static final int BATCH_PUBLISH_THRESHOLD = 1024;
 
     private static final int HIGHER_PRIORITY_QUEUE_ID = 0;
     private static final int LOWER_PRIORITY_QUEUE_ID = 1;
 
+    private static final int TYPE_CLEAN_DEADLINE = -2;
     private static final Runnable _emptyRunnable = () -> {};
     private static final Runnable _invalidRunnable = () -> {};
 
@@ -75,13 +73,8 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     private long p17, p18, p19, p20, p21, p22, p23, p24;
 
     /** 事件队列 */
-    private final MpscUnboundedXaddArrayQueue2<Runnable> ringBuffer;
-    /** 主要用于唤醒消费者（当前EventLoop） */
-    private final MpscSequencer sequencer;
-    /** 用于减少发布事件开销 */
-    private final MpscUnboundedXaddArrayQueue2.OfferHooker<Runnable> translator;
-
-    /** 周期性任务队列 -- 都是先于taskQueue中的任务提交的 -- 暂不提供带缓存行填充的实现 */
+    private final RingBuffer<RingBufferEvent> ringBuffer;
+    /** 周期性任务队列 -- 都是先于RingBuffer中的任务提交的 -- 暂不提供带缓存行填充的实现 */
     private final IndexedPriorityQueue<XScheduledFutureTask<?>> scheduledTaskQueue;
     /** 批量执行任务的大小 */
     private final int taskBatchSize;
@@ -101,27 +94,29 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     private long p25, p26, p27, p28, p29, p30, p31, p32;
     // 填充结束
 
-    public DefaultEventLoop(EventLoopBuilder.DefaultBuilder builder) {
+    public DisruptorEventLoop(EventLoopBuilder.DisruptorBuilder builder) {
         super(builder.getParent());
 
         WaitStrategy waitStrategy = Objects.requireNonNull(builder.getWaitStrategy(), "waitStrategy");
         ThreadFactory threadFactory = Objects.requireNonNull(builder.getThreadFactory(), "threadFactory");
 
         this.nanoTime = System.nanoTime();
-        this.ringBuffer = new MpscUnboundedXaddArrayQueue2<>(Math.max(64, builder.getChunkSize()), builder.getMaxPooledChunks());
-        this.sequencer = new MpscSequencer(waitStrategy, ringBuffer);
-        this.translator = new Translator();
-
+        this.ringBuffer = RingBuffer.createMultiProducer(RingBufferEvent::new,
+                builder.getRingBufferSize(),
+                waitStrategy);
         this.scheduledTaskQueue = new DefaultIndexedPriorityQueue<>(XScheduledFutureTask::compareTo, 64);
-        this.taskBatchSize = MathUtils.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
+        this.taskBatchSize = MathCommon.clamp(builder.getBatchSize(), MIN_BATCH_SIZE, MAX_BATCH_SIZE);
         this.rejectedExecutionHandler = Objects.requireNonNull(builder.getRejectedExecutionHandler());
         this.agent = Objects.requireNonNullElse(builder.getAgent(), EmptyAgent.getInstance());
         this.mainModule = builder.getMainModule();
 
         // 它不依赖于其它消费者，只依赖生产者的sequence
-        worker = new Worker(sequencer.newBarrier());
+        worker = new Worker(ringBuffer.newBarrier());
         thread = Objects.requireNonNull(threadFactory.newThread(worker), "newThread");
         DefaultThreadFactory.checkUncaughtExceptionHandler(thread);
+
+        // 添加worker的sequence为网关sequence，生产者们会监听到线程的消费进度
+        ringBuffer.addGatingSequences(worker.sequence);
 
         // 完成绑定
         this.agent.inject(this);
@@ -189,11 +184,15 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
 
     /**
      * 当前任务数
-     * 注意：返回值是一个估算值
+     * 注意：返回值是一个估算值！
      */
     @Beta
     public int taskCount() {
-        return ringBuffer.size();
+        long count = ringBuffer.getCursor() - worker.sequence.get();
+        if (count >= ringBuffer.getBufferSize()) {
+            return ringBuffer.getBufferSize();
+        }
+        return Math.max(0, (int) count);
     }
 
     /** EventLoop绑定的Agent（代理） */
@@ -217,34 +216,159 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
             rejectedExecutionHandler.rejected(task, this);
             return;
         }
-        ringBuffer.offerX(task, translator);
+        if (inEventLoop()) {
+            // 当前线程调用，需要使用tryNext以避免死锁
+            try {
+                tryPublish(task, ringBuffer.tryNext(1));
+            } catch (InsufficientCapacityException ignore) {
+                rejectedExecutionHandler.rejected(task, this);
+            }
+        } else {
+            // 其它线程调用，可能阻塞
+            tryPublish(task, ringBuffer.next(1));
+        }
     }
 
-    private class Translator implements MpscUnboundedXaddArrayQueue2.OfferHooker<Runnable> {
-
-        @Override
-        public Runnable translate(Runnable task, long sequence) {
-            if (isShuttingDown()) {
-                return _invalidRunnable;
-            }
-            if (task instanceof XScheduledFutureTask<?> futureTask) {
-                futureTask.setId(sequence); // nice
-                if (futureTask.isEnable(TaskFeature.LOW_PRIORITY)) {
-                    futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
+    /**
+     * Q: 如何保证算法的安全性的？
+     * A: 我们只需要保证申请到的sequence是有效的，且发布任务在{@link Worker#removeFromGatingSequence()}之前即可。
+     * 因为{@link Worker#removeFromGatingSequence()}之前申请到的sequence一定是有效的，它考虑了EventLoop的消费进度。
+     * <p>
+     * 关键时序：
+     * 1. {@link #isShuttingDown()}为true一定在{@link Worker#cleanRingBuffer()}之前。
+     * 2. {@link Worker#cleanRingBuffer()}必须等待在这之前申请到的sequence发布。
+     * 3. {@link Worker#cleanRingBuffer()}在所有生产者发布数据之后才{@link Worker#removeFromGatingSequence()}
+     * <p>
+     * 因此，{@link Worker#cleanRingBuffer()}之前申请到的sequence是有效的；
+     * 又因为{@link #isShuttingDown()}为true一定在{@link Worker#cleanRingBuffer()}之前，
+     * 因此，如果sequence是在{@link #isShuttingDown()}为true之前申请到的，那么sequence一定是有效的，否则可能有效，也可能无效。
+     */
+    private void tryPublish(@Nonnull Runnable task, long sequence) {
+        if (isShuttingDown()) {
+            // 先发布sequence，避免拒绝逻辑可能产生的阻塞，不可以覆盖数据
+            ringBuffer.publish(sequence);
+            rejectedExecutionHandler.rejected(task, this);
+        } else {
+            RingBufferEvent event = ringBuffer.get(sequence);
+            if (task.getClass() == RingBufferEvent.class) { // 相对instanceof更快
+                RingBufferEvent userEvent = (RingBufferEvent) task;
+                event.copyFrom(userEvent);
+            } else {
+                event.internal_setType(0);
+                event.obj0 = task;
+                if (task instanceof XScheduledFutureTask<?> futureTask) {
+                    futureTask.setId(sequence); // nice
+                    if (futureTask.isEnable(TaskFeature.LOW_PRIORITY)) {
+                        futureTask.setQueueId(LOWER_PRIORITY_QUEUE_ID);
+                    }
                 }
             }
-            return task;
-        }
+            ringBuffer.publish(sequence);
 
-        @Override
-        public void hook(Runnable srcEvent, Runnable destEvent, long sequence) {
-            sequencer.signalAllWhenBlocking(); // 理论上发布失败的情况下可不调用该方法，不过概率小，优化的意义不大
-            if (srcEvent != destEvent) {
-                rejectedExecutionHandler.rejected(srcEvent, DefaultEventLoop.this);
-            } else if (sequence == 0 && !inEventLoop()) {
-                // 确保线程已启动 -- ringBuffer私有的情况下才可以测试 sequence == 0
+            // 确保线程已启动 -- ringBuffer私有的情况下才可以测试 sequence == 0
+            if (sequence == 0 && !inEventLoop()) {
                 ensureThreadStarted();
             }
+        }
+    }
+
+    public final RingBufferEvent getEvent(long sequence) {
+        checkSequence(sequence);
+        return ringBuffer.get(sequence);
+    }
+
+    private static void checkSequence(long sequence) {
+        if (sequence < 0) {
+            throw new IllegalArgumentException("invalid sequence " + sequence);
+        }
+    }
+
+    /**
+     * 开放的特殊接口
+     * 1.按照规范，在调用该方法后，必须在finally块中进行发布。
+     * 2.事件类型必须大于等于0，否则可能导致异常
+     * 3.返回值为-1时必须检查
+     * <pre> {@code
+     *      long sequence = eventLoop.nextSequence();
+     *      try {
+     *          RingBufferEvent event = eventLoop.getEvent(sequence);
+     *          // Do work.
+     *      } finally {
+     *          eventLoop.publish(sequence)
+     *      }
+     * }</pre>
+     *
+     * @return 如果申请成功，则返回对应的sequence，否则返回 -1
+     */
+    @Beta
+    public final long nextSequence() {
+        return nextSequence(1);
+    }
+
+    @Beta
+    public final void publish(long sequence) {
+        checkSequence(sequence);
+        ringBuffer.publish(sequence);
+        if (sequence == 0 && !inEventLoop()) {
+            ensureThreadStarted();
+        }
+    }
+
+    /**
+     * 1.按照规范，在调用该方法后，必须在finally块中进行发布。
+     * 2.事件类型必须大于等于0，否则可能导致异常
+     * 3.返回值为-1时必须检查
+     * <pre>{@code
+     *   int n = 10;
+     *   long hi = eventLoop.nextSequence(n);
+     *   try {
+     *      long lo = hi - (n - 1);
+     *      for (long sequence = lo; sequence <= hi; sequence++) {
+     *          RingBufferEvent event = eventLoop.getEvent(sequence);
+     *          // Do work.
+     *      }
+     *   } finally {
+     *      eventLoop.publish(lo, hi);
+     *   }
+     * }</pre>
+     *
+     * @param size 申请的空间大小
+     * @return 如果申请成功，则返回申请空间的最大序号，否则返回-1
+     */
+    @Beta
+    public final long nextSequence(int size) {
+        if (isShuttingDown()) {
+            return -1;
+        }
+        long sequence;
+        if (inEventLoop()) {
+            try {
+                sequence = ringBuffer.tryNext(size);
+            } catch (InsufficientCapacityException ignore) {
+                return -1;
+            }
+        } else {
+            sequence = ringBuffer.next(size);
+        }
+        if (isShuttingDown()) {
+            // sequence不一定有效了，申请的全部序号都要发布
+            long lo = sequence - (size - 1);
+            ringBuffer.publish(lo, sequence);
+            return -1;
+        }
+        return sequence;
+    }
+
+    /**
+     * @param lo inclusive
+     * @param hi inclusive
+     */
+    @Beta
+    public final void publish(long lo, long hi) {
+        checkSequence(lo);
+        ringBuffer.publish(lo, hi);
+        if (lo == 0 && !inEventLoop()) {
+            ensureThreadStarted();
         }
     }
 
@@ -262,9 +386,8 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     final void removeScheduled(XScheduledFutureTask<?> futureTask) {
         if (inEventLoop()) {
             scheduledTaskQueue.removeTyped(futureTask);
-        } else {
-            execute(() -> scheduledTaskQueue.removeTyped(futureTask));
         }
+        // else 等待任务超时弹出时再删除 -- 延迟删除可能存在内存泄漏，但压任务又可能导致阻塞（有界队列）
     }
 
     @Override
@@ -326,6 +449,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         if (oldState == ST_NOT_STARTED) {
             // TODO 是否需要启动线程，进行更彻底的清理？
             state = ST_TERMINATED;
+            worker.removeFromGatingSequence(); // 防死锁
 
             FutureUtils.completeTerminationFuture(runningFuture, new StartFailedException("Termination"));
             FutureUtils.completeTerminationFuture(terminationFuture);
@@ -360,11 +484,17 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     private int compareAndExchangeState(int expectedState, int targetState) {
         return (int) STATE.compareAndExchange(this, expectedState, targetState);
     }
-
     // endregion
 
+    /**
+     * 实现{@link RingBuffer}的消费者，实现基本和{@link BatchEventProcessor}一致。
+     * 但解决了两个问题：
+     * 1. 生产者调用{@link RingBuffer#next()}时，如果消费者已关闭，则会死锁！为避免死锁不得不使用{@link RingBuffer#tryNext()}，但是那样的代码并不友好。
+     * 2. 内存泄漏问题，使用{@link BatchEventProcessor}在关闭时无法清理{@link RingBuffer}中的数据。
+     */
     private class Worker implements Runnable {
 
+        private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
         private final SequenceBarrier sequenceBarrier;
 
         private Worker(SequenceBarrier sequenceBarrier) {
@@ -422,11 +552,11 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
         }
 
         private void loop() {
-            final MpscUnboundedXaddArrayQueue2<Runnable> ringBuffer = DefaultEventLoop.this.ringBuffer;
             final SequenceBarrier sequenceBarrier = this.sequenceBarrier;
-            final int taskBatchSize = DefaultEventLoop.this.taskBatchSize;
+            final int taskBatchSize = DisruptorEventLoop.this.taskBatchSize;
 
-            long nextSequence;
+            final Sequence sequence = this.sequence;
+            long nextSequence = sequence.get() + 1L;
             long availableSequence;
             long batchEndSequence;
 
@@ -435,7 +565,6 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
                 nanoTime = System.nanoTime();
                 try {
                     // 等待生产者生产数据
-                    nextSequence = ringBuffer.lvConsumerIndex();
                     availableSequence = sequenceBarrier.waitFor(nextSequence);
 
                     // 多生产者模型下不可频繁调用waitFor，会在查询可用sequence时产生巨大的开销，因此查询之后本地切割为小批次，避免用户循环得不到执行
@@ -445,6 +574,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
 
                         batchEndSequence = Math.min(availableSequence, nextSequence + taskBatchSize - 1);
                         nextSequence = runTaskBatch(nextSequence, batchEndSequence) + 1;
+                        sequence.set(nextSequence - 1);
 
                         if (nextSequence != batchEndSequence + 1) { // 未消费完毕，应当是开始退出了
                             assert isShuttingDown();
@@ -492,7 +622,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
          * @param shuttingDownMode 是否是退出模式
          */
         private void processScheduledQueue(long tickTime, int limit, boolean shuttingDownMode) {
-            final DefaultEventLoop eventLoop = DefaultEventLoop.this;
+            final DisruptorEventLoop eventLoop = DisruptorEventLoop.this;
             final IndexedPriorityQueue<XScheduledFutureTask<?>> taskQueue = eventLoop.scheduledTaskQueue;
 
             long count = 0;
@@ -530,23 +660,16 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
 
         /** @return curSequence */
         private long runTaskBatch(final long batchBeginSequence, final long batchEndSequence) {
-            MpscUnboundedXaddArrayQueue2<Runnable> ringBuffer = DefaultEventLoop.this.ringBuffer;
-            EventLoopAgent agent = DefaultEventLoop.this.agent;
-
-            Runnable event;
+            RingBuffer<RingBufferEvent> ringBuffer = DisruptorEventLoop.this.ringBuffer;
+            EventLoopAgent agent = DisruptorEventLoop.this.agent;
+            RingBufferEvent event;
             for (long curSequence = batchBeginSequence; curSequence <= batchEndSequence; curSequence++) {
-                event = ringBuffer.poll();
-                assert event != null;
+                event = ringBuffer.get(curSequence);
                 try {
-                    if (event.getClass() == RingBufferEvent.class) { // 相对instanceOf更快
-                        RingBufferEvent agentEvent = (RingBufferEvent) event;
-                        if (agentEvent.getType() > 0) {
-                            agent.onEvent(agentEvent);
-                        } else {
-                            agentEvent.castObj0ToRunnable().run();
-                        }
-                    } else if (event != _invalidRunnable) {
-                        event.run();
+                    if (event.getType() > 0) {
+                        agent.onEvent(event);
+                    } else if (event.getType() == 0) {
+                        event.castObj0ToRunnable().run();
                     } else {
                         if (isShuttingDown()) { // 生产者在观察到关闭时发布了不连续的数据
                             return curSequence;
@@ -558,219 +681,114 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
                     if (t instanceof InterruptedException && isShuttingDown()) {
                         return curSequence; // 响应关闭，避免丢失中断信号
                     }
+                } finally {
+                    event.clean();
+                }
+
+                // 避免长时间不发布sequence阻塞生产者，最后一个sequence外部发布
+                if (((curSequence - batchBeginSequence) & BATCH_PUBLISH_THRESHOLD) == 0
+                        && curSequence < batchEndSequence) {
+                    sequence.set(curSequence);
                 }
             }
             return batchEndSequence;
         }
 
+        /**
+         * 这是解决死锁问题的关键，如果不从gatingSequence中移除，则{@link RingBuffer#next(int)} 方法可能死锁。
+         * 该方法是线程安全的
+         */
+        private void removeFromGatingSequence() {
+            ringBuffer.removeGatingSequence(sequence);
+        }
+
         private void cleanRingBuffer() {
             final long startTimeMillis = System.currentTimeMillis();
-            final MpscUnboundedXaddArrayQueue2<Runnable> ringBuffer = DefaultEventLoop.this.ringBuffer;
-            final EventLoopAgent agent = DefaultEventLoop.this.agent;
+            final RingBuffer<RingBufferEvent> ringBuffer = DisruptorEventLoop.this.ringBuffer;
+            final EventLoopAgent agent = DisruptorEventLoop.this.agent;
 
             // 处理延迟任务
             nanoTime = System.nanoTime();
             processScheduledQueue(nanoTime, 0, true);
             scheduledTaskQueue.clearIgnoringIndexes();
 
+            // 当所有的槽位都填充后，所有生产者将阻塞，此时可以删除gatingSequence
+            // 当生产者获取到新的sequence后，将观察到线程处于关闭状态，从而避免破坏数据
+            long nextSequence = sequence.get() + 1;
+            long lastSequence = sequence.get() + ringBuffer.getBufferSize();
+            waitAllSequencePublished(ringBuffer, nextSequence, lastSequence);
+            removeFromGatingSequence();
+
+            // 由于所有的数据都是受保护的，不会被覆盖，因此可以继续消费
+            long nullCount = 0;
             long taskCount = 0;
             long discardCount = 0;
-            Runnable event;
-            while ((event = ringBuffer.poll()) != null) {  // poll在有生产者发布数据时会进行阻塞
+            for (; nextSequence <= lastSequence; nextSequence++) {
+                final RingBufferEvent event = ringBuffer.get(nextSequence);
+                if (event.getType() == TYPE_CLEAN_DEADLINE) { // 后面都是空白区
+                    break;
+                }
+                if (event.getType() < 0) { // 生产者在观察到关闭时发布了不连续的数据
+                    nullCount++;
+                    continue;
+                }
                 taskCount++;
                 if (isShutdown()) { // 如果已进入shutdown阶段，则直接丢弃任务
                     discardCount++;
+                    event.cleanAll();
                     continue;
                 }
                 try {
-                    if (event.getClass() == RingBufferEvent.class) {
-                        RingBufferEvent agentEvent = (RingBufferEvent) event;
-                        if (agentEvent.getType() > 0) {
-                            agent.onEvent(agentEvent);
-                        } else {
-                            agentEvent.castObj0ToRunnable().run();
-                        }
-                    } else if (event != _invalidRunnable) {
-                        event.run();
+                    if (event.getType() > 0) {
+                        agent.onEvent(event);
+                    } else {
+                        event.castObj0ToRunnable().run();
                     }
                 } catch (Throwable t) {
                     logCause(t);
+                } finally {
+                    event.cleanAll();
                 }
             }
-            logger.info("cleanRingBuffer success! taskCount = {}, discardCount {}, cost timeMillis = {}",
-                    taskCount, discardCount, (System.currentTimeMillis() - startTimeMillis));
+            sequence.set(lastSequence);
+            logger.info("cleanRingBuffer success!  nullCount = {}, taskCount = {}, discardCount {}, cost timeMillis = {}",
+                    nullCount, taskCount, discardCount, (System.currentTimeMillis() - startTimeMillis));
         }
 
-    }
+        @SuppressWarnings("deprecation")
+        private void waitAllSequencePublished(RingBuffer<RingBufferEvent> ringBuffer, long nextSequence, long lastSequence) {
+            long highestPublishedSequence = nextSequence - 1;
+            while (true) {
+                // 必须保证发布的连续性
+                while (ringBuffer.isPublished(highestPublishedSequence + 1)) {
+                    highestPublishedSequence++;
+                }
+                // 真实的生产者发布了该序号
+                if (highestPublishedSequence == lastSequence) {
+                    return;
+                }
 
-    /** 生产者之间协调 -- 序号分配和发布 */
-    private static class MpscSequencer extends Sequence implements Sequencer {
-
-        final WaitStrategy waitStrategy;
-        final MpscUnboundedXaddArrayQueue2<?> taskQueue;
-        final CursorSequence cursorSequence;
-
-        public MpscSequencer(WaitStrategy waitStrategy, MpscUnboundedXaddArrayQueue2<?> taskQueue) {
-            this.waitStrategy = waitStrategy;
-            this.taskQueue = taskQueue;
-            this.cursorSequence = new CursorSequence(taskQueue);
-        }
-
-        @Override
-        public final int getBufferSize() {
-            return -1;
-        }
-
-        @Override
-        public long remainingCapacity() {
-            return -1;
-        }
-
-        /** 获取生产者的序号 */
-        @Override
-        public final long getCursor() {
-            // 在Disruptor中，序号从-1开始，而JCTools中默认序号0，因此需要减1
-            return taskQueue.lvProducerIndex() - 1;
-        }
-
-        /** 获取消费者的序号 */
-        @Override
-        public long getMinimumSequence() {
-            return taskQueue.lvConsumerIndex() - 1;
-        }
-
-        /** 创建消费者用于等待的屏障 */
-        @Override
-        public SequenceBarrier newBarrier(Sequence... sequencesToTrack) {
-            if (sequencesToTrack.length != 0) throw new IllegalArgumentException();
-            return new MpscSequenceBarrier(this, waitStrategy, cursorSequence);
-        }
-
-        /** 唤醒阻塞的消费者 -- 即EventLoop；提交任务后应当调用该方法 */
-        public void signalAllWhenBlocking() {
-            waitStrategy.signalAllWhenBlocking();
-        }
-
-        @Override
-        public long getHighestPublishedSequence(long nextSequence, long availableSequence) {
-            // availableSequence就是cursor的序号，但JCTools并不支持查询后续序号是否可用 -- 实现了也没有意义
-            // 因此我们只能返回availableSequence，并由EventLoop阻塞式等待对应的元素发布，即只能使用poll拉取元素
-            return availableSequence;
-        }
-
-        // endregion
-
-        // region 不会被调用和需要屏蔽的方法
-        @Override
-        public boolean hasAvailableCapacity(int requiredCapacity) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long next() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long next(int n) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long tryNext() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long tryNext(int n) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void publish(long lo, long hi) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void publish(long sequence) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isAvailable(long sequence) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void claim(long sequence) {
-            throw new UnsupportedOperationException();
-        }
-
-        /** 添加生产者需要等待的消费者序号 -- 该方法只有EventLoop调用 */
-        @Override
-        public final void addGatingSequences(Sequence... gatingSequences) {
-            throw new UnsupportedOperationException();
-        }
-
-        /** 移除生产者需要等待的消费者序号 -- 该方法只有EventLoop调用 */
-        @Override
-        public boolean removeGatingSequence(Sequence sequence) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <T> EventPoller<T> newPoller(DataProvider<T> provider, Sequence... gatingSequences) {
-            throw new UnsupportedOperationException();
-        }
-
-        // endregion
-
-    }
-
-    /** 为等待策略提供获取生产者序号的途径 -- 等待策略是不能修改序号的 */
-    private static class CursorSequence extends Sequence {
-
-        final IndexedQueueSizeUtil.IndexedQueue taskQueue;
-
-        private CursorSequence(IndexedQueueSizeUtil.IndexedQueue taskQueue) {
-            this.taskQueue = taskQueue;
-        }
-
-        @Override
-        public long get() {
-            return taskQueue.lvProducerIndex() - 1;
-        }
-
-        @Override
-        public void set(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setVolatile(long value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean compareAndSet(long expectedValue, long newValue) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long incrementAndGet() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long addAndGet(long increment) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
-            return "CursorSequence{" +
-                    "index=" + get() +
-                    "}";
+                long cursor = ringBuffer.getCursor();
+                if (highestPublishedSequence != cursor) { // 已发布区间不连续
+                    ThreadUtils.sleepQuietly(1);
+                    continue;
+                }
+                int size = Math.toIntExact(lastSequence - cursor);
+                if (size < 1) { // 其它生产者将填充
+                    ThreadUtils.sleepQuietly(1);
+                    continue;
+                }
+                try {
+                    // 消费者不再更新的情况下，申请成功就应该是全部
+                    long seq = ringBuffer.tryNext(size);
+                    RingBufferEvent event = ringBuffer.get(cursor + 1);
+                    event.internal_setType(TYPE_CLEAN_DEADLINE);
+                    ringBuffer.publish(seq);
+                    return;
+                } catch (InsufficientCapacityException ignore) {
+                    ThreadUtils.sleepQuietly(1);
+                }
+            }
         }
     }
 
@@ -779,7 +797,7 @@ public class DefaultEventLoop extends AbstractScheduledEventLoop {
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            STATE = l.findVarHandle(DefaultEventLoop.class, "state", int.class);
+            STATE = l.findVarHandle(DisruptorEventLoop.class, "state", int.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }

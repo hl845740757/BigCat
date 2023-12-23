@@ -28,6 +28,7 @@ import java.util.Set;
  * @author wjybxx
  * date - 2023/4/17
  */
+@SuppressWarnings("unused")
 public class PropertiesUtils {
 
     // region

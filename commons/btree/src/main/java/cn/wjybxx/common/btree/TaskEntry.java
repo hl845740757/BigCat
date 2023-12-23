@@ -175,7 +175,7 @@ public class TaskEntry<E> extends Task<E> {
     }
 
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
         rootTask.onEvent(event);
     }
 

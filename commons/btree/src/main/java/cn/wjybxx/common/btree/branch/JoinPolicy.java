@@ -44,8 +44,10 @@ public interface JoinPolicy<E> {
     void onChildCompleted(Join<E> join, Task<E> child);
 
     /**
+     * join节点收到外部事件
+     *
      * @param event 收到的事件
      */
-    void onEvent(Join<E> join, Object event) throws Exception;
+    void onEvent(Join<E> join, Object event);
 
 }

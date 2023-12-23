@@ -66,7 +66,7 @@ public class JoinTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }

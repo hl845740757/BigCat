@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.tools.util;
 
-import cn.wjybxx.common.MathUtils;
+import cn.wjybxx.common.MathCommon;
 import cn.wjybxx.common.concurrent.DefaultThreadFactory;
 
 import java.util.List;
@@ -46,7 +46,7 @@ public class ExecutorMgr {
     private static int calPoolSize() {
         final int availableProcessors = Runtime.getRuntime().availableProcessors();
         final int expectedSize = availableProcessors / 2;
-        return MathUtils.clamp(expectedSize, 4, 16);
+        return MathCommon.clamp(expectedSize, 4, 16);
     }
 
     public ExecutorService getExecutorService() {

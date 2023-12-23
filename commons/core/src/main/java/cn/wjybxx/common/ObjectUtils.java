@@ -25,6 +25,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/4/17
  */
+@SuppressWarnings("unused")
 public class ObjectUtils {
 
     /**
@@ -92,14 +93,27 @@ public class ObjectUtils {
         return true;
     }
 
+    /** 空字符串转默认字符串 */
     public static <T extends CharSequence> T emptyToDef(T str, T def) {
         return isEmpty(str) ? def : str;
     }
 
+    /** 空白字符串转默认字符串 */
     public static <T extends CharSequence> T blankToDef(T str, T def) {
         return isBlank(str) ? def : str;
     }
 
+    /** 空字符串转默认字符串 -- 避免string泛型转换 */
+    public static String emptyToDef(String str, String def) {
+        return isEmpty(str) ? def : str;
+    }
+
+    /** 空白字符串转默认字符串 -- 避免string泛型转换 */
+    public static String blankToDef(String str, String def) {
+        return isBlank(str) ? def : str;
+    }
+
+    /** 获取字符串的尾字符 */
     public static char lastChar(CharSequence value) {
         return value.charAt(value.length() - 1);
     }

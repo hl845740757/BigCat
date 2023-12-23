@@ -16,6 +16,7 @@
 
 package cn.wjybxx.common.concurrent;
 
+import cn.wjybxx.common.ex.NoLogRequiredException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

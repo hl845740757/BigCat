@@ -113,7 +113,7 @@ public class StateMachineTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }
@@ -135,7 +135,7 @@ public class StateMachineTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }
@@ -235,7 +235,7 @@ public class StateMachineTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }
@@ -261,7 +261,7 @@ public class StateMachineTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }
@@ -297,7 +297,7 @@ public class StateMachineTest {
         }
 
         @Override
-        protected void onEventImpl(@Nonnull Object event) throws Exception {
+        protected void onEventImpl(@Nonnull Object event) {
 
         }
     }

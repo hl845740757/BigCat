@@ -18,7 +18,6 @@ package cn.wjybxx.common;
 
 import cn.wjybxx.common.collect.DelayedCompressList;
 import cn.wjybxx.common.collect.DelayedCompressListImpl;
-import cn.wjybxx.common.collect.SmallArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -231,34 +230,6 @@ public class CollectionUtils {
         return null;
     }
 
-    /** 返回List中第一个不为null的元素 */
-    public static <E> E firstPresent(List<E> list) {
-        for (int i = 0, size = list.size(); i < size; i++) {
-            final E e = list.get(i);
-            if (e != null) return e;
-        }
-        return null;
-    }
-
-    /** 返回list中最后一个不为null的元素 */
-    public static <E> E lastPresent(List<E> list) {
-        for (int i = list.size() - 1; i >= 0; i--) {
-            final E e = list.get(i);
-            if (e != null) return e;
-        }
-        return null;
-    }
-
-    /** 返回List中非null元素个数 */
-    public static int presentCount(List<?> list) {
-        int count = 0;
-        for (int i = list.size() - 1; i >= 0; i--) {
-            final Object e = list.get(i);
-            if (e != null) count++;
-        }
-        return count;
-    }
-
     /** 获取从某个索引开始的子列表 */
     public static <E> List<E> subList(List<E> src, int index) {
         return src.subList(index, src.size());
@@ -267,30 +238,24 @@ public class CollectionUtils {
     // region 使用“==”操作集合
     // 注意：对于拆装箱的对象慎用
 
-    /**
-     * 使用“==”判断元素是否存在
-     */
     public static boolean containsRef(List<?> list, Object element) {
-        if (list == null) {
-            return false;
-        }
-        for (int i = 0, size = list.size(); i < size; i++) {
-            if (list.get(i) == element) {
-                return true;
-            }
-        }
-        return false;
+        return indexOfRef(list, element, 0) >= 0;
     }
 
-    /**
-     * 使用“==”查询元素位置
-     */
+    /** 查找对象引用在数组中的索引 */
     public static int indexOfRef(List<?> list, Object element) {
         return indexOfRef(list, element, 0);
     }
 
+    /**
+     * 查找对象引用在List中的索引
+     *
+     * @param element    要查找的元素
+     * @param startIndex 开始下标
+     */
     public static int indexOfRef(List<?> list, Object element, int startIndex) {
-        if (list == null || startIndex >= list.size()) {
+        Objects.requireNonNull(list, "list");
+        if (startIndex >= list.size()) {
             return INDEX_NOT_FOUND;
         }
         if (startIndex < 0) {
@@ -304,12 +269,20 @@ public class CollectionUtils {
         return INDEX_NOT_FOUND;
     }
 
+    /** 反向查找对象引用在List中的索引 */
     public static int lastIndexOfRef(List<?> list, Object element) {
         return lastIndexOfRef(list, element, Integer.MAX_VALUE);
     }
 
+    /**
+     * 反向查找对象引用在List中的索引
+     *
+     * @param element    要查找的元素
+     * @param startIndex 开始下标
+     */
     public static int lastIndexOfRef(List<?> list, Object element, int startIndex) {
-        if (list == null || startIndex < 0) {
+        Objects.requireNonNull(list, "list");
+        if (startIndex < 0) {
             return INDEX_NOT_FOUND;
         }
         if (startIndex >= list.size()) {
@@ -323,9 +296,7 @@ public class CollectionUtils {
         return -1;
     }
 
-    /**
-     * 使用“==”删除对象
-     */
+    /** 使用“==”删除对象 */
     public static boolean removeRef(List<?> list, Object element) {
         final int index = indexOfRef(list, element);
         if (index < 0) {
@@ -335,9 +306,7 @@ public class CollectionUtils {
         return true;
     }
 
-    /**
-     * 使用“==”删除对象
-     */
+    /** 使用“==”删除对象 */
     public static boolean removeRef(List<?> list, Object element, boolean ordered) {
         final int index = indexOfRef(list, element);
         if (index < 0) {
@@ -350,30 +319,25 @@ public class CollectionUtils {
 
     // region 数组
 
-    /**
-     * 使用“==”判断元素是否存在
-     */
+    /** 判断是否存在给定元素的引用 */
     public static <T> boolean containsRef(T[] list, Object element) {
-        if (list == null) {
-            return false;
-        }
-        for (int i = 0, size = list.length; i < size; i++) {
-            if (list[i] == element) {
-                return true;
-            }
-        }
-        return false;
+        return indexOfRef(list, element, 0) >= 0;
     }
 
-    /**
-     * 使用“==”查询元素位置
-     */
+    /** 查找对象引用在数组中的索引 */
     public static <T> int indexOfRef(T[] list, Object element) {
         return indexOfRef(list, element, 0);
     }
 
+    /**
+     * 查找对象引用在数组中的索引
+     *
+     * @param element    要查找的元素
+     * @param startIndex 开始下标
+     */
     public static <T> int indexOfRef(T[] list, Object element, int startIndex) {
-        if (list == null || startIndex >= list.length) {
+        Objects.requireNonNull(list, "list");
+        if (startIndex >= list.length) {
             return INDEX_NOT_FOUND;
         }
         if (startIndex < 0) {
@@ -387,12 +351,20 @@ public class CollectionUtils {
         return INDEX_NOT_FOUND;
     }
 
+    /** 反向查找对象引用在数组中的索引 */
     public static <T> int lastIndexOfRef(T[] list, Object element) {
         return lastIndexOfRef(list, element, Integer.MAX_VALUE);
     }
 
+    /**
+     * 反向查找对象引用在数组中的索引
+     *
+     * @param element    要查找的元素
+     * @param startIndex 开始下标
+     */
     public static <T> int lastIndexOfRef(T[] list, Object element, int startIndex) {
-        if (list == null || startIndex < 0) {
+        Objects.requireNonNull(list, "list");
+        if (startIndex < 0) {
             return INDEX_NOT_FOUND;
         }
         if (startIndex >= list.length) {
@@ -409,10 +381,6 @@ public class CollectionUtils {
     // endregion
 
     // region arrayList快捷方法
-
-    public static <E> ArrayList<E> newSmallArrayList() {
-        return new SmallArrayList<>();
-    }
 
     public static <E> ArrayList<E> newArrayList(E a) {
         final ArrayList<E> result = new ArrayList<>(1);
@@ -719,15 +687,12 @@ public class CollectionUtils {
         return Collections.disjoint(source, candidates);
     }
 
+    /** 获取集合的首个元素 */
     public static <E> E first(Collection<E> elements) {
         if (elements instanceof SequencedCollection<E> sequenced) {
             return sequenced.getFirst();
         }
         return elements.iterator().next();
-    }
-
-    public static <E> E last(SequencedCollection<E> elements) {
-        return elements.getLast(); // jdk21
     }
 
     /** 如果集合不为空，则返回第一个元素，否则返回默认值 */
@@ -812,7 +777,7 @@ public class CollectionUtils {
         if (expectedSize < 3) {
             return 4;
         }
-        if (expectedSize < MathUtils.MAX_POWER_OF_TWO) {
+        if (expectedSize < MathCommon.MAX_POWER_OF_TWO) {
             return (int) ((float) expectedSize / 0.75F + 1.0F);
         }
         return Integer.MAX_VALUE;
@@ -832,6 +797,7 @@ public class CollectionUtils {
             this.length = length;
         }
 
+        @Nonnull
         @Override
         public Object[] toArray() {
             if (offset == 0 && length == array.length) {

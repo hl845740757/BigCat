@@ -48,7 +48,7 @@ public class WaitFrame<E> extends LeafTask<E> {
     }
 
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
 
     }
 

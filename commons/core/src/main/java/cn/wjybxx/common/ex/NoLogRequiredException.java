@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.concurrent;
+package cn.wjybxx.common.ex;
 
 import cn.wjybxx.common.annotation.MarkInterface;
 

@@ -16,29 +16,29 @@
 
 package cn.wjybxx.common.concurrent;
 
+import cn.wjybxx.common.ex.NoLogRequiredException;
+
+import java.util.concurrent.TimeoutException;
+
 /**
- * 该异常表示{@link FutureCombiner}监听的任务数不足以到达成功条件
+ * 该异常表示一个可分时运行的任务超时了。
  *
  * @author wjybxx
- * date 2023/4/12
+ * date 2023/4/3
  */
-public class TaskInsufficientException extends RuntimeException implements NoLogRequiredException {
+public class TimeSharingTimeoutException extends TimeoutException implements NoLogRequiredException {
 
-    public TaskInsufficientException() {
+    public static final TimeSharingTimeoutException INSTANCE = new TimeSharingTimeoutException("task is timeout");
+
+    public TimeSharingTimeoutException() {
     }
 
-    public TaskInsufficientException(String message) {
+    public TimeSharingTimeoutException(String message) {
         super(message);
     }
 
     public final Throwable fillInStackTrace() {
         return this;
-    }
-
-    public static TaskInsufficientException create(int futureCount, int doneCount, int succeedCount, int successRequire) {
-        final String msg = String.format("futureCount :%d, doneCount %d, succeedCount: %d, successRequire :%d",
-                futureCount, doneCount, succeedCount, successRequire);
-        return new TaskInsufficientException(msg);
     }
 
 }

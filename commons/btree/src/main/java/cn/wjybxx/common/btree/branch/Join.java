@@ -120,7 +120,7 @@ public class Join<E> extends Parallel<E> {
     }
 
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
         policy.onEvent(this, event);
     }
 

@@ -61,7 +61,7 @@ public class SimpleParallel<E> extends Parallel<E> {
     }
 
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
         children.get(0).onEvent(event);
     }
 }

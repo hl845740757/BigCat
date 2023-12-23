@@ -93,7 +93,7 @@ public abstract class SingleRunningChildBranch<E> extends BranchTask<E> {
     }
 
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
         if (runningChild != null) {
             runningChild.onEvent(event);
         }

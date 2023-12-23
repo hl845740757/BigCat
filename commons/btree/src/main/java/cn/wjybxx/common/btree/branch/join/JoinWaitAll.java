@@ -66,7 +66,7 @@ public class JoinWaitAll<E> implements JoinPolicy<E> {
     }
 
     @Override
-    public void onEvent(Join<E> join, Object event) throws Exception {
+    public void onEvent(Join<E> join, Object event) {
 
     }
 }

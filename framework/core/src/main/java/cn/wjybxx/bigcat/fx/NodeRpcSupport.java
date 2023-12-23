@@ -18,7 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.common.ThreadUtils;
 import cn.wjybxx.common.concurrent.ICompletableFuture;
-import cn.wjybxx.common.concurrent.NoLogRequiredException;
+import cn.wjybxx.common.ex.NoLogRequiredException;
 import cn.wjybxx.common.concurrent.WatcherMgr;
 import cn.wjybxx.common.concurrent.XCompletableFuture;
 import cn.wjybxx.common.log.DebugLogLevel;

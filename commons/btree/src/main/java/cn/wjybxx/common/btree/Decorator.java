@@ -46,7 +46,7 @@ public abstract class Decorator<E> extends Task<E> {
     }
 
     @Override
-    protected void onEventImpl(@Nonnull Object event) throws Exception {
+    protected void onEventImpl(@Nonnull Object event) {
         if (child != null) {
             child.onEvent(event);
         }

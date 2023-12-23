@@ -16,15 +16,12 @@
 
 package cn.wjybxx.common;
 
-import cn.wjybxx.common.pair.IntTuple2;
-import cn.wjybxx.common.pair.ShortTuple2;
-
 /**
  * @author wjybxx
  * date 2023/3/31
  */
 @SuppressWarnings("unused")
-public class MathUtils {
+public class MathCommon {
 
     public static final int MAX_POWER_OF_TWO = 1 << 30;
     public static final long LONG_MAX_POWER_OF_TWO = 1L << 62;
@@ -45,12 +42,24 @@ public class MathUtils {
     public static final long LONG_MASK2 = 0x00_00_00_00_00_00_FF_00L;
     public static final long LONG_MASK1 = 0x00_00_00_00_00_00_00_FFL;
 
-    protected MathUtils() {
+    protected MathCommon() {
     }
 
     /** 判断一个值是否是2的整次幂 */
     public static boolean isPowerOfTwo(int x) {
         return x > 0 && (x & (x - 1)) == 0;
+    }
+
+    /** 计算num最接近下一个整2次幂；如果自身是2的整次幂，则会返回自身 */
+    public static int nextPowerOfTwo(int num) {
+        if (num < 1) return 1;
+        return 1 << (32 - Integer.numberOfLeadingZeros(num - 1));
+    }
+
+    /** 计算num最接近下一个整2次幂；如果自身是2的整次幂，则会返回自身 */
+    public static long nextPowerOfTwo(long num) {
+        if (num < 1) return 1;
+        return 1L << (64 - Long.numberOfLeadingZeros(num - 1));
     }
 
     /** @return 如果给定参数是【偶数】则返回true */
@@ -85,10 +94,6 @@ public class MathUtils {
         return (int) value;
     }
 
-    public static IntTuple2 decomposeLongToInt(long value) {
-        return new IntTuple2(higherIntOfLong(value), lowerIntOfLong(value));
-    }
-
     /**
      * 将两个short聚合为int
      *
@@ -107,10 +112,6 @@ public class MathUtils {
 
     public static short lowerShortOfInt(int value) {
         return (short) value;
-    }
-
-    public static ShortTuple2 decomposeIntToShort(int value) {
-        return new ShortTuple2(higherShortOfInt(value), lowerShortOfInt(value));
     }
 
     /** 两个int安全相乘，返回一个long，避免越界；相乘之后再强转可能越界。 */

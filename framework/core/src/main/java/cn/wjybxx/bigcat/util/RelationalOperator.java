@@ -20,7 +20,7 @@ package cn.wjybxx.bigcat.util;
 import cn.wjybxx.common.EnumLite;
 import cn.wjybxx.common.EnumLiteMap;
 import cn.wjybxx.common.EnumUtils;
-import cn.wjybxx.common.MathUtils;
+import cn.wjybxx.common.MathCommon;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 
 import javax.annotation.Nullable;
@@ -68,12 +68,12 @@ public enum RelationalOperator implements EnumLite {
 
         @Override
         public boolean test(float a, float b) {
-            return a > b || MathUtils.isEqual(a, b);
+            return a > b || MathCommon.isEqual(a, b);
         }
 
         @Override
         public boolean test(double a, double b) {
-            return a > b || MathUtils.isEqual(a, b);
+            return a > b || MathCommon.isEqual(a, b);
         }
     },
 
@@ -111,12 +111,12 @@ public enum RelationalOperator implements EnumLite {
 
         @Override
         public boolean test(float a, float b) {
-            return a < b || MathUtils.isEqual(a, b);
+            return a < b || MathCommon.isEqual(a, b);
         }
 
         @Override
         public boolean test(double a, double b) {
-            return a < b || MathUtils.isEqual(a, b);
+            return a < b || MathCommon.isEqual(a, b);
         }
     },
 
@@ -133,12 +133,12 @@ public enum RelationalOperator implements EnumLite {
 
         @Override
         public boolean test(float a, float b) {
-            return MathUtils.isEqual(a, b);
+            return MathCommon.isEqual(a, b);
         }
 
         @Override
         public boolean test(double a, double b) {
-            return MathUtils.isEqual(a, b);
+            return MathCommon.isEqual(a, b);
         }
     },
 
@@ -155,12 +155,12 @@ public enum RelationalOperator implements EnumLite {
 
         @Override
         public boolean test(float a, float b) {
-            return !MathUtils.isEqual(a, b);
+            return !MathCommon.isEqual(a, b);
         }
 
         @Override
         public boolean test(double a, double b) {
-            return !MathUtils.isEqual(a, b);
+            return !MathCommon.isEqual(a, b);
         }
     },
 

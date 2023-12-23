@@ -16,7 +16,7 @@
 
 package cn.wjybxx.common.async;
 
-import cn.wjybxx.common.concurrent.NoLogRequiredException;
+import cn.wjybxx.common.ex.NoLogRequiredException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 

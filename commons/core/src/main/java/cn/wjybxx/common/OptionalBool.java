@@ -27,15 +27,15 @@ import java.util.NoSuchElementException;
  */
 public enum OptionalBool implements EnumLite {
 
-    EMPTY(false),
     FALSE(false),
     TRUE(true),
+    EMPTY(false),
     ;
 
-    private final boolean _value;
+    private final boolean value;
 
     OptionalBool(boolean v) {
-        this._value = v;
+        this.value = v;
     }
 
     //
@@ -53,7 +53,7 @@ public enum OptionalBool implements EnumLite {
         if (this == EMPTY) {
             throw new NoSuchElementException("No value present");
         }
-        return _value;
+        return value;
     }
 
     public boolean isTrue() {
@@ -73,14 +73,14 @@ public enum OptionalBool implements EnumLite {
     }
 
     public boolean orElse(boolean value) {
-        return this == EMPTY ? value : _value;
+        return this == EMPTY ? value : this.value;
     }
 
     public boolean orElseThrow() {
         if (this == EMPTY) {
             throw new NoSuchElementException("No value present");
         }
-        return _value;
+        return value;
     }
 
     @Override
@@ -91,17 +91,17 @@ public enum OptionalBool implements EnumLite {
     @Override
     public int getNumber() {
         return switch (this) {
-            case EMPTY -> 2;
-            case TRUE -> 1;
             case FALSE -> 0;
+            case TRUE -> 1;
+            case EMPTY -> 2; // -1不利于序列化
         };
     }
 
     public static OptionalBool forNumber(int number) {
         return switch (number) {
-            case 2 -> EMPTY;
-            case 1 -> TRUE;
             case 0 -> FALSE;
+            case 1 -> TRUE;
+            case 2 -> EMPTY;
             default -> throw new IllegalArgumentException("invalid number " + number);
         };
     }

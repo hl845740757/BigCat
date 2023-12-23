@@ -187,14 +187,17 @@ public interface IProperties extends Map<String, String> {
     // endregion
 
     /** @return 可能是快照 */
+    @Nonnull
     @Override
     Set<String> keySet();
 
     /** @return 可能是快照 */
+    @Nonnull
     @Override
     Collection<String> values();
 
     /** @return 可能是快照 */
+    @Nonnull
     @Override
     Set<Entry<String, String>> entrySet();
 
