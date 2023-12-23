@@ -27,18 +27,18 @@ import cn.wjybxx.common.log.DebugLogFriendlyObject;
  */
 public abstract class RpcProtocol implements DebugLogFriendlyObject {
 
-    private static final int MASK_SHARABLE = 1;
-    private static final int MASK_SERIALIZED = 1 << 1;
-    private static final int MASK_DESERIALIZED = 1 << 2;
+    static final int MASK_SHARABLE = 1;
+    static final int MASK_SERIALIZED = 1 << 1;
+    static final int MASK_DESERIALIZED = 1 << 2;
 
     /** 连接id */
     protected long conId;
-    /** 发送方节点id */
+    /** 发送方地址 */
     protected RpcAddr srcAddr;
-    /** 接收方节点id -- 如果是广播，接收方字段是否有值取决于实现 */
+    /** 接收方地址 -- 注意：目标地址不一定是直接地址，也可能是别名等 */
     protected RpcAddr destAddr;
 
-    /** 不序列化；未来可能在注解上配置 */
+    /** 控制标记 */
     private transient int ctl;
 
     public RpcProtocol() {
@@ -67,9 +67,8 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
         return (ctl & MASK_SERIALIZED) != 0;
     }
 
-    public final RpcProtocol setSerialized() {
-        ctl = Bits.set(ctl, MASK_SERIALIZED, true);
-        return this;
+    public final void setSerialized() {
+        ctl |= MASK_SERIALIZED;
     }
 
     /** 方法参数或结果是否反序列化 */
@@ -77,10 +76,18 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
         return (ctl & MASK_DESERIALIZED) != 0;
     }
 
-    public final RpcProtocol setDeserialized() {
-        ctl = Bits.set(ctl, MASK_DESERIALIZED, true);
-        return this;
+    public final void setDeserialized() {
+        ctl |= MASK_DESERIALIZED;
     }
+
+    public final int getCtl() {
+        return ctl;
+    }
+
+    public final void setCtl(int ctl) {
+        this.ctl = ctl;
+    }
+
     // endregion
 
     // region getter/setter

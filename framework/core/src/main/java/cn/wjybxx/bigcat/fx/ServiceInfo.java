@@ -25,7 +25,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/10/4
  */
-public class ServiceInfo {
+public final class ServiceInfo {
 
     public final int serviceId;
     public final List<Worker> workerList;

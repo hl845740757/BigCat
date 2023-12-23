@@ -55,6 +55,8 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
         List<WorkerModule> moduleList = FxUtils.createModules(builder);
         this.mainModule = (MainModule) moduleList.get(0);
         this.moduleList = List.copyOf(moduleList);
+        // 导出Rpc服务 -- 先注册到Registry但不对外发布
+        FxUtils.exportService(builder);
     }
 
     private static EventLoopBuilder.DisruptorBuilder decorate(WorkerBuilder.DisruptWorkerBuilder builder) {

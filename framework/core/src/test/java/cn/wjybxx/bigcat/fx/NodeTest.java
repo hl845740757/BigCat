@@ -51,7 +51,7 @@ public class NodeTest {
                 .setInjector(createNodeInjector())
                 .addModule(WorkerRpcClient.class)
                 .addModule(NodeRpcSupport.class)
-                .addModule(TestRpcSender.class)
+                .addModule(TestRpcRouter.class)
                 // 初始化Worker
                 .setWorkerFactory((parent, workerCtx, index) -> {
                     return WorkerBuilder.newDisruptorWorkerBuilder()
@@ -109,14 +109,14 @@ public class NodeTest {
                 bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
                 bind(TimeModule.class).in(Singleton.class);
 
+                // 记得以前超类绑定到子类时指定Singleton，子类不需要单独声明Singleton，现在怎么不行了....
+                // 子类如果不单独绑定，则会创建一个新的实例，各种bug...
+                bind(NodeRpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
+                bind(TestRpcRouter.class).in(Singleton.class);
+
                 bind(NodeRpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
                 bind(PBMethodInfoRegistry.class).in(Singleton.class);
-
-                // 记得以前超类绑定到子类时指定Singleton，子类不需要单独声明Singleton，现在怎么不行了....
-                // 子类如果不单独绑定，则会创建一个新的实例，各种bug...
-                bind(NodeRpcSender.class).to(TestRpcSender.class).in(Singleton.class);
-                bind(TestRpcSender.class).in(Singleton.class);
             }
         });
     }
@@ -144,7 +144,7 @@ public class NodeTest {
 
         final Regulator regulator = Regulator.newFixedDelay(1, 100);
         Worker worker;
-        NodeRpcSupport rpcSupport;
+        TestRpcRouter rpcRouter;
 
         @Inject
         RpcRegistry registry;
@@ -156,7 +156,7 @@ public class NodeTest {
         @Override
         public void inject(Worker worker) {
             this.worker = worker;
-            this.rpcSupport = Objects.requireNonNull(worker.parent()).injector().getInstance(NodeRpcSupport.class);
+            this.rpcRouter = (TestRpcRouter) worker.node().injector().getInstance(NodeRpcRouter.class);
         }
 
         @Override
@@ -171,7 +171,7 @@ public class NodeTest {
                 String msg = "time: " + regulator.getLastUpdateTime();
                 rpcClient.call(StaticRpcAddr.LOCAL, RpcServiceExampleProxy.echo(msg))
                         .thenAccept(result -> {
-                            if (rpcSupport.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
+                            if (rpcRouter.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
                                 Assertions.assertSame(msg, result);
                             } else {
                                 Assertions.assertEquals(msg, result);
@@ -242,14 +242,11 @@ public class NodeTest {
         }
     }
 
-    private static class TestRpcSender implements NodeRpcSender, WorkerModule {
+    private static class TestRpcRouter extends AbstractRpcRouter {
 
         private final ConcurrentLinkedQueue<RpcProtocol> protocolQueue = new ConcurrentLinkedQueue<>();
         private volatile boolean shuttingDown;
         private Thread thread;
-
-        @Inject
-        private NodeRpcSupport rpcSupport;
 
         @Override
         public void start() {
@@ -260,16 +257,27 @@ public class NodeTest {
         }
 
         @Override
-        public boolean send(RpcProtocol proto) {
-            Objects.requireNonNull(proto);
-            protocolQueue.offer(proto);
-            return true;
-        }
-
-        @Override
         public void stop() {
             shuttingDown = true;
             thread.interrupt();
+        }
+
+        @Override
+        public boolean send(RpcProtocol protocol) {
+            Objects.requireNonNull(protocol);
+            // 这里不执行序列化，但如果已序列化，则进行反序列化
+            if (protocol.isSerialized()) {
+                if (protocol instanceof RpcRequest request) {
+                    byte[] bytesParameters = request.bytesParameters();
+                    request.setParameters(serializer.read(bytesParameters));
+                } else if (protocol instanceof RpcResponse response) {
+                    byte[] bytesResults = response.bytesResults();
+                    response.setResults(serializer.read(bytesResults));
+                }
+            }
+            protocol.setDeserialized();
+            protocolQueue.offer(protocol);
+            return true;
         }
 
         // 该方法由子线程调用

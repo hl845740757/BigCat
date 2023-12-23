@@ -65,6 +65,8 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         List<WorkerModule> moduleList = FxUtils.createModules(builder);
         this.mainModule = (MainModule) moduleList.get(0);
         this.moduleList = List.copyOf(moduleList);
+        // 导出Rpc服务 -- 先注册到Registry但不对外发布
+        FxUtils.exportService(builder);
 
         int numberChildren = builder.getNumberChildren();
         if (numberChildren < 1) {
@@ -179,16 +181,16 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         return workerCtx;
     }
 
-    @Nullable
-    @Override
-    public Node parent() {
-        return null;
-    }
-
     @Nonnull
     @Override
     public Node node() {
         return this;
+    }
+
+    @Nullable
+    @Override
+    public Node parent() {
+        return null;
     }
 
     @Nonnull

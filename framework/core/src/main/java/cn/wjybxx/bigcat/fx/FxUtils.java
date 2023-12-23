@@ -54,21 +54,6 @@ public class FxUtils {
         }
     }
 
-    /** 导出Rpc服务 */
-    public static void exportService(RpcRegistry registry, Class<?> serviceInterface, Object serviceImpl) {
-        if (!serviceInterface.isInstance(serviceImpl)) {
-            throw new IllegalArgumentException();
-        }
-        // public static void export(RpcRegistry registry, RpcServiceExample instance) {}
-        try {
-            Class<?> exporter = Class.forName(serviceInterface.getName() + "Exporter");
-            Method method = exporter.getDeclaredMethod("export", RpcRegistry.class, serviceInterface); // 生成的静态export方法
-            method.invoke(null, registry, serviceInterface);
-        } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
-        }
-    }
-
     /** 获取所有的模块 */
     public static List<WorkerModule> createModules(WorkerBuilder builder) {
         Injector injector = builder.getInjector();
@@ -84,5 +69,30 @@ public class FxUtils {
             moduleList.add(workerModule);
         }
         return moduleList;
+    }
+
+    /** 导出Rpc服务 */
+    public static void exportService(WorkerBuilder builder) {
+        Injector injector = builder.getInjector();
+        RpcRegistry registry = injector.getInstance(RpcRegistry.class);
+        for (Class<?> clazz : builder.getServiceClasses()) {
+            Object instance = injector.getInstance(clazz);
+            exportService(registry, clazz, instance);
+        }
+    }
+
+    /** 导出Rpc服务 */
+    public static void exportService(RpcRegistry registry, Class<?> serviceInterface, Object serviceImpl) {
+        if (!serviceInterface.isInstance(serviceImpl)) {
+            throw new IllegalArgumentException();
+        }
+        // public static void export(RpcRegistry registry, RpcServiceExample instance) {}
+        try {
+            Class<?> exporter = Class.forName(serviceInterface.getName() + "Exporter");
+            Method method = exporter.getDeclaredMethod("export", RpcRegistry.class, serviceInterface); // 生成的静态export方法
+            method.invoke(null, registry, serviceInterface);
+        } catch (Exception e) {
+            ExceptionUtils.rethrow(e);
+        }
     }
 }

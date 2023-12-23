@@ -19,19 +19,25 @@ package cn.wjybxx.common.rpc;
 
 import cn.wjybxx.common.ObjectUtils;
 import cn.wjybxx.common.codec.FieldImpl;
+import cn.wjybxx.common.codec.TypeArgInfo;
 import cn.wjybxx.common.codec.binary.BinaryObjectReader;
 import cn.wjybxx.common.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.common.codec.binary.BinarySerializable;
 import cn.wjybxx.common.concurrent.FutureUtils;
 import cn.wjybxx.common.ex.ErrorCodeException;
 import cn.wjybxx.common.log.DebugLogFriendlyObject;
+import cn.wjybxx.dson.DsonType;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * rpc响应结构体
+ * <p>
+ * Q：为什么不区分null和void？
+ * A：用户可以监听void函数的结果，而void只能通知为null。
  *
  * @author wjybxx
  * date 2023/4/1
@@ -54,11 +60,13 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
     /**
      * 方法结果
      * 1.正确设值的情况下不为null，为{@link byte[]}或{@link List}
-     * 2.如果为bytes，表示已经序列化
-     * 3.如果为List，表示尚未序列化；兼容无返回值和返回null的情况，也有利于扩展
+     * 2.如果为bytes，表示已经序列化；
+     * 3.如果为List，表示尚未序列化；不区分null和void，null会封装为空List。
+     * 4.封装一层是必须的，参数和结果需要能独立序列化，而序列化要求必须是容器(Object或List)。
+     * 5.在基于Protobuf进行Rpc通信时，在写入最终协议时可展开。
      */
     @FieldImpl(writeProxy = "writeResults", readProxy = "readResults")
-    private Object result;
+    private Object results;
 
     public RpcResponse() {
         // 序列化支持
@@ -68,6 +76,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         super(conId, srcAddr, destAddr);
     }
 
+    /** request的目标地址并不一定直接是当前节点地址，因此需要显式传入 */
     public RpcResponse(RpcRequest request, RpcAddr selfAddr) {
         super(request.getConId(), selfAddr, request.getSrcAddr());
         this.requestId = request.getRequestId();
@@ -75,33 +84,22 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         this.methodId = request.getMethodId();
     }
 
-    public RpcResponse(RpcRequest request, RpcAddr selfAddr, int errorCode, Object result) {
-        super(request.getConId(), selfAddr, request.getSrcAddr());
-        this.requestId = request.getRequestId();
-        this.serviceId = request.getServiceId();
-        this.methodId = request.getMethodId();
-        this.errorCode = errorCode;
-        this.result = result;
-    }
-
     // region 业务
 
     public void setSuccess(Object result) {
+        this.errorCode = RpcErrorCodes.SUCCESS;
+        // null不放入，不区分null和void
         if (result == null) {
-            this.errorCode = RpcErrorCodes.RESULT_NULL;
-        } else if (result.getClass() == byte[].class) {
-            this.errorCode = RpcErrorCodes.RESULT_BYTES;
+            this.results = List.of();
         } else {
-            this.errorCode = RpcErrorCodes.SUCCESS;
+            this.results = List.of(result);
         }
-        this.result = result;
     }
 
     public void setFailed(int errorCode, String msg) {
-        assert !RpcErrorCodes.isSuccess(errorCode);
+        assert errorCode > 0;
         this.errorCode = errorCode;
-        this.result = ObjectUtils.nullToDef(msg, "");
-        this.setSharable(true); // 字符串总是可共享
+        this.results = List.of(ObjectUtils.nullToDef(msg, ""));
     }
 
     public void setFailed(Throwable ex) {
@@ -115,16 +113,41 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         }
     }
 
-    public boolean isSuccess() {
-        return errorCode == 0;
+    /** 结果转bytes */
+    public byte[] bytesResults() {
+        assert results != null;
+        return (byte[]) results;
     }
 
+    /** 结果转List */
+    @SuppressWarnings("unchecked")
+    public List<Object> listResult() {
+        assert results != null;
+        return (List<Object>) results;
+    }
+
+    @SuppressWarnings("unchecked")
     public String getErrorMsg() {
         if (errorCode == 0) {
             throw new IllegalStateException("errorCode == 0");
         }
-        return (String) result;
+        List<Object> listResult = (List<Object>) this.results;
+        return (String) listResult.get(0);
     }
+
+    @SuppressWarnings("unchecked")
+    public Object getResult() {
+        if (errorCode != 0) {
+            throw new IllegalStateException("errorCode != 0");
+        }
+        List<Object> listResult = (List<Object>) this.results;
+        return listResult.isEmpty() ? null : listResult.get(0);
+    }
+
+    public boolean isSuccess() {
+        return errorCode == 0;
+    }
+
     // endregion
 
     // region getter/setter
@@ -164,12 +187,12 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         return this;
     }
 
-    public Object getResult() {
-        return result;
+    public Object getResults() {
+        return results;
     }
 
-    public RpcResponse setResult(Object result) {
-        this.result = result;
+    public RpcResponse setResults(Object result) {
+        this.results = result;
         return this;
     }
     // endregion
@@ -182,7 +205,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-                ", results=" + result +
+//                ", results=" + results +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
@@ -202,7 +225,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-                ", results=" + result +
+                ", results=" + results +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
@@ -211,25 +234,45 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
 
     // region 序列化优化
     // 1.自动处理延迟序列化问题
+    // 2.避免多态写入List类型信息
 
     public void writeResults(BinaryObjectWriter writer, int name) {
-        if (errorCode == RpcErrorCodes.RESULT_NULL) {
-            // null不写
-        } else if (errorCode == RpcErrorCodes.RESULT_BYTES) {
-            writer.writeBytes(name, (byte[]) result);
+        if (results == null) {
+            writer.writeNull(name);
+            return;
+        }
+        if (results instanceof byte[] bytes) {
+            writer.writeValueBytes(name, DsonType.ARRAY, bytes);
         } else {
-            writer.writeObject(name, result);
+            List<Object> results = listResult();
+            writer.writeStartArray(name, RpcRequest.getListTypeArgInfo(results));
+            for (Object ele : results) {
+                writer.writeObject(0, ele);
+            }
+            writer.writeEndArray();
         }
     }
 
     public void readResults(BinaryObjectReader reader, int name) {
-        if (errorCode == RpcErrorCodes.RESULT_NULL) {
-            // null不读
-        } else if (errorCode == RpcErrorCodes.RESULT_BYTES) {
-            result = reader.readBytes(name);
-        } else {
-            result = reader.readObject(name);
+        if (!reader.readName(name)) {
+            return;
         }
+        if (reader.getCurrentDsonType() == DsonType.NULL) {
+            reader.readNull(name);
+            return;
+        }
+        List<Object> results = new ArrayList<>(1);
+        reader.readStartArray(TypeArgInfo.ARRAYLIST);
+        DsonType dsonType;
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            if (dsonType == DsonType.HEADER) { // 用户可能写入了List的类型
+                reader.skipValue();
+            } else {
+                results.add(reader.readObject(0));
+            }
+        }
+        reader.readEndArray();
+        this.results = results;
     }
 
     // endregion

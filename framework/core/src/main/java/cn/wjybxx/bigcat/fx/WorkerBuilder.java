@@ -21,7 +21,12 @@ import cn.wjybxx.common.concurrent.DefaultThreadFactory;
 import cn.wjybxx.common.concurrent.EventLoopBuilder;
 import cn.wjybxx.common.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.common.concurrent.ext.TimeoutSleepingWaitStrategy;
+import cn.wjybxx.common.pb.PBMethodInfoRegistry;
+import cn.wjybxx.common.rpc.RpcClient;
 import cn.wjybxx.common.rpc.RpcRegistry;
+import cn.wjybxx.common.rpc.RpcRouter;
+import cn.wjybxx.common.rpc.RpcSerializer;
+import cn.wjybxx.common.time.TimeProvider;
 import com.google.inject.Injector;
 import com.lmax.disruptor.WaitStrategy;
 
@@ -40,9 +45,13 @@ public abstract class WorkerBuilder {
 
     private String workerId;
     /**
-     * Worker上绑定的容器
-     * 1. 需要包含{@link MainModule}接口的实例
-     * 2. 需要包含{@link RpcRegistry}接口的实例
+     * Worker上绑定的容器，需要包含：
+     * {@link MainModule}、{@link TimeModule}
+     * {@link RpcClient}、{@link RpcRegistry}、
+     * <p>
+     * 如果是Node，则还需要包含：
+     * {@link NodeRpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
+     * {@link PBMethodInfoRegistry}、{@link TimeProvider}
      */
     private Injector injector;
 
@@ -51,12 +60,13 @@ public abstract class WorkerBuilder {
      * 1. 需要能通过{@link #injector}获取实例
      * 2. 无需包含{@link MainModule}
      * 3. 添加顺序很重要，Worker将按照添加顺序启动所有的Module
-     * 4. 实现类必须是{@link WorkerModule}的子类
+     * 4. 实现类必须是{@link WorkerModule}的子类（注入的接口则不一定）
      */
     private final List<Class<?>> moduleClasses = new ArrayList<>();
     /**
      * Worker上挂载的服务类
-     * 1.作为配置会传递给MainModule
+     * 1.服务接口的实例必须在容器中存在
+     * 2.
      */
     private final List<Class<?>> serviceClasses = new ArrayList<>();
 

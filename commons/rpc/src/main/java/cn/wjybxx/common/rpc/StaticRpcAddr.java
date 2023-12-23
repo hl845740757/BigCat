@@ -33,10 +33,10 @@ import javax.annotation.Nullable;
 @BinarySerializable
 public enum StaticRpcAddr implements RpcAddr, EnumLite {
 
-    /** 本地单播地址 */
+    /** Node内本地单播地址 */
     LOCAL(1),
 
-    /** 本地广播地址 */
+    /** Node内本地广播地址 */
     LOCAL_BROADCAST(2);
 
     private final int number;

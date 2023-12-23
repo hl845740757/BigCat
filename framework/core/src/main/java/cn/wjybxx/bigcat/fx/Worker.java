@@ -89,6 +89,7 @@ public interface Worker extends EventLoop {
     @Nonnull
     Node node();
 
+    // region 接口适配
     @Nullable
     @Override
     Node parent();
@@ -104,5 +105,6 @@ public interface Worker extends EventLoop {
     default Worker select(int key) {
         return this;
     }
+    // endregion
 
 }

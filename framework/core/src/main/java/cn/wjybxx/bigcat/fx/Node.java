@@ -75,22 +75,6 @@ public interface Node extends Worker {
     /** 服务id -> 存在对应服务的Worker -- 限本地使用 */
     Int2ObjectMap<ServiceInfo> serviceInfoMap();
 
-    /** 获取所有的服务计数 -- 用于暴露到网络 */
-    default Int2IntMap serviceCountMap() {
-        Int2ObjectMap<ServiceInfo> servicedInfoMap = serviceInfoMap();
-        Int2IntOpenHashMap result = new Int2IntOpenHashMap(servicedInfoMap.size());
-        servicedInfoMap.values().forEach(serviceInfo -> {
-            result.put(serviceInfo.serviceId, serviceInfo.workerList.size());
-        });
-        return result;
-    }
-
-    /** 获取指定服务的数量（并发数） */
-    default int serviceCount(int serviceId) {
-        ServiceInfo serviceInfo = serviceInfoMap().get(serviceId);
-        return serviceInfo == null ? 0 : serviceInfo.workerList.size();
-    }
-
     // region worker管理
 
     /** Node挂载的所有Worker */
@@ -108,17 +92,20 @@ public interface Node extends Worker {
 
     // endregion
 
+    // region 接口适配
+
+    /** Node总是返回自己 */
+    @Nonnull
+    @Override
+    default Node node() {
+        return this;
+    }
+
     /** Node没有Parent */
     @Nullable
     @Override
     default Node parent() {
         return null;
-    }
-
-    @Nonnull
-    @Override
-    default Node node() {
-        return this;
     }
 
     @Nonnull
@@ -132,4 +119,25 @@ public interface Node extends Worker {
     default Node select(int key) {
         return this;
     }
+    // endregion
+
+    // region util
+
+    /** 获取所有的服务计数 -- 用于暴露到网络 */
+    default Int2IntMap serviceCountMap() {
+        Int2ObjectMap<ServiceInfo> servicedInfoMap = serviceInfoMap();
+        Int2IntOpenHashMap result = new Int2IntOpenHashMap(servicedInfoMap.size());
+        servicedInfoMap.values().forEach(serviceInfo -> {
+            result.put(serviceInfo.serviceId, serviceInfo.workerList.size());
+        });
+        return result;
+    }
+
+    /** 获取指定服务的数量（并发数） */
+    default int serviceCount(int serviceId) {
+        ServiceInfo serviceInfo = serviceInfoMap().get(serviceId);
+        return serviceInfo == null ? 0 : serviceInfo.workerList.size();
+    }
+
+    // endregion
 }

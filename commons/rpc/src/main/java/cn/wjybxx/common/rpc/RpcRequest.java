@@ -51,7 +51,9 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
      * 方法参数
      * 1.正确设值的情况下不为null，为{@link byte[]}或{@link List}
      * 2.如果为bytes，表示已经序列化
-     * 3.如果为List，表示尚未序列化；支持无参和单参数为null的情况
+     * 3.如果为List，表示尚未序列化；支持无参和单参数为null的情况;
+     * 4.封装一层是必须的，参数和结果需要能独立序列化，而序列化要求必须是容器(Object或List)。
+     * 5.在基于Protobuf进行Rpc通信时，在写入最终协议时可展开。
      */
     @FieldImpl(writeProxy = "writeParameters", readProxy = "readParameters")
     private Object parameters;
@@ -65,7 +67,7 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
     }
 
     public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                      long requestId, int invokeType, RpcMethodSpec<?> methodSpec) {
+                      int invokeType, long requestId, RpcMethodSpec<?> methodSpec) {
         super(conId, srcAddr, destAddr);
         this.requestId = requestId;
         this.invokeType = invokeType;
@@ -88,6 +90,13 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
     public List<Object> listParameters() {
         assert parameters != null;
         return (List<Object>) parameters;
+    }
+
+    /** 获取方法参数 */
+    @SuppressWarnings("unchecked")
+    public Object getArgument() {
+        List<Object> parameters = (List<Object>) this.parameters;
+        return parameters.isEmpty() ? null : parameters.get(0);
     }
 
     // endregion
@@ -193,7 +202,8 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
 
     public void writeParameters(BinaryObjectWriter writer, int name) {
         if (parameters == null) {
-            throw new IllegalStateException("parameters is null");
+            writer.writeNull(name);
+            return;
         }
         if (parameters instanceof byte[] bytes) {
             writer.writeValueBytes(name, DsonType.ARRAY, bytes);
@@ -208,15 +218,28 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
     }
 
     public void readParameters(BinaryObjectReader reader, int name) {
-        List<Object> parameters = new ArrayList<>(1);
-        reader.readStartArray(name, TypeArgInfo.ARRAYLIST);
-        while (reader.readDsonType() != DsonType.END_OF_OBJECT) {
-            parameters.add(reader.readObject(0));
+        if (!reader.readName(name)) {
+            return;
+        }
+        if (reader.getCurrentDsonType() == DsonType.NULL) {
+            reader.readNull(name);
+            return;
+        }
+        List<Object> parameters = new ArrayList<>(2);
+        reader.readStartArray(TypeArgInfo.ARRAYLIST);
+        DsonType dsonType;
+        while ((dsonType = reader.readDsonType()) != DsonType.END_OF_OBJECT) {
+            if (dsonType == DsonType.HEADER) { // 用户可能写入了List的类型
+                reader.skipValue();
+            } else {
+                parameters.add(reader.readObject(0));
+            }
         }
         reader.readEndArray();
         this.parameters = parameters;
     }
 
+    /** 避免写入类型 */
     static TypeArgInfo<?> getListTypeArgInfo(List<Object> list) {
         return list.getClass() == ArrayList.class ? TypeArgInfo.ARRAYLIST : TypeArgInfo.of(list.getClass());
     }

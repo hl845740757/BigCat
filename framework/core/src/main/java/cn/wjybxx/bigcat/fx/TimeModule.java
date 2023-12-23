@@ -47,7 +47,7 @@ public class TimeModule implements TimeProvider {
         this.time = timeMillis;
     }
 
-    /** 通常有主模块在主循环中更新 */
+    /** 通常由主模块在主循环中更新 */
     public void update(long timeMillis) {
         frame += 1;
         this.deltaTime = Math.max(0, timeMillis - this.time);

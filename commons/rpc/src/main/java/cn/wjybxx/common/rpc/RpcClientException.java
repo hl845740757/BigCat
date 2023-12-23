@@ -55,7 +55,7 @@ public class RpcClientException extends RpcException {
     /** 异步调用的情况下，超时堆栈毫无益处，因此可共享该对象 */
     private static final RpcClientException TIMEOUT = new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "timeout", null, false, false);
 
-    public static RpcClientException routeFailed(RpcAddr target) {
+    public static RpcClientException sendFailed(RpcAddr target) {
         return new RpcClientException(RpcErrorCodes.LOCAL_ROUTER_EXCEPTION, target + " unreachable", null, true, true);
     }
 

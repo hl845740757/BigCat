@@ -186,7 +186,7 @@ public class RpcTest1 {
 
             SimpleAddr role = SimpleAddr.SERVER;
             rpcClient = new DefaultRpcClient(role.id, role,
-                    new TestRpcSender(), new DefaultRpcRegistry(),
+                    new TestRpcRouter(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
 //            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
@@ -232,7 +232,7 @@ public class RpcTest1 {
 
             SimpleAddr role = SimpleAddr.CLIENT;
             rpcClient = new DefaultRpcClient(role.id, role,
-                    new TestRpcSender(), new DefaultRpcRegistry(),
+                    new TestRpcRouter(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
 //            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
@@ -276,23 +276,23 @@ public class RpcTest1 {
     }
 
     // 模拟路由
-    private class TestRpcSender implements RpcSender {
+    private class TestRpcRouter implements RpcRouter {
 
-        private TestRpcSender() {
+        private TestRpcRouter() {
         }
 
         @Override
-        public boolean send(RpcProtocol proto) {
-            SimpleAddr targetRole = (SimpleAddr) proto.getDestAddr();
+        public boolean send(RpcProtocol protocol) {
+            SimpleAddr targetRole = (SimpleAddr) protocol.getDestAddr();
             switch (targetRole) {
                 case CLIENT -> {
-                    if (proto instanceof RpcResponse response) {
+                    if (protocol instanceof RpcResponse response) {
                         return clientWorker.checkWatcher(response) || clientQueue.offer(response);
                     }
-                    return clientQueue.offer(proto);
+                    return clientQueue.offer(protocol);
                 }
                 case SERVER -> {
-                    return serverQueue.offer(proto);
+                    return serverQueue.offer(protocol);
                 }
             }
             return false;

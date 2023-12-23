@@ -16,6 +16,8 @@
 
 package cn.wjybxx.common.rpc;
 
+import java.util.List;
+
 /**
  * rpc执行时的上下文接口。
  * 1. 该接口提供了返回结果的方法。
@@ -38,8 +40,11 @@ public interface RpcContext<V> extends RpcGenericContext {
     /**
      * 发送已编码的正确结果，避免中途解码
      * 1.基于protobuf通信时，即为protobuf消息的序列化结果
-     * 2.非pb通信时，原始结果不可以是bytes，否则无法还原
-     * 3.如果需避免拷贝，发送之前还需调用{@link #setSharable(boolean)}
+     * 2.非pb通信时，应当使用{@link List}封装一层，再使用{@link RpcSerializer}序列化，否则无法还原
+     * 3.由于类型的不同，需要独立指定是否可共享
+     *
+     * @param result   编码后的结果，不可为null
+     * @param sharable 是否允许共享
      */
-    void sendEncodedResult(byte[] result);
+    void sendEncodedResult(byte[] result, boolean sharable);
 }

@@ -16,6 +16,8 @@
 package cn.wjybxx.common.rpc;
 
 
+import cn.wjybxx.common.Bits;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -35,12 +37,8 @@ public final class RpcMethodSpec<V> {
     private transient int methodId;
     private List<Object> parameters;
 
-    /**
-     * 方法参数是否可共享
-     * 1.进程内调用特征值
-     * 2.再增加特性时可修该为int（mask）
-     */
-    private transient boolean sharable;
+    /** 临时控制标记 */
+    private transient int ctl;
 
     public RpcMethodSpec(int serviceId, int methodId, List<Object> parameters) {
         this(serviceId, methodId, parameters, false);
@@ -50,8 +48,22 @@ public final class RpcMethodSpec<V> {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.parameters = Objects.requireNonNull(parameters);
-        this.sharable = sharable;
+        if (sharable) {
+            ctl |= RpcProtocol.MASK_SHARABLE;
+        }
     }
+
+    /** 方法参数是否可共享 */
+    public boolean isSharable() {
+        return (ctl & RpcProtocol.MASK_SHARABLE) != 0;
+    }
+
+    public RpcMethodSpec<V> setSharable(boolean value) {
+        ctl = Bits.set(ctl, RpcProtocol.MASK_SHARABLE, value);
+        return this;
+    }
+
+    // region getter
 
     public int getServiceId() {
         return serviceId;
@@ -76,15 +88,7 @@ public final class RpcMethodSpec<V> {
     public void setParameters(List<Object> parameters) {
         this.parameters = parameters;
     }
-
-    public boolean isSharable() {
-        return sharable;
-    }
-
-    public RpcMethodSpec<V> setSharable(boolean sharable) {
-        this.sharable = sharable;
-        return this;
-    }
+    // endregion
 
     // region 简化生成代码
 
