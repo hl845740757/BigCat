@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.rpc.RpcAddr;
-import cn.wjybxx.common.rpc.RpcSerializer;
+import cn.wjybxx.bigcat.rpc.RpcAddr;
+import cn.wjybxx.bigcat.rpc.RpcSerializer;
 
 import java.util.Objects;
 

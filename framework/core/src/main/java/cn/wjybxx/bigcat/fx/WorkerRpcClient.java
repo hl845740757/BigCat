@@ -16,10 +16,10 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.bigcat.rpc.RpcAddr;
+import cn.wjybxx.bigcat.rpc.RpcClient;
+import cn.wjybxx.bigcat.rpc.RpcMethodSpec;
 import cn.wjybxx.common.concurrent.ICompletableFuture;
-import cn.wjybxx.common.rpc.RpcAddr;
-import cn.wjybxx.common.rpc.RpcClient;
-import cn.wjybxx.common.rpc.RpcMethodSpec;
 
 import java.util.Objects;
 

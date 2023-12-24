@@ -61,6 +61,7 @@
         <junit.version>5.9.2</junit.version>
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
+        <pb.version>3.25.1</pb.version>
 
         <commons.version>1.0.rc1</commons.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
@@ -107,8 +108,13 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${pb.version}</version>
+        </dependency>
 
-        <!-- commons和apt -->
+        <!-- commons -->
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
@@ -133,11 +139,6 @@
         <dependency>
             <groupId>cn.wjybxx.bigcat</groupId>
             <artifactId>bigcat-apt</artifactId>
-            <version>${apt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>commons-apt</artifactId>
             <version>${apt.version}</version>
         </dependency>
 

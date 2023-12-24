@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import cn.wjybxx.common.concurrent.*;
-import cn.wjybxx.common.rpc.RpcRegistry;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.*;
 

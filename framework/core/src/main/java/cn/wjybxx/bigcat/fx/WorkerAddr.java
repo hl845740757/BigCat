@@ -16,9 +16,9 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.bigcat.rpc.RpcAddr;
 import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
 import cn.wjybxx.dson.codec.binary.BinarySerializable;
-import cn.wjybxx.common.rpc.RpcAddr;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;

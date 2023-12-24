@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.pb;
 
+import cn.wjybxx.dson.DsonBinary;
 import cn.wjybxx.dson.codec.PojoCodecImpl;
 import cn.wjybxx.dson.codec.TypeArgInfo;
 import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
@@ -24,7 +25,6 @@ import cn.wjybxx.dson.codec.binary.BinaryPojoCodecScanIgnore;
 import cn.wjybxx.dson.codec.document.DocumentObjectReader;
 import cn.wjybxx.dson.codec.document.DocumentObjectWriter;
 import cn.wjybxx.dson.codec.document.DocumentPojoCodecScanIgnore;
-import cn.wjybxx.dson.DsonBinary;
 import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;

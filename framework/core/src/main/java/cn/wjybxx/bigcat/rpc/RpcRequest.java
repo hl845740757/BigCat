@@ -17,13 +17,13 @@
 package cn.wjybxx.bigcat.rpc;
 
 
+import cn.wjybxx.common.log.DebugLogFriendlyObject;
+import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.codec.FieldImpl;
 import cn.wjybxx.dson.codec.TypeArgInfo;
 import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
 import cn.wjybxx.dson.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.dson.codec.binary.BinarySerializable;
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
-import cn.wjybxx.dson.DsonType;
 import org.apache.commons.codec.binary.Hex;
 
 import javax.annotation.Nonnull;

@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.rpc.*;
+import cn.wjybxx.bigcat.rpc.*;
 
 /**
  * Node线程发送Rpc协议的实现

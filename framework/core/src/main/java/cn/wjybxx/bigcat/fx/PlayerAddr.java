@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.rpc.RpcAddr;
+import cn.wjybxx.bigcat.rpc.RpcAddr;
 
 /**
  * 玩家通信地址

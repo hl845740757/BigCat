@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.rpc.RpcMethod;
-import cn.wjybxx.common.rpc.RpcService;
+import cn.wjybxx.bigcat.rpc.RpcMethod;
+import cn.wjybxx.bigcat.rpc.RpcService;
 
 import java.util.List;
 import java.util.StringJoiner;

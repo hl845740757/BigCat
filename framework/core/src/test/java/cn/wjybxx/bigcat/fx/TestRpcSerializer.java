@@ -16,13 +16,13 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.bigcat.rpc.RpcSerializer;
 import cn.wjybxx.common.ClassScanner;
 import cn.wjybxx.dson.codec.*;
 import cn.wjybxx.dson.codec.binary.BinaryConverter;
 import cn.wjybxx.dson.codec.binary.BinaryPojoCodecImpl;
 import cn.wjybxx.dson.codec.binary.BinaryPojoCodecScanIgnore;
 import cn.wjybxx.dson.codec.binary.DefaultBinaryConverter;
-import cn.wjybxx.common.rpc.RpcSerializer;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
