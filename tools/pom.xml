@@ -163,27 +163,12 @@
             </distributionManagement>
             <build>
                 <plugins>
-                    <!-- 源码插件 -->
-                    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-source-plugin -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <!-- 文档插件 -->
                     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>3.5.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -204,7 +189,7 @@
                         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <!-- id与mvn setting.xml的 gpg 配置中的 id 对应-->
@@ -216,12 +201,11 @@
                             </execution>
                         </executions>
                     </plugin>
-
                     <!-- maven部署相关插件 -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
-                        <version>3.0.0</version>
+                        <version>3.1.0</version>
                     </plugin>
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>

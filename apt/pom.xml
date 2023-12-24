@@ -45,6 +45,7 @@
         <revision>1.0-SNAPSHOT</revision>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
         <!-- mvn命令默认gbk编码导致中文注释异常，需要通过这里设置 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
@@ -154,7 +155,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>3.5.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -164,10 +165,7 @@
                                 </goals>
                                 <!-- 注释不是特别规范，避免打包中断 -->
                                 <configuration>
-                                    <!-- <additionalJOption>-Xdoclint:none</additionalJOption> -->
                                     <doclint>none</doclint>
-                                    <charset>UTF-8</charset>
-                                    <locale>zh_CN</locale>
                                 </configuration>
                             </execution>
                         </executions>
@@ -213,4 +211,5 @@
             </build>
         </profile>
     </profiles>
+
 </project>

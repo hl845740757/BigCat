@@ -5,19 +5,19 @@ BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大
 
 ### 项目划分
 
-项目在最高层分为3个子项目，分别为：support、framework、tools。
+项目在最高层分为3个子项目，分别为：apt、framework、tools。
 
-1. support是必须先安装为jar包的工具包，主要是注解处理器 -- support不能和其它项目同时打开编译，会产生错误。
+1. apt是注解处理器，必须先安装到本地 -- apt不能和其它项目同时打开编译，会产生错误。
 2. framework框架包，是游戏相关的部分。
 3. tools是辅助工具包，是开发期间使用的，比如：导表工具、协议预处理工具等。**其它项目都不直接依赖tools，只依赖它产生的文件。**
 
 ### 如何编译该项目
 
 1. 该项目的3个子项目需要分别独立编译。
-2. 进入support项目，clean install 安装apt到本地maven仓库，卸载support项目，不可与其它项目一开编译。
+2. 进入apt项目，clean install 安装apt到本地maven仓库，卸载apt项目，不可与其它项目一开编译。
 3. 进入framework或tools项目，可正常开始编译。
 
-PS：我现在是在根目录下打开项目，编写apt时将support项目加载进来，安装apt以后卸载support项目(unlink)。
+PS：我现在是在根目录下打开项目，编写apt时将apt项目加载进来，安装apt以后卸载apt项目(unlink)。
 
 Q：编译报生成的XXX文件不存在？  
 A：请先确保support项目安装成功，如果已安装成功，请仔细检查编译输出的错误信息，通常是忘记getter等方法，修改错误后先clean，然后再编译。
