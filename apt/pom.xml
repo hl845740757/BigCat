@@ -9,7 +9,7 @@
     <version>${revision}</version>
 
     <name>Apt</name>
-    <description>BigCat适用到的注解处理器</description>
+    <description>BigCat使用的注解处理器</description>
     <url>https://github.com/hl845740757/BigCat</url>
 
     <!-- 证书 -->

@@ -20,7 +20,6 @@ import cn.wjybxx.base.CollectionUtils;
 import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import com.google.inject.Injector;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -92,7 +91,7 @@ public class FxUtils {
             Method method = exporter.getDeclaredMethod("export", RpcRegistry.class, serviceInterface); // 生成的静态export方法
             method.invoke(null, registry, serviceInterface);
         } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
+            throw new RuntimeException("service:" + serviceInterface.getSimpleName(), e);
         }
     }
 }

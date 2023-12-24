@@ -61,10 +61,13 @@
         <junit.version>5.9.2</junit.version>
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
         <pb.version>3.25.1</pb.version>
 
         <base.version>1.0.rc1</base.version>
         <commons.version>1.0.rc1</commons.version>
+        <btree.version>1.0.rc1</btree.version>
+        <dson.version>1.2.rc4</dson.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
         <!-- netty真的更新太快 -->
@@ -102,11 +105,6 @@
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>config</artifactId>
-            <version>${commons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
             <artifactId>core</artifactId>
             <version>${commons.version}</version>
         </dependency>
@@ -121,6 +119,22 @@
             <version>${apt.version}</version>
         </dependency>
 
+        <!-- 序列化 -->
+        <dependency>
+            <groupId>cn.wjybxx.dson</groupId>
+            <artifactId>dson-core</artifactId>
+            <version>${dson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.dson</groupId>
+            <artifactId>dson-codec</artifactId>
+            <version>${dson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.dson</groupId>
+            <artifactId>dson-apt</artifactId>
+            <version>${dson.version}</version>
+        </dependency>
         <!-- 依赖注入 -->
         <dependency>
             <groupId>com.google.inject</groupId>

@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
 
 /**
  * message会写为具有一个{@link DsonBinary}字段的Object
+ * (也可写为具有一个元素的数组，可以不写name)
  *
  * @author wjybxx
  * date 2023/4/2

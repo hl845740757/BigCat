@@ -11,4 +11,28 @@
 
     <artifactId>core</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>cn.wjybxx.bigcat</groupId>
+            <artifactId>config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.bigcat</groupId>
+            <artifactId>rpc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- 行为树 -->
+        <dependency>
+            <groupId>cn.wjybxx.btree</groupId>
+            <artifactId>btree-core</artifactId>
+            <version>${btree.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.btree</groupId>
+            <artifactId>btree-codec</artifactId>
+            <version>${btree.version}</version>
+        </dependency>
+
+    </dependencies>
 </project>
