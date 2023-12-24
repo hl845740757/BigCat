@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.reload;
 
-import cn.wjybxx.common.AbstractConstant;
-import cn.wjybxx.common.Constant;
+import cn.wjybxx.base.AbstractConstant;
+import cn.wjybxx.base.Constant;
 import org.apache.commons.io.FilenameUtils;
 
 /**

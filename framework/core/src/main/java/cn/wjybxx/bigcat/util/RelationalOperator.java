@@ -17,11 +17,11 @@
 package cn.wjybxx.bigcat.util;
 
 
-import cn.wjybxx.common.EnumLite;
-import cn.wjybxx.common.EnumLiteMap;
-import cn.wjybxx.common.EnumUtils;
-import cn.wjybxx.common.MathCommon;
-import cn.wjybxx.common.codec.binary.BinarySerializable;
+import cn.wjybxx.base.EnumLite;
+import cn.wjybxx.base.EnumLiteMap;
+import cn.wjybxx.base.EnumUtils;
+import cn.wjybxx.base.MathCommon;
+import cn.wjybxx.dson.codec.binary.BinarySerializable;
 
 import javax.annotation.Nullable;
 

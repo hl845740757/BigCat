@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.annotation.VisibleForTesting;
-import cn.wjybxx.common.time.TimeProvider;
+import cn.wjybxx.base.annotation.VisibleForTesting;
+import cn.wjybxx.base.time.TimeProvider;
 
 import javax.annotation.concurrent.NotThreadSafe;
 

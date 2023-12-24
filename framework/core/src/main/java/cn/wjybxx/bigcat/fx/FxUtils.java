@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.CollectionUtils;
+import cn.wjybxx.base.CollectionUtils;
 import cn.wjybxx.common.rpc.RpcRegistry;
 import com.google.inject.Injector;
 import org.apache.commons.lang3.ArrayUtils;

@@ -15,6 +15,7 @@
 
     <modules>
         <module>core</module>
+        <module>tools</module>
     </modules>
 
     <!-- 证书 -->
@@ -61,10 +62,8 @@
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
 
-        <annotations.version>1.0-SNAPSHOT</annotations.version>
-        <commons.version>1.0-SNAPSHOT</commons.version>
+        <commons.version>1.0.rc1</commons.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
-        <dson.version>1.0.4</dson.version>
 
         <!-- netty真的更新太快 -->
         <netty.version>4.1.101.Final</netty.version>
@@ -112,6 +111,16 @@
         <!-- commons和apt -->
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>base</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>config</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
             <artifactId>core</artifactId>
             <version>${commons.version}</version>
         </dependency>
@@ -120,14 +129,15 @@
             <artifactId>concurrent</artifactId>
             <version>${commons.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>rpc</artifactId>
-            <version>${commons.version}</version>
+            <groupId>cn.wjybxx.bigcat</groupId>
+            <artifactId>bigcat-apt</artifactId>
+            <version>${apt.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>apt-common</artifactId>
+            <artifactId>commons-apt</artifactId>
             <version>${apt.version}</version>
         </dependency>
 
@@ -142,7 +152,6 @@
             <artifactId>netty-handler</artifactId>
             <version>${netty.version}</version>
         </dependency>
-
     </dependencies>
 
     <build>

@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.reload;
 
-import cn.wjybxx.common.ConstantPool;
+import cn.wjybxx.base.ConstantPool;
 
 /**
  * 一个辅助类

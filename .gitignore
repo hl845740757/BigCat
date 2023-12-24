@@ -48,3 +48,4 @@ temp-*
 ~$*
 /commons/testres/temp/
 /commons/tools/src/test/java/cn/wjybxx/common/temp/
+/framework/tools/src/test/java/cn/wjybxx/bigcat/tools/temp

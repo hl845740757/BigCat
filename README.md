@@ -5,19 +5,17 @@ BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大
 
 ### 项目划分
 
-项目在最高层将分为4个子项目，分别为：support、commons、tools、framework
+项目在最高层分为3个子项目，分别为：support、framework、tools。
 
 1. support是必须先安装为jar包的工具包，主要是注解处理器 -- support不能和其它项目同时打开编译，会产生错误。
-2. commons是基础工具包，是运行时需要的包；Commons也分多个模块，可选择性依赖。
+2. framework框架包，是游戏相关的部分。
 3. tools是辅助工具包，是开发期间使用的，比如：导表工具、协议预处理工具等。**其它项目都不直接依赖tools，只依赖它产生的文件。**
-4. framework框架包，是游戏相关的部分。
 
 ### 如何编译该项目
 
-1. 该项目的4个子项目需要分别独立编译。
+1. 该项目的3个子项目需要分别独立编译。
 2. 进入support项目，clean install 安装apt到本地maven仓库，卸载support项目，不可与其它项目一开编译。
-3. 进入commons项目，可正常开始编译 -- 如果之前出错导致无法编译，请先clean清理缓存。
-4. 进入framework或tools项目，可正常开始编译。
+3. 进入framework或tools项目，可正常开始编译。
 
 PS：我现在是在根目录下打开项目，编写apt时将support项目加载进来，安装apt以后卸载support项目(unlink)。
 

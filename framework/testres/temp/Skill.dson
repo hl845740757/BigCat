@@ -1,0 +1,28 @@
+{fileName: test.xlsx,
+  sheetName: Skill,
+  sheetIndex: 0,
+  headerMap: [
+    {args: cs, name: skillId, type: int32, comment: 技能id, rowIndex: 12, colIndex: 0},
+    {args: cs, name: actionId, type: int32, comment: 动作id, rowIndex: 12, colIndex: 1},
+    {args: c, name: shockScreen, type: bool, comment: 是否震屏, rowIndex: 12, colIndex: 2},
+    {args: c, name: animationId, type: string, comment: 动画id, rowIndex: 12, colIndex: 3}
+  ],
+  valueRowList: [
+    {rowIndex: 14,
+      cellMap: {
+        skillId: "10001",
+        actionId: "20001",
+        shockScreen: "0",
+        animationId: "ani_30001"
+      }
+    },
+    {rowIndex: 15,
+      cellMap: {
+        skillId: "10002",
+        actionId: "20002",
+        shockScreen: "1",
+        animationId: "ani_30002"
+      }
+    }
+  ]
+}

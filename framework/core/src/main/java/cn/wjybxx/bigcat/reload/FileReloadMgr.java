@@ -16,12 +16,11 @@
 
 package cn.wjybxx.bigcat.reload;
 
-import cn.wjybxx.common.CollectionUtils;
-import cn.wjybxx.common.Constant;
-import cn.wjybxx.common.Preconditions;
+import cn.wjybxx.base.CollectionUtils;
+import cn.wjybxx.base.Constant;
+import cn.wjybxx.base.Preconditions;
+import cn.wjybxx.base.time.StopWatch;
 import cn.wjybxx.common.concurrent.FutureUtils;
-import cn.wjybxx.common.ex.BadImplementationException;
-import cn.wjybxx.common.time.StepWatch;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -195,15 +194,15 @@ public class FileReloadMgr {
      */
     public void loadAll(long timeoutFindChangedFiles, long timeoutReadFiles) {
         logger.info("loadAll started");
-        final StepWatch stepWatch = StepWatch.createStarted("FileReloadMgr:loadAll");
+        final StopWatch stopWatch = StopWatch.createStarted("FileReloadMgr:loadAll");
         try {
             reloadImpl(metadataMap.keySet(), true,
                     timeoutFindChangedFiles, timeoutReadFiles, false,
-                    stepWatch);
+                    stopWatch);
 
-            logger.info("loadAll completed, fileCount {}, stepInfo {}", metadataMap.size(), stepWatch);
+            logger.info("loadAll completed, fileCount {}, stepInfo {}", metadataMap.size(), stopWatch);
         } catch (Exception e) {
-            logger.info("loadAll failure, fileCount {}, stepInfo {}", metadataMap.size(), stepWatch);
+            logger.info("loadAll failure, fileCount {}, stepInfo {}", metadataMap.size(), stopWatch);
             throw ReloadException.wrap(FutureUtils.unwrapCompletionException(e));
         }
     }
@@ -233,35 +232,35 @@ public class FileReloadMgr {
 
     private void reloadScopeImpl(Set<FilePath<?>> scope, long timeoutFindChangedFiles, long timeoutReadFiles) {
         logger.info("reloadScope started");
-        final StepWatch stepWatch = StepWatch.createStarted("FileReloadMgr:reloadScope");
+        final StopWatch stopWatch = StopWatch.createStarted("FileReloadMgr:reloadScope");
         try {
             reloadImpl(scope, false,
                     timeoutFindChangedFiles, timeoutReadFiles, true,
-                    stepWatch);
+                    stopWatch);
 
-            logger.info("reloadScope completed, fileNum {}, stepInfo {}", metadataMap.size(), stepWatch);
+            logger.info("reloadScope completed, fileNum {}, stepInfo {}", metadataMap.size(), stopWatch);
         } catch (Exception e) {
-            logger.info("reloadScope failure, fileNum {}, stepInfo {}", metadataMap.size(), stepWatch);
+            logger.info("reloadScope failure, fileNum {}, stepInfo {}", metadataMap.size(), stopWatch);
             throw new ReloadException(FutureUtils.unwrapCompletionException(e));
         }
     }
 
     private void reloadImpl(Set<FilePath<?>> scope, boolean reStatistics,
                             long timeoutFindChangedFiles, long timeoutReadFiles,
-                            boolean notifyListener, StepWatch stepWatch) throws Exception {
+                            boolean notifyListener, StopWatch stopWatch) throws Exception {
         // 读取文件的频率并不高，因此每次读取时更新依赖
         rebuildReaderDependents();
-        stepWatch.logStep("rebuildReaderDependents");
+        stopWatch.logStep("rebuildReaderDependents");
 
         FileReloadHelper helper = new FileReloadHelper(this, scope, reStatistics,
                 timeoutFindChangedFiles, timeoutReadFiles);
         // 统计文件状态
         helper.statisticFileStats();
-        stepWatch.logStep("statisticFileStats");
+        stopWatch.logStep("statisticFileStats");
 
         // 读取所有受影响的文件
         Set<FilePath<?>> affectedFiles = helper.readAffectedFiles();
-        stepWatch.logStep("readAffectedFiles");
+        stopWatch.logStep("readAffectedFiles");
 
         // 初始化沙箱环境的FileDataMgr
         FileDataContainer sandBoxDataContainer = helper.getSandboxDataContainer();
@@ -271,7 +270,7 @@ public class FileReloadMgr {
             link(sandboxDateMgr);
             // 验证数据合法性
             validate(sandboxDateMgr);
-            stepWatch.logStep("validate");
+            stopWatch.logStep("validate");
         } catch (Throwable e) {
             // 错误恢复，由于linker会导致外部data链接到沙箱数据，我们通过再次执行link来纠正错误
             // 构建完全的沙盒开销极大，因此我们选择纠正错误的方式实现原子性
@@ -290,7 +289,7 @@ public class FileReloadMgr {
         // 执行回调逻辑（这里可能产生异常）
         if (notifyListener) {
             notifyListeners(Collections.unmodifiableSet(affectedFiles));
-            stepWatch.logStep("notifyListeners");
+            stopWatch.logStep("notifyListeners");
         }
 
         // 最后更新文件状态(这可以使得在前面发生异常后可以重试)
@@ -366,15 +365,15 @@ public class FileReloadMgr {
     private FileDataMgr createSandboxDateMgr() {
         final FileDataMgr sandboxFileDataMgr = fileDataMgr.newInstance();
         if (sandboxFileDataMgr == null) {
-            throw new BadImplementationException("fileDataMgr.newInstance return null, class: " + fileDataMgr.getClass().getName());
+            throw new IllegalStateException("fileDataMgr.newInstance return null, class: " + fileDataMgr.getClass().getName());
         }
         if (sandboxFileDataMgr == fileDataMgr) {
-            throw new BadImplementationException("fileDataMgr.newInstance return self, class: " + fileDataMgr.getClass().getName());
+            throw new IllegalStateException("fileDataMgr.newInstance return self, class: " + fileDataMgr.getClass().getName());
         }
         if (sandboxFileDataMgr.getClass() != fileDataMgr.getClass()) {
             final String msg = String.format("fileDataMgr.newInstance return bad type, protoType: %s, cloned: %s", fileDataMgr.getClass().getName(),
                     sandboxFileDataMgr.getClass().getName());
-            throw new BadImplementationException(msg);
+            throw new IllegalStateException(msg);
         }
         return sandboxFileDataMgr;
     }

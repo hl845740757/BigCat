@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.Preconditions;
+import cn.wjybxx.base.Preconditions;
 import cn.wjybxx.common.concurrent.DefaultThreadFactory;
 import cn.wjybxx.common.concurrent.EventLoopBuilder;
 import cn.wjybxx.common.concurrent.RejectedExecutionHandler;
@@ -26,7 +26,7 @@ import cn.wjybxx.common.rpc.RpcClient;
 import cn.wjybxx.common.rpc.RpcRegistry;
 import cn.wjybxx.common.rpc.RpcRouter;
 import cn.wjybxx.common.rpc.RpcSerializer;
-import cn.wjybxx.common.time.TimeProvider;
+import cn.wjybxx.base.time.TimeProvider;
 import com.google.inject.Injector;
 import com.lmax.disruptor.WaitStrategy;
 
