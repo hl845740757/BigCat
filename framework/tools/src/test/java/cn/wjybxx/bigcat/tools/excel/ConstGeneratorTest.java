@@ -17,10 +17,10 @@
 package cn.wjybxx.bigcat.tools.excel;
 
 import cn.wjybxx.bigcat.tools.TestUtil;
-import cn.wjybxx.bigcat.tools.excel.ConstantGenerator;
-import cn.wjybxx.bigcat.tools.excel.EnumGenerator;
-import cn.wjybxx.bigcat.tools.excel.SheetEnumValue;
-import cn.wjybxx.common.tools.util.Utils;
+import cn.wjybxx.bigcat.tools.excel.gen.ConstantGenerator;
+import cn.wjybxx.bigcat.tools.excel.gen.EnumGenerator;
+import cn.wjybxx.bigcat.tools.excel.gen.SheetEnumValue;
+import cn.wjybxx.bigcat.tools.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

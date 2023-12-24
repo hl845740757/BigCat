@@ -14,7 +14,11 @@
     <url>https://github.com/hl845740757/BigCat</url>
 
     <modules>
+        <module>config</module>
+        <module>rpc</module>
         <module>core</module>
+
+        <!-- tools为开发期工具，应避免运行时使用 -->
         <module>tools</module>
     </modules>
 

@@ -19,15 +19,21 @@
 
     <dependencies>
         <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>tools</artifactId>
-            <version>${commons.version}</version>
-        </dependency>
-        <dependency>
             <groupId>cn.wjybxx.bigcat</groupId>
             <artifactId>core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.bigcat</groupId>
+            <artifactId>config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.bigcat</groupId>
+            <artifactId>rpc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
 
         <!-- excel -->
         <!-- excel支持，需要覆盖依赖的有缺陷的版本 -->
