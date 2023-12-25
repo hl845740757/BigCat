@@ -5,16 +5,20 @@ BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大
 
 ### 项目划分
 
-项目在最高层分为3个子项目，分别为：apt、framework、tools。
+项目在最高层分为2个子项目，分别为：tools、framework。
 
-1. apt是注解处理器，必须先安装到本地 -- apt不能和其它项目同时打开编译，会产生错误。
+1. tools是辅助工具包，是开发期间使用的，比如：注解处理器、导表工具、协议预处理工具等
 2. framework框架包，是游戏相关的部分。
-3. tools是辅助工具包，是开发期间使用的，比如：导表工具、协议预处理工具等。**其它项目都不直接依赖tools，只依赖它产生的文件。**
+
+注意：
+
+1. 高层的maven项目有三个，分别是 apt、tools、framework -- apt不能和其它项目一起编译，需要作为顶层项目独立编译安装。
+2. **其它项目都不直接依赖tools，只依赖它产生的文件**。tools项目下的工具也不直接依赖framework下的类文件，生成代码更多依赖类路径和类名。
 
 ### 如何编译该项目
 
-1. 该项目的3个子项目需要分别独立编译。
-2. 进入apt项目，clean install 安装apt到本地maven仓库，卸载apt项目，不可与其它项目一开编译。
+1. 该项目的2个子项目需要分别独立编译。
+2. 进入tools目录下的apt项目，clean install 安装apt到本地maven仓库，卸载apt项目，不可与其它项目一开编译。
 3. 进入framework或tools项目，可正常开始编译。
 
 PS：我现在是在根目录下打开项目，编写apt时将apt项目加载进来，安装apt以后卸载apt项目(unlink)。
@@ -41,7 +45,10 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/Dson)
 5. 配置抽象（Sheet） + 表格处理工具
 6. 文件热更新管理 [文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/FileReload.md)
-7. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
+7.
+
+通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
+
 8. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
 9. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BigCat/blob/dev/doc/TaskTree.md)
 
