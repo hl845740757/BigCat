@@ -14,14 +14,29 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.config;
+package cn.wjybxx.bigcat.tools.config;
 
 /**
  * @author wjybxx
  * date 2023/4/15
  */
-public interface CellProvider {
+public class ValueRowReader extends CellProviderReader {
 
-    SheetCell getCell(String name);
+    public ValueRowReader(SheetRow row, ValueParser parser) {
+        super(row, parser);
+    }
+
+    @Override
+    public SheetRow getProvider() {
+        return (SheetRow) super.getProvider();
+    }
+
+    public int getRowIndex() {
+        return getProvider().getRowIndex();
+    }
+
+    public int getLineNumber() {
+        return getProvider().getLineNumber();
+    }
 
 }

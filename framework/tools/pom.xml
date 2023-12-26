@@ -17,25 +17,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!-- 工具模块可作为独立项目 -->
     <dependencies>
-        <dependency>
-            <groupId>cn.wjybxx.bigcat</groupId>
-            <artifactId>core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.bigcat</groupId>
-            <artifactId>config</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.bigcat</groupId>
-            <artifactId>rpc</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-
-        <!-- excel -->
         <!-- excel支持，需要覆盖依赖的有缺陷的版本 -->
         <dependency>
             <groupId>org.apache.commons</groupId>

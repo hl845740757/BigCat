@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.config;
+package cn.wjybxx.bigcat.tools.config;
 
 
 import cn.wjybxx.dson.DsonType;

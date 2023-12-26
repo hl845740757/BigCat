@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.tools.excel;
 
-import cn.wjybxx.bigcat.config.Sheet;
-import cn.wjybxx.bigcat.config.SheetCodec;
+import cn.wjybxx.bigcat.tools.config.Sheet;
+import cn.wjybxx.bigcat.tools.config.SheetCodec;
 import cn.wjybxx.bigcat.tools.TestUtil;
 import cn.wjybxx.bigcat.tools.Utils;
 import cn.wjybxx.dson.codec.ConvertOptions;

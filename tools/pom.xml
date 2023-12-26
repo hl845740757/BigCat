@@ -14,6 +14,7 @@
     <url>https://github.com/hl845740757/BigCat</url>
 
     <modules>
+        <module>config</module>
     </modules>
 
     <!-- 证书 -->
@@ -54,10 +55,19 @@
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
         <!-- 依赖版本 -->
-        <slf4j.version>2.0.7</slf4j.version>
-        <logback.version>1.4.6</logback.version>
+        <slf4j.version>2.0.9</slf4j.version>
+        <logback.version>1.4.14</logback.version>
         <junit.version>5.9.2</junit.version>
         <guice.version>7.0.0</guice.version>
+
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <guice.version>7.0.0</guice.version>
+        <guava.version>33.0.0-jre</guava.version>
+        <pb.version>3.25.1</pb.version>
+
+        <base.version>1.0.rc1</base.version>
+        <commons.version>1.0.rc1</commons.version>
+        <dson.version>1.2.rc4</dson.version>
     </properties>
 
     <dependencies>
@@ -80,10 +90,52 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- commons -->
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>base</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>core</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+        <!-- 序列化 -->
+        <dependency>
+            <groupId>cn.wjybxx.dson</groupId>
+            <artifactId>dson-core</artifactId>
+            <version>${dson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.dson</groupId>
+            <artifactId>dson-codec</artifactId>
+            <version>${dson.version}</version>
+        </dependency>
+        <!-- 依赖注入 -->
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <version>${guice.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- protobuf -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${pb.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

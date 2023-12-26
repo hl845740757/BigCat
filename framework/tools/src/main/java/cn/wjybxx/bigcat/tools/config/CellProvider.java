@@ -14,31 +14,14 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.config;
+package cn.wjybxx.bigcat.tools.config;
 
 /**
- * 参数表格解析
- *
  * @author wjybxx
  * date 2023/4/15
  */
-public class ParamSheetReader extends CellProviderReader {
+public interface CellProvider {
 
-    public ParamSheetReader(Sheet sheet, ValueParser parser) {
-        super(new SheetAdapter(sheet), parser);
-    }
+    SheetCell getCell(String name);
 
-    static class SheetAdapter implements CellProvider {
-
-        final Sheet sheet;
-
-        SheetAdapter(Sheet sheet) {
-            this.sheet = sheet;
-        }
-
-        @Override
-        public SheetCell getCell(String name) {
-            return sheet.getParamCell(name);
-        }
-    }
 }

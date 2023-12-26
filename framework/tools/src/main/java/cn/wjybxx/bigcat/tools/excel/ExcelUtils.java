@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.tools.excel;
 
-import cn.wjybxx.bigcat.config.Sheet;
+import cn.wjybxx.bigcat.tools.config.Sheet;
 
 import java.io.File;
 import java.util.Map;

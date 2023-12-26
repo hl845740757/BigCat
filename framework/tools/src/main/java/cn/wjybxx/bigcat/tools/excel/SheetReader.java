@@ -18,10 +18,10 @@ package cn.wjybxx.bigcat.tools.excel;
 
 import cn.wjybxx.base.CollectionUtils;
 import cn.wjybxx.base.ObjectUtils;
-import cn.wjybxx.bigcat.config.Header;
-import cn.wjybxx.bigcat.config.Sheet;
-import cn.wjybxx.bigcat.config.SheetCell;
-import cn.wjybxx.bigcat.config.SheetRow;
+import cn.wjybxx.bigcat.tools.config.Header;
+import cn.wjybxx.bigcat.tools.config.Sheet;
+import cn.wjybxx.bigcat.tools.config.SheetCell;
+import cn.wjybxx.bigcat.tools.config.SheetRow;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.apache.commons.lang3.StringUtils;

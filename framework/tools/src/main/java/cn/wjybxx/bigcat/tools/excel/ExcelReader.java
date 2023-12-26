@@ -18,7 +18,7 @@ package cn.wjybxx.bigcat.tools.excel;
 
 import cn.wjybxx.base.CollectionUtils;
 import cn.wjybxx.common.CloseableUtils;
-import cn.wjybxx.bigcat.config.Sheet;
+import cn.wjybxx.bigcat.tools.config.Sheet;
 import com.monitorjbl.xlsx.StreamingReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;

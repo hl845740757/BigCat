@@ -14,7 +14,6 @@
     <url>https://github.com/hl845740757/BigCat</url>
 
     <modules>
-        <module>config</module>
         <module>rpc</module>
         <module>core</module>
 
@@ -63,15 +62,16 @@
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
         <junit.version>5.9.2</junit.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
-        <commons-lang3.version>3.14.0</commons-lang3.version>
         <pb.version>3.25.1</pb.version>
 
+        <!-- 我的commons -->
         <base.version>1.0.rc1</base.version>
         <commons.version>1.0.rc1</commons.version>
-        <btree.version>1.0.rc1</btree.version>
         <dson.version>1.2.rc4</dson.version>
+        <btree.version>1.0.rc1</btree.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
         <!-- netty真的更新太快 -->

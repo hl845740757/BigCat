@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.config;
+package cn.wjybxx.bigcat.tools.config;
 
 /**
+ * 参数表格解析
+ *
  * @author wjybxx
  * date 2023/4/15
  */
-public class ValueRowReader extends CellProviderReader {
+public class ParamSheetReader extends CellProviderReader {
 
-    public ValueRowReader(SheetRow row, ValueParser parser) {
-        super(row, parser);
+    public ParamSheetReader(Sheet sheet, ValueParser parser) {
+        super(new SheetAdapter(sheet), parser);
     }
 
-    @Override
-    public SheetRow getProvider() {
-        return (SheetRow) super.getProvider();
-    }
+    static class SheetAdapter implements CellProvider {
 
-    public int getRowIndex() {
-        return getProvider().getRowIndex();
-    }
+        final Sheet sheet;
 
-    public int getLineNumber() {
-        return getProvider().getLineNumber();
-    }
+        SheetAdapter(Sheet sheet) {
+            this.sheet = sheet;
+        }
 
+        @Override
+        public SheetCell getCell(String name) {
+            return sheet.getParamCell(name);
+        }
+    }
 }
