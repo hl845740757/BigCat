@@ -43,8 +43,8 @@ public class PBParserTest {
                 .addCommon("common")
                 .setJavaMultipleFiles(true);
 
-        String modulePath = TestUtil.bigcatPath + "/tools/tools-protobuf";
-        options.setJavaOut(modulePath + "/src/test/java")
+        String testOutModulePath = TestUtil.bigcatPath + "/framework/testout";
+        options.setJavaOut(testOutModulePath + "/src/main/java")
                 .setJavaPackage("cn.wjybxx.bigcat.temp.pb1");
 
         options.setMethodDefMode(PBMethod.MODE_CONTEXT)

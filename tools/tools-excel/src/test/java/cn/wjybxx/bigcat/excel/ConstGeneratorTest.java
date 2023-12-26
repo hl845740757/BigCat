@@ -33,8 +33,9 @@ public class ConstGeneratorTest {
 
     @Test
     void test() throws IOException {
-        String javaOut = TestUtil.modulePath + "/src/test/java";
-        String javaPackage = "cn.wjybxx.bigcat.excel.temp";
+        String testOutModulePath = TestUtil.bigcatPath + "/framework/testout";
+        String javaOut = testOutModulePath + "/src/main/java";
+        String javaPackage = "cn.wjybxx.bigcat.temp.excel";
         {
             List<SheetEnumValue> enumValueList = List.of(new SheetEnumValue("ONE", "1", null),
                     new SheetEnumValue("TWO", "2", null),

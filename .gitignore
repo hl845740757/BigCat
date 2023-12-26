@@ -43,9 +43,7 @@ hs_err_pid*
 
 
 # 临时文件
-temp-*
 *.flattened-pom.xml
 ~$*
-/commons/testres/temp/
-/commons/tools/src/test/java/cn/wjybxx/common/temp/
-/framework/tools/src/test/java/cn/wjybxx/bigcat/tools/temp
+temp-*
+**/temp/*
