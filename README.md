@@ -43,14 +43,11 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 2. Rpc + 注解处理器 - [关于Rpc的设计解释](https://github.com/hl845740757/BigCat/blob/dev/doc/Rpc.md)
 3. EventBus + 注解处理器
 4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/Dson)
-5. 配置抽象（Sheet） + 表格处理工具
+5. ~~配置抽象（Sheet） + 表格处理工具~~ Sheet只用于工具，运行时直接使用Dson。
 6. 文件热更新管理 [文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/FileReload.md)
-7.
-
-通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
-
+7. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
 8. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
-9. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BigCat/blob/dev/doc/TaskTree.md)
+9. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BTree)
 
 近日在研：
 

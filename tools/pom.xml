@@ -14,7 +14,10 @@
     <url>https://github.com/hl845740757/BigCat</url>
 
     <modules>
-        <module>config</module>
+        <module>tools-config</module>
+        <module>tools-excel</module>
+        <module>tools-protobuf</module>
+        <module>tools-core</module>
     </modules>
 
     <!-- 证书 -->
@@ -100,6 +103,11 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>core</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>concurrent</artifactId>
             <version>${commons.version}</version>
         </dependency>
         <!-- 序列化 -->

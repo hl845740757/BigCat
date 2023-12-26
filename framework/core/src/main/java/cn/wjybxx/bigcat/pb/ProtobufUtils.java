@@ -16,13 +16,17 @@
 
 package cn.wjybxx.bigcat.pb;
 
+import cn.wjybxx.common.ClassScanner;
 import cn.wjybxx.dson.codec.PojoCodecImpl;
 import com.google.protobuf.*;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * protocol buffer工具类
@@ -33,6 +37,15 @@ import java.util.Objects;
  * date 2023/4/1
  */
 public class ProtobufUtils {
+
+    public static Set<Class<?>> scan(Set<String> packages) {
+        return packages.stream()
+                .map(scanPackage -> ClassScanner.findClasses(scanPackage,
+                        name -> !name.endsWith("Builder"), // 去除Builder类；协议类可以是顶级类
+                        ProtobufUtils::isProtoBufferClass))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toUnmodifiableSet());
+    }
 
     public static boolean isProtoBufferClass(Class<?> messageClazz) {
         if (Modifier.isAbstract(messageClazz.getModifiers())) {
@@ -93,12 +106,12 @@ public class ProtobufUtils {
     }
 
     public static <T extends MessageLite> MessageCodec<T> createMessageCodec(Class<T> messageClazz) {
-        final var enumLiteMap = ProtobufUtils.findParser(messageClazz);
+        final var enumLiteMap = findParser(messageClazz);
         return new MessageCodec<>(messageClazz, enumLiteMap);
     }
 
     public static <T extends ProtocolMessageEnum> MessageEnumCodec<T> createMessageEnumCodec(Class<T> messageClazz) {
-        final var enumLiteMap = ProtobufUtils.findMapper(messageClazz);
+        final var enumLiteMap = findMapper(messageClazz);
         return new MessageEnumCodec<>(messageClazz, enumLiteMap);
     }
 }

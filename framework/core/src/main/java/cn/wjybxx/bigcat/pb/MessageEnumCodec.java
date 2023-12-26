@@ -32,6 +32,7 @@ import com.google.protobuf.Internal;
 import com.google.protobuf.ProtocolMessageEnum;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * MessageEnum会写为具有int32字段的Object
@@ -49,7 +50,7 @@ public class MessageEnumCodec<T extends ProtocolMessageEnum> implements PojoCode
 
     public MessageEnumCodec(Class<T> clazz, Internal.EnumLiteMap<T> enumLiteMap) {
         this.clazz = clazz;
-        this.enumLiteMap = enumLiteMap;
+        this.enumLiteMap = Objects.requireNonNull(enumLiteMap, "enumLiteMap");
     }
 
     @Nonnull

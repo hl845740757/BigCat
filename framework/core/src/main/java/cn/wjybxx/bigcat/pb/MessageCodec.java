@@ -31,6 +31,7 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * message会写为具有一个{@link DsonBinary}字段的Object
@@ -48,7 +49,7 @@ public class MessageCodec<T extends MessageLite> implements PojoCodecImpl<T> {
 
     public MessageCodec(Class<T> clazz, Parser<T> parser) {
         this.clazz = clazz;
-        this.parser = parser;
+        this.parser = Objects.requireNonNull(parser, "parser");
     }
 
     @Nonnull
