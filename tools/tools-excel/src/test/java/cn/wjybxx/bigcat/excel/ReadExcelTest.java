@@ -53,7 +53,7 @@ public class ReadExcelTest {
 
         String dson = converter.writeAsDson(skillSheet, DsonMode.RELAXED, TypeArgInfo.OBJECT);
 //        System.out.println(dson);
-        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, DsonMode.RELAXED, TypeArgInfo.of(Sheet.class)));
+        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, TypeArgInfo.of(Sheet.class)));
 
         Sheet clonedObject = converter.cloneObject(skillSheet, TypeArgInfo.of(Sheet.class));
         Assertions.assertEquals(skillSheet, clonedObject);

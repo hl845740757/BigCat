@@ -24,10 +24,10 @@ import cn.wjybxx.dson.codec.TypeArgInfo;
 import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
 import cn.wjybxx.dson.codec.binary.BinaryObjectWriter;
 import cn.wjybxx.dson.codec.binary.BinarySerializable;
-import org.apache.commons.codec.binary.Hex;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -190,7 +190,7 @@ public final class RpcRequest extends RpcProtocol implements DebugLogFriendlyObj
             return "null";
         }
         if (parameters.getClass() == byte[].class) {
-            return Hex.encodeHexString((byte[]) parameters);
+            return HexFormat.of().formatHex((byte[]) parameters);
         }
         // List类型
         return parameters.toString();

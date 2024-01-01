@@ -70,7 +70,7 @@
 
         <base.version>1.0.rc1</base.version>
         <commons.version>1.0.rc1</commons.version>
-        <dson.version>1.2.rc4</dson.version>
+        <dson.version>1.4.rc1</dson.version>
     </properties>
 
     <dependencies>
@@ -98,11 +98,6 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
-            <version>${commons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>core</artifactId>
             <version>${commons.version}</version>
         </dependency>
         <dependency>
@@ -156,7 +151,7 @@
                 <version>1.5.0</version>
                 <configuration>
                     <updatePomFile>true</updatePomFile>
-                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    <flattenMode>oss</flattenMode>
                 </configuration>
                 <executions>
                     <execution>

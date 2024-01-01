@@ -18,8 +18,8 @@ package cn.wjybxx.bigcat.protobuf;
 
 import cn.wjybxx.base.CollectionUtils;
 import cn.wjybxx.bigcat.tools.Utils;
-import cn.wjybxx.common.io.Line;
-import cn.wjybxx.common.io.LineIterator;
+import cn.wjybxx.bigcat.io.Line;
+import cn.wjybxx.bigcat.io.LineIterator;
 import cn.wjybxx.dson.DsonObject;
 import cn.wjybxx.dson.DsonValue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -512,7 +512,7 @@ public class PBParser {
             if (id == null) {
                 throw new PBParserException("The id of method is absent, line: " + lineInfo);
             }
-            int methodId = id.asNumber().intValue();
+            int methodId = id.asDsonNumber().intValue();
             if (methodId < 0 || methodId > 9999) {
                 throw new PBParserException("invalid methodId, line: " + lineInfo);
             }
@@ -520,7 +520,7 @@ public class PBParser {
 
             DsonValue mode = dsonValue.get("mode"); // 也可根据service的name或id计算
             if (mode != null) {
-                method.setMode(mode.asNumber().intValue());
+                method.setMode(mode.asDsonNumber().intValue());
             } else {
                 method.setMode(options.getMethodDefMode());
             }
@@ -544,7 +544,7 @@ public class PBParser {
             if (id == null) {
                 throw new PBParserException("The id of method is absent, line: " + service.getSourceLine());
             }
-            int serviceId = id.asNumber().intValue();
+            int serviceId = id.asDsonNumber().intValue();
             if (serviceId < Short.MIN_VALUE || serviceId > Short.MAX_VALUE) {
                 throw new PBParserException("invalid serviceId, line: " + service.getSourceLine());
             }

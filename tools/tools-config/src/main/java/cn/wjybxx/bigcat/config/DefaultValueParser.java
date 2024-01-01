@@ -154,7 +154,7 @@ public class DefaultValueParser implements ValueParser {
 
         if (getArrayDimensional(typeToken) == 1) {
             List<String> elements = new ArrayList<>(10);
-            try (DsonTextReader reader = new DsonTextReader(DsonTextReaderSettings.DEFAULT, DsonCharStream.newCharStream(value, DsonMode.RELAXED))) {
+            try (DsonTextReader reader = new DsonTextReader(DsonTextReaderSettings.DEFAULT, value)) {
                 if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
                 readOneDimensionArray(reader, elements);
                 if (reader.readDsonType() != DsonType.END_OF_OBJECT) throw new IllegalArgumentException(value);
@@ -164,7 +164,7 @@ public class DefaultValueParser implements ValueParser {
         } else {
             // 读取为二维list
             List<List<String>> twoDimensionElements = new ArrayList<>(4);
-            try (DsonTextReader reader = new DsonTextReader(DsonTextReaderSettings.DEFAULT, DsonCharStream.newCharStream(value, DsonMode.RELAXED))) {
+            try (DsonTextReader reader = new DsonTextReader(DsonTextReaderSettings.DEFAULT, value)) {
                 if (reader.readDsonType() != DsonType.ARRAY) throw new IllegalArgumentException(value);
                 readTwoDimensionArray(reader, twoDimensionElements);
                 if (reader.readDsonType() != DsonType.END_OF_OBJECT) throw new IllegalArgumentException(value);

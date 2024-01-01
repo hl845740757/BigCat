@@ -17,6 +17,7 @@
         <module>rpc</module>
         <module>core</module>
         <module>testout</module>
+        <module>common</module>
     </modules>
 
     <!-- 证书 -->
@@ -60,7 +61,9 @@
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
         <junit.version>5.9.2</junit.version>
+        <fastutil.version>8.5.12</fastutil.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
+        <commons-io.version>2.15.1</commons-io.version>
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
         <pb.version>3.25.1</pb.version>
@@ -68,12 +71,16 @@
         <!-- 我的commons -->
         <base.version>1.0.rc1</base.version>
         <commons.version>1.0.rc1</commons.version>
-        <dson.version>1.2.rc4</dson.version>
+        <dson.version>1.4.rc1</dson.version>
         <btree.version>1.0.rc1</btree.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
         <!-- netty真的更新太快 -->
         <netty.version>4.1.101.Final</netty.version>
+        <bson.version>4.10.2</bson.version>
+        <javapoet.version>1.13.0</javapoet.version>
+        <disruptor.version>3.4.4</disruptor.version>
+        <jctools.version>4.0.1</jctools.version>
     </properties>
 
     <dependencies>
@@ -103,11 +110,6 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
-            <version>${commons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>core</artifactId>
             <version>${commons.version}</version>
         </dependency>
         <dependency>
@@ -190,7 +192,7 @@
                 <version>1.5.0</version>
                 <configuration>
                     <updatePomFile>true</updatePomFile>
-                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    <flattenMode>oss</flattenMode>
                 </configuration>
                 <executions>
                     <execution>

@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.protobuf;
 
 import cn.wjybxx.bigcat.tools.Utils;
-import cn.wjybxx.common.io.Line;
+import cn.wjybxx.bigcat.io.Line;
 
 import javax.annotation.Nonnull;
 import java.util.*;

@@ -41,7 +41,7 @@ public class PBAnnotation {
 
     public DsonObject<String> getDsonValue() {
         if (dsonValue == null) {
-            dsonValue = Dsons.fromJson(value).asObject();
+            dsonValue = Dsons.fromDson(value).asObject();
         }
         return dsonValue;
     }
