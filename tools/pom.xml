@@ -64,13 +64,15 @@
         <guice.version>7.0.0</guice.version>
 
         <commons-lang3.version>3.14.0</commons-lang3.version>
+        <commons-io.verison>2.15.1</commons-io.verison>
+        <javapoet.version>1.13.0</javapoet.version>
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
         <pb.version>3.25.1</pb.version>
 
-        <base.version>1.0.rc1</base.version>
+        <base.version>1.0.2</base.version>
+        <dson.version>1.4.0</dson.version>
         <commons.version>1.0.rc1</commons.version>
-        <dson.version>1.4.rc1</dson.version>
     </properties>
 
     <dependencies>
@@ -98,13 +100,25 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
-            <version>${commons.version}</version>
+            <version>${base.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>concurrent</artifactId>
-            <version>${commons.version}</version>
+            <version>${base.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>${javapoet.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.verison}</version>
+        </dependency>
+
         <!-- 序列化 -->
         <dependency>
             <groupId>cn.wjybxx.dson</groupId>

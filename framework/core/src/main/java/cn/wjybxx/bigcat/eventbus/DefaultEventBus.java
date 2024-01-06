@@ -41,7 +41,7 @@ public class DefaultEventBus implements EventBus {
      */
     private final Map<Object, EventHandler<?>> handlerMap;
     /** 事件key缓存池 */
-    private final ObjectPool<ComposeEventKey> keyPool = new DefaultObjectPool<>(ComposeEventKey::new, ComposeEventKey::reset, 4, 8);
+    private final ObjectPool<ComposeEventKey> keyPool = new DefaultObjectPool<>(ComposeEventKey::new, ComposeEventKey::reset, 8);
     /** 递归深度 - 防止死循环 */
     private int recursionDepth;
 

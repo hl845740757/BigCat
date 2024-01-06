@@ -19,12 +19,12 @@ package cn.wjybxx.bigcat.excel;
 import cn.wjybxx.bigcat.config.Sheet;
 import cn.wjybxx.bigcat.config.SheetCodec;
 import cn.wjybxx.bigcat.tools.TestUtil;
-import cn.wjybxx.dson.codec.ConvertOptions;
+import cn.wjybxx.dson.codec.ConverterOptions;
 import cn.wjybxx.dson.codec.TypeArgInfo;
 import cn.wjybxx.dson.codec.TypeMeta;
 import cn.wjybxx.dson.codec.TypeMetaRegistries;
-import cn.wjybxx.dson.codec.document.DefaultDocumentConverter;
-import cn.wjybxx.dson.codec.document.DocumentConverter;
+import cn.wjybxx.dson.codec.dson.DefaultDsonConverter;
+import cn.wjybxx.dson.codec.dson.DsonConverter;
 import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.ObjectStyle;
 import org.junit.jupiter.api.Assertions;
@@ -45,8 +45,8 @@ public class ReadExcelTest {
         Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(TestUtil.docPath + "/test.xlsx"));
         Sheet skillSheet = sheetMap.get("Skill");
 
-        ConvertOptions options = ConvertOptions.newBuilder().build();
-        DocumentConverter converter = DefaultDocumentConverter.newInstance(
+        ConverterOptions options = ConverterOptions.newBuilder().build();
+        DsonConverter converter = DefaultDsonConverter.newInstance(
                 List.of(new SheetCodec()),
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
                 options);

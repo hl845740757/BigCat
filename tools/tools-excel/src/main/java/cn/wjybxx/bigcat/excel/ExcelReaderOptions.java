@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.excel;
 
 import cn.wjybxx.base.ObjectUtils;
-import cn.wjybxx.common.FunctionUtils;
 import cn.wjybxx.bigcat.config.DefaultValueParser;
 
 import javax.annotation.Nonnull;
@@ -49,7 +48,7 @@ public class ExcelReaderOptions {
         this.supportedTypes = Set.copyOf(builder.supportedTypes);
         this.bufferSize = Math.max(8 * 1024, builder.bufferSize);
         this.sheetNameParser = ObjectUtils.nullToDef(builder.sheetNameParser, ((fileName, sheetName) -> sheetName));
-        this.sheetNameFilter = ObjectUtils.nullToDef(builder.sheetNameFilter, FunctionUtils.alwaysTrue());
+        this.sheetNameFilter = ObjectUtils.nullToDef(builder.sheetNameFilter, s -> true);
         this.skipRows = builder.skipRows;
         this.mode = ObjectUtils.nullToDef(builder.mode, Mode.BOTH);
     }

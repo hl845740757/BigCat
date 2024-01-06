@@ -19,12 +19,12 @@ package cn.wjybxx.bigcat.excel;
 import cn.wjybxx.bigcat.config.Sheet;
 import cn.wjybxx.bigcat.config.SheetCodec;
 import cn.wjybxx.bigcat.io.NotTempFileFilter;
-import cn.wjybxx.dson.codec.ConvertOptions;
+import cn.wjybxx.dson.codec.ConverterOptions;
 import cn.wjybxx.dson.codec.TypeArgInfo;
 import cn.wjybxx.dson.codec.TypeMeta;
 import cn.wjybxx.dson.codec.TypeMetaRegistries;
-import cn.wjybxx.dson.codec.document.DefaultDocumentConverter;
-import cn.wjybxx.dson.codec.document.DocumentConverter;
+import cn.wjybxx.dson.codec.dson.DefaultDsonConverter;
+import cn.wjybxx.dson.codec.dson.DsonConverter;
 import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.ObjectStyle;
 import org.apache.commons.io.FileUtils;
@@ -59,17 +59,17 @@ public class ExcelExporter {
     /** 线程池 -- 表格会被并发读取和并发导出 */
     private final Executor executor;
     /** 编解码器 */
-    private final DocumentConverter converter;
+    private final DsonConverter converter;
 
     private Map<String, Sheet> sheetMap;
 
     public ExcelExporter(ExcelExporterOptions options, Executor executor) {
         this.options = options;
         this.executor = executor;
-        this.converter = DefaultDocumentConverter.newInstance(
+        this.converter = DefaultDsonConverter.newInstance(
                 List.of(new SheetCodec()),
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
-                ConvertOptions.DEFAULT);
+                ConverterOptions.DEFAULT);
     }
 
     /**

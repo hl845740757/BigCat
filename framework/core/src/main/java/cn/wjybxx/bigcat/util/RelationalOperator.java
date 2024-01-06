@@ -21,7 +21,7 @@ import cn.wjybxx.base.EnumLite;
 import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.base.MathCommon;
-import cn.wjybxx.dson.codec.binary.BinarySerializable;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
 
 import javax.annotation.Nullable;
 
@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
  * @author wjybxx
  * date - 2023/4/27
  */
-@BinarySerializable
+@DsonLiteSerializable
 public enum RelationalOperator implements EnumLite {
 
     gt(1) {

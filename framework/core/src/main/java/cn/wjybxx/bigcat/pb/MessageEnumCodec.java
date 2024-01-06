@@ -17,15 +17,15 @@
 package cn.wjybxx.bigcat.pb;
 
 import cn.wjybxx.dson.WireType;
-import cn.wjybxx.dson.codec.PojoCodecImpl;
+import cn.wjybxx.dson.codec.DuplexCodec;
 import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
-import cn.wjybxx.dson.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.dson.codec.binary.BinaryPojoCodecScanIgnore;
 import cn.wjybxx.dson.codec.codecs.EnumLiteCodec;
-import cn.wjybxx.dson.codec.document.DocumentObjectReader;
-import cn.wjybxx.dson.codec.document.DocumentObjectWriter;
-import cn.wjybxx.dson.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.codec.dson.DsonCodecScanIgnore;
+import cn.wjybxx.dson.codec.dson.DsonObjectReader;
+import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodecScanIgnore;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
 import cn.wjybxx.dson.text.NumberStyle;
 import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.Internal;
@@ -41,9 +41,9 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/4/2
  */
-@BinaryPojoCodecScanIgnore
-@DocumentPojoCodecScanIgnore
-public class MessageEnumCodec<T extends ProtocolMessageEnum> implements PojoCodecImpl<T> {
+@DsonLiteCodecScanIgnore
+@DsonCodecScanIgnore
+public class MessageEnumCodec<T extends ProtocolMessageEnum> implements DuplexCodec<T> {
 
     private final Class<T> clazz;
     private final Internal.EnumLiteMap<T> enumLiteMap;
@@ -60,23 +60,23 @@ public class MessageEnumCodec<T extends ProtocolMessageEnum> implements PojoCode
     }
 
     @Override
-    public void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(DsonLiteObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
         writer.writeInt(0, instance.getNumber(), WireType.UINT);
     }
 
     @Override
-    public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+    public T readObject(DsonLiteObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         int number = reader.readInt(0);
         return enumLiteMap.findValueByNumber(number); // TODO 是否要让Null非法？
     }
 
     @Override
-    public void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeObject(DsonObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeInt("number", instance.getNumber(), WireType.UINT, NumberStyle.SIMPLE);
     }
 
     @Override
-    public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+    public T readObject(DsonObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         int number = reader.readInt("number");
         return enumLiteMap.findValueByNumber(number); // TODO 是否要让Null非法？
     }

@@ -21,7 +21,7 @@ import cn.wjybxx.base.EnumLite;
 import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.base.annotation.SourceFileRef;
-import cn.wjybxx.dson.codec.binary.BinarySerializable;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
 import com.squareup.javapoet.*;
 
 import javax.annotation.Nonnull;
@@ -57,7 +57,7 @@ public class GenClassUtils {
 
     public static final AnnotationSpec ANNOTATION_OVERRIDE = AnnotationSpec.builder(Override.class).build();
     public static final AnnotationSpec ANNOTATION_NONNULL = AnnotationSpec.builder(Nonnull.class).build();
-    public static final AnnotationSpec ANNOTATION_SERIALIZABLE = AnnotationSpec.builder(BinarySerializable.class).build();
+    public static final AnnotationSpec ANNOTATION_SERIALIZABLE = AnnotationSpec.builder(DsonLiteSerializable.class).build();
 
     public static final ClassName CLSNAME_SOURCE_REF = ClassName.get(SourceFileRef.class);
     public static final ClassName CLSNAME_STRING = ClassName.get(String.class);

@@ -69,9 +69,9 @@
         <pb.version>3.25.1</pb.version>
 
         <!-- 我的commons -->
-        <base.version>1.0.rc1</base.version>
+        <base.version>1.0.2</base.version>
+        <dson.version>1.4.0</dson.version>
         <commons.version>1.0.rc1</commons.version>
-        <dson.version>1.4.rc1</dson.version>
         <btree.version>1.0.rc1</btree.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
@@ -110,12 +110,12 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
-            <version>${commons.version}</version>
+            <version>${base.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>concurrent</artifactId>
-            <version>${commons.version}</version>
+            <version>${base.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.bigcat</groupId>

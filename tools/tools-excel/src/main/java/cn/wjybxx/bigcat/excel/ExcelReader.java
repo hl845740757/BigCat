@@ -17,9 +17,9 @@
 package cn.wjybxx.bigcat.excel;
 
 import cn.wjybxx.base.CollectionUtils;
-import cn.wjybxx.common.CloseableUtils;
 import cn.wjybxx.bigcat.config.Sheet;
 import com.monitorjbl.xlsx.StreamingReader;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
@@ -99,7 +99,7 @@ class ExcelReader implements AutoCloseable {
 
     @Override
     public void close() {
-        CloseableUtils.closeSafely(workbook);
+        IOUtils.closeQuietly(workbook);
     }
 
 }

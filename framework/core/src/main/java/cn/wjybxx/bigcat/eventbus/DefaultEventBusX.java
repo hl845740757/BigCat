@@ -36,7 +36,7 @@ public class DefaultEventBusX implements EventBus {
     /** 现在的实现，开销还是比较高的，多了一层封装，hash和equals的开销变多了 */
     private final Map<ComposeEventKey, EventHandler<?>> handlerMap;
     /** 事件key缓存池 */
-    private final ObjectPool<ComposeEventKey> keyPool = new DefaultObjectPool<>(ComposeEventKey::new, ComposeEventKey::reset, 4, 8);
+    private final ObjectPool<ComposeEventKey> keyPool = new DefaultObjectPool<>(ComposeEventKey::new, ComposeEventKey::reset, 8);
     /** 递归深度 - 防止死循环 */
     private int recursionDepth;
 

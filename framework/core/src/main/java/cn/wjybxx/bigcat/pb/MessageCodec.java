@@ -17,14 +17,14 @@
 package cn.wjybxx.bigcat.pb;
 
 import cn.wjybxx.dson.DsonBinary;
-import cn.wjybxx.dson.codec.PojoCodecImpl;
+import cn.wjybxx.dson.codec.DuplexCodec;
 import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
-import cn.wjybxx.dson.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.dson.codec.binary.BinaryPojoCodecScanIgnore;
-import cn.wjybxx.dson.codec.document.DocumentObjectReader;
-import cn.wjybxx.dson.codec.document.DocumentObjectWriter;
-import cn.wjybxx.dson.codec.document.DocumentPojoCodecScanIgnore;
+import cn.wjybxx.dson.codec.dson.DsonCodecScanIgnore;
+import cn.wjybxx.dson.codec.dson.DsonObjectReader;
+import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodecScanIgnore;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
 import cn.wjybxx.dson.text.ObjectStyle;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -40,9 +40,9 @@ import java.util.Objects;
  * @author wjybxx
  * date 2023/4/2
  */
-@BinaryPojoCodecScanIgnore
-@DocumentPojoCodecScanIgnore
-public class MessageCodec<T extends MessageLite> implements PojoCodecImpl<T> {
+@DsonLiteCodecScanIgnore
+@DsonCodecScanIgnore
+public class MessageCodec<T extends MessageLite> implements DuplexCodec<T> {
 
     private final Class<T> clazz;
     private final Parser<T> parser;
@@ -59,12 +59,12 @@ public class MessageCodec<T extends MessageLite> implements PojoCodecImpl<T> {
     }
 
     @Override
-    public void writeObject(BinaryObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
+    public void writeObject(DsonLiteObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
         writer.writeBytes(0, writer.options().pbBinaryType, instance.toByteArray());
     }
 
     @Override
-    public T readObject(BinaryObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+    public T readObject(DsonLiteObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         byte[] bytes = reader.readBytes(0);
         try {
             return parser.parseFrom(bytes);
@@ -74,12 +74,12 @@ public class MessageCodec<T extends MessageLite> implements PojoCodecImpl<T> {
     }
 
     @Override
-    public void writeObject(DocumentObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeObject(DsonObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeBytes("data", writer.options().pbBinaryType, instance.toByteArray());
     }
 
     @Override
-    public T readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+    public T readObject(DsonObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         byte[] bytes = reader.readBytes("data");
         try {
             return parser.parseFrom(bytes);

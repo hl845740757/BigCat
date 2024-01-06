@@ -22,10 +22,5 @@
             <artifactId>tools-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.bigcat</groupId>
-            <artifactId>tools-config</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 </project>

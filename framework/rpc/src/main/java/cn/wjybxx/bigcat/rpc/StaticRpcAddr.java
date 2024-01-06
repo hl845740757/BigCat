@@ -20,7 +20,7 @@ import cn.wjybxx.base.EnumLite;
 import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.base.annotation.StableName;
-import cn.wjybxx.dson.codec.binary.BinarySerializable;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
 
 import javax.annotation.Nullable;
 
@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  * @author wjybxx
  * date - 2023/10/4
  */
-@BinarySerializable
+@DsonLiteSerializable
 public enum StaticRpcAddr implements RpcAddr, EnumLite {
 
     /** Node内本地单播地址 */

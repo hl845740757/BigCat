@@ -16,7 +16,6 @@
 
 package cn.wjybxx.common.props;
 
-import cn.wjybxx.base.PropertiesUtils;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;

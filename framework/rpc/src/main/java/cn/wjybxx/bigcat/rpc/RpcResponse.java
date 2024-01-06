@@ -24,9 +24,9 @@ import cn.wjybxx.common.log.DebugLogFriendlyObject;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.codec.FieldImpl;
 import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.binary.BinaryObjectReader;
-import cn.wjybxx.dson.codec.binary.BinaryObjectWriter;
-import cn.wjybxx.dson.codec.binary.BinarySerializable;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
+import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Nonnull;
@@ -42,7 +42,7 @@ import java.util.List;
  * @author wjybxx
  * date 2023/4/1
  */
-@BinarySerializable
+@DsonLiteSerializable
 public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
 
     /** 请求的唯一id */
@@ -236,7 +236,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
     // 1.自动处理延迟序列化问题
     // 2.避免多态写入List类型信息
 
-    public void writeResults(BinaryObjectWriter writer, int name) {
+    public void writeResults(DsonLiteObjectWriter writer, int name) {
         if (results == null) {
             writer.writeNull(name);
             return;
@@ -253,7 +253,7 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
         }
     }
 
-    public void readResults(BinaryObjectReader reader, int name) {
+    public void readResults(DsonLiteObjectReader reader, int name) {
         if (!reader.readName(name)) {
             return;
         }

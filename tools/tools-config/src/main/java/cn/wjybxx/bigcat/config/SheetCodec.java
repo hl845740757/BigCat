@@ -19,9 +19,9 @@ package cn.wjybxx.bigcat.config;
 
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.document.DocumentObjectReader;
-import cn.wjybxx.dson.codec.document.DocumentObjectWriter;
-import cn.wjybxx.dson.codec.document.DocumentPojoCodecImpl;
+import cn.wjybxx.dson.codec.dson.DsonCodec;
+import cn.wjybxx.dson.codec.dson.DsonObjectReader;
+import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
 import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
 
@@ -38,7 +38,7 @@ import java.util.Map;
  * date - 2023/4/17
  */
 @SuppressWarnings("unused")
-public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
+public class SheetCodec implements DsonCodec<Sheet> {
 
     public SheetCodec() {
     }
@@ -50,7 +50,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
     }
 
     @Override
-    public Sheet readObject(DocumentObjectReader reader, TypeArgInfo<?> typeArgInfo) {
+    public Sheet readObject(DsonObjectReader reader, TypeArgInfo<?> typeArgInfo) {
         String fileName = reader.readString("fileName");
         String sheetName = reader.readString("sheetName");
         int sheetIndex = reader.readInt("sheetIndex");
@@ -60,7 +60,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
     }
 
     @Override
-    public void writeObject(DocumentObjectWriter writer, Sheet sheet, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
+    public void writeObject(DsonObjectWriter writer, Sheet sheet, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
         writer.writeString("fileName", sheet.getFileName());
         writer.writeString("sheetName", sheet.getSheetName());
         writer.writeInt("sheetIndex", sheet.getSheetIndex());
@@ -72,7 +72,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
 
     //
 
-    private void writeHeaderMap(DocumentObjectWriter writer, Map<String, Header> headerMap, boolean isParamSheet) {
+    private void writeHeaderMap(DsonObjectWriter writer, Map<String, Header> headerMap, boolean isParamSheet) {
         // 只写values
         writer.writeStartArray("headerMap", headerMap.values(), TypeArgInfo.ARRAYLIST);
         for (Header header : headerMap.values()) {
@@ -88,7 +88,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         writer.writeEndArray();
     }
 
-    private Map<String, Header> readHeaderMap(DocumentObjectReader reader) {
+    private Map<String, Header> readHeaderMap(DsonObjectReader reader) {
         Map<String, Header> headerMap = new LinkedHashMap<>();
         // headerMap写的是数组格式
         reader.readStartArray("headerMap", TypeArgInfo.ARRAYLIST);
@@ -108,7 +108,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
     }
 
     //
-    private void writeValueRowList(DocumentObjectWriter writer, List<SheetRow> valueRowList, boolean isParamSheet) {
+    private void writeValueRowList(DsonObjectWriter writer, List<SheetRow> valueRowList, boolean isParamSheet) {
         // 其实将rowIndex看做key写成对象会更有效，但兼容性可能不好
         writer.writeStartArray("valueRowList", valueRowList, TypeArgInfo.ARRAYLIST);
         for (SheetRow valueRow : valueRowList) {
@@ -128,7 +128,7 @@ public class SheetCodec implements DocumentPojoCodecImpl<Sheet> {
         writer.writeEndArray();
     }
 
-    private List<SheetRow> readValueRowList(DocumentObjectReader reader, Map<String, Header> headerMap) {
+    private List<SheetRow> readValueRowList(DsonObjectReader reader, Map<String, Header> headerMap) {
         // valueRowList写的是数组格式
         ArrayList<SheetRow> valueRowList = new ArrayList<>();
         reader.readStartArray("valueRowList", TypeArgInfo.ARRAYLIST);
