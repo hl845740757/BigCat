@@ -569,7 +569,7 @@ public class NodeRpcSupport implements WorkerModule {
         // null参数警告
         PBMethodInfo<?, ?> methodInfo = methodInfoRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
         List<Object> parameters = request.listParameters();
-        if (methodInfo.argType != null && parameters.isEmpty() || parameters.get(0) == null) {
+        if (methodInfo.hasArg() && parameters.isEmpty() || parameters.get(0) == null) {
             logger.info("rpc argument is null, it will be replaced with an empty message, serviceId: {}, {}",
                     request.getServiceId(), request.getMethodId());
         }
@@ -581,7 +581,7 @@ public class NodeRpcSupport implements WorkerModule {
         }
         // null结果警告
         PBMethodInfo<?, ?> methodInfo = methodInfoRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
-        if (methodInfo.resultType != null && response.getResult() == null) {
+        if (methodInfo.hasResult() && response.getResult() == null) {
             logger.info("rpc result is null, it will be replaced with an empty message, serviceId: {}, {}",
                     response.getServiceId(), response.getMethodId());
         }

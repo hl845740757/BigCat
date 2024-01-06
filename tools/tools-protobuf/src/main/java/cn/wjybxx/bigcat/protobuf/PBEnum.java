@@ -33,7 +33,7 @@ public final class PBEnum extends PBTypeElement {
         return PBElementKind.ENUM;
     }
 
-    public List<PBEnumValue> getEnumValueList() {
+    public List<PBEnumValue> getEnumValues() {
         return getEnclosedElements().stream()
                 .filter(e -> e.getKind() == PBElementKind.ENUM_VALUE)
                 .map(e -> (PBEnumValue) e)

@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.protobuf;
 
+import cn.wjybxx.base.ObjectUtils;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -61,6 +63,14 @@ public class PBMethod extends PBElement {
 
     public boolean isContextMode() {
         return mode == MODE_CONTEXT;
+    }
+
+    public boolean hasArg() {
+        return !ObjectUtils.isEmpty(argType);
+    }
+
+    public boolean hasResult() {
+        return !ObjectUtils.isEmpty(resultType);
     }
 
     //

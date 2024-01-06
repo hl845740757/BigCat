@@ -34,15 +34,15 @@ public class PBMethodInfo<T, R> {
     public final int serviceId;
     public final int methodId;
 
-    /** 方法参数类型 -- 可判断是否有参数 */
+    /** 方法参数类型 */
     public final Class<T> argType;
     public final Parser<T> argParser;
 
-    /** 方法结果类型 -- 可判断是否有结果 */
+    /** 方法结果类型 */
     public final Class<R> resultType;
     public final Parser<R> resultParser;
 
-    public PBMethodInfo(int serviceId, int methodId, @Nullable Class<T> argType, @Nullable Class<R> resultType) {
+    public PBMethodInfo(int serviceId, int methodId, Class<T> argType, Class<R> resultType) {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.argType = argType;
@@ -52,9 +52,10 @@ public class PBMethodInfo<T, R> {
         this.resultParser = findParser(resultType);
     }
 
+    // 该构造器生成的代码会调用
     public PBMethodInfo(int serviceId, int methodId,
-                        Class<T> argType, Parser<T> argParser,
-                        Class<R> resultType, Parser<R> resultParser) {
+                        Class<T> argType, @Nullable Parser<T> argParser,
+                        Class<R> resultType, @Nullable Parser<R> resultParser) {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.argType = argType;
@@ -64,9 +65,19 @@ public class PBMethodInfo<T, R> {
         this.resultParser = resultParser;
     }
 
+    /** 方法是否有参数 */
+    public boolean hasArg() {
+        return argParser != null;
+    }
+
+    /** 方法是否有结果 */
+    public boolean hasResult() {
+        return resultParser != null;
+    }
+
     @SuppressWarnings("unchecked")
     private static <M> Parser<M> findParser(Class<M> argType) {
-        if (argType == null || argType == Void.class) {
+        if (argType == null || argType == Void.class || argType == void.class) {
             return null;
         }
         Class<? extends MessageLite> clazz = (Class<? extends MessageLite>) argType;

@@ -33,41 +33,43 @@ public class Utils extends ObjectUtils {
     // region 空白字符
 
     /**
-     * 查找首个非空白字符
+     * 获取首个非空白字符
      *
      * @return 如果不存在则返回-1
      */
     public static int firstCharNonWhitespace(CharSequence cs) {
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-        for (int i = 0; i < length; i++) {
-            char c = cs.charAt(i);
-            if (!Character.isWhitespace(c)) {
-                return c;
-            }
-        }
-        return -1;
+        int idx = indexOfNonWhitespace(cs, 0);
+        return idx >= 0 ? cs.charAt(idx) : -1;
     }
 
     /**
-     * 查找最后一个非空白字符
+     * 获取首个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int firstCharNonWhitespace(CharSequence cs, int startIndex) {
+        int idx = indexOfNonWhitespace(cs, startIndex);
+        return idx >= 0 ? cs.charAt(idx) : -1;
+    }
+
+    /**
+     * 获取最后一个非空白字符
      *
      * @return 如果不存在则返回-1
      */
     public static int lastCharNonWhitespace(CharSequence cs) {
-        int length = length(cs);
-        if (length == 0) {
-            return -1;
-        }
-        for (int i = length - 1; i >= 0; i--) {
-            char c = cs.charAt(i);
-            if (!Character.isWhitespace(c)) {
-                return c;
-            }
-        }
-        return -1;
+        int idx = lastIndexOfNonWhitespace(cs, 0);
+        return idx >= 0 ? cs.charAt(idx) : -1;
+    }
+
+    /**
+     * 获取最后一个非空白字符
+     *
+     * @return 如果不存在则返回-1
+     */
+    public static int lastCharNonWhitespace(CharSequence cs, int startIndex) {
+        int idx = lastIndexOfNonWhitespace(cs, startIndex);
+        return idx >= 0 ? cs.charAt(idx) : -1;
     }
 
     /** 索引首个非空白字符的 */
@@ -80,7 +82,6 @@ public class Utils extends ObjectUtils {
         if (startIndex < 0) {
             throw new IllegalArgumentException("startIndex " + startIndex);
         }
-
         int length = length(cs);
         if (length == 0) {
             return -1;

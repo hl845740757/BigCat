@@ -48,6 +48,8 @@ public class PBKeywords {
     public static final String ENUM = "enum";
     /** rpc方法 */
     public static final String RPC = "rpc";
+    /** rpc方法返回值声明 */
+    public static final String RETURNS = "returns";
 
     // region file
 

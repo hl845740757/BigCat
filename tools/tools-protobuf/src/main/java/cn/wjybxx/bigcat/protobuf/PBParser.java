@@ -17,9 +17,9 @@
 package cn.wjybxx.bigcat.protobuf;
 
 import cn.wjybxx.base.CollectionUtils;
-import cn.wjybxx.bigcat.tools.Utils;
 import cn.wjybxx.bigcat.io.Line;
 import cn.wjybxx.bigcat.io.LineIterator;
+import cn.wjybxx.bigcat.tools.Utils;
 import cn.wjybxx.dson.DsonObject;
 import cn.wjybxx.dson.DsonValue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -448,10 +448,11 @@ public class PBParser {
         String name;
         String argType;
         String argName;
+        int argEnd;
         {
             int nameStart = content.indexOf(' ');
             int argStart = content.indexOf('(');
-            int argEnd = content.indexOf(')');
+            argEnd = content.indexOf(')');
 
             name = content.substring(nameStart + 1, argStart).trim();
 
@@ -471,10 +472,13 @@ public class PBParser {
             }
         }
 
+        if (content.indexOf(PBKeywords.RETURNS, argEnd) < 0) {
+            throw new PBParserException("missing return statement, line: " + lineInfo);
+        }
         String resultType;
         {
-            int rStart = content.lastIndexOf('(');
-            int rEnd = content.lastIndexOf(')');
+            int rStart = content.indexOf('(', argEnd);
+            int rEnd = content.indexOf(')', rStart);
             String results = content.substring(rStart + 1, rEnd);
             if (StringUtils.isBlank(results)) {
                 resultType = null;
@@ -784,29 +788,36 @@ public class PBParser {
                 comment = "";
             }
         }
-        String keyword;
-        {
-            int firstChar = content.length() > 0 ? content.charAt(0) : -1;
-            if (firstChar == -1 || firstChar == '{' || firstChar == '}') {
-                keyword = null;
-            } else {
-                int idx = content.indexOf(' ');
-                if (idx > 0) {
-                    int mapIdx = content.indexOf('<', 0, idx);
-                    if (mapIdx > 0) { // 处理泛型
-                        keyword = content.substring(0, mapIdx).trim();
-                    } else {
-                        keyword = content.substring(0, idx).trim();
-                    }
-                } else if ((idx = content.indexOf('=')) > 0) {
-                    // 没有空格的情况下，可能有'='
-                    keyword = content.substring(0, idx).trim();
-                } else {
-                    keyword = null;
-                }
-            }
-        }
+        String keyword = parseKeyword(content);
         return new LineInfo(line, content, comment, keyword);
+    }
+
+    private static String parseKeyword(String content) {
+        int firstChar = content.length() > 0 ? content.charAt(0) : -1;
+        if (firstChar == -1 || firstChar == '{' || firstChar == '}') { // {}
+            return null;
+        }
+        // syntax=proto3
+        // import "xxx";
+        // int32 value = 1;
+        // repeated int32 value = 1;
+        // map<int32, int32> value = 1;
+        String keyword;
+        int idx = content.indexOf(' ');
+        if (idx > 0) {
+            int mapIdx = content.indexOf('<', 0, idx);
+            if (mapIdx > 0) { // 处理泛型
+                keyword = content.substring(0, mapIdx).trim();
+            } else {
+                keyword = content.substring(0, idx).trim();
+            }
+        } else if ((idx = content.indexOf('=')) > 0) {
+            // 没有空格的情况下，可能有'='
+            keyword = content.substring(0, idx).trim();
+        } else {
+            keyword = null;
+        }
+        return keyword;
     }
 
     // endregion

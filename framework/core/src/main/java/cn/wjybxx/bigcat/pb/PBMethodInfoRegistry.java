@@ -99,7 +99,7 @@ public final class PBMethodInfoRegistry {
         if (methodInfo == null) {
             return false;
         }
-        if (methodInfo.argType == null) { // 无参数
+        if (methodInfo.argParser == null) { // 无参数
             request.setParameters(List.of());
             return true;
         }
@@ -142,7 +142,7 @@ public final class PBMethodInfoRegistry {
         if (methodInfo == null) {
             return false;
         }
-        if (methodInfo.resultType == null) { // Void
+        if (methodInfo.resultParser == null) { // Void
             response.setResults(List.of()); // Future无法区分Void和Null
             return true;
         }
