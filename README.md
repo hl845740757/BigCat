@@ -17,7 +17,8 @@ BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大
 
 ### 如何编译该项目
 
-最近将Commons从BigCat仓库迁移了出去，Commons的Concurrent尚未发布到Maven中央仓库，因此需要先下载Commons仓库，安装Commons项目到本地。
+最近将Commons从BigCat仓库迁移了出去，Commons的Concurrent尚未发布到Maven中央仓库，因此需要先下载Commons仓库，安装Commons项目到本地。  
+(近期可能频繁无法编译通过，需要等待Commons的Concurrent重写完毕，调整commons结构后才能恢复正常)
 
 1. 该项目的2个子项目需要分别独立编译。
 2. 进入tools目录下的apt项目，clean install 安装apt到本地maven仓库，卸载apt项目，不可与其它项目一开编译。
