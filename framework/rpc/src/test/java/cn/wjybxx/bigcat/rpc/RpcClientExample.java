@@ -56,7 +56,7 @@ public class RpcClientExample implements ExtensibleService {
         RpcClient rpcClient = this.rpcClient;
         rpcClient.send(SimpleAddr.SERVER, RpcServiceExampleProxy.hello("这是一个通知，不接收结果"));
         rpcClient.call(SimpleAddr.SERVER, RpcServiceExampleProxy.hello("这是一个异步调用，可监听结果"))
-                .thenApply(result -> {
+                .thenApply((ctx, result) -> {
                     System.out.println(result);
                     return null;
                 });
@@ -69,7 +69,7 @@ public class RpcClientExample implements ExtensibleService {
         RpcClient rpcClient = this.rpcClient;
         rpcClient.send(SimpleAddr.SERVER, RpcServiceExampleProxy.contextHello("这是一个通知，目标函数有Context"));
         rpcClient.call(SimpleAddr.SERVER, RpcServiceExampleProxy.contextHello("这是一个异步调用，目标函数有Context"))
-                .thenApply(result -> {
+                .thenApply((ctx, result) -> {
                     System.out.println(result);
                     return null;
                 });

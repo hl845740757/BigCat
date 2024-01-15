@@ -19,9 +19,9 @@ package cn.wjybxx.bigcat.rpc;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.base.time.TimeProviders;
-import cn.wjybxx.common.FunctionUtils;
-import cn.wjybxx.common.async.SameThreadScheduledExecutor;
-import cn.wjybxx.common.async.SameThreads;
+import cn.wjybxx.common.unitask.UniFutureUtils;
+import cn.wjybxx.common.unitask.UniScheduledExecutor;
+import cn.wjybxx.common.unitask.DefaultScheduledExecutor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -95,9 +95,9 @@ public class RpcTest1 {
 
     private static class TestService {
 
-        private final SameThreadScheduledExecutor executor;
+        private final UniScheduledExecutor executor;
 
-        private TestService(SameThreadScheduledExecutor executor) {
+        private TestService(UniScheduledExecutor executor) {
             this.executor = executor;
         }
 
@@ -106,9 +106,7 @@ public class RpcTest1 {
         }
 
         public CompletableFuture<String> helloAsync(String msg) {
-            CompletableFuture<String> future = new CompletableFuture<>();
-            SameThreads.setFuture(future, executor.scheduleCall(() -> hello(msg), 500));
-            return future;
+            return UniFutureUtils.toJdkFuture(executor.schedule(() -> hello(msg), 500));
         }
 
     }
@@ -159,7 +157,7 @@ public class RpcTest1 {
                         serviceId,
                         helloMethodId,
                         List.of(msg1)
-                )).thenApply(FunctionUtils.toFunction(response -> assertResponse(msg1, response)));
+                )).thenAccept((ctx, response) -> assertResponse(msg1, response));
             }
             {
                 String msg2 = "local sayHello -- remote helloAsync" + ", time " + timeProvider.getTime();
@@ -167,7 +165,7 @@ public class RpcTest1 {
                         serviceId,
                         helloAsyncMethodId,
                         List.of(msg2)
-                )).thenApply(FunctionUtils.toFunction(response -> assertResponse(msg2, response)));
+                )).thenAccept((ctx, response) -> assertResponse(msg2, response));
             }
         }
     }
@@ -177,12 +175,12 @@ public class RpcTest1 {
     private class ServerWorker implements Runnable {
 
         final TimeProvider timeProvider;
-        final SameThreadScheduledExecutor executor;
+        final UniScheduledExecutor executor;
         final DefaultRpcClient rpcClient;
 
         private ServerWorker() {
             this.timeProvider = TimeProviders.systemMillisProvider();
-            this.executor = SameThreads.newScheduledExecutor(timeProvider);
+            this.executor = new DefaultScheduledExecutor(timeProvider);
 
             SimpleAddr role = SimpleAddr.SERVER;
             rpcClient = new DefaultRpcClient(role.id, role,
@@ -211,8 +209,8 @@ public class RpcTest1 {
                     if (protocol != null) {
                         rpcClient.onRcvProtocol(protocol);
                     }
-                    executor.tick();
-                    rpcClient.tick();
+                    executor.update();
+                    rpcClient.update();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -223,12 +221,12 @@ public class RpcTest1 {
     private class ClientWorker implements Runnable {
 
         final TimeProvider timeProvider;
-        final SameThreadScheduledExecutor executor;
+        final UniScheduledExecutor executor;
         final DefaultRpcClient rpcClient;
 
         private ClientWorker() {
             this.timeProvider = TimeProviders.systemMillisProvider();
-            this.executor = SameThreads.newScheduledExecutor(timeProvider);
+            this.executor = UniFutureUtils.newScheduledExecutor(timeProvider);
 
             SimpleAddr role = SimpleAddr.CLIENT;
             rpcClient = new DefaultRpcClient(role.id, role,
@@ -265,8 +263,8 @@ public class RpcTest1 {
                     if (protocol != null) {
                         rpcClient.onRcvProtocol(protocol);
                     }
-                    executor.tick();
-                    rpcClient.tick();
+                    executor.update();
+                    rpcClient.update();
                 }
             } catch (InterruptedException e) {
                 // 退出

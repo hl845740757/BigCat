@@ -17,13 +17,11 @@
 package cn.wjybxx.bigcat.rpc;
 
 
+import cn.wjybxx.base.BitFlags;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.ex.NoLogRequiredException;
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.common.concurrent.FutureUtils;
-import cn.wjybxx.common.concurrent.ICompletableFuture;
-import cn.wjybxx.common.concurrent.SimpleWatcherMgr;
-import cn.wjybxx.common.concurrent.WatcherMgr;
+import cn.wjybxx.common.concurrent.*;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
@@ -36,9 +34,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * 默认的{@link RpcClient}实现，但仍建议你进行代理封装
@@ -122,7 +120,7 @@ public class DefaultRpcClient implements RpcClient {
     /**
      * 服务器需要每帧调用该方法，以检测超时等
      */
-    public void tick() {
+    public void update() {
         // 并不需要检查全部的rpc请求，只要第一个未超时，即可停止。
         // 因为我们没打算支持每个请求单独设立超时时间，且我们的map是保持插入序的，因此先发送的请求一定先超时
         final long curTime = timeProvider.getTime();
@@ -135,7 +133,7 @@ public class DefaultRpcClient implements RpcClient {
 
             logger.info("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
             requestStubMap.removeFirst();
-            requestStub.future.completeExceptionally(RpcClientException.timeout());
+            requestStub.future.trySetException(RpcClientException.timeout());
         }
     }
 
@@ -180,7 +178,7 @@ public class DefaultRpcClient implements RpcClient {
      * @return future，可以监听调用结果
      */
     @Override
-    public <V> ICompletableFuture<V> call(RpcAddr target, RpcMethodSpec<V> methodSpec) {
+    public <V> IFuture<V> call(RpcAddr target, RpcMethodSpec<V> methodSpec) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(methodSpec);
 
@@ -197,7 +195,7 @@ public class DefaultRpcClient implements RpcClient {
 
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
-        final ICompletableFuture<V> promise = FutureUtils.newPromise();
+        final IPromise<V> promise = FutureUtils.newPromise();
         final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(request, deadline, promise);
         requestStubMap.put(requestId, requestStub);
         return promise;
@@ -312,12 +310,15 @@ public class DefaultRpcClient implements RpcClient {
             // rpc -- 监听future完成事件
             try {
                 final Object result = proxy.invoke(context, methodSpec);
-                if (result == context) {
-                    return; // 用户使用了context返回结果
+                if (context.isManualReturn()) {
+                    return; // 用户自行管理结果
                 }
-                if (result instanceof CompletionStage<?>) { // 异步获取结果
-                    @SuppressWarnings("unchecked") CompletionStage<T> future = (CompletionStage<T>) result;
+                if (result instanceof CompletableFuture<?>) { // 异步获取结果
+                    @SuppressWarnings("unchecked") CompletableFuture<T> future = (CompletableFuture<T>) result;
                     future.whenComplete(context);
+                } else if (result instanceof IFuture<?>) {
+                    @SuppressWarnings("unchecked") IFuture<T> future = (IFuture<T>) result;
+                    future.onCompleted(context, 0);
                 } else {
                     // 立即得到了结果
                     @SuppressWarnings("unchecked") T castResult = (T) result;
@@ -376,11 +377,11 @@ public class DefaultRpcClient implements RpcClient {
             return;
         }
         final int errorCode = response.getErrorCode();
-        @SuppressWarnings("unchecked") final ICompletableFuture<Object> promise = (ICompletableFuture<Object>) requestStub.future;
+        @SuppressWarnings("unchecked") final IPromise<Object> promise = (IPromise<Object>) requestStub.future;
         if (errorCode == 0) {
-            promise.complete(response.getResult());
+            promise.trySetResult(response.getResult());
         } else {
-            promise.completeExceptionally(RpcServerException.newServerException(response));
+            promise.trySetException(RpcServerException.newServerException(response));
         }
     }
 
@@ -429,11 +430,13 @@ public class DefaultRpcClient implements RpcClient {
         }
     }
 
-    private static class RpcContextImpl<V> implements RpcContext<V>, BiConsumer<V, Throwable> {
+    private static class RpcContextImpl<V> implements RpcContext<V>,
+            Consumer<IFuture<V>>,
+            BiConsumer<V, Throwable> {
 
         final RpcRequest request;
         final DefaultRpcClient rpcClient;
-        boolean sharable = false;
+        int options;
 
         RpcContextImpl(RpcRequest request, DefaultRpcClient rpcClient) {
             this.request = request;
@@ -457,18 +460,28 @@ public class DefaultRpcClient implements RpcClient {
 
         @Override
         public boolean isSharable() {
-            return sharable;
+            return BitFlags.isAllSet(options, MASK_RESULT_SHARABLE);
         }
 
         @Override
         public void setSharable(boolean sharable) {
-            this.sharable = sharable;
+            options = BitFlags.set(options, MASK_RESULT_SHARABLE, sharable);
+        }
+
+        @Override
+        public boolean isManualReturn() {
+            return BitFlags.isAllSet(options, MASK_RESULT_MANUAL);
+        }
+
+        @Override
+        public void setManualReturn(boolean value) {
+            options = BitFlags.set(options, MASK_RESULT_MANUAL, value);
         }
 
         @Override
         public void sendResult(V result) {
             RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
-            response.setSharable(sharable);
+            response.setSharable(isSharable());
             response.setSuccess(result);
             rpcClient.sendResponse(response);
         }
@@ -503,6 +516,15 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         @Override
+        public void accept(IFuture<V> future) {
+            if (future.isSucceeded()) {
+                sendResult(future.resultNow());
+            } else {
+                sendError(future.exceptionNow(false));
+            }
+        }
+
+        @Override
         public void accept(V v, Throwable throwable) {
             if (throwable == null) {
                 sendResult(v);
@@ -517,9 +539,9 @@ public class DefaultRpcClient implements RpcClient {
 
         final RpcRequest request;
         final long deadline;
-        final ICompletableFuture<?> future;
+        final IPromise<?> future;
 
-        RpcRequestStubImpl(RpcRequest request, long deadline, ICompletableFuture<?> future) {
+        RpcRequestStubImpl(RpcRequest request, long deadline, IPromise<?> future) {
             this.future = future;
             this.deadline = deadline;
             this.request = request;

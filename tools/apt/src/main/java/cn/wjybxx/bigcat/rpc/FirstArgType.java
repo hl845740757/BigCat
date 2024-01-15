@@ -25,11 +25,10 @@ package cn.wjybxx.bigcat.rpc;
 enum FirstArgType {
 
     NONE,
-    GENERIC_CONTEXT,
     CONTEXT,
     OTHER;
 
-    public boolean noCounting() {
-        return this == GENERIC_CONTEXT || this == CONTEXT;
+    public boolean isContext() {
+        return this == CONTEXT;
     }
 }

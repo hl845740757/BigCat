@@ -48,7 +48,7 @@ public class PBParserTest {
                 .setJavaPackage("cn.wjybxx.bigcat.temp.pb1");
 
         options.setMethodDefMode(PBMethod.MODE_CONTEXT)
-                .setUseCompleteStage(false)
+                .setUseJdkFuture(false)
                 .setServiceInterceptor(service -> {
                     service.addSuperinterface("cn.wjybxx.bigcat.rpc.ExtensibleService");
                 });

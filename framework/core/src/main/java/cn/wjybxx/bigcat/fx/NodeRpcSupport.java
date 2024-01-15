@@ -16,15 +16,17 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.base.BitFlags;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.ex.NoLogRequiredException;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.pb.PBMethodInfo;
 import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
 import cn.wjybxx.bigcat.rpc.*;
-import cn.wjybxx.common.concurrent.ICompletableFuture;
+import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.common.concurrent.IPromise;
+import cn.wjybxx.common.concurrent.Promise;
 import cn.wjybxx.common.concurrent.WatcherMgr;
-import cn.wjybxx.common.concurrent.XCompletableFuture;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
@@ -36,8 +38,12 @@ import javax.annotation.concurrent.ThreadSafe;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * 1.设置属性应该启动Node之前，运行时不可修改对象的属性
@@ -168,7 +174,7 @@ public class NodeRpcSupport implements WorkerModule {
 
             logger.info("rpc timeout, requestId {}, target {}", requestId, requestStub.getDestAddr());
             requestStubMap.removeFirst();
-            requestStub.future.completeExceptionally(RpcClientException.timeout());
+            requestStub.future.trySetException(RpcClientException.timeout());
         }
     }
 
@@ -209,22 +215,22 @@ public class NodeRpcSupport implements WorkerModule {
     // region call
 
     @SuppressWarnings("unchecked")
-    public <V> ICompletableFuture<V> w2n_call(Worker worker, RpcAddr target, RpcMethodSpec<V> methodSpec) {
+    public <V> IFuture<V> w2n_call(Worker worker, RpcAddr target, RpcMethodSpec<V> methodSpec) {
         Objects.requireNonNull(worker, "worker");
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(methodSpec, "methodSpec");
 
         final RpcRequest request = newRequest(target, methodSpec, RpcInvokeType.CALL);
         if (!node.inEventLoop()) {
-            return (ICompletableFuture<V>) node.submit(() -> w2n_call(worker, request))
-                    .thenCompose(e -> e) // 这里不能调用composeAsync，如果返回的future尚未完成，则会在触发其完成的线程触发业务回调
-                    .whenCompleteAsync((v, t) -> {}, worker); // 需要回到worker线程
+            return (IFuture<V>) node.submit(() -> w2n_call(worker, request))
+                    .composeApply((ctx, e) -> e) // 这里不能调用composeAsync，如果返回的future尚未完成，则会在触发其完成的线程触发业务回调
+                    .whenCompleteAsync(worker, (ctx, v, t) -> {}); // 需要回到worker线程
         } else {
             return w2n_call(worker, request);
         }
     }
 
-    private <V> ICompletableFuture<V> w2n_call(Worker worker, RpcRequest request) {
+    private <V> IFuture<V> w2n_call(Worker worker, RpcRequest request) {
         fillRequest(request);
         if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
             logSndRequest(request);
@@ -238,7 +244,7 @@ public class NodeRpcSupport implements WorkerModule {
 
         // 保留存根
         final long deadline = timeProvider.getTime() + timeoutMs;
-        final ICompletableFuture<V> promise = node.newPromise(); // 不可在node上阻塞
+        final IPromise<V> promise = node.newPromise(); // 不可在node上阻塞
         final RpcRequestStubImpl requestStub = new RpcRequestStubImpl(request, deadline, promise);
         requestStubMap.put(request.getRequestId(), requestStub);
         return promise;
@@ -265,12 +271,12 @@ public class NodeRpcSupport implements WorkerModule {
         try {
             if (!node.inEventLoop()) {
                 response = node.submit(() -> w2n_syncCall(worker, request))
-                        .thenCompose(e -> e)
-                        .toCompletableFuture()
+                        .composeApply((ctx, e) -> e)
+                        .toFuture()
                         .get(timeoutMs, TimeUnit.MILLISECONDS);
             } else {
                 response = w2n_syncCall(worker, request)
-                        .toCompletableFuture()
+                        .toFuture()
                         .get(timeoutMs, TimeUnit.MILLISECONDS);
             }
             // 使用之前反序列化
@@ -302,7 +308,7 @@ public class NodeRpcSupport implements WorkerModule {
         }
     }
 
-    private ICompletableFuture<RpcResponse> w2n_syncCall(Worker worker, RpcRequest request) {
+    private IPromise<RpcResponse> w2n_syncCall(Worker worker, RpcRequest request) {
         // 理论上到达这里的时候，可能请求线程已经超时了，暂不处理
         fillRequest(request);
 
@@ -320,7 +326,7 @@ public class NodeRpcSupport implements WorkerModule {
             logger.info("rpc send failure, target " + request.getDestAddr());
 
             RpcResponse response = newFailedResponse(request, RpcErrorCodes.LOCAL_ROUTER_EXCEPTION, "Failed to send request");
-            watcher.future.complete(response);
+            watcher.future.trySetResult(response);
         }
         return watcher.future;
     }
@@ -414,13 +420,18 @@ public class NodeRpcSupport implements WorkerModule {
             // Call -- 监听future完成事件
             try {
                 final Object result = proxy.invoke(context, methodSpec);
-                if (result == context) {
-                    return; // 用户使用了context返回结果
+                if (context.isManualReturn()) {
+                    return; // 用户自行管理结果
                 }
-                if (result instanceof CompletionStage<?>) { // 异步获取结果
-                    @SuppressWarnings("unchecked") CompletionStage<T> future = (CompletionStage<T>) result;
+                if (result instanceof IFuture<?>) { // 异步获取结果
+                    @SuppressWarnings("unchecked") IFuture<T> future = (IFuture<T>) result;
+                    future.onCompleted(context, 0);
+                }
+                else if (result instanceof CompletableFuture<?>) {
+                    @SuppressWarnings("unchecked") CompletableFuture<T> future = (CompletableFuture<T>) result;
                     future.whenComplete(context);
-                } else {
+                }
+                else {
                     // 立即得到了结果
                     @SuppressWarnings("unchecked") T castReult = (T) result;
                     context.sendResult(castReult);
@@ -678,7 +689,7 @@ public class NodeRpcSupport implements WorkerModule {
     @ThreadSafe
     private static class RpcResponseWatcher implements WatcherMgr.Watcher<RpcResponse> {
 
-        private final ICompletableFuture<RpcResponse> future = new XCompletableFuture<>();
+        private final IPromise<RpcResponse> future = new Promise<>();
         private final long conId;
         private final long requestId;
 
@@ -695,15 +706,17 @@ public class NodeRpcSupport implements WorkerModule {
 
         @Override
         public void onEvent(@Nonnull RpcResponse response) {
-            future.complete(response);
+            future.trySetResult(response);
         }
     }
 
-    private static class RpcContextImpl<V> implements RpcContext<V>, BiConsumer<V, Throwable> {
+    private static class RpcContextImpl<V> implements RpcContext<V>,
+            Consumer<IFuture<V>>,
+            BiConsumer<V, Throwable> {
 
         final RpcRequest request;
         final NodeRpcSupport rpcClient;
-        boolean sharable = false;
+        int options;
 
         RpcContextImpl(RpcRequest request, NodeRpcSupport rpcClient) {
             this.request = request;
@@ -727,18 +740,28 @@ public class NodeRpcSupport implements WorkerModule {
 
         @Override
         public boolean isSharable() {
-            return sharable;
+            return BitFlags.isAllSet(options, MASK_RESULT_SHARABLE);
         }
 
         @Override
         public void setSharable(boolean sharable) {
-            this.sharable = sharable;
+            options = BitFlags.set(options, MASK_RESULT_SHARABLE, sharable);
+        }
+
+        @Override
+        public boolean isManualReturn() {
+            return BitFlags.isAllSet(options, MASK_RESULT_MANUAL);
+        }
+
+        @Override
+        public void setManualReturn(boolean value) {
+            options = BitFlags.set(options, MASK_RESULT_MANUAL, value);
         }
 
         @Override
         public void sendResult(V result) {
             RpcResponse response = new RpcResponse(request, rpcClient.selfAddr);
-            response.setSharable(sharable);
+            response.setSharable(isSharable());
             response.setSuccess(result);
             rpcClient.sendResponse(response);
         }
@@ -778,6 +801,15 @@ public class NodeRpcSupport implements WorkerModule {
         }
 
         @Override
+        public void accept(IFuture<V> future) {
+            if (future.isSucceeded()) {
+                sendResult(future.resultNow());
+            } else {
+                sendError(future.exceptionNow(false));
+            }
+        }
+
+        @Override
         public void accept(V v, Throwable throwable) {
             if (throwable == null) {
                 sendResult(v);
@@ -791,9 +823,9 @@ public class NodeRpcSupport implements WorkerModule {
 
         final RpcRequest request;
         final long deadline;
-        final ICompletableFuture<?> future;
+        final IPromise<?> future;
 
-        RpcRequestStubImpl(RpcRequest request, long deadline, ICompletableFuture<?> future) {
+        RpcRequestStubImpl(RpcRequest request, long deadline, IPromise<?> future) {
             this.future = future;
             this.deadline = deadline;
             this.request = request;

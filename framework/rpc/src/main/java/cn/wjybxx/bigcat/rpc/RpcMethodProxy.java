@@ -17,6 +17,7 @@
 package cn.wjybxx.bigcat.rpc;
 
 import cn.wjybxx.base.annotation.StableName;
+import cn.wjybxx.common.concurrent.IFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -36,9 +37,8 @@ public interface RpcMethodProxy {
      * 执行调用
      *
      * <h3>返回值说来</h3>
-     * 1. 如果返回{@link RpcContext}，即方法参数中的context，表示用户自行管理返回时机
-     * 2. 如果返回future，即{@link CompletionStage}或{@link CompletableFuture}，则底层监听future完成，将结果返回给远程调用者
-     * 3. 如果返回其它值，则表示方法已执行完毕，其结果将直接返回给远程
+     * 1. 如果返回{@link IFuture}或{@link CompletableFuture}，则底层监听future完成，将结果返回给远程调用者
+     * 2. 如果返回其它值，则表示方法已执行完毕，其结果将直接返回给远程
      *
      * @param context    rpc执行时的一些上下文
      * @param methodSpec 方法的参数

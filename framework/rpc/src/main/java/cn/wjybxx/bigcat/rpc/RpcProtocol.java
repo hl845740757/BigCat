@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.rpc;
 
-import cn.wjybxx.common.Bits;
+import cn.wjybxx.base.BitFlags;
 import cn.wjybxx.common.log.DebugLogFriendlyObject;
 
 /**
@@ -58,7 +58,7 @@ public abstract class RpcProtocol implements DebugLogFriendlyObject {
     }
 
     public final RpcProtocol setSharable(boolean value) {
-        ctl = Bits.set(ctl, MASK_SHARABLE, value);
+        ctl = BitFlags.set(ctl, MASK_SHARABLE, value);
         return this;
     }
 

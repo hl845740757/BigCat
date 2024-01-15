@@ -39,8 +39,8 @@ import java.util.concurrent.CompletionStage;
  * <h3>Context</h3>
  * Context有助于实现复杂的消息交互，允许在返回结果前后向对方发送额外的消息，这在与客户端通信的过程中非常有用。
  * 1. 如果需要Ctx，必须将{@link RpcContext}定义为方法的第一个参数。
- * 2. Context不会导出给客户端的Proxy，也不会计数
- * 3. 如果只想获得远程信息，而不想自行管理方法的返回时机，可将Ctx声明为{@link RpcGenericContext}
+ * 2. Context不会导出给客户端的Proxy，也不会计数。
+ * 3. 需要自行管理结果的返回实际时，需要设置{@link #manualReturn()}
  * 4. 关于context的用法可查看测试用例(RpcTest2)
  *
  * <h3>限制</h3>
@@ -79,12 +79,18 @@ public @interface RpcMethod {
      * 方法返回值是否可共享
      * 当返回值可共享时，序列化会延迟到IO线程
      * <p>
-     * 1. 该属性用于配置默认值，以免方法的实现者调用{@link RpcGenericContext#setSharable(boolean)}.
+     * 1. 该属性用于配置默认值，以免方法的实现者调用{@link RpcContext#setSharable(boolean)}.
      * 2. 如果方法返回值为：基本类型 + 包装类型 + String，则默认会设置为true。
      *
      * @see #argSharable()
      */
     boolean resultSharable() default false;
+
+    /**
+     * 是否由用户手动返回结果
+     * 当需要实现复杂的
+     */
+    boolean manualReturn() default false;
 
     /**
      * 自定义扩展数据，通常是json或dson格式。

@@ -174,20 +174,18 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         if (processor.isResultSharable(method, annoValueMap)) {
             builder.addStatement("    $L.setSharable(true)", varName_context);
         }
-
+        if (processor.isManualReturn(method, annoValueMap)) {
+            builder.addStatement("    $L.setManualReturn(true)", varName_context);
+        }
         // 执行方法调用
         FirstArgType firstArgType = processor.firstArgType(method);
         final InvokeStatement invokeStatement = genInvokeStatement(method, firstArgType);
-        if (firstArgType == FirstArgType.CONTEXT) {
-            builder.addStatement("    " + invokeStatement.format, invokeStatement.params.toArray());
-            builder.addStatement("    return context");
-        } else if (method.getReturnType().getKind() == TypeKind.VOID) {
+        if (method.getReturnType().getKind() == TypeKind.VOID) {
             builder.addStatement("    " + invokeStatement.format, invokeStatement.params.toArray());
             builder.addStatement("    return null");
         } else {
             builder.addStatement("    return " + invokeStatement.format, invokeStatement.params.toArray());
         }
-
         builder.addStatement("})");
 
         // 注册切面数据
@@ -221,7 +219,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
         // 去除context和request
         List<? extends VariableElement> parameters = method.getParameters();
-        if (firstArgType.noCounting()) {
+        if (firstArgType.isContext()) {
             TypeName targetContextType = TypeName.get(parameters.get(0).asType());
             format.append("($T) context");
             params.add(targetContextType);

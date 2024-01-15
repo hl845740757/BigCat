@@ -16,17 +16,62 @@
 
 package cn.wjybxx.bigcat.rpc;
 
+import cn.wjybxx.base.annotation.StableName;
+
 import java.util.List;
 
 /**
  * rpc执行时的上下文接口。
- * 1. 该接口提供了返回结果的方法。
- * 2. 当Rpc方法的第一个参数为该接口时，由用户自行控制结果的返回时机。
+ * <p>
+ * ps: 不能直接通过{@link RpcContext}发送结果，否则可能导致用户的封装失效，
+ * 需要走统一出口{@link RpcClient}发包。
  *
  * @author wjybxx
  * date 2023/4/1
  */
-public interface RpcContext<V> extends RpcGenericContext {
+public interface RpcContext<V> {
+
+    /**
+     * @return 返回调用的详细信息
+     */
+    RpcRequest request();
+
+    /**
+     * 远端地址
+     * 1.可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
+     * 2.本地进行模拟时，可以赋值{@link #localAddr()}
+     */
+    default RpcAddr remoteAddr() {
+        return request().srcAddr;
+    }
+
+    /**
+     * 本地地址
+     * 可用于校验 -- 对应{@link RpcRequest#destAddr}
+     */
+    default RpcAddr localAddr() {
+        return request().destAddr;
+    }
+
+    // region config
+
+    /** 当前返回值是否可共享 */
+    boolean isSharable();
+
+    /** 设置返回值是否可共享标记 -- 不论是否托管返回时机，都可以设置 */
+    @StableName
+    void setSharable(boolean sharable);
+
+    /** 是否用户手动返回结果 */
+    boolean isManualReturn();
+
+    /** 设置是否用户手动返回结果 */
+    @StableName
+    void setManualReturn(boolean value);
+
+    // endregion
+
+    // region result
 
     /** 发送正确结果 */
     void sendResult(V result);
@@ -47,4 +92,16 @@ public interface RpcContext<V> extends RpcGenericContext {
      * @param sharable 是否允许共享
      */
     void sendEncodedResult(byte[] result, boolean sharable);
+
+    // endregion
+
+
+    // region 常量
+
+    /** 返回值可共享 */
+    int MASK_RESULT_SHARABLE = 1;
+    /** 手动返回结果 */
+    int MASK_RESULT_MANUAL = 1 << 1;
+
+    // endregion
 }

@@ -170,7 +170,7 @@ public class NodeTest {
             if (regulator.isReady(timeModule.getTime())) {
                 String msg = "time: " + regulator.getLastUpdateTime();
                 rpcClient.call(StaticRpcAddr.LOCAL, RpcServiceExampleProxy.echo(msg))
-                        .thenAccept(result -> {
+                        .thenAccept((ctx, result) -> {
                             if (rpcRouter.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
                                 Assertions.assertSame(msg, result);
                             } else {

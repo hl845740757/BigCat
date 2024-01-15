@@ -55,7 +55,7 @@ class RpcClientExample {
         RpcClient rpcClient = getRpcClient();
         rpcClient.send(ServerNodeId.GAME, RpcServiceExampleProxy.hello("这是一个通知，不接收结果"));
         rpcClient.call(ServerNodeId.GAME, RpcServiceExampleProxy.hello("这是一个异步调用，可监听结果"))
-                .thenApply(result -> {
+                .thenApply((ctx, result) -> {
                     System.out.println(result);
                     return null;
                 });
@@ -122,7 +122,7 @@ Context的用法可见测试用例**RpcTest2**，这里贴部分代码：
 ```java
 class RpcServerExample {
     /** 测试context的代码生成 */
-    @RpcMethod(methodId = 7)
+    @RpcMethod(methodId = 7, manualReturn = true)
     public void contextHello(RpcContext<String> rpcContext, String msg) {
         rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage("context -- before"));
         rpcContext.sendResult(msg);

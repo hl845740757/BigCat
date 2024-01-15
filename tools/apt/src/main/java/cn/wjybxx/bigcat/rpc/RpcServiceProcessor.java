@@ -51,13 +51,14 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String PNAME_METHOD_ID = "methodId";
     private static final String PNAME_ARG_SHARABLE = "argSharable";
     private static final String PNAME_RESULT_SHARABLE = "resultSharable";
+    private static final String PNAME_MANUAL_RETURN = "manualReturn";
     private static final String PNAME_CUSTOM_DATA = "customData";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.bigcat.rpc.RpcMethodSpec";
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.bigcat.rpc.RpcRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.bigcat.rpc.RpcContext";
-    private static final String CNAME_GENERIC_CONTEXT = "cn.wjybxx.bigcat.rpc.RpcGenericContext";
 
+    private static final String CNAME_MY_FUTURE = "cn.wjybxx.common.concurrent.IFuture";
     private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
     private static final int MAX_PARAMETER_COUNT = 5;
 
@@ -70,7 +71,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     ClassName contextRawTypeName;
     TypeMirror contextTypeMirror;
-    TypeMirror genericContextTypeMirror;
 
     TypeMirror boxedVoidTypeMirror;
     TypeMirror objectTypeMirror;
@@ -104,14 +104,13 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         TypeElement contextTypeElement = elementUtils.getTypeElement(CNAME_CONTEXT);
         contextRawTypeName = ClassName.get(contextTypeElement);
         contextTypeMirror = contextTypeElement.asType();
-        genericContextTypeMirror = elementUtils.getTypeElement(CNAME_GENERIC_CONTEXT).asType();
 
         boxedVoidTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Void.class).asType();
         objectTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, Object.class).asType();
         stringTypeMirror = AptUtils.getTypeElementOfClass(elementUtils, String.class).asType();
 
         futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletableFuture.class).asType());
-        futureTypeMirrors.add(AptUtils.getTypeElementOfClass(elementUtils, CompletionStage.class).asType());
+        futureTypeMirrors.add(elementUtils.getTypeElement(CNAME_MY_FUTURE).asType());
 
         for (TypeKind typeKind : TypeKind.values()) {
             if (!typeKind.isPrimitive()) continue;
@@ -193,20 +192,15 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
             return;
         }
         FirstArgType firstArgType = firstArgType(method);
-        // 如果声明了context，方法的返回值必须是void
-        if (firstArgType == FirstArgType.CONTEXT && method.getReturnType().getKind() != TypeKind.VOID) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "the return type of method(context) must be void", method);
-        }
-
         // 检测方法参数个数
-        int maxParameterCount = firstArgType.noCounting() ? MAX_PARAMETER_COUNT + 1 : MAX_PARAMETER_COUNT;
+        int maxParameterCount = firstArgType.isContext() ? MAX_PARAMETER_COUNT + 1 : MAX_PARAMETER_COUNT;
         if (parameters.size() > maxParameterCount) {
             messager.printMessage(Diagnostic.Kind.ERROR, "method has too many parameters!", method);
         }
         // 检查后续是否存在context参数 -- 意义不是很大
-        for (int idx = firstArgType.noCounting() ? 1 : 0; idx < parameters.size(); idx++) {
+        for (int idx = firstArgType.isContext() ? 1 : 0; idx < parameters.size(); idx++) {
             VariableElement variableElement = parameters.get(idx);
-            if (isContext(variableElement.asType()) || isGenericContext(variableElement.asType())) {
+            if (isContext(variableElement.asType())) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "context and request must be declared as the first parameter!", method);
                 continue;
             }
@@ -254,6 +248,15 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return (String) annotationValue.getValue();
     }
 
+    /** 是否手动返回结果 */
+    boolean isManualReturn(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
+        AnnotationValue annotationValue = annoValueMap.get(PNAME_MANUAL_RETURN);
+        if (annotationValue == null) {
+            return false;
+        }
+        return (boolean) annotationValue.getValue();
+    }
+
     /** 方法参数是否可共享 */
     boolean isArgSharable(ExecutableElement method, Map<String, AnnotationValue> annoValueMap) {
         // 指定了属性则以属性为准
@@ -265,7 +268,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         // 如果所有参数都是不可变的，则默认true
         List<? extends VariableElement> parameters = method.getParameters();
         for (VariableElement parameter : parameters) {
-            if (isContext(parameter.asType()) || isGenericContext(parameter.asType())) {
+            if (isContext(parameter.asType())) {
                 continue;
             }
             if (!isImmutableType(parameter.asType())) {
@@ -285,7 +288,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         // 如果所有参数都是不可变的，则默认true
         List<? extends VariableElement> parameters = method.getParameters();
         for (VariableElement parameter : parameters) {
-            if (isContext(parameter.asType()) || isGenericContext(parameter.asType())) {
+            if (isContext(parameter.asType())) {
                 continue;
             }
             if (!isImmutableType(parameter.asType())) {
@@ -321,13 +324,9 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
                 .execute();
     }
 
+    /** 是否是context参数 */
     boolean isContext(TypeMirror typeMirror) {
         return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, contextTypeMirror);
-    }
-
-    /** 是否是通用Context */
-    boolean isGenericContext(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, genericContextTypeMirror);
     }
 
     boolean isString(TypeMirror typeMirror) {
@@ -349,7 +348,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
         TypeMirror typeMirror = parameters.get(0).asType();
         if (isContext(typeMirror)) return FirstArgType.CONTEXT;
-        if (isGenericContext(typeMirror)) return FirstArgType.GENERIC_CONTEXT; // 需放在后面判断
         return FirstArgType.OTHER;
     }
 

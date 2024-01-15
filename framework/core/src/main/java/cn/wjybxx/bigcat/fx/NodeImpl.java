@@ -311,14 +311,14 @@ public class NodeImpl extends DefaultEventLoop implements Node {
             for (Worker child : children) {
                 combiner.add(child.terminationFuture());
             }
-            XCompletableFuture<Object> aggregateFuture = combiner.selectAll(true);
+            IPromise<Object> aggregateFuture = combiner.selectAll(true);
 
             // 逆序关闭 -- 可能存在时序依赖
             for (int i = children.length - 1; i >= 0; i--) {
                 Worker child = children[i];
                 child.shutdown();
             }
-            if (aggregateFuture.awaitUninterruptedly(1, TimeUnit.MINUTES)) {
+            if (aggregateFuture.awaitUninterruptibly(1, TimeUnit.MINUTES)) {
                 return;
             }
             // 进入快速关闭阶段

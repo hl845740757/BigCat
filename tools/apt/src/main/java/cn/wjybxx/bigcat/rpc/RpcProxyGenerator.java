@@ -96,7 +96,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         // 去除context和request参数
         final List<ParameterSpec> parameters = builder.parameters;
         final FirstArgType firstArgType = processor.firstArgType(method);
-        if (firstArgType.noCounting()) {
+        if (firstArgType.isContext()) {
             parameters.remove(0);
         }
 

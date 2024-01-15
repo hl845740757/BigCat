@@ -78,14 +78,15 @@ ps：
 方法的元注解有三个，分别为：
 
 ```
-    //@RpcMethod {id: 1, mode: 1, ctx: true}
+    //@RpcMethod {id: 1, mode: 1, ctx: true, manual: true}
     //@Sparam {}
     //@Cparam {}
 ```
 
 * id 表示方法在服务内的id
 * mode 表示服务端接口的模式；默认值为0（解析器指定）
-* ctx 表示在**非Ctx异步模式**下是否需要**RpcGenericContext**参数；默认值为false
+* ctx 表示是否需要RpcContext参数；默认值为false
+* manual 表示是否手动管理返回时机，如果为true，应当声明tx。
 * Sparam 为服务端用参数，dson格式；单独成行，利于解析和书写
 * Cparam 为客户端用参数，dson格式
 
@@ -93,7 +94,6 @@ mode枚举：
 
 * 0 表示普通模式，接口和pb中定义一致
 * 1 表示异步模式，服务端接口的返回值将包装为Future
-* 2 表示Ctx异步模式，服务端接口的第一个参数为RpcContext，且方法的返回值为void
 
 ### 限制
 

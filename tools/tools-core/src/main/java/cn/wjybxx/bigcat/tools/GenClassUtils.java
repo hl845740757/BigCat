@@ -21,6 +21,7 @@ import cn.wjybxx.base.EnumLite;
 import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.base.annotation.SourceFileRef;
+import cn.wjybxx.common.concurrent.IFuture;
 import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
 import com.squareup.javapoet.*;
 
@@ -78,8 +79,8 @@ public class GenClassUtils {
     public static final ClassName CLSNAME_ARRAYS = ClassName.get(Arrays.class);
     public static final ClassName CLSNAME_OBJECTS = ClassName.get(Objects.class);
 
-    public static final ClassName CLSNAME_FUTURE = ClassName.get(CompletableFuture.class);
-    public static final ClassName CLSNAME_STAGE = ClassName.get(CompletionStage.class);
+    public static final ClassName CLSNAME_JDK_FUTURE = ClassName.get(CompletableFuture.class);
+    public static final ClassName CLSNAME_MY_FUTURE = ClassName.get(IFuture.class);
 
     public static final Map<String, TypeName> primitiveTypeNameMap;
     public static final Map<String, TypeName> boxedTypeNameMap;

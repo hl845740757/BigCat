@@ -46,9 +46,10 @@ public class PBMethod extends PBElement {
     private int methodId;
     /** 方法的执行模式，如果文件中未定义，则使用默认的模式（解析器中配置） */
     private int mode;
-    /** 非context模式下，是否在方法参数中追加{@code RpcGenericContext}参数 */
+    /** 是否在方法参数中追加{@code RpcContext}参数 */
     private boolean ctx = false;
-
+    /** 是否手动返回结果 */
+    private boolean manual =false;
     //
 
     @Nonnull
@@ -129,6 +130,14 @@ public class PBMethod extends PBElement {
         return this;
     }
 
+    public boolean isManual() {
+        return manual;
+    }
+
+    public void setManual(boolean manual) {
+        this.manual = manual;
+    }
+
     @Override
     protected void toString(StringBuilder sb) {
         sb.append(", argType='").append(argType).append('\'')
@@ -136,7 +145,7 @@ public class PBMethod extends PBElement {
                 .append(", resultType='").append(resultType).append('\'')
                 .append(", methodId=").append(methodId)
                 .append(", mode=").append(mode)
-                .append(", ctx=").append(ctx);
-
+                .append(", ctx=").append(ctx)
+                .append(", manual=").append(manual);
     }
 }

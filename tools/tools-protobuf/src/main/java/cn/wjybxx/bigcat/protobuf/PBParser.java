@@ -532,7 +532,13 @@ public class PBParser {
             if (ctx != null) {
                 method.setCtx(ctx.asBool());
             } else {
-                method.setCtx(options.isMethodDefCtx());
+                method.setCtx(options.isMethodDefAppendCtx());
+            }
+            DsonValue manual = dsonValue.get("manual");
+            if (manual != null) {
+                method.setManual(manual.asBool());
+            } else {
+                method.setManual(options.isMethodDefManual());
             }
         }
     }

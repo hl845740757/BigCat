@@ -17,13 +17,13 @@
 package cn.wjybxx.bigcat.rpc;
 
 import cn.wjybxx.common.concurrent.FutureUtils;
+import cn.wjybxx.common.concurrent.IFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author wjybxx
@@ -45,7 +45,7 @@ public class RpcServiceExample implements ExtensibleService {
 
     /** 测试异步返回 */
     @RpcMethod(methodId = 2)
-    public CompletableFuture<String> helloAsync(String msg) {
+    public IFuture<String> helloAsync(String msg) {
         return FutureUtils.newSucceededFuture(msg);
     }
 
@@ -73,7 +73,7 @@ public class RpcServiceExample implements ExtensibleService {
     }
 
     /** 测试context的代码生成 */
-    @RpcMethod(methodId = 7)
+    @RpcMethod(methodId = 7, manualReturn = true)
     public void contextHello(RpcContext<String> rpcContext, String msg) {
         rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage("context -- before"));
         rpcContext.sendResult(msg);
@@ -82,7 +82,7 @@ public class RpcServiceExample implements ExtensibleService {
 
     /** 测试context的代码生成 */
     @RpcMethod(methodId = 8)
-    public String requestHello(RpcGenericContext ctx, String msg) {
+    public String requestHello(RpcContext<Object> ctx, String msg) {
         return msg;
     }
 

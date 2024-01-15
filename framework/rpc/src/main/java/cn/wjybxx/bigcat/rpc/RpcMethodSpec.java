@@ -16,7 +16,7 @@
 package cn.wjybxx.bigcat.rpc;
 
 
-import cn.wjybxx.common.Bits;
+import cn.wjybxx.base.BitFlags;
 
 import java.util.List;
 import java.util.Objects;
@@ -59,7 +59,7 @@ public final class RpcMethodSpec<V> {
     }
 
     public RpcMethodSpec<V> setSharable(boolean value) {
-        ctl = Bits.set(ctl, RpcProtocol.MASK_SHARABLE, value);
+        ctl = BitFlags.set(ctl, RpcProtocol.MASK_SHARABLE, value);
         return this;
     }
 

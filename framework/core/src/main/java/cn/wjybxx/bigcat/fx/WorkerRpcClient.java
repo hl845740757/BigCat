@@ -19,7 +19,7 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.bigcat.rpc.RpcAddr;
 import cn.wjybxx.bigcat.rpc.RpcClient;
 import cn.wjybxx.bigcat.rpc.RpcMethodSpec;
-import cn.wjybxx.common.concurrent.ICompletableFuture;
+import cn.wjybxx.common.concurrent.IFuture;
 
 import java.util.Objects;
 
@@ -50,7 +50,7 @@ public class WorkerRpcClient implements RpcClient, WorkerModule {
     }
 
     @Override
-    public <V> ICompletableFuture<V> call(RpcAddr target, RpcMethodSpec<V> methodSpec) {
+    public <V> IFuture<V> call(RpcAddr target, RpcMethodSpec<V> methodSpec) {
         return rpcSupport.w2n_call(worker, target, methodSpec);
     }
 

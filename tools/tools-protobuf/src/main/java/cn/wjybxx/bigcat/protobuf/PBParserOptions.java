@@ -17,11 +17,11 @@
 package cn.wjybxx.bigcat.protobuf;
 
 import cn.wjybxx.base.ObjectUtils;
+import cn.wjybxx.common.concurrent.IFuture;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -96,10 +96,12 @@ public class PBParserOptions {
 
     /** 方法的默认模式 */
     private int methodDefMode = PBMethod.MODE_NORMAL;
-    /** 方法ctx选项的默认值 */
-    private boolean methodDefCtx = false;
-    /** 异步方法返回值是否类型声明为{@link CompletionStage}，如果为false，则声明为{@link CompletableFuture} */
-    private boolean useCompleteStage = false;
+    /** 方法是否默认追加ctx参数 */
+    private boolean methodDefAppendCtx = false;
+    /** 方法是否默认为手动返回结果 */
+    private boolean methodDefManual = false;
+    /** 异步方法返回值是否类型声明为{@link CompletableFuture}，如果为false，则声明为{@link IFuture} */
+    private boolean useJdkFuture = false;
     /**
      * 方法参数名的生成方式 - 参数为{@link PBMethod#getArgType()}
      * 如果沿用Protobuf格式，方法参数仅类型无名字，可通过该函数根据类型名生成变量名。
@@ -300,21 +302,29 @@ public class PBParserOptions {
         return this;
     }
 
-    public boolean isMethodDefCtx() {
-        return methodDefCtx;
+    public boolean isMethodDefAppendCtx() {
+        return methodDefAppendCtx;
     }
 
-    public PBParserOptions setMethodDefCtx(boolean methodDefCtx) {
-        this.methodDefCtx = methodDefCtx;
+    public PBParserOptions setMethodDefAppendCtx(boolean methodDefAppendCtx) {
+        this.methodDefAppendCtx = methodDefAppendCtx;
         return this;
     }
 
-    public boolean isUseCompleteStage() {
-        return useCompleteStage;
+    public boolean isMethodDefManual() {
+        return methodDefManual;
     }
 
-    public PBParserOptions setUseCompleteStage(boolean useCompleteStage) {
-        this.useCompleteStage = useCompleteStage;
+    public void setMethodDefManual(boolean methodDefManual) {
+        this.methodDefManual = methodDefManual;
+    }
+
+    public boolean isUseJdkFuture() {
+        return useJdkFuture;
+    }
+
+    public PBParserOptions setUseJdkFuture(boolean useJdkFuture) {
+        this.useJdkFuture = useJdkFuture;
         return this;
     }
 

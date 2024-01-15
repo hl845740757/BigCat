@@ -19,8 +19,8 @@ package cn.wjybxx.bigcat.rpc;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.base.time.TimeProviders;
-import cn.wjybxx.common.async.SameThreadScheduledExecutor;
-import cn.wjybxx.common.async.SameThreads;
+import cn.wjybxx.common.unitask.UniFutureUtils;
+import cn.wjybxx.common.unitask.UniScheduledExecutor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -93,12 +93,12 @@ public class RpcTest2 {
     private class ServerWorker implements Runnable {
 
         final TimeProvider timeProvider;
-        final SameThreadScheduledExecutor executor;
+        final UniScheduledExecutor executor;
         final DefaultRpcClient rpcClient;
 
         private ServerWorker() {
             this.timeProvider = TimeProviders.systemMillisProvider();
-            this.executor = SameThreads.newScheduledExecutor(timeProvider);
+            this.executor = UniFutureUtils.newScheduledExecutor(timeProvider);
 
             SimpleAddr role = SimpleAddr.SERVER;
             RpcRegistry registry = new DefaultRpcRegistry();
@@ -122,8 +122,8 @@ public class RpcTest2 {
                     if (protocol != null) {
                         rpcClient.onRcvProtocol(protocol);
                     }
-                    executor.tick();
-                    rpcClient.tick();
+                    executor.update();
+                    rpcClient.update();
                 }
             } catch (InterruptedException e) {
                 // 退出
@@ -134,14 +134,14 @@ public class RpcTest2 {
     private class ClientWorker implements Runnable {
 
         final TimeProvider timeProvider;
-        final SameThreadScheduledExecutor executor;
+        final UniScheduledExecutor executor;
         final int mode;
 
         final DefaultRpcClient rpcClient;
 
         private ClientWorker(int mode) {
             this.timeProvider = TimeProviders.systemMillisProvider();
-            this.executor = SameThreads.newScheduledExecutor(timeProvider);
+            this.executor = UniFutureUtils.newScheduledExecutor(timeProvider);
             this.mode = mode;
 
             SimpleAddr role = SimpleAddr.CLIENT;
@@ -172,8 +172,8 @@ public class RpcTest2 {
                     if (protocol != null) {
                         rpcClient.onRcvProtocol(protocol);
                     }
-                    executor.tick();
-                    rpcClient.tick();
+                    executor.update();
+                    rpcClient.update();
                 }
             } catch (InterruptedException e) {
                 // 退出

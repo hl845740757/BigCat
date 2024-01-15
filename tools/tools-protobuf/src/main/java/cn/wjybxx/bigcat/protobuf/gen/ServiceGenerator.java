@@ -35,9 +35,7 @@ public class ServiceGenerator extends AbstractGenerator {
 
     private static final ClassName anno_rpcService = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcService");
     private static final ClassName anno_rpcMethod = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcMethod");
-
     private static final ClassName clsName_rpcContext = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcContext");
-    private static final ClassName clsName_rpcGenericContext = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcGenericContext");
 
     private final File javaOutDir;
     private final AnnotationSpec generatorInfo;
@@ -94,10 +92,10 @@ public class ServiceGenerator extends AbstractGenerator {
                 methodBuilder.addAnnotation(annoBuilder.build());
             }
             // 处理方法的模式
-            switch (method.getMode()) {
-                case PBMethod.MODE_CONTEXT -> buildWithContextMode(method, methodBuilder);
-                case PBMethod.MODE_FUTURE -> buildWithFutureMode(method, methodBuilder);
-                default -> buildWithDefMode(method, methodBuilder);
+            if (method.getMode() == PBMethod.MODE_FUTURE) {
+                buildWithFutureMode(method, methodBuilder);
+            } else {
+                buildWithDefMode(method, methodBuilder);
             }
             // 方法注释
             if (method.getComments().size() > 0) {
@@ -138,7 +136,7 @@ public class ServiceGenerator extends AbstractGenerator {
 
         // 是否需要context参数
         if (method.isCtx()) {
-            methodBuilder.addParameter(clsName_rpcGenericContext, "rpcCtx");
+            methodBuilder.addParameter(parseRpcContextType(method), "rpcCtx");
         }
         // 正常参数
         if (method.getArgType() != null) {
@@ -152,10 +150,10 @@ public class ServiceGenerator extends AbstractGenerator {
         TypeName returnType;
         if (method.getResultType() != null) {
             ClassName resultType = classNameOfType(method.getResultType());
-            if (options.isUseCompleteStage()) {
-                returnType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_STAGE, resultType);
+            if (options.isUseJdkFuture()) {
+                returnType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_JDK_FUTURE, resultType);
             } else {
-                returnType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_FUTURE, resultType);
+                returnType = ParameterizedTypeName.get(GenClassUtils.CLSNAME_MY_FUTURE, resultType);
             }
         } else {
             returnType = TypeName.VOID;
@@ -164,7 +162,7 @@ public class ServiceGenerator extends AbstractGenerator {
 
         // 是否需要context参数
         if (method.isCtx()) {
-            methodBuilder.addParameter(clsName_rpcGenericContext, "rpcCtx");
+            methodBuilder.addParameter(parseRpcContextType(method), "rpcCtx");
         }
         // 正常参数
         if (method.getArgType() != null) {
@@ -173,23 +171,15 @@ public class ServiceGenerator extends AbstractGenerator {
         }
     }
 
-    private void buildWithContextMode(PBMethod method, MethodSpec.Builder methodBuilder) {
-        // 返回值类型封装到context
+    private TypeName parseRpcContextType(PBMethod method) {
         TypeName rpcCtxArg;
         if (method.getResultType() != null) {
             ClassName resultType = classNameOfType(method.getResultType());
             rpcCtxArg = ParameterizedTypeName.get(clsName_rpcContext, resultType);
         } else {
-            rpcCtxArg = ParameterizedTypeName.get(clsName_rpcContext, TypeName.OBJECT);
+            rpcCtxArg = ParameterizedTypeName.get(clsName_rpcContext, TypeName.OBJECT); // object代替?
         }
-        methodBuilder.returns(TypeName.VOID)
-                .addParameter(rpcCtxArg, "rpcCtx");
-
-        // 正常参数
-        if (method.getArgType() != null) {
-            ClassName argType = classNameOfType(method.getArgType());
-            methodBuilder.addParameter(argType, method.getArgName());
-        }
+        return rpcCtxArg;
     }
 
 }
