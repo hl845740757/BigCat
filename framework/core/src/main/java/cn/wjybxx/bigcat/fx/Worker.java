@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.Internal;
-import cn.wjybxx.common.concurrent.EventLoop;
+import cn.wjybxx.concurrent.EventLoop;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntSet;
 

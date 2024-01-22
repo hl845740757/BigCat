@@ -17,10 +17,9 @@
 package cn.wjybxx.bigcat.rpc;
 
 import cn.wjybxx.base.annotation.StableName;
-import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.concurrent.IFuture;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 /**
  * rpc方法代理

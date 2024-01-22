@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.concurrent.EventLoopModule;
+import cn.wjybxx.concurrent.EventLoopModule;
 
 /**
  * WorkerModule是Worker的组件单元。

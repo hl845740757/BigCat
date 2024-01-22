@@ -21,7 +21,8 @@ import cn.wjybxx.base.time.Regulator;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
 import cn.wjybxx.bigcat.rpc.*;
-import cn.wjybxx.common.concurrent.RingBufferEvent;
+import cn.wjybxx.concurrent.RingBufferEvent;
+import cn.wjybxx.disruptor.EventTranslator;
 import com.google.inject.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -86,12 +87,30 @@ public class NodeTest {
     @Test
     void testFireEvent() {
         for (int idx = 0; idx < 10; idx++) {
-            RingBufferEvent event = new RingBufferEvent();
-            event.setType(1);
-            event.intVal1 = idx;
-
-            node.execute(event);
+            node.execute(new Translator(1, idx));
             ThreadUtils.sleepQuietly(10);
+        }
+    }
+
+    private static class Translator implements EventTranslator<RingBufferEvent>, Runnable {
+
+        final int type;
+        final int intVal1;
+
+        public Translator(int type, int intVal1) {
+            this.type = type;
+            this.intVal1 = intVal1;
+        }
+
+        @Override
+        public void run() {
+
+        }
+
+        @Override
+        public void translateTo(RingBufferEvent event, long sequence) {
+            event.setType(1);
+            event.intVal1 = intVal1;
         }
     }
 

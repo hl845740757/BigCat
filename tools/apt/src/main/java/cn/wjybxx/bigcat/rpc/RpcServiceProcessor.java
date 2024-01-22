@@ -58,7 +58,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.bigcat.rpc.RpcRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.bigcat.rpc.RpcContext";
 
-    private static final String CNAME_MY_FUTURE = "cn.wjybxx.common.concurrent.IFuture";
+    private static final String CNAME_MY_FUTURE = "cn.wjybxx.concurrent.IFuture";
     private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
     private static final int MAX_PARAMETER_COUNT = 5;
 

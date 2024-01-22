@@ -17,8 +17,8 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.common.concurrent.EventLoop;
-import cn.wjybxx.common.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.EventLoop;
+import cn.wjybxx.concurrent.FutureUtils;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;

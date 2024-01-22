@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.concurrent.RingBufferEvent;
+import cn.wjybxx.concurrent.RingBufferEvent;
 
 /**
  * 主模块是Worker的策略实现，每个Worker都绑定一个主模块。

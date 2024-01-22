@@ -16,9 +16,9 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.concurrent.EventLoop;
-import cn.wjybxx.common.concurrent.EventLoopFactory;
-import cn.wjybxx.common.concurrent.EventLoopGroup;
+import cn.wjybxx.concurrent.EventLoop;
+import cn.wjybxx.concurrent.EventLoopFactory;
+import cn.wjybxx.concurrent.EventLoopGroup;
 
 /**
  * @author wjybxx

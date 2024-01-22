@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.rpc.RpcRegistry;
-import cn.wjybxx.common.concurrent.*;
+import cn.wjybxx.concurrent.*;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.*;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * @author wjybxx
  * date - 2023/10/4
  */
-public class NodeImpl extends DefaultEventLoop implements Node {
+public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Node {
 
     private final String workerId;
     private final Injector injector;
@@ -92,7 +92,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
         chooser = chooserFactory.newChooser(children);
     }
 
-    private static EventLoopBuilder.DefaultBuilder decorate(NodeBuilder.DefaultNodeBuilder builder) {
+    private static EventLoopBuilder.DisruptorBuilder<RingBufferEvent> decorate(NodeBuilder.DefaultNodeBuilder builder) {
         return builder.getDelegated()
                 .setAgent(new Agent());
     }
@@ -206,7 +206,7 @@ public class NodeImpl extends DefaultEventLoop implements Node {
     }
     //
 
-    private static class Agent implements EventLoopAgent {
+    private static class Agent implements EventLoopAgent<RingBufferEvent> {
 
         NodeImpl node;
         MainModule mainModule; // 缓存

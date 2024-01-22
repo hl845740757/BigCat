@@ -17,10 +17,9 @@
 package cn.wjybxx.bigcat.rpc;
 
 
-import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.concurrent.IFuture;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.List;
 
 /**
  * Rpc客户端。

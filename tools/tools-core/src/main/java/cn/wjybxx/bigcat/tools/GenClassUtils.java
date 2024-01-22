@@ -21,7 +21,7 @@ import cn.wjybxx.base.EnumLite;
 import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.base.annotation.SourceFileRef;
-import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.concurrent.IFuture;
 import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
 import com.squareup.javapoet.*;
 

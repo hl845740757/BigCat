@@ -23,12 +23,12 @@ import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.pb.PBMethodInfo;
 import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
 import cn.wjybxx.bigcat.rpc.*;
-import cn.wjybxx.common.concurrent.IFuture;
-import cn.wjybxx.common.concurrent.IPromise;
-import cn.wjybxx.common.concurrent.Promise;
-import cn.wjybxx.common.concurrent.WatcherMgr;
 import cn.wjybxx.common.log.DebugLogLevel;
 import cn.wjybxx.common.log.DebugLogUtils;
+import cn.wjybxx.concurrent.IFuture;
+import cn.wjybxx.concurrent.IPromise;
+import cn.wjybxx.concurrent.Promise;
+import cn.wjybxx.concurrent.WatcherMgr;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -426,12 +426,10 @@ public class NodeRpcSupport implements WorkerModule {
                 if (result instanceof IFuture<?>) { // 异步获取结果
                     @SuppressWarnings("unchecked") IFuture<T> future = (IFuture<T>) result;
                     future.onCompleted(context, 0);
-                }
-                else if (result instanceof CompletableFuture<?>) {
+                } else if (result instanceof CompletableFuture<?>) {
                     @SuppressWarnings("unchecked") CompletableFuture<T> future = (CompletableFuture<T>) result;
                     future.whenComplete(context);
-                }
-                else {
+                } else {
                     // 立即得到了结果
                     @SuppressWarnings("unchecked") T castReult = (T) result;
                     context.sendResult(castReult);

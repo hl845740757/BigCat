@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.rpc;
 
-import cn.wjybxx.common.concurrent.FutureUtils;
-import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.IFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;

@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.concurrent.RingBufferEvent;
+import cn.wjybxx.concurrent.RingBufferEvent;
 import com.google.inject.Inject;
 
 /**

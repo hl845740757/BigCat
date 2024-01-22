@@ -23,12 +23,14 @@ import cn.wjybxx.bigcat.rpc.RpcClient;
 import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import cn.wjybxx.bigcat.rpc.RpcRouter;
 import cn.wjybxx.bigcat.rpc.RpcSerializer;
-import cn.wjybxx.common.concurrent.DefaultThreadFactory;
-import cn.wjybxx.common.concurrent.EventLoopBuilder;
-import cn.wjybxx.common.concurrent.RejectedExecutionHandler;
-import cn.wjybxx.common.concurrent.ext.TimeoutSleepingWaitStrategy;
+import cn.wjybxx.concurrent.DefaultThreadFactory;
+import cn.wjybxx.concurrent.EventLoopBuilder;
+import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
+import cn.wjybxx.concurrent.RejectedExecutionHandler;
+import cn.wjybxx.concurrent.RingBufferEvent;
+import cn.wjybxx.disruptor.EventSequencer;
+import cn.wjybxx.disruptor.WaitStrategy;
 import com.google.inject.Injector;
-import com.lmax.disruptor.WaitStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,13 +75,13 @@ public abstract class WorkerBuilder {
     /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
     private WorkerCtx workerCtx;
     /** Builder之间不方便继承 */
-    protected final EventLoopBuilder delegated;
+    protected final EventLoopBuilder<RingBufferEvent> delegated;
 
-    protected WorkerBuilder(EventLoopBuilder delegated) {
+    protected WorkerBuilder(EventLoopBuilder<RingBufferEvent> delegated) {
         this.delegated = Objects.requireNonNull(delegated);
     }
 
-    public EventLoopBuilder getDelegated() {
+    public EventLoopBuilder<RingBufferEvent> getDelegated() {
         return delegated;
     }
 
@@ -101,6 +103,15 @@ public abstract class WorkerBuilder {
 
     public WorkerBuilder setThreadFactory(ThreadFactory threadFactory) {
         delegated.setThreadFactory(threadFactory);
+        return this;
+    }
+
+    public int getBatchSize() {
+        return delegated.getBatchSize();
+    }
+
+    public WorkerBuilder setBatchSize(int batchSize) {
+        delegated.setBatchSize(batchSize);
         return this;
     }
 
@@ -191,15 +202,12 @@ public abstract class WorkerBuilder {
             if (getThreadFactory() == null) {
                 setThreadFactory(new DefaultThreadFactory("Worker"));
             }
-            if (getWaitStrategy() == null) {
-                setWaitStrategy(new TimeoutSleepingWaitStrategy());
-            }
             return new WorkerImpl(this);
         }
 
         @Override
-        public EventLoopBuilder.DisruptorBuilder getDelegated() {
-            return (EventLoopBuilder.DisruptorBuilder) super.getDelegated();
+        public DisruptorBuilder<RingBufferEvent> getDelegated() {
+            return (DisruptorBuilder<RingBufferEvent>) super.getDelegated();
         }
 
         // region
@@ -266,12 +274,14 @@ public abstract class WorkerBuilder {
 
         // endregion
 
-        public int getRingBufferSize() {
-            return getDelegated().getRingBufferSize();
+        // region disruptor
+
+        public EventSequencer<? extends RingBufferEvent> getEventSequencer() {
+            return getDelegated().getEventSequencer();
         }
 
-        public DisruptWorkerBuilder setRingBufferSize(int ringBufferSize) {
-            getDelegated().setRingBufferSize(ringBufferSize);
+        public DisruptWorkerBuilder setEventSequencer(EventSequencer<? extends RingBufferEvent> eventSequencer) {
+            getDelegated().setEventSequencer(eventSequencer);
             return this;
         }
 
@@ -284,14 +294,15 @@ public abstract class WorkerBuilder {
             return this;
         }
 
-        public int getBatchSize() {
-            return getDelegated().getBatchSize();
+        public boolean isCleanBufferOnExit() {
+            return getDelegated().isCleanBufferOnExit();
         }
 
-        public DisruptWorkerBuilder setBatchSize(int batchSize) {
-            getDelegated().setBatchSize(batchSize);
+        public DisruptWorkerBuilder setCleanBufferOnExit(boolean cleanBufferOnExit) {
+            getDelegated().setCleanBufferOnExit(cleanBufferOnExit);
             return this;
         }
 
+        // endregion
     }
 }

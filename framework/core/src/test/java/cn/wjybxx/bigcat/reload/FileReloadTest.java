@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.reload;
 
 import cn.wjybxx.base.Preconditions;
-import cn.wjybxx.common.concurrent.DefaultThreadFactory;
+import cn.wjybxx.concurrent.DefaultThreadFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;

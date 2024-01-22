@@ -19,7 +19,7 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.bigcat.rpc.RpcAddr;
 import cn.wjybxx.bigcat.rpc.RpcClient;
 import cn.wjybxx.bigcat.rpc.RpcMethodSpec;
-import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.concurrent.IFuture;
 
 import java.util.Objects;
 

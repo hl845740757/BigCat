@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.protobuf;
 
 import cn.wjybxx.base.ObjectUtils;
-import cn.wjybxx.common.concurrent.IFuture;
+import cn.wjybxx.concurrent.IFuture;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;

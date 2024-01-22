@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.tools;
 
 import cn.wjybxx.base.MathCommon;
-import cn.wjybxx.common.concurrent.DefaultThreadFactory;
+import cn.wjybxx.concurrent.DefaultThreadFactory;
 
 import java.util.List;
 import java.util.concurrent.*;

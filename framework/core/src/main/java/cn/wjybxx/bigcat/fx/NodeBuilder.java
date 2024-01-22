@@ -16,13 +16,11 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.common.concurrent.DefaultThreadFactory;
-import cn.wjybxx.common.concurrent.EventLoopBuilder;
-import cn.wjybxx.common.concurrent.EventLoopChooserFactory;
-import cn.wjybxx.common.concurrent.RejectedExecutionHandler;
-import cn.wjybxx.common.concurrent.ext.TimeoutSleepingWaitStrategy;
+import cn.wjybxx.concurrent.*;
+import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
+import cn.wjybxx.disruptor.EventSequencer;
+import cn.wjybxx.disruptor.WaitStrategy;
 import com.google.inject.Injector;
-import com.lmax.disruptor.WaitStrategy;
 
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
@@ -40,7 +38,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
     private EventLoopChooserFactory chooserFactory;
     private WorkerAddr nodeAddr;
 
-    protected NodeBuilder(EventLoopBuilder delegateBuilder) {
+    protected NodeBuilder(EventLoopBuilder<RingBufferEvent> delegateBuilder) {
         super(delegateBuilder);
     }
 
@@ -156,14 +154,11 @@ public abstract class NodeBuilder extends WorkerBuilder {
     public static class DefaultNodeBuilder extends NodeBuilder {
 
         private DefaultNodeBuilder() {
-            super(EventLoopBuilder.newDefaultBuilder());
+            super(EventLoopBuilder.newDisruptBuilder());
         }
 
         @Override
         public Node build() {
-            if (getWaitStrategy() == null) {
-                setWaitStrategy(new TimeoutSleepingWaitStrategy());
-            }
             if (getThreadFactory() == null) {
                 setThreadFactory(new DefaultThreadFactory("Node"));
             }
@@ -171,12 +166,26 @@ public abstract class NodeBuilder extends WorkerBuilder {
         }
 
         @Override
-        public EventLoopBuilder.DefaultBuilder getDelegated() {
-            return (EventLoopBuilder.DefaultBuilder) super.getDelegated();
+        public DisruptorBuilder<RingBufferEvent> getDelegated() {
+            return (DisruptorBuilder<RingBufferEvent>) super.getDelegated();
         }
-        // region
 
-        // endregion
+        @Override
+        public DefaultNodeBuilder setBatchSize(int batchSize) {
+            getDelegated().setBatchSize(batchSize);
+            return this;
+        }
+
+        // region disruptor
+
+        public EventSequencer<? extends RingBufferEvent> getEventSequencer() {
+            return getDelegated().getEventSequencer();
+        }
+
+        public NodeBuilder setEventSequencer(EventSequencer<? extends RingBufferEvent> eventSequencer) {
+            getDelegated().setEventSequencer(eventSequencer);
+            return this;
+        }
 
         public WaitStrategy getWaitStrategy() {
             return getDelegated().getWaitStrategy();
@@ -187,31 +196,16 @@ public abstract class NodeBuilder extends WorkerBuilder {
             return this;
         }
 
-        public int getBatchSize() {
-            return getDelegated().getBatchSize();
+        public boolean isCleanBufferOnExit() {
+            return getDelegated().isCleanBufferOnExit();
         }
 
-        public DefaultNodeBuilder setBatchSize(int batchSize) {
-            getDelegated().setBatchSize(batchSize);
+        public DefaultNodeBuilder setCleanBufferOnExit(boolean cleanBufferOnExit) {
+            getDelegated().setCleanBufferOnExit(cleanBufferOnExit);
             return this;
         }
 
-        public int getChunkSize() {
-            return getDelegated().getChunkSize();
-        }
+        // endregion
 
-        public DefaultNodeBuilder setChunkSize(int chunkSize) {
-            getDelegated().setChunkSize(chunkSize);
-            return this;
-        }
-
-        public int getMaxPooledChunks() {
-            return getDelegated().getMaxPooledChunks();
-        }
-
-        public DefaultNodeBuilder setMaxPooledChunks(int maxPooledChunks) {
-            getDelegated().setMaxPooledChunks(maxPooledChunks);
-            return this;
-        }
     }
 }

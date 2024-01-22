@@ -72,7 +72,6 @@
 
         <base.version>1.0.2</base.version>
         <dson.version>1.4.0</dson.version>
-        <commons.version>1.0.rc1</commons.version>
     </properties>
 
     <dependencies>
@@ -112,6 +111,11 @@
             <groupId>com.squareup</groupId>
             <artifactId>javapoet</artifactId>
             <version>${javapoet.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

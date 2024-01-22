@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.rpc.RpcRegistry;
-import cn.wjybxx.common.concurrent.*;
+import cn.wjybxx.concurrent.*;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -33,7 +33,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/10/4
  */
-public class WorkerImpl extends DisruptorEventLoop implements Worker {
+public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements Worker {
 
     private final String workerId;
     private final Injector injector;
@@ -59,7 +59,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
         FxUtils.exportService(builder);
     }
 
-    private static EventLoopBuilder.DisruptorBuilder decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
+    private static EventLoopBuilder.DisruptorBuilder<RingBufferEvent> decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
         return builder.getDelegated()
                 .setAgent(new Agent());
     }
@@ -122,7 +122,7 @@ public class WorkerImpl extends DisruptorEventLoop implements Worker {
         return workerCtx;
     }
 
-    private static class Agent implements EventLoopAgent {
+    private static class Agent implements EventLoopAgent<RingBufferEvent> {
 
         WorkerImpl worker;
         MainModule mainModule; // 缓存
