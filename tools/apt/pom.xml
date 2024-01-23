@@ -56,7 +56,7 @@
         <jsr305.version>3.0.2</jsr305.version>
         <javapoet.version>1.13.0</javapoet.version>
 
-        <base.version>1.0.rc1</base.version>
+        <commons.version>1.0.3</commons.version>
     </properties>
 
     <!-- 基础依赖/全局依赖 -->
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>apt-base</artifactId>
-            <version>${base.version}</version>
+            <version>${commons.version}</version>
         </dependency>
     </dependencies>
 

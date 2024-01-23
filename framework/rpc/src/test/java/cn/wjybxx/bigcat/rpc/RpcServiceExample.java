@@ -46,7 +46,7 @@ public class RpcServiceExample implements ExtensibleService {
     /** 测试异步返回 */
     @RpcMethod(methodId = 2)
     public IFuture<String> helloAsync(String msg) {
-        return FutureUtils.newSucceededFuture(msg);
+        return FutureUtils.completedFuture(msg);
     }
 
     /** 测试void返回值 */

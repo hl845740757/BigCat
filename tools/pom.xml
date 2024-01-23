@@ -70,7 +70,7 @@
         <guava.version>33.0.0-jre</guava.version>
         <pb.version>3.25.1</pb.version>
 
-        <base.version>1.0.2</base.version>
+        <commons.version>1.0.3</commons.version>
         <dson.version>1.4.0</dson.version>
     </properties>
 
@@ -99,12 +99,12 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
-            <version>${base.version}</version>
+            <version>${commons.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>concurrent</artifactId>
-            <version>${base.version}</version>
+            <version>${commons.version}</version>
         </dependency>
 
         <dependency>
