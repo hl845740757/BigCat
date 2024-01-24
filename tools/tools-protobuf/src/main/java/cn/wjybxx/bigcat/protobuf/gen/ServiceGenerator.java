@@ -85,6 +85,11 @@ public class ServiceGenerator extends AbstractGenerator {
                         .addMember("methodId", Integer.toString(method.getMethodId()))
                         .addMember("argSharable", "true")
                         .addMember("resultSharable", "true"); // 无参数和返回值时也设置为可共享，可避免不必要的序列化
+                // 是否手动返回结果
+                if (method.isManual()) {
+                    annoBuilder.addMember("manualReturn", "true");
+                }
+                // 自定义数据
                 PBAnnotation sparam = method.getAnnotation(AnnotationTypes.SPARAM);
                 if (sparam != null) {
                     annoBuilder.addMember("customData", "$S", sparam.value);

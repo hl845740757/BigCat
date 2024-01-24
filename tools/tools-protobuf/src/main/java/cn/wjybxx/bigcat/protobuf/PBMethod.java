@@ -30,10 +30,8 @@ public class PBMethod extends PBElement {
 
     /** 普通模式 */
     public static final int MODE_NORMAL = 0;
-    /** future异步模式 -- 返回的返回值修正为{@code CompletionStage<V>} */
+    /** future异步模式 -- 返回的返回值修正为{@code Future<V>} */
     public static final int MODE_FUTURE = 1;
-    /** context异步模式 -- 在方法参数中添加{@code RpcContext<V>} */
-    public static final int MODE_CONTEXT = 2;
 
     /** 方法参数的类型 */
     private String argType;
@@ -49,7 +47,7 @@ public class PBMethod extends PBElement {
     /** 是否在方法参数中追加{@code RpcContext}参数 */
     private boolean ctx = false;
     /** 是否手动返回结果 */
-    private boolean manual =false;
+    private boolean manual = false;
     //
 
     @Nonnull
@@ -60,10 +58,6 @@ public class PBMethod extends PBElement {
 
     public boolean isFutureMode() {
         return mode == MODE_FUTURE;
-    }
-
-    public boolean isContextMode() {
-        return mode == MODE_CONTEXT;
     }
 
     public boolean hasArg() {

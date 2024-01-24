@@ -14,20 +14,35 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat.guid;
+package cn.wjybxx.common;
 
 /**
- * guid生成器工厂。
- * 注意：该工厂是由启动类创建的，然后传递给应用逻辑的，而不是应用逻辑自己创建的。
+ * 负值处理策略
  *
  * @author wjybxx
- * date 2023/4/1
+ * date 2023/4/6
  */
-public interface GuidGeneratorFactory {
+public enum NegativeChecker {
 
-    /**
-     * @param name {@link GuidGenerator}的名字
-     */
-    GuidGenerator newInstance(String name);
+    /** 允许负数值 */
+    SUCCESS,
+    /** 失败 - 抛出异常 */
+    FAILURE,
+    /** 转为0 */
+    ZERO,
+    /** 转为1 */
+    ONE;
+
+    public long check(long value) {
+        if (value >= 0) {
+            return value;
+        }
+        return switch (this) {
+            case SUCCESS -> value;
+            case FAILURE -> throw new IllegalArgumentException("value must be gte 0, but found: " + value);
+            case ZERO -> 0;
+            case ONE -> 1;
+        };
+    }
 
 }

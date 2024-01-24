@@ -315,8 +315,9 @@ public class PBParserOptions {
         return methodDefManual;
     }
 
-    public void setMethodDefManual(boolean methodDefManual) {
+    public PBParserOptions setMethodDefManual(boolean methodDefManual) {
         this.methodDefManual = methodDefManual;
+        return this;
     }
 
     public boolean isUseJdkFuture() {

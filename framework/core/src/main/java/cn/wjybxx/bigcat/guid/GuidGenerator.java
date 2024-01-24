@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.guid;
+package cn.wjybxx.bigcat.guid;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.Closeable;

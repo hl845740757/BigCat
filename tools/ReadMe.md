@@ -28,4 +28,5 @@ Excel导出的Java代码或pb文件，主要处理枚举。枚举通常是要告
 
 ## ProtoBuf模块
 
-1. 用于支持通过.proto文件定义rpc服务
+1. 解析protobuf为结构化对象
+2. 用于支持通过.proto文件定义rpc服务

@@ -47,7 +47,8 @@ public class PBParserTest {
         options.setJavaOut(testOutModulePath + "/src/main/java")
                 .setJavaPackage("cn.wjybxx.bigcat.temp.pb1");
 
-        options.setMethodDefMode(PBMethod.MODE_CONTEXT)
+        options.setMethodDefAppendCtx(true)
+                .setMethodDefManual(true)
                 .setUseJdkFuture(false)
                 .setServiceInterceptor(service -> {
                     service.addSuperinterface("cn.wjybxx.bigcat.rpc.ExtensibleService");

@@ -19,6 +19,7 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.concurrent.*;
 import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
 import cn.wjybxx.disruptor.EventSequencer;
+import cn.wjybxx.disruptor.MpUnboundedEventSequencer;
 import cn.wjybxx.disruptor.WaitStrategy;
 import com.google.inject.Injector;
 
@@ -159,8 +160,23 @@ public abstract class NodeBuilder extends WorkerBuilder {
 
         @Override
         public Node build() {
+            if (getEventSequencer() == null) {
+                setEventSequencer(MpUnboundedEventSequencer.newBuilder(RingBufferEvent::new)
+                        .setChunkSize(1024)
+                        .setMaxPooledChunks(8)
+                        .build());
+            }
             if (getThreadFactory() == null) {
                 setThreadFactory(new DefaultThreadFactory("Node"));
+            }
+            if (getWorkerFactory() == null) {
+                setWorkerFactory((parent, ctx, index) -> {
+                    return WorkerBuilder.newDisruptorWorkerBuilder()
+                            .setParent(parent)
+                            .setWorkerCtx(ctx)
+                            .setWorkerId("Worker-" + index)
+                            .build();
+                });
             }
             return new NodeImpl(this);
         }
