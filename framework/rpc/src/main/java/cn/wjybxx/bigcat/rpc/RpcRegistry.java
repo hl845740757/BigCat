@@ -47,10 +47,10 @@ public interface RpcRegistry {
      *
      * @param serviceId  服务id
      * @param methodId   方法id
-     * @param customData 自定义切面数据；也可用于指示是否可覆盖；若为null则表示删除
+     * @param customData 自定义切面数据(string或object)；若为null则表示删除;
      */
     @StableName
-    void setProxyData(int serviceId, int methodId, String customData);
+    void setProxyData(int serviceId, int methodId, Object customData);
 
     /**
      * 注册一个rpc请求处理函数
@@ -62,7 +62,7 @@ public interface RpcRegistry {
      */
     @StableName
     default void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy,
-                          @Nullable String customData) {
+                          @Nullable Object customData) {
         register(serviceId, methodId, proxy);
         setProxyData(serviceId, methodId, customData);
     }

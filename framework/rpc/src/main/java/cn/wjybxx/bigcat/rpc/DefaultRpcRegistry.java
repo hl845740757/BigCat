@@ -45,7 +45,7 @@ public class DefaultRpcRegistry implements RpcRegistry {
     }
 
     @Override
-    public void setProxyData(int serviceId, int methodId, String customData) {
+    public void setProxyData(int serviceId, int methodId, Object customData) {
 
     }
 

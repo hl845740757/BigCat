@@ -34,7 +34,7 @@ public interface DebugLogFriendlyObject {
     String toSimpleLog();
 
     /**
-     * @return 生成详细的日志信息
+     * @return 生成详细的日志信息，通常可以调用{@link #toString()}方法。
      */
     @Nonnull
     String toDetailLog();
