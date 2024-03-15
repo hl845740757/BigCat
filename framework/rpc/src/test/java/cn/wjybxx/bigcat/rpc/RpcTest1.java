@@ -19,9 +19,9 @@ package cn.wjybxx.bigcat.rpc;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.base.time.TimeProviders;
+import cn.wjybxx.unitask.DefaultScheduledExecutor;
 import cn.wjybxx.unitask.UniFutureUtils;
 import cn.wjybxx.unitask.UniScheduledExecutor;
-import cn.wjybxx.unitask.DefaultScheduledExecutor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -106,7 +106,7 @@ public class RpcTest1 {
         }
 
         public CompletableFuture<String> helloAsync(String msg) {
-            return UniFutureUtils.toJdkFuture(executor.schedule(() -> hello(msg), 500));
+            return UniFutureUtils.toJdkFuture(executor.schedule(() -> hello(msg), 500, TimeUnit.MILLISECONDS));
         }
 
     }
@@ -242,7 +242,7 @@ public class RpcTest1 {
         @Override
         public void run() {
             TestClient testClient = new TestClient(timeProvider, rpcClient);
-            executor.scheduleWithFixedDelay(testClient::sayHello, 200, 300);
+            executor.scheduleWithFixedDelay(testClient::sayHello, 200, 300, TimeUnit.MILLISECONDS);
             executor.scheduleWithFixedDelay(() -> {
                 try {
                     testClient.syncSayHello();
@@ -253,7 +253,7 @@ public class RpcTest1 {
                         logger.info("client caught exception", e);
                     }
                 }
-            }, 200, 500);
+            }, 200, 500, TimeUnit.MILLISECONDS);
 
             // 准备好以后执行countdown
             latch.countDown();

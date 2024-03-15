@@ -54,7 +54,7 @@ public class NodeTest {
                 .addModule(NodeRpcSupport.class)
                 .addModule(TestRpcRouter.class)
                 // 初始化Worker
-                .setWorkerFactory((parent, workerCtx, index) -> {
+                .setWorkerFactory((parent, index, workerCtx) -> {
                     return WorkerBuilder.newDisruptorWorkerBuilder()
                             .setWorkerId("Worker-" + index)
                             .setParent(parent)

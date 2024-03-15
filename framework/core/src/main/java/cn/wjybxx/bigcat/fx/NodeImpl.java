@@ -83,7 +83,7 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
         children = new Worker[numberChildren];
         for (int i = 0; i < numberChildren; i++) {
             WorkerCtx workerCtx = new WorkerCtx();
-            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, workerCtx, i));
+            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, i, workerCtx));
             if (eventLoop.parent() != this) throw new IllegalStateException("the parent of worker is illegal");
             if (eventLoop.workerCtx() != workerCtx) throw new IllegalStateException("the ctx of worker is illegal");
             children[i] = eventLoop;

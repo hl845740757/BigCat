@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.tools;
 
 import cn.wjybxx.base.MathCommon;
 import cn.wjybxx.concurrent.DefaultThreadFactory;
+import com.google.inject.Inject;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -32,6 +33,7 @@ public class ExecutorMgr {
 
     private final ExecutorService executorService;
 
+    @Inject
     public ExecutorMgr() {
         final int poolSize = calPoolSize();
         final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(poolSize, poolSize,

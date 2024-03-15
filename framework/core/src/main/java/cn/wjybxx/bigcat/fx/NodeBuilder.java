@@ -170,7 +170,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
                 setThreadFactory(new DefaultThreadFactory("Node"));
             }
             if (getWorkerFactory() == null) {
-                setWorkerFactory((parent, ctx, index) -> {
+                setWorkerFactory((parent, index, ctx) -> {
                     return WorkerBuilder.newDisruptorWorkerBuilder()
                             .setParent(parent)
                             .setWorkerCtx(ctx)

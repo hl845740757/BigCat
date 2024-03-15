@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.reload;
 
 import cn.wjybxx.base.CollectionUtils;
 import cn.wjybxx.base.Constant;
+import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.base.Preconditions;
 import cn.wjybxx.base.time.StopWatch;
 import cn.wjybxx.concurrent.FutureUtils;
@@ -143,7 +144,7 @@ public class FileReloadMgr {
         try {
             fileMetadata.fileStat = ReloadUtils.statOfFile(fileMetadata.file);
         } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
+            ObjectUtils.rethrow(e);
         }
     }
 
@@ -277,7 +278,7 @@ public class FileReloadMgr {
             if (!fileDataContainer.isEmpty()) {
                 link(fileDataMgr);
             }
-            ExceptionUtils.rethrow(e);
+            ObjectUtils.rethrow(e);
         }
 
         // 赋值到真实环境

@@ -70,7 +70,7 @@
         <pb.version>3.25.1</pb.version>
 
         <!-- 我的commons -->
-        <commons.version>1.0.3</commons.version>
+        <commons.version>1.0.5</commons.version>
         <dson.version>1.4.0</dson.version>
         <btree.version>1.0.rc1</btree.version>
         <apt.version>1.0-SNAPSHOT</apt.version>

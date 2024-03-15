@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.excel;
 
+import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.bigcat.config.Sheet;
 import cn.wjybxx.bigcat.config.SheetCodec;
 import cn.wjybxx.bigcat.io.NotTempFileFilter;
@@ -144,11 +145,11 @@ public class ExcelExporter {
 
     private void writeSheet(Sheet sheet) {
         try {
-            File outFile = new File(options.getOutDir(), sheet.getSheetName() + ".dson");
+            File outFile = new File(options.getOutDir(), sheet.getSheetName() + "." + DSON_EXTENSION);
             FileWriter fileWriter = new FileWriter(outFile, false);
             converter.writeAsDson(sheet, DsonMode.RELAXED, TypeArgInfo.of(Sheet.class), fileWriter);
         } catch (Exception e) {
-            ExceptionUtils.rethrow(e);
+            ObjectUtils.rethrow(e);
         }
     }
 }

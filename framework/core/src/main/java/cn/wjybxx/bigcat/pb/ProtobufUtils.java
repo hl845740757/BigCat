@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.pb;
 
-import cn.wjybxx.common.ClassScanner;
+import cn.wjybxx.base.ClassScanner;
 import cn.wjybxx.dson.codec.DuplexCodec;
 import com.google.protobuf.*;
 

@@ -162,7 +162,7 @@ public class RpcTest2 {
             RpcClientExampleExporter.export(registry, new RpcClientExample(rpcClient));
 
             RpcClientExample rpcUserExample = new RpcClientExample(rpcClient);
-            executor.scheduleWithFixedDelay(() -> rpcTest(rpcUserExample), 200, 500);
+            executor.scheduleWithFixedDelay(() -> rpcTest(rpcUserExample), 200, 500, TimeUnit.MILLISECONDS);
 
             // 准备好以后执行countdown
             latch.countDown();

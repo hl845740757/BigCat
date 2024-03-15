@@ -16,15 +16,15 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.base.ClassScanner;
+import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.bigcat.rpc.RpcSerializer;
-import cn.wjybxx.common.ClassScanner;
 import cn.wjybxx.dson.codec.*;
 import cn.wjybxx.dson.codec.dsonlite.DefaultDsonLiteConverter;
 import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodec;
 import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodecScanIgnore;
 import cn.wjybxx.dson.codec.dsonlite.DsonLiteConverter;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Modifier;
@@ -64,7 +64,7 @@ public class TestRpcSerializer implements RpcSerializer {
         try {
             return (DsonLiteCodec<?>) e.getConstructor(ArrayUtils.EMPTY_CLASS_ARRAY).newInstance(ArrayUtils.EMPTY_OBJECT_ARRAY);
         } catch (Exception ex) {
-            return ExceptionUtils.rethrow(ex);
+            return ObjectUtils.rethrow(ex);
         }
     }
 
