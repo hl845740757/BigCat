@@ -435,8 +435,8 @@ public class NodeRpcSupport implements WorkerModule {
                     context.sendResult(castReult);
                 }
             } catch (Throwable e) {
-                context.sendError(e);
                 logInvokeException(request, e);
+                context.sendError(e);
             }
         }
     }
@@ -738,7 +738,7 @@ public class NodeRpcSupport implements WorkerModule {
 
         @Override
         public boolean isSharable() {
-            return BitFlags.isAllSet(options, MASK_RESULT_SHARABLE);
+            return BitFlags.isSet(options, MASK_RESULT_SHARABLE);
         }
 
         @Override
@@ -748,7 +748,7 @@ public class NodeRpcSupport implements WorkerModule {
 
         @Override
         public boolean isManualReturn() {
-            return BitFlags.isAllSet(options, MASK_RESULT_MANUAL);
+            return BitFlags.isSet(options, MASK_RESULT_MANUAL);
         }
 
         @Override

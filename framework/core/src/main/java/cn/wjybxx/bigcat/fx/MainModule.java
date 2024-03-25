@@ -35,8 +35,20 @@ public interface MainModule extends WorkerModule {
 
     // region 主循环和事件
 
-    /** 检查当前是否需要执行主循环 */
-    boolean checkMainLoop();
+    /**
+     * 检查当前是否需要执行主循环。
+     * 事件循环会反复调用该方法，直到该方法返回false，以允许业务层实现为固定帧率循环。
+     * 示例代码如下：
+     * <pre>{@code
+     * while(mainModule.checkMainLoop(frame)) {
+     *     update(modules)
+     * }
+     * frame++;
+     * }</pre>
+     *
+     * @param eventLoopFrame 事件循环的帧号，用于判别是否是同一次事件循环的update
+     */
+    boolean checkMainLoop(long eventLoopFrame);
 
     /** 在每次开始主循环之前调用 */
     void beforeMainLoop();

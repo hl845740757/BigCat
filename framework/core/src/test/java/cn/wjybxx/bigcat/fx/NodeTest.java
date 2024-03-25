@@ -220,7 +220,7 @@ public class NodeTest {
         }
 
         @Override
-        public boolean checkMainLoop() {
+        public boolean checkMainLoop(long eventLoopFrame) {
             return System.currentTimeMillis() - timeModule.getTime() >= 10;
         }
 

@@ -89,12 +89,11 @@ public interface RpcContext<V> {
      * 3.由于类型的不同，需要独立指定是否可共享
      *
      * @param result   编码后的结果，不可为null
-     * @param sharable 是否允许共享
+     * @param sharable 是否允许共享 -- result是否为只读
      */
     void sendEncodedResult(byte[] result, boolean sharable);
 
     // endregion
-
 
     // region 常量
 

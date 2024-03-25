@@ -66,7 +66,7 @@ public class DefaultMainModule implements MainModule {
     }
 
     @Override
-    public boolean checkMainLoop() {
+    public boolean checkMainLoop(long eventLoopFrame) {
         return System.currentTimeMillis() - timeModule.getTime() >= frameInterval;
     }
 

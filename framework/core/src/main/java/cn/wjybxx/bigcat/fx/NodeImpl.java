@@ -212,6 +212,7 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
         MainModule mainModule; // 缓存
         List<WorkerModule> updatableModuleList = new ArrayList<>();
         List<WorkerModule> startedModuleList = new ArrayList<>();
+        long loopFrame;
 
         public Agent() {
         }
@@ -336,20 +337,21 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
 
         @Override
         public void update() throws Exception {
-            if (!mainModule.checkMainLoop()) {
-                return;
-            }
-            mainModule.beforeMainLoop();
-            List<WorkerModule> updatableModuleList = this.updatableModuleList;
-            for (int i = 0; i < updatableModuleList.size(); i++) {
-                WorkerModule workerModule = updatableModuleList.get(i);
-                try {
-                    workerModule.update();
-                } catch (Throwable e) {
-                    logCause(e);
+            // 允许控制补帧
+            while (mainModule.checkMainLoop(loopFrame)) {
+                mainModule.beforeMainLoop();
+                List<WorkerModule> updatableModuleList = this.updatableModuleList;
+                for (int i = 0; i < updatableModuleList.size(); i++) {
+                    WorkerModule workerModule = updatableModuleList.get(i);
+                    try {
+                        workerModule.update();
+                    } catch (Throwable e) {
+                        logCause(e);
+                    }
                 }
+                mainModule.afterMainLoop();
             }
-            mainModule.afterMainLoop();
+            loopFrame++;
         }
 
         @Override

@@ -128,6 +128,7 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         MainModule mainModule; // 缓存
         List<WorkerModule> updatableModuleList = new ArrayList<>();
         List<WorkerModule> startedModuleList = new ArrayList<>();
+        long loopFrame;
 
         public Agent() {
         }
@@ -190,20 +191,20 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
 
         @Override
         public void update() throws Exception {
-            if (!mainModule.checkMainLoop()) {
-                return;
-            }
-            mainModule.beforeMainLoop();
-            List<WorkerModule> updatableModuleList = this.updatableModuleList;
-            for (int i = 0; i < updatableModuleList.size(); i++) {
-                WorkerModule workerModule = updatableModuleList.get(i);
-                try {
-                    workerModule.update();
-                } catch (Throwable e) {
-                    logCause(e);
+            while (mainModule.checkMainLoop(loopFrame)) {
+                mainModule.beforeMainLoop();
+                List<WorkerModule> updatableModuleList = this.updatableModuleList;
+                for (int i = 0; i < updatableModuleList.size(); i++) {
+                    WorkerModule workerModule = updatableModuleList.get(i);
+                    try {
+                        workerModule.update();
+                    } catch (Throwable e) {
+                        logCause(e);
+                    }
                 }
+                mainModule.afterMainLoop();
             }
-            mainModule.afterMainLoop();
+            loopFrame++;
         }
 
         @Override

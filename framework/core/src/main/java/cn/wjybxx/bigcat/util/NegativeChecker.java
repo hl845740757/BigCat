@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.bigcat.util;
 
 /**
  * 负值处理策略
