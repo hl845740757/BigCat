@@ -16,7 +16,7 @@
 package cn.wjybxx.bigcat.rpc;
 
 
-import cn.wjybxx.common.log.DebugLogLevel;
+import cn.wjybxx.bigcat.rpclog.DebugLogLevel;
 
 import javax.annotation.concurrent.Immutable;
 

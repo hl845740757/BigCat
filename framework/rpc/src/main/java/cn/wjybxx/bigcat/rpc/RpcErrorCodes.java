@@ -55,6 +55,12 @@ public class RpcErrorCodes {
     /** 服务端反序列化请求失败 */
     public static final int SERVER_DESERIALIZE_FAILED = 34;
 
+    /**
+     * 判断错误码是否属于用户命名空间
+     *
+     * @param code 错误码
+     * @return 如果是用户空间错误码，则返回true，否则返回false。
+     */
     public static boolean isUserCode(int code) {
         return code > 100;
     }

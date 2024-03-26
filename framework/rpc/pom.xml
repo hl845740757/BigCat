@@ -18,11 +18,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>cn.wjybxx.bigcat</groupId>
-            <artifactId>common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <!-- 暂时放这里 -->
         <dependency>
             <groupId>commons-io</groupId>

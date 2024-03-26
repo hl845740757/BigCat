@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.reload;
 
 import cn.wjybxx.base.CaseMode;
-import cn.wjybxx.common.Md5Utils;
+import cn.wjybxx.bigcat.util.Md5Utils;
 
 import java.io.File;
 import java.io.IOException;

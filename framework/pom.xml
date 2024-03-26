@@ -17,7 +17,6 @@
         <module>rpc</module>
         <module>core</module>
         <module>testout</module>
-        <module>common</module>
     </modules>
 
     <!-- 证书 -->

@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.rpc;
 
 import cn.wjybxx.base.BitFlags;
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
+import cn.wjybxx.bigcat.rpclog.DebugLogFriendlyObject;
 
 /**
  * Rpc协议的抽象基类

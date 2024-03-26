@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.bigcat.util;
 
 import cn.wjybxx.base.CaseMode;
 import org.apache.commons.codec.binary.Hex;

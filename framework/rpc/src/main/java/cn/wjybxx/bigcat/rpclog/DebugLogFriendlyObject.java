@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.log;
+package cn.wjybxx.bigcat.rpclog;
 
 import javax.annotation.Nonnull;
 
 /**
  * 对debug友好的对象
  * 如果一个对象实现了该接口，则在打印日志时会根据日志环境调用对应的方法，如果没有实现该对象，则始终调用对象的{@link #toString()}方法。
+ * <p>
+ * ps:实践中发现这个设计并不实用，因此迁移到rpc模块；如果以后要重新设计，其实设计成面向切面的(或外部Handler)形式会更友好。
  *
  * @author wjybxx
  * date 2023/4/1

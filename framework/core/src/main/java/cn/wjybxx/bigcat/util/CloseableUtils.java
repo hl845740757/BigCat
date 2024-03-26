@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common;
+package cn.wjybxx.bigcat.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

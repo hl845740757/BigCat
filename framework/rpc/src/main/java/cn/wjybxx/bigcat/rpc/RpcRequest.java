@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.rpc;
 
 
-import cn.wjybxx.common.log.DebugLogFriendlyObject;
+import cn.wjybxx.bigcat.rpclog.DebugLogFriendlyObject;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.codec.FieldImpl;
 import cn.wjybxx.dson.codec.TypeArgInfo;

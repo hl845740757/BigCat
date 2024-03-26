@@ -23,8 +23,8 @@ import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.pb.PBMethodInfo;
 import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
 import cn.wjybxx.bigcat.rpc.*;
-import cn.wjybxx.common.log.DebugLogLevel;
-import cn.wjybxx.common.log.DebugLogUtils;
+import cn.wjybxx.bigcat.rpclog.DebugLogLevel;
+import cn.wjybxx.bigcat.rpclog.DebugLogUtils;
 import cn.wjybxx.concurrent.IFuture;
 import cn.wjybxx.concurrent.IPromise;
 import cn.wjybxx.concurrent.Promise;
@@ -399,7 +399,7 @@ public class NodeRpcSupport implements WorkerModule {
             return;
         }
         // 拦截测试
-        int code = workerCtx.interceptor == null ? 0 : workerCtx.interceptor.test(request);
+        int code = workerCtx.rpcInterceptor == null ? 0 : workerCtx.rpcInterceptor.test(request);
         if (code != 0) {
             if (RpcInvokeType.isCall(request.getInvokeType())) {
                 sendResponse(newFailedResponse(request, code, ""));

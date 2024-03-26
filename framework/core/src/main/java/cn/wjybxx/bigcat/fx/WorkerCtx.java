@@ -34,18 +34,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public final class WorkerCtx {
 
-    Worker worker;
     RpcRegistry rpcRegistry;
-    RpcInterceptor interceptor;
+    RpcInterceptor rpcInterceptor;
 
     public WorkerCtx() {
     }
 
     void init(Worker worker) {
-        this.worker = worker;
+        assert worker.inEventLoop();
         this.rpcRegistry = worker.injector().getInstance(RpcRegistry.class);
         try {
-            this.interceptor = worker.injector().getInstance(RpcInterceptor.class);
+            this.rpcInterceptor = worker.injector().getInstance(RpcInterceptor.class);
         } catch (ConfigurationException ignore) {
 
         }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.common.log;
+package cn.wjybxx.bigcat.rpclog;
 
 import org.slf4j.event.Level;
 
