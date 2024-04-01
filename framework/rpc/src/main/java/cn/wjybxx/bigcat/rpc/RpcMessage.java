@@ -82,7 +82,6 @@ public final class RpcMessage extends RpcProtocol {
 
     //
     @Nonnull
-    @Override
     public String toSimpleLog() {
         return "{" +
                 "serviceId=" + serviceId +
@@ -95,7 +94,6 @@ public final class RpcMessage extends RpcProtocol {
     }
 
     @Nonnull
-    @Override
     public String toDetailLog() {
         return toString();
     }

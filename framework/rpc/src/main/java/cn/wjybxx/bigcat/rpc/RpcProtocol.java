@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.rpc;
 
 import cn.wjybxx.base.BitFlags;
-import cn.wjybxx.bigcat.rpclog.DebugLogFriendlyObject;
 
 /**
  * Rpc协议的抽象基类
@@ -25,7 +24,7 @@ import cn.wjybxx.bigcat.rpclog.DebugLogFriendlyObject;
  * @author wjybxx
  * date - 2023/9/11
  */
-public abstract class RpcProtocol implements DebugLogFriendlyObject {
+public abstract class RpcProtocol {
 
     static final int MASK_SHARABLE = 1;
     static final int MASK_SERIALIZED = 1 << 1;

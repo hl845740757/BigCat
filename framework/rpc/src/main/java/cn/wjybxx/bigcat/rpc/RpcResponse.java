@@ -19,7 +19,6 @@ package cn.wjybxx.bigcat.rpc;
 
 import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.base.ex.ErrorCodeException;
-import cn.wjybxx.bigcat.rpclog.DebugLogFriendlyObject;
 import cn.wjybxx.concurrent.FutureUtils;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.codec.FieldImpl;
@@ -43,7 +42,7 @@ import java.util.List;
  * date 2023/4/1
  */
 @DsonLiteSerializable
-public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyObject {
+public final class RpcResponse extends RpcProtocol {
 
     /** 请求的唯一id */
     private long requestId;
@@ -198,7 +197,6 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
     // endregion
 
     @Nonnull
-    @Override
     public String toSimpleLog() {
         return "{" +
                 "requestId=" + requestId +
@@ -213,7 +211,6 @@ public final class RpcResponse extends RpcProtocol implements DebugLogFriendlyOb
     }
 
     @Nonnull
-    @Override
     public String toDetailLog() {
         return toString();
     }

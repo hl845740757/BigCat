@@ -186,7 +186,6 @@ public class RpcTest1 {
             rpcClient = new DefaultRpcClient(role.id, role,
                     new TestRpcRouter(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
-//            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
 
         @Override
@@ -232,7 +231,6 @@ public class RpcTest1 {
             rpcClient = new DefaultRpcClient(role.id, role,
                     new TestRpcRouter(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
-//            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
 
         public boolean checkWatcher(RpcResponse response) {

@@ -21,8 +21,6 @@ import cn.wjybxx.base.BitFlags;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.ex.NoLogRequiredException;
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.bigcat.rpclog.DebugLogLevel;
-import cn.wjybxx.bigcat.rpclog.DebugLogUtils;
 import cn.wjybxx.concurrent.*;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import org.slf4j.Logger;
@@ -61,9 +59,7 @@ public class DefaultRpcClient implements RpcClient {
     private final TimeProvider timeProvider;
     private final long timeoutMs;
 
-    /** 日志级别 */
-    private RpcLogConfig logConfig = RpcLogConfig.NONE;
-    /** 拦截测试 */
+    private boolean enableLog;
     private RpcInterceptor interceptor;
 
     /**
@@ -85,12 +81,12 @@ public class DefaultRpcClient implements RpcClient {
         this.timeoutMs = timeoutMs;
     }
 
-    public RpcLogConfig getLogConfig() {
-        return logConfig;
+    public boolean isEnableLog() {
+        return enableLog;
     }
 
-    public DefaultRpcClient setLogConfig(RpcLogConfig logConfig) {
-        this.logConfig = Objects.requireNonNullElse(logConfig, RpcLogConfig.NONE);
+    public DefaultRpcClient setEnableLog(boolean enableLog) {
+        this.enableLog = enableLog;
         return this;
     }
 
@@ -162,7 +158,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfAddr, target,
                 RpcInvokeType.ONEWAY, requestId, methodSpec);
 
-        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (enableLog) {
             logSndRequest(request);
         }
         if (!router.send(request)) {
@@ -186,7 +182,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfAddr, target,
                 RpcInvokeType.CALL, requestId, methodSpec);
 
-        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (enableLog) {
             logSndRequest(request);
         }
         if (!router.send(request)) {
@@ -230,7 +226,7 @@ public class DefaultRpcClient implements RpcClient {
         final RpcRequest request = new RpcRequest(conId, selfAddr, target,
                 RpcInvokeType.SYNC_CALL, requestId, methodSpec);
 
-        if (logConfig.getSndRequestLogLevel() > DebugLogLevel.NONE) {
+        if (enableLog) {
             logSndRequest(request);
         }
 
@@ -245,7 +241,7 @@ public class DefaultRpcClient implements RpcClient {
             }
 
             RpcResponse response = watcher.future.get(timeoutMs, TimeUnit.MILLISECONDS);
-            if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
+            if (enableLog) {
                 logRcvResponse(response, false);
             }
 
@@ -279,7 +275,7 @@ public class DefaultRpcClient implements RpcClient {
      */
     public <T> void onRcvRequest(RpcRequest request) {
         Objects.requireNonNull(request);
-        if (logConfig.getRcvRequestLogLevel() > DebugLogLevel.NONE) {
+        if (enableLog) {
             logRcvRequest(request);
         }
 
@@ -350,7 +346,7 @@ public class DefaultRpcClient implements RpcClient {
     }
 
     private void sendResponse(RpcResponse response) {
-        if (logConfig.getSndResponseLogLevel() > DebugLogLevel.NONE) {
+        if (enableLog) {
             logSndResponse(response);
         }
         if (!router.send(response)) {
@@ -370,7 +366,7 @@ public class DefaultRpcClient implements RpcClient {
         }
 
         final RpcRequestStubImpl requestStub = requestStubMap.remove(response.getRequestId());
-        if (logConfig.getRcvResponseLogLevel() > DebugLogLevel.NONE) {
+        if (enableLog) {
             logRcvResponse(response, requestStub == null);
         }
         if (requestStub == null) {
@@ -568,29 +564,37 @@ public class DefaultRpcClient implements RpcClient {
     // region debug日志
 
     private void logSndRequest(RpcRequest request) {
-        logger.info("snd rpc request, request {}",
-                DebugLogUtils.logOf(logConfig.getSndRequestLogLevel(), request));
-    }
-
-    private void logSndResponse(RpcResponse response) {
-        logger.info("snd rpc response, response {}",
-                DebugLogUtils.logOf(logConfig.getSndResponseLogLevel(), response));
-    }
-
-    private void logRcvRequest(RpcRequest request) {
-        logger.info("rcv rpc request, request {}",
-                DebugLogUtils.logOf(logConfig.getRcvRequestLogLevel(), request));
-    }
-
-    private void logRcvResponse(RpcResponse response, boolean timeout) {
-        if (timeout) {
-            logger.info("rcv rpc response, but request is timeout, response {}",
-                    DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
-        } else {
-            logger.info("rcv rpc response, response {}",
-                    DebugLogUtils.logOf(logConfig.getRcvResponseLogLevel(), response));
+        if (logger.isDebugEnabled()) {
+            logger.debug("snd rpc request, request {}", request.toDetailLog());
+        } else if (logger.isInfoEnabled()) {
+            logger.info("snd rpc request, request {}", request.toSimpleLog());
         }
     }
 
+    private void logSndResponse(RpcResponse response) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("snd rpc response, response {}", response.toDetailLog());
+        } else if (logger.isInfoEnabled()) {
+            logger.info("snd rpc response, response {}", response.toSimpleLog());
+        }
+    }
+
+    private void logRcvRequest(RpcRequest request) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("rcv rpc request, request {}", request.toDetailLog());
+        } else if (logger.isInfoEnabled()) {
+            logger.info("rcv rpc request, request {}", request.toSimpleLog());
+        }
+    }
+
+    private void logRcvResponse(RpcResponse response, boolean timeout) {
+        String format = timeout ? "rcv rpc response, but request is timeout, response {}"
+                : "rcv rpc response, response {}";
+        if (logger.isDebugEnabled()) {
+            logger.debug(format, response.toDetailLog());
+        } else if (logger.isInfoEnabled()) {
+            logger.info(format, response.toSimpleLog());
+        }
+    }
     // endregion
 }

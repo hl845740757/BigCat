@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -105,7 +106,7 @@ public class RpcTest2 {
             rpcClient = new DefaultRpcClient(role.id, role,
                     new TestRpcRouter(), registry,
                     timeProvider, 5 * 1000);
-//            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
+            rpcClient.setEnableLog(true);
         }
 
         @Override
@@ -148,7 +149,6 @@ public class RpcTest2 {
             rpcClient = new DefaultRpcClient(role.id, role,
                     new TestRpcRouter(), new DefaultRpcRegistry(),
                     timeProvider, 5 * 1000);
-//            rpcClient.setRpcLogConfig(RpcLogConfig.ALL_SIMPLE);
         }
 
         public boolean checkWatcher(RpcResponse response) {
