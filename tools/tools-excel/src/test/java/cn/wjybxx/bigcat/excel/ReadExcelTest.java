@@ -25,7 +25,6 @@ import cn.wjybxx.dson.codec.TypeMeta;
 import cn.wjybxx.dson.codec.TypeMetaRegistries;
 import cn.wjybxx.dson.codec.dson.DefaultDsonConverter;
 import cn.wjybxx.dson.codec.dson.DsonConverter;
-import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.ObjectStyle;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -51,8 +50,8 @@ public class ReadExcelTest {
                 TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
                 options);
 
-        String dson = converter.writeAsDson(skillSheet, DsonMode.RELAXED, TypeArgInfo.OBJECT);
-//        System.out.println(dson);
+        String dson = converter.writeAsDson(skillSheet, TypeArgInfo.OBJECT);
+        System.out.println(dson);
         Assertions.assertEquals(skillSheet, converter.readFromDson(dson, TypeArgInfo.of(Sheet.class)));
 
         Sheet clonedObject = converter.cloneObject(skillSheet, TypeArgInfo.of(Sheet.class));

@@ -57,21 +57,26 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
-        <!-- 依赖版本 -->
+        <!-- 基础依赖 -->
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
         <junit.version>5.9.2</junit.version>
-        <guice.version>7.0.0</guice.version>
 
+        <fastutil.version>8.5.12</fastutil.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
-        <commons-io.verison>2.15.1</commons-io.verison>
-        <javapoet.version>1.13.0</javapoet.version>
+        <commons-io.version>2.15.1</commons-io.version>
+        <commons-codec.version>1.16.0</commons-codec.version>
+
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
         <pb.version>3.25.1</pb.version>
 
-        <commons.version>1.0.3</commons.version>
-        <dson.version>1.4.0</dson.version>
+        <commons.version>1.0.8</commons.version>
+        <dson.version>2.0.2</dson.version>
+        <btree.version>1.0.rc1</btree.version>
+
+        <!-- 特殊依赖 -->
+        <javapoet.version>1.13.0</javapoet.version>
     </properties>
 
     <dependencies>
@@ -94,6 +99,12 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- commons -->
         <dependency>
@@ -106,12 +117,6 @@
             <artifactId>concurrent</artifactId>
             <version>${commons.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.squareup</groupId>
-            <artifactId>javapoet</artifactId>
-            <version>${javapoet.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -120,8 +125,9 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.verison}</version>
+            <version>${commons-io.version}</version>
         </dependency>
+
 
         <!-- 序列化 -->
         <dependency>
@@ -157,6 +163,13 @@
                     <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- 代码生成 -->
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>${javapoet.version}</version>
         </dependency>
     </dependencies>
 

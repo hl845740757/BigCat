@@ -56,28 +56,28 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
-        <!-- 依赖版本 -->
+        <!-- 基础依赖 -->
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
         <junit.version>5.9.2</junit.version>
+
         <fastutil.version>8.5.12</fastutil.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-io.version>2.15.1</commons-io.version>
         <commons-codec.version>1.16.0</commons-codec.version>
+
         <guice.version>7.0.0</guice.version>
         <guava.version>33.0.0-jre</guava.version>
         <pb.version>3.25.1</pb.version>
 
-        <!-- 我的commons -->
-        <commons.version>1.0.6</commons.version>
-        <dson.version>2.0.0</dson.version>
+        <commons.version>1.0.8</commons.version>
+        <dson.version>2.0.2</dson.version>
         <btree.version>1.0.rc1</btree.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
-        <!-- netty真的更新太快 -->
+        <!-- 特殊依赖 -->
         <netty.version>4.1.101.Final</netty.version>
         <bson.version>4.10.2</bson.version>
-        <javapoet.version>1.13.0</javapoet.version>
     </properties>
 
     <dependencies>
@@ -103,6 +103,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- commons -->
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${commons-lang3.version}</version>
@@ -112,8 +120,7 @@
             <artifactId>commons-codec</artifactId>
             <version>${commons-codec.version}</version>
         </dependency>
-
-        <!-- commons -->
+        <!-- wjybxx-commons -->
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>base</artifactId>
@@ -146,6 +153,7 @@
             <artifactId>dson-apt</artifactId>
             <version>${dson.version}</version>
         </dependency>
+
         <!-- 依赖注入 -->
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -170,7 +178,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
+        <!-- 升级guava依赖 -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

@@ -19,9 +19,10 @@ package cn.wjybxx.bigcat.rpc;
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.base.time.TimeProviders;
-import cn.wjybxx.unitask.DefaultScheduledExecutor;
-import cn.wjybxx.unitask.UniFutureUtils;
-import cn.wjybxx.unitask.UniScheduledExecutor;
+import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.sequential.DefaultUniScheduledExecutor;
+import cn.wjybxx.sequential.UniFutureUtils;
+import cn.wjybxx.sequential.UniScheduledExecutor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -106,7 +107,7 @@ public class RpcTest1 {
         }
 
         public CompletableFuture<String> helloAsync(String msg) {
-            return UniFutureUtils.toJdkFuture(executor.schedule(() -> hello(msg), 500, TimeUnit.MILLISECONDS));
+            return FutureUtils.toJDKFuture(executor.schedule(() -> hello(msg), 500, TimeUnit.MILLISECONDS));
         }
 
     }
@@ -180,7 +181,7 @@ public class RpcTest1 {
 
         private ServerWorker() {
             this.timeProvider = TimeProviders.systemMillisProvider();
-            this.executor = new DefaultScheduledExecutor(timeProvider);
+            this.executor = new DefaultUniScheduledExecutor(timeProvider);
 
             SimpleAddr role = SimpleAddr.SERVER;
             rpcClient = new DefaultRpcClient(role.id, role,

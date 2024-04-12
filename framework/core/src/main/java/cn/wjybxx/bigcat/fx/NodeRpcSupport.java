@@ -854,19 +854,19 @@ public class NodeRpcSupport implements WorkerModule {
         }
     }
 
-    private void logSndResponse(RpcResponse response) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("snd rpc response, response {}", response.toDetailLog());
-        } else if (logger.isInfoEnabled()) {
-            logger.info("snd rpc response, response {}", response.toSimpleLog());
-        }
-    }
-
     private void logRcvRequest(RpcRequest request) {
         if (logger.isDebugEnabled()) {
             logger.debug("rcv rpc request, request {}", request.toDetailLog());
         } else if (logger.isInfoEnabled()) {
             logger.info("rcv rpc request, request {}", request.toSimpleLog());
+        }
+    }
+
+    private void logSndResponse(RpcResponse response) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("snd rpc response, response {}", response.toDetailLog());
+        } else if (logger.isInfoEnabled()) {
+            logger.info("snd rpc response, response {}", response.toSimpleLog());
         }
     }
 

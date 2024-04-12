@@ -26,12 +26,10 @@ import cn.wjybxx.dson.codec.TypeMeta;
 import cn.wjybxx.dson.codec.TypeMetaRegistries;
 import cn.wjybxx.dson.codec.dson.DefaultDsonConverter;
 import cn.wjybxx.dson.codec.dson.DsonConverter;
-import cn.wjybxx.dson.text.DsonMode;
 import cn.wjybxx.dson.text.ObjectStyle;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -147,7 +145,7 @@ public class ExcelExporter {
         try {
             File outFile = new File(options.getOutDir(), sheet.getSheetName() + "." + DSON_EXTENSION);
             FileWriter fileWriter = new FileWriter(outFile, false);
-            converter.writeAsDson(sheet, DsonMode.RELAXED, TypeArgInfo.of(Sheet.class), fileWriter);
+            converter.writeAsDson(sheet, TypeArgInfo.of(Sheet.class), fileWriter);
         } catch (Exception e) {
             ObjectUtils.rethrow(e);
         }
