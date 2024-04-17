@@ -41,7 +41,7 @@ public final class WorkerCtx {
     }
 
     void init(Worker worker) {
-        assert worker.inEventLoop();
+//        assert worker.inEventLoop(); // worker尚未启动
         this.rpcRegistry = worker.injector().getInstance(RpcRegistry.class);
         try {
             this.rpcInterceptor = worker.injector().getInstance(RpcInterceptor.class);

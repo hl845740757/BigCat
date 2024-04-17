@@ -508,12 +508,12 @@ public class NodeRpcSupport implements WorkerModule {
             return;
         }
         // future的跨线程问题是在call的时候处理的
-        @SuppressWarnings("unchecked") CompletableFuture<Object> future = (CompletableFuture<Object>) requestStub.future;
+        @SuppressWarnings("unchecked") IPromise<Object> future = (IPromise<Object>) requestStub.future;
         final int errorCode = response.getErrorCode();
         if (errorCode == 0) {
-            future.complete(response.getResult());
+            future.trySetResult(response.getResult());
         } else {
-            future.completeExceptionally(RpcServerException.newServerException(response));
+            future.trySetException(RpcServerException.newServerException(response));
         }
     }
 
