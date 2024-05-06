@@ -30,7 +30,11 @@ import java.util.IdentityHashMap;
  */
 @DsonSerializable
 @DsonLiteSerializable
-@ClassImpl(skipFields = "IdentityHashMap.size")
+@ClassImpl(skipFields = {
+//        "IdentityHashMap.size",
+        "java.util.IdentityHashMap.size"
+}
+)
 public class CodecSkipFieldTest<K, V> extends IdentityHashMap<K, V> {
 
 }

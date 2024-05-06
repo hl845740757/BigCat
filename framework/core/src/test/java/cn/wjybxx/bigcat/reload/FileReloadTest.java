@@ -64,6 +64,10 @@ public class FileReloadTest {
                 new DefaultThreadFactory("common", true));
         executor.allowCoreThreadTimeOut(true);
 
+        File fileResDir = new File(resDir);
+        if (!fileResDir.exists()) {
+            fileResDir.mkdirs();
+        }
         fileDataMgr = new TestFileDataMgr();
         fileReloadMgr = new FileReloadMgr(resDir, fileDataMgr, executor);
 

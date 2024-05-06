@@ -21,6 +21,7 @@ import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.WireType;
+import cn.wjybxx.dson.codec.ConverterOptions;
 import cn.wjybxx.dson.codec.FieldImpl;
 import cn.wjybxx.dson.codec.TypeArgInfo;
 import cn.wjybxx.dson.codec.dson.DsonObjectReader;
@@ -106,7 +107,7 @@ public class CodecBeanExample {
 
     }
 
-    public void afterDecode() {
+    public void afterDecode(ConverterOptions options) {
         if (age < 1) throw new IllegalStateException();
     }
 

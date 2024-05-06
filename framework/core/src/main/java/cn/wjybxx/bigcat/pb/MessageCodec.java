@@ -60,7 +60,7 @@ public class MessageCodec<T extends MessageLite> implements DuplexCodec<T> {
 
     @Override
     public void writeObject(DsonLiteObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
-        writer.writeBytes(0, writer.options().pbBinaryType, instance.toByteArray());
+        writer.writeBinary(0, writer.options().pbBinaryType, instance.toByteArray());
     }
 
     @Override
@@ -75,7 +75,7 @@ public class MessageCodec<T extends MessageLite> implements DuplexCodec<T> {
 
     @Override
     public void writeObject(DsonObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
-        writer.writeBytes("data", writer.options().pbBinaryType, instance.toByteArray());
+        writer.writeBinary("data", writer.options().pbBinaryType, instance.toByteArray());
     }
 
     @Override

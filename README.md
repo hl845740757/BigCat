@@ -77,7 +77,7 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 1. 注解处理器
 2. Rpc
 3. Future和EventBus
-4. 序列化（Pb二进制和Bson文档）
+4. ~~序列化（Pb二进制和Bson文档）~~
 5. 代码和表格热更新
 6. 事件循环
 
