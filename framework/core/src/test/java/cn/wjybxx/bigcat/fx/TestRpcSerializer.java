@@ -19,11 +19,9 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.base.ClassScanner;
 import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.bigcat.rpc.RpcSerializer;
-import cn.wjybxx.dson.codec.*;
-import cn.wjybxx.dson.codec.dsonlite.DefaultDsonLiteConverter;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodec;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodecScanIgnore;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteConverter;
+import cn.wjybxx.dsoncodec.*;
+import cn.wjybxx.dsoncodec.annotations.DsonCodecScanIgnore;
+import cn.wjybxx.dson.text.ObjectStyle;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.annotation.Nonnull;
@@ -39,30 +37,28 @@ import java.util.List;
  */
 public class TestRpcSerializer implements RpcSerializer {
 
-    private final DsonLiteConverter converter;
+    private final DsonConverter converter;
 
     public TestRpcSerializer() {
         List<Class<?>> codecClsList = scanBinaryCodecs();
-        List<? extends DsonLiteCodec<?>> codecImplList = codecClsList.stream()
+        List<? extends DsonCodec<?>> codecImplList = codecClsList.stream()
                 .map(TestRpcSerializer::newInstance)
                 .toList();
 
         // 扫描的是Codec类，并不直接是可序列化的类
         List<? extends Class<?>> encoderClsList = codecImplList.stream()
-                .map(DsonLiteCodec::getEncoderClass)
+                .map(DsonCodec::getEncoderClass)
                 .toList();
 
         TypeMetaRegistry typeMetaRegistry = TypeMetaRegistries.fromMapper(new HashSet<>(encoderClsList), cls -> {
-            int ns = cls.getPackageName().startsWith("cn.wjybxx.common") ? 1 : 2;
-            int lclassId = cls.getName().hashCode();
-            return TypeMeta.of(cls, new ClassId(ns, lclassId));
+            return TypeMeta.of(cls, ObjectStyle.INDENT, cls.getSimpleName());
         });
-        converter = DefaultDsonLiteConverter.newInstance(codecImplList, typeMetaRegistry, ConverterOptions.DEFAULT);
+        converter = DefaultDsonConverter.newInstance(typeMetaRegistry, codecImplList, ConverterOptions.DEFAULT);
     }
 
-    private static DsonLiteCodec<?> newInstance(Class<?> e) {
+    private static DsonCodec<?> newInstance(Class<?> e) {
         try {
-            return (DsonLiteCodec<?>) e.getConstructor(ArrayUtils.EMPTY_CLASS_ARRAY).newInstance(ArrayUtils.EMPTY_OBJECT_ARRAY);
+            return (DsonCodec<?>) e.getConstructor(ArrayUtils.EMPTY_CLASS_ARRAY).newInstance(ArrayUtils.EMPTY_OBJECT_ARRAY);
         } catch (Exception ex) {
             return ObjectUtils.rethrow(ex);
         }
@@ -73,8 +69,8 @@ public class TestRpcSerializer implements RpcSerializer {
         List<Class<?>> codecClsList = new ArrayList<>(10);
         for (String pkg : packages) {
             codecClsList.addAll(ClassScanner.findClasses(pkg, e -> e.endsWith("BinCodec"), cls -> {
-                return DsonLiteCodec.class.isAssignableFrom(cls)
-                        && !cls.isAnnotationPresent(DsonLiteCodecScanIgnore.class)
+                return DsonCodec.class.isAssignableFrom(cls)
+                        && !cls.isAnnotationPresent(DsonCodecScanIgnore.class)
                         && Arrays.stream(cls.getConstructors()).anyMatch(e -> e.getParameterCount() == 0 && Modifier.isPublic(e.getModifiers()));
             }));
         }

@@ -17,33 +17,28 @@
 package cn.wjybxx.bigcat.pb;
 
 import cn.wjybxx.dson.WireType;
-import cn.wjybxx.dson.codec.DuplexCodec;
-import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.codecs.EnumLiteCodec;
-import cn.wjybxx.dson.codec.dson.DsonCodecScanIgnore;
-import cn.wjybxx.dson.codec.dson.DsonObjectReader;
-import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodecScanIgnore;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
 import cn.wjybxx.dson.text.NumberStyle;
 import cn.wjybxx.dson.text.ObjectStyle;
+import cn.wjybxx.dsoncodec.DsonCodec;
+import cn.wjybxx.dsoncodec.DsonObjectReader;
+import cn.wjybxx.dsoncodec.DsonObjectWriter;
+import cn.wjybxx.dsoncodec.TypeInfo;
+import cn.wjybxx.dsoncodec.annotations.DsonCodecScanIgnore;
 import com.google.protobuf.Internal;
 import com.google.protobuf.ProtocolMessageEnum;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
- * MessageEnum会写为具有int32字段的Object
- * (和{@link EnumLiteCodec}相同)
+ * MessageEnum会写为int值，因此不能作为顶层对象。
  *
  * @author wjybxx
  * date 2023/4/2
  */
-@DsonLiteCodecScanIgnore
 @DsonCodecScanIgnore
-public class MessageEnumCodec<T extends ProtocolMessageEnum> implements DuplexCodec<T> {
+public class MessageEnumCodec<T extends ProtocolMessageEnum> implements DsonCodec<T> {
 
     private final Class<T> clazz;
     private final Internal.EnumLiteMap<T> enumLiteMap;
@@ -60,24 +55,13 @@ public class MessageEnumCodec<T extends ProtocolMessageEnum> implements DuplexCo
     }
 
     @Override
-    public void writeObject(DsonLiteObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
-        writer.writeInt(0, instance.getNumber(), WireType.UINT);
+    public void writeObject(DsonObjectWriter writer, T instance, TypeInfo<?> typeArgInfo, ObjectStyle style) {
+        writer.writeInt(null, instance.getNumber(), WireType.UINT, NumberStyle.SIMPLE);
     }
 
     @Override
-    public T readObject(DsonLiteObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        int number = reader.readInt(0);
-        return enumLiteMap.findValueByNumber(number); // TODO 是否要让Null非法？
-    }
-
-    @Override
-    public void writeObject(DsonObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
-        writer.writeInt("number", instance.getNumber(), WireType.UINT, NumberStyle.SIMPLE);
-    }
-
-    @Override
-    public T readObject(DsonObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        int number = reader.readInt("number");
+    public T readObject(DsonObjectReader reader, TypeInfo<?> typeArgInfo, Supplier<? extends T> factory) {
+        int number = reader.readInt(reader.getCurrentName());
         return enumLiteMap.findValueByNumber(number); // TODO 是否要让Null非法？
     }
 }

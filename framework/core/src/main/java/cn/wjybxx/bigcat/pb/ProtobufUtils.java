@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.pb;
 
 import cn.wjybxx.base.ClassScanner;
-import cn.wjybxx.dson.codec.DuplexCodec;
+import cn.wjybxx.dsoncodec.DsonCodec;
 import com.google.protobuf.*;
 
 import javax.annotation.Nonnull;
@@ -94,7 +94,7 @@ public class ProtobufUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static DuplexCodec<?> createProtobufCodec(Class<?> clazz) {
+    public static DsonCodec<?> createProtobufCodec(Class<?> clazz) {
         // protoBuf消息
         if (MessageLite.class.isAssignableFrom(clazz)) {
             return createMessageCodec((Class<? extends MessageLite>) clazz);

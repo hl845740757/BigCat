@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.annotation;
 
+import cn.wjybxx.base.annotation.Alias;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -32,6 +34,7 @@ import java.lang.annotation.Target;
  * 2. 生成的工具类的类名： 类名 + Fields，如：Player生成的工具类为 PlayerFields。
  * 3. 默认为每一个字段生成一个对应的常量。
  * 4. 常量字段名始终与字段名相同，常量的值通常与字段名也相同。
+ * 5. 常量值可通过{@link Alias}指定。
  * <p>
  * Q：这个注解有什么用？
  * A：可避免手写字符串，也为生成的代码提供常量。

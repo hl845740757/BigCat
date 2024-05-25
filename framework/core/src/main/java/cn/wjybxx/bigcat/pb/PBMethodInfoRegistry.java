@@ -84,12 +84,17 @@ public final class PBMethodInfoRegistry {
     // region 编解码
     // 这里的序列化只是示例，在真实的项目中，应当直接写入对应的输出流
 
+    /** 如果未设置为可共享，则在Worker线程序列化；否则由用户的Router直接序列化到协议 */
     public void encodeParameters(RpcRequest request) {
-        Message message = (Message) request.getArgument();
-        if (message == null) {
+        Object arg = request.getArgument();
+        if (arg == null) {
             request.setParameters(ArrayUtils.EMPTY_BYTE_ARRAY);
-        } else {
+        } else if (arg instanceof Message message) {
             request.setParameters(message.toByteArray());
+        } else if (arg instanceof Message.Builder builder) {
+            request.setParameters(builder.build().toByteArray());
+        } else {
+            throw new IllegalArgumentException("invalid argType: " + arg.getClass());
         }
     }
 
@@ -115,6 +120,7 @@ public final class PBMethodInfoRegistry {
         }
     }
 
+    /** 如果未设置为可共享，则在Worker线程序列化；否则由用户的Router直接序列化到协议 */
     public void encodeResult(RpcResponse response) {
         if (!response.isSuccess()) { // 失败
             byte[] msgBytes = response.getErrorMsg().getBytes(StandardCharsets.UTF_8);
@@ -122,11 +128,15 @@ public final class PBMethodInfoRegistry {
             return;
         }
         // null替换为空字节数组(空消息)
-        Message message = (Message) response.getResult();
-        if (message == null) {
+        Object result = response.getResult();
+        if (result == null) {
             response.setResults(ArrayUtils.EMPTY_BYTE_ARRAY);
-        } else {
+        } else if (result instanceof Message message) {
             response.setResults(message.toByteArray());
+        } else if (result instanceof Message.Builder builder) {
+            response.setResults(builder.build().toByteArray());
+        } else {
+            throw new IllegalArgumentException("invalid resultType: " + result.getClass());
         }
     }
 

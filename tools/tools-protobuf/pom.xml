@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>cn.wjybxx.bigcat</groupId>
-            <artifactId>tools-core</artifactId>
+            <artifactId>tools-common</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

@@ -21,15 +21,12 @@ import cn.wjybxx.base.EnumLiteMap;
 import cn.wjybxx.base.EnumUtils;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.WireType;
-import cn.wjybxx.dson.codec.ConverterOptions;
-import cn.wjybxx.dson.codec.FieldImpl;
-import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.dson.DsonObjectReader;
-import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
-import cn.wjybxx.dson.codec.dson.DsonSerializable;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
+import cn.wjybxx.dsoncodec.ConverterOptions;
+import cn.wjybxx.dsoncodec.DsonObjectReader;
+import cn.wjybxx.dsoncodec.DsonObjectWriter;
+import cn.wjybxx.dsoncodec.annotations.DsonCodecScanIgnore;
+import cn.wjybxx.dsoncodec.annotations.DsonProperty;
+import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 import cn.wjybxx.dson.text.ObjectStyle;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -46,41 +43,40 @@ import java.util.*;
  * @author wjybxx
  * date 2023/4/7
  */
-@DsonSerializable
-@DsonLiteSerializable
+@DsonSerializable(annotations = DsonCodecScanIgnore.class)
 public class CodecBeanExample {
 
-    @FieldImpl(wireType = WireType.UINT, name = "_age")
+    @DsonProperty(wireType = WireType.UINT, name = "_age")
     public int age;
     public String name;
 
-    @FieldImpl(dsonType = DsonType.EXT_STRING, dsonSubType = 12)
+    @DsonProperty(dsonType = DsonType.EXT_STRING, dsonSubType = 12)
     public String reg;
-    @FieldImpl(dsonType = DsonType.EXT_DOUBLE, dsonSubType = 12)
+    @DsonProperty(dsonType = DsonType.EXT_DOUBLE, dsonSubType = 12)
     public double dv;
 
     public Map<Integer, String> age2NameMap;
     public Map<Sex, String> sex2NameMap1;
     public EnumMap<Sex, String> sex2NameMap2;
-    @FieldImpl(EnumMap.class)
+    @DsonProperty(impl = EnumMap.class)
     public Map<Sex, String> sex2NameMap3;
 
     public Set<Sex> sexSet1;
     public EnumSet<Sex> sexSet2;
-    @FieldImpl(EnumSet.class)
+    @DsonProperty(impl = EnumSet.class)
     public Set<Sex> sexSet3;
 
-    @FieldImpl(objectStyle = ObjectStyle.FLOW)
+    @DsonProperty(objectStyle = ObjectStyle.FLOW)
     public List<String> stringList1;
     public ArrayList<String> stringList2;
-    @FieldImpl(LinkedList.class)
+    @DsonProperty(impl = LinkedList.class)
     public List<String> stringList3;
 
     public Int2IntOpenHashMap currencyMap1;
-    @FieldImpl(Int2IntOpenHashMap.class)
+    @DsonProperty(impl = Int2IntOpenHashMap.class)
     public Int2IntMap currencyMap2;
 
-    @FieldImpl(writeProxy = "writeCustom", readProxy = "readCustom")
+    @DsonProperty(writeProxy = "writeCustom", readProxy = "readCustom")
     public Object custom;
 
     // 测试非标准的getter/setter
@@ -91,14 +87,6 @@ public class CodecBeanExample {
     }
 
     //
-    public void writeCustom(DsonLiteObjectWriter writer, int name) {
-        writer.writeObject(name, custom, TypeArgInfo.OBJECT);
-    }
-
-    public void readCustom(DsonLiteObjectReader reader, int name) {
-        this.custom = reader.readObject(name, TypeArgInfo.OBJECT);
-    }
-
     public void writeCustom(DsonObjectWriter writer, String name) {
 
     }
@@ -107,8 +95,16 @@ public class CodecBeanExample {
 
     }
 
+    public void beforeEncode(ConverterOptions options) {
+
+    }
+
     public void afterDecode(ConverterOptions options) {
         if (age < 1) throw new IllegalStateException();
+    }
+
+    public static CodecBeanExample newInstance(DsonObjectReader reader) {
+        return new CodecBeanExample();
     }
 
     // REGION 非标准getter/setter
@@ -134,7 +130,6 @@ public class CodecBeanExample {
     // ENDREGION
 
     //
-    @DsonLiteSerializable
     @DsonSerializable
     public enum Sex implements EnumLite {
 

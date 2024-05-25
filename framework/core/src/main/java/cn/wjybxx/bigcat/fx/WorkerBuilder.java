@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.Preconditions;
 import cn.wjybxx.base.time.TimeProvider;
+import cn.wjybxx.bigcat.TimeModule;
 import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
 import cn.wjybxx.bigcat.rpc.RpcClient;
 import cn.wjybxx.bigcat.rpc.RpcRegistry;

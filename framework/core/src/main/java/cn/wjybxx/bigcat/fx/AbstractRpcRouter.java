@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.rpc.RpcAddr;
 import cn.wjybxx.bigcat.rpc.RpcSerializer;
+import cn.wjybxx.bigcat.rpc.StaticRpcAddr;
 
 import java.util.Objects;
 
@@ -47,6 +48,8 @@ public abstract class AbstractRpcRouter implements NodeRpcRouter {
 
     // endregion
 
+    // region core
+
     @Override
     public void inject(Worker worker) {
         node = (Node) Objects.requireNonNull(worker);
@@ -64,4 +67,65 @@ public abstract class AbstractRpcRouter implements NodeRpcRouter {
         return node.nodeAddr().equalsIgnoreWorker(addr);
     }
 
+    // endregion
+
+    // region 重复实现-提高效率
+
+    /** 测试给定的地址是否是单播地址，只有每一级都是单播的情况下才可以返回true */
+    @Override
+    public boolean isUnicastAddr(WorkerAddr addr) {
+        return addr.serverType > 0
+                && addr.serverId > 0
+                && !("*".equals(addr.workerId));
+    }
+
+    /** 测试给定的地址在worker层是否是单播地址 */
+    @Override
+    public boolean isUnicastWorkerAddr(WorkerAddr addr) {
+        return !("*".equals(addr.workerId));
+    }
+
+    /** 测试给定的地址在worker层是否是广播地址 */
+    @Override
+    public boolean isBroadcastWorkerAddr(WorkerAddr addr) {
+        return "*".equals(addr.workerId);
+    }
+
+    /** 判断是否是单播地址 */
+    @Override
+    public boolean isUnicastAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return isUnicastAddr(workerAddr);
+        }
+        return addr == StaticRpcAddr.LOCAL;
+    }
+
+    /** 测试给定的地址在worker层是否是单播地址 */
+    @Override
+    public boolean isUnicastWorkerAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return isUnicastWorkerAddr(addr);
+        }
+        return addr == StaticRpcAddr.LOCAL;
+    }
+
+    /** 测试给定的地址在worker层是否是广播地址 */
+    @Override
+    public boolean isBroadcastWorkerAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return isBroadcastWorkerAddr(workerAddr);
+        }
+        return addr == StaticRpcAddr.LOCAL_BROADCAST;
+    }
+
+    /** 测试给定地址似乎否是本地地址(进程内地址) */
+    @Override
+    public boolean isLocalAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return isLocalAddr(workerAddr);
+        }
+        return addr instanceof StaticRpcAddr;
+    }
+
+    // endregion
 }

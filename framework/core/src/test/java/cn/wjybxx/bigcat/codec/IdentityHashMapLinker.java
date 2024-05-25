@@ -16,13 +16,11 @@
 
 package cn.wjybxx.bigcat.codec;
 
-import cn.wjybxx.dson.codec.CodecLinkerBean;
-import cn.wjybxx.dson.codec.ConverterOptions;
-import cn.wjybxx.dson.codec.FieldImpl;
-import cn.wjybxx.dson.codec.dson.DsonObjectReader;
-import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
+import cn.wjybxx.dsoncodec.ConverterOptions;
+import cn.wjybxx.dsoncodec.DsonObjectReader;
+import cn.wjybxx.dsoncodec.DsonObjectWriter;
+import cn.wjybxx.dsoncodec.annotations.DsonCodecLinkerBean;
+import cn.wjybxx.dsoncodec.annotations.DsonProperty;
 
 import java.util.IdentityHashMap;
 
@@ -30,17 +28,13 @@ import java.util.IdentityHashMap;
  * @author houlei
  * date - 2024/4/16
  */
-@CodecLinkerBean(value = IdentityHashMap.class)
+@DsonCodecLinkerBean(value = IdentityHashMap.class)
 public class IdentityHashMapLinker {
 
-    @FieldImpl(readProxy = "readSize", writeProxy = "writeSize")
+    @DsonProperty(readProxy = "readSize", writeProxy = "writeSize")
     private IdentityHashMap<?, ?> size;
 
     public static void writeSize(IdentityHashMap<?, ?> inst, DsonObjectWriter writer, String name) {
-
-    }
-
-    public static void writeSize(IdentityHashMap<?, ?> inst, DsonLiteObjectWriter writer, int name) {
 
     }
 
@@ -48,7 +42,11 @@ public class IdentityHashMapLinker {
 
     }
 
-    public static void readSize(IdentityHashMap<?, ?> inst, DsonLiteObjectReader reader, int name) {
+    public static IdentityHashMap<?, ?> newInstance(DsonObjectReader reader) {
+        return new IdentityHashMap<>();
+    }
+
+    public static void beforeEncode(IdentityHashMap<?, ?> inst, ConverterOptions options) {
 
     }
 

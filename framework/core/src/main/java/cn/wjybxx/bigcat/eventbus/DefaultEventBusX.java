@@ -56,7 +56,7 @@ public class DefaultEventBusX implements EventBus {
 
         recursionDepth++;
         try {
-            final ComposeEventKey key = keyPool.get();
+            final ComposeEventKey key = keyPool.acquire();
             if (event instanceof DynamicEvent eventX) {
                 key.sourceKey = eventX.sourceKey();
                 key.masterKey = eventX.masterKey();
@@ -74,7 +74,7 @@ public class DefaultEventBusX implements EventBus {
                 key.masterKey = event.getClass();
                 EventBusUtils.postEvent(handlerMap, event, key);
             }
-            keyPool.returnOne(key);
+            keyPool.release(key);
         } finally {
             recursionDepth--;
         }
@@ -118,7 +118,7 @@ public class DefaultEventBusX implements EventBus {
             sourceKey = null;
         }
         // 子键集合处理
-        final ComposeEventKey composeEventKey = keyPool.get();
+        final ComposeEventKey composeEventKey = keyPool.acquire();
         if (EventBusUtils.isNotEmptyCollection(childKey)) {
             for (Object c : (Collection<?>) childKey) {
                 composeEventKey.init(sourceKey, masterKey, c);
@@ -128,7 +128,7 @@ public class DefaultEventBusX implements EventBus {
             composeEventKey.init(sourceKey, masterKey, childKey);
             EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
         }
-        keyPool.returnOne(composeEventKey);
+        keyPool.release(composeEventKey);
     }
 
     @Override
@@ -143,10 +143,10 @@ public class DefaultEventBusX implements EventBus {
         } else {
             sourceKey = null;
         }
-        final ComposeEventKey composeEventKey = keyPool.get();
+        final ComposeEventKey composeEventKey = keyPool.acquire();
         composeEventKey.init(sourceKey, masterKey, childKey);
         boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-        keyPool.returnOne(composeEventKey);
+        keyPool.release(composeEventKey);
         return contains;
     }
 

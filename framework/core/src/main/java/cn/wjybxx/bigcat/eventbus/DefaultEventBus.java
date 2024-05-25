@@ -66,10 +66,10 @@ public class DefaultEventBus implements EventBus {
 
                 final Object childKey = eventX.childKey();
                 if (childKey != null) {
-                    final ComposeEventKey composeEventKey = keyPool.get();
+                    final ComposeEventKey composeEventKey = keyPool.acquire();
                     composeEventKey.init(masterKey, childKey);
                     EventBusUtils.postEvent(handlerMap, (Object) eventX, composeEventKey);
-                    keyPool.returnOne(composeEventKey);
+                    keyPool.release(composeEventKey);
                 }
             } else {
                 // 普通事件只支持class作为masterKey
@@ -111,7 +111,7 @@ public class DefaultEventBus implements EventBus {
         if (childKey == null) {
             EventBusUtils.removeHandler(handlerMap, masterKey, handler);
         } else {
-            final ComposeEventKey composeEventKey = keyPool.get();
+            final ComposeEventKey composeEventKey = keyPool.acquire();
             if (EventBusUtils.isNotEmptyCollection(childKey)) {
                 for (Object c : (Collection<?>) childKey) {
                     composeEventKey.init(masterKey, c);
@@ -121,7 +121,7 @@ public class DefaultEventBus implements EventBus {
                 composeEventKey.init(masterKey, childKey);
                 EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
             }
-            keyPool.returnOne(composeEventKey);
+            keyPool.release(composeEventKey);
         }
     }
 
@@ -130,10 +130,10 @@ public class DefaultEventBus implements EventBus {
         if (childKey == null) {
             return EventBusUtils.hasListener(handlerMap, masterKey, handler);
         } else {
-            final ComposeEventKey composeEventKey = keyPool.get();
+            final ComposeEventKey composeEventKey = keyPool.acquire();
             composeEventKey.init(masterKey, childKey);
             boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-            keyPool.returnOne(composeEventKey);
+            keyPool.release(composeEventKey);
             return contains;
         }
     }

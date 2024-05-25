@@ -16,33 +16,29 @@
 
 package cn.wjybxx.bigcat.pb;
 
-import cn.wjybxx.dson.DsonBinary;
-import cn.wjybxx.dson.codec.DuplexCodec;
-import cn.wjybxx.dson.codec.TypeArgInfo;
-import cn.wjybxx.dson.codec.dson.DsonCodecScanIgnore;
-import cn.wjybxx.dson.codec.dson.DsonObjectReader;
-import cn.wjybxx.dson.codec.dson.DsonObjectWriter;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteCodecScanIgnore;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectWriter;
+import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.dson.text.ObjectStyle;
+import cn.wjybxx.dsoncodec.DsonCodec;
+import cn.wjybxx.dsoncodec.DsonObjectReader;
+import cn.wjybxx.dsoncodec.DsonObjectWriter;
+import cn.wjybxx.dsoncodec.TypeInfo;
+import cn.wjybxx.dsoncodec.annotations.DsonCodecScanIgnore;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
- * message会写为具有一个{@link DsonBinary}字段的Object
- * (也可写为具有一个元素的数组，可以不写name)
+ * Message会序列化为字节数组，因此不可以作为顶层对象。
  *
  * @author wjybxx
  * date 2023/4/2
  */
-@DsonLiteCodecScanIgnore
 @DsonCodecScanIgnore
-public class MessageCodec<T extends MessageLite> implements DuplexCodec<T> {
+public class MessageCodec<T extends MessageLite> implements DsonCodec<T> {
 
     private final Class<T> clazz;
     private final Parser<T> parser;
@@ -59,32 +55,17 @@ public class MessageCodec<T extends MessageLite> implements DuplexCodec<T> {
     }
 
     @Override
-    public void writeObject(DsonLiteObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo) {
-        writer.writeBinary(0, writer.options().pbBinaryType, instance.toByteArray());
+    public void writeObject(DsonObjectWriter writer, T instance, TypeInfo<?> typeArgInfo, ObjectStyle style) {
+        writer.writeBinary(null, writer.options().pbBinaryType, instance.toByteArray());
     }
 
     @Override
-    public T readObject(DsonLiteObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        byte[] bytes = reader.readBytes(0);
+    public T readObject(DsonObjectReader reader, TypeInfo<?> typeArgInfo, Supplier<? extends T> factory) {
+        byte[] bytes = reader.readBytes(reader.getCurrentName());
         try {
             return parser.parseFrom(bytes);
         } catch (InvalidProtocolBufferException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void writeObject(DsonObjectWriter writer, T instance, TypeArgInfo<?> typeArgInfo, ObjectStyle style) {
-        writer.writeBinary("data", writer.options().pbBinaryType, instance.toByteArray());
-    }
-
-    @Override
-    public T readObject(DsonObjectReader reader, TypeArgInfo<?> typeArgInfo) {
-        byte[] bytes = reader.readBytes("data");
-        try {
-            return parser.parseFrom(bytes);
-        } catch (InvalidProtocolBufferException e) {
-            throw new RuntimeException(e);
+            return ObjectUtils.rethrow(e);
         }
     }
 

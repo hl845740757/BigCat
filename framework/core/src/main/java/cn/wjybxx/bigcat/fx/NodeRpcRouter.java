@@ -40,7 +40,7 @@ public interface NodeRpcRouter extends RpcRouter, WorkerModule {
 
     /**
      * 测试给定的地址是否是跨语言的rpc节点
-     * 1.如果是跨语言的节点通信，方法参数和结果必须是protobuf的消息
+     * 1.如果是跨语言的节点通信，方法参数和结果必须是protobuf的消息 -- 应当外部序列化和反序列化。
      * 2.通常用于客户端和服务器的rpc通信
      */
     boolean isCrossLanguageAddr(RpcAddr addr);

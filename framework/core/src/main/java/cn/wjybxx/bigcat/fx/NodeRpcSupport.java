@@ -398,9 +398,7 @@ public class NodeRpcSupport implements WorkerModule {
         // 拦截测试
         int code = workerCtx.rpcInterceptor == null ? 0 : workerCtx.rpcInterceptor.test(request);
         if (code != 0) {
-            if (RpcInvokeType.isCall(request.getInvokeType())) {
-                sendResponse(newFailedResponse(request, code, ""));
-            }
+            reject(request, code);
             return;
         }
         // 执行调用
@@ -452,10 +450,17 @@ public class NodeRpcSupport implements WorkerModule {
     private void unsupportedInterface(RpcRequest request) {
         logger.warn("unsupported interface, src {}, serviceId={}, methodId={}",
                 request.getSrcAddr(), request.getServiceId(), request.getMethodId());
-
-        // 需要返回结果
         if (RpcInvokeType.isCall(request.getInvokeType())) {
             sendResponse(newFailedResponse(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE, ""));
+        }
+    }
+
+    /** 请求被拒绝 */
+    private void reject(RpcRequest request, int code) {
+        logger.warn("request denied, src {}, serviceId={}, methodId={}",
+                request.getSrcAddr(), request.getServiceId(), request.getMethodId());
+        if (RpcInvokeType.isCall(request.getInvokeType())) {
+            sendResponse(newFailedResponse(request, code, ""));
         }
     }
 
@@ -574,15 +579,15 @@ public class NodeRpcSupport implements WorkerModule {
     private void checkArgumentNull(RpcRequest request) {
         // null参数警告
         PBMethodInfo<?, ?> methodInfo = methodInfoRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
-        List<Object> parameters = request.listParameters();
-        if (methodInfo.hasArg() && parameters.isEmpty() || parameters.get(0) == null) {
+        if (methodInfo.hasArg() && request.getArgument() == null) {
             logger.info("rpc argument is null, it will be replaced with an empty message, serviceId: {}, {}",
                     request.getServiceId(), request.getMethodId());
         }
     }
 
     private void checkResultNull(RpcResponse response) {
-        if (response.isSerialized() || !response.isSuccess()) { // 用户可直接发送编码后的结果
+        // 用户可直接发送编码后的结果，见RpcContext
+        if (response.isSerialized() || !response.isSuccess()) {
             return;
         }
         // null结果警告

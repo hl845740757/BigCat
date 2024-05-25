@@ -16,9 +16,7 @@
 
 package cn.wjybxx.bigcat.codec;
 
-import cn.wjybxx.dson.codec.ClassImpl;
-import cn.wjybxx.dson.codec.dson.DsonSerializable;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
+import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 
 import java.util.IdentityHashMap;
 
@@ -28,13 +26,10 @@ import java.util.IdentityHashMap;
  * @author houlei
  * date - 2024/4/12
  */
-@DsonSerializable
-@DsonLiteSerializable
-@ClassImpl(skipFields = {
+@DsonSerializable(skipFields = {
 //        "IdentityHashMap.size",
         "java.util.IdentityHashMap.size"
-}
-)
+})
 public class CodecSkipFieldTest<K, V> extends IdentityHashMap<K, V> {
 
 }

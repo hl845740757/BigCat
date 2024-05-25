@@ -17,7 +17,7 @@
         <module>tools-config</module>
         <module>tools-excel</module>
         <module>tools-protobuf</module>
-        <module>tools-core</module>
+        <module>tools-common</module>
     </modules>
 
     <!-- 证书 -->
@@ -58,22 +58,22 @@
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
         <!-- 基础依赖 -->
-        <slf4j.version>2.0.9</slf4j.version>
-        <logback.version>1.4.14</logback.version>
-        <junit.version>5.9.2</junit.version>
+        <slf4j.version>2.0.13</slf4j.version>
+        <logback.version>1.5.6</logback.version>
+        <junit.version>5.10.2</junit.version>
 
-        <fastutil.version>8.5.12</fastutil.version>
+        <fastutil.version>8.5.13</fastutil.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
-        <commons-io.version>2.15.1</commons-io.version>
-        <commons-codec.version>1.16.0</commons-codec.version>
+        <commons-io.version>2.16.1</commons-io.version>
+        <commons-codec.version>1.17.0</commons-codec.version>
 
         <guice.version>7.0.0</guice.version>
-        <guava.version>33.0.0-jre</guava.version>
-        <pb.version>3.25.1</pb.version>
+        <guava.version>33.2.0-jre</guava.version>
+        <pb.version>4.26.1</pb.version>
 
-        <commons.version>1.0.9</commons.version>
-        <dson.version>2.0.2</dson.version>
-        <btree.version>1.0.rc1</btree.version>
+        <commons.version>1.0.11</commons.version>
+        <dson.version>2.1.3</dson.version>
+        <btree.version>1.0.rc2</btree.version>
 
         <!-- 特殊依赖 -->
         <javapoet.version>1.13.0</javapoet.version>

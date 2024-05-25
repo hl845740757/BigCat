@@ -17,8 +17,8 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.rpc.RpcAddr;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteObjectReader;
-import cn.wjybxx.dson.codec.dsonlite.DsonLiteSerializable;
+import cn.wjybxx.dsoncodec.DsonObjectReader;
+import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
@@ -34,7 +34,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/10/4
  */
-@DsonLiteSerializable
+@DsonSerializable
 public class WorkerAddr implements RpcAddr {
 
     /** 服务器类型 */
@@ -55,10 +55,10 @@ public class WorkerAddr implements RpcAddr {
     }
 
     /** 解码函数 */
-    public WorkerAddr(DsonLiteObjectReader reader) {
-        this.serverType = reader.readInt(WorkerAddrCodec.numbers_serverType);
-        this.serverId = reader.readInt(WorkerAddrCodec.numbers_serverId);
-        this.workerId = reader.readString(WorkerAddrCodec.numbers_workerId);
+    public WorkerAddr(DsonObjectReader reader) {
+        this.serverType = reader.readInt(WorkerAddrCodec.names_serverType);
+        this.serverId = reader.readInt(WorkerAddrCodec.names_serverId);
+        this.workerId = reader.readString(WorkerAddrCodec.names_workerId);
     }
 
     /** 是否有workerId */

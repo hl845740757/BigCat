@@ -24,6 +24,8 @@ import cn.wjybxx.concurrent.IFuture;
 import java.util.Objects;
 
 /**
+ * worker端的RpcClient仅仅将请求转发至Node，线程切换问题全部由Node处理。
+ *
  * @author wjybxx
  * date - 2023/10/28
  */

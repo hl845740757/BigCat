@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.bigcat.TimeModule;
 import cn.wjybxx.concurrent.RingBufferEvent;
 import com.google.inject.Inject;
 

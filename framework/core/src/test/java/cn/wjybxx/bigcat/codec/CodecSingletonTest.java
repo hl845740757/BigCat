@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.codec;
 
-import cn.wjybxx.dson.codec.ClassImpl;
-import cn.wjybxx.dson.codec.CodecLinkerBean;
+import cn.wjybxx.dsoncodec.annotations.DsonCodecLinkerBean;
+import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 
 import java.util.IdentityHashMap;
 
@@ -27,9 +27,9 @@ import java.util.IdentityHashMap;
  * @author houlei
  * date - 2024/4/12
  */
-@CodecLinkerBean(
+@DsonCodecLinkerBean(
         value = CodecSingletonTest.MockSingleton.class,
-        classImpl = @ClassImpl(
+        props = @DsonSerializable(
                 singleton = "getInstance"
         ))
 public class CodecSingletonTest<K, V> extends IdentityHashMap<K, V> {
