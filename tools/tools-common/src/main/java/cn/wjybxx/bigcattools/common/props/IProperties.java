@@ -32,8 +32,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * 主要为{@link Properties}提供快捷的解析方式
- * （项目的配置文件，我使用Dson文本）
+ * 主要为{@link Properties}提供快捷的解析方式。
+ * 注意：正常项目不再使用Properties文件，而是使用Dson文本。
  *
  * @author wjybxx
  * date 2023/4/14

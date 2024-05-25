@@ -37,7 +37,8 @@ public final class Header {
     /** name定义的列索引 */
     private final int colIndex;
 
-    public Header(String args, String name, String type, String comment, int rowIndex, int colIndex) {
+    public Header(String args, String name, String type, String comment,
+                  int rowIndex, int colIndex) {
         this.name = name;
         this.type = type.intern(); // type类型很少，而且会进行大量的equals测试，池化很有帮助
         this.args = args;

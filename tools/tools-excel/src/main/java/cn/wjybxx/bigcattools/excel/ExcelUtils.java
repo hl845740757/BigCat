@@ -33,15 +33,20 @@ public class ExcelUtils {
      *
      * @return sheetName -> sheet
      */
+    public static Map<String, Sheet> readExcel(File file) {
+        return readExcel(file, ExcelReaderOptions.DEFAULT);
+    }
+
+    /**
+     * 读取Excel
+     *
+     * @return sheetName -> sheet
+     */
     public static Map<String, Sheet> readExcel(File file, ExcelReaderOptions options) {
         Objects.requireNonNull(options);
         try (final ExcelReader reader = new ExcelReader(file, options)) {
             return reader.readSheets();
         }
-    }
-
-    public static Map<String, Sheet> readExcel(File file) {
-        return readExcel(file, ExcelReaderOptions.DEFAULT);
     }
 
 }

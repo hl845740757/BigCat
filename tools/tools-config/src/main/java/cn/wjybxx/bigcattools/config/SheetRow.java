@@ -60,7 +60,7 @@ public class SheetRow implements CellProvider {
         return name2CellMap.get(name);
     }
 
-    public SheetCell checkedGetCell(String name) {
+    public SheetCell getCellOrThrow(String name) {
         SheetCell sheetCell = name2CellMap.get(name);
         if (sheetCell == null) throw new IllegalArgumentException("cell is absent, name " + name);
         return sheetCell;

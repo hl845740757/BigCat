@@ -31,6 +31,8 @@ enum Corpus {
   CORPUS_VIDEO = 7;
 }
 
+// 采用注解的方式指定msgId
+//@{msgId: 1001}
 message SearchRequest {
   string query = 1;
   int32 page_number = 2;

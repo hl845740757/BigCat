@@ -18,12 +18,12 @@ package cn.wjybxx.bigcattools.config;
 
 
 import cn.wjybxx.dson.DsonType;
-import cn.wjybxx.dsoncodec.TypeInfo;
+import cn.wjybxx.dson.text.ObjectStyle;
+import cn.wjybxx.dson.text.StringStyle;
 import cn.wjybxx.dsoncodec.DsonCodec;
 import cn.wjybxx.dsoncodec.DsonObjectReader;
 import cn.wjybxx.dsoncodec.DsonObjectWriter;
-import cn.wjybxx.dson.text.ObjectStyle;
-import cn.wjybxx.dson.text.StringStyle;
+import cn.wjybxx.dsoncodec.TypeInfo;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * 用于从json等格式中读取sheet
+ * Sheet到Dson的转换器。
  *
  * @author wjybxx
  * date - 2023/4/17

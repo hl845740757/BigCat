@@ -25,8 +25,9 @@ import java.util.*;
  * 我们不使用POI那么复杂的数据结构，也不需要，简单的数据结构就可以很好工作。
  * <p>
  * 1.关于表格的格式，见顶层Doc目录下的<b>表格设计</b>文档
- * 2.程序可以直接使用{@link Sheet}作为配置对象，在运行时(启动时)解析，也可以提前解析并存储为json等格式。
+ * 2.程序可以直接使用{@link Sheet}作为配置对象，在运行时(启动时)解析，也可以提前解析并存储为json等格式 —— 已改为使用Dson。
  * 3.不论项目使用Excel、CSV或自定义格式，都可以转为该格式，该抽象的目的就在于解除业务对配置形式的依赖。
+ * 4.表格内容全部读取为字符串，保持原始的内容。
  *
  * @author wjybxx
  * date 2023/4/15
@@ -77,7 +78,7 @@ public class Sheet {
         return valueRowList;
     }
 
-    //
+    // region 查询
 
     /**
      * 表头信息是否为空
@@ -164,13 +165,27 @@ public class Sheet {
         if (indexedRowMap == null) rebuildIndexes();
         return indexedRowMap.get(primaryKey);
     }
+    // endregion
 
-    //
+    // region 主键索引
     private static final String COL_ARGS = "args";
     private static final String COL_NAME = "name";
     private static final String COL_TYPE = "type";
     private static final String COL_VALUE = "value";
     private static final String COL_COMMENT = "comment";
+
+    /** 获取主键的名名字 */
+    public String getPrimaryKeyName() {
+        if (isParamSheet()) {
+            return COL_NAME;
+        }
+        return headerMap.values().stream()
+                .min(Comparator.comparingInt(Header::getColIndex))
+                .stream()
+                .findFirst()
+                .orElseThrow()
+                .getName();
+    }
 
     /** 构建主键索引 */
     public void rebuildIndexes() {
@@ -182,12 +197,7 @@ public class Sheet {
             }
         } else {
             // 第一列是主键
-            String primaryKeyName = headerMap.values().stream()
-                    .min(Comparator.comparingInt(Header::getColIndex))
-                    .stream()
-                    .findFirst()
-                    .orElseThrow()
-                    .getName();
+            String primaryKeyName = getPrimaryKeyName();
             for (SheetRow sheetRow : valueRowList) {
                 String keyValue = sheetRow.getCell(primaryKeyName).getValue();
                 if (indexedMap.put(keyValue, sheetRow) != null) {
@@ -198,23 +208,9 @@ public class Sheet {
         }
         this.indexedRowMap = indexedMap;
     }
+    // endregion
 
-    //
-
-    public static NormalSheetReader readNormalSheet(Sheet sheet, ValueParser valueParser) {
-        if (sheet.isParamSheet()) {
-            throw new IllegalArgumentException("this sheet is a param sheet");
-        }
-        return new NormalSheetReader(sheet, valueParser);
-    }
-
-    public static ParamSheetReader readParamSheet(Sheet sheet, ValueParser valueParser) {
-        if (!sheet.isParamSheet()) {
-            throw new IllegalArgumentException("this sheet is a normal sheet");
-        }
-        return new ParamSheetReader(sheet, valueParser);
-    }
-    //
+    // region equals
 
     @Override
     public boolean equals(Object o) {
@@ -250,4 +246,5 @@ public class Sheet {
                 ", valueRowList=" + valueRowList +
                 '}';
     }
+    // endregion
 }

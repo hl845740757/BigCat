@@ -17,16 +17,11 @@
 package cn.wjybxx.bigcattools.excel;
 
 import cn.wjybxx.base.ObjectUtils;
+import cn.wjybxx.bigcattools.common.io.NotTempFileFilter;
 import cn.wjybxx.bigcattools.config.Sheet;
 import cn.wjybxx.bigcattools.config.SheetCodec;
-import cn.wjybxx.bigcattools.common.io.NotTempFileFilter;
-import cn.wjybxx.dsoncodec.ConverterOptions;
-import cn.wjybxx.dsoncodec.TypeInfo;
-import cn.wjybxx.dsoncodec.TypeMeta;
-import cn.wjybxx.dsoncodec.TypeMetaRegistries;
-import cn.wjybxx.dsoncodec.DefaultDsonConverter;
-import cn.wjybxx.dsoncodec.DsonConverter;
 import cn.wjybxx.dson.text.ObjectStyle;
+import cn.wjybxx.dsoncodec.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
@@ -45,6 +40,11 @@ import java.util.stream.Collectors;
 /**
  * 表格导出工具
  *
+ * <h3>可能的变化</h3>
+ * 1.未来可能预解析表格中的Type，导出为最终值，而不是直接导出Sheet。
+ * 2.清理文件时需要保留部分特殊文件。
+ * 3.在导出之后，用户可能还需要整理表格导出其它文件，比如：I18N文本。
+ *
  * @author wjybxx
  * date - 2023/10/14
  */
@@ -52,6 +52,7 @@ public class ExcelExporter {
 
     private static final String EXCEL_EXTENSION = "xlsx";
     private static final String DSON_EXTENSION = "dson";
+    private static final String DSON_BINARY_EXTENSION = "dsonbytes";
 
     /** 导表选项 */
     private final ExcelExporterOptions options;
@@ -72,8 +73,8 @@ public class ExcelExporter {
     }
 
     /**
-     * 获取所有的表格数据，可用于生成其它数据
-     * 在{@link #build()}之后可调用
+     * 获取所有的表格数据，可用于生成其它数据，比如；I18N文本。
+     * 注意：在{@link #build()}之后才可调用。
      */
     public Map<String, Sheet> getSheetMap() {
         if (sheetMap == null) {
@@ -143,9 +144,13 @@ public class ExcelExporter {
 
     private void writeSheet(Sheet sheet) {
         try {
+            // 文本格式 -- 更多是给策划看的
             File outFile = new File(options.getOutDir(), sheet.getSheetName() + "." + DSON_EXTENSION);
             FileWriter fileWriter = new FileWriter(outFile, false);
             converter.writeAsDson(sheet, TypeInfo.of(Sheet.class), fileWriter);
+            // 二进制格式 -- 程序真正使用的
+            outFile = new File(options.getOutDir(), sheet.getSheetName() + "." + DSON_BINARY_EXTENSION);
+            FileUtils.writeByteArrayToFile(outFile, converter.write(sheet, TypeInfo.of(Sheet.class)));
         } catch (Exception e) {
             ObjectUtils.rethrow(e);
         }

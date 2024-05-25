@@ -27,10 +27,7 @@ import java.util.Objects;
  */
 public class SheetCell {
 
-    /**
-     * 单元格内容
-     * 和properties一样，这里都是原始的字符串，使得用户可以进行自定义解析 -- 可以实现{@link ValueParser}
-     */
+    /** 单元格内容(原始字符串) */
     private final String value;
     /** 缓存在Cell上方便使用 */
     private final transient Header header;

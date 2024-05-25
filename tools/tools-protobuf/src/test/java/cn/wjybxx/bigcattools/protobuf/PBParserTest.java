@@ -33,7 +33,7 @@ import java.util.Collection;
  */
 public class PBParserTest {
 
-    /** 该测试部走自动化测试 */
+    /** 该测试不走自动化测试 */
     public static void main(String[] args) throws IOException {
         PBParserOptions options = new PBParserOptions();
         options.setProtoDir(TestUtil.testResPath)

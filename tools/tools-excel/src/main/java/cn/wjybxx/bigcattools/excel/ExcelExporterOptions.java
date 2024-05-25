@@ -28,7 +28,7 @@ public class ExcelExporterOptions {
     private String excelDir;
     /** 导出文件夹（输出文件夹） */
     private String outDir;
-    /** 在导出excel前是否可清理输出文件夹 */
+    /** 在导出excel前是否可清理输出文件夹 -- TODO 保留特定文件 */
     private boolean cleanOutDir = true;
     /** 是否写入空白单元格 -- 仅对普通表格有效 */
     private boolean writeEmptyCell = true;
