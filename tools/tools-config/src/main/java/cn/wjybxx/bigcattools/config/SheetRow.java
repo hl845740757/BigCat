@@ -32,6 +32,10 @@ public class SheetRow implements CellProvider {
     /** 该行的所有值 */
     private final Map<String, SheetCell> name2CellMap;
 
+    /**
+     * @param rowIndex     行索引
+     * @param name2CellMap 必须保持原始顺序
+     */
     public SheetRow(int rowIndex, Map<String, SheetCell> name2CellMap) {
         this.rowIndex = rowIndex;
         this.name2CellMap = Objects.requireNonNull(name2CellMap);

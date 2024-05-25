@@ -31,7 +31,7 @@ public class ExportExcelTest {
     @Test
     void test() throws IOException {
         ExcelExporterOptions options = new ExcelExporterOptions()
-                .setExcelDir(TestUtil.docPath)
+                .setExcelDir(TestUtil.testResPath)
                 .setOutDir(TestUtil.testResPath + "/temp")
                 .setWriteEmptyCell(false);
 

@@ -41,7 +41,7 @@ public class ReadExcelTest {
 
     @Test
     void test() {
-        Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(TestUtil.docPath + "/test.xlsx"));
+        Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(TestUtil.testResPath + "/test.xlsx"));
         Sheet skillSheet = sheetMap.get("Skill");
 
         ConverterOptions options = ConverterOptions.newBuilder().build();

@@ -18,9 +18,7 @@ package cn.wjybxx.bigcattools.config;
 
 import cn.wjybxx.base.CollectionUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 一个表格页的抽象
@@ -46,6 +44,9 @@ public class Sheet {
     private final Map<String, Header> headerMap;
     /** 只包含内容部分 -- 因此{@link SheetRow#getRowIndex()}起始不是0 */
     private final List<SheetRow> valueRowList;
+
+    /** 主键到行的缓存 */
+    private transient Map<String, SheetRow> indexedRowMap;
 
     public Sheet(String fileName, String sheetName, int sheetIndex,
                  Map<String, Header> headerMap, List<SheetRow> valueRowList) {
@@ -157,22 +158,62 @@ public class Sheet {
     public Header getHeader(String name) {
         return headerMap.get(name);
     }
+
+    /** 通过主键查询对应的行 -- 不存在则返回null */
+    public SheetRow findRow(String primaryKey) {
+        if (indexedRowMap == null) rebuildIndexes();
+        return indexedRowMap.get(primaryKey);
+    }
+
+    //
+    private static final String COL_ARGS = "args";
+    private static final String COL_NAME = "name";
+    private static final String COL_TYPE = "type";
+    private static final String COL_VALUE = "value";
+    private static final String COL_COMMENT = "comment";
+
+    /** 构建主键索引 */
+    public void rebuildIndexes() {
+        Map<String, SheetRow> indexedMap = new HashMap<>(valueRowList.size());
+        if (isParamSheet()) {
+            for (SheetRow sheetRow : valueRowList) {
+                String nameValue = sheetRow.getCell(COL_NAME).getValue();
+                indexedMap.put(nameValue, sheetRow);
+            }
+        } else {
+            // 第一列是主键
+            String primaryKeyName = headerMap.values().stream()
+                    .min(Comparator.comparingInt(Header::getColIndex))
+                    .stream()
+                    .findFirst()
+                    .orElseThrow()
+                    .getName();
+            for (SheetRow sheetRow : valueRowList) {
+                String keyValue = sheetRow.getCell(primaryKeyName).getValue();
+                if (indexedMap.put(keyValue, sheetRow) != null) {
+                    throw new IllegalStateException("primary key is duplicate, colName: %s, value: %s"
+                            .formatted(primaryKeyName, keyValue));
+                }
+            }
+        }
+        this.indexedRowMap = indexedMap;
+    }
+
     //
 
-    public NormalSheetReader readNormalSheet(ValueParser valueParser) {
-        if (isParamSheet()) {
+    public static NormalSheetReader readNormalSheet(Sheet sheet, ValueParser valueParser) {
+        if (sheet.isParamSheet()) {
             throw new IllegalArgumentException("this sheet is a param sheet");
         }
-        return new NormalSheetReader(this, valueParser);
+        return new NormalSheetReader(sheet, valueParser);
     }
 
-    public ParamSheetReader readParamSheet(ValueParser valueParser) {
-        if (!isParamSheet()) {
+    public static ParamSheetReader readParamSheet(Sheet sheet, ValueParser valueParser) {
+        if (!sheet.isParamSheet()) {
             throw new IllegalArgumentException("this sheet is a normal sheet");
         }
-        return new ParamSheetReader(this, valueParser);
+        return new ParamSheetReader(sheet, valueParser);
     }
-
     //
 
     @Override

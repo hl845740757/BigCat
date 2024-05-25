@@ -41,15 +41,16 @@ import java.util.function.Consumer;
  */
 class SheetReader {
 
+    private static final String COL_ID = "id";
     private static final String COL_ARGS = "args";
     private static final String COL_NAME = "name";
     private static final String COL_TYPE = "type";
     private static final String COL_VALUE = "value";
     private static final String COL_COMMENT = "comment";
     /** 参数表的所有列 */
-    private static final List<String> PARAM_SHEET_COL_NAMES = List.of(COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE, COL_COMMENT);
+    private static final List<String> PARAM_SHEET_COL_NAMES = List.of(COL_ID, COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE, COL_COMMENT);
     /** 参数表至少具备的列 - 注释列可选 */
-    private static final List<String> PARAM_SHEET_REQUIRED_COL_NAMES = List.of(COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE);
+    private static final List<String> PARAM_SHEET_REQUIRED_COL_NAMES = List.of(COL_ID, COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE);
 
     private final String fileName;
     private final String sheetName;
@@ -270,19 +271,30 @@ class SheetReader {
         }
 
         private SheetContent read() {
-            final Map<String, Header> headerMap = readHeaders();
+            final LinkedHashMap<String, Header> headerMap = readHeaders();
+            final String firstColName = headerMap.firstEntry().getKey();
+
+            final Set<String> firstColValues = HashSet.newHashSet(totalRowCount - options.skipRows - 4);
             final List<SheetRow> valueRowList = new ArrayList<>(totalRowCount - options.skipRows - 4);
             while (rowItr.hasNext()) {
-                valueRowList.add(readValueRow(headerMap, rowItr.next()));
+                SheetRow valueRow = readValueRow(headerMap, rowItr.next());
+                SheetCell cell = valueRow.getCell(firstColName);
+                if (cell == null || StringUtils.isBlank(cell.getValue())) {
+                    throw new IllegalStateException("the value of first column cant be empty, rowNumber: " + valueRow.getLineNumber());
+                }
+                if (!firstColValues.add(cell.getValue())) {
+                    throw new IllegalStateException("the value of first column cant be duplicate, rowNumber: " + valueRow.getLineNumber());
+                }
+                valueRowList.add(valueRow);
             }
             return new SheetContent(headerMap, valueRowList);
         }
 
         /** header和定于顺序一致 */
-        private Map<String, Header> readHeaders() {
+        private LinkedHashMap<String, Header> readHeaders() {
             final int totalColCount = getTotalColCount(nameRow);
             // 使用LinkedHashMap以保持读入顺序
-            final Map<String, Header> result = CollectionUtils.newLinkedHashMap(totalColCount);
+            final LinkedHashMap<String, Header> result = CollectionUtils.newLinkedHashMap(totalColCount);
             for (int colIndex = 0; colIndex < totalColCount; colIndex++) {
                 final String args = readCellValueNonNull(argsRow, colIndex).trim();
                 final String type = readCellValueNonNull(typeRow, colIndex).trim();

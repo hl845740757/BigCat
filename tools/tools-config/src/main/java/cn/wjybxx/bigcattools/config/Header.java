@@ -21,7 +21,7 @@ package cn.wjybxx.bigcattools.config;
  * @author wjybxx
  * date 2023/4/15
  */
-public class Header {
+public final class Header {
 
     /** 命令和参数，格式：{@code cs -x -y} */
     private final String args;
