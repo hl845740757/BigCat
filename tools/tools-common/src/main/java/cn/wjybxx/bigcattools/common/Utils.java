@@ -217,6 +217,8 @@ public class Utils extends ObjectUtils {
 
     // endregion
 
+    // region 引号
+
     /** 去除字符串的双引号 */
     public static String unquote(String str) {
         int length = ObjectUtils.length(str);
@@ -247,22 +249,8 @@ public class Utils extends ObjectUtils {
         return '"' + str + '"';
     }
 
-    /** 读取另一个进程的输出 */
-    public static StringBuilder readProcessOutput(Process process) throws IOException {
-        // 另一个进程的输出，对于当前进程而言就是可读取的（InputStream）
-        // 另一个进程的输入，对于当前进程而言就是可写入的（OutputStream）
-        StringBuilder sb = new StringBuilder(1024);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line = reader.readLine();
-            if (line != null) {
-                if (sb.length() > 0) {
-                    sb.append('\n');
-                }
-                sb.append(line);
-            }
-        }
-        return sb;
-    }
+    // endregion
+
     // region file
 
     /** 获取当前工作目录 */
@@ -287,6 +275,44 @@ public class Utils extends ObjectUtils {
         throw new IllegalArgumentException("invalid projectName: " + projectName);
     }
 
+
     // endregion
 
+    // region 其它
+
+    /** 驼峰命名转为蛇形命名 */
+    public static String camelToSnake(String rawString) {
+        StringBuilder sb = new StringBuilder(rawString.length() + 4);
+        for (int i = 0; i < rawString.length(); i++) {
+            char c = rawString.charAt(i);
+            if (c == '_') {
+                sb.append(c);
+            } else if (Character.isUpperCase(c)) {
+                if (i > 0 && sb.charAt(sb.length() - 1) != '_') sb.append('_');
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    /** 读取另一个进程的输出 */
+    public static StringBuilder readProcessOutput(Process process) throws IOException {
+        // 另一个进程的输出，对于当前进程而言就是可读取的（InputStream）
+        // 另一个进程的输入，对于当前进程而言就是可写入的（OutputStream）
+        StringBuilder sb = new StringBuilder(1024);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line = reader.readLine();
+            if (line != null) {
+                if (sb.length() > 0) {
+                    sb.append('\n');
+                }
+                sb.append(line);
+            }
+        }
+        return sb;
+    }
+
+    // endregion
 }

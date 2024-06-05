@@ -64,6 +64,7 @@ public interface Worker extends EventLoop {
     Injector injector();
 
     /** Worker绑定的主模块 */
+    @Override
     MainModule mainModule();
 
     /**
@@ -81,7 +82,11 @@ public interface Worker extends EventLoop {
 
     //
 
-    /** 返回node设置的上下文 */
+    /**
+     * 返回node设置的数据。
+     * node为管理worker，需要保存Worker的一些上下文。
+     * 这些数据只应该node读写，用户不应该访问，不保证对外的可见性。
+     */
     @Internal
     WorkerCtx workerCtx();
 

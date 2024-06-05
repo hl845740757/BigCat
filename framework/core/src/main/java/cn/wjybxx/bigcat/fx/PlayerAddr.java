@@ -17,20 +17,25 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.rpc.RpcAddr;
+import cn.wjybxx.bigcat.rpc.RpcClient;
+import cn.wjybxx.bigcat.rpc.RpcRequest;
 
 /**
  * 玩家通信地址
- * (如果不想每次创建，可以缓存在玩家Session上)
+ * 1. 如果不想每次创建，可以缓存在玩家Session上。
+ * 2. 服务器给玩家发送消息，不需要走{@link RpcClient}，因为服务器不会向玩家发送{@link RpcRequest}。
+ * 3. 服务器只需要模拟Rpc的接收过程。
  *
  * @author wjybxx
  * date - 2023/12/22
  */
 public final class PlayerAddr implements RpcAddr {
 
-    public final long playerGuid;
+    /** 连接id */
+    public final long conId;
 
-    public PlayerAddr(long playerGuid) {
-        this.playerGuid = playerGuid;
+    public PlayerAddr(long conId) {
+        this.conId = conId;
     }
 
 }

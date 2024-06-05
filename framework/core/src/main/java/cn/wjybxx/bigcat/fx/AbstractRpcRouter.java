@@ -59,7 +59,7 @@ public abstract class AbstractRpcRouter implements NodeRpcRouter {
 
     @Override
     public boolean isCrossLanguageAddr(RpcAddr addr) {
-        return addr.getClass() == PlayerAddr.class;
+        return false;
     }
 
     @Override

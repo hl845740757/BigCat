@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.eventbus;
 
+import cn.wjybxx.base.annotation.StableName;
+
 import javax.annotation.Nullable;
 
 /**
@@ -63,18 +65,22 @@ public interface EventHandlerRegistry {
         registerX(masterKey, childKey, handler, null);
     }
 
+    @StableName(comment = "生成的代码会调用")
     default <T> void register(Class<T> eventType, EventHandler<? super T> handler) {
         registerX(eventType, null, handler, null);
     }
 
+    @StableName(comment = "生成的代码会调用")
     default <T> void register(Class<T> eventType, EventHandler<? super T> handler, Object customData) {
         registerX(eventType, null, handler, customData);
     }
 
+    @StableName(comment = "生成的代码会调用")
     default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler) {
         registerX(eventType, childKey, handler, null);
     }
 
+    @StableName(comment = "生成的代码会调用")
     default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler, Object customData) {
         registerX(eventType, childKey, handler, customData);
     }
