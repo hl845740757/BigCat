@@ -70,7 +70,7 @@ class ExcelReader implements AutoCloseable {
 
             try {
                 if (result.containsKey(sheetName)) {
-                    final String msg = String.format("sheetName resolved is duplicate, fileName%s, sheetName: %s", file.getName(), rawSheetName);
+                    final String msg = String.format("resolved sheetName is duplicate, fileName%s, sheetName: %s", file.getName(), rawSheetName);
                     throw new IllegalStateException(msg);
                 }
 
@@ -90,6 +90,7 @@ class ExcelReader implements AutoCloseable {
 
     private static boolean isSheetNameSkippable(String sheetName, Predicate<String> sheetNameFilter) {
         return StringUtils.isBlank(sheetName)
+                || sheetName.charAt(0) == '_' // 下划线开头表示隐藏表
                 || sheetName.startsWith("Sheet")
                 || sheetName.startsWith("sheet")
                 || sheetName.equals("ExamleLang") // Excel自带的隐藏表

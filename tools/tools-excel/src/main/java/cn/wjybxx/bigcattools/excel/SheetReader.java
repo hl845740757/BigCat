@@ -41,16 +41,15 @@ import java.util.function.Consumer;
  */
 class SheetReader {
 
-    private static final String COL_ID = "id";
     private static final String COL_ARGS = "args";
     private static final String COL_NAME = "name";
     private static final String COL_TYPE = "type";
     private static final String COL_VALUE = "value";
     private static final String COL_COMMENT = "comment";
     /** 参数表的所有列 */
-    private static final List<String> PARAM_SHEET_COL_NAMES = List.of(COL_ID, COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE, COL_COMMENT);
+    private static final List<String> PARAM_SHEET_COL_NAMES = List.of(COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE, COL_COMMENT);
     /** 参数表至少具备的列 - 注释列可选 */
-    private static final List<String> PARAM_SHEET_REQUIRED_COL_NAMES = List.of(COL_ID, COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE);
+    private static final List<String> PARAM_SHEET_REQUIRED_COL_NAMES = List.of(COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE);
 
     private final String fileName;
     private final String sheetName;
