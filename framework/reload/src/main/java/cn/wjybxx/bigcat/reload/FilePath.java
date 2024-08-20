@@ -28,7 +28,7 @@ import org.apache.commons.io.FilenameUtils;
  * @author wjybxx
  * date - 2023/5/19
  */
-public final class FilePath<T> extends AbstractConstant<FilePath<?>> {
+public final class FilePath<T> extends AbstractConstant {
 
     /** 如果虚拟属性为true，则表示文件并不真实存在，只是在逻辑上用于存储数据用 */
     private final boolean virtual;
@@ -36,7 +36,7 @@ public final class FilePath<T> extends AbstractConstant<FilePath<?>> {
     private final String fileName;
     private final String fileNameWithoutExt;
 
-    public FilePath(Builder builder) {
+    public FilePath(Builder<T> builder) {
         super(builder);
         this.virtual = builder.virtual;
 
@@ -93,11 +93,11 @@ public final class FilePath<T> extends AbstractConstant<FilePath<?>> {
     }
     // endregion
 
-    public static Builder newBuilder(String name) {
-        return new Builder(name);
+    public static <T> Builder<T> newBuilder(String name) {
+        return new Builder<>(name);
     }
 
-    public static class Builder extends Constant.Builder<FilePath<?>> {
+    public static class Builder<T> extends Constant.Builder<FilePath<T>> {
 
         private boolean virtual = false;
 
@@ -109,13 +109,13 @@ public final class FilePath<T> extends AbstractConstant<FilePath<?>> {
             return virtual;
         }
 
-        public Builder setVirtual(boolean virtual) {
+        public Builder<T> setVirtual(boolean virtual) {
             this.virtual = virtual;
             return this;
         }
 
         @Override
-        public FilePath<?> build() {
+        public FilePath<T> build() {
             return new FilePath<>(this);
         }
     }

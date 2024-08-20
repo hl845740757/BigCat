@@ -56,12 +56,15 @@ public class MessageCodec<T extends MessageLite> implements DsonCodec<T> {
 
     @Override
     public void writeObject(DsonObjectWriter writer, T instance, TypeInfo<?> typeArgInfo, ObjectStyle style) {
-        writer.writeBinary(null, writer.options().pbBinaryType, instance.toByteArray());
+        writer.writeBytes(null, instance.toByteArray());
     }
 
     @Override
     public T readObject(DsonObjectReader reader, TypeInfo<?> typeArgInfo, Supplier<? extends T> factory) {
         byte[] bytes = reader.readBytes(reader.getCurrentName());
+        if (bytes == null) {
+            return null;
+        }
         try {
             return parser.parseFrom(bytes);
         } catch (InvalidProtocolBufferException e) {

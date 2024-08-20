@@ -51,12 +51,8 @@
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
         <!-- 依赖版本 -->
-        <slf4j.version>2.0.7</slf4j.version>
-        <junit.version>5.9.2</junit.version>
-        <jsr305.version>3.0.2</jsr305.version>
         <javapoet.version>1.13.0</javapoet.version>
-
-        <commons.version>1.0.10</commons.version>
+        <commons.version>1.1.0-rc4</commons.version>
     </properties>
 
     <!-- 基础依赖/全局依赖 -->
@@ -64,18 +60,22 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-            <version>${jsr305.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>apt-base</artifactId>
-            <version>${commons.version}</version>
+            <version>3.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service-annotations</artifactId>
             <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>${javapoet.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>commons-apt-base</artifactId>
+            <version>${commons.version}</version>
         </dependency>
     </dependencies>
 
@@ -123,6 +123,11 @@
                             <groupId>com.google.auto.service</groupId>
                             <artifactId>auto-service</artifactId>
                             <version>1.1.1</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
+                            <groupId>com.google.code.findbugs</groupId>
+                            <artifactId>jsr305</artifactId>
+                            <version>3.0.2</version>
                         </annotationProcessorPath>
                     </annotationProcessorPaths>
                 </configuration>

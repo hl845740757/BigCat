@@ -18,6 +18,8 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.rpc.RpcAddr;
 import cn.wjybxx.dsoncodec.DsonObjectReader;
+import cn.wjybxx.dsoncodec.TypeInfo;
+import cn.wjybxx.dsoncodec.annotations.DsonProperty;
 import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,10 +40,13 @@ import java.util.Objects;
 public class WorkerAddr implements RpcAddr {
 
     /** 服务器类型 */
+    @DsonProperty(name = "type")
     public final int serverType;
     /** 服务器id */
+    @DsonProperty(name = "sid")
     public final int serverId;
-    /** 线程id */
+    /** 线程id -- 通常不应该指定 */
+    @DsonProperty(name = "wid")
     public final String workerId;
 
     public WorkerAddr(int serverType, int serverId) {
@@ -55,7 +60,7 @@ public class WorkerAddr implements RpcAddr {
     }
 
     /** 解码函数 */
-    public WorkerAddr(DsonObjectReader reader) {
+    public WorkerAddr(DsonObjectReader reader, TypeInfo<?> typeInfo) {
         this.serverType = reader.readInt(WorkerAddrCodec.names_serverType);
         this.serverId = reader.readInt(WorkerAddrCodec.names_serverId);
         this.workerId = reader.readString(WorkerAddrCodec.names_workerId);

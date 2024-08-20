@@ -26,8 +26,11 @@ import cn.wjybxx.base.BitFlags;
  */
 public abstract class RpcProtocol {
 
+    /** 参数可共享 */
     static final int MASK_SHARABLE = 1;
+    /** 已序列化 */
     static final int MASK_SERIALIZED = 1 << 1;
+    /** 已反序列化 */
     static final int MASK_DESERIALIZED = 1 << 2;
 
     /** 连接id */

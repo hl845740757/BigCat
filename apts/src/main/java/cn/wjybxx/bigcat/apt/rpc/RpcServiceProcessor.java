@@ -208,9 +208,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     }
 
     private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
-        AnnotationMirror serviceAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType())
-                .orElseThrow();
-
+        AnnotationMirror serviceAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType());
         final int serviceId = AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_SERVICE_ID, null);
         if (AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_GEN_EXPORTER, Boolean.TRUE)) {
             genServerProxy(typeElement, serviceId, rpcMethodList);
@@ -222,14 +220,12 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     Integer getServiceId(TypeElement typeElement) {
         // 基本类型会被包装，Object不能直接转int
-        return (Integer) AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType())
-                .map(annotationMirror -> AptUtils.getAnnotationValueValue(annotationMirror, PNAME_SERVICE_ID))
-                .orElseThrow();
+        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType());
+        return AptUtils.getAnnotationValueValue(annotationMirror, PNAME_SERVICE_ID);
     }
 
     Map<String, AnnotationValue> getMethodAnnoValueMap(ExecutableElement method) {
-        var annotationMirror = AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType())
-                .orElse(null);
+        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, method, anno_rpcMethodElement.asType());
         if (annotationMirror == null) {
             return null;
         }

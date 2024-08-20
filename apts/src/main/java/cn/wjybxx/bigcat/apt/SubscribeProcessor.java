@@ -145,7 +145,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
             }
 
             // 生成注册代码
-            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, method, anno_subscribeTypeElement.asType()).orElseThrow();
+            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, method, anno_subscribeTypeElement.asType());
             final List<TypeMirror> childEventTypeMirrors = getChildEventTypeMirrors(method, annotationMirror);
             if (isGenericEvent(eventParameter)) {
                 registerGenericChildHandlers(builder, method, annotationMirror, childEventTypeMirrors);

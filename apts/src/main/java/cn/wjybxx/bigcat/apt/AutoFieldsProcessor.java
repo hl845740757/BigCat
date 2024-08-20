@@ -123,9 +123,7 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
                     .map(this::genFieldOfEnumConst)
                     .collect(Collectors.toList());
         } else {
-            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_autoTypeElement.asType())
-                    .orElseThrow();
-
+            final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_autoTypeElement.asType());
             final boolean skipStatic = AptUtils.getAnnotationValueValue(annotationMirror, PROPERTY_SKIP_STATIC, true);
             final boolean skipInstance = AptUtils.getAnnotationValueValue(annotationMirror, PROPERTY_SKIP_INSTANCE, false);
             return BeanUtils.getAllFieldsWithInherit(typeElement).stream()
@@ -143,10 +141,8 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
     }
 
     private FieldSpec genFieldOfClassField(VariableElement element) {
-        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, element, anno_aliasTypeElement.asType())
-                .orElse(null);
-
         final String constantValue;
+        final AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, element, anno_aliasTypeElement.asType());
         if (annotationMirror == null) {
             constantValue = element.getSimpleName().toString();
         } else {

@@ -185,7 +185,7 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         }
 
         @Override
-        public void onEvent(RingBufferEvent event) throws Exception {
+        public void onEvent(long sequence, RingBufferEvent event) throws Exception {
             mainModule.onEvent(event);
         }
 

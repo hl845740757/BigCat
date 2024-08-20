@@ -331,7 +331,7 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
         }
 
         @Override
-        public void onEvent(RingBufferEvent event) throws Exception {
+        public void onEvent(long sequence, RingBufferEvent event) throws Exception {
             mainModule.onEvent(event);
         }
 

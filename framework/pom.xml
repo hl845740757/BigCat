@@ -70,9 +70,7 @@
         <guava.version>33.2.0-jre</guava.version>
         <pb.version>3.25.2</pb.version> <!-- 4.26尚不稳定 -->
 
-        <commons.version>1.0.11</commons.version>
-        <dson.version>2.1.3</dson.version>
-        <btree.version>1.0.rc2</btree.version>
+        <commons.version>1.1.0</commons.version>
         <apt.version>1.0-SNAPSHOT</apt.version>
 
         <!-- 特殊依赖 -->
@@ -123,25 +121,25 @@
         <!-- wjybxx-commons -->
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>base</artifactId>
+            <artifactId>commons-base</artifactId>
             <version>${commons.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
-            <artifactId>concurrent</artifactId>
+            <artifactId>commons-concurrent</artifactId>
             <version>${commons.version}</version>
         </dependency>
 
         <!-- 序列化 -->
         <dependency>
-            <groupId>cn.wjybxx.dson</groupId>
+            <groupId>cn.wjybxx.commons</groupId>
             <artifactId>dson-core</artifactId>
-            <version>${dson.version}</version>
+            <version>${commons.version}</version>
         </dependency>
         <dependency>
-            <groupId>cn.wjybxx.dson</groupId>
+            <groupId>cn.wjybxx.commons</groupId>
             <artifactId>dson-codec</artifactId>
-            <version>${dson.version}</version>
+            <version>${commons.version}</version>
         </dependency>
 
         <!-- 依赖注入 -->
@@ -230,15 +228,30 @@
                     <annotationProcessorPaths>
                         <!-- apt的依赖需要放在这里 -->
                         <annotationProcessorPath>
+                            <groupId>com.google.auto.service</groupId>
+                            <artifactId>auto-service</artifactId>
+                            <version>1.1.1</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
                             <groupId>com.google.code.findbugs</groupId>
                             <artifactId>jsr305</artifactId>
                             <version>3.0.2</version>
                         </annotationProcessorPath>
+                        <dependency>
+                            <groupId>com.squareup</groupId>
+                            <artifactId>javapoet</artifactId>
+                            <version>1.13.0</version>
+                        </dependency>
+                        <annotationProcessorPath>
+                            <groupId>cn.wjybxx.commons</groupId>
+                            <artifactId>commons-apt-base</artifactId>
+                            <version>${commons.version}</version>
+                        </annotationProcessorPath>
                         <!-- dson序列化注解 -->
                         <annotationProcessorPath>
-                            <groupId>cn.wjybxx.dson</groupId>
+                            <groupId>cn.wjybxx.commons</groupId>
                             <artifactId>dson-apt</artifactId>
-                            <version>${dson.version}</version>
+                            <version>${commons.version}</version>
                         </annotationProcessorPath>
                         <!-- 项目apt注解 -->
                         <annotationProcessorPath>
