@@ -33,11 +33,11 @@ public abstract class RpcProtocol {
     /** 已反序列化 */
     static final int MASK_DESERIALIZED = 1 << 2;
 
-    /** 连接id */
+    /** 连接id -- 服务器间通信时，condId由连接的发起方生成即可 */
     protected long conId;
     /** 发送方地址 */
     protected RpcAddr srcAddr;
-    /** 接收方地址 -- 注意：目标地址不一定是直接地址，也可能是别名等 */
+    /** 接收方地址 */
     protected RpcAddr destAddr;
 
     /** 控制标记 */

@@ -251,6 +251,43 @@ public class Utils extends ObjectUtils {
 
     // endregion
 
+    // region 中文
+
+
+    /** 判断字符串是否包含中文 */
+    public static boolean containsChinese(String str) {
+        int i = 0;
+        int utf16Length = str.length();
+        while (i < utf16Length) {
+            int c = Character.codePointAt(str, i);
+            if (isChinese(c)) {
+                return true;
+            }
+            i += Character.charCount(c);
+        }
+        return false;
+    }
+
+    /**
+     * 判断一个字符是否是中文字符
+     *
+     * @param c Unicode码点
+     */
+    public static boolean isChinese(int c) {
+        if (c < 256) {
+            return false;
+        }
+        Character.UnicodeBlock ub = Character.UnicodeBlock.of(c);
+        return ub == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS
+                || ub == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS
+                || ub == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A
+                || ub == Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION
+                || ub == Character.UnicodeBlock.GENERAL_PUNCTUATION
+                || ub == Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS;
+    }
+
+    // endregion
+
     // region file
 
     /** 获取当前工作目录 */
@@ -280,7 +317,7 @@ public class Utils extends ObjectUtils {
 
     // region 其它
 
-    /** 驼峰命名转为蛇形命名 */
+    /** 大驼峰命名转为蛇形命名 -- 大写字母分词 */
     public static String camelToSnake(String rawString) {
         StringBuilder sb = new StringBuilder(rawString.length() + 4);
         for (int i = 0; i < rawString.length(); i++) {

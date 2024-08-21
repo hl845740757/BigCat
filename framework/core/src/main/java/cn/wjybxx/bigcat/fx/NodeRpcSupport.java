@@ -46,6 +46,7 @@ import java.util.function.Consumer;
 /**
  * 1.设置属性应该启动Node之前，运行时不可修改对象的属性
  * 2.所有的线程切换都在该类中，避免代码分散
+ * 3.该模块仅负责服务器之间的rpc通信
  *
  * @author wjybxx
  * date - 2023/10/28
@@ -211,7 +212,6 @@ public class NodeRpcSupport implements WorkerModule {
 
     // region call
 
-    @SuppressWarnings("unchecked")
     public <V> IFuture<V> w2n_call(Worker worker, RpcAddr target, RpcMethodSpec<V> methodSpec) {
         Objects.requireNonNull(worker, "worker");
         Objects.requireNonNull(target, "target");
@@ -219,7 +219,7 @@ public class NodeRpcSupport implements WorkerModule {
 
         final RpcRequest request = newRequest(target, methodSpec, RpcInvokeType.CALL);
         if (!node.inEventLoop()) {
-            return (IFuture<V>) node.submit(() -> w2n_call(worker, request))
+            return node.submitFunc(() -> this.<V>w2n_call(worker, request))
                     .composeApply((ctx, e) -> e) // 这里不能调用composeAsync，如果返回的future尚未完成，则会在触发其完成的线程触发业务回调
                     .whenCompleteAsync(worker, (ctx, v, t) -> {}); // 需要回到worker线程
         } else {
@@ -267,7 +267,7 @@ public class NodeRpcSupport implements WorkerModule {
         RpcResponse response = null;
         try {
             if (!node.inEventLoop()) {
-                response = node.submit(() -> w2n_syncCall(worker, request))
+                response = node.submitFunc(() -> w2n_syncCall(worker, request))
                         .composeApply((ctx, e) -> e)
                         .toFuture()
                         .get(timeoutMs, TimeUnit.MILLISECONDS);
@@ -296,7 +296,7 @@ public class NodeRpcSupport implements WorkerModule {
         } finally {
             // 及时删除watcher -- 注意！当前线程可能看不见Node线程分配的requestId，而在node线程下一定可见
             if (response == null) {
-                if (request.getRequestId() > 0) {
+                if (node.inEventLoop()) { // 这个概率其实很低
                     watcherMap.remove(request.getRequestId());
                 } else {
                     node.execute(() -> watcherMap.remove(request.getRequestId()));
@@ -535,7 +535,6 @@ public class NodeRpcSupport implements WorkerModule {
         // 参数可共享的情况下，延迟序列化（分担主线程开销）
         if (!request.isSharable() && !request.isSerialized()) {
             encodeParameters(request);
-            request.setSerialized();
         }
         return request;
     }
@@ -548,6 +547,10 @@ public class NodeRpcSupport implements WorkerModule {
     private void fillRequest(RpcRequest request) {
 //        assert node.inEventLoop();
         request.setRequestId(++sequencer);
+        // 检查延迟序列化
+        if (!request.isSerialized()) {
+            encodeParameters(request);
+        }
     }
 
     /** node或worker线程调用 */
@@ -558,7 +561,6 @@ public class NodeRpcSupport implements WorkerModule {
         // 参数可共享的情况下，延迟序列化（分担主线程开销）
         if (!response.isSharable() && !response.isSerialized()) {
             encodeResult(response);
-            response.setSerialized();
         }
         if (!node.inEventLoop()) {
             node.execute(() -> sendResponseImpl(response));
@@ -568,6 +570,10 @@ public class NodeRpcSupport implements WorkerModule {
     }
 
     private void sendResponseImpl(RpcResponse response) {
+        // 检查延迟序列化
+        if (!response.isSerialized()) {
+            encodeResult(response);
+        }
         if (enableLog) {
             logSndResponse(response);
         }
@@ -622,7 +628,6 @@ public class NodeRpcSupport implements WorkerModule {
                 .setMethodId(src.getMethodId())
                 .setParameters(bytesParameters);
         decodeParameters(request);
-        request.setDeserialized();
         return request;
     }
 
@@ -639,16 +644,19 @@ public class NodeRpcSupport implements WorkerModule {
             assert parameters instanceof List;
             request.setParameters(serializer.write(parameters));
         }
+        request.setSerialized();
     }
 
     /** 反序列化rpc参数 -- 在使用之前；可顺带进行部分初始化 */
     private boolean decodeParameters(RpcRequest request) {
-        if (router.isCrossLanguageAddr(request.getSrcAddr())) {
-            return methodInfoRegistry.decodeParameters(request);
-        }
         try {
-            Object parameters = serializer.read(request.bytesParameters());
-            request.setParameters(parameters);
+            if (router.isCrossLanguageAddr(request.getSrcAddr())) {
+                methodInfoRegistry.decodeParameters(request);
+            } else {
+                Object parameters = serializer.read(request.bytesParameters());
+                request.setParameters(parameters);
+            }
+            request.setDeserialized();
             return true;
         } catch (Exception e) {
             logger.info("decode parameters caught exception, serviceId {}, methodId {}",
@@ -665,16 +673,19 @@ public class NodeRpcSupport implements WorkerModule {
             assert results instanceof List;
             response.setResults(serializer.write(results));
         }
+        response.setSerialized();
     }
 
     /** 反序列化结果 -- 在使用之前；可顺带进行部分初始化 */
     private boolean decodeResult(RpcResponse response) {
-        if (router.isCrossLanguageAddr(response.getSrcAddr())) {
-            return methodInfoRegistry.decodeResult(response);
-        }
         try {
-            Object results = serializer.read(response.bytesResults());
-            response.setResults(results);
+            if (router.isCrossLanguageAddr(response.getSrcAddr())) {
+                methodInfoRegistry.decodeResult(response);
+            } else {
+                Object results = serializer.read(response.bytesResults());
+                response.setResults(results);
+            }
+            response.setDeserialized();
             return true;
         } catch (Exception e) {
             logger.info("decode result caught exception, serviceId {}, methodId {}",

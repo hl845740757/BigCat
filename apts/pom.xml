@@ -42,7 +42,7 @@
     </developers>
 
     <properties>
-        <revision>1.0-SNAPSHOT</revision>
+        <revision>1.0.0-SNAPSHOT</revision>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
@@ -52,7 +52,7 @@
 
         <!-- 依赖版本 -->
         <javapoet.version>1.13.0</javapoet.version>
-        <commons.version>1.1.0-rc4</commons.version>
+        <commons.version>1.1.0</commons.version>
     </properties>
 
     <!-- 基础依赖/全局依赖 -->

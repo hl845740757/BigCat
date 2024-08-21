@@ -50,7 +50,7 @@
     </developers>
 
     <properties>
-        <revision>1.0-SNAPSHOT</revision>
+        <revision>1.0.0-SNAPSHOT</revision>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <!-- mvn命令默认gbk编码导致中文注释异常，需要通过这里设置 -->
@@ -62,6 +62,7 @@
         <logback.version>1.5.6</logback.version>
         <junit.version>5.10.2</junit.version>
 
+        <commons.version>1.1.0</commons.version>
         <fastutil.version>8.5.13</fastutil.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-io.version>2.16.1</commons-io.version>
@@ -70,9 +71,6 @@
         <guice.version>7.0.0</guice.version>
         <guava.version>33.2.0-jre</guava.version>
         <pb.version>4.26.1</pb.version>
-
-        <commons.version>1.1.0</commons.version>
-        <apt.version>1.0-SNAPSHOT</apt.version>
 
         <!-- 特殊依赖 -->
         <javapoet.version>1.13.0</javapoet.version>

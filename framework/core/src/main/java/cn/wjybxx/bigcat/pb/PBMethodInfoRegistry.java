@@ -20,7 +20,6 @@ import cn.wjybxx.base.annotation.StableName;
 import cn.wjybxx.bigcat.rpc.RpcMethodKey;
 import cn.wjybxx.bigcat.rpc.RpcRequest;
 import cn.wjybxx.bigcat.rpc.RpcResponse;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -98,26 +97,19 @@ public final class PBMethodInfoRegistry {
         }
     }
 
-    public boolean decodeParameters(RpcRequest request) {
+    public void decodeParameters(RpcRequest request) throws Exception {
         int methodKey = RpcMethodKey.methodKey(request.getServiceId(), request.getMethodId());
         PBMethodInfo<?, ?> methodInfo = methodInfoMap.get(methodKey);
         if (methodInfo == null) {
-            return false;
+            return;
         }
         if (methodInfo.argParser == null) { // 无参数
             request.setParameters(List.of());
-            return true;
+            return;
         }
-        try {
-            // 空字节数组将被解析为空消息
-            Object message = methodInfo.argParser.parseFrom(request.bytesParameters());
-            request.setParameters(List.of(message));
-            return true;
-        } catch (InvalidProtocolBufferException e) {
-            logger.info("decode parameter caught exception, serviceId: {}, methodId {}",
-                    request.getServiceId(), request.getMethodId(), e);
-            return false;
-        }
+        // 空字节数组将被解析为空消息
+        Object message = methodInfo.argParser.parseFrom(request.bytesParameters());
+        request.setParameters(List.of(message));
     }
 
     /** 如果未设置为可共享，则在Worker线程序列化；否则由用户的Router直接序列化到协议 */
@@ -140,32 +132,24 @@ public final class PBMethodInfoRegistry {
         }
     }
 
-    public boolean decodeResult(RpcResponse response) {
+    public void decodeResult(RpcResponse response) throws Exception {
         if (!response.isSuccess()) {
             String errorMsg = new String(response.bytesResults(), StandardCharsets.UTF_8);
             response.setResults(List.of(errorMsg));
-            return true;
+            return;
         }
-
         int methodKey = RpcMethodKey.methodKey(response.getServiceId(), response.getMethodId());
         PBMethodInfo<?, ?> methodInfo = methodInfoMap.get(methodKey);
         if (methodInfo == null) {
-            return false;
+            return;
         }
         if (methodInfo.resultParser == null) { // Void
             response.setResults(List.of()); // Future无法区分Void和Null
-            return true;
+            return;
         }
-        try {
-            // 空字节数组将被解析为空消息
-            Object message = methodInfo.resultParser.parseFrom(response.bytesResults());
-            response.setResults(List.of(message));
-            return true;
-        } catch (InvalidProtocolBufferException e) {
-            logger.info("decode result caught exception, serviceId: {}, methodId {}",
-                    response.getServiceId(), response.getMethodId(), e);
-            return false;
-        }
+        // 空字节数组将被解析为空消息
+        Object message = methodInfo.resultParser.parseFrom(response.bytesResults());
+        response.setResults(List.of(message));
     }
 
     // endregion
