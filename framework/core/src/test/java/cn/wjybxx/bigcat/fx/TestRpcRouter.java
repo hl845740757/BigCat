@@ -16,10 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.base.ThreadUtils;
-
+import java.util.ArrayDeque;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author wjybxx
@@ -27,26 +25,38 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class TestRpcRouter extends AbstractRpcRouter {
 
-    private final ConcurrentLinkedQueue<RpcProtocol> protocolQueue = new ConcurrentLinkedQueue<>();
-    private volatile boolean shuttingDown;
-    private Thread thread;
+    private final ArrayDeque<RpcProtocol> protocolQueue = new ArrayDeque<>();
+
+    @Override
+    public void inject(Worker worker) {
+        super.inject(worker);
+//        rpcSupport.setEnableLog(true);
+    }
 
     @Override
     public void start() {
-        thread = new Thread(this::subThreadLoop);
-        thread.setName("RpcSender");
-        thread.setDaemon(true);
-        thread.start();
+    }
+
+    @Override
+    public void update() throws Exception {
+        RpcProtocol protocol;
+        while ((protocol = protocolQueue.poll()) != null) {
+            if (protocol instanceof RpcRequest request) {
+                rpcSupport.onRcvRequest(request);
+            } else if (protocol instanceof RpcResponse response) {
+                rpcSupport.onRcvResponse(response);
+            }
+        }
     }
 
     @Override
     public void stop() {
-        shuttingDown = true;
-        thread.interrupt();
+        protocolQueue.clear();
     }
 
     @Override
     public boolean send(RpcProtocol protocol) {
+        assert node.inEventLoop() : "node.inEventLoop()";
         Objects.requireNonNull(protocol);
         // 这里不执行序列化，但如果已序列化，则进行反序列化
         if (protocol.isBytes()) {
@@ -62,24 +72,6 @@ public class TestRpcRouter extends AbstractRpcRouter {
         }
         protocolQueue.offer(protocol);
         return true;
-    }
-
-
-    // 该方法为子线程循环，不能在主线程，否则无法支持同步rpc调用
-    private void subThreadLoop() {
-        RpcProtocol protocol;
-        while (!shuttingDown) {
-            protocol = protocolQueue.poll();
-            if (protocol == null) {
-                ThreadUtils.sleepQuietly(1);
-                continue;
-            }
-            if (protocol instanceof RpcRequest request) {
-                rpcSupport.onRcvRequest(request);
-            } else if (protocol instanceof RpcResponse response) {
-                rpcSupport.onRcvResponse(response);
-            }
-        }
     }
 
 }

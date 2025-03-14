@@ -24,6 +24,7 @@ import cn.wjybxx.concurrent.EventLoopChooserFactory;
 import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.disruptor.EventSequencer;
 import cn.wjybxx.disruptor.MpUnboundedEventSequencer;
+import cn.wjybxx.disruptor.TimeoutSleepingWaitStrategy;
 import cn.wjybxx.disruptor.WaitStrategy;
 import com.google.inject.Injector;
 
@@ -187,6 +188,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
         public Node build() {
             if (getEventSequencer() == null) {
                 setEventSequencer(MpUnboundedEventSequencer.newBuilder(WorkerEvent::new)
+                        .setWaitStrategy(TimeoutSleepingWaitStrategy.INSTANCE)
                         .setChunkSize(1024)
                         .setMaxPooledChunks(8)
                         .build());

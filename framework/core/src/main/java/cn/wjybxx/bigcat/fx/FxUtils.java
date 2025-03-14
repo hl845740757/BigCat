@@ -156,7 +156,10 @@ public class FxUtils {
                     rType = (Class<?>) genericReturnType.getActualTypeArguments()[0];
                 }
                 // 注册方法
-                RpcMethodInfo<?, ?> methodInfo = new RpcMethodInfo<>(serviceAnno.serviceId(), methodAnno.methodId(), pType, rType);
+                RpcMethodInfo<?, ?> methodInfo = new RpcMethodInfo<>(
+                        serviceInterface.getSimpleName(), method.getName(),
+                        serviceAnno.serviceId(), methodAnno.methodId(),
+                        pType, rType);
                 registry.register(methodInfo);
             }
         } catch (Exception e) {

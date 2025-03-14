@@ -125,8 +125,17 @@ public final class RpcRequest extends RpcProtocol {
     }
 
     @Nonnull
-    public String toDetailLog() {
-        return toString();
+    public String toDetailLog(String serviceName, String methodName) {
+        return "RpcRequest{" +
+                "requestId=" + requestId +
+                ", invokeType=" + invokeType +
+                ", serviceId=" + serviceName +
+                ", methodId=" + methodName +
+                ", data=" + dataToString() +
+                ", conId=" + conId +
+                ", srcAddr=" + srcAddr +
+                ", destAddr=" + destAddr +
+                '}';
     }
 
     @Override

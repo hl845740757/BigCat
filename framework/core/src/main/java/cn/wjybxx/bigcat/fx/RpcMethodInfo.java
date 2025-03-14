@@ -25,6 +25,7 @@ import java.util.Objects;
 
 /**
  * Rpc方法信息
+ * (本地用)
  *
  * @param <T> 方法参数类型，{@link Void}表示无
  * @param <R> 方法结果类型，{@link Void}表示无
@@ -32,6 +33,11 @@ import java.util.Objects;
  * date - 2023/10/12
  */
 public final class RpcMethodInfo<T, R> {
+
+    /** 服务名 -- 本地debug用，不参与equals比较 */
+    public final String serviceName;
+    /** 方法名 -- 本地debug用 */
+    public final String methodName;
 
     /** 服务id */
     public final int serviceId;
@@ -48,9 +54,12 @@ public final class RpcMethodInfo<T, R> {
     /** 不为null则表示结果为pb类型 */
     public final Parser<R> resultParser;
 
-    public RpcMethodInfo(int serviceId, int methodId,
+    public RpcMethodInfo(String serviceName, String methodName,
+                         int serviceId, int methodId,
                          Class<T> parameterType,
                          Class<R> resultType) {
+        this.serviceName = Objects.requireNonNull(serviceName);
+        this.methodName = Objects.requireNonNull(methodName);
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.parameterType = voidToNull(parameterType);
@@ -97,7 +106,9 @@ public final class RpcMethodInfo<T, R> {
     @Override
     public String toString() {
         return "RpcMethodInfo{" +
-                "serviceId=" + serviceId +
+                "serviceName='" + serviceName + '\'' +
+                ", methodName='" + methodName + '\'' +
+                ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", parameterType=" + parameterType +
                 ", resultType=" + resultType +

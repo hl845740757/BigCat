@@ -19,7 +19,6 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ex.ErrorCodeException;
 import cn.wjybxx.concurrent.FutureUtils;
-import cn.wjybxx.dsoncodec.annotations.DsonProperty;
 import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -166,8 +165,17 @@ public final class RpcResponse extends RpcProtocol {
     }
 
     @Nonnull
-    public String toDetailLog() {
-        return toString();
+    public String toDetailLog(String serviceName, String methodName) {
+        return "RpcResponse{" +
+                "requestId=" + requestId +
+                ", serviceId=" + serviceName +
+                ", methodId=" + methodName +
+                ", errorCode=" + errorCode +
+                ", result=" + dataToString() +
+                ", conId=" + conId +
+                ", srcAddr=" + srcAddr +
+                ", destAddr=" + destAddr +
+                '}';
     }
 
     @Override

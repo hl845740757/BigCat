@@ -25,6 +25,7 @@ import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
 import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.disruptor.EventSequencer;
 import cn.wjybxx.disruptor.RingBufferEventSequencer;
+import cn.wjybxx.disruptor.TimeoutSleepingWaitStrategy;
 import cn.wjybxx.disruptor.WaitStrategy;
 import com.google.inject.Injector;
 
@@ -200,6 +201,7 @@ public abstract class WorkerBuilder {
             }
             if (getEventSequencer() == null) {
                 setEventSequencer(RingBufferEventSequencer.newMultiProducer(WorkerEvent::new)
+                        .setWaitStrategy(TimeoutSleepingWaitStrategy.INSTANCE)
                         .setBufferSize(8 * 1024)
                         .build());
             }

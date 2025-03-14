@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.MathCommon;
 import cn.wjybxx.base.time.Regulator;
+import cn.wjybxx.base.time.TimeHelper;
 import cn.wjybxx.bigcat.TimeModule;
 import com.google.inject.Inject;
 import org.junit.jupiter.api.Assertions;
@@ -36,12 +37,14 @@ import java.util.Map;
 public class RpcClientExample implements ExtensibleService, WorkerModule {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcClientExample.class);
+    private static final RpcAddr serverAddr = StaticRpcAddr.LOCAL;
 
     /** worker */
     private Worker worker;
     /** 在node上，不能直接注入 */
     private TestRpcRouter rpcRouter;
-    private final Regulator regulator = Regulator.newFixedDelay(1, 100);
+    /** 定时器 */
+    private final Regulator regulator = Regulator.newFixedDelay(1, 50);
 
     @Inject
     private RpcClient rpcClient;
@@ -81,6 +84,11 @@ public class RpcClientExample implements ExtensibleService, WorkerModule {
     }
 
     @Override
+    public void stop() {
+        System.out.println("triggerCount: " + regulator.getCount());
+    }
+
+    @Override
     public void update() {
         if (!regulator.isReady(timeModule.getTime())) {
             return;
@@ -98,12 +106,12 @@ public class RpcClientExample implements ExtensibleService, WorkerModule {
 
     private void testOneway() {
         String msg = createMessage("这是一个通知，不接收结果");
-        rpcClient.send(SimpleAddr.SERVER, RpcServiceExampleProxy.hello(Request.ofString(msg)));
+        rpcClient.send(serverAddr, RpcServiceExampleProxy.hello(Request.ofString(msg)));
     }
 
     private void testAsyncCall() {
         String msg = createMessage("这是一个异步调用，可监听结果");
-        rpcClient.call(SimpleAddr.SERVER, RpcServiceExampleProxy.hello(Request.ofString(msg)))
+        rpcClient.call(serverAddr, RpcServiceExampleProxy.hello(Request.ofString(msg)))
                 .thenApply((ctx, result) -> {
                     if (rpcRouter.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
                         Assertions.assertSame(msg, result.getString());
@@ -112,26 +120,29 @@ public class RpcClientExample implements ExtensibleService, WorkerModule {
                     }
                     Assertions.assertTrue(worker.inEventLoop(), "worker.inEventLoop");
                     System.out.println("callResult: " + result.getString());
+                    System.out.println();
                     return null;
                 });
     }
 
     private void testSyncCall() {
         String msg = createMessage("这是一个同步调用，远程异步执行");
-        Response result = rpcClient.syncCall(SimpleAddr.SERVER, RpcServiceExampleProxy.helloAsync(Request.ofString(msg)));
+        Response result = rpcClient.syncCall(serverAddr, RpcServiceExampleProxy.helloAsync(Request.ofString(msg)));
         System.out.println("syncResult: " + result.getString());
-    }
-
-    private String createMessage(String x) {
-        return "time: " + regulator.getLastUpdateTime() + "#" + x;
+        System.out.println();
     }
 
     private void testContext() {
         String msg = createMessage("这是一个异步调用，目标函数有Context");
-        rpcClient.call(SimpleAddr.SERVER, RpcServiceExampleProxy.contextHello(Request.ofString(msg)))
+        rpcClient.call(serverAddr, RpcServiceExampleProxy.contextHello(Request.ofString(msg)))
                 .thenApply((ctx, result) -> {
                     System.out.println(result.getString());
                     return null;
                 });
+    }
+
+    private String createMessage(String msg) {
+        String timeString = TimeHelper.SYSTEM.formatTime(regulator.getLastUpdateTime());
+        return "time: " + timeString + " # " + msg;
     }
 }

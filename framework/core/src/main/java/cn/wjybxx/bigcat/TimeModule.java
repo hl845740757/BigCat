@@ -49,10 +49,10 @@ public class TimeModule implements TimeProvider {
     }
 
     /** 通常由主模块在主循环中更新 */
-    public void update(long timeMillis) {
+    public void update(long curTime) {
         frame += 1;
-        this.deltaTime = Math.max(0, timeMillis - this.time);
-        this.time = timeMillis;
+        this.deltaTime = Math.max(0, curTime - this.time);
+        this.time = curTime;
     }
 
     public int getFrame() {

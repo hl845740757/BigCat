@@ -22,10 +22,7 @@ import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.ex.NoLogRequiredException;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.pb.ProtobufUtils;
-import cn.wjybxx.concurrent.IFuture;
-import cn.wjybxx.concurrent.IPromise;
-import cn.wjybxx.concurrent.Promise;
-import cn.wjybxx.concurrent.WatcherMgr;
+import cn.wjybxx.concurrent.*;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +57,7 @@ public final class RpcSupport implements WorkerModule {
     /** rpc超时时间 */
     private long timeoutMs = 15 * 1000;
     /** 是否启用日志 */
-    private boolean enableLog;
+    private boolean enableLog = false;
     /** 当前是否可修改配置数据 -- 也可看做是否已启动标记 */
     private volatile boolean mutable = true;
 
@@ -215,7 +212,12 @@ public final class RpcSupport implements WorkerModule {
         if (timeoutMs <= 0) {
             timeoutMs = this.timeoutMs;
         }
-        // 只阻塞发起调用的线程 -- 注意！这里尚无requestId
+        // 检测调用自身上的同步rpc服务
+        if (router.isLocalAddr(target)
+                && worker.services().contains(methodSpec.getServiceId())) {
+            throw new BlockingOperationException("deadlock");
+        }
+        // 只阻塞发起调用的线程
         RpcRequest request = newRequest(target, methodSpec, RpcInvokeType.SYNC_CALL);
         IPromise<RpcResponse> promise = new Promise<>(); // promise允许阻塞
         try {
@@ -247,29 +249,26 @@ public final class RpcSupport implements WorkerModule {
     }
 
     /** 收到worker到node的request */
-    @SuppressWarnings("unchecked")
     void sendRequestStep2(Worker worker, RpcRequest request, IPromise<?> promise) {
         // 不检测延迟序列化，以允许进程内共享方法参数对象
         request.setRequestId(++sequencer);
         request.setTime(timeProvider.getTime());
 
         if (request.getInvokeType() == RpcInvokeType.SYNC_CALL) {
+            @SuppressWarnings("unchecked") IPromise<RpcResponse> castPromise = (IPromise<RpcResponse>) promise;
             // 理论上到达这里的时候，可能请求线程已经超时了，暂不处理
-            // 必须先watch再发送，否则可能丢失信号
-            RpcResponseWatcher watcher = new RpcResponseWatcher(conId, request.getRequestId(), (IPromise<RpcResponse>) promise);
-            watcherMap.put(request.getRequestId(), watcher);
-            //
             if (enableLog) {
                 logSndRequest(request);
             }
             if (!router.send(request)) {
                 logger.info("rpc send failure, target " + request.getDestAddr());
-
-                // 同步调用，发送失败时立即失败 -- 记得删除watcher
-                watcherMap.remove(request.getRequestId());
+                // 同步调用，发送失败时立即失败
                 RpcResponse response = newFailedResponse(request, RpcErrorCodes.LOCAL_ROUTER_EXCEPTION, "Failed to send request");
-                watcher.future.trySetResult(response);
+                castPromise.trySetResult(response);
             } else {
+                // 理论上send之前添加watcher更安全，但我们的业务并不会在send的时候立即执行rpc请求，因此不会立即完成
+                RpcResponseWatcher watcher = new RpcResponseWatcher(conId, request.getRequestId(), castPromise);
+                watcherMap.put(request.getRequestId(), watcher);
                 // 同步调用也保留存根，确保watcher及时删除
                 final long deadline = timeProvider.getTime() + timeoutMs;
                 requestStubMap.put(request.getRequestId(), new RpcRequestStub(worker, request, promise, deadline));
@@ -854,7 +853,8 @@ public final class RpcSupport implements WorkerModule {
 
     private void logSndRequest(RpcRequest request) {
         if (logger.isDebugEnabled()) {
-            logger.debug("snd rpc request, request {}", request.toDetailLog());
+            RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
+            logger.debug("snd rpc request, request {}", request.toDetailLog(methodInfo.serviceName, methodInfo.methodName));
         } else if (logger.isInfoEnabled()) {
             logger.info("snd rpc request, request {}", request.toSimpleLog());
         }
@@ -862,7 +862,8 @@ public final class RpcSupport implements WorkerModule {
 
     private void logRcvRequest(RpcRequest request) {
         if (logger.isDebugEnabled()) {
-            logger.debug("rcv rpc request, request {}", request.toDetailLog());
+            RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
+            logger.debug("rcv rpc request, request {}", request.toDetailLog(methodInfo.serviceName, methodInfo.methodName));
         } else if (logger.isInfoEnabled()) {
             logger.info("rcv rpc request, request {}", request.toSimpleLog());
         }
@@ -870,7 +871,8 @@ public final class RpcSupport implements WorkerModule {
 
     private void logSndResponse(RpcResponse response) {
         if (logger.isDebugEnabled()) {
-            logger.debug("snd rpc response, response {}", response.toDetailLog());
+            RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
+            logger.debug("snd rpc response, response {}", response.toDetailLog(methodInfo.serviceName, methodInfo.methodName));
         } else if (logger.isInfoEnabled()) {
             logger.info("snd rpc response, response {}", response.toSimpleLog());
         }
@@ -880,7 +882,8 @@ public final class RpcSupport implements WorkerModule {
         String format = timeout ? "rcv rpc response, but request is timeout, response {}"
                 : "rcv rpc response, response {}";
         if (logger.isDebugEnabled()) {
-            logger.debug(format, response.toDetailLog());
+            RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
+            logger.debug(format, response.toDetailLog(methodInfo.serviceName, methodInfo.methodName));
         } else if (logger.isInfoEnabled()) {
             logger.info(format, response.toSimpleLog());
         }

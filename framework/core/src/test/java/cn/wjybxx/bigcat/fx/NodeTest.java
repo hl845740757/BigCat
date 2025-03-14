@@ -53,21 +53,25 @@ public class NodeTest {
                 .addModule(TestRpcRouter.class)
                 // 初始化rpc接口包
                 .addRpcPackage(TestRpcRouter.class.getPackageName())
-                // 初始化Worker
+                // 初始化Worker，1号worker是client，2号是server，否则无法支持同步调用
+                .setNumberChildren(2)
                 .setWorkerFactory((parent, index, workerCtx) -> {
-                    return WorkerBuilder.newDisruptorWorkerBuilder()
+                    WorkerBuilder.DisruptWorkerBuilder workerBuilder = WorkerBuilder.newDisruptorWorkerBuilder()
                             .setWorkerId("Worker-" + index)
                             .setParent(parent)
                             .setWorkerCtx(workerCtx)
                             // 初始化模块
                             .setInjector(createWorkerInjector())
-                            .addModule(RpcClient.class)
-                            .addModule(RpcClientExample.class)
-                            .addModule(RpcServiceExample.class)
-                            // 初始化rpc服务
-                            .addService(RpcClientExample.class)
-                            .addService(RpcServiceExample.class)
-                            .build();
+                            .addModule(RpcClient.class);
+                    // 初始化rpc服务
+                    if (index == 0) {
+                        workerBuilder.addModule(RpcClientExample.class)
+                                .addService(RpcClientExample.class);
+                    } else {
+                        workerBuilder.addModule(RpcServiceExample.class)
+                                .addService(RpcServiceExample.class);
+                    }
+                    return workerBuilder.build();
                 })
                 .build();
 
@@ -85,7 +89,7 @@ public class NodeTest {
     @Test
     void test() {
         // 查看日志
-        ThreadUtils.sleepQuietly(5000);
+        ThreadUtils.sleepQuietly(15 * 1000);
         node.shutdown();
     }
 
