@@ -116,32 +116,25 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         AptUtils.copyParameters(builder, method);
         builder.varargs(method.isVarArgs());
 
-        // 去除context和request参数
+        // 去除context参数
         final List<ParameterSpec> parameters = builder.parameters;
         final FirstArgType firstArgType = processor.firstArgType(method);
         if (firstArgType.isContext()) {
             parameters.remove(0);
         }
-
         if (parameters.size() == 0) {
-            // 无参时，使用 List.of();
-            builder.addStatement("return new $T<>($L, $L, $T.of(), true)",
+            // 无参(serviceId, methodId, null, true)
+            builder.addStatement("return new $T<>($L, $L, null, true)",
                     processor.methodSpecRawTypeName,
-                    serviceId, processor.getMethodId(method, annoValueMap),
-                    AptUtils.CLSNAME_LIST);
+                    serviceId, processor.getMethodId(method, annoValueMap));
         } else {
-            // ArrayList<Object> _parameters = new ArrayList<>(2);
-            ClassName arrayListTypeName = AptUtils.CLSNAME_ARRAY_LIST;
-            builder.addStatement("$T<Object> _parameters = new $T<>($L)", arrayListTypeName, arrayListTypeName, parameters.size());
-            for (ParameterSpec parameterSpec : parameters) {
-                builder.addStatement("_parameters.add($L)", parameterSpec.name);
-            }
-            builder.addStatement("return new $T<>($L, $L, _parameters, $L)",
+            // 1个参数(serviceId, methodId, parameter, sharable)
+            builder.addStatement("return new $T<>($L, $L, $L, $L)",
                     processor.methodSpecRawTypeName,
                     serviceId, processor.getMethodId(method, annoValueMap),
+                    parameters.get(0).name,
                     processor.isArgSharable(method, annoValueMap));
         }
-
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
         builder.addJavadoc("{@link $T#$L}", typeClassName, method.getSimpleName().toString());
         return builder.build();

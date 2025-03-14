@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.bigcat.TimeModule;
-import cn.wjybxx.concurrent.RingBufferEvent;
 import com.google.inject.Inject;
 
 /**
@@ -85,7 +84,7 @@ public class DefaultMainModule implements MainModule {
     }
 
     @Override
-    public void onEvent(RingBufferEvent rawEvent) throws Exception {
+    public void onEvent(WorkerEvent rawEvent) throws Exception {
 
     }
 

@@ -16,14 +16,12 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.*;
-
 /**
  * Node线程发送Rpc协议的实现
  * 1.该接口主要用于支持自定义地址解析；查询地址特性的方法可能多线程访问，需要保证【线程安全】。
- * 2.在收到请求时应当调用{@link NodeRpcSupport#onRcvRequest(RpcRequest)}
- * 3.在收到响应时应当调用{@link NodeRpcSupport#onRcvResponse(RpcResponse)}
- * 4.Router和{@link NodeRpcSupport}都是Node上的模块，需要双向绑定。
+ * 2.在收到请求时应当调用{@link RpcSupport#onRcvRequest(RpcRequest)}
+ * 3.在收到响应时应当调用{@link RpcSupport#onRcvResponse(RpcResponse)}
+ * 4.Router和{@link RpcSupport}都是Node上的模块，需要双向绑定。
  *
  * @author wjybxx
  * date - 2023/10/28
@@ -33,7 +31,7 @@ public interface NodeRpcRouter extends RpcRouter, WorkerModule {
     /**
      * 1.该方法在Node线程调用
      * 2.如果方法参数或结果是不可共享的，则已在Worker线程序列化；否则由Router决定序列化时机。
-     * 3.可通过{@link RpcProtocol#isSerialized()}判断是否已序列化。
+     * 3.可通过{@link RpcProtocol#isNullOrBytes()}判断是否已序列化。
      */
     @Override
     boolean send(RpcProtocol protocol);

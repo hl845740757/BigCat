@@ -17,11 +17,10 @@
 package cn.wjybxx.bigcat.eventbus;
 
 import cn.wjybxx.base.CollectionUtils;
-import cn.wjybxx.base.pool.DefaultObjectPool;
-import cn.wjybxx.base.pool.ObjectPool;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,7 @@ public class DefaultEventBus implements EventBus {
      */
     private final Map<Object, EventHandler<?>> handlerMap;
     /** 事件key缓存池 */
-    private final ObjectPool<ComposeEventKey> keyPool = new DefaultObjectPool<>(ComposeEventKey::new, ComposeEventKey::reset, 8);
+    private final ArrayList<ComposeEventKey> keyPool = new ArrayList<>(8);
     /** 递归深度 - 防止死循环 */
     private int recursionDepth;
 
@@ -66,10 +65,10 @@ public class DefaultEventBus implements EventBus {
 
                 final Object childKey = eventX.childKey();
                 if (childKey != null) {
-                    final ComposeEventKey composeEventKey = keyPool.acquire();
+                    final ComposeEventKey composeEventKey = acquireKey();
                     composeEventKey.init(masterKey, childKey);
                     EventBusUtils.postEvent(handlerMap, (Object) eventX, composeEventKey);
-                    keyPool.release(composeEventKey);
+                    releaseKey(composeEventKey);
                 }
             } else {
                 // 普通事件只支持class作为masterKey
@@ -83,6 +82,7 @@ public class DefaultEventBus implements EventBus {
     @Override
     public void clear() {
         handlerMap.clear();
+        keyPool.clear();
     }
 
     @Override
@@ -111,7 +111,7 @@ public class DefaultEventBus implements EventBus {
         if (childKey == null) {
             EventBusUtils.removeHandler(handlerMap, masterKey, handler);
         } else {
-            final ComposeEventKey composeEventKey = keyPool.acquire();
+            final ComposeEventKey composeEventKey = acquireKey();
             if (EventBusUtils.isNotEmptyCollection(childKey)) {
                 for (Object c : (Collection<?>) childKey) {
                     composeEventKey.init(masterKey, c);
@@ -121,7 +121,7 @@ public class DefaultEventBus implements EventBus {
                 composeEventKey.init(masterKey, childKey);
                 EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
             }
-            keyPool.release(composeEventKey);
+            releaseKey(composeEventKey);
         }
     }
 
@@ -130,12 +130,22 @@ public class DefaultEventBus implements EventBus {
         if (childKey == null) {
             return EventBusUtils.hasListener(handlerMap, masterKey, handler);
         } else {
-            final ComposeEventKey composeEventKey = keyPool.acquire();
+            final ComposeEventKey composeEventKey = acquireKey();
             composeEventKey.init(masterKey, childKey);
             boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-            keyPool.release(composeEventKey);
+            releaseKey(composeEventKey);
             return contains;
         }
+    }
+    //------------------
+
+    private ComposeEventKey acquireKey() {
+        return keyPool.isEmpty() ? new ComposeEventKey() : keyPool.removeLast();
+    }
+
+    private void releaseKey(ComposeEventKey key) {
+        key.reset();
+        keyPool.add(key);
     }
 
     private static final class ComposeEventKey {

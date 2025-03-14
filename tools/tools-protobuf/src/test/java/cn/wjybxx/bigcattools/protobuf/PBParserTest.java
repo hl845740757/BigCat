@@ -78,7 +78,7 @@ public class PBParserTest {
             new PBFileGenerator(options, tempDir, parser).build();
         }
         new PBCompiler(options).build();
-        new MethodInfoExporterGenerator(options, repository).build();
+//        new MethodInfoExporterGenerator(options, repository).build();
         new ServiceGenerator(options, repository).build();
     }
 

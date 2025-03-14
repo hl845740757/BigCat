@@ -16,14 +16,21 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.concurrent.*;
+import cn.wjybxx.base.Preconditions;
+import cn.wjybxx.concurrent.DefaultThreadFactory;
+import cn.wjybxx.concurrent.EventLoopBuilder;
 import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
+import cn.wjybxx.concurrent.EventLoopChooserFactory;
+import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.disruptor.EventSequencer;
 import cn.wjybxx.disruptor.MpUnboundedEventSequencer;
 import cn.wjybxx.disruptor.WaitStrategy;
 import com.google.inject.Injector;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -38,8 +45,10 @@ public abstract class NodeBuilder extends WorkerBuilder {
     private WorkerFactory workerFactory;
     private EventLoopChooserFactory chooserFactory;
     private WorkerAddr nodeAddr;
+    /** rpc接口所在的包，用于生成{@link RpcMethodRegistry} */
+    private final Set<String> rpcPackages = new HashSet<>();
 
-    protected NodeBuilder(EventLoopBuilder<RingBufferEvent> delegateBuilder) {
+    protected NodeBuilder(EventLoopBuilder<WorkerEvent> delegateBuilder) {
         super(delegateBuilder);
     }
 
@@ -146,6 +155,22 @@ public abstract class NodeBuilder extends WorkerBuilder {
         this.nodeAddr = nodeAddr;
         return this;
     }
+
+    public Set<String> getRpcPackages() {
+        return rpcPackages;
+    }
+
+    public NodeBuilder addRpcPackage(String pkg) {
+        Objects.requireNonNull(pkg);
+        rpcPackages.add(pkg);
+        return this;
+    }
+
+    public NodeBuilder addRpcPackages(List<String> packages) {
+        Preconditions.checkNullElements(packages);
+        rpcPackages.addAll(packages);
+        return this;
+    }
     // endregion
 
     public static DefaultNodeBuilder newDefaultNodeBuilder() {
@@ -161,7 +186,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
         @Override
         public Node build() {
             if (getEventSequencer() == null) {
-                setEventSequencer(MpUnboundedEventSequencer.newBuilder(RingBufferEvent::new)
+                setEventSequencer(MpUnboundedEventSequencer.newBuilder(WorkerEvent::new)
                         .setChunkSize(1024)
                         .setMaxPooledChunks(8)
                         .build());
@@ -182,8 +207,8 @@ public abstract class NodeBuilder extends WorkerBuilder {
         }
 
         @Override
-        public DisruptorBuilder<RingBufferEvent> getDelegated() {
-            return (DisruptorBuilder<RingBufferEvent>) super.getDelegated();
+        public DisruptorBuilder<WorkerEvent> getDelegated() {
+            return (DisruptorBuilder<WorkerEvent>) super.getDelegated();
         }
 
         @Override
@@ -194,11 +219,11 @@ public abstract class NodeBuilder extends WorkerBuilder {
 
         // region disruptor
 
-        public EventSequencer<? extends RingBufferEvent> getEventSequencer() {
+        public EventSequencer<? extends WorkerEvent> getEventSequencer() {
             return getDelegated().getEventSequencer();
         }
 
-        public NodeBuilder setEventSequencer(EventSequencer<? extends RingBufferEvent> eventSequencer) {
+        public NodeBuilder setEventSequencer(EventSequencer<? extends WorkerEvent> eventSequencer) {
             getDelegated().setEventSequencer(eventSequencer);
             return this;
         }

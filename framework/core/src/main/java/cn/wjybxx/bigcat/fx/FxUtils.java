@@ -16,14 +16,18 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.base.ClassScanner;
 import cn.wjybxx.base.CollectionUtils;
-import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import com.google.inject.Injector;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Future;
 
 /**
  * 框架辅助类
@@ -32,6 +36,21 @@ import java.util.List;
  * date - 2023/10/4
  */
 public class FxUtils {
+
+    /** worker发到node的rpc请求 - 发送，包含worker,request，promise */
+    public static final int TYPE_WORKER_NODE_REQUEST = 1;
+    /** worker发到node的rpc响应 - 发送，包含Response */
+    public static final int TYPE_WORKER_NODE_RESPONSE = 2;
+
+    /** 收到网络层的Request - 接收 */
+    public static final int TYPE_NET_NODE_REQUEST = 3;
+    /** 收到网络层的Response - 接收 */
+    public static final int TYPE_NET_NODE_RESPONSE = 4;
+
+    /** node发到worker的rpc请求 - 派发请求，包含worker,request */
+    public static final int TYPE_NODE_WORKER_REQUEST = 5;
+    /** node发到worker的rpc结果 - 设置Promise，包含Response, Promise */
+    public static final int TYPE_NODE_WORKER_RESPONSE = 6;
 
     /** 筛选需要每帧Update的Module */
     public static List<WorkerModule> filterUpdatableModules(List<WorkerModule> workerModules) {
@@ -89,7 +108,57 @@ public class FxUtils {
         try {
             Class<?> exporter = Class.forName(serviceInterface.getName() + "Exporter");
             Method method = exporter.getDeclaredMethod("export", RpcRegistry.class, serviceInterface); // 生成的静态export方法
-            method.invoke(null, registry, serviceInterface);
+            method.invoke(null, registry, serviceImpl);
+        } catch (Exception e) {
+            throw new RuntimeException("service:" + serviceInterface.getSimpleName(), e);
+        }
+    }
+
+    /** 导出rpc方法信息 */
+    public static void exportMethodInfo(NodeBuilder builder) {
+        RpcMethodRegistry registry = builder.getInjector().getInstance(RpcMethodRegistry.class);
+        for (String pkg : builder.getRpcPackages()) {
+            Set<Class<?>> classSet = ClassScanner.findClasses(pkg, c -> true, c -> c.isAnnotationPresent(RpcService.class));
+            for (Class<?> serviceInterface : classSet) {
+                exportMethodInfo(registry, serviceInterface);
+            }
+        }
+    }
+
+    /** 导出rpc方法信息 */
+    public static void exportMethodInfo(RpcMethodRegistry registry, Class<?> serviceInterface) {
+        RpcService serviceAnno = serviceInterface.getAnnotation(RpcService.class);
+        if (serviceAnno == null) {
+            throw new IllegalArgumentException("target is not RpcService: " + serviceInterface);
+        }
+        try {
+            Method[] methods = serviceInterface.getMethods();
+            List<Parameter> parameters = new ArrayList<>(2);
+            for (Method method : methods) {
+                RpcMethod methodAnno = method.getAnnotation(RpcMethod.class);
+                if (methodAnno == null) {
+                    continue; // 非rpc方法
+                }
+                // 参数需要排除RpcContext参数
+                parameters.clear();
+                for (Parameter parameter : method.getParameters()) {
+                    if (RpcContext.class.isAssignableFrom(parameter.getType())) {
+                        continue;
+                    }
+                    parameters.add(parameter);
+                }
+                Class<?> pType = parameters.isEmpty() ? null : parameters.get(0).getType();
+
+                // 返回值需要处理future
+                Class<?> rType = method.getReturnType();
+                if (Future.class.isAssignableFrom(rType)) {
+                    ParameterizedType genericReturnType = (ParameterizedType) method.getGenericReturnType();
+                    rType = (Class<?>) genericReturnType.getActualTypeArguments()[0];
+                }
+                // 注册方法
+                RpcMethodInfo<?, ?> methodInfo = new RpcMethodInfo<>(serviceAnno.serviceId(), methodAnno.methodId(), pType, rType);
+                registry.register(methodInfo);
+            }
         } catch (Exception e) {
             throw new RuntimeException("service:" + serviceInterface.getSimpleName(), e);
         }

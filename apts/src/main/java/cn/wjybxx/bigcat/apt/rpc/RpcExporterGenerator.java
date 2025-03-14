@@ -41,7 +41,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     private static final String varName_registry = "registry";
     private static final String varName_instance = "instance";
     private static final String varName_context = "context";
-    private static final String varName_methodSpec = "methodSpec";
+    private static final String varName_parameter = "parameter";
 
     private static final String MNAME_GET_OBJECT = "getObject";
     private static final String MNAME_GET_STRING = "getString";
@@ -168,7 +168,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
         // registry中的方法
         builder.addCode("$L.register($L, $L, ($L, $L) -> {\n",
-                varName_registry, serviceId, methodId, varName_context, varName_methodSpec);
+                varName_registry, serviceId, methodId, varName_context, varName_parameter);
 
         // 可变性设置
         if (processor.isResultSharable(method, annoValueMap)) {
@@ -217,7 +217,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         params.add(varName_instance);
         params.add(method.getSimpleName().toString());
 
-        // 去除context和request
+        // 去除context
         List<? extends VariableElement> parameters = method.getParameters();
         if (firstArgType.isContext()) {
             TypeName targetContextType = TypeName.get(parameters.get(0).asType());
@@ -229,38 +229,14 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
                 format.append(", ");
             }
         }
+        // 方法参数已限定为最多1个，Object向下转换
+        if (parameters.size() > 0) {
+            VariableElement variableElement = parameters.get(0);
+            final TypeName parameterTypeName = TypeName.get(variableElement.asType());
 
-        // 填充参数
-        for (int index = 0; index < parameters.size(); index++) {
-            VariableElement variableElement = parameters.get(index);
-            if (index > 0) {
-                format.append(", ");
-            }
-
-            final TypeMirror paramTypeMirror = variableElement.asType();
-            if (paramTypeMirror.getKind().isPrimitive() || processor.isString(paramTypeMirror)) {
-                final String getParamMethodName;
-                if (paramTypeMirror.getKind().isPrimitive()) {
-                    // methodSpec.getInt(0)
-                    getParamMethodName = primitiveGetParamMethodName.get(paramTypeMirror.getKind());
-                } else {
-                    // methodSpec.getString(0)
-                    getParamMethodName = MNAME_GET_STRING;
-                }
-                format.append("$L.$L($L)");
-                params.add(varName_methodSpec);
-                params.add(getParamMethodName);
-                params.add(index);
-            } else {
-                final TypeName parameterTypeName = TypeName.get(paramTypeMirror);
-                final String getParamMethodName = MNAME_GET_OBJECT;
-                // (Integer) methodSpec.getObject(0)
-                format.append("($T) $L.$L($L)");
-                params.add(parameterTypeName);
-                params.add(varName_methodSpec);
-                params.add(getParamMethodName);
-                params.add(index);
-            }
+            format.append("($T) $L");
+            params.add(parameterTypeName);
+            params.add(varName_parameter);
         }
         format.append(")");
         return new InvokeStatement(format.toString(), params);

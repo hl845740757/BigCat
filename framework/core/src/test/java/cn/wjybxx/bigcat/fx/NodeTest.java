@@ -17,23 +17,16 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ThreadUtils;
-import cn.wjybxx.base.time.Regulator;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.TimeModule;
-import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
-import cn.wjybxx.bigcat.rpc.*;
-import cn.wjybxx.concurrent.RingBufferEvent;
-import cn.wjybxx.disruptor.EventTranslator;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author wjybxx
@@ -41,19 +34,25 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class NodeTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(NodeTest.class);
     private static Node node;
 
+    /** 准备工作有点多 */
     @BeforeAll
     static void setUp() {
+        // 先初始化Logger，避免污染输出
+        LoggerFactory.getLogger("Main");
+        System.out.println();
+
         node = NodeBuilder.newDefaultNodeBuilder()
                 .setNodeAddr(new WorkerAddr(1, 1))
                 .setWorkerId("Node")
                 // 初始化模块
                 .setInjector(createNodeInjector())
-                .addModule(WorkerRpcClient.class)
-                .addModule(NodeRpcSupport.class)
+                .addModule(RpcClient.class)
+                .addModule(RpcSupport.class)
                 .addModule(TestRpcRouter.class)
+                // 初始化rpc接口包
+                .addRpcPackage(TestRpcRouter.class.getPackageName())
                 // 初始化Worker
                 .setWorkerFactory((parent, index, workerCtx) -> {
                     return WorkerBuilder.newDisruptorWorkerBuilder()
@@ -62,8 +61,12 @@ public class NodeTest {
                             .setWorkerCtx(workerCtx)
                             // 初始化模块
                             .setInjector(createWorkerInjector())
-                            .addModule(WorkerRpcClient.class)
-                            .addModule(TestWorkerModule.class)
+                            .addModule(RpcClient.class)
+                            .addModule(RpcClientExample.class)
+                            .addModule(RpcServiceExample.class)
+                            // 初始化rpc服务
+                            .addService(RpcClientExample.class)
+                            .addService(RpcServiceExample.class)
                             .build();
                 })
                 .build();
@@ -83,36 +86,7 @@ public class NodeTest {
     void test() {
         // 查看日志
         ThreadUtils.sleepQuietly(5000);
-    }
-
-    @Test
-    void testFireEvent() {
-        for (int idx = 0; idx < 10; idx++) {
-            node.execute(new Translator(1, idx));
-            ThreadUtils.sleepQuietly(10);
-        }
-    }
-
-    private static class Translator implements EventTranslator<RingBufferEvent>, Runnable {
-
-        final int type;
-        final int intVal1;
-
-        public Translator(int type, int intVal1) {
-            this.type = type;
-            this.intVal1 = intVal1;
-        }
-
-        @Override
-        public void run() {
-
-        }
-
-        @Override
-        public void translateTo(RingBufferEvent event, long sequence) {
-            event.setType(1);
-            event.intVal1 = intVal1;
-        }
+        node.shutdown();
     }
 
     private static Injector createNodeInjector() {
@@ -120,23 +94,23 @@ public class NodeTest {
             @Override
             protected void configure() {
                 super.configure();
-                binder().requireExplicitBindings(); // 获取未显式绑定的实例时抛出异常，避免获取到错误的实例；一定要声明，否则极易出bug
+                // 获取未显式绑定的实例时抛出异常，避免获取到错误的实例；一定要声明，否则极易出bug
+                binder().requireExplicitBindings();
 
                 bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
-                bind(WorkerRpcClient.class).in(Singleton.class);
                 bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
-                bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
-                bind(TimeModule.class).in(Singleton.class);
+                bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);
+                bind(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
 
-                // 记得以前超类绑定到子类时指定Singleton，子类不需要单独声明Singleton，现在怎么不行了....
+                // 要想直接注入子类，子类也需要显式绑定
                 // 子类如果不单独绑定，则会创建一个新的实例，各种bug...
-                bind(NodeRpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
                 bind(TestRpcRouter.class).in(Singleton.class);
+                bind(NodeRpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
 
-                bind(NodeRpcSupport.class).in(Singleton.class);
+                bind(RpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
-                bind(PBMethodInfoRegistry.class).in(Singleton.class);
+                bind(RpcMethodRegistry.class).in(Singleton.class);
             }
         });
     }
@@ -150,178 +124,14 @@ public class NodeTest {
 
                 bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
-                bind(WorkerRpcClient.class).in(Singleton.class);
                 bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
                 bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);
-                bind(TimeModule.class).in(Singleton.class);
+                bind(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
 
-                bind(TestWorkerModule.class).in(Singleton.class);
+                bind(RpcClientExample.class).in(Singleton.class);
+                bind(RpcServiceExample.class).in(Singleton.class);
             }
         });
-    }
-
-    private static class TestWorkerModule implements WorkerModule {
-
-        final Regulator regulator = Regulator.newFixedDelay(1, 100);
-        Worker worker;
-        TestRpcRouter rpcRouter;
-
-        @Inject
-        RpcRegistry registry;
-        @Inject
-        TimeModule timeModule;
-        @Inject
-        RpcClient rpcClient;
-
-        @Override
-        public void inject(Worker worker) {
-            this.worker = worker;
-            this.rpcRouter = (TestRpcRouter) worker.node().injector().getInstance(NodeRpcRouter.class);
-        }
-
-        @Override
-        public void start() {
-            regulator.restart(timeModule.getTime());
-            RpcServiceExampleExporter.export(registry, new RpcServiceExample());
-        }
-
-        @Override
-        public void update() {
-            if (regulator.isReady(timeModule.getTime())) {
-                String msg = "time: " + regulator.getLastUpdateTime();
-                rpcClient.call(StaticRpcAddr.LOCAL, RpcServiceExampleProxy.echo(msg))
-                        .thenAccept((ctx, result) -> {
-                            if (rpcRouter.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
-                                Assertions.assertSame(msg, result);
-                            } else {
-                                Assertions.assertEquals(msg, result);
-                            }
-                            Assertions.assertTrue(worker.inEventLoop(), "worker.inEventLoop");
-                            logger.info("rcv echo " + result);
-                        });
-            }
-        }
-
-    }
-
-    private static class TestMainModule implements MainModule {
-
-        private Worker worker;
-        @Inject
-        private TimeModule timeModule;
-
-        @Override
-        public void inject(Worker worker) {
-            this.worker = worker;
-        }
-
-        @Override
-        public void start() {
-            timeModule.start(System.currentTimeMillis());
-        }
-
-        @Override
-        public boolean checkMainLoop(long eventLoopFrame) {
-            return System.currentTimeMillis() - timeModule.getTime() >= 10;
-        }
-
-        @Override
-        public void beforeMainLoop() {
-            timeModule.update(System.currentTimeMillis());
-        }
-
-        @Override
-        public void afterMainLoop() {
-
-        }
-
-        @Override
-        public void onEvent(RingBufferEvent rawEvent) throws Exception {
-            RingBufferEvent event = (RingBufferEvent) rawEvent;
-            logger.info("eventType: {}, index: {}", event.getType(), event.intVal1);
-        }
-
-        @Override
-        public void beforeWorkerStart() {
-            logger.info("beforeWorkerStart: " + worker.workerId());
-        }
-
-        @Override
-        public void afterWorkerStart() {
-            logger.info("afterWorkerStart: " + worker.workerId());
-        }
-
-        @Override
-        public void beforeWorkerShutdown() {
-            logger.info("beforeWorkerShutdown: " + worker.workerId());
-        }
-
-        @Override
-        public void afterWorkerShutdown() {
-            logger.info("afterWorkerShutdown: " + worker.workerId());
-        }
-    }
-
-    private static class TestRpcRouter extends AbstractRpcRouter {
-
-        private final ConcurrentLinkedQueue<RpcProtocol> protocolQueue = new ConcurrentLinkedQueue<>();
-        private volatile boolean shuttingDown;
-        private Thread thread;
-
-        @Override
-        public void start() {
-            thread = new Thread(this::subThreadLoop);
-            thread.setName("RpcSender");
-            thread.setDaemon(true);
-            thread.start();
-        }
-
-        @Override
-        public void stop() {
-            shuttingDown = true;
-            thread.interrupt();
-        }
-
-        @Override
-        public boolean send(RpcProtocol protocol) {
-            Objects.requireNonNull(protocol);
-            // 这里不执行序列化，但如果已序列化，则进行反序列化
-            if (protocol.isSerialized()) {
-                if (protocol instanceof RpcRequest request) {
-                    byte[] bytesParameters = request.bytesParameters();
-                    request.setParameters(serializer.read(bytesParameters));
-                } else if (protocol instanceof RpcResponse response) {
-                    byte[] bytesResults = response.bytesResults();
-                    response.setResults(serializer.read(bytesResults));
-                }
-            }
-            protocol.setDeserialized();
-            protocolQueue.offer(protocol);
-            return true;
-        }
-
-        // 该方法由子线程调用
-        private void onProtocol(RpcProtocol protocol) {
-            if (protocol instanceof RpcRequest request) {
-                rpcSupport.onRcvRequest(request);
-            } else if (protocol instanceof RpcResponse response) {
-                rpcSupport.onRcvResponse(response);
-            }
-        }
-
-        // 该方法为子线程循环，不能在主线程，否则无法支持同步rpc调用
-        private void subThreadLoop() {
-            RpcProtocol protocol;
-            while (!shuttingDown) {
-                protocol = protocolQueue.poll();
-                if (protocol == null) {
-                    ThreadUtils.sleepQuietly(1);
-                    continue;
-                }
-                onProtocol(protocol);
-            }
-        }
-
     }
 
 }

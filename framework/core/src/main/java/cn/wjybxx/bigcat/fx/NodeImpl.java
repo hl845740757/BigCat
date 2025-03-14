@@ -16,7 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import cn.wjybxx.concurrent.*;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.*;
@@ -33,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @author wjybxx
  * date - 2023/10/4
  */
-public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Node {
+public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
 
     private final String workerId;
     private final Injector injector;
@@ -67,6 +66,7 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
         this.moduleList = List.copyOf(moduleList);
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
+        FxUtils.exportMethodInfo(builder);
 
         int numberChildren = builder.getNumberChildren();
         if (numberChildren < 1) {
@@ -92,7 +92,7 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
         chooser = chooserFactory.newChooser(children);
     }
 
-    private static EventLoopBuilder.DisruptorBuilder<RingBufferEvent> decorate(NodeBuilder.DefaultNodeBuilder builder) {
+    private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(NodeBuilder.DefaultNodeBuilder builder) {
         return builder.getDelegated()
                 .setAgent(new Agent());
     }
@@ -166,8 +166,9 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
 
     @Override
     public Worker findWorker(String workerId) {
-        // 该接口不常用，运行时Worker数量不多，暂不优化
-        for (Worker child : children) {
+        // worker通常不多，for循环足够快
+        for (int i = 0; i < children.length; i++) {
+            Worker child = children[i];
             if (child.workerId().equals(workerId)) {
                 return child;
             }
@@ -206,10 +207,11 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
     }
     //
 
-    private static class Agent implements EventLoopAgent<RingBufferEvent> {
+    private static class Agent implements EventLoopAgent<WorkerEvent> {
 
         NodeImpl node;
         MainModule mainModule; // 缓存
+        RpcSupport rpcSupport;
         List<WorkerModule> updatableModuleList = new ArrayList<>();
         List<WorkerModule> startedModuleList = new ArrayList<>();
         long loopFrame;
@@ -227,6 +229,7 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
             Worker.CURRENT_WORKER.set(node);
             Node.CURRENT_NODES.add(node);
             mainModule = node.mainModule;
+            rpcSupport = node.injector.getInstance(RpcSupport.class);
             updatableModuleList.addAll(FxUtils.filterUpdatableModules(node.moduleList));
 
             initWorkerCtx();
@@ -331,8 +334,22 @@ public class NodeImpl extends DisruptorEventLoop<RingBufferEvent> implements Nod
         }
 
         @Override
-        public void onEvent(long sequence, RingBufferEvent event) throws Exception {
-            mainModule.onEvent(event);
+        public void onEvent(long sequence, WorkerEvent event) throws Exception {
+            switch (event.getType()) {
+                case FxUtils.TYPE_NET_NODE_REQUEST -> {
+                    rpcSupport.onRcvRequestStep2((RpcRequest) event.obj1);
+                }
+                case FxUtils.TYPE_NET_NODE_RESPONSE -> {
+                    rpcSupport.onRcvResponseStep2((RpcResponse) event.obj1);
+                }
+                case FxUtils.TYPE_WORKER_NODE_REQUEST -> {
+                    rpcSupport.sendRequestStep2((Worker) event.obj1, (RpcRequest) event.obj2, (IPromise<?>) event.obj3);
+                }
+                case FxUtils.TYPE_WORKER_NODE_RESPONSE -> {
+                    rpcSupport.sendResponseStep2((RpcResponse) event.obj1);
+                }
+                default -> mainModule.onEvent(event);
+            }
         }
 
         @Override

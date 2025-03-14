@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,16 +39,19 @@ public class ReadExcelTest {
         Sheet skillSheet = sheetMap.get("Skill");
 
         ConverterOptions options = ConverterOptions.newBuilder().build();
-        DsonConverter converter = DefaultDsonConverter.newInstance(
-                TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
-                List.of(new SheetCodec()),
-                options);
+        DsonConverter converter = new DsonConverterBuilder()
+                .addTypeMeta(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet"))
+                .addCodec(new SheetCodec())
+                .setOptions(options)
+                .build();
 
         String dson = converter.writeAsDson(skillSheet, TypeInfo.OBJECT);
         System.out.println(dson);
-        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, TypeInfo.of(Sheet.class)));
 
-        Sheet clonedObject = converter.cloneObject(skillSheet, TypeInfo.of(Sheet.class));
+        TypeInfo sheetTypeInfo = TypeInfo.of(Sheet.class);
+        Assertions.assertEquals(skillSheet, converter.readFromDson(dson, sheetTypeInfo));
+
+        Sheet clonedObject = converter.cloneObject(skillSheet, sheetTypeInfo, sheetTypeInfo);
         Assertions.assertEquals(skillSheet, clonedObject);
     }
 }

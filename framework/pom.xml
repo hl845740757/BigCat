@@ -57,23 +57,24 @@
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
 
         <!-- 基础依赖 -->
-        <slf4j.version>2.0.13</slf4j.version>
-        <logback.version>1.5.6</logback.version>
-        <junit.version>5.10.2</junit.version>
-
-        <commons.version>1.1.0</commons.version> <!-- 我的commons库 -->
-        <fastutil.version>8.5.13</fastutil.version>
-        <commons-lang3.version>3.14.0</commons-lang3.version>
-        <commons-io.version>2.16.1</commons-io.version>
-        <commons-codec.version>1.17.0</commons-codec.version>
-
+        <slf4j.version>2.0.17</slf4j.version>
+        <logback.version>1.5.17</logback.version>
+        <junit.version>5.12.0</junit.version>
+        <!-- 我的commons库 -->
+        <commons.version>1.5.0</commons.version>
+        <commons-apt.version>1.5.0</commons-apt.version>
+        <!-- 基础工具库 -->
+        <fastutil.version>8.5.14</fastutil.version>
+        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-io.version>2.18.0</commons-io.version>
+        <commons-codec.version>1.18.0</commons-codec.version>
+        <guava.version>33.4.0-jre</guava.version>
         <guice.version>7.0.0</guice.version>
-        <guava.version>33.2.0-jre</guava.version>
-        <pb.version>3.25.2</pb.version> <!-- 4.26尚不稳定 -->
 
         <!-- 特殊依赖 -->
-        <netty.version>4.1.101.Final</netty.version>
-        <bson.version>4.11.2</bson.version>
+        <netty.version>4.1.119.Final</netty.version>
+        <bson.version>4.11.5</bson.version>
+        <pb.version>3.25.6</pb.version> <!-- 4.26尚不稳定 -->
     </properties>
 
     <dependencies>
@@ -137,6 +138,19 @@
         <dependency>
             <groupId>cn.wjybxx.commons</groupId>
             <artifactId>dson-codec</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+
+        <!-- 行为树 -->
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>btree-core</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+        <!-- 行为树 -->
+        <dependency>
+            <groupId>cn.wjybxx.commons</groupId>
+            <artifactId>btree-codec</artifactId>
             <version>${commons.version}</version>
         </dependency>
 
@@ -243,13 +257,13 @@
                         <annotationProcessorPath>
                             <groupId>cn.wjybxx.commons</groupId>
                             <artifactId>commons-apt-base</artifactId>
-                            <version>${commons.version}</version>
+                            <version>${commons-apt.version}</version>
                         </annotationProcessorPath>
                         <!-- dson序列化注解 -->
                         <annotationProcessorPath>
                             <groupId>cn.wjybxx.commons</groupId>
                             <artifactId>dson-apt</artifactId>
-                            <version>${commons.version}</version>
+                            <version>${commons-apt.version}</version>
                         </annotationProcessorPath>
                         <!-- 项目apt注解 -->
                         <annotationProcessorPath>

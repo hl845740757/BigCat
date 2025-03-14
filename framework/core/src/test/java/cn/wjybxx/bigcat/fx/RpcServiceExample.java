@@ -16,31 +16,87 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcMethod;
-import cn.wjybxx.bigcat.rpc.RpcService;
+import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.IFuture;
+import com.google.inject.Inject;
 
-import java.util.List;
-import java.util.StringJoiner;
+import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author wjybxx
- * date 2023/10/29
+ * date 2023/4/12
  */
-@RpcService(serviceId = 1)
-public class RpcServiceExample {
+@RpcService(serviceId = 11)
+public class RpcServiceExample implements ExtensibleService, WorkerModule {
 
-    @RpcMethod(methodId = 1, customData = "{interval : 500}")
-    public String echo(String msg) {
-        return msg;
+    @Inject
+    private RpcClient rpcClient;
+
+    @RpcMethod(methodId = 1, argSharable = true, resultSharable = true)
+    public Response echo(Request request) {
+        return new Response()
+                .setString(request.getString1());
     }
 
-    @RpcMethod(methodId = 4)
-    public String join(List<String> args) {
-        StringJoiner joiner = new StringJoiner(",");
-        for (String arg : args) {
-            joiner.add(arg);
+    @RpcMethod(methodId = 2, argSharable = true, resultSharable = true, customData = "{interval : 500}")
+    public Response hello(Request request) {
+        return new Response()
+                .setString(request.getString1());
+    }
+
+    /** 测试异步返回 */
+    @RpcMethod(methodId = 3, argSharable = true, resultSharable = true)
+    public IFuture<Response> helloAsync(Request request) {
+        Response response = new Response()
+                .setString(request.getString1());
+        return FutureUtils.completedFuture(response);
+    }
+
+    /** 测试void返回值 */
+    @RpcMethod(methodId = 4, argSharable = true, resultSharable = true)
+    public void hello2(Request request) {
+    }
+
+    /** 测试参数带泛型 */
+    @RpcMethod(methodId = 5, argSharable = true, resultSharable = true)
+    public Response join(Request request) {
+        String result = String.join(",", request.getStringList());
+        return new Response()
+                .setString(result);
+    }
+
+    /** 测试context的代码生成 */
+    @RpcMethod(methodId = 6, argSharable = true, resultSharable = true, manualReturn = true)
+    public void contextHello(RpcContext<Response> rpcContext, Request request) {
+        rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage(Request.ofString("context -- before")));
+        {
+            Response response = new Response()
+                    .setString(request.getString1());
+            rpcContext.sendResult(response);
         }
-        return joiner.toString();
+        rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage(Request.ofString("context -- end\n")));
     }
 
+    /** 测试context的代码生成 */
+    @RpcMethod(methodId = 7, argSharable = true, resultSharable = true)
+    public Response requestHello(RpcContext<Response> rpcContext, Request request) {
+        return new Response()
+                .setString(request.getString1());
+    }
+
+    // 测试从接口继承的方法
+    private final Map<String, Object> extBlackboard = new HashMap<>();
+
+    @Nonnull
+    @Override
+    public Map<String, Object> getExtBlackboard() {
+        return extBlackboard;
+    }
+
+    @Override
+    public ExecuteResult execute(ExecuteRequest request) {
+        return null;
+    }
 }

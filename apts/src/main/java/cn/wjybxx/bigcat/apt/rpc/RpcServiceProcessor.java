@@ -41,12 +41,12 @@ import java.util.stream.Collectors;
 @AutoService(Processor.class)
 public class RpcServiceProcessor extends MyAbstractProcessor {
 
-    private static final String CNAME_RPC_SERVICE = "cn.wjybxx.bigcat.rpc.RpcService";
+    private static final String CNAME_RPC_SERVICE = "cn.wjybxx.bigcat.fx.RpcService";
     private static final String PNAME_SERVICE_ID = "serviceId";
     private static final String PNAME_GEN_EXPORTER = "genExporter";
     private static final String PNAME_GEN_PROXY = "genProxy";
 
-    private static final String CNAME_RPC_METHOD = "cn.wjybxx.bigcat.rpc.RpcMethod";
+    private static final String CNAME_RPC_METHOD = "cn.wjybxx.bigcat.fx.RpcMethod";
     private static final String PNAME_METHOD_ID = "methodId";
     private static final String PNAME_ARG_SHARABLE = "argSharable";
     private static final String PNAME_RESULT_SHARABLE = "resultSharable";
@@ -54,13 +54,13 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String PNAME_CUSTOM_DATA = "customData";
     private static final String PNAME_BUILDER_PATTERN = "builderPattern";
 
-    private static final String CNAME_METHOD_SPEC = "cn.wjybxx.bigcat.rpc.RpcMethodSpec";
-    private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.bigcat.rpc.RpcRegistry";
-    private static final String CNAME_CONTEXT = "cn.wjybxx.bigcat.rpc.RpcContext";
+    private static final String CNAME_METHOD_SPEC = "cn.wjybxx.bigcat.fx.RpcMethodSpec";
+    private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.bigcat.fx.RpcRegistry";
+    private static final String CNAME_CONTEXT = "cn.wjybxx.bigcat.fx.RpcContext";
 
     private static final String CNAME_MY_FUTURE = "cn.wjybxx.concurrent.IFuture";
     private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
-    private static final int MAX_PARAMETER_COUNT = 5;
+    private static final int MAX_PARAMETER_COUNT = 1; // 限制最大一个参数
 
     private TypeElement anno_rpcServiceElement;
     private TypeElement anno_rpcMethodElement;
@@ -123,8 +123,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        @SuppressWarnings("unchecked")
-        Set<TypeElement> typeElementSet = (Set<TypeElement>) roundEnv.getElementsAnnotatedWith(anno_rpcServiceElement);
+        Set<TypeElement> typeElementSet = AptUtils.selectSourceFile(roundEnv, elementUtils, anno_rpcServiceElement);
         for (TypeElement typeElement : typeElementSet) {
             try {
                 List<ExecutableElement> rpcMethodList = checkBase(typeElement);

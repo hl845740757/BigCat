@@ -46,12 +46,12 @@ public class SheetCodec implements DsonCodec<Sheet> {
 
     @Nonnull
     @Override
-    public Class<Sheet> getEncoderClass() {
-        return Sheet.class;
+    public TypeInfo getEncoderType() {
+        return TypeInfo.of(Sheet.class);
     }
 
     @Override
-    public Sheet readObject(DsonObjectReader reader, TypeInfo<?> TypeInfo, Supplier<? extends Sheet> factory) {
+    public Sheet readObject(DsonObjectReader reader, Supplier<? extends Sheet> factory) {
         String fileName = reader.readString("fileName");
         String sheetName = reader.readString("sheetName");
         int sheetIndex = reader.readInt("sheetIndex");
@@ -61,7 +61,7 @@ public class SheetCodec implements DsonCodec<Sheet> {
     }
 
     @Override
-    public void writeObject(DsonObjectWriter writer, Sheet sheet, TypeInfo<?> TypeInfo, ObjectStyle style) {
+    public void writeObject(DsonObjectWriter writer, Sheet sheet, TypeInfo declaredType, ObjectStyle style) {
         writer.writeString("fileName", sheet.getFileName());
         writer.writeString("sheetName", sheet.getSheetName());
         writer.writeInt("sheetIndex", sheet.getSheetIndex());
@@ -75,9 +75,9 @@ public class SheetCodec implements DsonCodec<Sheet> {
 
     private void writeHeaderMap(DsonObjectWriter writer, Map<String, Header> headerMap, boolean isParamSheet) {
         // 只写values
-        writer.writeStartArray("headerMap", headerMap.values(), TypeInfo.ARRAYLIST);
+        writer.writeStartArray("headerMap", ObjectStyle.INDENT);
         for (Header header : headerMap.values()) {
-            writer.writeStartObject(header, TypeInfo.OBJECT, ObjectStyle.FLOW);
+            writer.writeStartObject(ObjectStyle.FLOW);
             writer.writeString("args", header.getArgs());
             writer.writeString("name", header.getName());
             writer.writeString("type", header.getType());
@@ -111,14 +111,14 @@ public class SheetCodec implements DsonCodec<Sheet> {
     //
     private void writeValueRowList(DsonObjectWriter writer, List<SheetRow> valueRowList, boolean isParamSheet) {
         // 其实将rowIndex看做key写成对象会更有效，但兼容性可能不好
-        writer.writeStartArray("valueRowList", valueRowList, TypeInfo.ARRAYLIST);
+        writer.writeStartArray("valueRowList", ObjectStyle.INDENT);
         for (SheetRow valueRow : valueRowList) {
-            writer.writeStartObject(valueRow, TypeInfo.OBJECT);
+            writer.writeStartObject(ObjectStyle.INDENT);
             writer.writeInt("rowIndex", valueRow.getRowIndex());
             {
                 // cellMap写为Map
                 ObjectStyle style = isParamSheet ? ObjectStyle.FLOW : ObjectStyle.INDENT;
-                writer.writeStartObject("cellMap", valueRow.getName2CellMap(), TypeInfo.STRING_HASHMAP, style);
+                writer.writeStartObject("cellMap", style);
                 for (SheetCell cell : valueRow.getName2CellMap().values()) {
                     writer.writeString(cell.getName(), cell.getValue(), StringStyle.QUOTE);
                 }

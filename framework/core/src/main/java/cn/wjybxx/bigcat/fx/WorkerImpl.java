@@ -16,7 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import cn.wjybxx.concurrent.*;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -33,7 +32,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/10/4
  */
-public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements Worker {
+public class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements Worker {
 
     private final String workerId;
     private final Injector injector;
@@ -59,7 +58,7 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         FxUtils.exportService(builder);
     }
 
-    private static EventLoopBuilder.DisruptorBuilder<RingBufferEvent> decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
+    private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
         return builder.getDelegated()
                 .setAgent(new Agent());
     }
@@ -93,15 +92,15 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         return serviceIdSet; // 不可变Set
     }
 
-    @Nullable
-    @Override
-    public Node parent() {
-        return (Node) parent;
-    }
-
     @Nonnull
     @Override
     public Node node() {
+        return (Node) parent;
+    }
+
+    @Nullable
+    @Override
+    public Node parent() {
         return (Node) parent;
     }
 
@@ -122,10 +121,11 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         return workerCtx;
     }
 
-    private static class Agent implements EventLoopAgent<RingBufferEvent> {
+    private static class Agent implements EventLoopAgent<WorkerEvent> {
 
         WorkerImpl worker;
         MainModule mainModule; // 缓存
+        RpcSupport rpcSupport;
         List<WorkerModule> updatableModuleList = new ArrayList<>();
         List<WorkerModule> startedModuleList = new ArrayList<>();
         long loopFrame;
@@ -142,6 +142,7 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         public void onStart() throws Exception {
             Worker.CURRENT_WORKER.set(worker);
             mainModule = worker.mainModule;
+            rpcSupport = worker.node().injector().getInstance(RpcSupport.class);
             updatableModuleList.addAll(FxUtils.filterUpdatableModules(worker.moduleList));
             resolveDependence();
 
@@ -185,8 +186,18 @@ public class WorkerImpl extends DisruptorEventLoop<RingBufferEvent> implements W
         }
 
         @Override
-        public void onEvent(long sequence, RingBufferEvent event) throws Exception {
-            mainModule.onEvent(event);
+        public void onEvent(long sequence, WorkerEvent event) throws Exception {
+            // 底层rpc支持
+            switch (event.getType()) {
+                case FxUtils.TYPE_NODE_WORKER_REQUEST -> {
+                    rpcSupport.onRcvRequestStep3((Worker) event.obj1, (RpcRequest) event.obj2);
+                }
+                case FxUtils.TYPE_NODE_WORKER_RESPONSE -> {
+                    @SuppressWarnings("unchecked") IPromise<Object> promise = (IPromise<Object>) event.obj2;
+                    rpcSupport.onRcvResponseStep3((RpcResponse) event.obj1, promise);
+                }
+                default -> mainModule.onEvent(event);
+            }
         }
 
         @Override

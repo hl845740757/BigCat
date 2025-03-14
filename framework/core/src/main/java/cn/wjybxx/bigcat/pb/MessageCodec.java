@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 
 /**
  * Message会序列化为字节数组，因此不可以作为顶层对象。
+ * (Message作为Rpc方法的参数或结果时会被特殊处理，不会走用户的序列化。)
  *
  * @author wjybxx
  * date 2023/4/2
@@ -40,27 +41,32 @@ import java.util.function.Supplier;
 @DsonCodecScanIgnore
 public class MessageCodec<T extends MessageLite> implements DsonCodec<T> {
 
-    private final Class<T> clazz;
+    private final TypeInfo typeInfo;
     private final Parser<T> parser;
 
     public MessageCodec(Class<T> clazz, Parser<T> parser) {
-        this.clazz = clazz;
+        this.typeInfo = TypeInfo.of(clazz);
         this.parser = Objects.requireNonNull(parser, "parser");
     }
 
     @Nonnull
     @Override
-    public Class<T> getEncoderClass() {
-        return clazz;
+    public TypeInfo getEncoderType() {
+        return typeInfo;
     }
 
     @Override
-    public void writeObject(DsonObjectWriter writer, T instance, TypeInfo<?> typeArgInfo, ObjectStyle style) {
-        writer.writeBytes(null, instance.toByteArray());
+    public boolean autoStartEnd() {
+        return false;
     }
 
     @Override
-    public T readObject(DsonObjectReader reader, TypeInfo<?> typeArgInfo, Supplier<? extends T> factory) {
+    public void writeObject(DsonObjectWriter writer, T inst, TypeInfo declaredType, ObjectStyle style) {
+        writer.writeBytes(null, inst.toByteArray());
+    }
+
+    @Override
+    public T readObject(DsonObjectReader reader, Supplier<? extends T> factory) {
         byte[] bytes = reader.readBytes(reader.getCurrentName());
         if (bytes == null) {
             return null;
@@ -71,5 +77,4 @@ public class MessageCodec<T extends MessageLite> implements DsonCodec<T> {
             return ObjectUtils.rethrow(e);
         }
     }
-
 }

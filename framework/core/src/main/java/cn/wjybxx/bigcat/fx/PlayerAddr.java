@@ -16,10 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcAddr;
-import cn.wjybxx.bigcat.rpc.RpcClient;
-import cn.wjybxx.bigcat.rpc.RpcRequest;
-
 /**
  * 玩家通信地址
  * 1. 如果不想每次创建，可以缓存在玩家Session上。
@@ -28,7 +24,9 @@ import cn.wjybxx.bigcat.rpc.RpcRequest;
  *
  * @author wjybxx
  * date - 2023/12/22
+ * @deprecated 与玩家通信时，使用连接id代替更好
  */
+@Deprecated
 public final class PlayerAddr implements RpcAddr {
 
     /** 连接id */

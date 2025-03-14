@@ -759,7 +759,7 @@ public class PBParser {
         return content.length() > 0 && content.charAt(0) == c;
     }
 
-    /** 确保内容行以 ';' 结尾 */
+    /** 确保内容行以分号 ';' 结尾 */
     private static void ensureEndWithSemicolon(LineInfo lineInfo, String content) {
         if (Utils.lastChar(content) != ';') {
             throw new PBParserException("expected ';', line: " + lineInfo);

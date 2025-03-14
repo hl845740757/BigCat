@@ -19,16 +19,10 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.base.Preconditions;
 import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.bigcat.TimeModule;
-import cn.wjybxx.bigcat.pb.PBMethodInfoRegistry;
-import cn.wjybxx.bigcat.rpc.RpcClient;
-import cn.wjybxx.bigcat.rpc.RpcRegistry;
-import cn.wjybxx.bigcat.rpc.RpcRouter;
-import cn.wjybxx.bigcat.rpc.RpcSerializer;
 import cn.wjybxx.concurrent.DefaultThreadFactory;
 import cn.wjybxx.concurrent.EventLoopBuilder;
 import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
 import cn.wjybxx.concurrent.RejectedExecutionHandler;
-import cn.wjybxx.concurrent.RingBufferEvent;
 import cn.wjybxx.disruptor.EventSequencer;
 import cn.wjybxx.disruptor.RingBufferEventSequencer;
 import cn.wjybxx.disruptor.WaitStrategy;
@@ -54,36 +48,36 @@ public abstract class WorkerBuilder {
      * {@link RpcClient}、{@link RpcRegistry}、
      * <p>
      * 如果是Node，则还需要包含：
-     * {@link NodeRpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
-     * {@link PBMethodInfoRegistry}、{@link TimeProvider}
+     * {@link RpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
+     * {@link RpcMethodRegistry}、{@link TimeProvider}
      */
     private Injector injector;
 
     /**
      * Worker上挂载的模块类
-     * 1. 需要能通过{@link #injector}获取实例
-     * 2. 无需包含{@link MainModule}
-     * 3. 添加顺序很重要，Worker将按照添加顺序启动所有的Module
-     * 4. 实现类必须是{@link WorkerModule}的子类（注入的接口则不一定）
+     * 1.需要能通过{@link #injector}获取实例
+     * 2.无需包含{@link MainModule}
+     * 3.添加顺序很重要，Worker将按照添加顺序启动所有的Module
+     * 4.实现类必须是{@link WorkerModule}的子类（注入的接口则不一定）
      */
     private final List<Class<?>> moduleClasses = new ArrayList<>();
     /**
      * Worker上挂载的服务类
      * 1.服务接口的实例必须在容器中存在
-     * 2.
+     * 2.服务会自动导出
      */
     private final List<Class<?>> serviceClasses = new ArrayList<>();
 
     /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
     private WorkerCtx workerCtx;
     /** Builder之间不方便继承 */
-    protected final EventLoopBuilder<RingBufferEvent> delegated;
+    protected final EventLoopBuilder<WorkerEvent> delegated;
 
-    protected WorkerBuilder(EventLoopBuilder<RingBufferEvent> delegated) {
+    protected WorkerBuilder(EventLoopBuilder<WorkerEvent> delegated) {
         this.delegated = Objects.requireNonNull(delegated);
     }
 
-    public EventLoopBuilder<RingBufferEvent> getDelegated() {
+    public EventLoopBuilder<WorkerEvent> getDelegated() {
         return delegated;
     }
 
@@ -205,7 +199,7 @@ public abstract class WorkerBuilder {
                 setThreadFactory(new DefaultThreadFactory("Worker"));
             }
             if (getEventSequencer() == null) {
-                setEventSequencer(RingBufferEventSequencer.newMultiProducer(RingBufferEvent::new)
+                setEventSequencer(RingBufferEventSequencer.newMultiProducer(WorkerEvent::new)
                         .setBufferSize(8 * 1024)
                         .build());
             }
@@ -213,8 +207,8 @@ public abstract class WorkerBuilder {
         }
 
         @Override
-        public DisruptorBuilder<RingBufferEvent> getDelegated() {
-            return (DisruptorBuilder<RingBufferEvent>) super.getDelegated();
+        public DisruptorBuilder<WorkerEvent> getDelegated() {
+            return (DisruptorBuilder<WorkerEvent>) super.getDelegated();
         }
 
         // region
@@ -283,11 +277,11 @@ public abstract class WorkerBuilder {
 
         // region disruptor
 
-        public EventSequencer<? extends RingBufferEvent> getEventSequencer() {
+        public EventSequencer<? extends WorkerEvent> getEventSequencer() {
             return getDelegated().getEventSequencer();
         }
 
-        public DisruptWorkerBuilder setEventSequencer(EventSequencer<? extends RingBufferEvent> eventSequencer) {
+        public DisruptWorkerBuilder setEventSequencer(EventSequencer<? extends WorkerEvent> eventSequencer) {
             getDelegated().setEventSequencer(eventSequencer);
             return this;
         }

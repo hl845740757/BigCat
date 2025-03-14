@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcattools.protobuf.gen;
 
-import cn.wjybxx.bigcattools.protobuf.*;
 import cn.wjybxx.bigcattools.common.GenClassUtils;
+import cn.wjybxx.bigcattools.protobuf.*;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
@@ -32,7 +32,9 @@ import java.io.IOException;
  *
  * @author wjybxx
  * date - 2023/10/12
+ * @deprecated 反射扫描接口即可，还包含非pb的接口
  */
+@Deprecated
 public class MethodInfoExporterGenerator extends AbstractGenerator {
 
     /** 生成的类名 */

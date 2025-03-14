@@ -16,10 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcAddr;
-import cn.wjybxx.bigcat.rpc.RpcSerializer;
-import cn.wjybxx.bigcat.rpc.StaticRpcAddr;
-
 import java.util.Objects;
 
 /**
@@ -29,21 +25,22 @@ import java.util.Objects;
 public abstract class AbstractRpcRouter implements NodeRpcRouter {
 
     protected Node node;
-    protected NodeRpcSupport rpcSupport;
+    protected RpcSupport rpcSupport;
     protected RpcSerializer serializer;
+    protected RpcMethodRegistry methodRegistry;
 
     /** 是否允许本地调用共享对象 */
     protected boolean enableLocalShare = true;
 
     // region 设置
 
+    /** 是否允许本地调用共享对象 */
     public boolean isEnableLocalShare() {
         return enableLocalShare;
     }
 
-    public AbstractRpcRouter setEnableLocalShare(boolean enableLocalShare) {
+    public void setEnableLocalShare(boolean enableLocalShare) {
         this.enableLocalShare = enableLocalShare;
-        return this;
     }
 
     // endregion
@@ -53,8 +50,9 @@ public abstract class AbstractRpcRouter implements NodeRpcRouter {
     @Override
     public void inject(Worker worker) {
         node = (Node) Objects.requireNonNull(worker);
-        rpcSupport = worker.injector().getInstance(NodeRpcSupport.class);
+        rpcSupport = worker.injector().getInstance(RpcSupport.class);
         serializer = worker.injector().getInstance(RpcSerializer.class);
+        methodRegistry = worker.injector().getInstance(RpcMethodRegistry.class);
     }
 
     @Override

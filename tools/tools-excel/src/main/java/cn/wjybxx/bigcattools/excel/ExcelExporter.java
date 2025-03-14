@@ -21,7 +21,10 @@ import cn.wjybxx.bigcattools.common.io.NotTempFileFilter;
 import cn.wjybxx.bigcattools.config.Sheet;
 import cn.wjybxx.bigcattools.config.SheetCodec;
 import cn.wjybxx.dson.text.ObjectStyle;
-import cn.wjybxx.dsoncodec.*;
+import cn.wjybxx.dsoncodec.DsonConverter;
+import cn.wjybxx.dsoncodec.DsonConverterBuilder;
+import cn.wjybxx.dsoncodec.TypeInfo;
+import cn.wjybxx.dsoncodec.TypeMeta;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
@@ -66,10 +69,10 @@ public class ExcelExporter {
     public ExcelExporter(ExcelExporterOptions options, Executor executor) {
         this.options = options;
         this.executor = executor;
-        this.converter = DefaultDsonConverter.newInstance(
-                TypeMetaRegistries.fromMetas(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet")),
-                List.of(new SheetCodec()),
-                ConverterOptions.DEFAULT);
+        this.converter = new DsonConverterBuilder()
+                .addTypeMeta(TypeMeta.of(Sheet.class, ObjectStyle.INDENT, "Sheet"))
+                .addCodec(new SheetCodec())
+                .build();
     }
 
     /**

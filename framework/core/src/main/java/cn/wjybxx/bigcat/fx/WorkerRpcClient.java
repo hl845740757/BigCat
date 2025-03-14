@@ -16,9 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcAddr;
-import cn.wjybxx.bigcat.rpc.RpcClient;
-import cn.wjybxx.bigcat.rpc.RpcMethodSpec;
 import cn.wjybxx.concurrent.IFuture;
 
 import java.util.Objects;
@@ -32,7 +29,7 @@ import java.util.Objects;
 public class WorkerRpcClient implements RpcClient, WorkerModule {
 
     private Worker worker;
-    private NodeRpcSupport rpcSupport;
+    private RpcSupport rpcSupport;
 
     @Override
     public void inject(Worker worker) {
@@ -43,7 +40,7 @@ public class WorkerRpcClient implements RpcClient, WorkerModule {
         } else {
             node = Objects.requireNonNull(worker.parent());
         }
-        this.rpcSupport = node.injector().getInstance(NodeRpcSupport.class);
+        this.rpcSupport = node.injector().getInstance(RpcSupport.class);
     }
 
     @Override

@@ -18,14 +18,15 @@ package cn.wjybxx.bigcat.pb;
 
 import cn.wjybxx.base.ClassScanner;
 import cn.wjybxx.dsoncodec.DsonCodec;
+import cn.wjybxx.dsoncodec.codecs.EnumCodec;
+import cn.wjybxx.dsoncodec.codecs.EnumValueInfo;
 import com.google.protobuf.*;
 
 import javax.annotation.Nonnull;
+import java.lang.Enum;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -81,7 +82,7 @@ public class ProtobufUtils {
      * @param clazz protoBuffer enum
      * @return map
      */
-    public static <T extends ProtocolMessageEnum> Internal.EnumLiteMap<T> findMapper(@Nonnull Class<T> clazz) {
+    public static <T extends ProtocolMessageEnum> Internal.EnumLiteMap<T> findEnumMap(@Nonnull Class<T> clazz) {
         Objects.requireNonNull(clazz);
         try {
             final Method method = clazz.getDeclaredMethod("internalGetValueMap");
@@ -93,25 +94,45 @@ public class ProtobufUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    /** 创建protobuf类型的关联的codec */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static DsonCodec<?> createProtobufCodec(Class<?> clazz) {
         // protoBuf消息
         if (MessageLite.class.isAssignableFrom(clazz)) {
             return createMessageCodec((Class<? extends MessageLite>) clazz);
         }
         if (ProtocolMessageEnum.class.isAssignableFrom(clazz)) {
-            return createMessageEnumCodec((Class<? extends ProtocolMessageEnum>) clazz);
+            return createMessageEnumCodec((Class<? extends Enum>) clazz);
         }
         throw new IllegalArgumentException("Unsupported class " + clazz);
     }
 
+    /** 创建protobuf的MessageCodec */
     public static <T extends MessageLite> MessageCodec<T> createMessageCodec(Class<T> messageClazz) {
-        final var enumLiteMap = findParser(messageClazz);
-        return new MessageCodec<>(messageClazz, enumLiteMap);
+        final Parser<T> parser = findParser(messageClazz);
+        return new MessageCodec<>(messageClazz, parser);
     }
 
-    public static <T extends ProtocolMessageEnum> MessageEnumCodec<T> createMessageEnumCodec(Class<T> messageClazz) {
-        final var enumLiteMap = findMapper(messageClazz);
-        return new MessageEnumCodec<>(messageClazz, enumLiteMap);
+    /** 创建protobuf的枚举codec */
+    public static <T extends Enum<T>> EnumCodec<T> createMessageEnumCodec(Class<T> messageClazz) {
+        T[] constants = messageClazz.getEnumConstants();
+        List<EnumValueInfo<T>> valueInfos = new ArrayList<>(constants.length);
+        for (T constant : constants) {
+            ProtocolMessageEnum pbEnum = (ProtocolMessageEnum) constant;
+            valueInfos.add(new EnumValueInfo<>(constant, pbEnum.getNumber(), constant.toString()));
+        }
+        return new EnumCodec<>(messageClazz, valueInfos);
+    }
+
+    /** 支持将builder和message转bytes */
+    public static byte[] toBytes(Object obj) {
+        Objects.requireNonNull(obj);
+        if (obj instanceof Message message) {
+            return message.toByteArray();
+        }
+        if (obj instanceof Message.Builder builder) {
+            return builder.build().toByteArray();
+        }
+        throw new IllegalArgumentException("invalid type: " + obj.getClass());
     }
 }

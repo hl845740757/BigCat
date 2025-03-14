@@ -16,8 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.concurrent.RingBufferEvent;
-
 /**
  * 主模块是Worker的策略实现，每个Worker都绑定一个主模块。
  * <p>
@@ -56,8 +54,8 @@ public interface MainModule extends WorkerModule {
     /** 在每次主循环结束后调用 */
     void afterMainLoop();
 
-    /** 提交到Worker的事件 */
-    void onEvent(RingBufferEvent rawEvent) throws Exception;
+    /** 提交到Worker的事件 -- 用户的事件建议从20+开始，框架底层有一些事件 */
+    void onEvent(WorkerEvent rawEvent) throws Exception;
 
     // endregion
 

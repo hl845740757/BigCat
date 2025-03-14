@@ -16,8 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.rpc.RpcInterceptor;
-import cn.wjybxx.bigcat.rpc.RpcRegistry;
 import com.google.inject.ConfigurationException;
 
 import javax.annotation.concurrent.NotThreadSafe;

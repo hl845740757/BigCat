@@ -74,10 +74,10 @@ public class AutoFieldsProcessor extends MyAbstractProcessor {
 
     @Override
     protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        final Set<? extends Element> annotatedClassSet = roundEnv.getElementsAnnotatedWith(anno_autoTypeElement);
-        for (Element element : annotatedClassSet) {
+        Set<TypeElement> typeElementSet = AptUtils.selectSourceFile(roundEnv, elementUtils, anno_autoTypeElement);
+        for (TypeElement element : typeElementSet) {
             try {
-                genFieldsClass((TypeElement) element);
+                genFieldsClass(element);
             } catch (Throwable e) {
                 messager.printMessage(Diagnostic.Kind.ERROR, AptUtils.getStackTrace(e), element);
             }

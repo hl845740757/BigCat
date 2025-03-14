@@ -80,7 +80,7 @@ public interface Worker extends EventLoop {
      */
     IntSet services();
 
-    //
+    //-----
 
     /**
      * 返回node设置的数据。
@@ -89,6 +89,20 @@ public interface Worker extends EventLoop {
      */
     @Internal
     WorkerCtx workerCtx();
+
+    /**
+     * 获取下一个事件序号
+     * 注意：在关闭状态下，可能返回-1。
+     */
+    long nextSequence();
+
+    /** 获取事件序号管理的事件 */
+    WorkerEvent getEvent(long sequence);
+
+    /** 发布事件 */
+    void publish(long sequence);
+
+    //-----
 
     /** Node返回自身，Worker返回从属的Node */
     @Nonnull

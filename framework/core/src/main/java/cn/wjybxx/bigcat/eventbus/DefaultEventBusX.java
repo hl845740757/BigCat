@@ -17,10 +17,9 @@
 package cn.wjybxx.bigcat.eventbus;
 
 import cn.wjybxx.base.CollectionUtils;
-import cn.wjybxx.base.pool.DefaultObjectPool;
-import cn.wjybxx.base.pool.ObjectPool;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +35,7 @@ public class DefaultEventBusX implements EventBus {
     /** 现在的实现，开销还是比较高的，多了一层封装，hash和equals的开销变多了 */
     private final Map<ComposeEventKey, EventHandler<?>> handlerMap;
     /** 事件key缓存池 */
-    private final ObjectPool<ComposeEventKey> keyPool = new DefaultObjectPool<>(ComposeEventKey::new, ComposeEventKey::reset, 8);
+    private final ArrayList<ComposeEventKey> keyPool = new ArrayList<>(8);
     /** 递归深度 - 防止死循环 */
     private int recursionDepth;
 
@@ -56,7 +55,7 @@ public class DefaultEventBusX implements EventBus {
 
         recursionDepth++;
         try {
-            final ComposeEventKey key = keyPool.acquire();
+            final ComposeEventKey key = acquireKey();
             if (event instanceof DynamicEvent eventX) {
                 key.sourceKey = eventX.sourceKey();
                 key.masterKey = eventX.masterKey();
@@ -74,7 +73,7 @@ public class DefaultEventBusX implements EventBus {
                 key.masterKey = event.getClass();
                 EventBusUtils.postEvent(handlerMap, event, key);
             }
-            keyPool.release(key);
+            releaseKey(key);
         } finally {
             recursionDepth--;
         }
@@ -118,7 +117,7 @@ public class DefaultEventBusX implements EventBus {
             sourceKey = null;
         }
         // 子键集合处理
-        final ComposeEventKey composeEventKey = keyPool.acquire();
+        final ComposeEventKey composeEventKey = acquireKey();
         if (EventBusUtils.isNotEmptyCollection(childKey)) {
             for (Object c : (Collection<?>) childKey) {
                 composeEventKey.init(sourceKey, masterKey, c);
@@ -128,7 +127,7 @@ public class DefaultEventBusX implements EventBus {
             composeEventKey.init(sourceKey, masterKey, childKey);
             EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
         }
-        keyPool.release(composeEventKey);
+        releaseKey(composeEventKey);
     }
 
     @Override
@@ -143,16 +142,28 @@ public class DefaultEventBusX implements EventBus {
         } else {
             sourceKey = null;
         }
-        final ComposeEventKey composeEventKey = keyPool.acquire();
+        final ComposeEventKey composeEventKey = acquireKey();
         composeEventKey.init(sourceKey, masterKey, childKey);
         boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-        keyPool.release(composeEventKey);
+        releaseKey(composeEventKey);
         return contains;
     }
 
     @Override
     public void clear() {
         handlerMap.clear();
+        keyPool.clear();
+    }
+
+    //------------------
+
+    private ComposeEventKey acquireKey() {
+        return keyPool.isEmpty() ? new ComposeEventKey() : keyPool.removeLast();
+    }
+
+    private void releaseKey(ComposeEventKey key) {
+        key.reset();
+        keyPool.add(key);
     }
 
     private static final class ComposeEventKey {
