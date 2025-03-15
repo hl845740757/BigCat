@@ -49,7 +49,7 @@ public final class RpcMethodInfo<T, R> {
     public final Class<R> resultType;
 
     // pb特殊支持
-    /** 不为null则表示参数为pb类型 */
+    /** 不为null则表示参数为pb类型，不参与equals比较 */
     public final Parser<T> parameterParser;
     /** 不为null则表示结果为pb类型 */
     public final Parser<R> resultParser;
@@ -85,11 +85,10 @@ public final class RpcMethodInfo<T, R> {
         if (o == null || getClass() != o.getClass()) return false;
 
         RpcMethodInfo<?, ?> that = (RpcMethodInfo<?, ?>) o;
-        return serviceId == that.serviceId && methodId == that.methodId
+        return serviceId == that.serviceId
+                && methodId == that.methodId
                 && parameterType == that.parameterType
-                && resultType == that.resultType
-                && parameterParser == that.parameterParser
-                && resultParser == that.resultParser;
+                && resultType == that.resultType;
     }
 
     @Override
@@ -98,8 +97,6 @@ public final class RpcMethodInfo<T, R> {
         result = 31 * result + methodId;
         result = 31 * result + Objects.hashCode(parameterType);
         result = 31 * result + Objects.hashCode(resultType);
-        result = 31 * result + Objects.hashCode(parameterParser);
-        result = 31 * result + Objects.hashCode(resultParser);
         return result;
     }
 

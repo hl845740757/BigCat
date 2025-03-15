@@ -133,27 +133,32 @@ public class FxUtils {
         }
         try {
             Method[] methods = serviceInterface.getMethods();
-            List<Parameter> parameters = new ArrayList<>(2);
             for (Method method : methods) {
                 RpcMethod methodAnno = method.getAnnotation(RpcMethod.class);
                 if (methodAnno == null) {
-                    continue; // 非rpc方法
+                    continue;
                 }
-                // 参数需要排除RpcContext参数
-                parameters.clear();
-                for (Parameter parameter : method.getParameters()) {
-                    if (RpcContext.class.isAssignableFrom(parameter.getType())) {
-                        continue;
+                // 获取RpcContext的类型和方法参数类型
+                ParameterizedType ctxType;
+                Class<?> pType;
+                Parameter[] parameters = method.getParameters();
+                if (parameters.length > 0 && RpcContext.class.isAssignableFrom(parameters[0].getType())) {
+                    ctxType = (ParameterizedType) parameters[0].getParameterizedType();
+                    pType = parameters.length > 1 ? parameters[1].getType() : null;
+                } else {
+                    ctxType = null;
+                    pType = parameters.length > 0 ? parameters[0].getType() : null;
+                }
+                // 返回值类型可能在Future和RpcContext的泛型参数中
+                Class<?> rType;
+                if (ctxType != null) {
+                    rType = (Class<?>) ctxType.getActualTypeArguments()[0];
+                } else {
+                    rType = method.getReturnType();
+                    if (Future.class.isAssignableFrom(rType)) {
+                        ParameterizedType genericReturnType = (ParameterizedType) method.getGenericReturnType();
+                        rType = (Class<?>) genericReturnType.getActualTypeArguments()[0];
                     }
-                    parameters.add(parameter);
-                }
-                Class<?> pType = parameters.isEmpty() ? null : parameters.get(0).getType();
-
-                // 返回值需要处理future
-                Class<?> rType = method.getReturnType();
-                if (Future.class.isAssignableFrom(rType)) {
-                    ParameterizedType genericReturnType = (ParameterizedType) method.getGenericReturnType();
-                    rType = (Class<?>) genericReturnType.getActualTypeArguments()[0];
                 }
                 // 注册方法
                 RpcMethodInfo<?, ?> methodInfo = new RpcMethodInfo<>(

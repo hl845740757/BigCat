@@ -67,8 +67,8 @@ public class RpcServiceExample implements ExtensibleService, WorkerModule {
                 .setString(result);
     }
 
-    /** 测试context的代码生成 */
-    @RpcMethod(methodId = 6, argSharable = true, resultSharable = true, manualReturn = true)
+    /** 测试context的代码生成 -- 参数和结果都不设置为可共享的，测试反序列化 */
+    @RpcMethod(methodId = 6, manualReturn = true)
     public void contextHello(RpcContext<Response> rpcContext, Request request) {
         rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage(Request.ofString("context -- before")));
         {
