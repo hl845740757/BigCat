@@ -40,6 +40,12 @@ public final class RpcMethodSpec<V> {
         this(serviceId, methodId, parameter, false);
     }
 
+    /**
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @param parameter 方法参数
+     * @param sharable  方法参数是否可共享
+     */
     @StableName(comment = "生成的代码调用")
     public RpcMethodSpec(int serviceId, int methodId, Object parameter, boolean sharable) {
         this.serviceId = serviceId;

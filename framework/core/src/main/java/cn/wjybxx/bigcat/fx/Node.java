@@ -36,9 +36,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Node是特殊的Worker，也支持挂载模块和服务，它挂载的模块称之为路由模块，它挂载的服务称之为路由服务。
  * Node是Worker的管理者，也是Worker在网络中的门面。
  * <p>
- * 1. 同Worker一样，Node也通过挂载模块（Module）扩展，
- * 2. Node的业务应当保持简单，勿在Node上挂在非IO模块。
- * 3. 为保持架构的简单性，我们不支持Node在运行时添加Worker.
+ * 1.同Worker一样，Node也通过挂载模块（Module）扩展，
+ * 2.Node的业务应当保持简单，勿在Node上挂在非IO模块。
+ * 3.为保持架构的简单性，我们不支持Node在运行时添加Worker.
+ * 4.Node不可以同步调用Worker上的服务，否则会导致死锁（超时）。
  *
  * <h3>服务导出</h3>
  * 1. 当暴露服务到网络时，只能暴露服务支持的并发数，而不能暴露服务关联的Worker。

@@ -434,8 +434,8 @@ public final class RpcSupport implements WorkerModule {
         }
         // 执行调用
         RpcContextImpl<T> context = new RpcContextImpl<>(request, this);
-        if (!RpcInvokeType.isCall(request.getInvokeType())) {
-            // Oneway - 不需要结果
+        if (RpcInvokeType.isMessage(request.getInvokeType())) {
+            // 单向消息 - 不需要结果
             try {
                 proxy.invoke(context, request.getData());
             } catch (Throwable e) {

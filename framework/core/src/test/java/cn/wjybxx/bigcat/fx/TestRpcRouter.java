@@ -62,12 +62,12 @@ public class TestRpcRouter extends AbstractRpcRouter {
         if (protocol.isBytes()) {
             if (protocol instanceof RpcRequest request) {
                 RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
-                byte[] bytesParameters = request.getBytes();
-                request.setData(serializer.read(bytesParameters, methodInfo.parameterType));
+                Object parameter = serializer.read(request.getBytes(), methodInfo.parameterType);
+                request.setData(parameter);
             } else if (protocol instanceof RpcResponse response) {
                 RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
-                byte[] bytesResults = response.getBytes();
-                response.setData(serializer.read(bytesResults, methodInfo.resultType));
+                Object result = serializer.read(response.getBytes(), methodInfo.resultType);
+                response.setData(result);
             }
         }
         protocolQueue.offer(protocol);

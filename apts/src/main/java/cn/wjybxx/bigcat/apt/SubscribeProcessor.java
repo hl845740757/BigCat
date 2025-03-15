@@ -46,7 +46,7 @@ public class SubscribeProcessor extends MyAbstractProcessor {
 
     private static final String CNAME_SUBSCRIBE = "cn.wjybxx.bigcat.eventbus.Subscribe";
     private static final String CNAME_GENERIC_EVENT = "cn.wjybxx.bigcat.eventbus.GenericEvent";
-    private static final String CNAME_HANDLER_REGISTRY = "cn.wjybxx.bigcat.eventbus.EventHandlerRegistry";
+    private static final String CNAME_HANDLER_REGISTRY = "cn.wjybxx.bigcat.eventbus.EventBus";
 
     private static final String PNAME_CHILD_EVENTS = "childEvents";
     private static final String PNAME_MASTER_DECLARED = "masterDeclared";

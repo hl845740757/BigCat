@@ -24,6 +24,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import javax.annotation.Nonnull;
 
 /**
+ * 子类可重写{@link #setProxyData(int, int, Object)}提前解析数据
+ *
  * @author wjybxx
  * date 2023/4/1
  */

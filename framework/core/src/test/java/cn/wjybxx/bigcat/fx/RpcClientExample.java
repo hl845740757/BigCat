@@ -19,7 +19,6 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.base.MathCommon;
 import cn.wjybxx.base.time.Regulator;
 import cn.wjybxx.base.time.TimeHelper;
-import cn.wjybxx.bigcat.TimeModule;
 import com.google.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;

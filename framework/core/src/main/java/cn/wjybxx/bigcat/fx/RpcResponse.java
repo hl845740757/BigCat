@@ -19,7 +19,6 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ex.ErrorCodeException;
 import cn.wjybxx.concurrent.FutureUtils;
-import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Nonnull;
@@ -34,7 +33,6 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/1
  */
-@DsonSerializable
 public final class RpcResponse extends RpcProtocol {
 
     /** 请求的唯一id */

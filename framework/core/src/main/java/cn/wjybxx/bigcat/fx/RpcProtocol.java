@@ -21,7 +21,7 @@ import java.util.HexFormat;
 /**
  * Rpc协议的抽象基类
  * 1.该对象通常不序列化，而是手工编码为对应网络包
- * 2.
+ * 2.{@link #data}为null时尽量还是特殊处理，空字节数组未必兼容
  *
  * @author wjybxx
  * date - 2023/9/11

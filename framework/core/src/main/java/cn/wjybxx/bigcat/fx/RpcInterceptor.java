@@ -28,6 +28,7 @@ public interface RpcInterceptor {
      * 测试请求是否可以派发 -- 通常检查连接的有效性和会话状态。
      * 1.走到这里的时候，方法参数已反序列化
      * 2.该方法在Worker线程执行（即主线程执行）
+     * 3.信息应该来源于方法的切面数据{@link RpcRegistry#getProxyData(int, int)}
      *
      * @return 错误码，返回0表示可以执行，其它则表示不可以执行
      */

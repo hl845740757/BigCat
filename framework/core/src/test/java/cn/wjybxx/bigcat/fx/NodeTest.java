@@ -18,7 +18,6 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.bigcat.TimeModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;

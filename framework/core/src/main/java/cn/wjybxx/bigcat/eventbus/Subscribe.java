@@ -25,7 +25,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 该注解用于订阅一个事件，注解处理器会为其生成注册到{@link EventHandlerRegistry}的辅助代码。
+ * 该注解用于订阅一个事件，注解处理器会为其生成注册到{@link EventBus}的辅助代码。
  * 生成的代理类为 XXXBusRegister。
  * <h3>约定</h3>
  * 1. 使用该注解的方法必须有且仅有一个参数，返回值无要求。

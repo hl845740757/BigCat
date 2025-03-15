@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 wjybxx(845740757@qq.com)
+ * Copyright 2023-2025 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat;
+package cn.wjybxx.bigcat.util;
 
 
 import cn.wjybxx.base.EnumLite;

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 默认的EventBus，不支持{@link DynamicEvent#sourceKey()}
+ * 默认的EventBus
  *
  * @author wjybxx
  * date 2023/4/6

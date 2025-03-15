@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 wjybxx(845740757@qq.com)
+ * Copyright 2023-2025 wjybxx(845740757@qq.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package cn.wjybxx.bigcat;
+package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.VisibleForTesting;
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.bigcat.fx.MainModule;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * 时间模块
- * 1. 系统的启动帧我们定为第0帧。
- * 2. 通常应该由{@link MainModule}来启动和更新时间模块。
- * 3. 每个线程一个，多线程共享是不必要也不安全的。
+ * 1.系统的启动帧我们定为第0帧。
+ * 2.通常应该由{@link MainModule}来启动和更新时间模块。
+ * 3.线程一个，多线程共享是不必要也不安全的。
  *
  * @author wjybxx
  * date - 2023/10/4

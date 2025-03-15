@@ -18,13 +18,13 @@ module wjybxx.bigcat.core {
     requires transitive wjybxx.dson.core;
     requires transitive wjybxx.dson.codec;
 
-    exports cn.wjybxx.bigcat;
+//    exports cn.wjybxx.bigcat;
     exports cn.wjybxx.bigcat.annotation;
     exports cn.wjybxx.bigcat.eventbus;
     exports cn.wjybxx.bigcat.fx;
     exports cn.wjybxx.bigcat.util;
 
-    opens cn.wjybxx.bigcat;
+//    opens cn.wjybxx.bigcat;
     opens cn.wjybxx.bigcat.annotation;
     opens cn.wjybxx.bigcat.eventbus;
     opens cn.wjybxx.bigcat.fx;
