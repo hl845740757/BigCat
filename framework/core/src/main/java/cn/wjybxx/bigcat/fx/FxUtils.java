@@ -18,8 +18,8 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ClassScanner;
 import cn.wjybxx.base.CollectionUtils;
+import cn.wjybxx.concurrent.EventLoopModule;
 import com.google.inject.Injector;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -52,41 +52,20 @@ public class FxUtils {
     /** node发到worker的rpc结果 - 设置Promise，包含Response, Promise */
     public static final int TYPE_NODE_WORKER_RESPONSE = 6;
 
-    /** 筛选需要每帧Update的Module */
-    public static List<WorkerModule> filterUpdatableModules(List<WorkerModule> workerModules) {
-        final List<WorkerModule> result = new ArrayList<>(workerModules.size());
-        for (WorkerModule workerModule : workerModules) {
-            if (workerModule instanceof MainModule || isOverrideUpdate(workerModule)) {
-                result.add(workerModule);
-            }
-        }
-        return result;
-    }
-
-    public static boolean isOverrideUpdate(WorkerModule workerModule) {
-        try {
-            Method method = workerModule.getClass().getMethod("update", ArrayUtils.EMPTY_CLASS_ARRAY);
-            return !method.getDeclaringClass().isInterface();
-        } catch (NoSuchMethodException ignore) {
-            return false;
-        }
-    }
-
-    /** 获取所有的模块 */
-    public static List<WorkerModule> createModules(WorkerBuilder builder) {
+    /** 创建所有的模块 */
+    public static void createModules(WorkerBuilder builder) {
         Injector injector = builder.getInjector();
-        MainModule mainModule = injector.getInstance(MainModule.class);
-
-        List<WorkerModule> moduleList = new ArrayList<>(builder.getModuleClasses().size() + 1);
-        moduleList.add(mainModule);
+        List<EventLoopModule> moduleList = new ArrayList<>(builder.getModuleClasses().size());
         for (Class<?> moduleClass : builder.getModuleClasses()) {
-            WorkerModule workerModule = (WorkerModule) injector.getInstance(moduleClass);
+            EventLoopModule workerModule = (EventLoopModule) injector.getInstance(moduleClass);
             if (CollectionUtils.containsRef(moduleList, workerModule)) {
                 throw new IllegalArgumentException("Duplicate Module: " + moduleClass);
             }
             moduleList.add(workerModule);
         }
-        return moduleList;
+        for (EventLoopModule module : moduleList) {
+            builder.getDelegated().addModule(module);
+        }
     }
 
     /** 导出Rpc服务 */

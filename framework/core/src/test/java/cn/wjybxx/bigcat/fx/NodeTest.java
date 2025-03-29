@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ThreadUtils;
 import cn.wjybxx.base.time.TimeProvider;
+import cn.wjybxx.concurrent.IEventLoopAgent;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -100,7 +101,7 @@ public class NodeTest {
                 // 获取未显式绑定的实例时抛出异常，避免获取到错误的实例；一定要声明，否则极易出bug
                 binder().requireExplicitBindings();
 
-                bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
+                bind(IEventLoopAgent.class).to(DefaultMainModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
                 bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
                 bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);
@@ -125,7 +126,7 @@ public class NodeTest {
                 super.configure();
                 binder().requireExplicitBindings();
 
-                bind(MainModule.class).to(TestMainModule.class).in(Singleton.class);
+                bind(IEventLoopAgent.class).to(DefaultMainModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
                 bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
                 bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);

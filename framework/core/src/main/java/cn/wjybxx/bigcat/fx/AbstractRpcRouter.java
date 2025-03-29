@@ -16,20 +16,20 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import java.util.Objects;
+import cn.wjybxx.concurrent.EventLoopModule;
 
 /**
  * @author wjybxx
  * date - 2023/12/22
  */
-public abstract class AbstractRpcRouter implements NodeRpcRouter {
+public abstract class AbstractRpcRouter extends EventLoopModule implements NodeRpcRouter {
 
     protected Node node;
     protected RpcSupport rpcSupport;
     protected RpcSerializer serializer;
     protected RpcMethodRegistry methodRegistry;
 
-    /** 是否允许本地调用共享对象 */
+    /** 是否允许本地调用共享对象 - 可禁用{@link RpcProtocol#isSharable()} */
     protected boolean enableLocalShare = true;
 
     // region 设置
@@ -48,11 +48,11 @@ public abstract class AbstractRpcRouter implements NodeRpcRouter {
     // region core
 
     @Override
-    public void inject(Worker worker) {
-        node = (Node) Objects.requireNonNull(worker);
-        rpcSupport = worker.injector().getInstance(RpcSupport.class);
-        serializer = worker.injector().getInstance(RpcSerializer.class);
-        methodRegistry = worker.injector().getInstance(RpcMethodRegistry.class);
+    public void resolveDependence() {
+        node = (Node) getEntity();
+        rpcSupport = node.injector().getInstance(RpcSupport.class);
+        serializer = node.injector().getInstance(RpcSerializer.class);
+        methodRegistry = node.injector().getInstance(RpcMethodRegistry.class);
     }
 
     @Override

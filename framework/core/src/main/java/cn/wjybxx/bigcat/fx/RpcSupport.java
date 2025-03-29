@@ -48,7 +48,7 @@ import java.util.function.Consumer;
  * date - 2023/10/28
  */
 @SuppressWarnings("unused")
-public final class RpcSupport implements WorkerModule {
+public final class RpcSupport extends EventLoopModule implements IAgentEventHandler<WorkerEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcSupport.class);
 
@@ -124,11 +124,8 @@ public final class RpcSupport implements WorkerModule {
     // region 流程
 
     @Override
-    public void inject(Worker worker) {
-        if (!(worker instanceof Node node)) {
-            throw new IllegalStateException();
-        }
-        this.node = node;
+    public void resolveDependence() {
+        this.node = (Node) getEntity();
         this.selfAddr = node.nodeAddr();
         this.timeProvider = node.injector().getInstance(TimeProvider.class);
         this.serializer = node.injector().getInstance(RpcSerializer.class);
@@ -142,6 +139,7 @@ public final class RpcSupport implements WorkerModule {
             conId = Math.abs(MathCommon.SHARED_RANDOM.nextLong());
         }
         makeImmutable();
+        subscribeEvents();
     }
 
     @Override
@@ -167,6 +165,34 @@ public final class RpcSupport implements WorkerModule {
     public void stop() {
         requestStubMap.clear();
         watcherMap.clear();
+    }
+
+    private void subscribeEvents() {
+        // net到node的请求和响应
+        node.subscribe(FxUtils.TYPE_NET_NODE_REQUEST, this);
+        node.subscribe(FxUtils.TYPE_NET_NODE_RESPONSE, this);
+        // worker到node的请求和响应
+        node.subscribe(FxUtils.TYPE_WORKER_NODE_REQUEST, this);
+        node.subscribe(FxUtils.TYPE_WORKER_NODE_RESPONSE, this);
+    }
+
+    @Override
+    public void onEvent(long sequence, WorkerEvent event) throws Exception {
+        switch (event.getType()) {
+            case FxUtils.TYPE_NET_NODE_REQUEST -> {
+                onRcvRequestStep2((RpcRequest) event.obj1);
+            }
+            case FxUtils.TYPE_NET_NODE_RESPONSE -> {
+                onRcvResponseStep2((RpcResponse) event.obj1);
+            }
+            case FxUtils.TYPE_WORKER_NODE_REQUEST -> {
+                sendRequestStep2((Worker) event.obj1, (RpcRequest) event.obj2, (IPromise<?>) event.obj3);
+            }
+            case FxUtils.TYPE_WORKER_NODE_RESPONSE -> {
+                sendResponseStep2((RpcResponse) event.obj1);
+            }
+            default -> throw new AssertionError();
+        }
     }
 
     // endregion
@@ -536,7 +562,7 @@ public final class RpcSupport implements WorkerModule {
     }
 
     /** 当前在Node线程 */
-    void onRcvResponseStep2(RpcResponse response) {
+    private void onRcvResponseStep2(RpcResponse response) {
         RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
         if (methodInfo == null) {
             return;
@@ -741,8 +767,13 @@ public final class RpcSupport implements WorkerModule {
         @Override
         public void sendResult(V result) {
             RpcResponse response = new RpcResponse(request);
-            response.setSharable(isSharable());
-            response.setSuccess(result);
+            if (result == null) {
+                response.setSharable(true);
+                response.setSuccess(null);
+            } else {
+                response.setSharable(isSharable());
+                response.setSuccess(result);
+            }
             rpcSupport.sendResponse(response);
         }
 

@@ -18,7 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 
 import cn.wjybxx.base.ex.ErrorCodeException;
-import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.ExecutorUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.annotation.Nonnull;
@@ -83,7 +83,7 @@ public final class RpcResponse extends RpcProtocol {
 
     /** 设置为失败，会自动标记为可共享 */
     public void setFailed(Throwable ex) {
-        ex = FutureUtils.unwrapCompletionException(ex);
+        ex = ExecutorUtils.unwrapCompletionException(ex);
         if (ex instanceof ErrorCodeException codeException) {
             setFailed(codeException.getErrorCode(), codeException.getMessage());
         } else if (ex instanceof RpcException rpcException) {

@@ -21,7 +21,7 @@ import cn.wjybxx.base.Constant;
 import cn.wjybxx.base.ObjectUtils;
 import cn.wjybxx.base.Preconditions;
 import cn.wjybxx.base.time.StopWatch;
-import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.ExecutorUtils;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import org.slf4j.Logger;
@@ -203,7 +203,7 @@ public class FileReloadMgr {
             logger.info("loadAll completed, fileCount {}, stepInfo {}", metadataMap.size(), stopWatch);
         } catch (Exception e) {
             logger.info("loadAll failure, fileCount {}, stepInfo {}", metadataMap.size(), stopWatch);
-            throw ReloadException.wrap(FutureUtils.unwrapCompletionException(e));
+            throw ReloadException.wrap(ExecutorUtils.unwrapCompletionException(e));
         }
     }
 
@@ -241,7 +241,7 @@ public class FileReloadMgr {
             logger.info("reloadScope completed, fileNum {}, stepInfo {}", metadataMap.size(), stopWatch);
         } catch (Exception e) {
             logger.info("reloadScope failure, fileNum {}, stepInfo {}", metadataMap.size(), stopWatch);
-            throw new ReloadException(FutureUtils.unwrapCompletionException(e));
+            throw new ReloadException(ExecutorUtils.unwrapCompletionException(e));
         }
     }
 

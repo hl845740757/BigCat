@@ -26,10 +26,10 @@ import cn.wjybxx.base.ConstantPool;
  */
 public class FilePathPool {
 
-    private final ConstantPool<FilePath<?>> POOL;
+    private final ConstantPool<FilePath<?>> pool;
 
     protected FilePathPool(ConstantPool<FilePath<?>> pool) {
-        POOL = pool;
+        this.pool = pool;
     }
 
     public static FilePathPool newPool() {
@@ -38,38 +38,38 @@ public class FilePathPool {
 
     @SuppressWarnings("unchecked")
     public <T> FilePath<T> newPath(String path) {
-        return (FilePath<T>) POOL.newInstance(FilePath.newBuilder(path));
+        return (FilePath<T>) pool.newInstance(FilePath.newBuilder(path));
     }
 
     @SuppressWarnings("unchecked")
     public <T> FilePath<T> newVirtualPath(String path) {
-        return (FilePath<T>) POOL.newInstance(FilePath.newBuilder(path).setVirtual(true));
+        return (FilePath<T>) pool.newInstance(FilePath.newBuilder(path).setVirtual(true));
     }
 
     @SuppressWarnings("unchecked")
-    public <T> FilePath<T> newPath(FilePath.Builder builder) {
-        return (FilePath<T>) POOL.newInstance(builder);
+    public <T> FilePath<T> newPath(FilePath.Builder<T> builder) {
+        return (FilePath<T>) pool.newInstance(builder);
     }
 
     /**
      * @return 如果存在对应的文件名常量，则返回true
      */
     public boolean exists(String path) {
-        return POOL.exists(path);
+        return pool.exists(path);
     }
 
     /**
      * @return 返回常量名关联的常量，若不存在则返回null。
      */
     public FilePath<?> get(String path) {
-        return POOL.get(path);
+        return pool.get(path);
     }
 
     /**
      * @throws IllegalArgumentException 如果不存在对应的常量
      */
     public FilePath<?> getOrThrow(String path) {
-        return POOL.getOrThrow(path);
+        return pool.getOrThrow(path);
     }
 
 }

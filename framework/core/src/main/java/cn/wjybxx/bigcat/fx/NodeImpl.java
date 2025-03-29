@@ -32,12 +32,10 @@ import java.util.concurrent.TimeUnit;
  * @author wjybxx
  * date - 2023/10/4
  */
-public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
+public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
 
     private final String workerId;
     private final Injector injector;
-    private final MainModule mainModule;
-    private final List<WorkerModule> moduleList;
     private final WorkerAddr nodeAddr;
 
     private final Worker[] children;
@@ -50,8 +48,6 @@ public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
 
     public NodeImpl(NodeBuilder.DefaultNodeBuilder builder) {
         super(decorate(builder));
-        Agent agent = (Agent) getAgent();
-        agent.node = this;
 
         this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
@@ -59,11 +55,6 @@ public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
         if (nodeAddr.hasWorkerId()) {
             throw new IllegalArgumentException("nodeAddr.workerId must be null, addr: " + nodeAddr);
         }
-
-        // 初始化Module列表
-        List<WorkerModule> moduleList = FxUtils.createModules(builder);
-        this.mainModule = (MainModule) moduleList.get(0);
-        this.moduleList = List.copyOf(moduleList);
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
         FxUtils.exportMethodInfo(builder);
@@ -86,6 +77,7 @@ public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
             Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, i, workerCtx));
             if (eventLoop.parent() != this) throw new IllegalStateException("the parent of worker is illegal");
             if (eventLoop.workerCtx() != workerCtx) throw new IllegalStateException("the ctx of worker is illegal");
+            if (builder.getManualClose() != null) workerCtx.manualClose = builder.getManualClose();
             children[i] = eventLoop;
         }
         readonlyChildren = List.of(children);
@@ -93,8 +85,12 @@ public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
     }
 
     private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(NodeBuilder.DefaultNodeBuilder builder) {
-        return builder.getDelegated()
-                .setAgent(new Agent());
+        FxUtils.createModules(builder);
+        if (builder.getAgent() == null) {
+            @SuppressWarnings("unchecked") IEventLoopAgent<WorkerEvent> agent = builder.getInjector().getInstance(IEventLoopAgent.class);
+            builder.setAgent(agent);
+        }
+        return builder.getDelegated();
     }
 
     private void setServiceIdSet(IntSet serviceIdSet) {
@@ -117,16 +113,6 @@ public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
     @Override
     public Injector injector() {
         return injector;
-    }
-
-    @Override
-    public MainModule mainModule() {
-        return mainModule;
-    }
-
-    @Override
-    public List<WorkerModule> modules() {
-        return moduleList; // 是不可变List
     }
 
     @Override
@@ -205,192 +191,102 @@ public class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
     public Node select(int key) {
         return this;
     }
-    //
+    // region 生命流程
 
-    private static class Agent implements EventLoopAgent<WorkerEvent> {
+    @Override
+    protected void onStart() throws Throwable {
+        Worker.CURRENT_WORKER.set(this);
+        Node.CURRENT_NODES.add(this);
+        initWorkerCtx();
 
-        NodeImpl node;
-        MainModule mainModule; // 缓存
-        RpcSupport rpcSupport;
-        List<WorkerModule> updatableModuleList = new ArrayList<>();
-        List<WorkerModule> startedModuleList = new ArrayList<>();
-        long loopFrame;
+        agent.beforeEventLoopStart();
+        startModules(); // 先启动自己的模块和服务，Worker可能需要使用
+        exportServices(List.of());
 
-        public Agent() {
-        }
-
-        @Override
-        public void inject(EventLoop eventLoop) {
-
-        }
-
-        @Override
-        public void onStart() throws Exception {
-            Worker.CURRENT_WORKER.set(node);
-            Node.CURRENT_NODES.add(node);
-            mainModule = node.mainModule;
-            rpcSupport = node.injector.getInstance(RpcSupport.class);
-            updatableModuleList.addAll(FxUtils.filterUpdatableModules(node.moduleList));
-
-            initWorkerCtx();
-            resolveDependence();
-
-            // 需要先启动Node的模块和服务，Worker可能会在启动时使用
-            mainModule.beforeWorkerStart();
-            startModules();
-            exportServices(List.of()); // 此时先导出自己的服务，Worker可能需要使用
-            startWorkers();
-            exportServices(node.readonlyChildren);
-            mainModule.afterWorkerStart();
-        }
-
-        private void initWorkerCtx() {
-            node.workerCtx.init(node);
-            for (Worker worker : node.children) {
-                worker.workerCtx().init(worker);
-            }
-        }
-
-        private void resolveDependence() {
-            for (WorkerModule workerModule : node.moduleList) {
-                workerModule.inject(node);
-            }
-            mainModule.resolveDependence();
-        }
-
-        private void exportServices(List<Worker> workers) {
-            IntSet nodeServiceIdSet = node.injector.getInstance(RpcRegistry.class).export();
-            node.setServiceIdSet(nodeServiceIdSet);
-
-            Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();
-            // Node自身的服务
-            nodeServiceIdSet.forEach((int serviceId) -> {
-                serviceInfoMap.put(serviceId, new ServiceInfo(serviceId, List.of(node)));
-            });
-            // 添加Worker上的服务 -- Worker不可包含Node同名服务
-            for (Worker worker : workers) {
-                worker.services().forEach((int serviceId) -> {
-                    if (nodeServiceIdSet.contains(serviceId)) {
-                        throw new IllegalArgumentException("The service in the worker conflicts with the service in the node, id " + serviceId);
-                    }
-                    serviceInfoMap.computeIfAbsent(serviceId, k -> new ServiceInfo(k, new ArrayList<>(2)))
-                            .addWorker(worker);
-                });
-            }
-            node.setServiceInfoMap(serviceInfoMap);
-        }
-
-        private void startModules() {
-            // 顺序启动
-            for (WorkerModule workerModule : node.moduleList) {
-                workerModule.start();
-                startedModuleList.add(workerModule);
-            }
-        }
-
-        private void stopModules() {
-            // 逆序停止
-            List<WorkerModule> startedModuleList = this.startedModuleList;
-            for (int i = startedModuleList.size() - 1; i >= 0; i--) {
-                WorkerModule workerModule = startedModuleList.get(i);
-                try {
-                    workerModule.stop();
-                } catch (Throwable e) {
-                    logCause(e);
-                }
-            }
-        }
-
-        private void startWorkers() {
-            FutureCombiner combiner = FutureUtils.newCombiner();
-            for (Worker child : node.children) {
-                combiner.add(child.start());
-            }
-            combiner.selectAll().join();
-        }
-
-        private void stopWorkers() {
-            FutureCombiner combiner = FutureUtils.newCombiner();
-            Worker[] children = node.children;
-            for (Worker child : children) {
-                combiner.add(child.terminationFuture());
-            }
-            IPromise<Object> aggregateFuture = combiner.selectAll(true);
-
-            // 逆序关闭 -- 可能存在时序依赖
-            for (int i = children.length - 1; i >= 0; i--) {
-                Worker child = children[i];
-                child.shutdown();
-            }
-            if (aggregateFuture.awaitUninterruptibly(1, TimeUnit.MINUTES)) {
-                return;
-            }
-            // 进入快速关闭阶段
-            for (int i = children.length - 1; i >= 0; i--) {
-                Worker child = children[i];
-                child.shutdownNow();
-            }
-            aggregateFuture.join();
-        }
-
-        @Override
-        public void onEvent(long sequence, WorkerEvent event) throws Exception {
-            switch (event.getType()) {
-                case FxUtils.TYPE_NET_NODE_REQUEST -> {
-                    rpcSupport.onRcvRequestStep2((RpcRequest) event.obj1);
-                }
-                case FxUtils.TYPE_NET_NODE_RESPONSE -> {
-                    rpcSupport.onRcvResponseStep2((RpcResponse) event.obj1);
-                }
-                case FxUtils.TYPE_WORKER_NODE_REQUEST -> {
-                    rpcSupport.sendRequestStep2((Worker) event.obj1, (RpcRequest) event.obj2, (IPromise<?>) event.obj3);
-                }
-                case FxUtils.TYPE_WORKER_NODE_RESPONSE -> {
-                    rpcSupport.sendResponseStep2((RpcResponse) event.obj1);
-                }
-                default -> mainModule.onEvent(event);
-            }
-        }
-
-        @Override
-        public void update() throws Exception {
-            // 允许控制补帧
-            while (mainModule.checkMainLoop(loopFrame)) {
-                mainModule.beforeMainLoop();
-                List<WorkerModule> updatableModuleList = this.updatableModuleList;
-                for (int i = 0; i < updatableModuleList.size(); i++) {
-                    WorkerModule workerModule = updatableModuleList.get(i);
-                    try {
-                        workerModule.update();
-                    } catch (Throwable e) {
-                        logCause(e);
-                    }
-                }
-                mainModule.afterMainLoop();
-            }
-            loopFrame++;
-        }
-
-        @Override
-        public void onShutdown() throws Exception {
-            try {
-                mainModule.beforeWorkerShutdown();
-            } catch (Throwable e) {
-                logCause(e);
-            }
-            try {
-                stopWorkers();
-                stopModules();
-                mainModule.afterWorkerShutdown();
-            } finally {
-                Worker.CURRENT_WORKER.remove();
-                Node.CURRENT_NODES.remove(node);
-                mainModule = null;
-                updatableModuleList.clear();
-                startedModuleList.clear();
-            }
-        }
-
+        startWorkers();
+        exportServices(readonlyChildren); // 再重新导出所有的服务
+        agent.afterEventLoopStart();
     }
 
+    @Override
+    protected void onShutdown() throws Throwable {
+        agent.beforeEventLoopShutdown();
+        try {
+            stopWorkers(); // 先停止worker，再停止自己的模块和服务
+
+            stopModules();
+            destroyModules();
+            setServiceIdSet(IntSets.emptySet());
+            setServiceInfoMap(Int2ObjectMaps.emptyMap());
+
+            agent.afterEventLoopShutdown();
+        } finally {
+            Worker.CURRENT_WORKER.remove();
+            Node.CURRENT_NODES.remove(this);
+        }
+    }
+
+    private void initWorkerCtx() {
+        workerCtx.init(this, false);
+        for (Worker worker : children) {
+            worker.workerCtx().init(worker, worker.state() == EventLoopState.UNSTARTED);
+        }
+    }
+
+    private void exportServices(List<Worker> workers) {
+        IntSet nodeServiceIdSet = injector.getInstance(RpcRegistry.class).export();
+        setServiceIdSet(nodeServiceIdSet);
+
+        Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();
+        // Node自身的服务
+        nodeServiceIdSet.forEach((int serviceId) -> {
+            serviceInfoMap.put(serviceId, new ServiceInfo(serviceId, List.of(this)));
+        });
+        // 添加Worker上的服务 -- Worker不可包含Node同名服务
+        for (Worker worker : workers) {
+            worker.services().forEach((int serviceId) -> {
+                if (nodeServiceIdSet.contains(serviceId)) {
+                    throw new IllegalArgumentException("The service in the worker conflicts with the service in the node, id " + serviceId);
+                }
+                serviceInfoMap.computeIfAbsent(serviceId, k -> new ServiceInfo(k, new ArrayList<>(2)))
+                        .addWorker(worker);
+            });
+        }
+        setServiceInfoMap(serviceInfoMap);
+    }
+
+    private void startWorkers() {
+        FutureCombiner combiner = ExecutorUtils.newCombiner();
+        for (Worker child : children) {
+            combiner.add(child.start());
+        }
+        combiner.selectAll().join();
+    }
+
+    private void stopWorkers() {
+        FutureCombiner combiner = ExecutorUtils.newCombiner();
+        for (Worker child : children) {
+            if (child.workerCtx().isManualClose()) continue;
+            combiner.add(child.terminationFuture());
+        }
+        IPromise<Object> aggregateFuture = combiner.selectAll(true);
+        // 逆序关闭 -- 可能存在时序依赖
+        for (int i = children.length - 1; i >= 0; i--) {
+            Worker child = children[i];
+            if (child.workerCtx().isManualClose()) continue;
+            child.shutdown();
+        }
+        if (aggregateFuture.awaitUninterruptibly(1, TimeUnit.MINUTES)) {
+            return;
+        }
+        // 进入快速关闭阶段
+        for (int i = children.length - 1; i >= 0; i--) {
+            Worker child = children[i];
+            if (child.workerCtx().isManualClose()) continue;
+            child.shutdownNow();
+        }
+        aggregateFuture.join();
+    }
+
+    // endregion
 }

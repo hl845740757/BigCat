@@ -17,11 +17,8 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.Preconditions;
-import cn.wjybxx.concurrent.DefaultThreadFactory;
-import cn.wjybxx.concurrent.EventLoopBuilder;
+import cn.wjybxx.concurrent.*;
 import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
-import cn.wjybxx.concurrent.EventLoopChooserFactory;
-import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.disruptor.EventSequencer;
 import cn.wjybxx.disruptor.MpUnboundedEventSequencer;
 import cn.wjybxx.disruptor.TimeoutSleepingWaitStrategy;
@@ -77,8 +74,20 @@ public abstract class NodeBuilder extends WorkerBuilder {
     }
 
     @Override
-    public WorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
+    public WorkerBuilder setAgent(IEventLoopAgent<WorkerEvent> agent) {
+        super.setAgent(agent);
+        return this;
+    }
+
+    @Override
+    public NodeBuilder setWorkerCtx(WorkerCtx workerCtx) {
         super.setWorkerCtx(workerCtx);
+        return this;
+    }
+
+    @Override
+    public NodeBuilder setManualClose(Boolean manualClose) {
+        super.setManualClose(manualClose);
         return this;
     }
 
@@ -236,15 +245,6 @@ public abstract class NodeBuilder extends WorkerBuilder {
 
         public DefaultNodeBuilder setWaitStrategy(WaitStrategy waitStrategy) {
             getDelegated().setWaitStrategy(waitStrategy);
-            return this;
-        }
-
-        public boolean isCleanBufferOnExit() {
-            return getDelegated().isCleanBufferOnExit();
-        }
-
-        public DefaultNodeBuilder setCleanBufferOnExit(boolean cleanBufferOnExit) {
-            getDelegated().setCleanBufferOnExit(cleanBufferOnExit);
             return this;
         }
 

@@ -34,11 +34,20 @@ public final class WorkerCtx {
 
     RpcRegistry rpcRegistry;
     RpcInterceptor rpcInterceptor;
+    Boolean manualClose;
 
     public WorkerCtx() {
     }
 
-    void init(Worker worker) {
+    boolean isManualClose() {
+        return manualClose != null && manualClose;
+    }
+
+    void init(Worker worker, boolean unstarted) {
+        // 如果未设置手动关闭，则在Worker已启动的情况下默认手动关闭
+        if (manualClose == null) {
+            manualClose = !unstarted;
+        }
 //        assert worker.inEventLoop(); // worker尚未启动
         this.rpcRegistry = worker.injector().getInstance(RpcRegistry.class);
         try {

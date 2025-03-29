@@ -18,10 +18,8 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.Preconditions;
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.concurrent.DefaultThreadFactory;
-import cn.wjybxx.concurrent.EventLoopBuilder;
+import cn.wjybxx.concurrent.*;
 import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
-import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import cn.wjybxx.disruptor.EventSequencer;
 import cn.wjybxx.disruptor.RingBufferEventSequencer;
 import cn.wjybxx.disruptor.TimeoutSleepingWaitStrategy;
@@ -44,7 +42,7 @@ public abstract class WorkerBuilder {
     private String workerId;
     /**
      * Worker上绑定的容器，需要包含：
-     * {@link MainModule}、{@link TimeModule}
+     * {@link IEventLoopAgent}、{@link TimeModule}
      * {@link RpcClient}、{@link RpcRegistry}、
      * <p>
      * 如果是Node，则还需要包含：
@@ -56,9 +54,8 @@ public abstract class WorkerBuilder {
     /**
      * Worker上挂载的模块类
      * 1.需要能通过{@link #injector}获取实例
-     * 2.无需包含{@link MainModule}
-     * 3.添加顺序很重要，Worker将按照添加顺序启动所有的Module
-     * 4.实现类必须是{@link WorkerModule}的子类（注入的接口则不一定）
+     * 2.添加顺序很重要，Worker将按照添加顺序启动所有的Module
+     * 3.实现类必须是{@link EventLoopModule}的子类（注入的接口则不一定）
      */
     private final List<Class<?>> moduleClasses = new ArrayList<>();
     /**
@@ -70,6 +67,8 @@ public abstract class WorkerBuilder {
 
     /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
     private WorkerCtx workerCtx;
+    /** 是否手动关闭Worker -- 如果未赋值，则取决于添加到Node时是否已启动 */
+    private Boolean manualClose;
     /** Builder之间不方便继承 */
     protected final EventLoopBuilder<WorkerEvent> delegated;
 
@@ -81,8 +80,9 @@ public abstract class WorkerBuilder {
         return delegated;
     }
 
-    //
     public abstract Worker build();
+
+    // region event-loop
 
     public Node getParent() {
         return (Node) delegated.getParent();
@@ -120,6 +120,20 @@ public abstract class WorkerBuilder {
         return this;
     }
 
+    public IEventLoopAgent<WorkerEvent> getAgent() {
+        return delegated.getAgent();
+    }
+
+    public WorkerBuilder setAgent(IEventLoopAgent<WorkerEvent> agent) {
+        delegated.setAgent(agent);
+        return this;
+    }
+
+    // endrgeion
+
+
+    //region worker
+
     public WorkerCtx getWorkerCtx() {
         return workerCtx;
     }
@@ -129,7 +143,14 @@ public abstract class WorkerBuilder {
         return this;
     }
 
-    //
+    public Boolean getManualClose() {
+        return manualClose;
+    }
+
+    public WorkerBuilder setManualClose(Boolean manualClose) {
+        this.manualClose = manualClose;
+        return this;
+    }
 
     public String getWorkerId() {
         return workerId;
@@ -181,7 +202,7 @@ public abstract class WorkerBuilder {
         return this;
     }
 
-    //
+    // endregion
 
     public static DisruptWorkerBuilder newDisruptorWorkerBuilder() {
         return new DisruptWorkerBuilder();
@@ -233,8 +254,20 @@ public abstract class WorkerBuilder {
         }
 
         @Override
+        public DisruptWorkerBuilder setAgent(IEventLoopAgent<WorkerEvent> agent) {
+            super.setAgent(agent);
+            return this;
+        }
+
+        @Override
         public DisruptWorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
             super.setWorkerCtx(workerCtx);
+            return this;
+        }
+
+        @Override
+        public DisruptWorkerBuilder setManualClose(Boolean manualClose) {
+            super.setManualClose(manualClose);
             return this;
         }
 
@@ -293,15 +326,6 @@ public abstract class WorkerBuilder {
 
         public DisruptWorkerBuilder setWaitStrategy(WaitStrategy waitStrategy) {
             getDelegated().setWaitStrategy(waitStrategy);
-            return this;
-        }
-
-        public boolean isCleanBufferOnExit() {
-            return getDelegated().isCleanBufferOnExit();
-        }
-
-        public DisruptWorkerBuilder setCleanBufferOnExit(boolean cleanBufferOnExit) {
-            getDelegated().setCleanBufferOnExit(cleanBufferOnExit);
             return this;
         }
 

@@ -26,9 +26,7 @@ import com.squareup.javapoet.TypeSpec;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,22 +41,8 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     private static final String varName_context = "context";
     private static final String varName_parameter = "parameter";
 
-    private static final String MNAME_GET_OBJECT = "getObject";
-    private static final String MNAME_GET_STRING = "getString";
-    private static final Map<TypeKind, String> primitiveGetParamMethodName = new EnumMap<>(TypeKind.class);
-
     private final int serviceId;
     private final List<ExecutableElement> rpcMethods;
-
-    static {
-        for (TypeKind typeKind : TypeKind.values()) {
-            if (!typeKind.isPrimitive()) {
-                continue;
-            }
-            final String name = BeanUtils.firstCharToUpperCase(typeKind.name().toLowerCase());
-            primitiveGetParamMethodName.put(typeKind, "get" + name);
-        }
-    }
 
     RpcExporterGenerator(RpcServiceProcessor processor, TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         super(processor, typeElement);
@@ -120,36 +104,25 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
     /**
      * 为某个具体方法生成注册方法，方法分为两类
-     * 1. 有返回值的，直接返回方法执行结果（任意值）; 如果方法签名中包含request，需要传入
+     * 1. 有返回值的，直接返回方法执行结果（任意值）; 如果方法签名中包含context，需要传入
      * <pre>
      * {@code
      * 		private static void exportMethod1(RpcFunctionRegistry registry, T instance) {
-     * 		    registry.register(10001, (context, methodSpec) -> {
-     * 		        return instance.method10001(methodSpec.getInt(0), methodSpec.getLong(1));
-     * 		        // return instance.method10001(context.request(), methodSpec.getInt(0), methodSpec.getLong(1));
+     * 		    registry.register(10001, (context, parameter) -> {
+     * 		        return instance.method10001(parameter);
+     * 		        // return instance.method10001(context, parameter);
      *         }
      *     }
      * }
      * </pre>
-     * 2. 无返回值的，代理执行完之后直接返回null；如果方法签名中包含request，需要传入
+     * 2. 无返回值的，代理执行完之后直接返回null；如果方法签名中包含context，需要传入
      * <pre>
      * {@code
      * 		private static void exportMethod2(RpcFunctionRegistry registry, T instance) {
-     * 		    registry.register(10002, (context, methodSpec) -> {
-     * 		        instance.method10002(methodSpec.getInt(0), methodSpec.getLong(1));
-     * 		        // instance.method10002(context.request(), methodSpec.getInt(0), methodSpec.getLong(1));
+     * 		    registry.register(10002, (context, parameter) -> {
+     * 		        instance.method10002(parameter);
+     * 		        // instance.method10002(context, parameter);
      * 		        return null;
-     *          }
-     *     }
-     * }
-     * </pre>
-     * 3. 方法签名中包含context，代理返回context参数
-     * <pre>
-     * {@code
-     * 		private static void exportMethod2(RpcFunctionRegistry registry, T instance) {
-     * 		    registry.register(10003, (context, methodSpec) -> {
-     * 		        instance.method10002(context, methodSpec.getInt(0), methodSpec.getLong(1));
-     * 		        return context;
      *          }
      *     }
      * }
@@ -167,15 +140,15 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         AptUtils.copyTypeVariables(builder, method);
 
         // registry中的方法
-        builder.addCode("$L.register($L, $L, ($L, $L) -> {\n",
-                varName_registry, serviceId, methodId, varName_context, varName_parameter);
+        builder.addCode("$L.register($L, $L, (context, $L) -> {\n",
+                varName_registry, serviceId, methodId, varName_parameter);
 
         // 可变性设置
         if (processor.isResultSharable(method, annoValueMap)) {
-            builder.addStatement("    $L.setSharable(true)", varName_context);
+            builder.addStatement("    context.setSharable(true)");
         }
         if (processor.isManualReturn(method, annoValueMap)) {
-            builder.addStatement("    $L.setManualReturn(true)", varName_context);
+            builder.addStatement("    context.setManualReturn(true)");
         }
         // 执行方法调用
         FirstArgType firstArgType = processor.firstArgType(method);

@@ -17,13 +17,14 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.Internal;
-import cn.wjybxx.concurrent.EventLoop;
+import cn.wjybxx.concurrent.IAgentEventHandler;
+import cn.wjybxx.concurrent.IEventLoop;
+import cn.wjybxx.concurrent.IEventLoopModule;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 /**
  * Worker表示进程中的一个线程，是业务的执行单元，是模块（Module）和服务(Service)的载体。
@@ -46,10 +47,20 @@ import java.util.List;
  * 2. 循环时，Worker会按照Module的添加顺序执行Module的Update方法。
  * 3. 停止时，Worker会按照启动顺序的逆序执行所有Module的Stop方法。
  *
+ * <h3>模块</h3>
+ * Module是Worker的组件单元。
+ * Module分为两类：Module 和 Service。
+ * 模块（Module）是业务逻辑的集成单元，应用由模块（Module）构成。
+ * 服务(Service)用于将模块的业务暴露到网络中，因此服务是对外提供服务的基本单位。
+ * <p>
+ * 1. 不建议Module在构造方法中执行太多逻辑，避免复杂的依赖和环境问题。
+ * 2. Module之间的特殊依赖由MainModule解决。
+ * 3. 如果Service单导出单个Module的业务，通常由Module直接实现Service接口；否则应由门面类实现Service。
+ *
  * @author wjybxx
  * date - 2023/10/4
  */
-public interface Worker extends EventLoop {
+public interface Worker extends IEventLoop {
 
     /** 用于获取当前Worker -- Node也会设置该变量 */
     ThreadLocal<Worker> CURRENT_WORKER = new ThreadLocal<>();
@@ -62,16 +73,6 @@ public interface Worker extends EventLoop {
 
     /** Worker上绑定的Bean容器 */
     Injector injector();
-
-    /** Worker绑定的主模块 */
-    @Override
-    MainModule mainModule();
-
-    /**
-     * Worker上绑定模块 -- 由于包含{@link MainModule}，因此一定不为空。
-     * 该接口只约定Worker启动后可正确获得，其它时候不保证可见性。
-     */
-    List<WorkerModule> modules();
 
     /**
      * Worker上绑定的服务id
@@ -89,6 +90,15 @@ public interface Worker extends EventLoop {
      */
     @Internal
     WorkerCtx workerCtx();
+
+    /**
+     * 注册事件处理器
+     * {@link IEventLoopModule}应当在启动时注册。
+     *
+     * @param type    事件类型
+     * @param handler 事件处理器
+     */
+    void subscribe(int type, IAgentEventHandler<WorkerEvent> handler);
 
     /**
      * 获取下一个事件序号

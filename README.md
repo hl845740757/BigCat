@@ -3,6 +3,10 @@
 BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大型猫科动物一样优秀！
 高代码质量，高运行性能，高开发效率 -- 这也许将是你见过的代码质量最好的项目！
 
+### 不止是游戏！
+
+底层核心线程框架具有普适性，用来做任何网络应用都是高性能的。
+
 ### 项目划分
 
 由于Apt(注解处理器)必须预先打包为Jar才能被其它模块使用，因此Apt必须声明为独立的项目，因此BigCat包含三个项目：apts、framework、tools。
@@ -37,18 +41,14 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
 ### 已实现
 
 1. Future和EventLoop - [Concurrent包](https://github.com/hl845740757/commons/tree/dev/java)。
-2. Rpc + 注解处理器 - [关于Rpc的设计解释](https://github.com/hl845740757/BigCat/blob/dev/doc/Rpc.md)
-3. EventBus + 注解处理器
-4. Dson序列化 - [Dson是什么](https://github.com/hl845740757/Dson)
-5. ~~配置抽象（Sheet） + 表格处理工具~~ Sheet只用于工具，运行时直接使用Dson。
-6. 文件热更新管理 [文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/FileReload.md)
-7. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](https://github.com/hl845740757/BigCat/blob/dev/doc/Protobuf.md)
-8. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
-9. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BTree)
-
-近日在研：
-
-1. 近日在研究网络相关知识，协议的设计思路已有，但还未开始编码。
+2. Rpc + 注解处理器 - [关于Rpc的设计解释](docs/Rpc.md)
+3. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
+4. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](docs/Protobuf.md)
+5. Dson序列化 - [Dson是什么](https://github.com/hl845740757/commons/blob/dev/docs/Dson.md)
+6. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BTree)
+7. ~~配置抽象（Sheet） + 表格处理工具~~ Sheet只用于工具，运行时直接使用Dson。
+8. 文件热更新管理 [文件加载流程](docs/FileReload.md)
+9. EventBus + 注解处理器 (小功能)
 
 ### 资料
 
@@ -102,13 +102,9 @@ A：用一句话表达：我这些年实在太痛苦，我经历过的痛苦希�
 另外一点，我认为要做出好玩的游戏，小团队很重要，但由于技术闭源的原因，大多数团队和公司的技术都是很差的。所以，市场上就表现为：有创意的没技术，有技术的没创意...
 所以，我希望开源能对这些小团队有帮助，希望国内多出点好游戏。
 
-### 成都的环境
+## 个人公众号(游戏开发)
 
-成都是一个没有内核的网红城市，成都的繁荣是表面的繁荣。
-
-我这两年在成都，个人认为成都的环境很糟糕，成都极缺乏高水平的人才，而大家普遍喜欢休闲的日子，没什么技术氛围。  
-现在有些大厂来成都建分公司，为了招人，大幅拉高了薪资水平，看简历稍有经验的，就要20K+，25K+，结果面试发现菜的一比。。。
-基础不扎实，多线程不会，游戏关键业务也不会，就没有强项啊，都是哪儿来的自信，梁静茹给的吗？
-有些还是所谓的主程，写的还是多线程架构，觉得自己的服务器写得很好，结果连多线程的基础知识都不扎实，这哪是写多线程，是在写bug...
-
-薪资高了，中小公司的生存很是艰难，大公司的野蛮扩张，最终需要小公司承受结果。如果始终难以引进人才，整体的衰败是迟早的事。
+<figure class="half">
+    <img src="docs/res/qrcode_for_wjybxx.jpg" title="公众号"  width="150" height="150">
+    <img src="docs/res/qrcode_readers.jpg" title="读者群" width="150" height="300">
+</figure>

@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.concurrent.IEventLoopModule;
+
 /**
  * Node线程发送Rpc协议的实现
  * 1.该接口主要用于支持自定义地址解析；查询地址特性的方法可能多线程访问，需要保证【线程安全】。
@@ -26,7 +28,7 @@ package cn.wjybxx.bigcat.fx;
  * @author wjybxx
  * date - 2023/10/28
  */
-public interface NodeRpcRouter extends RpcRouter, WorkerModule {
+public interface NodeRpcRouter extends RpcRouter, IEventLoopModule {
 
     /**
      * 1.该方法在Node线程调用

@@ -16,9 +16,9 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.concurrent.EventLoop;
 import cn.wjybxx.concurrent.EventLoopFactory;
-import cn.wjybxx.concurrent.EventLoopGroup;
+import cn.wjybxx.concurrent.IEventLoop;
+import cn.wjybxx.concurrent.IEventLoopGroup;
 
 /**
  * @author wjybxx
@@ -28,7 +28,7 @@ public interface WorkerFactory extends EventLoopFactory {
 
     @Deprecated
     @Override
-    default EventLoop newChild(EventLoopGroup parent, int index, Object extraInfo) {
+    default IEventLoop newChild(IEventLoopGroup parent, int index, Object extraInfo) {
         return newChild((Node) parent, index, (WorkerCtx) extraInfo);
     }
 

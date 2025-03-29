@@ -19,6 +19,7 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.base.MathCommon;
 import cn.wjybxx.base.time.Regulator;
 import cn.wjybxx.base.time.TimeHelper;
+import cn.wjybxx.concurrent.EventLoopModule;
 import com.google.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ import java.util.Map;
  * date 2023/4/12
  */
 @RpcService(serviceId = 12)
-public class RpcClientExample implements ExtensibleService, WorkerModule {
+public class RpcClientExample extends EventLoopModule implements ExtensibleService {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcClientExample.class);
     private static final RpcAddr serverAddr = StaticRpcAddr.LOCAL;
@@ -72,8 +73,8 @@ public class RpcClientExample implements ExtensibleService, WorkerModule {
     // region logic
 
     @Override
-    public void inject(Worker worker) {
-        this.worker = worker;
+    public void resolveDependence() {
+        this.worker = (Worker) getEntity();
         this.rpcRouter = worker.node().injector().getInstance(TestRpcRouter.class);
     }
 

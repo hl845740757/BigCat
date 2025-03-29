@@ -92,11 +92,8 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
     /**
      * 为客户端生成代理方法
      * <pre>{@code
-     * 		public static MethodSpec<String> method1(int id, String param) {
-     * 			List<Object> _parameters = new ArrayList<>(2);
-     * 			_parameters.add(id);
-     * 			_parameters.add(param);
-     * 			return new DefaultRpcMethodSpec<>(1, 2, _parameters, 0, 0);
+     * 		public static MethodSpec<Response> method1(Request request) {
+     * 			return new DefaultRpcMethodSpec<>(1, 2, request, false);
      *        }
      * }
      * </pre>

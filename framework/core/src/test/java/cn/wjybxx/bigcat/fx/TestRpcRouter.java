@@ -28,8 +28,8 @@ public class TestRpcRouter extends AbstractRpcRouter {
     private final ArrayDeque<RpcProtocol> protocolQueue = new ArrayDeque<>();
 
     @Override
-    public void inject(Worker worker) {
-        super.inject(worker);
+    public void resolveDependence() {
+        super.resolveDependence();
 //        rpcSupport.setEnableLog(true);
     }
 

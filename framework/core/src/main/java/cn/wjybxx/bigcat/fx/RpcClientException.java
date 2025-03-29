@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ex.ErrorCodeException;
-import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.ExecutorUtils;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -88,7 +88,7 @@ public class RpcClientException extends RpcException {
         if (e instanceof ExecutionException) {
             return RpcClientException.unknownException(e.getCause());
         }
-        e = FutureUtils.unwrapCompletionException(e);
+        e = ExecutorUtils.unwrapCompletionException(e);
         return unknownException(e);
     }
 

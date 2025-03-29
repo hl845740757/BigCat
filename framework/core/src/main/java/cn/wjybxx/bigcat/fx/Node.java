@@ -17,8 +17,8 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.time.TimeProvider;
-import cn.wjybxx.concurrent.EventLoop;
-import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.ExecutorUtils;
+import cn.wjybxx.concurrent.IEventLoop;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -27,7 +27,6 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -46,7 +45,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * 2. Rpc客户端不能指定服务由哪个Worker处理 -- 避免不必要的依赖。
  *
  * <h3>建议</h3>
- * 1. Node上的{@link TimeProvider}最好支持多线程读，可参考{@link FutureUtils#newTimeProvider(EventLoop, long)}
+ * 1. Node上的{@link TimeProvider}最好支持多线程读，可参考{@link ExecutorUtils#newTimeProvider(IEventLoop)}
  *
  * @author wjybxx
  * date - 2023/10/4
@@ -65,11 +64,7 @@ public interface Node extends Worker {
     /** 节点地址（不包含workerId） -- 用于Rpc通信；公司地址 */
     WorkerAddr nodeAddr();
 
-    /** 直接绑定在Node上的模块 */
-    @Override
-    List<WorkerModule> modules();
-
-    /** 直接绑定在Node上的服务 */
+    /** 直接绑定在Node上的服务 -- 模块也是隔离的 */
     @Override
     IntSet services();
 

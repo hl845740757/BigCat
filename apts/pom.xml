@@ -119,15 +119,17 @@
                         <arg>-parameters</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
+                        <!-- 注解处理器的依赖 -->
+                        <dependency>
+                            <groupId>com.google.code.findbugs</groupId>
+                            <artifactId>jsr305</artifactId>
+                            <version>3.0.2</version>
+                        </dependency>
+                        <!-- 注解处理器 -->
                         <annotationProcessorPath>
                             <groupId>com.google.auto.service</groupId>
                             <artifactId>auto-service</artifactId>
                             <version>1.1.1</version>
-                        </annotationProcessorPath>
-                        <annotationProcessorPath>
-                            <groupId>com.google.code.findbugs</groupId>
-                            <artifactId>jsr305</artifactId>
-                            <version>3.0.2</version>
                         </annotationProcessorPath>
                     </annotationProcessorPaths>
                 </configuration>

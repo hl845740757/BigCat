@@ -28,10 +28,10 @@ import cn.wjybxx.concurrent.IAgentEvent;
 public final class WorkerEvent implements IAgentEvent {
 
     private int type = TYPE_INVALID;
+    private int options;
     public Object obj1;
     public Object obj2;
     public Object obj3;
-    public int options;
 
     // 扩展字段
     public int intVal1;
@@ -42,19 +42,19 @@ public final class WorkerEvent implements IAgentEvent {
     @Override
     public void clean() {
         type = TYPE_INVALID;
+        options = 0;
         obj1 = null;
         obj2 = null;
         obj3 = null;
-        options = 0;
     }
 
     @Override
     public void cleanAll() {
         type = TYPE_INVALID;
+        options = 0;
         obj1 = null;
         obj2 = null;
         obj3 = null;
-        options = 0;
 
         intVal1 = 0;
         intVal2 = 0;
@@ -73,13 +73,13 @@ public final class WorkerEvent implements IAgentEvent {
     }
 
     @Override
-    public Object getObj2() {
-        return obj2;
+    public int getOptions() {
+        return options;
     }
 
     @Override
-    public void setObj2(Object obj2) {
-        this.obj2 = obj2;
+    public void setOptions(int options) {
+        this.options = options;
     }
 
     @Override
@@ -93,13 +93,56 @@ public final class WorkerEvent implements IAgentEvent {
     }
 
     @Override
-    public int getOptions() {
-        return options;
+    public Object getObj2() {
+        return obj2;
     }
 
     @Override
-    public void setOptions(int options) {
-        this.options = options;
+    public void setObj2(Object obj2) {
+        this.obj2 = obj2;
     }
 
+    public Object getObj3() {
+        return obj3;
+    }
+
+    public void setObj3(Object obj3) {
+        this.obj3 = obj3;
+    }
+
+    public int getIntVal1() {
+        return intVal1;
+    }
+
+    public void setIntVal1(int intVal1) {
+        this.intVal1 = intVal1;
+    }
+
+    public int getIntVal2() {
+        return intVal2;
+    }
+
+    public void setIntVal2(int intVal2) {
+        this.intVal2 = intVal2;
+    }
+
+    @Override
+    public long getLongVal1() {
+        return longVal1;
+    }
+
+    @Override
+    public void setLongVal1(long longVal1) {
+        this.longVal1 = longVal1;
+    }
+
+    @Override
+    public long getLongVal2() {
+        return longVal2;
+    }
+
+    @Override
+    public void setLongVal2(long longVal2) {
+        this.longVal2 = longVal2;
+    }
 }

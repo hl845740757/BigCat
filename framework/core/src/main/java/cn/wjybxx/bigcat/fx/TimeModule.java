@@ -18,13 +18,14 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.VisibleForTesting;
 import cn.wjybxx.base.time.TimeProvider;
+import cn.wjybxx.concurrent.IEventLoopAgent;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * 时间模块
  * 1.系统的启动帧我们定为第0帧。
- * 2.通常应该由{@link MainModule}来启动和更新时间模块。
+ * 2.通常应该由{@link IEventLoopAgent}来启动和更新时间模块。
  * 3.线程一个，多线程共享是不必要也不安全的。
  *
  * @author wjybxx
@@ -67,22 +68,20 @@ public class TimeModule implements TimeProvider {
         return deltaTime;
     }
 
+    // setter
     @VisibleForTesting
-    public TimeModule setFrame(int frame) {
+    public void setFrame(int frame) {
         this.frame = frame;
-        return this;
     }
 
     @VisibleForTesting
-    public TimeModule setDeltaTime(long deltaTime) {
+    public void setDeltaTime(long deltaTime) {
         this.deltaTime = deltaTime;
-        return this;
     }
 
     @VisibleForTesting
-    public TimeModule setTime(long time) {
+    public void setTime(long time) {
         this.time = time;
-        return this;
     }
 
 }

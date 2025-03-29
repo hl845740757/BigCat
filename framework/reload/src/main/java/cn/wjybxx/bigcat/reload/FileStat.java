@@ -24,7 +24,7 @@ package cn.wjybxx.bigcat.reload;
  * @author wjybxx
  * date - 2023/5/21
  */
-class FileStat {
+final class FileStat {
 
     final long length;
     final String md5;

@@ -16,7 +16,10 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.concurrent.EventLoopModule;
+import cn.wjybxx.concurrent.IAgentEventHandler;
 import cn.wjybxx.concurrent.IFuture;
+import cn.wjybxx.concurrent.IPromise;
 
 import java.util.Objects;
 
@@ -26,14 +29,14 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/10/28
  */
-public class WorkerRpcClient implements RpcClient, WorkerModule {
+public class WorkerRpcClient extends EventLoopModule implements RpcClient, IAgentEventHandler<WorkerEvent> {
 
     private Worker worker;
     private RpcSupport rpcSupport;
 
     @Override
-    public void inject(Worker worker) {
-        this.worker = Objects.requireNonNull(worker);
+    public void resolveDependence() {
+        this.worker = (Worker) getEntity();
         Node node;
         if (worker instanceof Node) {
             node = (Node) worker;
@@ -63,4 +66,30 @@ public class WorkerRpcClient implements RpcClient, WorkerModule {
         return rpcSupport.w2n_syncCall(worker, target, methodSpec, timeoutMs);
     }
 
+    // region rpc支持
+
+    @Override
+    public void start() {
+        // 接收Node派发到Worker的请求和响应，再转换给RpcSupport
+        worker.subscribe(FxUtils.TYPE_NODE_WORKER_REQUEST, this);
+        worker.subscribe(FxUtils.TYPE_NODE_WORKER_RESPONSE, this);
+    }
+
+    @Override
+    public void onEvent(long sequence, WorkerEvent event) throws Exception {
+        switch (event.getType()) {
+            case FxUtils.TYPE_NODE_WORKER_REQUEST -> {
+                rpcSupport.onRcvRequestStep3((Worker) event.obj1, (RpcRequest) event.obj2);
+            }
+            case FxUtils.TYPE_NODE_WORKER_RESPONSE -> {
+                @SuppressWarnings("unchecked") IPromise<Object> promise = (IPromise<Object>) event.obj2;
+                rpcSupport.onRcvResponseStep3((RpcResponse) event.obj1, promise);
+            }
+            default -> {
+                throw new AssertionError();
+            }
+        }
+    }
+
+    // endregion
 }

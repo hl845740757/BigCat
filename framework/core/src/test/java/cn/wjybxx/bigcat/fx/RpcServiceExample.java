@@ -16,7 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.concurrent.FutureUtils;
+import cn.wjybxx.concurrent.EventLoopModule;
+import cn.wjybxx.concurrent.ExecutorUtils;
 import cn.wjybxx.concurrent.IFuture;
 import com.google.inject.Inject;
 
@@ -29,7 +30,7 @@ import java.util.Map;
  * date 2023/4/12
  */
 @RpcService(serviceId = 11)
-public class RpcServiceExample implements ExtensibleService, WorkerModule {
+public class RpcServiceExample extends EventLoopModule implements ExtensibleService {
 
     @Inject
     private RpcClient rpcClient;
@@ -51,7 +52,7 @@ public class RpcServiceExample implements ExtensibleService, WorkerModule {
     public IFuture<Response> helloAsync(Request request) {
         Response response = new Response()
                 .setString(request.getString1());
-        return FutureUtils.completedFuture(response);
+        return ExecutorUtils.completedFuture(response);
     }
 
     /** 测试void返回值 */

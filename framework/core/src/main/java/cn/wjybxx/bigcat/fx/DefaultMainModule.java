@@ -16,13 +16,20 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.concurrent.IAgentEventHandler;
+import cn.wjybxx.concurrent.IEventLoop;
+import cn.wjybxx.concurrent.IEventLoopAgent;
 import com.google.inject.Inject;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
+import java.util.Objects;
 
 /**
  * @author wjybxx
  * date - 2023/12/23
  */
-public class DefaultMainModule implements MainModule {
+public class DefaultMainModule implements IEventLoopAgent<WorkerEvent> {
 
     @Inject
     protected TimeModule timeModule;
@@ -36,6 +43,10 @@ public class DefaultMainModule implements MainModule {
     /** 上一次主循环耗时 */
     protected long mainLoopTimeSpan;
     //
+    /** 事件循环 */
+    protected Worker worker;
+    /** 事件循环的事件处理器 */
+    protected final Int2ObjectMap<IAgentEventHandler<? super WorkerEvent>> handlerMap = new Int2ObjectOpenHashMap<>(20);
 
     public int getFrameInterval() {
         return frameInterval;
@@ -56,10 +67,34 @@ public class DefaultMainModule implements MainModule {
         return System.currentTimeMillis() - timeBeforeMainLoop;
     }
 
-    //
+    // region 事件
+    @Override
+    public void inject(IEventLoop eventLoop, long consumerId) {
+        this.worker = (Worker) eventLoop;
+    }
 
     @Override
-    public void start() {
+    public void subscribe(int type, IAgentEventHandler<? super WorkerEvent> handler) {
+        Objects.requireNonNull(handler, "handler");
+        if (handlerMap.containsKey(type)) {
+            throw new IllegalArgumentException("type: " + type);
+        }
+        handlerMap.put(type, handler);
+    }
+
+    @Override
+    public void onEvent(long sequence, WorkerEvent event) throws Exception {
+        IAgentEventHandler<? super WorkerEvent> handler = handlerMap.get(event.getType());
+        if (handler != null) {
+            handler.onEvent(sequence, event);
+        }
+    }
+    // endregion
+
+    // region 主循环
+
+    @Override
+    public void beforeEventLoopStart() {
         timeModule.start(System.currentTimeMillis());
         timeBeforeMainLoop = timeAfterMainLoop = timeModule.getTime();
     }
@@ -70,40 +105,18 @@ public class DefaultMainModule implements MainModule {
     }
 
     @Override
-    public void beforeMainLoop() {
+    public void beforeMainLoop(long threadTime) {
         long timeMillis = System.currentTimeMillis();
         timeModule.update(timeMillis);
         timeBeforeMainLoop = timeMillis;
     }
 
     @Override
-    public void afterMainLoop() {
+    public void afterMainLoop(long threadTime) {
         timeAfterMainLoop = System.currentTimeMillis();
         mainLoopTimeSpan = timeAfterMainLoop - timeBeforeMainLoop;
     }
 
-    @Override
-    public void onEvent(WorkerEvent rawEvent) throws Exception {
+    // endregion
 
-    }
-
-    @Override
-    public void beforeWorkerStart() {
-
-    }
-
-    @Override
-    public void afterWorkerStart() {
-
-    }
-
-    @Override
-    public void beforeWorkerShutdown() {
-
-    }
-
-    @Override
-    public void afterWorkerShutdown() {
-
-    }
 }
