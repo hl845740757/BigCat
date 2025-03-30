@@ -31,7 +31,7 @@
 在以上所有步骤中，只有并发读表阶段是多线程执行，其它阶段都是在主线程执行。
 
 加载流程图如下：
-![文件加载流程](https://github.com/hl845740757/BigCat/blob/dev/doc/res/fileload.png)
+![文件加载流程](res/fileload.png)
 
 ### 解析文件依赖
 

@@ -1,56 +1,34 @@
-## BigCat
+# BigCat
 
 BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大型猫科动物一样优秀！
 高代码质量，高运行性能，高开发效率 -- 这也许将是你见过的代码质量最好的项目！
 
-### 不止是游戏！
+PS：不止是游戏！底层核心线程框架具有普适性，用来做任何网络应用都是高性能的。
 
-底层核心线程框架具有普适性，用来做任何网络应用都是高性能的。
+## Unity，安排！
 
-### 项目划分
+成都这边没有合适的项目，作者最近待业在家，编码时间比较多，决定开搞C#和Unity工程。
+既是做开源分享知识，另一方面也是为以后自己的项目做准备。
 
-由于Apt(注解处理器)必须预先打包为Jar才能被其它模块使用，因此Apt必须声明为独立的项目，因此BigCat包含三个项目：apts、framework、tools。
-
-1. apts是注解处理器、必须先安装为jar，才能为其它模块提供服务。
-2. tools是辅助工具包，是开发期间使用的，比如：注解处理器、导表工具、协议预处理工具等
-3. framework框架包，是游戏相关的部分。
-
-注意： **其它项目都不直接依赖tools，只依赖它产生的文件**。tools项目下的工具也不直接依赖framework下的类文件，生成代码更多依赖类路径和类名。
-
-### 如何编译该项目
-
-1. 该项目的3个子项目需要分别独立编译。
-2. 进入apts目录，执行 `mvn clean install`，安装apt到本地。
-3. 如果加载了apts项目请卸载(unlink)，apts项目不能和其它项目一块编译。
-4. 进入framework或tools项目，可正常开始编译。
-
-Q：编译报生成的XXX文件不存在？  
-A：请先确保`apts`项目安装成功，如果已安装成功，请仔细检查编译输出的错误信息，通常是忘记getter等方法，修改错误后先clean，然后再编译。
-
-Q：编译成功，但文件曝红，找不到文件？  
-A：请将各个模块 target/generated-sources/annotations 设置为源代码目录（mark directory as generated source root）;   
-将各个模块 target/generated-test-sources/test-annotations 设置为测试代码目录（mark directory as test source root）。
-
-### 项目主要内容
+## 项目主要内容
 
 1. 基础工具集：Future、EventBus、序列化、热更新、状态机、行为树....
 2. 网络库：Rpc，可靠UDP协议
 3. 主循环框架（线程框架）
 4. 角色和场景框架，技能框架...
 
-### 已实现
+## 已实现
 
 1. Future和EventLoop - [Concurrent包](https://github.com/hl845740757/commons/tree/dev/java)。
-2. Rpc + 注解处理器 - [关于Rpc的设计解释](docs/Rpc.md)
-3. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
+2. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
+3. Rpc + 注解处理器 - [关于Rpc的设计解释](docs/Rpc.md)
 4. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](docs/Protobuf.md)
 5. Dson序列化 - [Dson是什么](https://github.com/hl845740757/commons/blob/dev/docs/Dson.md)
 6. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BTree)
 7. ~~配置抽象（Sheet） + 表格处理工具~~ Sheet只用于工具，运行时直接使用Dson。
 8. 文件热更新管理 [文件加载流程](docs/FileReload.md)
-9. EventBus + 注解处理器 (小功能)
 
-### 资料
+## 资料
 
 1. 代码：本人(wjybxx)对代码质量有较高的要求，代码就是第一资料。在存在特殊设定的地方，你多数时候都可以看见关于我的思路和意图的注释，
    不过可能不会太详尽，因为部分设计是难以简单解释的。另外，测试用例也值得阅读，既有测试正确性的用例，也有工具使用方式的用例。
@@ -59,30 +37,7 @@ A：请将各个模块 target/generated-sources/annotations 设置为源代码�
    都还未开始，只拟了一个目录。后续真正创作的时候，将会包含该项目中的一些设定的详细解释。  
    (其实，书籍的主要内容其实来源于我这几年的笔记，超1000篇，思考了太多问题，项目是笔记落地的体现)
 
-## 其它
-
-### 项目前身
-
-项目的前身为fastjgame(2019.5-2021.3，现已private)，当初也是想写一个开发工具集和框架，但实际上更像是用于学习和实验的一个仓库，原因如下：
-
-1. 部分组件的实现有很明显的模仿性质（尤其Netty），缺少自己的思想。
-2. 部分设计脱离了实际业务，重的是技术而不是实用性 -- 一心造多线程的服务器。
-3. 那时我对角色系统、技能、AI还未有好的解决方案。
-
-不过，fastjgame还是实现了一些好的工具，将会迁移到该仓库，或直接迁移或进行优化后迁移，这包括：
-
-1. 注解处理器
-2. Rpc
-3. Future和EventBus
-4. ~~序列化（Pb二进制和Bson文档）~~
-5. 代码和表格热更新
-6. 事件循环
-
-回过头来，我认为fastjgame最优秀的点在于注解处理器(apt)
-，注解处理器减少大量的样板代码，可使得我们的业务代码极为干净，而且无运行时性能开销。  
-PS：统计了一下fastjgame项目，震惊自己居然写了那么多类（507个类，57596行代码）...
-
-### 开源
+## 开源
 
 Q：我为什么开源呢？  
 A：用一句话表达：我这些年实在太痛苦，我经历过的痛苦希望他人可以避免。  
@@ -105,6 +60,6 @@ A：用一句话表达：我这些年实在太痛苦，我经历过的痛苦希�
 ## 个人公众号(游戏开发)
 
 <figure class="half">
-    <img src="docs/res/qrcode_for_wjybxx.jpg" title="公众号"  width="150" height="150">
-    <img src="docs/res/qrcode_readers.jpg" title="读者群" width="150" height="300">
+    <img src="docs/res/qrcode_for_wjybxx.jpg" title="公众号"  width="200" height="200">
+    <img src="docs/res/mm_reward_qrcode.png" title="赞赏" width="200" height="200">
 </figure>
