@@ -33,8 +33,9 @@ public interface RpcRouter {
      * 2.如果转发时要重定向等，应当先拷贝，再修改拷贝后的实例；或者不编码原始proto的目标地址{@link RpcProtocol#getDestAddr()}
      * 3.{@link RpcRequest}中的方法参数可能是未序列化的，以允许进程内共享对象 —— 调用本地服务时避免序列化。
      * 4.{@link RpcResponse}在的结果对象也可能是未序列化的，以允许进程内共享对象。
+     * 5.如果不能发送，需返回false，请确保正确的进行了实现。
      *
-     * @param protocol 要路由的协议
+     * @param protocol 要发送的协议
      * @return 如果不能发送，则返回false，请确保正确的进行了实现。
      */
     boolean send(RpcProtocol protocol);

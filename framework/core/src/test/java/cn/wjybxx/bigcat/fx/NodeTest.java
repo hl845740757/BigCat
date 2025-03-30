@@ -89,7 +89,7 @@ public class NodeTest {
     @Test
     void test() {
         // 查看日志
-        ThreadUtils.sleepQuietly(15 * 1000);
+        ThreadUtils.sleepQuietly(10 * 1000);
         node.shutdown();
     }
 

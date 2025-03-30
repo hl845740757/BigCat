@@ -50,13 +50,12 @@ public final class RpcRequest extends RpcProtocol {
     }
 
     public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                      int invokeType, long requestId, RpcMethodSpec<?> methodSpec) {
+                      RpcMethodSpec<?> methodSpec, int invokeType) {
         super(conId, srcAddr, destAddr);
         if (methodSpec.getParameter() == null) {
             methodSpec.setParameter(ArrayUtils.EMPTY_BYTE_ARRAY);
             methodSpec.setSharable(true);
         }
-        this.requestId = requestId;
         this.invokeType = invokeType;
         this.serviceId = methodSpec.getServiceId();
         this.methodId = methodSpec.getMethodId();

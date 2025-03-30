@@ -17,9 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.Internal;
-import cn.wjybxx.concurrent.IAgentEventHandler;
-import cn.wjybxx.concurrent.IEventLoop;
-import cn.wjybxx.concurrent.IEventLoopModule;
+import cn.wjybxx.concurrent.IDisruptorEventLoop;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -60,10 +58,7 @@ import javax.annotation.Nullable;
  * @author wjybxx
  * date - 2023/10/4
  */
-public interface Worker extends IEventLoop {
-
-    /** 用于获取当前Worker -- Node也会设置该变量 */
-    ThreadLocal<Worker> CURRENT_WORKER = new ThreadLocal<>();
+public interface Worker extends IDisruptorEventLoop<WorkerEvent> {
 
     /**
      * Worker的id —— 员工编号
@@ -92,29 +87,9 @@ public interface Worker extends IEventLoop {
     WorkerCtx workerCtx();
 
     /**
-     * 注册事件处理器
-     * {@link IEventLoopModule}应当在启动时注册。
-     *
-     * @param type    事件类型
-     * @param handler 事件处理器
+     * Worker绑定的Node
+     * Node返回自身
      */
-    void subscribe(int type, IAgentEventHandler<WorkerEvent> handler);
-
-    /**
-     * 获取下一个事件序号
-     * 注意：在关闭状态下，可能返回-1。
-     */
-    long nextSequence();
-
-    /** 获取事件序号管理的事件 */
-    WorkerEvent getEvent(long sequence);
-
-    /** 发布事件 */
-    void publish(long sequence);
-
-    //-----
-
-    /** Node返回自身，Worker返回从属的Node */
     @Nonnull
     Node node();
 
@@ -134,6 +109,15 @@ public interface Worker extends IEventLoop {
     default Worker select(int key) {
         return this;
     }
+
     // endregion
 
+    // region global
+
+    /** 获取当前线程绑定的Worker */
+    static Worker currentWorker() {
+        return FxUtils.CURRENT_WORKER.get();
+    }
+
+    // endregion
 }

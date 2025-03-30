@@ -110,7 +110,7 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
 
     @Override
     protected void onStart() throws Throwable {
-        Worker.CURRENT_WORKER.set(this);
+        FxUtils.CURRENT_WORKER.set(this);
 
         agent.beforeEventLoopStart();
         startModules();
@@ -129,7 +129,7 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
             super.onShutdown();
             setServiceIdSet(IntSets.emptySet());
         } finally {
-            Worker.CURRENT_WORKER.remove();
+            FxUtils.CURRENT_WORKER.remove();
         }
     }
 

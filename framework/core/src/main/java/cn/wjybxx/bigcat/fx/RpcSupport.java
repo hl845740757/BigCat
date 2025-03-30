@@ -609,7 +609,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
 
     /** worker线程调用 -- worker可能是node自身 */
     private RpcRequest newRequest(RpcAddr target, RpcMethodSpec<?> methodSpec, int invokeType) {
-        RpcRequest request = new RpcRequest(conId, selfAddr, target, invokeType, 0, methodSpec);
+        RpcRequest request = new RpcRequest(conId, selfAddr, target, methodSpec, invokeType);
         // 参数可共享的情况下，延迟序列化（分担主线程开销）(本地调用的情况下，还可以不序列化)
         if (!request.isSharable() && !request.isNullOrBytes()) {
             RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());

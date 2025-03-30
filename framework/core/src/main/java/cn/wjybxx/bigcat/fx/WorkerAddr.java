@@ -26,6 +26,7 @@ import java.util.Objects;
 
 /**
  * Worker地址
+ *
  * <h3>推荐方案</h3>
  * 负数用于表示特殊地址，正数表示单播地址，0表示不指定。
  * 1. {@link #serverType} 如果为-1，表示匹配所有类型的服务器

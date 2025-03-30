@@ -141,16 +141,6 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     }
 
     @Override
-    public Worker nextWorker() {
-        return (Worker) chooser.select();
-    }
-
-    @Override
-    public Worker selectWorker(int key) {
-        return (Worker) chooser.select(key);
-    }
-
-    @Override
     public Worker findWorker(String workerId) {
         // worker通常不多，for循环足够快
         for (int i = 0; i < children.length; i++) {
@@ -182,21 +172,21 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
     @Nonnull
     @Override
-    public Node select() {
-        return this;
+    public Worker select() {
+        return (Worker) chooser.select();
     }
 
     @Nonnull
     @Override
-    public Node select(int key) {
-        return this;
+    public Worker select(int key) {
+        return (Worker) chooser.select(key);
     }
     // region 生命流程
 
     @Override
     protected void onStart() throws Throwable {
-        Worker.CURRENT_WORKER.set(this);
-        Node.CURRENT_NODES.add(this);
+        FxUtils.CURRENT_WORKER.set(this);
+        FxUtils.CURRENT_NODES.add(this);
         initWorkerCtx();
 
         agent.beforeEventLoopStart();
@@ -221,8 +211,8 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
             agent.afterEventLoopShutdown();
         } finally {
-            Worker.CURRENT_WORKER.remove();
-            Node.CURRENT_NODES.remove(this);
+            FxUtils.CURRENT_WORKER.remove();
+            FxUtils.CURRENT_NODES.remove(this);
         }
     }
 

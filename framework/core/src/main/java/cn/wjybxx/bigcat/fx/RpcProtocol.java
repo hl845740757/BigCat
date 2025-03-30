@@ -124,7 +124,7 @@ public abstract class RpcProtocol {
             return "null";
         }
         if (data instanceof byte[] bytes) {
-            return HexFormat.of().formatHex((bytes));
+            return HexFormat.of().formatHex((bytes)); // 其实意义不大?
         }
         return data.toString();
     }

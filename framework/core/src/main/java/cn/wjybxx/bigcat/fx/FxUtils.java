@@ -25,8 +25,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 
 /**
@@ -36,6 +38,17 @@ import java.util.concurrent.Future;
  * date - 2023/10/4
  */
 public class FxUtils {
+
+    /** 当前线程运行的Worker，Node也会发布到这里。 */
+    public final static ThreadLocal<Worker> CURRENT_WORKER = new ThreadLocal<>();
+    /**
+     * 当前运行中的所有Node -- 用于未来支持单进程下启动多个服务器。
+     * <p>
+     * 经过反复地思考权衡，允许一个进程内启动多个Node是简单可靠的方式，代价是增加一部分开销 -- 不会太多。
+     * 如果在一个Node内启动多个服务器，虽然资源利用率更高，但编程复杂，尤其对Rpc客户端不友好。
+     * 如果需要查询当前线程的Node，可通过Worker查询。
+     */
+    public final static CopyOnWriteArraySet<Node> CURRENT_NODES = new CopyOnWriteArraySet<>();
 
     /** worker发到node的rpc请求 - 发送，包含worker,request，promise */
     public static final int TYPE_WORKER_NODE_REQUEST = 1;
