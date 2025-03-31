@@ -9,14 +9,14 @@ service SearchService {
   //@RpcMethod {id: 1}
   rpc Search(SearchRequest) returns (SearchResponse);
 
-  //@RpcMethod {id: 2, mode: 2}
+  //@RpcMethod {id: 2, async: true}
   //@Sparam {interval: 500}
   rpc SearchAsync(SearchRequest) returns (SearchResponse);
 
   // 以下两种形式不符合proto的rpc语法，但符合我们的约定
-  //@RpcMethod {id: 3, mode: 1}
+  //@RpcMethod {id: 3, async: false}
   rpc Search3(SearchRequest request) returns (SearchResponse);
-  //@RpcMethod {id: 4, mode: 1}
+  //@RpcMethod {id: 4, async: false}
   rpc Search4() returns ();
 }
 

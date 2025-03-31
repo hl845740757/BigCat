@@ -48,25 +48,6 @@ public class DefaultMainModule implements IEventLoopAgent<WorkerEvent> {
     /** 事件循环的事件处理器 */
     protected final Int2ObjectMap<IAgentEventHandler<? super WorkerEvent>> handlerMap = new Int2ObjectOpenHashMap<>(20);
 
-    public int getFrameInterval() {
-        return frameInterval;
-    }
-
-    public void setFrameInterval(int frameInterval) {
-        if (frameInterval <= 0) throw new IllegalArgumentException("frameInterval: " + frameInterval);
-        this.frameInterval = frameInterval;
-    }
-
-    /** 获取前一次主循环耗时 -- 或当前主循环结束后查看本次耗时 */
-    public long getMainLoopTimeSpan() {
-        return mainLoopTimeSpan;
-    }
-
-    /** 实时的主循环耗时 */
-    public long mainLoopElapsed() {
-        return System.currentTimeMillis() - timeBeforeMainLoop;
-    }
-
     // region 事件
     @Override
     public void inject(IEventLoop eventLoop, long consumerId) {
@@ -92,6 +73,27 @@ public class DefaultMainModule implements IEventLoopAgent<WorkerEvent> {
     // endregion
 
     // region 主循环
+
+    /** 获取帧间隔参数 */
+    public int getFrameInterval() {
+        return frameInterval;
+    }
+
+    /** 设置帧间隔参数 */
+    public void setFrameInterval(int frameInterval) {
+        if (frameInterval <= 0) throw new IllegalArgumentException("frameInterval: " + frameInterval);
+        this.frameInterval = frameInterval;
+    }
+
+    /** 获取前一次主循环耗时 -- 或当前主循环结束后查看本次耗时 */
+    public long getMainLoopTimeSpan() {
+        return mainLoopTimeSpan;
+    }
+
+    /** 实时的主循环耗时 */
+    public long mainLoopElapsed() {
+        return System.currentTimeMillis() - timeBeforeMainLoop;
+    }
 
     @Override
     public void beforeEventLoopStart() {

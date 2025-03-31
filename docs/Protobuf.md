@@ -24,11 +24,11 @@ ps：
     service HelloServer { // '{'可换行可不换行
     
       //服务端同步返回结果
-      //@RpcMethod {id: 1, mode: 0}
+      //@RpcMethod {id: 1}
       rpc Hello(HelloRequest request) returns (HelloResponse); // 分号是必须的
       
       // 服务端需要异步完成
-      // @RpcMethod {id: 2, mode: 1}
+      // @RpcMethod {id: 2, async: true}
       rpc HelloAsync(HelloRequest request) returns (HelloResponse);
       
     } // '}'必须换行
@@ -78,22 +78,17 @@ ps：
 方法的元注解有三个，分别为：
 
 ```
-    //@RpcMethod {id: 1, mode: 1, ctx: true, manual: true}
+    //@RpcMethod {id: 1, async: true, ctx: true, manual: true}
     //@Sparam {}
     //@Cparam {}
 ```
 
 * id 表示方法在服务内的id
-* mode 表示服务端接口的模式；默认值为0（解析器指定）
+* async 表示服务端接口是否为异步模式；默认值为false（可解析器指定）
 * ctx 表示是否需要RpcContext参数；默认值为false
 * manual 表示是否手动管理返回时机，如果为true，应当声明tx。
 * Sparam 为服务端用参数，dson格式；单独成行，利于解析和书写
 * Cparam 为客户端用参数，dson格式
-
-mode枚举：
-
-* 0 表示普通模式，接口和pb中定义一致
-* 1 表示异步模式，服务端接口的返回值将包装为Future
 
 ### 限制
 

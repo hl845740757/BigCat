@@ -33,9 +33,9 @@ import java.util.List;
  */
 public class ServiceGenerator extends AbstractGenerator {
 
-    private static final ClassName anno_rpcService = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcService");
-    private static final ClassName anno_rpcMethod = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcMethod");
-    private static final ClassName clsName_rpcContext = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.rpc.RpcContext");
+    private static final ClassName anno_rpcService = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.fx.RpcService");
+    private static final ClassName anno_rpcMethod = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.fx.RpcMethod");
+    private static final ClassName clsName_rpcContext = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.fx.RpcContext");
 
     private final File javaOutDir;
     private final AnnotationSpec generatorInfo;
@@ -100,10 +100,10 @@ public class ServiceGenerator extends AbstractGenerator {
                 methodBuilder.addAnnotation(annoBuilder.build());
             }
             // 处理方法的模式
-            if (method.getMode() == PBMethod.MODE_FUTURE) {
-                buildWithFutureMode(method, methodBuilder);
+            if (method.isAsync()) {
+                buildWithAsyncMode(method, methodBuilder);
             } else {
-                buildWithDefMode(method, methodBuilder);
+                buildWithSyncMode(method, methodBuilder);
             }
             // 方法注释
             if (method.getComments().size() > 0) {
@@ -132,7 +132,7 @@ public class ServiceGenerator extends AbstractGenerator {
         return codeBuilder.build();
     }
 
-    private void buildWithDefMode(PBMethod method, MethodSpec.Builder methodBuilder) {
+    private void buildWithSyncMode(PBMethod method, MethodSpec.Builder methodBuilder) {
         // 仅处理void
         TypeName returnType;
         if (method.getResultType() != null) {
@@ -143,17 +143,17 @@ public class ServiceGenerator extends AbstractGenerator {
         methodBuilder.returns(returnType);
 
         // 是否需要context参数
-        if (method.isCtx()) {
+        if (method.isAppendCtx()) {
             methodBuilder.addParameter(parseRpcContextType(method), "rpcCtx");
         }
         // 正常参数
-        if (method.getArgType() != null) {
-            ClassName argType = classNameOfType(method.getArgType());
-            methodBuilder.addParameter(argType, method.getArgName());
+        if (method.getParameterType() != null) {
+            ClassName argType = classNameOfType(method.getParameterType());
+            methodBuilder.addParameter(argType, method.getParameterName());
         }
     }
 
-    private void buildWithFutureMode(PBMethod method, MethodSpec.Builder methodBuilder) {
+    private void buildWithAsyncMode(PBMethod method, MethodSpec.Builder methodBuilder) {
         // 返回值类型封装为future
         TypeName returnType;
         if (method.getResultType() != null) {
@@ -169,13 +169,13 @@ public class ServiceGenerator extends AbstractGenerator {
         methodBuilder.returns(returnType);
 
         // 是否需要context参数
-        if (method.isCtx()) {
+        if (method.isAppendCtx()) {
             methodBuilder.addParameter(parseRpcContextType(method), "rpcCtx");
         }
         // 正常参数
-        if (method.getArgType() != null) {
-            ClassName argType = classNameOfType(method.getArgType());
-            methodBuilder.addParameter(argType, method.getArgName());
+        if (method.getParameterType() != null) {
+            ClassName argType = classNameOfType(method.getParameterType());
+            methodBuilder.addParameter(argType, method.getParameterName());
         }
     }
 

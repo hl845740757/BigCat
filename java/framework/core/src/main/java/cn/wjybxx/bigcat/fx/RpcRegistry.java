@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
 public interface RpcRegistry {
 
     /**
-     * 注册一个rpc请求处理函数
+     * 注册一个rpc方法代理
      *
      * @param serviceId 服务id
      * @param methodId  方法id
@@ -56,7 +56,7 @@ public interface RpcRegistry {
     Object getProxyData(int serviceId, int methodId);
 
     /**
-     * 注册一个rpc请求处理函数
+     * 注册一个rpc方法代理
      *
      * @param serviceId  服务id
      * @param methodId   方法id
@@ -71,6 +71,7 @@ public interface RpcRegistry {
     }
 
     /**
+     * 查询是否存在对应方法的代理
      * 由于{@link #getProxy(int, int)}可能返回默认的proxy，因此不能根据是否为null判断是否存在服务
      */
     boolean hasProxy(int serviceId, int methodId);

@@ -20,6 +20,7 @@ import cn.wjybxx.base.MathCommon;
 import cn.wjybxx.base.time.Regulator;
 import cn.wjybxx.base.time.TimeHelper;
 import cn.wjybxx.concurrent.EventLoopModule;
+import cn.wjybxx.concurrent.IEventLoop;
 import com.google.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -37,7 +38,6 @@ import java.util.Map;
 public class RpcClientExample extends EventLoopModule implements ExtensibleService {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcClientExample.class);
-    private static final RpcAddr serverAddr = StaticRpcAddr.LOCAL;
 
     /** worker */
     private Worker worker;
@@ -50,14 +50,18 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     private RpcClient rpcClient;
     @Inject
     private TimeModule timeModule;
+    // 测试从接口继承的方法
+    private final Map<String, Object> extBlackboard = new HashMap<>();
+    // 目标地址 -- 本地
+    private  RpcAddr serverAddr;
+
+    public RpcClientExample() {
+    }
 
     @RpcMethod(methodId = 1)
     public void onMessage(Request request) {
         System.out.println(request.getString1());
     }
-
-    // 测试从接口继承的方法
-    private final Map<String, Object> extBlackboard = new HashMap<>();
 
     @Nonnull
     @Override
@@ -76,6 +80,7 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     public void resolveDependence() {
         this.worker = (Worker) getEntity();
         this.rpcRouter = worker.node().injector().getInstance(TestRpcRouter.class);
+        this.serverAddr = worker.node().nodeAddr();
     }
 
     @Override

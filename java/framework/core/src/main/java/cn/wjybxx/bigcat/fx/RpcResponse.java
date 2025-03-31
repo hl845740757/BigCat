@@ -26,9 +26,6 @@ import javax.annotation.Nonnull;
 /**
  * rpc响应结构体
  * 注意：该对象不可以共享，结果的可共享性取决于用户。
- * <p>
- * Q：为什么不区分null和void？
- * A：用户可以监听void函数的结果，而void只能通知为null。
  *
  * @author wjybxx
  * date 2023/4/1

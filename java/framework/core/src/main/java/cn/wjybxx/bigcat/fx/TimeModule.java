@@ -26,7 +26,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * 时间模块
  * 1.系统的启动帧我们定为第0帧。
  * 2.通常应该由{@link IEventLoopAgent}来启动和更新时间模块。
- * 3.线程一个，多线程共享是不必要也不安全的。
+ * 3.每个线程一个，多线程共享是不必要也不安全的。
  *
  * @author wjybxx
  * date - 2023/10/4
@@ -34,7 +34,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public class TimeModule implements TimeProvider {
 
-    private int frame;
+    private int frameCount;
     private long time;
     private long deltaTime;
 
@@ -42,21 +42,20 @@ public class TimeModule implements TimeProvider {
         time = System.currentTimeMillis();
     }
 
-    public void start(long timeMillis) {
-        this.frame = 0;
+    public void start(long curTime) {
+        this.frameCount = 0;
         this.deltaTime = 0;
-        this.time = timeMillis;
+        this.time = curTime;
     }
 
-    /** 通常由主模块在主循环中更新 */
     public void update(long curTime) {
-        frame += 1;
+        frameCount += 1;
         this.deltaTime = Math.max(0, curTime - this.time);
         this.time = curTime;
     }
 
-    public int getFrame() {
-        return frame;
+    public int getFrameCount() {
+        return frameCount;
     }
 
     @Override
@@ -70,8 +69,8 @@ public class TimeModule implements TimeProvider {
 
     // setter
     @VisibleForTesting
-    public void setFrame(int frame) {
-        this.frame = frame;
+    public void setFrameCount(int frameCount) {
+        this.frameCount = frameCount;
     }
 
     @VisibleForTesting

@@ -46,7 +46,7 @@ public abstract class WorkerBuilder {
      * {@link RpcClient}、{@link RpcRegistry}、
      * <p>
      * 如果是Node，则还需要包含：
-     * {@link RpcSupport}、{@link NodeRpcRouter}、{@link RpcSerializer}、
+     * {@link RpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
      * {@link RpcMethodRegistry}、{@link TimeProvider}
      */
     private Injector injector;

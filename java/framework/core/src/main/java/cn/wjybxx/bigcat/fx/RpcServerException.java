@@ -26,6 +26,10 @@ import cn.wjybxx.base.ex.ErrorCodeException;
  */
 public class RpcServerException extends RpcException {
 
+    public RpcServerException(int errorCode) {
+        super(errorCode);
+    }
+
     public RpcServerException(int errorCode, String message) {
         super(errorCode, message, null, true, false);
     }
@@ -36,6 +40,7 @@ public class RpcServerException extends RpcException {
         return this;
     }
 
+    /** 根据Response创建合适的服务器异常 */
     public static RuntimeException newServerException(RpcResponse response) {
         int errorCode = response.getErrorCode();
         if (RpcErrorCodes.isUserCode(errorCode)) {

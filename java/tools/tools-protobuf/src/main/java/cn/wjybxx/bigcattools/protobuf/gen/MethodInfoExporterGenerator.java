@@ -39,8 +39,8 @@ public class MethodInfoExporterGenerator extends AbstractGenerator {
 
     /** 生成的类名 */
     private static final String CLASS_NAME = "PBMethodInfoExporter";
-    private static final ClassName CLSNAME_METHOD_REGISTRY = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.pb.PBMethodInfoRegistry");
-    private static final ClassName CLSNAME_METHOD_INFO = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.pb.PBMethodInfo");
+    private static final ClassName CLSNAME_METHOD_REGISTRY = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.fx.rpcmethodregistry");
+    private static final ClassName CLSNAME_METHOD_INFO = GenClassUtils.classNameOfCanonicalName("cn.wjybxx.bigcat.fx.RpcMethodInfo");
 
     private final boolean isProto2;
 
@@ -65,7 +65,7 @@ public class MethodInfoExporterGenerator extends AbstractGenerator {
                             service.getServiceId(),
                             method.getMethodId());
                     codeBuilder.add("\n");
-                    addParserStatement(method.getArgType(), codeBuilder);
+                    addParserStatement(method.getParameterType(), codeBuilder);
                     codeBuilder.add(",\n");
                     addParserStatement(method.getResultType(), codeBuilder);
                     codeBuilder.add("))");

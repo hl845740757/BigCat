@@ -17,9 +17,9 @@
 package cn.wjybxx.bigcattools.protobuf;
 
 import cn.wjybxx.base.CollectionUtils;
+import cn.wjybxx.bigcattools.common.Utils;
 import cn.wjybxx.bigcattools.common.io.Line;
 import cn.wjybxx.bigcattools.common.io.LineIterator;
-import cn.wjybxx.bigcattools.common.Utils;
 import cn.wjybxx.dson.DsonObject;
 import cn.wjybxx.dson.DsonValue;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -488,8 +488,8 @@ public class PBParser {
         }
 
         PBMethod method = new PBMethod()
-                .setArgType(argType)
-                .setArgName(argName)
+                .setParameterType(argType)
+                .setParameterName(argName)
                 .setResultType(resultType);
         method.setSimpleName(name)
                 .setSourceLine(lineInfo.asLine())
@@ -522,27 +522,27 @@ public class PBParser {
             }
             method.setMethodId(methodId);
 
-            DsonValue mode = dsonValue.get("mode"); // 也可根据service的name或id计算
-            if (mode != null) {
-                method.setMode(mode.asDsonNumber().intValue());
+            DsonValue asyncMode = dsonValue.get("async"); // 也可根据service的name或id计算
+            if (asyncMode != null) {
+                method.setAsync(asBool(asyncMode));
             } else {
-                method.setMode(options.getMethodDefMode());
+                method.setAsync(options.getMethodDefAsync());
             }
-            DsonValue ctx = dsonValue.get("ctx");
-            if (ctx != null) {
-                method.setCtx(ctx.asBool());
+            DsonValue appendCtx = dsonValue.get("ctx");
+            if (appendCtx != null) {
+                method.setAppendCtx(asBool(appendCtx));
             } else {
-                method.setCtx(options.isMethodDefAppendCtx());
+                method.setAppendCtx(options.isMethodDefAppendCtx());
             }
             DsonValue manual = dsonValue.get("manual");
             if (manual != null) {
-                method.setManual(manual.asBool());
+                method.setManual(asBool(manual));
             } else {
                 method.setManual(options.isMethodDefManual());
             }
             DsonValue builderPattern = dsonValue.get("builderPattern");
             if (builderPattern != null) {
-                method.setBuilderPattern(builderPattern.asBool());
+                method.setBuilderPattern(asBool(builderPattern));
             } else {
                 method.setBuilderPattern(options.isMethodBuilderPattern());
             }
@@ -568,13 +568,22 @@ public class PBParser {
 
             DsonValue genProxy = dsonValue.get("genProxy"); // 最好是根据name计算
             if (genProxy != null) {
-                service.setGenProxy(genProxy.asBool());
+                service.setGenProxy(asBool(genProxy));
             }
             DsonValue genExporter = dsonValue.get("genExporter");
             if (genExporter != null) {
-                service.setGenExporter(genExporter.asBool());
+                service.setGenExporter(asBool(genExporter));
             }
         }
+    }
+
+    /** 将1也转为true */
+    private static boolean asBool(DsonValue dsonValue) {
+        return switch (dsonValue.getDsonType()) {
+            case BOOL -> dsonValue.asBool();
+            case INT32, INT64, FLOAT, DOUBLE -> dsonValue.asDsonNumber().intValue() == 1;
+            default -> false;
+        };
     }
 
     // endregion

@@ -17,8 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 
-import cn.wjybxx.base.ArrayUtils;
-
 import javax.annotation.Nonnull;
 
 /**
@@ -52,18 +50,11 @@ public final class RpcRequest extends RpcProtocol {
     public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr,
                       RpcMethodSpec<?> methodSpec, int invokeType) {
         super(conId, srcAddr, destAddr);
-        if (methodSpec.getParameter() == null) {
-            methodSpec.setParameter(ArrayUtils.EMPTY_BYTE_ARRAY);
-            methodSpec.setSharable(true);
-        }
         this.invokeType = invokeType;
         this.serviceId = methodSpec.getServiceId();
         this.methodId = methodSpec.getMethodId();
         this.data = methodSpec.getParameter();
-        // 缓存标记
-        if (methodSpec.isSharable()) {
-            setSharable(true);
-        }
+        this.sharable = methodSpec.isSharable();
     }
 
     // region getter/setter

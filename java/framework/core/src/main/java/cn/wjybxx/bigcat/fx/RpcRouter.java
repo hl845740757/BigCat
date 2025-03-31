@@ -17,27 +17,50 @@
 package cn.wjybxx.bigcat.fx;
 
 /**
- * 该接口负责真正的消息路由。
- * 实现要求：
- * 1. 发给同一个target的消息必须保证先发的先到！！！
- * 2. 单播和广播消息之间最好也保证顺序 —— 使用双channel或双topic的方式可能存在时序问题。
+ * Rpc路由器
+ * 1.该接口主要用于支持自定义地址解析；查询地址特性的方法可能多线程访问，需要保证【线程安全】。
+ * 2.在收到请求时应当调用{@link RpcSupport#onRcvRequest(RpcRequest)}
+ * 3.在收到响应时应当调用{@link RpcSupport#onRcvResponse(RpcResponse)}
+ * 4.Router和{@link RpcSupport}都是Node上的模块，需要双向绑定。
+ *
+ * <h3>时序要求</h3>
+ * 1.发给同一个target的消息必须保证先发的先到
+ * 2.单播和广播消息之间最好也保证顺序 —— 使用双channel或双topic的方式可能存在时序问题。
+ * 3.尽可能避免修改协议对象的数据
+ *
+ * <h3>进程内可共享对象</h3>
+ * 1.{@link RpcRequest}和{@link RpcResponse}中的方法参数可能是未序列化的，以允许进程内共享对象。
+ * 2.如果方法参数或结果是不可共享的，则已在Worker线程序列化；否则由Router决定是否序列化，以及序列化的时机。
+ * 3.可通过{@link RpcProtocol#isNullOrBytes()}判断是否已序列化。
  *
  * @author wjybxx
- * date 2023/4/1
+ * date - 2023/10/28
  */
 public interface RpcRouter {
 
     /**
      * 发送一个协议
-     * 1.发送的时候不可以修改proto的内容
-     * 2.如果转发时要重定向等，应当先拷贝，再修改拷贝后的实例；或者不编码原始proto的目标地址{@link RpcProtocol#getDestAddr()}
-     * 3.{@link RpcRequest}中的方法参数可能是未序列化的，以允许进程内共享对象 —— 调用本地服务时避免序列化。
-     * 4.{@link RpcResponse}在的结果对象也可能是未序列化的，以允许进程内共享对象。
-     * 5.如果不能发送，需返回false，请确保正确的进行了实现。
+     * 注：该方法在Node线程调用
      *
      * @param protocol 要发送的协议
-     * @return 如果不能发送，则返回false，请确保正确的进行了实现。
+     * @return 是否发送成功
      */
     boolean send(RpcProtocol protocol);
+
+    /**
+     * 测试给定地址似乎否是本地地址(进程内地址)
+     * 1.通常用于判断数据是否可共享 -- ‘本地单播’时可直接传递原始对象。
+     * 2.用于本地服务调用优化，避免不必要的序列化和拷贝 -- 比如：调用本地的DB服务，Http服务。
+     */
+    boolean isLocalAddr(RpcAddr addr);
+
+    /** 判断是否是单播地址 -- 只有每一级都是单播的情况下才可以返回true */
+    boolean isUnicastAddr(RpcAddr addr);
+
+    /** 测试是否是本地单播地址 -- 测试给定的地址在worker层是否是单播地址 */
+    boolean isWorkerUnicastAddr(RpcAddr addr);
+
+    /** 测试是否是本地广播地址 -- 测试给定的地址在worker层是否是广播地址 */
+    boolean isWorkerBroadcastAddr(RpcAddr addr);
 
 }

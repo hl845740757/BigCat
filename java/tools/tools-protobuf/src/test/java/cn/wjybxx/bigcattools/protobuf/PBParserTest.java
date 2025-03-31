@@ -52,7 +52,7 @@ public class PBParserTest {
                 .setMethodBuilderPattern(true)
                 .setUseJdkFuture(false)
                 .setServiceInterceptor(service -> {
-                    service.addSuperinterface("cn.wjybxx.bigcat.rpc.ExtensibleService");
+                    service.addSuperinterface("cn.wjybxx.bigcat.fx.ExtensibleService");
                 });
 
         File protoDir = new File(options.getProtoDir());

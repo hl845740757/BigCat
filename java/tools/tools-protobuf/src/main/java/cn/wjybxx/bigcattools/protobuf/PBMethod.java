@@ -28,24 +28,19 @@ import javax.annotation.Nonnull;
  */
 public class PBMethod extends PBElement {
 
-    /** 普通模式 */
-    public static final int MODE_NORMAL = 0;
-    /** future异步模式 -- 返回的返回值修正为{@code Future<V>} */
-    public static final int MODE_FUTURE = 1;
-
     /** 方法参数的类型 */
-    private String argType;
+    private String parameterType;
     /** 方法参数的名字 -- 默认值由parser赋值 */
-    private String argName;
+    private String parameterName;
     /** 方法返回值的类型 */
     private String resultType;
 
     /** 方法id -- 从注解中获得的缓存值 */
     private int methodId;
-    /** 方法的执行模式，如果文件中未定义，则使用默认的模式（解析器中配置） */
-    private int mode;
+    /** 服务器是否是异步方法 -- 默认值由parser赋值 */
+    private boolean async;
     /** 是否在方法参数中追加{@code RpcContext}参数 */
-    private boolean ctx = false;
+    private boolean appendCtx = false;
     /** 是否手动返回结果 */
     private boolean manual = false;
     /** 是否启用建造者模式 -- 默认值由解析器配置 */
@@ -58,12 +53,8 @@ public class PBMethod extends PBElement {
         return PBElementKind.METHOD;
     }
 
-    public boolean isFutureMode() {
-        return mode == MODE_FUTURE;
-    }
-
-    public boolean hasArg() {
-        return !ObjectUtils.isEmpty(argType);
+    public boolean hasParameter() {
+        return !ObjectUtils.isEmpty(parameterType);
     }
 
     public boolean hasResult() {
@@ -72,12 +63,12 @@ public class PBMethod extends PBElement {
 
     //
 
-    public String getArgType() {
-        return argType;
+    public String getParameterType() {
+        return parameterType;
     }
 
-    public PBMethod setArgType(String argType) {
-        this.argType = argType;
+    public PBMethod setParameterType(String parameterType) {
+        this.parameterType = parameterType;
         return this;
     }
 
@@ -90,12 +81,12 @@ public class PBMethod extends PBElement {
         return this;
     }
 
-    public String getArgName() {
-        return argName;
+    public String getParameterName() {
+        return parameterName;
     }
 
-    public PBMethod setArgName(String argName) {
-        this.argName = argName;
+    public PBMethod setParameterName(String parameterName) {
+        this.parameterName = parameterName;
         return this;
     }
 
@@ -108,21 +99,21 @@ public class PBMethod extends PBElement {
         return this;
     }
 
-    public int getMode() {
-        return mode;
+    public boolean isAsync() {
+        return async;
     }
 
-    public PBMethod setMode(int mode) {
-        this.mode = mode;
+    public PBMethod setAsync(boolean async) {
+        this.async = async;
         return this;
     }
 
-    public boolean isCtx() {
-        return ctx;
+    public boolean isAppendCtx() {
+        return appendCtx;
     }
 
-    public PBMethod setCtx(boolean ctx) {
-        this.ctx = ctx;
+    public PBMethod setAppendCtx(boolean appendCtx) {
+        this.appendCtx = appendCtx;
         return this;
     }
 
@@ -146,12 +137,12 @@ public class PBMethod extends PBElement {
 
     @Override
     protected void toString(StringBuilder sb) {
-        sb.append(", argType='").append(argType).append('\'')
-                .append(", argName='").append(argName).append('\'')
+        sb.append(", parameterType='").append(parameterType).append('\'')
+                .append(", parameterName='").append(parameterName).append('\'')
                 .append(", resultType='").append(resultType).append('\'')
                 .append(", methodId=").append(methodId)
-                .append(", mode=").append(mode)
-                .append(", ctx=").append(ctx)
+                .append(", mode=").append(async)
+                .append(", appendCtx=").append(appendCtx)
                 .append(", manual=").append(manual)
                 .append(", builderPattern=").append(builderPattern);
     }

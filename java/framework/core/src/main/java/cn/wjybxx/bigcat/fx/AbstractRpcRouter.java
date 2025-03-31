@@ -22,7 +22,7 @@ import cn.wjybxx.concurrent.EventLoopModule;
  * @author wjybxx
  * date - 2023/12/22
  */
-public abstract class AbstractRpcRouter extends EventLoopModule implements NodeRpcRouter {
+public abstract class AbstractRpcRouter extends EventLoopModule implements RpcRouter {
 
     protected Node node;
     protected RpcSupport rpcSupport;
@@ -45,7 +45,7 @@ public abstract class AbstractRpcRouter extends EventLoopModule implements NodeR
 
     // endregion
 
-    // region core
+    // region addr
 
     @Override
     public void resolveDependence() {
@@ -55,74 +55,42 @@ public abstract class AbstractRpcRouter extends EventLoopModule implements NodeR
         methodRegistry = node.injector().getInstance(RpcMethodRegistry.class);
     }
 
+    /** 测试给定地址似乎否是本地地址(进程内地址) */
     @Override
-    public boolean isCrossLanguageAddr(RpcAddr addr) {
+    public boolean isLocalAddr(RpcAddr addr) {
+        if (addr instanceof WorkerAddr workerAddr) {
+            return node.nodeAddr().equalsIgnoreWorker(workerAddr);
+        }
         return false;
-    }
-
-    @Override
-    public boolean isLocalAddr(WorkerAddr addr) {
-        return node.nodeAddr().equalsIgnoreWorker(addr);
-    }
-
-    // endregion
-
-    // region 重复实现-提高效率
-
-    /** 测试给定的地址是否是单播地址，只有每一级都是单播的情况下才可以返回true */
-    @Override
-    public boolean isUnicastAddr(WorkerAddr addr) {
-        return addr.serverType > 0
-                && addr.serverId > 0
-                && !("*".equals(addr.workerId));
-    }
-
-    /** 测试给定的地址在worker层是否是单播地址 */
-    @Override
-    public boolean isUnicastWorkerAddr(WorkerAddr addr) {
-        return !("*".equals(addr.workerId));
-    }
-
-    /** 测试给定的地址在worker层是否是广播地址 */
-    @Override
-    public boolean isBroadcastWorkerAddr(WorkerAddr addr) {
-        return "*".equals(addr.workerId);
     }
 
     /** 判断是否是单播地址 */
     @Override
     public boolean isUnicastAddr(RpcAddr addr) {
         if (addr instanceof WorkerAddr workerAddr) {
-            return isUnicastAddr(workerAddr);
+            return workerAddr.serverType > 0
+                    && workerAddr.serverId > 0
+                    && !("*".equals(workerAddr.workerId));
         }
-        return addr == StaticRpcAddr.LOCAL;
+        return false;
     }
 
     /** 测试给定的地址在worker层是否是单播地址 */
     @Override
-    public boolean isUnicastWorkerAddr(RpcAddr addr) {
+    public boolean isWorkerUnicastAddr(RpcAddr addr) {
         if (addr instanceof WorkerAddr workerAddr) {
-            return isUnicastWorkerAddr(addr);
+            return !("*".equals(workerAddr.workerId));
         }
-        return addr == StaticRpcAddr.LOCAL;
+        return false;
     }
 
     /** 测试给定的地址在worker层是否是广播地址 */
     @Override
-    public boolean isBroadcastWorkerAddr(RpcAddr addr) {
+    public boolean isWorkerBroadcastAddr(RpcAddr addr) {
         if (addr instanceof WorkerAddr workerAddr) {
-            return isBroadcastWorkerAddr(workerAddr);
+            return "*".equals(workerAddr.workerId);
         }
-        return addr == StaticRpcAddr.LOCAL_BROADCAST;
-    }
-
-    /** 测试给定地址似乎否是本地地址(进程内地址) */
-    @Override
-    public boolean isLocalAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return isLocalAddr(workerAddr);
-        }
-        return addr instanceof StaticRpcAddr;
+        return false;
     }
 
     // endregion

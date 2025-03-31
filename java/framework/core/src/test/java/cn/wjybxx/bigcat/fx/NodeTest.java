@@ -110,7 +110,7 @@ public class NodeTest {
                 // 要想直接注入子类，子类也需要显式绑定
                 // 子类如果不单独绑定，则会创建一个新的实例，各种bug...
                 bind(TestRpcRouter.class).in(Singleton.class);
-                bind(NodeRpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
+                bind(RpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
 
                 bind(RpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);

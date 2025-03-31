@@ -95,7 +95,7 @@ public class PBParserOptions {
     private Consumer<? super PBMessage> messageInterceptor = (message) -> {};
 
     /** 方法的默认模式 */
-    private int methodDefMode = PBMethod.MODE_NORMAL;
+    private boolean methodDefAsync = false;
     /** 方法是否默认追加ctx参数 */
     private boolean methodDefAppendCtx = false;
     /** 方法是否默认为手动返回结果 */
@@ -105,7 +105,7 @@ public class PBParserOptions {
     /** 异步方法返回值是否类型声明为{@link CompletableFuture}，如果为false，则声明为{@link IFuture} */
     private boolean useJdkFuture = false;
     /**
-     * 方法参数名的生成方式 - 参数为{@link PBMethod#getArgType()}
+     * 方法参数名的生成方式 - 参数为{@link PBMethod#getParameterType()}
      * 如果沿用Protobuf格式，方法参数仅类型无名字，可通过该函数根据类型名生成变量名。
      */
     private Function<String, String> argNameFunc = ObjectUtils::firstCharToLowerCase;
@@ -295,12 +295,12 @@ public class PBParserOptions {
         return this;
     }
 
-    public int getMethodDefMode() {
-        return methodDefMode;
+    public boolean getMethodDefAsync() {
+        return methodDefAsync;
     }
 
-    public PBParserOptions setMethodDefMode(int methodDefMode) {
-        this.methodDefMode = methodDefMode;
+    public PBParserOptions setMethodDefAsync(boolean methodDefAsync) {
+        this.methodDefAsync = methodDefAsync;
         return this;
     }
 

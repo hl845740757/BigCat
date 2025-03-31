@@ -23,7 +23,7 @@ package cn.wjybxx.bigcattools.common;
 public class TestUtil {
 
     /** bigcat总文件目录 */
-    public static final String bigcatPath = Utils.findProjectDir("BigCat").getPath();
+    public static final String bigcatPath = Utils.findProjectDir("BigCat").getPath() + "/java";
     /** 总仓库的文档目录地址 -- 部分示例表格 */
     public static final String docPath = bigcatPath + "/doc";
 

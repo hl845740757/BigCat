@@ -24,7 +24,8 @@ package cn.wjybxx.bigcat.fx;
  */
 public class RpcMethodKey {
 
-    private static final int FACTOR = 10000;
+    /** 服务id的乘系数 */
+    public static final int FACTOR = 10000;
 
     public static int methodKey(int serviceId, int methodId) {
         if (methodId < 0 || methodId >= FACTOR) {

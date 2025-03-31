@@ -76,7 +76,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
     private WorkerAddr selfAddr;
     private RpcMethodRegistry methodRegistry;
     private RpcSerializer serializer;
-    private NodeRpcRouter router;
+    private RpcRouter router;
     private TimeProvider timeProvider;
 
     // region 设置
@@ -130,7 +130,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         this.timeProvider = node.injector().getInstance(TimeProvider.class);
         this.serializer = node.injector().getInstance(RpcSerializer.class);
         this.methodRegistry = node.injector().getInstance(RpcMethodRegistry.class);
-        this.router = node.injector().getInstance(NodeRpcRouter.class);
+        this.router = node.injector().getInstance(RpcRouter.class);
     }
 
     @Override
@@ -405,7 +405,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
             return;
         }
         List<Worker> workerList = serviceInfo.workerList;
-        if (workerList.size() > 1 && router.isBroadcastWorkerAddr(request.getDestAddr())) {
+        if (workerList.size() > 1 && router.isWorkerBroadcastAddr(request.getDestAddr())) {
             // 广播 - 逆序迭代(顺序不应该产生影响)，最后一个worker不拷贝协议
             byte[] bytesParameters = serializer.write(request.getData(), methodInfo.parameterType);
             for (int i = workerList.size() - 1; i >= 0; i--) {
