@@ -17,12 +17,15 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.StableName;
+import cn.wjybxx.concurrent.IFuture;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * rpc执行时的上下文接口。
  * <p>
- * ps: 不能直接通过{@link RpcContext}发送结果，否则可能导致用户的封装失效，
- * 需要走统一出口{@link RpcClient}发包。
+ * ps: 由于我们会将RpcContext对象暴露给用户，以及监听Future的结果，因此RpcContext无法简单池化；
+ * 由于Java端并不支持值类型，因此我们保留抽象，以方便未来扩展。
  *
  * @author wjybxx
  * date 2023/4/1
@@ -31,23 +34,24 @@ public interface RpcContext<V> {
 
     /**
      * 连接id
-     * 服务器与客户端通信时使用该字段
+     * 1.服务器与客户端通信时使用该字段
+     * 2.可用于在返回结果前后向目标发送额外的消息
      */
     long conId();
 
     /**
      * 远端地址
-     * 1.可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
-     * 2.服务器之间通信时使用该字段
+     * 1.服务器之间通信时使用该字段
+     * 2.可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
      */
-    RpcAddr remoteAddr();
+    WorkerAddr remoteAddr();
 
     // region config
 
     /** 当前返回值是否可共享 */
     boolean isSharable();
 
-    /** 设置返回值是否可共享标记 -- 不论是否托管返回时机，都可以设置 */
+    /** 设置返回值是否可共享标记 */
     @StableName
     void setSharable(boolean sharable);
 
@@ -84,14 +88,11 @@ public interface RpcContext<V> {
     /** 发送错误结果 */
     void sendError(Throwable ex);
 
-    // endregion
+    /** 发送异步结果 */
+    void sendAsyncResult(IFuture<V> future);
 
-    // region 常量
-
-    /** 返回值可共享 */
-    int MASK_RESULT_SHARABLE = 1;
-    /** 手动返回结果 */
-    int MASK_RESULT_MANUAL = 1 << 1;
+    /** 发送异步结果 */
+    void sendAsyncResult(CompletableFuture<V> future);
 
     // endregion
 }

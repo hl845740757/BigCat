@@ -59,7 +59,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String CNAME_CONTEXT = "cn.wjybxx.bigcat.fx.RpcContext";
 
     private static final String CNAME_MY_FUTURE = "cn.wjybxx.concurrent.IFuture";
-    private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.Message";
+    private static final String CNAME_PROTOBUF_MESSAGE = "com.google.protobuf.AbstractMessage";
     private static final int MAX_PARAMETER_COUNT = 1; // 限制最大一个参数
 
     private TypeElement anno_rpcServiceElement;
@@ -79,6 +79,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     /** 不可变类型，不包含基础类型 */
     Set<TypeMirror> immutableTypeMirrors = new HashSet<>(36);
+    TypeMirror pbMessageTypeMirror;
 
     public RpcServiceProcessor() {
     }
@@ -119,6 +120,10 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
             immutableTypeMirrors.add(typeElement.asType());
         }
         immutableTypeMirrors.add(stringTypeMirror);
+        try {
+            pbMessageTypeMirror = elementUtils.getTypeElement(CNAME_PROTOBUF_MESSAGE).asType();
+        } catch (Exception ignore) {
+        }
     }
 
     @Override
@@ -165,6 +170,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
                 continue;
             }
             checkParameters(method);
+            checkReturnType(method);
             rpcMethodList.add(method);
         }
         return rpcMethodList;
@@ -181,8 +187,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private static TypeElement castTypeMirror2TypeElement(TypeMirror typeMirror) {
         DeclaredType declaredType = (DeclaredType) typeMirror;
-        Element element = declaredType.asElement();
-        return (TypeElement) element;
+        return (TypeElement) declaredType.asElement();
     }
 
     private void checkParameters(ExecutableElement method) {
@@ -200,9 +205,24 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         for (int idx = firstArgType.isContext() ? 1 : 0; idx < parameters.size(); idx++) {
             VariableElement variableElement = parameters.get(idx);
             if (isContext(variableElement.asType())) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "context and request must be declared as the first parameter!", method);
+                messager.printMessage(Diagnostic.Kind.ERROR, "context must be declared as the first parameter!", method);
                 continue;
             }
+            // 不再支持基本类型
+            if (variableElement.asType().getKind().isPrimitive()) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "rpc no longer support primitive types!", method);
+            }
+        }
+    }
+
+    private void checkReturnType(ExecutableElement method) {
+        // 不再支持基本类型
+        TypeMirror returnType = method.getReturnType();
+        if (isFuture(returnType)) {
+            returnType = findFirstTypeArgument(returnType, method);
+        }
+        if (returnType.getKind().isPrimitive()) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "rpc no longer support primitive types!", method);
         }
     }
 
@@ -215,12 +235,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         if (AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_GEN_PROXY, Boolean.TRUE)) {
             genClientProxy(typeElement, serviceId, rpcMethodList);
         }
-    }
-
-    Integer getServiceId(TypeElement typeElement) {
-        // 基本类型会被包装，Object不能直接转int
-        AnnotationMirror annotationMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType());
-        return AptUtils.getAnnotationValueValue(annotationMirror, PNAME_SERVICE_ID);
     }
 
     Map<String, AnnotationValue> getMethodAnnoValueMap(ExecutableElement method) {
@@ -267,7 +281,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         if (annotationValue != null) {
             return (Boolean) annotationValue.getValue();
         }
-
         // 如果所有参数都是不可变的，则默认true
         List<? extends VariableElement> parameters = method.getParameters();
         for (VariableElement parameter : parameters) {
@@ -289,16 +302,8 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
             return (Boolean) annotationValue.getValue();
         }
         // 如果所有参数都是不可变的，则默认true
-        List<? extends VariableElement> parameters = method.getParameters();
-        for (VariableElement parameter : parameters) {
-            if (isContext(parameter.asType())) {
-                continue;
-            }
-            if (!isImmutableType(parameter.asType())) {
-                return false;
-            }
-        }
-        return true;
+        TypeMirror returnType = rpcReturnType(method, false);
+        return isImmutableType(returnType);
     }
 
     // 默认只对基础类型，包装类型，String做自动的判别
@@ -306,7 +311,14 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         if (typeMirror.getKind().isPrimitive()) {
             return true;
         }
-        return immutableTypeMirrors.contains(typeMirror);
+        if (immutableTypeMirrors.contains(typeMirror)) {
+            return true;
+        }
+        if (pbMessageTypeMirror != null
+                && AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, pbMessageTypeMirror)) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -332,10 +344,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, contextTypeMirror);
     }
 
-    boolean isString(TypeMirror typeMirror) {
-        return AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, stringTypeMirror);
-    }
-
+    /** 是否是future类型 */
     boolean isFuture(TypeMirror typeMirror) {
         for (TypeMirror futureTypeMirror : futureTypeMirrors) {
             if (AptUtils.isSubTypeIgnoreTypeParameter(typeUtils, typeMirror, futureTypeMirror)) {
@@ -345,6 +354,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return false;
     }
 
+    /** 获取rpc方法第一个参数的类型 */
     FirstArgType firstArgType(ExecutableElement method) {
         List<? extends VariableElement> parameters = method.getParameters();
         if (parameters.size() == 0) return FirstArgType.NONE;
@@ -354,4 +364,44 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
         return FirstArgType.OTHER;
     }
 
+    /**
+     * 解析Rpc方法的返回值类型
+     * 如果是基本类型，会进行装箱；
+     * 如果是Future，会解析泛型参数；
+     * 如果是RpcContext，会解析泛型参数
+     *
+     * @param boxed 返回值是否进行装箱
+     */
+    TypeMirror rpcReturnType(ExecutableElement method, boolean boxed) {
+        // context覆盖返回值类型
+        List<? extends VariableElement> parameters = method.getParameters();
+        if (parameters.size() > 0 && isContext(parameters.get(0).asType())) {
+            return findFirstTypeArgument(parameters.get(0).asType(), method);
+        }
+        TypeMirror returnType = method.getReturnType();
+        // 基础类型和void -- 现不再支持基本类型
+//        if (returnType.getKind().isPrimitive()) {
+//            return boxed ? typeUtils.boxedClass((PrimitiveType) returnType).asType() : returnType;
+//        }
+        if (returnType.getKind() == TypeKind.VOID) {
+            return boxed ? boxedVoidTypeMirror : returnType;
+        }
+        // future类型
+        if (isFuture(returnType)) {
+            return findFirstTypeArgument(returnType, method);
+        } else {
+            return returnType;
+        }
+    }
+
+    /** @param method 用于打印错误 */
+    TypeMirror findFirstTypeArgument(TypeMirror typeMirror, ExecutableElement method) {
+        TypeMirror firstTypeParameter = AptUtils.findFirstTypeParameter(typeMirror);
+        if (firstTypeParameter == null) {
+            messager.printMessage(Diagnostic.Kind.WARNING, "Future missing type parameter!", method);
+            return objectTypeMirror;
+        } else {
+            return firstTypeParameter;
+        }
+    }
 }

@@ -23,7 +23,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * Rpc客户端。
- * 各个模块绑定具体的实现类到该接口；当然，也可以提供更具体的方法。
  *
  * <h3>实现要求</h3>
  * 1. 单向消息(send系列方法)：无论执行成功还是失败，实现必须忽略调用的方法的执行结果(最好不回传结果，而不是仅仅不上报给调用者)。
@@ -50,7 +49,7 @@ public interface RpcClient {
      * @param target     远程地址
      * @param methodSpec 要调用的方法信息
      */
-    void send(RpcAddr target, RpcMethodSpec<?> methodSpec);
+    void send(WorkerAddr target, RpcMethodSpec<?> methodSpec);
 
     /**
      * 发起一个rpc调用，可以监听调用结果。
@@ -60,7 +59,7 @@ public interface RpcClient {
      * @param methodSpec 要调用的方法信息
      * @return future，可以监听调用结果
      */
-    <V> IFuture<V> call(RpcAddr target, RpcMethodSpec<V> methodSpec);
+    <V> IFuture<V> call(WorkerAddr target, RpcMethodSpec<V> methodSpec);
 
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回 -- 使用默认的超时时间。
@@ -70,7 +69,7 @@ public interface RpcClient {
      * @return 方法返回值
      * @throws RpcException 执行错误时抛出异常
      */
-    <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec);
+    <V> V syncCall(WorkerAddr target, RpcMethodSpec<V> methodSpec);
 
     /**
      * 执行一个同步rpc调用，当前线程会阻塞到结果返回。
@@ -81,6 +80,6 @@ public interface RpcClient {
      * @return 执行结果
      * @throws RpcException 执行错误时抛出异常
      */
-    <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs);
+    <V> V syncCall(WorkerAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs);
 
 }

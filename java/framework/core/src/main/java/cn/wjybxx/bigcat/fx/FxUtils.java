@@ -18,6 +18,7 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ClassScanner;
 import cn.wjybxx.base.CollectionUtils;
+import cn.wjybxx.base.SystemPropsUtils;
 import cn.wjybxx.concurrent.EventLoopModule;
 import com.google.inject.Injector;
 
@@ -48,6 +49,8 @@ public class FxUtils {
      * 如果需要查询当前线程的Node，可通过Worker查询。
      */
     public final static CopyOnWriteArraySet<Node> CURRENT_NODES = new CopyOnWriteArraySet<>();
+    /** rpc对象池的大小 */
+    public static final int RPC_POOL_SIZE = SystemPropsUtils.getInt("Wjybxx.BigCat.Fx.RpcPoolSize", 1024);
 
     /** worker发到node的rpc请求 - 发送，包含worker,request，promise */
     public static final int TYPE_WORKER_NODE_REQUEST = 1;

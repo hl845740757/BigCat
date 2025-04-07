@@ -20,7 +20,6 @@ import cn.wjybxx.base.MathCommon;
 import cn.wjybxx.base.time.Regulator;
 import cn.wjybxx.base.time.TimeHelper;
 import cn.wjybxx.concurrent.EventLoopModule;
-import cn.wjybxx.concurrent.IEventLoop;
 import com.google.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -53,7 +52,7 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     // 测试从接口继承的方法
     private final Map<String, Object> extBlackboard = new HashMap<>();
     // 目标地址 -- 本地
-    private  RpcAddr serverAddr;
+    private WorkerAddr serverAddr;
 
     public RpcClientExample() {
     }

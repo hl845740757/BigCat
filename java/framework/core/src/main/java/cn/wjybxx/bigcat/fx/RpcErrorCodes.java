@@ -47,12 +47,14 @@ public class RpcErrorCodes {
     // 31 - 50 表服务器异常
     /** 表示服务器调用出现异常的错误码 */
     public static final int SERVER_EXCEPTION = 31;
-    /** 不支持的接口调用 */
+    /** 不支持的接口调用 -- 或是服务id非法，或是方法id非法 */
     public static final int SERVER_UNSUPPORTED_INTERFACE = 32;
     /** 连接状态错误 */
     public static final int SERVER_CONNECTION_STATE_ERROR = 33;
     /** 服务端反序列化请求失败 */
     public static final int SERVER_DESERIALIZE_FAILED = 34;
+    /** 服务端检测到请求过期 */
+    public static final int SERVER_REQUEST_EXPIRED = 34;
 
     /**
      * 判断错误码是否属于用户命名空间

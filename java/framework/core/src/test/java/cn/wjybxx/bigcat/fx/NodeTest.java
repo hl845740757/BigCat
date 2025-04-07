@@ -44,22 +44,22 @@ public class NodeTest {
         System.out.println();
 
         node = NodeBuilder.newDefaultNodeBuilder()
-                .setNodeAddr(new WorkerAddr(1, 1))
+                .setNodeAddr(new WorkerAddr(1, null))
                 .setWorkerId("Node")
                 // 初始化模块
                 .setInjector(createNodeInjector())
                 .addModule(RpcClient.class)
-                .addModule(RpcSupport.class)
+                .addModule(NodeRpcSupport.class)
                 .addModule(TestRpcRouter.class)
                 // 初始化rpc接口包
                 .addRpcPackage(TestRpcRouter.class.getPackageName())
                 // 初始化Worker，1号worker是client，2号是server，否则无法支持同步调用
                 .setNumberChildren(2)
-                .setWorkerFactory((parent, index, workerCtx) -> {
+                .setWorkerFactory((parent, index, controlData) -> {
                     WorkerBuilder.DisruptWorkerBuilder workerBuilder = WorkerBuilder.newDisruptorWorkerBuilder()
                             .setWorkerId("Worker-" + index)
                             .setParent(parent)
-                            .setWorkerCtx(workerCtx)
+                            .setControlData(controlData)
                             // 初始化模块
                             .setInjector(createWorkerInjector())
                             .addModule(RpcClient.class);
@@ -112,7 +112,7 @@ public class NodeTest {
                 bind(TestRpcRouter.class).in(Singleton.class);
                 bind(RpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
 
-                bind(RpcSupport.class).in(Singleton.class);
+                bind(NodeRpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
                 bind(RpcMethodRegistry.class).in(Singleton.class);
             }

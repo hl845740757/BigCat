@@ -17,9 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.StableName;
-import cn.wjybxx.concurrent.IFuture;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * rpc方法代理
@@ -30,20 +27,16 @@ import java.util.concurrent.CompletableFuture;
  * date 2023/4/1
  */
 @FunctionalInterface
-public interface RpcMethodProxy {
+public interface RpcMethodProxy<T> {
 
     /**
      * 执行调用
+     * 注意，proxy不可捕获Request的引用，否则可能导致异常！
      *
-     * <h3>返回值说来</h3>
-     * 1. 如果返回{@link IFuture}或{@link CompletableFuture}，则底层监听future完成，将结果返回给远程调用者
-     * 2. 如果返回其它值，则表示方法已执行完毕，其结果将直接返回给远程
-     *
-     * @param context   rpc执行上下文
+     * @param context   rpc执行上下文，通过context返回结果
      * @param parameter 方法参数
-     * @return 方法执行结果
      * @throws Exception 由于用户的代码可能存在抛出异常的情况，这里声明异常对lambda更友好
      */
-    Object invoke(@StableName RpcContext<?> context, Object parameter) throws Exception;
+    void invoke(@StableName RpcContext<T> context, Object parameter) throws Exception;
 
 }

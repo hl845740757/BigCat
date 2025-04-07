@@ -29,6 +29,7 @@ public interface RpcInterceptor {
      * 1.走到这里的时候，方法参数已反序列化
      * 2.该方法在Worker线程执行（即主线程执行）
      * 3.信息应该来源于方法的切面数据{@link RpcRegistry#getProxyData(int, int)}
+     * 4.错误码约定见{@link RpcErrorCodes}
      *
      * @return 错误码，返回0表示可以执行，其它则表示不可以执行
      */

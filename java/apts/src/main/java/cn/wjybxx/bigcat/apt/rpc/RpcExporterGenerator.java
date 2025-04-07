@@ -19,13 +19,11 @@ package cn.wjybxx.bigcat.apt.rpc;
 import cn.wjybxx.apt.AbstractGenerator;
 import cn.wjybxx.apt.AptUtils;
 import cn.wjybxx.apt.BeanUtils;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -104,13 +102,23 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
     /**
      * 为某个具体方法生成注册方法，方法分为两类
-     * 1. 有返回值的，直接返回方法执行结果（任意值）; 如果方法签名中包含context，需要传入
+     * 1. 有返回值的，直接返回方法执行结果; 如果方法签名中包含context，需要传入；
      * <pre>
      * {@code
      * 		private static void exportMethod1(RpcFunctionRegistry registry, T instance) {
-     * 		    registry.register(10001, (context, parameter) -> {
-     * 		        return instance.method10001(parameter);
-     * 		        // return instance.method10001(context, parameter);
+     * 		    registry.<R>register(10001, (context, parameter) -> {
+     * 		        R r = instance.method10001(context, (T) parameter);
+     * 		        if (context.isManualReturn()) return;
+     * 		        context.sendResult(r);
+     *         }
+     *     }
+     * }
+     * {@code
+     * 		private static void exportMethod1(RpcFunctionRegistry registry, T instance) {
+     * 		    registry.<R>register(10001, (context, parameter) -> {
+     * 		        IFuture<R> r = instance.method10001(context, (T) parameter);
+     * 		        if (context.isManualReturn()) return;
+     * 		        context.sendAsyncResult(r);
      *         }
      *     }
      * }
@@ -118,11 +126,9 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * 2. 无返回值的，代理执行完之后直接返回null；如果方法签名中包含context，需要传入
      * <pre>
      * {@code
-     * 		private static void exportMethod2(RpcFunctionRegistry registry, T instance) {
-     * 		    registry.register(10002, (context, parameter) -> {
-     * 		        instance.method10002(parameter);
-     * 		        // instance.method10002(context, parameter);
-     * 		        return null;
+     *      private static void exportMethod2(RpcFunctionRegistry registry, T instance) {
+     * 		    registry.<Object>register(10002, (context, parameter) -> {
+     * 		        instance.method10001(context, (T) parameter);
      *          }
      *     }
      * }
@@ -138,35 +144,57 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
                 .addParameter(TypeName.get(typeElement.asType()), varName_instance);
         // 拷贝泛型参数
         AptUtils.copyTypeVariables(builder, method);
-
-        // registry中的方法
-        builder.addCode("$L.register($L, $L, (context, $L) -> {\n",
-                varName_registry, serviceId, methodId, varName_parameter);
-
-        // 可变性设置
-        if (processor.isResultSharable(method, annoValueMap)) {
-            builder.addStatement("    context.setSharable(true)");
-        }
-        if (processor.isManualReturn(method, annoValueMap)) {
-            builder.addStatement("    context.setManualReturn(true)");
-        }
-        // 执行方法调用
-        FirstArgType firstArgType = processor.firstArgType(method);
-        final InvokeStatement invokeStatement = genInvokeStatement(method, firstArgType);
-        if (method.getReturnType().getKind() == TypeKind.VOID) {
-            builder.addStatement("    " + invokeStatement.format, invokeStatement.params.toArray());
-            builder.addStatement("    return null");
-        } else {
-            builder.addStatement("    return " + invokeStatement.format, invokeStatement.params.toArray());
-        }
-        builder.addStatement("})");
-
+        // 注册方法代理
+        builder.addCode(genMethodProxy(serviceId, method, methodId, annoValueMap).build());
         // 注册切面数据
         String customData = processor.getCustomData(method, annoValueMap);
         if (customData != null) {
             builder.addStatement("$L.setProxyData($L, $L, $S)", varName_registry, serviceId, methodId, customData);
         }
         return builder.build();
+    }
+
+    /** 生成方法代理 */
+    private CodeBlock.Builder genMethodProxy(int serviceId, ExecutableElement method, int methodId,
+                                             Map<String, AnnotationValue> annoValueMap) {
+        CodeBlock.Builder codeBuilder = CodeBlock.builder();
+        // registry -- 传入泛型参数，可以避免不必要的类型转换
+        TypeMirror rpcReturnType = processor.rpcReturnType(method, true);
+        codeBuilder.beginControlFlow("$L.<$T>register($L, $L, (context, $L) ->",
+                varName_registry, rpcReturnType, serviceId, methodId, varName_parameter);
+        // 可变性设置
+        if (processor.isResultSharable(method, annoValueMap)) {
+            codeBuilder.addStatement("context.setSharable(true)");
+        }
+        if (processor.isManualReturn(method, annoValueMap)) {
+            codeBuilder.addStatement("context.setManualReturn(true)");
+        }
+        // 执行方法调用 -- 这里测试方法的直接返回值
+        if (method.getReturnType().getKind() == TypeKind.VOID) {
+            StringBuilder format = new StringBuilder(32);
+            List<Object> params = new ArrayList<>(4);
+            genInvokeStatement(method, format, params);
+            codeBuilder.addStatement(format.toString(), params.toArray()); // 需要ToArray
+        } else {
+            StringBuilder format = new StringBuilder(32);
+            List<Object> params = new ArrayList<>(4);
+            {
+                format.append("$T tempR = ");
+                params.add(TypeName.get(method.getReturnType()));
+            }
+            genInvokeStatement(method, format, params);
+            codeBuilder.addStatement(format.toString(), params.toArray()); // 需要ToArray
+
+            codeBuilder.addStatement("if (context.isManualReturn()) return");
+            if (processor.isFuture(method.getReturnType())) {
+                codeBuilder.addStatement("context.sendAsyncResult(tempR)");
+            } else {
+                codeBuilder.addStatement("context.sendResult(tempR)");
+            }
+        }
+        codeBuilder.unindent(); // endControlFlow会拼入空格...
+        codeBuilder.addStatement("})");
+        return codeBuilder;
     }
 
     /**
@@ -181,26 +209,20 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * 生成方法调用代码，没有分号和换行符。
      * {@code instance.rpcMethod(a, b, c)}
      */
-    private InvokeStatement genInvokeStatement(ExecutableElement method, FirstArgType firstArgType) {
-        final StringBuilder format = new StringBuilder();
-        final List<Object> params = new ArrayList<>(method.getParameters().size());
-
+    private void genInvokeStatement(ExecutableElement method, StringBuilder format, List<Object> params) {
         // 调用方法
         format.append("$L.$L(");
         params.add(varName_instance);
         params.add(method.getSimpleName().toString());
 
-        // 去除context
+        // 去除context -- Context的类型转换已在上面统一处理
         List<? extends VariableElement> parameters = method.getParameters();
-        if (firstArgType.isContext()) {
-            TypeName targetContextType = TypeName.get(parameters.get(0).asType());
-            format.append("($T) context");
-            params.add(targetContextType);
-
-            parameters = method.getParameters().subList(1, parameters.size());
-            if (parameters.size() > 0) {
+        if (parameters.size() > 0 && processor.isContext(parameters.get(0).asType())) {
+            format.append("context");
+            if (parameters.size() > 1) {
                 format.append(", ");
             }
+            parameters = method.getParameters().subList(1, parameters.size());
         }
         // 方法参数已限定为最多1个，Object向下转换
         if (parameters.size() > 0) {
@@ -212,17 +234,5 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
             params.add(varName_parameter);
         }
         format.append(")");
-        return new InvokeStatement(format.toString(), params);
-    }
-
-    private static class InvokeStatement {
-
-        private final String format;
-        private final List<Object> params;
-
-        private InvokeStatement(String format, List<Object> params) {
-            this.format = format;
-            this.params = params;
-        }
     }
 }

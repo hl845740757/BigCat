@@ -84,7 +84,7 @@ public interface Worker extends IDisruptorEventLoop<WorkerEvent> {
      * 这些数据只应该node读写，用户不应该访问，不保证对外的可见性。
      */
     @Internal
-    WorkerCtx workerCtx();
+    WorkerControlData controlData();
 
     /**
      * Worker绑定的Node

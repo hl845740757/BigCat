@@ -16,6 +16,7 @@
 
 package cn.wjybxx.bigcattools.common.io;
 
+import cn.wjybxx.base.io.IORuntimeException;
 import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
@@ -89,7 +90,7 @@ public class LineIterator implements Iterator<Line>, Closeable {
             }
         } catch (final IOException ioe) {
             IOUtils.closeQuietly(this, ioe::addSuppressed);
-            throw new IllegalStateException(ioe);
+            throw new IORuntimeException(ioe);
         }
     }
 

@@ -32,7 +32,7 @@ import java.util.Objects;
 public class WorkerRpcClient extends EventLoopModule implements RpcClient, IAgentEventHandler<WorkerEvent> {
 
     private Worker worker;
-    private RpcSupport rpcSupport;
+    private NodeRpcSupport rpcSupport;
 
     @Override
     public void resolveDependence() {
@@ -43,26 +43,26 @@ public class WorkerRpcClient extends EventLoopModule implements RpcClient, IAgen
         } else {
             node = Objects.requireNonNull(worker.parent());
         }
-        this.rpcSupport = node.injector().getInstance(RpcSupport.class);
+        this.rpcSupport = node.injector().getInstance(NodeRpcSupport.class);
     }
 
     @Override
-    public void send(RpcAddr target, RpcMethodSpec<?> methodSpec) {
+    public void send(WorkerAddr target, RpcMethodSpec<?> methodSpec) {
         rpcSupport.w2n_send(worker, target, methodSpec);
     }
 
     @Override
-    public <V> IFuture<V> call(RpcAddr target, RpcMethodSpec<V> methodSpec) {
+    public <V> IFuture<V> call(WorkerAddr target, RpcMethodSpec<V> methodSpec) {
         return rpcSupport.w2n_call(worker, target, methodSpec);
     }
 
     @Override
-    public <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec) {
+    public <V> V syncCall(WorkerAddr target, RpcMethodSpec<V> methodSpec) {
         return rpcSupport.w2n_syncCall(worker, target, methodSpec);
     }
 
     @Override
-    public <V> V syncCall(RpcAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs) {
+    public <V> V syncCall(WorkerAddr target, RpcMethodSpec<V> methodSpec, long timeoutMs) {
         return rpcSupport.w2n_syncCall(worker, target, methodSpec, timeoutMs);
     }
 
@@ -82,8 +82,8 @@ public class WorkerRpcClient extends EventLoopModule implements RpcClient, IAgen
                 rpcSupport.onRcvRequestStep3((Worker) event.obj1, (RpcRequest) event.obj2);
             }
             case FxUtils.TYPE_NODE_WORKER_RESPONSE -> {
-                @SuppressWarnings("unchecked") IPromise<Object> promise = (IPromise<Object>) event.obj2;
-                rpcSupport.onRcvResponseStep3((RpcResponse) event.obj1, promise);
+                @SuppressWarnings("unchecked") IPromise<Object> promise = (IPromise<Object>) event.obj1;
+                rpcSupport.onRcvResponseStep3(promise, event.intVal1, event.obj2);
             }
             default -> {
                 throw new AssertionError();

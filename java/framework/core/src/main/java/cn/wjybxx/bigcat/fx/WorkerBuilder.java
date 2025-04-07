@@ -46,7 +46,7 @@ public abstract class WorkerBuilder {
      * {@link RpcClient}、{@link RpcRegistry}、
      * <p>
      * 如果是Node，则还需要包含：
-     * {@link RpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
+     * {@link NodeRpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
      * {@link RpcMethodRegistry}、{@link TimeProvider}
      */
     private Injector injector;
@@ -66,7 +66,7 @@ public abstract class WorkerBuilder {
     private final List<Class<?>> serviceClasses = new ArrayList<>();
 
     /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
-    private WorkerCtx workerCtx;
+    private WorkerControlData controlData;
     /** 是否手动关闭Worker -- 如果未赋值，则取决于添加到Node时是否已启动 */
     private Boolean manualClose;
     /** Builder之间不方便继承 */
@@ -134,12 +134,12 @@ public abstract class WorkerBuilder {
 
     //region worker
 
-    public WorkerCtx getWorkerCtx() {
-        return workerCtx;
+    public WorkerControlData getWorkerCtx() {
+        return controlData;
     }
 
-    public WorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
-        this.workerCtx = workerCtx;
+    public WorkerBuilder setControlData(WorkerControlData controlData) {
+        this.controlData = controlData;
         return this;
     }
 
@@ -260,8 +260,8 @@ public abstract class WorkerBuilder {
         }
 
         @Override
-        public DisruptWorkerBuilder setWorkerCtx(WorkerCtx workerCtx) {
-            super.setWorkerCtx(workerCtx);
+        public DisruptWorkerBuilder setControlData(WorkerControlData controlData) {
+            super.setControlData(controlData);
             return this;
         }
 

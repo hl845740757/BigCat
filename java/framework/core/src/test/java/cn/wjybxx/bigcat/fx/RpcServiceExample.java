@@ -69,7 +69,7 @@ public class RpcServiceExample extends EventLoopModule implements ExtensibleServ
     }
 
     /** 测试context的代码生成 -- 参数和结果都不设置为可共享的，测试反序列化 */
-    @RpcMethod(methodId = 6, manualReturn = true)
+    @RpcMethod(methodId = 6)
     public void contextHello(RpcContext<Response> rpcContext, Request request) {
         rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage(Request.ofString("context -- before")));
         {

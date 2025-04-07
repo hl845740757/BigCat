@@ -20,61 +20,47 @@ import cn.wjybxx.dsoncodec.DsonObjectReader;
 import cn.wjybxx.dsoncodec.TypeInfo;
 import cn.wjybxx.dsoncodec.annotations.DsonProperty;
 import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
 /**
  * Worker地址
- *
- * <h3>推荐方案</h3>
- * 负数用于表示特殊地址，正数表示单播地址，0表示不指定。
- * 1. {@link #serverType} 如果为-1，表示匹配所有类型的服务器
- * 2. {@link #serverId} 如果为-1，表示匹配该类型所有服务器
- * 3. {@link #workerId} 如果为null或空白，表示不指定Worker；如果为'*'，表示匹配所有worker
+ * PS：建议使用静态方法代替构造函数，提供更友好的API -- 或提供Utils类。
  *
  * @author wjybxx
  * date - 2023/10/4
  */
 @DsonSerializable
-public final class WorkerAddr implements RpcAddr {
+public final class WorkerAddr {
 
-    /** 服务器类型 */
-    @DsonProperty(name = "type")
-    public final int serverType;
-    /** 服务器id */
-    @DsonProperty(name = "sid")
-    public final int serverId;
-    /** 线程id -- 通常不应该指定 */
+    /**
+     * NodeId，进程id。
+     * <p>
+     * 1.服务器地址应当是一个稳定值，就像主机的hostname。
+     * 2.发送Rpc时通常精确指定
+     * 3.NodeId通常是可编码的，通常包含服务器类型和服务器id。
+     * 4.虽然int类型随扩展性有限，但对于游戏服务器而言足够。
+     */
+    @DsonProperty(name = "nid")
+    public final int nodeId;
+    /**
+     * WorkerId，线程Id
+     * <p>
+     * 1.线程id通常不具有稳定性，用户应尽可能避免线程id
+     * 2.发送Rpc时通常不指定
+     */
     @DsonProperty(name = "wid")
     public final String workerId;
 
-    public WorkerAddr(int serverType, int serverId) {
-        this(serverType, serverId, null);
-    }
-
-    public WorkerAddr(int serverType, int serverId, String workerId) {
-        this.serverType = serverType;
-        this.serverId = serverId;
+    public WorkerAddr(int nodeId, String workerId) {
+        this.nodeId = nodeId;
         this.workerId = workerId;
     }
 
     /** 解码函数 */
     public WorkerAddr(DsonObjectReader reader, TypeInfo typeInfo) {
-        this.serverType = reader.readInt(WorkerAddrCodec.names_serverType);
-        this.serverId = reader.readInt(WorkerAddrCodec.names_serverId);
+        this.nodeId = reader.readInt(WorkerAddrCodec.names_nodeId);
         this.workerId = reader.readString(WorkerAddrCodec.names_workerId);
-    }
-
-    /** 是否有workerId */
-    public boolean hasWorkerId() {
-        return !StringUtils.isBlank(workerId);
-    }
-
-    /** 测试除worker以外的部分是否相同 */
-    public boolean equalsIgnoreWorker(WorkerAddr that) {
-        return serverType == that.serverType
-                && serverId == that.serverId;
     }
 
     @Override
@@ -83,25 +69,20 @@ public final class WorkerAddr implements RpcAddr {
         if (o == null || getClass() != o.getClass()) return false;
 
         WorkerAddr that = (WorkerAddr) o;
-
-        if (serverType != that.serverType) return false;
-        if (serverId != that.serverId) return false;
-        return Objects.equals(workerId, that.workerId);
+        return nodeId == that.nodeId && Objects.equals(workerId, that.workerId);
     }
 
     @Override
     public int hashCode() {
-        int result = serverType;
-        result = 31 * result + serverId;
-        result = 31 * result + (workerId != null ? workerId.hashCode() : 0);
+        int result = nodeId;
+        result = 31 * result + Objects.hashCode(workerId);
         return result;
     }
 
     @Override
     public String toString() {
         return "WorkerAddr{" +
-                "serverType=" + serverType +
-                ", serverId=" + serverId +
+                "nodeId=" + nodeId +
                 ", workerId='" + workerId + '\'' +
                 '}';
     }

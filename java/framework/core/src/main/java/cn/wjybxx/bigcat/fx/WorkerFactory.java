@@ -29,12 +29,12 @@ public interface WorkerFactory extends EventLoopFactory {
     @Deprecated
     @Override
     default IEventLoop newChild(IEventLoopGroup parent, int index, Object extraInfo) {
-        return newChild((Node) parent, index, (WorkerCtx) extraInfo);
+        return newChild((Node) parent, index, (WorkerControlData) extraInfo);
     }
 
     /**
-     * @param workerCtx node为worker分配的上下文
+     * @param controlData node为worker分配的上下文
      */
-    Worker newChild(Node parent, int index, WorkerCtx workerCtx);
+    Worker newChild(Node parent, int index, WorkerControlData controlData);
 
 }

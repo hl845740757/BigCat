@@ -63,9 +63,10 @@ public @interface RpcMethod {
 
     /**
      * 该方法在该类中的唯一id。
-     * 注意：取值范围为闭区间[0, 9999]。
-     *
-     * @return 由该id和serviceId构成唯一索引。
+     * <p>
+     * 注意：
+     * 1.取值范围为闭区间[1, 9999]。
+     * 2.由该id和serviceId构成唯一索引
      */
     int methodId();
 
@@ -73,7 +74,7 @@ public @interface RpcMethod {
      * 方法参数是否可共享
      * 当方法参数可共享时，序列化会延迟到IO线程 —— 理论上可做到进程内rpc不序列化。
      * <p>
-     * 1.该属性用于配置默认值，以免所有调用者都需要调用{@link RpcMethodSpec#setSharable(boolean)}设置共享属性。
+     * 1.该属性用于配置默认值，减少用户调用{@link RpcMethodSpec#setSharable(boolean)}设置共享属性。
      * 2.主要用于避免本地Rpc调用时的序列化过程
      */
     boolean argSharable() default false;
@@ -82,7 +83,7 @@ public @interface RpcMethod {
      * 方法返回值是否可共享
      * 当返回值可共享时，序列化会延迟到IO线程
      * <p>
-     * 1.该属性用于配置默认值，以免方法的实现者调用{@link RpcContext#setSharable(boolean)}.
+     * 1.该属性用于配置默认值，减少用户调用{@link RpcContext#setSharable(boolean)}.
      * 2.主要用于避免本地Rpc调用时的序列化过程
      *
      * @see #argSharable()
@@ -92,8 +93,9 @@ public @interface RpcMethod {
     /**
      * 是否由用户手动返回结果
      * <p>
-     * 1.该属性用于配置默认值，以免方法的实现者调用{@link RpcContext#setManualReturn(boolean)}
+     * 1.该属性用于配置默认值，减少用户调用{@link RpcContext#setManualReturn(boolean)}
      * 2.如果用户手动返回结果，方法参数第一个必须是{@link RpcContext}
+     * 3.方法的直接返回值为{@code void}时才需要设置
      */
     boolean manualReturn() default false;
 

@@ -25,7 +25,7 @@ public class TestUtil {
     /** bigcat总文件目录 */
     public static final String bigcatPath = Utils.findProjectDir("BigCat").getPath() + "/java";
     /** 总仓库的文档目录地址 -- 部分示例表格 */
-    public static final String docPath = bigcatPath + "/doc";
+    public static final String docPath = bigcatPath + "/docs";
 
     /** tools项目根目录 */
     public static final String toolsPath = bigcatPath + "/tools";

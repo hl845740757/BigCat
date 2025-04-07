@@ -25,7 +25,7 @@ import cn.wjybxx.concurrent.EventLoopModule;
 public abstract class AbstractRpcRouter extends EventLoopModule implements RpcRouter {
 
     protected Node node;
-    protected RpcSupport rpcSupport;
+    protected NodeRpcSupport rpcSupport;
     protected RpcSerializer serializer;
     protected RpcMethodRegistry methodRegistry;
 
@@ -50,47 +50,9 @@ public abstract class AbstractRpcRouter extends EventLoopModule implements RpcRo
     @Override
     public void resolveDependence() {
         node = (Node) getEntity();
-        rpcSupport = node.injector().getInstance(RpcSupport.class);
+        rpcSupport = node.injector().getInstance(NodeRpcSupport.class);
         serializer = node.injector().getInstance(RpcSerializer.class);
         methodRegistry = node.injector().getInstance(RpcMethodRegistry.class);
-    }
-
-    /** 测试给定地址似乎否是本地地址(进程内地址) */
-    @Override
-    public boolean isLocalAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return node.nodeAddr().equalsIgnoreWorker(workerAddr);
-        }
-        return false;
-    }
-
-    /** 判断是否是单播地址 */
-    @Override
-    public boolean isUnicastAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return workerAddr.serverType > 0
-                    && workerAddr.serverId > 0
-                    && !("*".equals(workerAddr.workerId));
-        }
-        return false;
-    }
-
-    /** 测试给定的地址在worker层是否是单播地址 */
-    @Override
-    public boolean isWorkerUnicastAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return !("*".equals(workerAddr.workerId));
-        }
-        return false;
-    }
-
-    /** 测试给定的地址在worker层是否是广播地址 */
-    @Override
-    public boolean isWorkerBroadcastAddr(RpcAddr addr) {
-        if (addr instanceof WorkerAddr workerAddr) {
-            return "*".equals(workerAddr.workerId);
-        }
-        return false;
     }
 
     // endregion

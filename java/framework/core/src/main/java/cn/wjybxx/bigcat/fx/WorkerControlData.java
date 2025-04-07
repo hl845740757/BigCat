@@ -30,13 +30,13 @@ import javax.annotation.concurrent.NotThreadSafe;
  * date - 2023/10/28
  */
 @NotThreadSafe
-public final class WorkerCtx {
+public final class WorkerControlData {
 
     RpcRegistry rpcRegistry;
     RpcInterceptor rpcInterceptor;
     Boolean manualClose;
 
-    public WorkerCtx() {
+    public WorkerControlData() {
     }
 
     boolean isManualClose() {

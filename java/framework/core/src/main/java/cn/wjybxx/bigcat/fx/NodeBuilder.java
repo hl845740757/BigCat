@@ -80,8 +80,8 @@ public abstract class NodeBuilder extends WorkerBuilder {
     }
 
     @Override
-    public NodeBuilder setWorkerCtx(WorkerCtx workerCtx) {
-        super.setWorkerCtx(workerCtx);
+    public NodeBuilder setControlData(WorkerControlData controlData) {
+        super.setControlData(controlData);
         return this;
     }
 
@@ -206,10 +206,10 @@ public abstract class NodeBuilder extends WorkerBuilder {
                 setThreadFactory(new DefaultThreadFactory("Node"));
             }
             if (getWorkerFactory() == null) {
-                setWorkerFactory((parent, index, ctx) -> {
+                setWorkerFactory((parent, index, controlData) -> {
                     return WorkerBuilder.newDisruptorWorkerBuilder()
                             .setParent(parent)
-                            .setWorkerCtx(ctx)
+                            .setControlData(controlData)
                             .setWorkerId("Worker-" + index)
                             .build();
                 });

@@ -65,11 +65,6 @@ public final class RpcMethodRegistry {
         return mutable;
     }
 
-    /** 当前是否处于不可变状态 */
-    public boolean isImmutable() {
-        return !mutable;
-    }
-
     /**
      * 设置为不可变(主线程注册完毕后调用)
      * 1.设置为不可变后，不再可增删MethodInfo和MethodProxy，切面数据可以动态变更

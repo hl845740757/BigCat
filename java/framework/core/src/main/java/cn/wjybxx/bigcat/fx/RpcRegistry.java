@@ -39,7 +39,7 @@ public interface RpcRegistry {
      * @throws IllegalArgumentException 如果已存在对应的proxy，则抛出异常
      */
     @StableName
-    void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy);
+    <T> void register(int serviceId, int methodId, @Nonnull RpcMethodProxy<T> proxy);
 
     /**
      * 设置代理的切面数据
@@ -64,26 +64,20 @@ public interface RpcRegistry {
      * @param customData 自定义切面数据；也可用于指示是否可覆盖
      */
     @StableName
-    default void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy,
-                          @Nullable Object customData) {
+    default <T> void register(int serviceId, int methodId, @Nonnull RpcMethodProxy<T> proxy,
+                              @Nullable Object customData) {
         register(serviceId, methodId, proxy);
         setProxyData(serviceId, methodId, customData);
     }
-
-    /**
-     * 查询是否存在对应方法的代理
-     * 由于{@link #getProxy(int, int)}可能返回默认的proxy，因此不能根据是否为null判断是否存在服务
-     */
-    boolean hasProxy(int serviceId, int methodId);
 
     /**
      * 查询方法绑定的Proxy
      *
      * @param serviceId 服务id
      * @param methodId  方法id
-     * @return 如果不存在，则返回默认的proxy -- {@link #getDefaultProxy()}
+     * @return 如果不存在，则返回null
      */
-    RpcMethodProxy getProxy(int serviceId, int methodId);
+    RpcMethodProxy<?> getProxy(int serviceId, int methodId);
 
     /**
      * 删除指定方法的Proxy
@@ -93,13 +87,7 @@ public interface RpcRegistry {
      * @param methodId  方法id
      * @return 如果不存在，则返回null
      */
-    RpcMethodProxy removeProxy(int serviceId, int methodId);
-
-    /** 设置默认的proxy */
-    void setDefaultProxy(RpcMethodProxy defaultProxy);
-
-    /** 获取默认的proxy */
-    RpcMethodProxy getDefaultProxy();
+    RpcMethodProxy<?> removeProxy(int serviceId, int methodId);
 
     /**
      * 导出注册表中包含的服务

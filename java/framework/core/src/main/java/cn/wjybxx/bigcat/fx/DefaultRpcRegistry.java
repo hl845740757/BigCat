@@ -34,11 +34,11 @@ public class DefaultRpcRegistry implements RpcRegistry {
     /**
      * 所有的Rpc请求处理函数, methodKey -> methodProxy
      */
-    private final Int2ObjectMap<RpcMethodProxy> proxyMap = new Int2ObjectOpenHashMap<>(512);
+    private final Int2ObjectMap<RpcMethodProxy<?>> proxyMap = new Int2ObjectOpenHashMap<>(512);
     private final Int2ObjectMap<Object> proxyDataMap = new Int2ObjectOpenHashMap<>(512);
 
     @Override
-    public void register(int serviceId, int methodId, @Nonnull RpcMethodProxy proxy) {
+    public <T> void register(int serviceId, int methodId, @Nonnull RpcMethodProxy<T> proxy) {
         final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         if (proxyMap.containsKey(methodKey)) {
             throw new IllegalArgumentException("methodKey is duplicate, serviceId: %d, methodId: %d"
@@ -64,31 +64,15 @@ public class DefaultRpcRegistry implements RpcRegistry {
     }
 
     @Override
-    public boolean hasProxy(int serviceId, int methodId) {
-        final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
-        return proxyMap.containsKey(methodKey);
-    }
-
-    @Override
-    public RpcMethodProxy getProxy(int serviceId, int methodId) {
+    public RpcMethodProxy<?> getProxy(int serviceId, int methodId) {
         final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return proxyMap.get(methodKey);
     }
 
     @Override
-    public RpcMethodProxy removeProxy(int serviceId, int methodId) {
+    public RpcMethodProxy<?> removeProxy(int serviceId, int methodId) {
         final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return proxyMap.remove(methodKey);
-    }
-
-    @Override
-    public void setDefaultProxy(RpcMethodProxy defaultProxy) {
-        proxyMap.defaultReturnValue(defaultProxy);
-    }
-
-    @Override
-    public RpcMethodProxy getDefaultProxy() {
-        return proxyMap.defaultReturnValue();
     }
 
     @Override

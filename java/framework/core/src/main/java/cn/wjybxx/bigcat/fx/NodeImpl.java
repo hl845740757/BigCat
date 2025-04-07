@@ -41,9 +41,11 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     private final Worker[] children;
     private final List<Worker> readonlyChildren;
     private final EventLoopChooser chooser;
-    private final WorkerCtx workerCtx = new WorkerCtx();
+    private final WorkerControlData controlData = new WorkerControlData();
 
+    /** Node自身的服务信息 */
     private volatile IntSet serviceIdSet = IntSets.emptySet();
+    /** Node+Worker的服务信息 */
     private volatile Int2ObjectMap<ServiceInfo> serviceInfoMap = Int2ObjectMaps.emptyMap();
 
     public NodeImpl(NodeBuilder.DefaultNodeBuilder builder) {
@@ -52,8 +54,8 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
         this.nodeAddr = Objects.requireNonNull(builder.getNodeAddr(), "nodeAddr");
-        if (nodeAddr.hasWorkerId()) {
-            throw new IllegalArgumentException("nodeAddr.workerId must be null, addr: " + nodeAddr);
+        if (nodeAddr.workerId != null) {
+            throw new IllegalArgumentException("nodeAddr.workerId != null");
         }
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
@@ -73,11 +75,12 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         }
         children = new Worker[numberChildren];
         for (int i = 0; i < numberChildren; i++) {
-            WorkerCtx workerCtx = new WorkerCtx();
-            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, i, workerCtx));
+            WorkerControlData controlData = new WorkerControlData();
+            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, i, controlData));
             if (eventLoop.parent() != this) throw new IllegalStateException("the parent of worker is illegal");
-            if (eventLoop.workerCtx() != workerCtx) throw new IllegalStateException("the ctx of worker is illegal");
-            if (builder.getManualClose() != null) workerCtx.manualClose = builder.getManualClose();
+            if (eventLoop.controlData() != controlData)
+                throw new IllegalStateException("the controlData of worker is illegal");
+            if (builder.getManualClose() != null) controlData.manualClose = builder.getManualClose();
             children[i] = eventLoop;
         }
         readonlyChildren = List.of(children);
@@ -116,13 +119,13 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     }
 
     @Override
-    public IntSet services() {
-        return serviceIdSet; // 不可变Set
+    public WorkerAddr nodeAddr() {
+        return nodeAddr;
     }
 
     @Override
-    public WorkerAddr nodeAddr() {
-        return nodeAddr;
+    public IntSet services() {
+        return serviceIdSet;
     }
 
     @Override
@@ -154,8 +157,8 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
     //
     @Override
-    public WorkerCtx workerCtx() {
-        return workerCtx;
+    public WorkerControlData controlData() {
+        return controlData;
     }
 
     @Nonnull
@@ -181,13 +184,14 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     public Worker select(int key) {
         return (Worker) chooser.select(key);
     }
+
     // region 生命流程
 
     @Override
     protected void onStart() throws Throwable {
         FxUtils.CURRENT_WORKER.set(this);
         FxUtils.CURRENT_NODES.add(this);
-        initWorkerCtx();
+        initControlData();
 
         agent.beforeEventLoopStart();
         startModules(); // 先启动自己的模块和服务，Worker可能需要使用
@@ -203,12 +207,11 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         agent.beforeEventLoopShutdown();
         try {
             stopWorkers(); // 先停止worker，再停止自己的模块和服务
-
-            stopModules();
-            destroyModules();
             setServiceIdSet(IntSets.emptySet());
             setServiceInfoMap(Int2ObjectMaps.emptyMap());
 
+            stopModules();
+            destroyModules();
             agent.afterEventLoopShutdown();
         } finally {
             FxUtils.CURRENT_WORKER.remove();
@@ -216,15 +219,16 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         }
     }
 
-    private void initWorkerCtx() {
-        workerCtx.init(this, false);
+    private void initControlData() {
+        controlData.init(this, false);
         for (Worker worker : children) {
-            worker.workerCtx().init(worker, worker.state() == EventLoopState.UNSTARTED);
+            worker.controlData().init(worker, worker.state() == EventLoopState.UNSTARTED);
         }
     }
 
     private void exportServices(List<Worker> workers) {
-        IntSet nodeServiceIdSet = injector.getInstance(RpcRegistry.class).export();
+        // Node自身的服务
+        IntSet nodeServiceIdSet = controlData.rpcRegistry.export();
         setServiceIdSet(nodeServiceIdSet);
 
         Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();
@@ -236,10 +240,14 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         for (Worker worker : workers) {
             worker.services().forEach((int serviceId) -> {
                 if (nodeServiceIdSet.contains(serviceId)) {
-                    throw new IllegalArgumentException("The service in the worker conflicts with the service in the node, id " + serviceId);
+                    throw new IllegalStateException("The service in the worker conflicts with the service in the node, id " + serviceId);
                 }
-                serviceInfoMap.computeIfAbsent(serviceId, k -> new ServiceInfo(k, new ArrayList<>(2)))
-                        .addWorker(worker);
+                ServiceInfo serviceInfo = serviceInfoMap.get(serviceId);
+                if (serviceInfo == null) {
+                    serviceInfo = new ServiceInfo(serviceId, new ArrayList<>(2));
+                    serviceInfoMap.put(serviceId, serviceInfo);
+                }
+                serviceInfo.addWorker(worker);
             });
         }
         setServiceInfoMap(serviceInfoMap);
@@ -255,24 +263,21 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
     private void stopWorkers() {
         FutureCombiner combiner = ExecutorUtils.newCombiner();
-        for (Worker child : children) {
-            if (child.workerCtx().isManualClose()) continue;
-            combiner.add(child.terminationFuture());
-        }
-        IPromise<Object> aggregateFuture = combiner.selectAll(true);
         // 逆序关闭 -- 可能存在时序依赖
         for (int i = children.length - 1; i >= 0; i--) {
             Worker child = children[i];
-            if (child.workerCtx().isManualClose()) continue;
+            if (child.controlData().isManualClose()) continue;
             child.shutdown();
+            combiner.add(child.terminationFuture());
         }
+        IPromise<Object> aggregateFuture = combiner.selectAll(true);
         if (aggregateFuture.awaitUninterruptibly(1, TimeUnit.MINUTES)) {
             return;
         }
         // 进入快速关闭阶段
         for (int i = children.length - 1; i >= 0; i--) {
             Worker child = children[i];
-            if (child.workerCtx().isManualClose()) continue;
+            if (child.controlData().isManualClose()) continue;
             child.shutdownNow();
         }
         aggregateFuture.join();

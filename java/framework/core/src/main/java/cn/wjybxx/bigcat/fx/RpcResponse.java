@@ -18,10 +18,9 @@ package cn.wjybxx.bigcat.fx;
 
 
 import cn.wjybxx.base.ex.ErrorCodeException;
+import cn.wjybxx.base.pool.ConcurrentObjectPool;
 import cn.wjybxx.concurrent.ExecutorUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-
-import javax.annotation.Nonnull;
 
 /**
  * rpc响应结构体
@@ -34,7 +33,7 @@ public final class RpcResponse extends RpcProtocol {
 
     /** 请求的唯一id */
     private long requestId;
-    /** 服务id -- 定位返回值类型，也可以用于校验和日志记录 */
+    /** 服务id -- 用于网络线程定位返回值类型，也可以用于校验和日志记录 */
     private int serviceId;
     /** 方法id */
     private int methodId;
@@ -50,15 +49,8 @@ public final class RpcResponse extends RpcProtocol {
         // 序列化支持
     }
 
-    public RpcResponse(long conId, RpcAddr srcAddr, RpcAddr destAddr) {
+    public RpcResponse(long conId, WorkerAddr srcAddr, WorkerAddr destAddr) {
         super(conId, srcAddr, destAddr);
-    }
-
-    public RpcResponse(RpcRequest request) {
-        super(request.getConId(), request.getDestAddr(), request.getSrcAddr());
-        this.requestId = request.getRequestId();
-        this.serviceId = request.getServiceId();
-        this.methodId = request.getMethodId();
     }
 
     // region 业务
@@ -74,12 +66,13 @@ public final class RpcResponse extends RpcProtocol {
             throw new IllegalArgumentException("errorCode: " + errorCode);
         }
         this.errorCode = errorCode;
-        this.data = msg == null ? "" : msg; // msg不为null
+        this.data = msg; // msg不为null
         setSharable(true);
     }
 
     /** 设置为失败，会自动标记为可共享 */
     public void setFailed(Throwable ex) {
+        // future对下游任务总是进行了封装
         ex = ExecutorUtils.unwrapCompletionException(ex);
         if (ex instanceof ErrorCodeException codeException) {
             setFailed(codeException.getErrorCode(), codeException.getMessage());
@@ -145,45 +138,46 @@ public final class RpcResponse extends RpcProtocol {
 
     // endregion
 
-    @Nonnull
-    public String toSimpleLog() {
+    // region toString
+
+    @Override
+    public String toString() {
         return "{" +
                 "requestId=" + requestId +
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
-//                ", results=" + results +
-                ", conId=" + conId +
-                ", srcAddr=" + srcAddr +
-                ", destAddr=" + destAddr +
-                '}';
-    }
-
-    @Nonnull
-    public String toDetailLog(String serviceName, String methodName) {
-        return "RpcResponse{" +
-                "requestId=" + requestId +
-                ", serviceId=" + serviceName +
-                ", methodId=" + methodName +
-                ", errorCode=" + errorCode +
                 ", result=" + dataToString() +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
                 '}';
     }
+    // endregion
+
+    // region pool
 
     @Override
-    public String toString() {
-        return "RpcResponse{" +
-                "requestId=" + requestId +
-                ", serviceId=" + serviceId +
-                ", methodId=" + methodId +
-                ", errorCode=" + errorCode +
-                ", result=" + dataToString() +
-                ", conId=" + conId +
-                ", srcAddr=" + srcAddr +
-                ", destAddr=" + destAddr +
-                '}';
+    protected void reset() {
+        super.reset();
+        requestId = -1;
+        serviceId = 0;
+        methodId = 0;
+        errorCode = 0;
     }
+
+    private static final ConcurrentObjectPool<RpcResponse> POOL = new ConcurrentObjectPool<>(
+            RpcResponse::new, RpcResponse::reset, FxUtils.RPC_POOL_SIZE);
+
+    /** 该方法通常由Router调用 */
+    public static RpcResponse acquire() {
+        return POOL.acquire();
+    }
+
+    /** 该方法通常由Node线程调用 */
+    public static void release(RpcResponse response) {
+        POOL.release(response);
+    }
+
+    // endregion
 }

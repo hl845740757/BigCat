@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 
-import javax.annotation.Nonnull;
+import cn.wjybxx.base.pool.ConcurrentObjectPool;
 
 /**
  * rpc请求结构体
@@ -36,25 +36,15 @@ public final class RpcRequest extends RpcProtocol {
 
     /** 调用类型 - {@link RpcInvokeType} */
     private int invokeType;
-    /** 创建时间 -- 是否序列化到对方，取决于用户 */
-    private long time;
+    /** 创建时间 -- 是否序列化到对方，取决于需求；如果需要支持请求超时，由用户拦截 */
+    private long createTime;
 
     public RpcRequest() {
         // 可能的序列化支持
     }
 
-    public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr) {
+    public RpcRequest(long conId, WorkerAddr srcAddr, WorkerAddr destAddr) {
         super(conId, srcAddr, destAddr);
-    }
-
-    public RpcRequest(long conId, RpcAddr srcAddr, RpcAddr destAddr,
-                      RpcMethodSpec<?> methodSpec, int invokeType) {
-        super(conId, srcAddr, destAddr);
-        this.invokeType = invokeType;
-        this.serviceId = methodSpec.getServiceId();
-        this.methodId = methodSpec.getMethodId();
-        this.data = methodSpec.getParameter();
-        this.sharable = methodSpec.isSharable();
     }
 
     // region getter/setter
@@ -91,54 +81,59 @@ public final class RpcRequest extends RpcProtocol {
         this.invokeType = invokeType;
     }
 
-    public long getTime() {
-        return time;
+    public long getCreateTime() {
+        return createTime;
     }
 
-    public void setTime(long time) {
-        this.time = time;
+    public void setCreateTime(long createTime) {
+        this.createTime = createTime;
     }
 
     // endregion
 
-    @Nonnull
-    public String toSimpleLog() {
-        return "{" +
-                "requestId=" + requestId +
-                ", invokeType=" + invokeType +
-                ", serviceId=" + serviceId +
-                ", methodId=" + methodId +
-                ", conId=" + conId +
-                ", srcAddr=" + srcAddr +
-                ", destAddr=" + destAddr +
-                '}';
-    }
-
-    @Nonnull
-    public String toDetailLog(String serviceName, String methodName) {
-        return "RpcRequest{" +
-                "requestId=" + requestId +
-                ", invokeType=" + invokeType +
-                ", serviceId=" + serviceName +
-                ", methodId=" + methodName +
-                ", data=" + dataToString() +
-                ", conId=" + conId +
-                ", srcAddr=" + srcAddr +
-                ", destAddr=" + destAddr +
-                '}';
-    }
+    // region toString
 
     @Override
     public String toString() {
-        return "RpcRequest{" +
+        return "{" +
                 "requestId=" + requestId +
-                ", invokeType=" + invokeType +
                 ", serviceId=" + serviceId +
                 ", methodId=" + methodId +
-                ", data=" + dataToString() +
+                ", parameter=" + dataToString() +
+                ", invokeType=" + invokeType +
+                ", createTime=" + createTime +
                 ", conId=" + conId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
                 '}';
     }
+    // endregion
+
+    // region pool
+
+    @Override
+    protected void reset() {
+        super.reset();
+        requestId = -1;
+        serviceId = 0;
+        methodId = 0;
+
+        invokeType = 0;
+        createTime = 0;
+    }
+
+    private static final ConcurrentObjectPool<RpcRequest> POOL = new ConcurrentObjectPool<>(
+            RpcRequest::new, RpcRequest::reset, FxUtils.RPC_POOL_SIZE);
+
+    /** 该方法通常由Node线程调用 */
+    public static RpcRequest acquire() {
+        return POOL.acquire();
+    }
+
+    /** 该方法通常由Router调用 */
+    public static void release(RpcRequest request) {
+        POOL.release(request);
+    }
+
+    // endregion
 }

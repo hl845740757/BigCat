@@ -55,8 +55,8 @@ public class RpcClientException extends RpcException {
     /** 异步调用的情况下，超时堆栈毫无益处，因此可共享该对象 */
     private static final RpcClientException TIMEOUT = new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "timeout", null, false, false);
 
-    public static RpcClientException sendFailed(RpcAddr target) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_ROUTER_EXCEPTION, target + " unreachable", null, true, true);
+    public static RpcClientException sendFailed(WorkerAddr target) {
+        return new RpcClientException(RpcErrorCodes.LOCAL_ROUTER_EXCEPTION, target + " unreachable", null);
     }
 
     public static RpcClientException timeout() {
@@ -64,18 +64,18 @@ public class RpcClientException extends RpcException {
     }
 
     public static RpcClientException blockingTimeout(TimeoutException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "blockingTimeout", e, true, true);
+        return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "blockingTimeout", e);
     }
 
     public static RpcClientException interrupted(InterruptedException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_INTERRUPTED, "interrupted", e, true, true);
+        return new RpcClientException(RpcErrorCodes.LOCAL_INTERRUPTED, "interrupted", e);
     }
 
     public static RpcClientException unknownException(Throwable e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "unknownException", e, true, true);
+        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "unknownException", e);
     }
 
-    public static RuntimeException wrapOrRethrow(Throwable e) {
+    public static RuntimeException wrapException(Throwable e) {
         if (e instanceof ErrorCodeException || e instanceof RpcException) {
             return (RuntimeException) e;
         }
@@ -86,9 +86,10 @@ public class RpcClientException extends RpcException {
             return interrupted(ie);
         }
         if (e instanceof ExecutionException) {
-            return RpcClientException.unknownException(e.getCause());
+            e = e.getCause();
+        } else {
+            e = ExecutorUtils.unwrapCompletionException(e);
         }
-        e = ExecutorUtils.unwrapCompletionException(e);
         return unknownException(e);
     }
 

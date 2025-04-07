@@ -37,14 +37,14 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
     private final String workerId;
     private final Injector injector;
     private volatile IntSet serviceIdSet = IntSets.emptySet();
-    private final WorkerCtx workerCtx;
+    private final WorkerControlData controlData;
 
     public WorkerImpl(WorkerBuilder.DisruptWorkerBuilder builder) {
         super(decorate(builder));
 
         this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
-        this.workerCtx = builder.getWorkerCtx();
+        this.controlData = builder.getWorkerCtx();
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
     }
@@ -74,7 +74,12 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
 
     @Override
     public IntSet services() {
-        return serviceIdSet; // 不可变Set
+        return serviceIdSet;
+    }
+
+    @Override
+    public WorkerControlData controlData() {
+        return controlData;
     }
 
     @Nonnull
@@ -101,12 +106,7 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
         return this;
     }
 
-    @Override
-    public WorkerCtx workerCtx() {
-        return workerCtx;
-    }
-
-    // region 扩展
+    // region 生命周期
 
     @Override
     protected void onStart() throws Throwable {
@@ -118,19 +118,19 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
         agent.afterEventLoopStart();
     }
 
-    private void exportServices() {
-        RpcRegistry registry = injector.getInstance(RpcRegistry.class);
-        setServiceIdSet(registry.export());
-    }
-
     @Override
     protected void onShutdown() throws Throwable {
         try {
-            super.onShutdown();
             setServiceIdSet(IntSets.emptySet());
+            super.onShutdown();
         } finally {
             FxUtils.CURRENT_WORKER.remove();
         }
+    }
+
+    private void exportServices() {
+        RpcRegistry registry = injector.getInstance(RpcRegistry.class);
+        setServiceIdSet(registry.export());
     }
 
     // endregion

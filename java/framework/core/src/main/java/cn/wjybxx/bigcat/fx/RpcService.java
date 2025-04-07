@@ -46,10 +46,10 @@ public @interface RpcService {
     /**
      * 服务id
      * <p>
-     * 1. serviceId < 0，则表示本地服务
-     * 2. serviceId >= 0 表示公共服务；建议1为连接管理服务。
-     * 3. 在与客户端通信的服务中，取值范围为 [-32767, 32767]，即2字节内，且可以转正值
-     * 4. serviceId 要好好规划，合理的serviceId分配有助于拦截器测试上下文
+     * 1.serviceId < 0，则表示本地服务
+     * 2.serviceId >= 0 表示公共服务；建议1为连接管理服务。
+     * 3.在与客户端通信的服务中，取值范围为 [-32767, 32767]，即2字节内，且可以转正值
+     * 4.serviceId 要好好规划，合理的serviceId分配有助于拦截器测试上下文
      */
     int serviceId();
 

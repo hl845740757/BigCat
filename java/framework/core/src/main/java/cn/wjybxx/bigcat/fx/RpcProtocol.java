@@ -31,15 +31,15 @@ public abstract class RpcProtocol {
     /** 连接id -- 服务器间通信时，condId由连接的发起方生成即可 */
     protected long conId;
     /** 发送方地址 */
-    protected RpcAddr srcAddr;
+    protected WorkerAddr srcAddr;
     /** 接收方地址 */
-    protected RpcAddr destAddr;
+    protected WorkerAddr destAddr;
 
     /**
      * 方法参数或结果
      * <p>
      * 1.可能情况：null,string,bytes,结构
-     * 2.bytes 表示已经序列化
+     * 2.bytes 表示已经序列化; TODO 改为Bytebuf
      * 3.null 表示无参数和结果，或是用户的参数和结果为null；在写入最终协议时需要区分
      * 4.string 表示错误信息
      * 5.结构 表示正常的参数和结构
@@ -51,7 +51,7 @@ public abstract class RpcProtocol {
     public RpcProtocol() {
     }
 
-    public RpcProtocol(long conId, RpcAddr srcAddr, RpcAddr destAddr) {
+    public RpcProtocol(long conId, WorkerAddr srcAddr, WorkerAddr destAddr) {
         this.conId = conId;
         this.srcAddr = srcAddr;
         this.destAddr = destAddr;
@@ -74,6 +74,14 @@ public abstract class RpcProtocol {
         return (byte[]) data;
     }
 
+    protected void reset() {
+        conId = 0;
+        srcAddr = null;
+        destAddr = null;
+        data = null;
+        sharable = false;
+    }
+
     // endregion
 
     // region getter/setter
@@ -86,19 +94,19 @@ public abstract class RpcProtocol {
         this.conId = conId;
     }
 
-    public RpcAddr getSrcAddr() {
+    public WorkerAddr getSrcAddr() {
         return srcAddr;
     }
 
-    public void setSrcAddr(RpcAddr srcAddr) {
+    public void setSrcAddr(WorkerAddr srcAddr) {
         this.srcAddr = srcAddr;
     }
 
-    public RpcAddr getDestAddr() {
+    public WorkerAddr getDestAddr() {
         return destAddr;
     }
 
-    public void setDestAddr(RpcAddr destAddr) {
+    public void setDestAddr(WorkerAddr destAddr) {
         this.destAddr = destAddr;
     }
 
