@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ThreadUtils;
-import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.concurrent.IEventLoopAgent;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -44,12 +43,12 @@ public class NodeTest {
         System.out.println();
 
         node = NodeBuilder.newDefaultNodeBuilder()
-                .setNodeAddr(new WorkerAddr(1, null))
+                .setNodeId(NodeId.makeNodeId(1, 1))
                 .setWorkerId("Node")
                 // 初始化模块
                 .setInjector(createNodeInjector())
                 .addModule(RpcClient.class)
-                .addModule(NodeRpcSupport.class)
+                .addModule(RpcSupport.class)
                 .addModule(TestRpcRouter.class)
                 // 初始化rpc接口包
                 .addRpcPackage(TestRpcRouter.class.getPackageName())
@@ -102,19 +101,18 @@ public class NodeTest {
                 binder().requireExplicitBindings();
 
                 bind(IEventLoopAgent.class).to(DefaultMainModule.class).in(Singleton.class);
-                bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
-                bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
-                bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);
-                bind(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
+                bind(TimeModule.class).in(Singleton.class);
+                bind(RpcClient.class).to(S2SRpcClient.class).in(Singleton.class);
+                bind(RpcProxyRegistry.class).to(DefaultRpcProxyRegistry.class).in(Singleton.class);
+                bind(S2SSessionMgr.class).in(Singleton.class); // 具体项目需要绑定子类
 
-                // 要想直接注入子类，子类也需要显式绑定
-                // 子类如果不单独绑定，则会创建一个新的实例，各种bug...
-                bind(TestRpcRouter.class).in(Singleton.class);
-                bind(RpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
-
-                bind(NodeRpcSupport.class).in(Singleton.class);
+                // RPC组件
+                bind(RpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
                 bind(RpcMethodRegistry.class).in(Singleton.class);
+                bind(RpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
+                bind(TestRpcRouter.class).in(Singleton.class); // 具体子类也被引用
+
             }
         });
     }
@@ -127,10 +125,10 @@ public class NodeTest {
                 binder().requireExplicitBindings();
 
                 bind(IEventLoopAgent.class).to(DefaultMainModule.class).in(Singleton.class);
-                bind(RpcClient.class).to(WorkerRpcClient.class).in(Singleton.class);
-                bind(RpcRegistry.class).to(DefaultRpcRegistry.class).in(Singleton.class);
-                bind(TimeProvider.class).to(TimeModule.class).in(Singleton.class);
-                bind(TimeModule.class).in(Singleton.class); // 部分地方依赖的是TimeProvider
+                bind(TimeModule.class).in(Singleton.class);
+                bind(RpcClient.class).to(S2SRpcClient.class).in(Singleton.class);
+                bind(RpcProxyRegistry.class).to(DefaultRpcProxyRegistry.class).in(Singleton.class);
+                bind(S2SSessionMgr.class).in(Singleton.class); // 具体项目需要绑定子类
 
                 bind(RpcClientExample.class).in(Singleton.class);
                 bind(RpcServiceExample.class).in(Singleton.class);

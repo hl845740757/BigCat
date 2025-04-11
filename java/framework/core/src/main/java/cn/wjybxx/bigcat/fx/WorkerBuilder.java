@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.Preconditions;
-import cn.wjybxx.base.time.TimeProvider;
 import cn.wjybxx.concurrent.*;
 import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
 import cn.wjybxx.disruptor.EventSequencer;
@@ -43,11 +42,12 @@ public abstract class WorkerBuilder {
     /**
      * Worker上绑定的容器，需要包含：
      * {@link IEventLoopAgent}、{@link TimeModule}
-     * {@link RpcClient}、{@link RpcRegistry}、
+     * {@link RpcClient}、{@link RpcProxyRegistry}、
+     * {@link S2SSessionMgr}
      * <p>
      * 如果是Node，则还需要包含：
-     * {@link NodeRpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
-     * {@link RpcMethodRegistry}、{@link TimeProvider}
+     * {@link RpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
+     * {@link RpcMethodRegistry}
      */
     private Injector injector;
 

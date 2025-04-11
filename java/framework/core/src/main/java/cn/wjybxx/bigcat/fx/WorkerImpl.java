@@ -34,7 +34,7 @@ import java.util.Objects;
  */
 public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements Worker {
 
-    private final String workerId;
+    private final WorkerAddr workerAddr;
     private final Injector injector;
     private volatile IntSet serviceIdSet = IntSets.emptySet();
     private final WorkerControlData controlData;
@@ -42,7 +42,9 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
     public WorkerImpl(WorkerBuilder.DisruptWorkerBuilder builder) {
         super(decorate(builder));
 
-        this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
+        final int nodeId = parent().nodeAddr().nodeId;
+        final String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
+        this.workerAddr = new WorkerAddr(nodeId, workerId);
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
         this.controlData = builder.getWorkerCtx();
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
@@ -62,9 +64,10 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
         this.serviceIdSet = IntSets.unmodifiable(new IntOpenHashSet(serviceIdSet));
     }
 
+    @Nonnull
     @Override
-    public String workerId() {
-        return workerId;
+    public WorkerAddr workerAddr() {
+        return workerAddr;
     }
 
     @Override
@@ -129,7 +132,7 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
     }
 
     private void exportServices() {
-        RpcRegistry registry = injector.getInstance(RpcRegistry.class);
+        RpcProxyRegistry registry = injector.getInstance(RpcProxyRegistry.class);
         setServiceIdSet(registry.export());
     }
 

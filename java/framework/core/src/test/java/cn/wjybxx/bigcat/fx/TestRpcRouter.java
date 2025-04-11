@@ -16,62 +16,19 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import java.util.ArrayDeque;
-import java.util.Objects;
+import cn.wjybxx.concurrent.EventLoopModule;
 
 /**
+ *
+ *
  * @author wjybxx
  * date - 2025/3/14
  */
-public class TestRpcRouter extends AbstractRpcRouter {
-
-    private final ArrayDeque<RpcProtocol> protocolQueue = new ArrayDeque<>();
+public class TestRpcRouter extends EventLoopModule implements RpcRouter {
 
     @Override
-    public void resolveDependence() {
-        super.resolveDependence();
-//        rpcSupport.setEnableLog(true);
-    }
+    public void send(RpcProtocol protocol) {
 
-    @Override
-    public void start() {
-    }
-
-    @Override
-    public void update() throws Exception {
-        RpcProtocol protocol;
-        while ((protocol = protocolQueue.poll()) != null) {
-            if (protocol instanceof RpcRequest request) {
-                rpcSupport.onRcvRequest(request);
-            } else if (protocol instanceof RpcResponse response) {
-                rpcSupport.onRcvResponse(response);
-            }
-        }
-    }
-
-    @Override
-    public void stop() {
-        protocolQueue.clear();
-    }
-
-    @Override
-    public boolean send(RpcProtocol protocol) {
-        assert node.inEventLoop() : "node.inEventLoop()";
-        Objects.requireNonNull(protocol);
-        // 这里不执行序列化，但如果已序列化，则进行反序列化
-        if (protocol.isBytes()) {
-            if (protocol instanceof RpcRequest request) {
-                RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
-                Object parameter = serializer.read(request.getBytes(), methodInfo.parameterType);
-                request.setData(parameter);
-            } else if (protocol instanceof RpcResponse response) {
-                RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
-                Object result = serializer.read(response.getBytes(), methodInfo.resultType);
-                response.setData(result);
-            }
-        }
-        protocolQueue.offer(protocol);
-        return true;
     }
 
 }

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author wjybxx
@@ -93,7 +94,7 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     }
 
     @Override
-    public void update() {
+    public void update() throws TimeoutException {
         if (!regulator.isReady(timeModule.getTime())) {
             return;
         }
@@ -117,11 +118,8 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
         String msg = createMessage("这是一个异步调用，可监听结果");
         rpcClient.call(serverAddr, RpcServiceExampleProxy.hello(Request.ofString(msg)))
                 .thenApply((ctx, result) -> {
-                    if (rpcRouter.isEnableLocalShare()) { // 启用本地共享的情况下应当是同一个字符串
-                        Assertions.assertSame(msg, result.getString());
-                    } else {
-                        Assertions.assertEquals(msg, result.getString());
-                    }
+                    // 启用本地共享的情况下应当是同一个字符串
+                    Assertions.assertSame(msg, result.getString());
                     Assertions.assertTrue(worker.inEventLoop(), "worker.inEventLoop");
                     System.out.println("callResult: " + result.getString());
                     System.out.println();
@@ -130,10 +128,16 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     }
 
     private void testSyncCall() {
-        String msg = createMessage("这是一个同步调用，远程异步执行");
-        Response result = rpcClient.syncCall(serverAddr, RpcServiceExampleProxy.helloAsync(Request.ofString(msg)));
-        System.out.println("syncResult: " + result.getString());
-        System.out.println();
+        try {
+            String msg = createMessage("这是一个同步调用，远程异步执行");
+            Response result = rpcClient.syncCall(serverAddr, RpcServiceExampleProxy.helloAsync(Request.ofString(msg)));
+            System.out.println("syncResult: " + result.getString());
+            System.out.println();
+        } catch (InterruptedException ignore) {
+            logger.info("syncCall interrupted");
+        } catch (TimeoutException ex) {
+            logger.info("syncCall timeout", ex);
+        }
     }
 
     private void testContext() {

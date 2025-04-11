@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
  * @author wjybxx
  * date 2023/4/1
  */
-public interface RpcRegistry {
+public interface RpcProxyRegistry {
 
     /**
      * 注册一个rpc方法代理
@@ -99,7 +99,7 @@ public interface RpcRegistry {
     /**
      * 清理注册表
      * 因为{@link #register(int, int, RpcMethodProxy)}会捕获太多对象，
-     * 当不再使用{@link RpcRegistry}时，执行该方法可释放{@link RpcMethodProxy}捕获的对象。
+     * 当不再使用{@link RpcProxyRegistry}时，执行该方法可释放{@link RpcMethodProxy}捕获的对象。
      */
     void clear();
 

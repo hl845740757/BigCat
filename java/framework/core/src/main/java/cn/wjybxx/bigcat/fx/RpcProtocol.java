@@ -28,18 +28,18 @@ import java.util.HexFormat;
  */
 public abstract class RpcProtocol {
 
-    /** 连接id -- 服务器间通信时，condId由连接的发起方生成即可 */
-    protected long conId;
-    /** 发送方地址 */
+    /** 会话id */
+    protected long sessionId;
+    /** 发送方地址 -- 服务器通信使用 */
     protected WorkerAddr srcAddr;
-    /** 接收方地址 */
+    /** 接收方地址 -- 服务器通信使用 */
     protected WorkerAddr destAddr;
 
     /**
      * 方法参数或结果
      * <p>
      * 1.可能情况：null,string,bytes,结构
-     * 2.bytes 表示已经序列化; TODO 改为Bytebuf
+     * 2.bytes 表示已经序列化; TODO 改为Bytebuf或Chunk，允许池化
      * 3.null 表示无参数和结果，或是用户的参数和结果为null；在写入最终协议时需要区分
      * 4.string 表示错误信息
      * 5.结构 表示正常的参数和结构
@@ -51,8 +51,8 @@ public abstract class RpcProtocol {
     public RpcProtocol() {
     }
 
-    public RpcProtocol(long conId, WorkerAddr srcAddr, WorkerAddr destAddr) {
-        this.conId = conId;
+    public RpcProtocol(long sessionId, WorkerAddr srcAddr, WorkerAddr destAddr) {
+        this.sessionId = sessionId;
         this.srcAddr = srcAddr;
         this.destAddr = destAddr;
     }
@@ -75,7 +75,7 @@ public abstract class RpcProtocol {
     }
 
     protected void reset() {
-        conId = 0;
+        sessionId = 0;
         srcAddr = null;
         destAddr = null;
         data = null;
@@ -86,12 +86,12 @@ public abstract class RpcProtocol {
 
     // region getter/setter
 
-    public long getConId() {
-        return conId;
+    public long getSessionId() {
+        return sessionId;
     }
 
-    public void setConId(long conId) {
-        this.conId = conId;
+    public void setSessionId(long sessionId) {
+        this.sessionId = sessionId;
     }
 
     public WorkerAddr getSrcAddr() {

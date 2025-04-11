@@ -43,9 +43,8 @@ public final class ServiceInfo {
         return new ServiceInfo(serviceId, List.copyOf(workerList));
     }
 
-    public ServiceInfo addWorker(Worker worker) {
+    public void addWorker(Worker worker) {
         Objects.requireNonNull(worker);
         workerList.add(worker);
-        return this;
     }
 }

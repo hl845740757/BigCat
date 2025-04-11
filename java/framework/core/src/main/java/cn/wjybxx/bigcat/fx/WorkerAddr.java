@@ -25,7 +25,6 @@ import java.util.Objects;
 
 /**
  * Worker地址
- * PS：建议使用静态方法代替构造函数，提供更友好的API -- 或提供Utils类。
  *
  * @author wjybxx
  * date - 2023/10/4
@@ -34,20 +33,22 @@ import java.util.Objects;
 public final class WorkerAddr {
 
     /**
-     * NodeId，进程id。
+     * 服务器节点id。
      * <p>
      * 1.服务器地址应当是一个稳定值，就像主机的hostname。
      * 2.发送Rpc时通常精确指定
      * 3.NodeId通常是可编码的，通常包含服务器类型和服务器id。
      * 4.虽然int类型随扩展性有限，但对于游戏服务器而言足够。
+     * 5.工具类{@link NodeId}
      */
     @DsonProperty(name = "nid")
     public final int nodeId;
     /**
      * WorkerId，线程Id
      * <p>
-     * 1.线程id通常不具有稳定性，用户应尽可能避免线程id
-     * 2.发送Rpc时通常不指定
+     * 1.线程id通常不具有稳定性，用户应尽可能避免线程id。
+     * 2.发送Rpc时通常不指定。
+     * 3.永远不应该发到网络中！
      */
     @DsonProperty(name = "wid")
     public final String workerId;

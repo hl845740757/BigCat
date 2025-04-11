@@ -27,6 +27,7 @@ import javax.annotation.concurrent.NotThreadSafe;
  * 1.系统的启动帧我们定为第0帧。
  * 2.通常应该由{@link IEventLoopAgent}来启动和更新时间模块。
  * 3.每个线程一个，多线程共享是不必要也不安全的。
+ * 4.不适用于场景内的World模拟。
  *
  * @author wjybxx
  * date - 2023/10/4
@@ -49,7 +50,7 @@ public class TimeModule implements TimeProvider {
     }
 
     public void update(long curTime) {
-        frameCount += 1;
+        frameCount++;
         this.deltaTime = Math.max(0, curTime - this.time);
         this.time = curTime;
     }

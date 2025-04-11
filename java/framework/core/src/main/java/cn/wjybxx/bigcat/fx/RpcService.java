@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * 生成的代理类名: {@code xxxProxy} {@code xxxExporter}
  * 其中：
  * Proxy用于客户端创建{@link RpcMethodSpec}，即：打包参数。
- * Exporter用于服务端暴露接口，向{@link RpcRegistry}中注册暴露的方法。
+ * Exporter用于服务端暴露接口，向{@link RpcProxyRegistry}中注册暴露的方法。
  * 生成的文件会添加一个指向源文件的引用，方便你通过引用查找生成的文件
  * <p>
  * 注意事项:
@@ -47,7 +47,7 @@ public @interface RpcService {
      * 服务id
      * <p>
      * 1.serviceId < 0，则表示本地服务
-     * 2.serviceId >= 0 表示公共服务；建议1为连接管理服务。
+     * 2.serviceId >= 0 表示公共服务；建议1表示连接管理服务
      * 3.在与客户端通信的服务中，取值范围为 [-32767, 32767]，即2字节内，且可以转正值
      * 4.serviceId 要好好规划，合理的serviceId分配有助于拦截器测试上下文
      */
@@ -65,4 +65,12 @@ public @interface RpcService {
 
     /** 是否生成客户端用的{@code Proxy} */
     boolean genProxy() default true;
+
+    /**
+     * 生成的proxy是否支持实例化
+     * <p>
+     * java不支持值类型，频繁创建{@link RpcMethodSpec}不是好的选择，
+     * 对于场景中的逻辑，我们可以选择将Proxy实例化，这样Proxy将总是返回缓存的{@link RpcMethodSpec}。
+     */
+    boolean proxyInstantiate() default false;
 }

@@ -96,8 +96,8 @@ public @interface Subscribe {
     /**
      * 如果声明了该属性（不为空），则表示订阅主事件下特定子事件；否则只订阅主事件。
      * <p>
-     * 1.常量字段的名字
-     * 2.普通字符串
+     * Q：它的作用？
+     * A：事件分流。
      */
     String[] childKeys() default {};
 

@@ -22,14 +22,15 @@ package cn.wjybxx.bigcat.fx;
  * @author wjybxx
  * date - 2023/10/13
  */
-public class RpcMethodKey {
+public final class RpcMethodKey {
 
     /** 服务id的乘系数 */
     public static final int FACTOR = 10000;
 
+    /** 计算方法键 */
     public static int methodKey(int serviceId, int methodId) {
         if (methodId < 0 || methodId >= FACTOR) {
-            throw new IllegalArgumentException("methodId must be between [0, 9999]");
+            throw new IllegalArgumentException("methodId must between [0, 9999]");
         }
         // 使用乘法更直观，更有规律；负数需要转正数，计算后再转负数
         if (serviceId < 0) {
@@ -39,6 +40,7 @@ public class RpcMethodKey {
         }
     }
 
+    /** 通过方法键计算服务id */
     public static int serviceIdOfKey(int methodKey) {
         if (methodKey < 0) {
             return -1 * (Math.abs(methodKey) / FACTOR);
@@ -47,11 +49,12 @@ public class RpcMethodKey {
         }
     }
 
+    /** 通过方法键计算方法id */
     public static int methodIdOfKey(int methodKey) {
         if (methodKey < 0) {
-            return Math.abs(methodKey) % 10000;
+            return Math.abs(methodKey) % FACTOR;
         }
-        return methodKey % 10000;
+        return methodKey % FACTOR;
     }
 
 }

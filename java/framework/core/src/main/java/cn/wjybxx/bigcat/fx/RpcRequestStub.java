@@ -17,6 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.annotation.Internal;
+import cn.wjybxx.base.collection.IndexedElement;
 import cn.wjybxx.concurrent.IPromise;
 
 /**
@@ -25,39 +26,58 @@ import cn.wjybxx.concurrent.IPromise;
  * 该对象仅用于框架层，不可暴露给用户。
  */
 @Internal
-public final class RpcRequestStub {
+public final class RpcRequestStub implements IndexedElement {
 
-    public Worker worker;
+    public int qIndex = IndexedElement.INDEX_NOT_FOUND;
     public IPromise<?> promise;
     public long deadline;
 
-    /** 连接id */
-    public long conId;
+    /** 会话id */
+    public long sessionId;
     /** 目标地址 */
     public WorkerAddr destAddr;
-    /** 请求id */
+    /** 请求id -- session内递增 */
     public long requestId;
     /** 服务id */
     public int serviceId;
     /** 方法id */
     public int methodId;
-    /** 调用方式 */
-    public int invokeType;
 
     public RpcRequestStub() {
     }
 
+    @Override
+    public int collectionIndex(Object collection) {
+        return qIndex;
+    }
+
+    @Override
+    public void collectionIndex(Object collection, int index) {
+        qIndex = index;
+    }
+
     public void reset() {
-        worker = null;
+        qIndex = -1;
         promise = null;
         deadline = 0;
 
-        conId = 0;
+        sessionId = 0;
         destAddr = null;
         requestId = -1;
         serviceId = 0;
         methodId = 0;
-        invokeType = 0;
     }
 
+    public static int compare(RpcRequestStub lhs, RpcRequestStub rhs) {
+        // 先比较超时时间
+        int r = Long.compare(lhs.deadline, rhs.deadline);
+        if (r != 0) return r;
+
+        // 再比较SessionId
+        r = Long.compare(lhs.sessionId, rhs.sessionId);
+        if (r != 0) return r;
+
+        // 最后比较请求id
+        return Long.compare(lhs.requestId, rhs.requestId);
+    }
 }

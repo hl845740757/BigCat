@@ -17,7 +17,6 @@
 package cn.wjybxx.bigcat.fx;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -49,12 +48,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public interface Node extends Worker {
 
-    /** 节点地址（不包含workerId） -- 用于Rpc通信；公司地址 */
+    /** node的Rpc地址 -- workerId为null；共享对象 */
     WorkerAddr nodeAddr();
-
-    /** 直接绑定在Node上的服务 -- 模块也是隔离的 */
-    @Override
-    IntSet services();
 
     /** 服务id -> 存在对应服务的Worker -- 限本地使用 */
     Int2ObjectMap<ServiceInfo> serviceInfoMap();

@@ -52,7 +52,7 @@ public class FxUtils {
     /** rpc对象池的大小 */
     public static final int RPC_POOL_SIZE = SystemPropsUtils.getInt("Wjybxx.BigCat.Fx.RpcPoolSize", 1024);
 
-    /** worker发到node的rpc请求 - 发送，包含worker,request，promise */
+    /** worker发到node的rpc请求 - 发送，包含request，promise */
     public static final int TYPE_WORKER_NODE_REQUEST = 1;
     /** worker发到node的rpc响应 - 发送，包含Response */
     public static final int TYPE_WORKER_NODE_RESPONSE = 2;
@@ -62,15 +62,18 @@ public class FxUtils {
     /** 收到网络层的Response - 接收 */
     public static final int TYPE_NET_NODE_RESPONSE = 4;
 
-    /** node发到worker的rpc请求 - 派发请求，包含worker,request */
+    /** node发到worker的rpc请求 - 派发请求，包含request */
     public static final int TYPE_NODE_WORKER_REQUEST = 5;
     /** node发到worker的rpc结果 - 设置Promise，包含Response, Promise */
     public static final int TYPE_NODE_WORKER_RESPONSE = 6;
 
     /** 创建所有的模块 */
     public static void createModules(WorkerBuilder builder) {
-        Injector injector = builder.getInjector();
         List<EventLoopModule> moduleList = new ArrayList<>(builder.getModuleClasses().size());
+        if (builder.getDelegated().getModules().size() > 0) {
+            moduleList.addAll(builder.getDelegated().getModules());
+        }
+        Injector injector = builder.getInjector();
         for (Class<?> moduleClass : builder.getModuleClasses()) {
             EventLoopModule workerModule = (EventLoopModule) injector.getInstance(moduleClass);
             if (CollectionUtils.containsRef(moduleList, workerModule)) {
@@ -86,7 +89,7 @@ public class FxUtils {
     /** 导出Rpc服务 */
     public static void exportService(WorkerBuilder builder) {
         Injector injector = builder.getInjector();
-        RpcRegistry registry = injector.getInstance(RpcRegistry.class);
+        RpcProxyRegistry registry = injector.getInstance(RpcProxyRegistry.class);
         for (Class<?> clazz : builder.getServiceClasses()) {
             Object instance = injector.getInstance(clazz);
             exportService(registry, clazz, instance);
@@ -94,14 +97,14 @@ public class FxUtils {
     }
 
     /** 导出Rpc服务 */
-    public static void exportService(RpcRegistry registry, Class<?> serviceInterface, Object serviceImpl) {
+    public static void exportService(RpcProxyRegistry registry, Class<?> serviceInterface, Object serviceImpl) {
         if (!serviceInterface.isInstance(serviceImpl)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("interface: %s, impl: %s".formatted(serviceInterface, serviceImpl.getClass()));
         }
-        // public static void export(RpcRegistry registry, RpcServiceExample instance) {}
+        // public static void export(RpcProxyRegistry registry, RpcServiceExample instance) {}
         try {
             Class<?> exporter = Class.forName(serviceInterface.getName() + "Exporter");
-            Method method = exporter.getDeclaredMethod("export", RpcRegistry.class, serviceInterface); // 生成的静态export方法
+            Method method = exporter.getDeclaredMethod("export", RpcProxyRegistry.class, serviceInterface); // 生成的静态export方法
             method.invoke(null, registry, serviceImpl);
         } catch (Exception e) {
             throw new RuntimeException("service:" + serviceInterface.getSimpleName(), e);

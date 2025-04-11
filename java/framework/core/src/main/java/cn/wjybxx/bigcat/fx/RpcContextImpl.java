@@ -19,10 +19,7 @@ package cn.wjybxx.bigcat.fx;
 import cn.wjybxx.base.BitFlags;
 import cn.wjybxx.concurrent.IFuture;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * {@link RpcContext}的默认实现
@@ -31,11 +28,9 @@ import java.util.function.Consumer;
  * @author wjybxx
  * date 2023/4/1
  */
-public final class RpcContextImpl<V> implements RpcContext<V>,
-        Consumer<IFuture<V>>,
-        BiConsumer<V, Throwable> {
+public final class RpcContextImpl<V> implements RpcContext<V> {
 
-    final RpcSupport rpcSupport;
+    final RpcClientImpl rpcClient;
     final long conId;
     final WorkerAddr remoteAddr;
     final long requestId;
@@ -44,12 +39,11 @@ public final class RpcContextImpl<V> implements RpcContext<V>,
     final int invokeType;
     private int options;
 
-    public RpcContextImpl(RpcSupport rpcSupport,
+    public RpcContextImpl(RpcClientImpl rpcClient,
                           long conId, WorkerAddr remoteAddr,
-                          long requestId,
-                          int serviceId, int methodId,
+                          long requestId, int serviceId, int methodId,
                           int invokeType) {
-        this.rpcSupport = rpcSupport;
+        this.rpcClient = rpcClient;
         this.conId = conId;
         this.remoteAddr = remoteAddr;
         this.requestId = requestId;
@@ -59,7 +53,7 @@ public final class RpcContextImpl<V> implements RpcContext<V>,
     }
 
     @Override
-    public long conId() {
+    public long sessionId() {
         return conId;
     }
 
@@ -93,7 +87,7 @@ public final class RpcContextImpl<V> implements RpcContext<V>,
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
-        rpcSupport.sendResult(conId, remoteAddr,
+        rpcClient.sendResult(conId, remoteAddr,
                 requestId, serviceId, methodId,
                 result, isSharable());
     }
@@ -103,7 +97,7 @@ public final class RpcContextImpl<V> implements RpcContext<V>,
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
-        rpcSupport.sendResult(conId, remoteAddr,
+        rpcClient.sendResult(conId, remoteAddr,
                 requestId, serviceId, methodId,
                 result, isSharable());
     }
@@ -113,48 +107,39 @@ public final class RpcContextImpl<V> implements RpcContext<V>,
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
-        rpcSupport.sendError(conId, remoteAddr,
+        rpcClient.sendError(conId, remoteAddr,
                 requestId, serviceId, methodId,
                 errorCode, msg);
     }
 
     @Override
     public void sendError(Throwable ex) {
-        Objects.requireNonNull(ex);
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
-        rpcSupport.sendError(conId, remoteAddr,
+        rpcClient.sendError(conId, remoteAddr,
                 requestId, serviceId, methodId,
                 ex);
     }
 
     @Override
     public void sendAsyncResult(IFuture<V> future) {
-        future.onCompleted(this);
+        if (invokeType == RpcInvokeType.ONEWAY) {
+            return;
+        }
+        rpcClient.sendAsyncResult(conId, remoteAddr,
+                requestId, serviceId, methodId,
+                future, isSharable());
     }
 
     @Override
     public void sendAsyncResult(CompletableFuture<V> future) {
-        future.whenComplete(this);
-    }
-
-    @Override
-    public void accept(IFuture<V> future) {
-        if (future.isSucceeded()) {
-            sendResult(future.resultNow());
-        } else {
-            sendError(future.exceptionNow(false));
+        if (invokeType == RpcInvokeType.ONEWAY) {
+            return;
         }
-    }
-
-    @Override
-    public void accept(V v, Throwable throwable) {
-        if (throwable == null) {
-            sendResult(v);
-        } else {
-            sendError(throwable);
-        }
+        rpcClient.sendAsyncResult(conId, remoteAddr,
+                requestId, serviceId, methodId,
+                future, isSharable());
     }
 
     // region 常量

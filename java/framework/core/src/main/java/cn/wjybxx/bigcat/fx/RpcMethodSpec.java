@@ -54,6 +54,22 @@ public final class RpcMethodSpec<V> {
         this.sharable = sharable;
     }
 
+    /**
+     * 该接口主要开放给生成的代码，用于池化{@link RpcMethodSpec}
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @param parameter 方法参数
+     * @param sharable  方法参数是否可共享
+     */
+    @StableName(comment = "生成的代码调用")
+    public void init(int serviceId, int methodId, Object parameter, boolean sharable) {
+        this.serviceId = serviceId;
+        this.methodId = methodId;
+        this.parameter = parameter;
+        this.sharable = sharable;
+    }
+
     // region getter
 
     public int getServiceId() {

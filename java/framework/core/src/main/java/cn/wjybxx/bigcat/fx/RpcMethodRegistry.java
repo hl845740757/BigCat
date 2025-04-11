@@ -21,15 +21,14 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
  * rpc方法信息注册表
+ * 1.客户端和服务端的方法都需要注册。
+ * 2.整个Node（或进程）一份。
+ * 3.禁止服务id重复，一个确定的服务id，对应的服务是确定的。
  * <p>
  * {@link RpcMethodInfo}通常由主线程进行注册，IO线程查询使用，
  * 为保证线程可见性和安全性，主线程在注册完成之后需调用{@link #makeImmutable()}将registry变更为不可变状态（注册完成），
  * IO线程在启动时可调用{@link #ensureImmutable()}检查registry的状态。
  * (另一种方案是通过线程的启动顺序来保证可见性，同时后续禁止修改。)
- *
- * <h3>服务id重复</h3>
- * 这里其实还有个情况，那就是本地暴露的服务的方法键一定是唯一id，但远程的服务的方法键不一定是唯一的。
- * 即服务器A提供1-1服务，服务器B也提供1-1服务，但这两个服务并不相同 —— 我们先不考虑这个情况。
  *
  * @author wjybxx
  * date - 2023/10/12

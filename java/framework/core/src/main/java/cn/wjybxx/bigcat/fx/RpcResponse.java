@@ -17,10 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 
-import cn.wjybxx.base.ex.ErrorCodeException;
 import cn.wjybxx.base.pool.ConcurrentObjectPool;
-import cn.wjybxx.concurrent.ExecutorUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * rpc响应结构体
@@ -49,8 +46,8 @@ public final class RpcResponse extends RpcProtocol {
         // 序列化支持
     }
 
-    public RpcResponse(long conId, WorkerAddr srcAddr, WorkerAddr destAddr) {
-        super(conId, srcAddr, destAddr);
+    public RpcResponse(long sessionId, WorkerAddr srcAddr, WorkerAddr destAddr) {
+        super(sessionId, srcAddr, destAddr);
     }
 
     // region 业务
@@ -66,21 +63,8 @@ public final class RpcResponse extends RpcProtocol {
             throw new IllegalArgumentException("errorCode: " + errorCode);
         }
         this.errorCode = errorCode;
-        this.data = msg; // msg不为null
-        setSharable(true);
-    }
-
-    /** 设置为失败，会自动标记为可共享 */
-    public void setFailed(Throwable ex) {
-        // future对下游任务总是进行了封装
-        ex = ExecutorUtils.unwrapCompletionException(ex);
-        if (ex instanceof ErrorCodeException codeException) {
-            setFailed(codeException.getErrorCode(), codeException.getMessage());
-        } else if (ex instanceof RpcException rpcException) {
-            setFailed(rpcException.getErrorCode(), rpcException.getMessage());
-        } else {
-            setFailed(RpcErrorCodes.SERVER_EXCEPTION, ExceptionUtils.getMessage(ex));
-        }
+        this.data = msg;
+        this.sharable = true; // 固定可共享
     }
 
     /** 结果转String，只有失败的情况下可调用 */
@@ -148,7 +132,7 @@ public final class RpcResponse extends RpcProtocol {
                 ", methodId=" + methodId +
                 ", errorCode=" + errorCode +
                 ", result=" + dataToString() +
-                ", conId=" + conId +
+                ", sessionId=" + sessionId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
                 '}';

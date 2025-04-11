@@ -21,6 +21,9 @@ import cn.wjybxx.base.annotation.StableName;
 import javax.annotation.Nullable;
 
 /**
+ * TODO 简化
+ * 由于客户端和服务器之间已不再通过事件方式绑定协议，因此该EventBus我们需要简化
+ *
  * @author wjybxx
  * date 2023/4/6
  */

@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements Node {
 
-    private final String workerId;
     private final Injector injector;
+    private final WorkerAddr workerAddr;
     private final WorkerAddr nodeAddr;
 
     private final Worker[] children;
@@ -51,12 +51,10 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     public NodeImpl(NodeBuilder.DefaultNodeBuilder builder) {
         super(decorate(builder));
 
-        this.workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
+        String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
+        this.workerAddr = new WorkerAddr(builder.getNodeId(), workerId);
+        this.nodeAddr = new WorkerAddr(builder.getNodeId(), null);
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
-        this.nodeAddr = Objects.requireNonNull(builder.getNodeAddr(), "nodeAddr");
-        if (nodeAddr.workerId != null) {
-            throw new IllegalArgumentException("nodeAddr.workerId != null");
-        }
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
         FxUtils.exportMethodInfo(builder);
@@ -74,14 +72,14 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
             chooserFactory = new DefaultChooserFactory();
         }
         children = new Worker[numberChildren];
-        for (int i = 0; i < numberChildren; i++) {
+        for (int idx = 0; idx < numberChildren; idx++) {
             WorkerControlData controlData = new WorkerControlData();
-            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, i, controlData));
+            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, idx, controlData));
             if (eventLoop.parent() != this) throw new IllegalStateException("the parent of worker is illegal");
             if (eventLoop.controlData() != controlData)
                 throw new IllegalStateException("the controlData of worker is illegal");
             if (builder.getManualClose() != null) controlData.manualClose = builder.getManualClose();
-            children[i] = eventLoop;
+            children[idx] = eventLoop;
         }
         readonlyChildren = List.of(children);
         chooser = chooserFactory.newChooser(children);
@@ -109,13 +107,14 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     }
 
     @Override
-    public String workerId() {
-        return workerId;
-    }
-
-    @Override
     public Injector injector() {
         return injector;
+    }
+
+    @Nonnull
+    @Override
+    public WorkerAddr workerAddr() {
+        return workerAddr;
     }
 
     @Override
@@ -148,9 +147,13 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         // worker通常不多，for循环足够快
         for (int i = 0; i < children.length; i++) {
             Worker child = children[i];
-            if (child.workerId().equals(workerId)) {
+            if (workerId.equals(child.workerAddr().workerId)) {
                 return child;
             }
+        }
+        // 可能是指向自己
+        if (workerId.equals(workerAddr.workerId)) {
+            return this;
         }
         return null;
     }
@@ -228,7 +231,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
     private void exportServices(List<Worker> workers) {
         // Node自身的服务
-        IntSet nodeServiceIdSet = controlData.rpcRegistry.export();
+        IntSet nodeServiceIdSet = controlData.rpcProxyRegistry.export();
         setServiceIdSet(nodeServiceIdSet);
 
         Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();

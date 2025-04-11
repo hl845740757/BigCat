@@ -43,8 +43,8 @@ public final class RpcRequest extends RpcProtocol {
         // 可能的序列化支持
     }
 
-    public RpcRequest(long conId, WorkerAddr srcAddr, WorkerAddr destAddr) {
-        super(conId, srcAddr, destAddr);
+    public RpcRequest(long sessionId, WorkerAddr srcAddr, WorkerAddr destAddr) {
+        super(sessionId, srcAddr, destAddr);
     }
 
     // region getter/setter
@@ -102,7 +102,7 @@ public final class RpcRequest extends RpcProtocol {
                 ", parameter=" + dataToString() +
                 ", invokeType=" + invokeType +
                 ", createTime=" + createTime +
-                ", conId=" + conId +
+                ", sessionId=" + sessionId +
                 ", srcAddr=" + srcAddr +
                 ", destAddr=" + destAddr +
                 '}';

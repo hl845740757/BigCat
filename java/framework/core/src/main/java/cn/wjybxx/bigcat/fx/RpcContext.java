@@ -33,15 +33,15 @@ import java.util.concurrent.CompletableFuture;
 public interface RpcContext<V> {
 
     /**
-     * 连接id
+     * 会话id
      * 1.服务器与客户端通信时使用该字段
      * 2.可用于在返回结果前后向目标发送额外的消息
      */
-    long conId();
+    long sessionId();
 
     /**
-     * 远端地址
-     * 1.服务器之间通信时使用该字段
+     * 远端节点i
+     * 1.服务器之间通信时使用该字段，与玩家通信时为null
      * 2.可用于在返回结果前后向目标发送额外的消息 -- 它对应的是{@link RpcRequest#srcAddr}
      */
     WorkerAddr remoteAddr();

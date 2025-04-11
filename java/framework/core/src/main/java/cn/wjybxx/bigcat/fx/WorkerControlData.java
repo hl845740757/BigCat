@@ -16,8 +16,6 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import com.google.inject.ConfigurationException;
-
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
@@ -32,8 +30,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public final class WorkerControlData {
 
-    RpcRegistry rpcRegistry;
-    RpcInterceptor rpcInterceptor;
+    RpcProxyRegistry rpcProxyRegistry;
+    S2SRpcClient rpcClient;
     Boolean manualClose;
 
     public WorkerControlData() {
@@ -49,12 +47,8 @@ public final class WorkerControlData {
             manualClose = !unstarted;
         }
 //        assert worker.inEventLoop(); // worker尚未启动
-        this.rpcRegistry = worker.injector().getInstance(RpcRegistry.class);
-        try {
-            this.rpcInterceptor = worker.injector().getInstance(RpcInterceptor.class);
-        } catch (ConfigurationException ignore) {
-
-        }
+        this.rpcProxyRegistry = worker.injector().getInstance(RpcProxyRegistry.class);
+        this.rpcClient = (S2SRpcClient) worker.injector().getInstance(RpcClient.class);
     }
 
 }

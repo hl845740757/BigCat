@@ -33,28 +33,30 @@ public class RpcErrorCodes {
     // 1 - 10 为特殊状态码，应用层不可见
 
     // 11 - 30 表客户端异常
-    /** 路由失败异常 */
-    public static final int LOCAL_ROUTER_EXCEPTION = 11;
+    /** 本地发生了未知错误 */
+    public static final int LOCAL_UNKNOWN_EXCEPTION = 11;
     /** 超时 */
     public static final int LOCAL_TIMEOUT = 12;
-    /** 本地中断了线程 */
-    public static final int LOCAL_INTERRUPTED = 13;
-    /** 本地发生了未知错误 */
-    public static final int LOCAL_UNKNOWN_EXCEPTION = 14;
     /** 本地反序列化请求或结果失败 */
-    public static final int LOCAL_DESERIALIZE_FAILED = 15;
+    public static final int LOCAL_DESERIALIZE_FAILED = 13;
+    /** 发包会话不存在 */
+    public static final int LOCAL_SESSION_NOT_EXIST = 14;
+    /** Session关闭 */
+    public static final int LOCAL_SESSION_CLOSED = 15;
 
     // 31 - 50 表服务器异常
     /** 表示服务器调用出现异常的错误码 */
-    public static final int SERVER_EXCEPTION = 31;
+    public static final int SERVER_UNKNOWN_EXCEPTION = 31;
     /** 不支持的接口调用 -- 或是服务id非法，或是方法id非法 */
     public static final int SERVER_UNSUPPORTED_INTERFACE = 32;
-    /** 连接状态错误 */
-    public static final int SERVER_CONNECTION_STATE_ERROR = 33;
     /** 服务端反序列化请求失败 */
-    public static final int SERVER_DESERIALIZE_FAILED = 34;
+    public static final int SERVER_DESERIALIZE_FAILED = 33;
     /** 服务端检测到请求过期 */
     public static final int SERVER_REQUEST_EXPIRED = 34;
+    /** 会话不存在 */
+    public static final int SERVER_SESSION_NOT_EXIST = 35;
+    /** Worker不存在 */
+    public static final int SERVER_WORKER_NOT_EXIST = 36;
 
     /**
      * 判断错误码是否属于用户命名空间

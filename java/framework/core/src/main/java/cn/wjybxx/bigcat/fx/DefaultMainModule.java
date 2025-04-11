@@ -102,7 +102,7 @@ public class DefaultMainModule implements IEventLoopAgent<WorkerEvent> {
     }
 
     @Override
-    public boolean checkMainLoop(long eventLoopFrame) {
+    public boolean checkMainLoop(long threadTime) {
         return System.currentTimeMillis() - timeModule.getTime() >= frameInterval;
     }
 

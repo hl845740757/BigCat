@@ -16,14 +16,14 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.base.ex.ErrorCodeException;
 import cn.wjybxx.concurrent.ExecutorUtils;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * 表示本地异常（一般需要填充堆栈）
+ * <p>
+ * PS：不能在{@link #fillInStackTrace()}中测试错误码，因为方法是在构造函数中调用的。
  *
  * @author wjybxx
  * date 2023/4/1
@@ -52,45 +52,29 @@ public class RpcClientException extends RpcException {
 
     // 静态工厂方法
 
-    /** 异步调用的情况下，超时堆栈毫无益处，因此可共享该对象 */
-    private static final RpcClientException TIMEOUT = new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "timeout", null, false, false);
-
-    public static RpcClientException sendFailed(WorkerAddr target) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_ROUTER_EXCEPTION, target + " unreachable", null);
+    /** 超时 -- 不需要填充堆栈，意义不大 */
+    public static RpcClientException timeout(WorkerAddr destAddr) {
+        return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "destAddr: " + destAddr, null, true, false);
     }
 
-    public static RpcClientException timeout() {
-        return TIMEOUT;
+    /** session不存在 -- 不需要填充堆栈，意义不大 */
+    public static RpcClientException sessionNotExist(WorkerAddr destAddr) {
+        return new RpcClientException(RpcErrorCodes.LOCAL_SESSION_NOT_EXIST, "destAddr: " + destAddr, null, true, false);
     }
 
-    public static RpcClientException blockingTimeout(TimeoutException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_TIMEOUT, "blockingTimeout", e);
+    /** session关闭 -- 不需要填充堆栈，意义不大 */
+    public static RpcClientException sessionClosed(WorkerAddr destAddr) {
+        return new RpcClientException(RpcErrorCodes.LOCAL_SESSION_CLOSED, "destAddr: " + destAddr, null, true, false);
     }
 
-    public static RpcClientException interrupted(InterruptedException e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_INTERRUPTED, "interrupted", e);
-    }
-
-    public static RpcClientException unknownException(Throwable e) {
-        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "unknownException", e);
-    }
-
-    public static RuntimeException wrapException(Throwable e) {
-        if (e instanceof ErrorCodeException || e instanceof RpcException) {
-            return (RuntimeException) e;
-        }
-        if (e instanceof TimeoutException timeoutException) {
-            return blockingTimeout(timeoutException);
-        }
-        if (e instanceof InterruptedException ie) {
-            return interrupted(ie);
-        }
-        if (e instanceof ExecutionException) {
-            e = e.getCause();
+    /** 未知异常 */
+    public static RpcClientException unknownException(Throwable ex) {
+        if (ex instanceof ExecutionException) {
+            ex = ex.getCause();
         } else {
-            e = ExecutorUtils.unwrapCompletionException(e);
+            ex = ExecutorUtils.unwrapCompletionException(ex);
         }
-        return unknownException(e);
+        return new RpcClientException(RpcErrorCodes.LOCAL_UNKNOWN_EXCEPTION, "unknownException", ex);
     }
 
 }

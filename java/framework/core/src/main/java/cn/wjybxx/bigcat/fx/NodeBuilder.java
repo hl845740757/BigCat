@@ -42,7 +42,8 @@ public abstract class NodeBuilder extends WorkerBuilder {
     private int numberChildren = 1;
     private WorkerFactory workerFactory;
     private EventLoopChooserFactory chooserFactory;
-    private WorkerAddr nodeAddr;
+    /** 服务器节点id */
+    private int nodeId;
     /** rpc接口所在的包，用于生成{@link RpcMethodRegistry} */
     private final Set<String> rpcPackages = new HashSet<>();
 
@@ -157,12 +158,12 @@ public abstract class NodeBuilder extends WorkerBuilder {
         return this;
     }
 
-    public WorkerAddr getNodeAddr() {
-        return nodeAddr;
+    public int getNodeId() {
+        return nodeId;
     }
 
-    public NodeBuilder setNodeAddr(WorkerAddr nodeAddr) {
-        this.nodeAddr = nodeAddr;
+    public NodeBuilder setNodeId(int nodeId) {
+        this.nodeId = nodeId;
         return this;
     }
 

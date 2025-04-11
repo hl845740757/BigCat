@@ -55,7 +55,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private static final String PNAME_BUILDER_PATTERN = "builderPattern";
 
     private static final String CNAME_METHOD_SPEC = "cn.wjybxx.bigcat.fx.RpcMethodSpec";
-    private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.bigcat.fx.RpcRegistry";
+    private static final String CNAME_METHOD_REGISTRY = "cn.wjybxx.bigcat.fx.RpcProxyRegistry";
     private static final String CNAME_CONTEXT = "cn.wjybxx.bigcat.fx.RpcContext";
 
     private static final String CNAME_MY_FUTURE = "cn.wjybxx.concurrent.IFuture";

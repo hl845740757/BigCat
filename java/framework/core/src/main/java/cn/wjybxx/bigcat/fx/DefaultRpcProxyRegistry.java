@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/1
  */
-public class DefaultRpcRegistry implements RpcRegistry {
+public class DefaultRpcProxyRegistry implements RpcProxyRegistry {
 
     /**
      * 所有的Rpc请求处理函数, methodKey -> methodProxy

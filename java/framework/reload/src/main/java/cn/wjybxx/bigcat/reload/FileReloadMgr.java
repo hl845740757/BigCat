@@ -51,6 +51,7 @@ public class FileReloadMgr {
     private final Set<FileDataValidator> validatorSet = CollectionUtils.newIdentityHashSet(20);
 
     private final FileDataContainer fileDataContainer = new FileDataContainer();
+    // TODO 改为List，监听器不多
     private final Map<FilePath<?>, ListenerWrapper> listenerWrapperMap = new IdentityHashMap<>(50);
 
     /**

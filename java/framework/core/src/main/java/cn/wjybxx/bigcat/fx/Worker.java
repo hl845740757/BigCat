@@ -60,19 +60,18 @@ import javax.annotation.Nullable;
  */
 public interface Worker extends IDisruptorEventLoop<WorkerEvent> {
 
-    /**
-     * Worker的id —— 员工编号
-     * 为线程分配数字id不易使用，我们使用字符串类型；在实际的rpc通信中，我们极少指定目标的workerId
-     */
-    String workerId();
+    /** Worker的Rpc地址 - NodeId和workerId都为有效值 */
+    @Nonnull
+    WorkerAddr workerAddr();
 
-    /** Worker上绑定的Bean容器 */
+    /** Worker上绑定的Bean容器 - 用于解决依赖问题 */
     Injector injector();
 
     /**
      * Worker上绑定的服务id
      * 1.该接口只约定Worker启动后可正确获得，启动之前不保证可见性。
      * 2.通常不建议Worker上包含与Node上同名的服务
+     * 3.如果是Node，也仅仅表示Node自身的服务
      */
     IntSet services();
 
