@@ -24,8 +24,10 @@ import javax.annotation.Nonnull;
  * @author wjybxx
  * date 2023/4/6
  */
+@FunctionalInterface
 public interface EventHandler<T> {
 
+    /** 处理事件 -- 事件的测试由自身负责 */
     void onEvent(@Nonnull T event) throws Exception;
 
 }

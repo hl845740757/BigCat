@@ -1,6 +1,5 @@
 
 import cn.wjybxx.bigcat.apt.AutoFieldsProcessor;
-import cn.wjybxx.bigcat.apt.SubscribeProcessor;
 import cn.wjybxx.bigcat.apt.rpc.RpcServiceProcessor;
 
 import javax.annotation.processing.Processor;
@@ -18,7 +17,7 @@ module wjybxx.bigcat.apt {
     exports cn.wjybxx.bigcat.apt;
     exports cn.wjybxx.bigcat.apt.rpc;
 
-    provides Processor with SubscribeProcessor,
+    provides Processor with
             AutoFieldsProcessor,
             RpcServiceProcessor;
 

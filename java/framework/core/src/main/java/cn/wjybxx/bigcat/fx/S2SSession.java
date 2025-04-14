@@ -22,6 +22,11 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 /**
  * 服务器之间的Session。
  *
+ * <h3>无状态Session方法</h3>
+ * 如果想处理旧连接的请求包，比如通过MQ通信，那么需要保持{@link #sessionId}一致，
+ * 根据两个服务器的{@link #nodeId}计算稳定的{@link #sessionId}即可。
+ * 在这种情况下，应当避免使用{@code Call}，仅使用{@code Send}，因为Call是有状态的。
+ *
  * @author wjybxx
  * date - 2025/4/10
  */
@@ -39,11 +44,13 @@ public final class S2SSession {
     /** 上次ping时间戳 */
     private long lastPingTime;
 
-    // 用户数据
+    // 服务器数据 -- 提供常用字段
     /** 外网地址 */
     private String outHost;
     /** 外网端口 */
     private int outPort;
+    /** 网络连接数量 -- 包含尚未登录的玩家 */
+    private int socketCount;
     /** 玩家数量 */
     private int playerCount;
     /** 场景数量 */
@@ -117,6 +124,14 @@ public final class S2SSession {
         this.outPort = outPort;
     }
 
+    public int getSocketCount() {
+        return socketCount;
+    }
+
+    public void setSocketCount(int socketCount) {
+        this.socketCount = socketCount;
+    }
+
     public int getPlayerCount() {
         return playerCount;
     }
@@ -148,6 +163,15 @@ public final class S2SSession {
     public void setRoomCount(int roomCount) {
         this.roomCount = roomCount;
     }
+
+    public long getSequencer() {
+        return sequencer;
+    }
+
+    public void setSequencer(long sequencer) {
+        this.sequencer = sequencer;
+    }
+
     // endregion
 
     // region internal

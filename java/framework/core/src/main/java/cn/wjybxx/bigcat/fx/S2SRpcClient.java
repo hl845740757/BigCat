@@ -41,7 +41,7 @@ import java.util.concurrent.TimeoutException;
  * @author wjybxx
  * date - 2023/10/28
  */
-public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl,
+public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl, RpcClient,
         IAgentEventHandler<WorkerEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(S2SRpcClient.class);

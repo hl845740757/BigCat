@@ -16,88 +16,101 @@
 
 package cn.wjybxx.bigcat.eventbus;
 
-import cn.wjybxx.base.annotation.StableName;
-
-import javax.annotation.Nullable;
-
 /**
- * TODO 简化
- * 由于客户端和服务器之间已不再通过事件方式绑定协议，因此该EventBus我们需要简化
+ * 基础的EventBus接口。
+ * （不适用战斗系统这类追求性能的场景，使用养成系统等更重视可读性的场景）
+ *
+ * <h3>chileKey时序问题</h3>
+ * childKey的目的在于监听器分流，可以减少不必要的广播；
+ * 但提前分流会导致不同的时序，如果时序很重要，用户应当不使用子键监听，然后再处理事件的时候测试子键的相等性。
+ *
+ * <h3>其它约定</h3>
+ * 1.post接口显式接收子键，是为了避免对事件类型进行任何的假设。
+ * 2.childKey仍需要包含在事件信息中，监听器可能需要这部分数据。
  *
  * @author wjybxx
  * date 2023/4/6
  */
 public interface EventBus {
 
+    // region register
+
+    /**
+     * @param masterKey 主事件key
+     * @param handler   事件处理器
+     */
+    <T> void register(Class<T> masterKey, EventHandler<? super T> handler);
+
+    /**
+     * @param masterKey 主事件key
+     * @param childKey  子事件key
+     * @param handler   事件处理器
+     */
+    <T> void register(Class<T> masterKey, int childKey, EventHandler<? super T> handler);
+
+    /**
+     * @param masterKey 主事件key
+     * @param childKey  子事件key
+     * @param handler   事件处理器
+     */
+    <T> void register(Class<T> masterKey, Object childKey, EventHandler<? super T> handler);
+
+    // endregion
+
+    // region unregister
+
+    /**
+     * @param masterKey 主事件key
+     * @param handler   事件处理器
+     */
+    <T> void unregister(Class<T> masterKey, EventHandler<? super T> handler);
+
+    /**
+     * @param masterKey 主事件key
+     * @param childKey  子事件key
+     * @param handler   事件处理器
+     */
+    <T> void unregister(Class<T> masterKey, int childKey, EventHandler<? super T> handler);
+
+    /**
+     * @param masterKey 主事件key
+     * @param childKey  子事件key
+     * @param handler   事件处理器
+     */
+    <T> void unregister(Class<T> masterKey, Object childKey, EventHandler<? super T> handler);
+
+    // endregion
+
+    // region post
+
     /** 派发事件 */
     void post(Object event);
 
-    //
+    /**
+     * 派发事件
+     * (事件支持一个int类型的子键)
+     *
+     * @param childKey 事件子键
+     */
+    void post(Object event, int childKey);
 
     /**
-     * @param masterKey  主事件key
-     * @param childKey   子事件key -- 为null或空集合时表示只监听masterKey；如果为非空集合，则表示要监听所有的子事件。
-     * @param handler    事件处理器
-     * @param customData 传递给EventBus的自定义数据，用于实现切面等功能 -- 在实践中通常是Json
-     */
-    <T> void registerX(Object masterKey, @Nullable Object childKey, EventHandler<T> handler, @Nullable Object customData);
-
-    /**
-     * 删除一个事件处理器。
-     * 注意：如果是lambda表达式生成的引用，则必须引用相等，即你必须保存事件处理器的引用。
+     * 派发事件
+     * (事件支持一个引用类型的子键)
      *
-     * @param masterKey 主事件key
-     * @param childKey  子事件key -- 如果为非空集合，则表示要取消所有的子事件。
-     * @param handler   要删除的处理器
+     * @param childKey 事件子键
      */
-    void unregisterX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
+    void post(Object event, Object childKey);
 
-    /***
-     * 判断handler是否在对应的事件监听列表表
-     *
-     * @param childKey 注意，这里不支持集合
-     */
-    boolean hasListener(Object masterKey, @Nullable Object childKey, EventHandler<?> handler);
+    // endregion
+
+    // region other
 
     /**
      * 清理注册表，释放内存
      */
     void clear();
 
-    // region 辅助方法
-    // 默认参数和通过泛型提示Handler接收的事件类型
-
-    default <T> void registerX(Object masterKey, @Nullable Object childKey, EventHandler<T> handler) {
-        registerX(masterKey, childKey, handler, null);
-    }
-
-    @StableName(comment = "生成的代码会调用")
-    default <T> void register(Class<T> eventType, EventHandler<? super T> handler) {
-        registerX(eventType, null, handler, null);
-    }
-
-    @StableName(comment = "生成的代码会调用")
-    default <T> void register(Class<T> eventType, EventHandler<? super T> handler, Object customData) {
-        registerX(eventType, null, handler, customData);
-    }
-
-    @StableName(comment = "生成的代码会调用")
-    default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler) {
-        registerX(eventType, childKey, handler, null);
-    }
-
-    @StableName(comment = "生成的代码会调用")
-    default <T> void register(Class<T> eventType, @Nullable Object childKey, EventHandler<? super T> handler, Object customData) {
-        registerX(eventType, childKey, handler, customData);
-    }
-
-    default void unregister(Class<?> eventType, EventHandler<?> handler) {
-        unregisterX(eventType, null, handler);
-    }
-
-    default void unregister(Class<?> eventType, Object childKey, EventHandler<?> handler) {
-        unregisterX(eventType, childKey, handler);
-    }
-
     // endregion
+
 }

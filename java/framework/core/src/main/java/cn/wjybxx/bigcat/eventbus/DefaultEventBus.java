@@ -17,16 +17,22 @@
 package cn.wjybxx.bigcat.eventbus;
 
 import cn.wjybxx.base.CollectionUtils;
+import cn.wjybxx.base.collection.DefaultDynamicArray;
+import cn.wjybxx.base.collection.DynamicArray;
+import cn.wjybxx.base.collection.SmallDynamicArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
 /**
  * 默认的EventBus
+ * <p>
+ * 1.适用于养成系统等不那么追求性能，更注重代码可读性的场景
+ * 2.不再池化Key，意义不大 -- 徒增复杂度。
  *
  * @author wjybxx
  * date 2023/4/6
@@ -34,169 +40,197 @@ import java.util.Objects;
 @NotThreadSafe
 public class DefaultEventBus implements EventBus {
 
+    private static final Logger logger = LoggerFactory.getLogger(DefaultEventBus.class);
+    private static final int DEFAULT_EXPECTED_SIZE = 64;
+    private static final int RECURSION_LIMIT = 16;
+
     /**
      * eventKey -> handler
-     * eventKey：{@link Class} 或 {@link ComposeEventKey}
+     * eventKey：{@link Class}或{@link CompositeKey}
      */
-    private final Map<Object, EventHandler<?>> handlerMap;
-    /** 事件key缓存池 */
-    private final ArrayList<ComposeEventKey> keyPool = new ArrayList<>(8);
+    private final Map<Object, DynamicArray<EventHandler<?>>> handlerMap;
+    /** 是否使用小数组 */
+    private final boolean smallArray;
     /** 递归深度 - 防止死循环 */
     private int recursionDepth;
 
     public DefaultEventBus() {
-        this(EventBusUtils.DEFAULT_EXPECTED_SIZE);
+        this(DEFAULT_EXPECTED_SIZE, true);
     }
 
-    public DefaultEventBus(int expectedSize) {
+    /**
+     * @param expectedSize 字典初始大小
+     * @param smallArray   监听器列表是否使用小型数组，同一事件类型仅支持最大64个监听器
+     */
+    public DefaultEventBus(int expectedSize, boolean smallArray) {
         this.handlerMap = CollectionUtils.newHashMap(expectedSize);
-    }
-
-    @Override
-    public final void post(Object event) {
-        if (recursionDepth >= EventBusUtils.RECURSION_LIMIT) {
-            throw new IllegalStateException("event had too many levels of nesting");
-        }
-        recursionDepth++;
-        try {
-            if (event instanceof DynamicEvent eventX) {
-                final Object masterKey = eventX.masterKey();
-                EventBusUtils.postEvent(handlerMap, eventX, masterKey);
-
-                final Object childKey = eventX.childKey();
-                if (childKey != null) {
-                    final ComposeEventKey composeEventKey = acquireKey();
-                    composeEventKey.init(masterKey, childKey);
-                    EventBusUtils.postEvent(handlerMap, (Object) eventX, composeEventKey);
-                    releaseKey(composeEventKey);
-                }
-            } else {
-                // 普通事件只支持class作为masterKey
-                EventBusUtils.postEvent(handlerMap, event, event.getClass());
-            }
-        } finally {
-            recursionDepth--;
-        }
+        this.smallArray = smallArray;
     }
 
     @Override
     public void clear() {
         handlerMap.clear();
-        keyPool.clear();
+    }
+
+    // region register
+
+    @Override
+    public <T> void register(Class<T> masterKey, EventHandler<? super T> handler) {
+        registerImpl(masterKey, handler);
     }
 
     @Override
-    public <T> void registerX(Object masterKey, @Nullable Object childKey, EventHandler<T> handler, @Nullable Object customData) {
-        Objects.requireNonNull(masterKey, "masterKey");
-        Objects.requireNonNull(handler, "handler");
-        if (childKey == null) {
-            EventBusUtils.addHandler(handlerMap, masterKey, handler);
-        } else {
-            if (EventBusUtils.isNotEmptyCollection(childKey)) {
-                for (Object c : (Collection<?>) childKey) {
-                    final ComposeEventKey key = new ComposeEventKey(masterKey, c);
-                    EventBusUtils.addHandler(handlerMap, key, handler);
+    public <T> void register(Class<T> masterKey, int childKey, EventHandler<? super T> handler) {
+        registerImpl(new CompositeKey(masterKey, childKey), handler);
+    }
+
+    @Override
+    public <T> void register(Class<T> masterKey, Object childKey, EventHandler<? super T> handler) {
+        registerImpl(new CompositeKey(masterKey, childKey), handler);
+    }
+
+    private void registerImpl(@Nonnull Object key, EventHandler<?> handler) {
+        Objects.requireNonNull(handler);
+        DynamicArray<EventHandler<?>> dynamicArray = handlerMap.get(key);
+        if (dynamicArray == null) {
+            dynamicArray = smallArray ? new SmallDynamicArray<>(4) : new DefaultDynamicArray<>(8);
+            handlerMap.put(key, dynamicArray);
+        }
+        dynamicArray.add(handler);
+    }
+
+    private void unregisterImpl(@Nonnull Object key, EventHandler<?> handler) {
+        if (handler == null) return;
+        DynamicArray<EventHandler<?>> dynamicArray = handlerMap.get(key);
+        if (dynamicArray == null || dynamicArray.elementCount() == 0) {
+            return;
+        }
+        dynamicArray.remove(handler);
+    }
+
+    // endregion
+
+    // region unregister
+
+    @Override
+    public <T> void unregister(Class<T> masterKey, EventHandler<? super T> handler) {
+        unregisterImpl(masterKey, handler);
+    }
+
+    @Override
+    public <T> void unregister(Class<T> masterKey, int childKey, EventHandler<? super T> handler) {
+        unregisterImpl(new CompositeKey(masterKey, childKey), handler);
+    }
+
+    @Override
+    public <T> void unregister(Class<T> masterKey, Object childKey, EventHandler<? super T> handler) {
+        unregisterImpl(new CompositeKey(masterKey, childKey), handler);
+    }
+
+    // endregion
+
+    // region post
+
+    @Override
+    public final void post(Object event) {
+        postImpl(event, event.getClass());
+    }
+
+    @Override
+    public void post(Object event, int childKey) {
+        postImpl(event, event.getClass());
+        postImpl(event, new CompositeKey(event.getClass(), childKey));
+    }
+
+    @Override
+    public void post(Object event, Object childKey) {
+        postImpl(event, event.getClass());
+        postImpl(event, new CompositeKey(event.getClass(), childKey));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> void postImpl(T event, Object key) {
+        DynamicArray<?> array = handlerMap.get(key);
+        if (array == null || array.elementCount() == 0) {
+            return;
+        }
+        if (recursionDepth >= RECURSION_LIMIT) {
+            throw new IllegalStateException("event had too many levels of nesting");
+        }
+        DynamicArray<EventHandler<? super T>> castArray = (DynamicArray<EventHandler<? super T>>) array;
+        recursionDepth++;
+        castArray.beginItr();
+        try {
+            for (int idx = 0, len = array.length(); idx < len; idx++) {
+                EventHandler<? super T> handler = castArray.get(idx);
+                if (handler == null) continue;
+                try {
+                    handler.onEvent(event);
+                } catch (Exception e) {
+                    logException(event, e, handler);
                 }
-            } else {
-                final ComposeEventKey key = new ComposeEventKey(masterKey, childKey);
-                EventBusUtils.addHandler(handlerMap, key, handler);
             }
+        } finally {
+            castArray.endItr();
+            recursionDepth--;
         }
     }
 
-    @Override
-    public void unregisterX(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
-        Objects.requireNonNull(masterKey, "masterKey");
-        Objects.requireNonNull(handler, "handler");
-        if (childKey == null) {
-            EventBusUtils.removeHandler(handlerMap, masterKey, handler);
-        } else {
-            final ComposeEventKey composeEventKey = acquireKey();
-            if (EventBusUtils.isNotEmptyCollection(childKey)) {
-                for (Object c : (Collection<?>) childKey) {
-                    composeEventKey.init(masterKey, c);
-                    EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
-                }
-            } else {
-                composeEventKey.init(masterKey, childKey);
-                EventBusUtils.removeHandler(handlerMap, composeEventKey, handler);
-            }
-            releaseKey(composeEventKey);
-        }
+    private static void logException(Object event, Exception e, EventHandler<?> handler) {
+        final String handlerClassName = handler.getClass().getName();
+        final String eventClassName = event.getClass().getName();
+        logger.warn("handlerClassName: " + handlerClassName + ", eventClassName: " + eventClassName, e);
     }
 
-    @Override
-    public boolean hasListener(Object masterKey, @Nullable Object childKey, EventHandler<?> handler) {
-        if (childKey == null) {
-            return EventBusUtils.hasListener(handlerMap, masterKey, handler);
-        } else {
-            final ComposeEventKey composeEventKey = acquireKey();
-            composeEventKey.init(masterKey, childKey);
-            boolean contains = EventBusUtils.hasListener(handlerMap, composeEventKey, handler);
-            releaseKey(composeEventKey);
-            return contains;
-        }
-    }
-    //------------------
+    // endregion
 
-    private ComposeEventKey acquireKey() {
-        return keyPool.isEmpty() ? new ComposeEventKey() : keyPool.removeLast();
-    }
+    // region key
+    private static class CompositeKey {
 
-    private void releaseKey(ComposeEventKey key) {
-        key.reset();
-        keyPool.add(key);
-    }
+        public final Class<?> masterKey;
+        public final int intKey; // 避免装箱
+        public final Object objectKey;
 
-    private static final class ComposeEventKey {
-
-        private Object masterKey; // 运行时不为null
-        private Object childKey;
-
-        ComposeEventKey() {
-        }
-
-        ComposeEventKey(Object masterKey, Object childKey) {
+        public CompositeKey(Class<?> masterKey, int intKey) {
             this.masterKey = masterKey;
-            this.childKey = childKey;
+            this.intKey = intKey;
+            this.objectKey = null;
         }
 
-        void init(Object masterKey, Object childKey) {
+        public CompositeKey(Class<?> masterKey, Object objectKey) {
             this.masterKey = masterKey;
-            this.childKey = childKey;
-        }
-
-        void reset() {
-            this.masterKey = null;
-            this.childKey = null;
+            this.intKey = 0;
+            this.objectKey = objectKey;
         }
 
         @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
 
-            if (o == null || o.getClass() != ComposeEventKey.class) {
-                return false;
-            }
-
-            final ComposeEventKey that = (ComposeEventKey) o;
-            return Objects.equals(masterKey, that.masterKey)
-                    && Objects.equals(childKey, that.childKey);
+            CompositeKey that = (CompositeKey) o;
+            return intKey == that.intKey
+                    && masterKey.equals(that.masterKey)
+                    && Objects.equals(objectKey, that.objectKey);
         }
 
         @Override
         public int hashCode() {
-            return 31 * masterKey.hashCode() + childKey.hashCode();
+            int result = masterKey.hashCode();
+            result = 31 * result + intKey;
+            result = 31 * result + Objects.hashCode(objectKey);
+            return result;
         }
 
         @Override
         public String toString() {
-            return "ComposeEventKey{" +
-                    "parentType=" + masterKey +
-                    ", childType=" + childKey +
+            return "CompositeKey{" +
+                    "masterKey=" + masterKey +
+                    ", intKey=" + intKey +
+                    ", objectKey=" + objectKey +
                     '}';
         }
     }
+
+    // endregion
 }

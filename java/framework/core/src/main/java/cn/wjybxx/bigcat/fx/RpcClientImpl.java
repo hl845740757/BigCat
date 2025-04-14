@@ -22,14 +22,15 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * 1.该接口和{@link RpcClient}分离，属于关注点分离。
- * 2.这里的接口由{@link RpcContext}调用，
- * 3.我们这里不再封装额外的方法对象来传输参数，因为用户基本不会手动调用这里的方法。
- * 4.如果返回结果的线程可能不是当前Worker，要小心多线程问题。
+ * 2.该接口不继承{@link RpcClient}，是因为{@link RpcClient}的接口是针对服务器通信的，而该接口的方法也适用和玩家之间通信。
+ * 3.这里的接口由{@link RpcContext}调用，
+ * 4.我们这里不再封装额外的方法对象来传输参数，因为用户基本不会手动调用这里的方法。
+ * 5.如果返回结果的线程可能不是当前Worker，要小心多线程问题。
  *
  * @author wjybxx
  * date - 2025/4/7
  */
-public interface RpcClientImpl extends RpcClient {
+public interface RpcClientImpl {
 
     // region result
 
