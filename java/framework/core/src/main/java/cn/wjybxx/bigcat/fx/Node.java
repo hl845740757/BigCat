@@ -20,7 +20,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -57,7 +57,7 @@ public interface Node extends Worker {
     // region worker管理
 
     /** Node挂载的所有Worker */
-    Iterator<Worker> workers();
+    List<Worker> workers();
 
     /** Node挂载的第一个Worker */
     Worker mainWorker();

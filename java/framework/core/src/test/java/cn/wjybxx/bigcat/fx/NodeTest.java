@@ -55,7 +55,7 @@ public class NodeTest {
                 // 初始化Worker，1号worker是client，2号是server，否则无法支持同步调用
                 .setNumberChildren(2)
                 .setWorkerFactory((parent, index, controlData) -> {
-                    WorkerBuilder.DisruptWorkerBuilder workerBuilder = WorkerBuilder.newDisruptorWorkerBuilder()
+                    DefaultWorkerBuilder workerBuilder = WorkerBuilder.newDisruptorWorkerBuilder()
                             .setWorkerId("Worker-" + index)
                             .setParent(parent)
                             .setControlData(controlData)
@@ -112,7 +112,6 @@ public class NodeTest {
                 bind(RpcMethodRegistry.class).in(Singleton.class);
                 bind(RpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
                 bind(TestRpcRouter.class).in(Singleton.class); // 具体子类也被引用
-
             }
         });
     }

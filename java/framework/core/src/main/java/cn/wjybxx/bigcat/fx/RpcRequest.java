@@ -125,7 +125,7 @@ public final class RpcRequest extends RpcProtocol {
     private static final ConcurrentObjectPool<RpcRequest> POOL = new ConcurrentObjectPool<>(
             RpcRequest::new, RpcRequest::reset, FxUtils.RPC_POOL_SIZE);
 
-    /** 该方法通常由Node线程调用 */
+    /** 该方法通常由Worker线程调用 */
     public static RpcRequest acquire() {
         return POOL.acquire();
     }

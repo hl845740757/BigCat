@@ -100,8 +100,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         switch (event.getType()) {
             case FxUtils.TYPE_NET_NODE_REQUEST -> onRcvRequestStep2((RpcRequest) event.obj1);
             case FxUtils.TYPE_NET_NODE_RESPONSE -> onRcvResponseStep2((RpcResponse) event.obj1);
-            case FxUtils.TYPE_WORKER_NODE_REQUEST ->
-                    sendRequestStep2((RpcRequest) event.obj1, (IPromise<?>) event.obj2);
+            case FxUtils.TYPE_WORKER_NODE_REQUEST -> sendRequestStep2((RpcRequest) event.obj1);
             case FxUtils.TYPE_WORKER_NODE_RESPONSE -> sendResponseStep2((RpcResponse) event.obj1);
             default -> throw new AssertionError();
         }
@@ -156,22 +155,21 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
     // region sendRequest
 
     /** worker请求发送rpc请求 */
-    public void sendRequest(RpcRequest request, IPromise<?> promise) {
+    public void sendRequest(RpcRequest request) {
         if (node.inEventLoop()) {
-            sendRequestStep2(request, promise);
+            sendRequestStep2(request);
         } else {
             long seq = node.nextSequence();
             if (seq < 0) return; // shutdown
             WorkerEvent event = node.getEvent(seq);
             event.setType(FxUtils.TYPE_WORKER_NODE_REQUEST);
             event.obj1 = request;
-            event.obj2 = promise;
             node.publish(seq);
         }
     }
 
     /** 当前在node线程 */
-    private void sendRequestStep2(RpcRequest request, IPromise<?> promise) {
+    private void sendRequestStep2(RpcRequest request) {
         if (enableLog) {
             logger.info("snd rpc request {}", request);
         }
@@ -237,7 +235,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
             if (seq < 0) return; // shutdown
             WorkerEvent event = node.getEvent(seq);
             event.setType(FxUtils.TYPE_NET_NODE_REQUEST);
-            event.setObj1(request);
+            event.obj1 = request;
             node.publish(seq);
         }
     }
@@ -319,9 +317,8 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
     /** 拒绝客户端请求 -- node节点的拒绝和worker拒绝逻辑有差异，地址不同 */
     private void reject(RpcRequest request, int code) {
         logger.warn("reject the request, reason {}, sessionId {}, srcAddr {}, serviceId {}, methodId {}",
-                code,
-                request.getSessionId(), request.getSrcAddr(),
-                request.getServiceId(), request.getMethodId());
+                code, request.getSessionId(), request.getSrcAddr(), request.getServiceId(), request.getMethodId());
+
         if (RpcInvokeType.isCall(request.getInvokeType())) {
             sendError(request.getSessionId(), request.getSrcAddr(), // srcAddr
                     request.getRequestId(), request.getServiceId(), request.getMethodId(),
@@ -362,7 +359,8 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
             logger.info("rcv rpc response {}", response);
         }
         // watcher需要在IO线程测试
-        IPromise<RpcResult> watcher = watcherMap.remove(new Key(response.getSessionId(), response.getRequestId()));
+        Key key = new Key(response.getSessionId(), response.getRequestId());
+        IPromise<RpcResult> watcher = watcherMap.remove(key);
         if (watcher != null) { // 同步调用结果
             RpcResult result = new RpcResult(response.getErrorCode(), response.getData());
             watcher.trySetResult(result);
@@ -375,7 +373,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
             if (seq < 0) return; // shutdown
             WorkerEvent event = node.getEvent(seq);
             event.setType(FxUtils.TYPE_NET_NODE_RESPONSE);
-            event.setObj1(response);
+            event.obj1 = response;
             node.publish(seq);
         }
     }
@@ -496,7 +494,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         }
     }
 
-    /** 深度拷贝rpc请求 -- src会包含在结果中返回 */
+    /** 深度拷贝rpc请求 -- src会包含在结果中返回；暂不池化List，广播很少 */
     public List<RpcRequest> deepCopy(RpcRequest src, int count) {
         List<RpcRequest> list = new ArrayList<>(count);
         list.add(src);

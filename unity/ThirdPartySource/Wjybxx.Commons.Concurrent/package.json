@@ -1,0 +1,22 @@
+{
+  "name" : "wjybxx.commons.concurrent",
+  "version" : "1.0.0",
+  "displayName" : "Wjybxx.Commons.Concurrent",
+  "description" : "行为树基础包",
+  "documentationUrl": "",
+  "license": "Apache-2.0",
+  
+  "unity": "2021.3",
+  "keywords": ["Wjybxx", "BigCat", "Concurrent"],
+  
+  "author": {
+    "name": "wjybxx",
+    "email": "845740757@qq.com",
+    "url": "https://github.com/hl845740757"
+  },
+  
+ "dependencies": {
+    "wjybxx.commons.core": "1.0.0",
+	"wjybxx.disruptor" : "1.0.0"
+  }
+}

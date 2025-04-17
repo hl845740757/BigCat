@@ -27,7 +27,7 @@ import cn.wjybxx.base.ex.ErrorCodeException;
 public class RpcServerException extends RpcException {
 
     public RpcServerException(int errorCode) {
-        super(errorCode);
+        super(errorCode, "", null, true, false);
     }
 
     public RpcServerException(int errorCode, String message) {

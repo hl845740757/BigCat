@@ -1,0 +1,17 @@
+{
+    "name": "Wjybxx.Dson.Codec",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6bbf46926f98d7c45ac53d124b80fa9b",
+        "GUID:405681f21562f474eb55563510b69fa3"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

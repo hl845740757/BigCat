@@ -17,12 +17,10 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.Preconditions;
-import cn.wjybxx.concurrent.*;
-import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
-import cn.wjybxx.disruptor.EventSequencer;
-import cn.wjybxx.disruptor.RingBufferEventSequencer;
-import cn.wjybxx.disruptor.TimeoutSleepingWaitStrategy;
-import cn.wjybxx.disruptor.WaitStrategy;
+import cn.wjybxx.concurrent.EventLoopBuilder;
+import cn.wjybxx.concurrent.EventLoopModule;
+import cn.wjybxx.concurrent.IEventLoopAgent;
+import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import com.google.inject.Injector;
 
 import java.util.ArrayList;
@@ -65,7 +63,7 @@ public abstract class WorkerBuilder {
      */
     private final List<Class<?>> serviceClasses = new ArrayList<>();
 
-    /** 在真正构建时由{@link Node}赋值，同{@link #setParent(Node)} */
+    /** 在真正构建时由{@link Node}赋值，用户需要设置到parent */
     private WorkerControlData controlData;
     /** 是否手动关闭Worker -- 如果未赋值，则取决于添加到Node时是否已启动 */
     private Boolean manualClose;
@@ -129,12 +127,12 @@ public abstract class WorkerBuilder {
         return this;
     }
 
-    // endrgeion
+    // endregion
 
 
     //region worker
 
-    public WorkerControlData getWorkerCtx() {
+    public WorkerControlData getControlData() {
         return controlData;
     }
 
@@ -204,131 +202,8 @@ public abstract class WorkerBuilder {
 
     // endregion
 
-    public static DisruptWorkerBuilder newDisruptorWorkerBuilder() {
-        return new DisruptWorkerBuilder();
+    public static DefaultWorkerBuilder newDisruptorWorkerBuilder() {
+        return new DefaultWorkerBuilder();
     }
 
-    public static class DisruptWorkerBuilder extends WorkerBuilder {
-
-        private DisruptWorkerBuilder() {
-            super(EventLoopBuilder.newDisruptBuilder());
-        }
-
-        @Override
-        public Worker build() {
-            if (getThreadFactory() == null) {
-                setThreadFactory(new DefaultThreadFactory("Worker"));
-            }
-            if (getEventSequencer() == null) {
-                setEventSequencer(RingBufferEventSequencer.newMultiProducer(WorkerEvent::new)
-                        .setWaitStrategy(TimeoutSleepingWaitStrategy.INSTANCE)
-                        .setBufferSize(8 * 1024)
-                        .build());
-            }
-            return new WorkerImpl(this);
-        }
-
-        @Override
-        public DisruptorBuilder<WorkerEvent> getDelegated() {
-            return (DisruptorBuilder<WorkerEvent>) super.getDelegated();
-        }
-
-        // region
-
-        @Override
-        public DisruptWorkerBuilder setParent(Node parent) {
-            super.setParent(parent);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setThreadFactory(ThreadFactory threadFactory) {
-            super.setThreadFactory(threadFactory);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
-            super.setRejectedExecutionHandler(rejectedExecutionHandler);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setAgent(IEventLoopAgent<WorkerEvent> agent) {
-            super.setAgent(agent);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setControlData(WorkerControlData controlData) {
-            super.setControlData(controlData);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setManualClose(Boolean manualClose) {
-            super.setManualClose(manualClose);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setWorkerId(String workerId) {
-            super.setWorkerId(workerId);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder setInjector(Injector injector) {
-            super.setInjector(injector);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder addModule(Class<?> moduleClazz) {
-            super.addModule(moduleClazz);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder addService(Class<?> serviceClass) {
-            super.addService(serviceClass);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder addModules(List<Class<?>> moduleClazz) {
-            super.addModules(moduleClazz);
-            return this;
-        }
-
-        @Override
-        public DisruptWorkerBuilder addServices(List<Class<?>> serviceClass) {
-            super.addServices(serviceClass);
-            return this;
-        }
-
-        // endregion
-
-        // region disruptor
-
-        public EventSequencer<? extends WorkerEvent> getEventSequencer() {
-            return getDelegated().getEventSequencer();
-        }
-
-        public DisruptWorkerBuilder setEventSequencer(EventSequencer<? extends WorkerEvent> eventSequencer) {
-            getDelegated().setEventSequencer(eventSequencer);
-            return this;
-        }
-
-        public WaitStrategy getWaitStrategy() {
-            return getDelegated().getWaitStrategy();
-        }
-
-        public DisruptWorkerBuilder setWaitStrategy(WaitStrategy waitStrategy) {
-            getDelegated().setWaitStrategy(waitStrategy);
-            return this;
-        }
-
-        // endregion
-    }
 }

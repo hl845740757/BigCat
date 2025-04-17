@@ -39,19 +39,19 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
     private volatile IntSet serviceIdSet = IntSets.emptySet();
     private final WorkerControlData controlData;
 
-    public WorkerImpl(WorkerBuilder.DisruptWorkerBuilder builder) {
+    public WorkerImpl(DefaultWorkerBuilder builder) {
         super(decorate(builder));
 
         final int nodeId = parent().nodeAddr().nodeId;
         final String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         this.workerAddr = new WorkerAddr(nodeId, workerId);
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
-        this.controlData = builder.getWorkerCtx();
+        this.controlData = builder.getControlData();
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
     }
 
-    private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(WorkerBuilder.DisruptWorkerBuilder builder) {
+    private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(DefaultWorkerBuilder builder) {
         FxUtils.createModules(builder);
         if (builder.getAgent() == null) {
             @SuppressWarnings("unchecked") IEventLoopAgent<WorkerEvent> agent = builder.getInjector().getInstance(IEventLoopAgent.class);
@@ -64,15 +64,15 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
         this.serviceIdSet = IntSets.unmodifiable(new IntOpenHashSet(serviceIdSet));
     }
 
+    @Override
+    public Injector injector() {
+        return injector;
+    }
+
     @Nonnull
     @Override
     public WorkerAddr workerAddr() {
         return workerAddr;
-    }
-
-    @Override
-    public Injector injector() {
-        return injector;
     }
 
     @Override

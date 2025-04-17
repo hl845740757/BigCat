@@ -21,6 +21,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * 用于Rpc通信序列化对象
+ * TODO 改为返回Bytebuf
  *
  * @author wjybxx
  * date - 2023/10/28

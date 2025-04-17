@@ -1,0 +1,19 @@
+{
+    "name": "Wjybxx.Dson.Apt",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6bbf46926f98d7c45ac53d124b80fa9b",
+        "GUID:9496018d2159a794a9963aa12989890b",
+        "GUID:405681f21562f474eb55563510b69fa3",
+        "GUID:29f5a517cdbe9e843927cdbaf25c5a3d"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

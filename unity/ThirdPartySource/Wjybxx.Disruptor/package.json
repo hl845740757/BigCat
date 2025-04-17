@@ -1,0 +1,17 @@
+{
+  "name" : "wjybxx.disruptor",
+  "version" : "1.0.0",
+  "displayName" : "Wjybxx.Disruptor",
+  "description" : "C# Disruptor实现",
+  "documentationUrl": "",
+  "license": "Apache-2.0",
+  
+  "unity": "2021.3",
+  "keywords": ["Wjybxx", "BigCat", "Concurrent", "Disruptor"],
+  
+  "author": {
+    "name": "wjybxx",
+    "email": "845740757@qq.com",
+    "url": "https://github.com/hl845740757"
+  }
+}

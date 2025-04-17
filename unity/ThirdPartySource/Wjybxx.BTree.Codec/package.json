@@ -1,0 +1,22 @@
+{
+  "name" : "wjybxx.btree.codec",
+  "version" : "1.0.0",
+  "displayName" : "Wjybxx.BTree.Codec",
+  "description" : "行为树反序列化包",
+  "documentationUrl": "",
+  "license": "Apache-2.0",
+  
+  "unity": "2021.3",
+  "keywords": ["Wjybxx", "BigCat", "BTree"],
+  
+  "author": {
+    "name": "wjybxx",
+    "email": "845740757@qq.com",
+    "url": "https://github.com/hl845740757"
+  },
+  "dependencies": {
+    "wjybxx.btree.core": "1.0.0",	  
+    "wjybxx.dson.core": "1.0.0",
+    "wjybxx.dson.codec": "1.0.0"
+ }
+}

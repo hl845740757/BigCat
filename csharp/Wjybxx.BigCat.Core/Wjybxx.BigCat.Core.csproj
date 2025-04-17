@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <PropertyGroup>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>annotations</Nullable>
+        <LangVersion>9</LangVersion> <!-- 为兼容unity我们使用c#9 -->
+        <RootNamespace>Wjybxx.BigCat.Core</RootNamespace>
+
+        <AssemblyName>Wjybxx.BigCat.Core</AssemblyName>
+        <PackageId>Wjybxx.BigCat.Core</PackageId>
+        <PackageVersion>1.0.0</PackageVersion>
+
+        <Title>Wjybxx.BigCat.Core</Title>
+        <Description>BigCat核心包</Description>
+        <PackageTags>wjybxx;bigcat;</PackageTags>
+
+        <Authors>wjybxx(845740757@qq.com)</Authors>
+        <Owners>wjybxx(845740757@qq.com)</Owners>
+        <Copyright>Copyright 2023-2024 wjybxx(845740757@qq.com)</Copyright>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/hl845740757/BigCat-Unity</PackageProjectUrl>
+        <PackageReleaseNotes>https://github.com/hl845740757/BigCat-Unity/releases</PackageReleaseNotes>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <NeutralLanguage>zh-Hans</NeutralLanguage>
+
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <EmbedAllSources>true</EmbedAllSources> <!-- 嵌入源代码 -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TargetFrameworks>net6.0;net7.0;net8.0;</TargetFrameworks>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <NoWarn>1701;1702;1591;</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <NoWarn>1701;1702;1591;</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="Google.Protobuf" Version="3.30.2" />
+      <PackageReference Include="Wjybxx.Commons.Apt" Version="1.2.0" />
+      <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.3.1-rc2" />
+      <PackageReference Include="Wjybxx.Commons.Core" Version="1.3.1-rc2" />
+      <PackageReference Include="Wjybxx.Dson.Codec" Version="2.4.0" />
+      <PackageReference Include="Wjybxx.Dson.Core" Version="2.4.0" />
+    </ItemGroup>
+
+</Project>

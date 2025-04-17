@@ -158,7 +158,7 @@ public final class RpcResponse extends RpcProtocol {
         return POOL.acquire();
     }
 
-    /** 该方法通常由Node线程调用 */
+    /** 该方法通常由Worker线程调用 */
     public static void release(RpcResponse response) {
         POOL.release(response);
     }

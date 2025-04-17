@@ -17,12 +17,10 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.Preconditions;
-import cn.wjybxx.concurrent.*;
-import cn.wjybxx.concurrent.EventLoopBuilder.DisruptorBuilder;
-import cn.wjybxx.disruptor.EventSequencer;
-import cn.wjybxx.disruptor.MpUnboundedEventSequencer;
-import cn.wjybxx.disruptor.TimeoutSleepingWaitStrategy;
-import cn.wjybxx.disruptor.WaitStrategy;
+import cn.wjybxx.concurrent.EventLoopBuilder;
+import cn.wjybxx.concurrent.EventLoopChooserFactory;
+import cn.wjybxx.concurrent.IEventLoopAgent;
+import cn.wjybxx.concurrent.RejectedExecutionHandler;
 import com.google.inject.Injector;
 
 import java.util.HashSet;
@@ -42,6 +40,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
     private int numberChildren = 1;
     private WorkerFactory workerFactory;
     private EventLoopChooserFactory chooserFactory;
+
     /** 服务器节点id */
     private int nodeId;
     /** rpc接口所在的包，用于生成{@link RpcMethodRegistry} */
@@ -54,7 +53,61 @@ public abstract class NodeBuilder extends WorkerBuilder {
     @Override
     public abstract Node build();
 
-    // region
+    // region node
+    public int getNumberChildren() {
+        return numberChildren;
+    }
+
+    public NodeBuilder setNumberChildren(int numberChildren) {
+        this.numberChildren = numberChildren;
+        return this;
+    }
+
+    public WorkerFactory getWorkerFactory() {
+        return workerFactory;
+    }
+
+    public NodeBuilder setWorkerFactory(WorkerFactory workerFactory) {
+        this.workerFactory = workerFactory;
+        return this;
+    }
+
+    public EventLoopChooserFactory getChooserFactory() {
+        return chooserFactory;
+    }
+
+    public NodeBuilder setChooserFactory(EventLoopChooserFactory chooserFactory) {
+        this.chooserFactory = chooserFactory;
+        return this;
+    }
+
+    public int getNodeId() {
+        return nodeId;
+    }
+
+    public NodeBuilder setNodeId(int nodeId) {
+        this.nodeId = nodeId;
+        return this;
+    }
+
+    public Set<String> getRpcPackages() {
+        return rpcPackages;
+    }
+
+    public NodeBuilder addRpcPackage(String pkg) {
+        Objects.requireNonNull(pkg);
+        rpcPackages.add(pkg);
+        return this;
+    }
+
+    public NodeBuilder addRpcPackages(List<String> packages) {
+        Preconditions.checkNullElements(packages);
+        rpcPackages.addAll(packages);
+        return this;
+    }
+    // endregion
+
+    // region worker
 
     @Override
     public NodeBuilder setParent(Node parent) {
@@ -130,126 +183,8 @@ public abstract class NodeBuilder extends WorkerBuilder {
 
     // endregion
 
-    // region
-    public int getNumberChildren() {
-        return numberChildren;
-    }
-
-    public NodeBuilder setNumberChildren(int numberChildren) {
-        this.numberChildren = numberChildren;
-        return this;
-    }
-
-    public WorkerFactory getWorkerFactory() {
-        return workerFactory;
-    }
-
-    public NodeBuilder setWorkerFactory(WorkerFactory workerFactory) {
-        this.workerFactory = workerFactory;
-        return this;
-    }
-
-    public EventLoopChooserFactory getChooserFactory() {
-        return chooserFactory;
-    }
-
-    public NodeBuilder setChooserFactory(EventLoopChooserFactory chooserFactory) {
-        this.chooserFactory = chooserFactory;
-        return this;
-    }
-
-    public int getNodeId() {
-        return nodeId;
-    }
-
-    public NodeBuilder setNodeId(int nodeId) {
-        this.nodeId = nodeId;
-        return this;
-    }
-
-    public Set<String> getRpcPackages() {
-        return rpcPackages;
-    }
-
-    public NodeBuilder addRpcPackage(String pkg) {
-        Objects.requireNonNull(pkg);
-        rpcPackages.add(pkg);
-        return this;
-    }
-
-    public NodeBuilder addRpcPackages(List<String> packages) {
-        Preconditions.checkNullElements(packages);
-        rpcPackages.addAll(packages);
-        return this;
-    }
-    // endregion
-
     public static DefaultNodeBuilder newDefaultNodeBuilder() {
         return new DefaultNodeBuilder();
     }
 
-    public static class DefaultNodeBuilder extends NodeBuilder {
-
-        private DefaultNodeBuilder() {
-            super(EventLoopBuilder.newDisruptBuilder());
-        }
-
-        @Override
-        public Node build() {
-            if (getEventSequencer() == null) {
-                setEventSequencer(MpUnboundedEventSequencer.newBuilder(WorkerEvent::new)
-                        .setWaitStrategy(TimeoutSleepingWaitStrategy.INSTANCE)
-                        .setChunkSize(1024)
-                        .setMaxPooledChunks(8)
-                        .build());
-            }
-            if (getThreadFactory() == null) {
-                setThreadFactory(new DefaultThreadFactory("Node"));
-            }
-            if (getWorkerFactory() == null) {
-                setWorkerFactory((parent, index, controlData) -> {
-                    return WorkerBuilder.newDisruptorWorkerBuilder()
-                            .setParent(parent)
-                            .setControlData(controlData)
-                            .setWorkerId("Worker-" + index)
-                            .build();
-                });
-            }
-            return new NodeImpl(this);
-        }
-
-        @Override
-        public DisruptorBuilder<WorkerEvent> getDelegated() {
-            return (DisruptorBuilder<WorkerEvent>) super.getDelegated();
-        }
-
-        @Override
-        public DefaultNodeBuilder setBatchSize(int batchSize) {
-            getDelegated().setBatchSize(batchSize);
-            return this;
-        }
-
-        // region disruptor
-
-        public EventSequencer<? extends WorkerEvent> getEventSequencer() {
-            return getDelegated().getEventSequencer();
-        }
-
-        public NodeBuilder setEventSequencer(EventSequencer<? extends WorkerEvent> eventSequencer) {
-            getDelegated().setEventSequencer(eventSequencer);
-            return this;
-        }
-
-        public WaitStrategy getWaitStrategy() {
-            return getDelegated().getWaitStrategy();
-        }
-
-        public DefaultNodeBuilder setWaitStrategy(WaitStrategy waitStrategy) {
-            getDelegated().setWaitStrategy(waitStrategy);
-            return this;
-        }
-
-        // endregion
-
-    }
 }

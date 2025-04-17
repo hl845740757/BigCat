@@ -69,6 +69,7 @@ public final class RpcRequestStub implements IndexedElement {
     }
 
     public static int compare(RpcRequestStub lhs, RpcRequestStub rhs) {
+        if (lhs == rhs) return 0;
         // 先比较超时时间
         int r = Long.compare(lhs.deadline, rhs.deadline);
         if (r != 0) return r;

@@ -75,7 +75,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
         Node node = worker.node();
         this.rpcSupport = node.injector().getInstance(RpcSupport.class);
         // 创建虚拟Session
-        this.localSession = new S2SSession(0, selfAddr.nodeId, 0);
+        this.localSession = new S2SSession(0, selfAddr.nodeId);
     }
 
     /** rpc超时时间 */
@@ -97,6 +97,28 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
         this.enableLocalSharing = enableLocalSharing;
     }
 
+    /** 注册session */
+    public void addSession(long sessionId) {
+        rpcSupport.addSession(sessionId, worker);
+    }
+
+    /** 删除相关session数据 */
+    public void removeSession(long sessionId) {
+        rpcSupport.removeSession(sessionId);
+
+        List<RpcRequestStub> list = new ArrayList<>();
+        for (RpcRequestStub stub : stubQueue) {
+            if (stub.sessionId == sessionId) {
+                list.add(stub);
+            }
+        }
+        for (RpcRequestStub stub : list) {
+            stub.promise.trySetException(RpcClientException.sessionClosed(stub.destAddr));
+            stubQueue.removeTyped(stub);
+            stubPool.release(stub);
+        }
+    }
+
     private S2SSession getSession(long sessionId) {
         if (sessionId == 0) return localSession;
         return sessionMgr.getSession(sessionId);
@@ -116,7 +138,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
             return;
         }
         final RpcRequest request = newRequest(session, destAddr, methodSpec, RpcInvokeType.ONEWAY);
-        rpcSupport.sendRequest(request, null);
+        rpcSupport.sendRequest(request);
     }
 
     @Override
@@ -142,7 +164,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
             session.stubMap.put(stub.requestId, stub);
             stubQueue.add(stub);
         }
-        rpcSupport.sendRequest(request, promise); // send以后不可再访问request，可能已被回收
+        rpcSupport.sendRequest(request); // send以后不可再访问request，可能已被回收
         return promise;
     }
 
@@ -153,6 +175,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
 
     @Override
     public <V> V syncCall(WorkerAddr destAddr, RpcMethodSpec<V> methodSpec, long timeoutMs) throws TimeoutException, InterruptedException {
+        assert worker.inEventLoop();
         final S2SSession session = getSessionOfNode(destAddr.nodeId);
         if (session == null) {
             throw RpcClientException.sessionNotExist(destAddr);
@@ -165,7 +188,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
 
         final long requestId = request.getRequestId(); // 提前保留requestId
         rpcSupport.addWatcher(session.sessionId, requestId, promise); // 先添加watcher再发送
-        rpcSupport.sendRequest(request, promise); // send以后不可再访问request，可能已被回收
+        rpcSupport.sendRequest(request); // send以后不可再访问request，可能已被回收
         try {
             RpcResult result = promise.get(timeoutMs, TimeUnit.MILLISECONDS);
             if (result.isSucceeded()) {
@@ -216,42 +239,23 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
     public <V> void sendAsyncResult(long sessionId, WorkerAddr destAddr,
                                     long requestId, int serviceId, int methodId,
                                     IFuture<V> future, boolean sharable) {
-        future.onCompleted(new RpcFutureListener<>(this, sessionId, destAddr,
-                requestId, serviceId, methodId, sharable));
+        future.onCompletedAsync(worker,
+                new RpcFutureListener<>(this, sessionId, destAddr, requestId, serviceId, methodId, sharable),
+                TaskOptions.STAGE_TRY_INLINE);
     }
 
     @Override
     public <V> void sendAsyncResult(long sessionId, WorkerAddr destAddr,
                                     long requestId, int serviceId, int methodId,
                                     CompletableFuture<V> future, boolean sharable) {
+        // 暂时认为就在Worker线程吧
         future.whenComplete(new RpcFutureListener<>(this, sessionId, destAddr,
                 requestId, serviceId, methodId, sharable));
     }
 
     // endregion
 
-    // region rpc支持
-
-    /** 注册session */
-    public void addSession(long sessionId) {
-        rpcSupport.addSession(sessionId, worker);
-    }
-
-    /** 删除相关session数据 */
-    public void removeSession(long sessionId) {
-        rpcSupport.removeSession(sessionId);
-
-        List<RpcRequestStub> list = new ArrayList<>();
-        for (RpcRequestStub stub : stubQueue) {
-            if (stub.sessionId == sessionId) {
-                list.add(stub);
-            }
-        }
-        for (RpcRequestStub stub : list) {
-            stub.promise.trySetException(RpcClientException.sessionClosed(stub.destAddr));
-            stubPool.release(stub);
-        }
-    }
+    // region 生命周期
 
     @Override
     public void start() {
@@ -327,19 +331,24 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
                 request.getInvokeType());
         try {
             proxy.invoke(context, request.getData());
-        } catch (Throwable e) {
-            logInvokeException(request, e);
-            context.sendError(e);
+        } catch (Throwable ex) {
+            logInvokeException(request, ex);
+            // 其实还可以感知一下context是否发送了结果
+            if (RpcInvokeType.isCall(request.getInvokeType())) {
+                sendError(request.getSessionId(), request.getSrcAddr(), // srcAddr
+                        request.getRequestId(), request.getServiceId(), request.getMethodId(),
+                        ex);
+            }
         }
         RpcRequest.release(request); // 回收
     }
 
     /** 拒绝客户端请求 -- node和worker的拒绝有差异，地址不同 */
     private void reject(RpcRequest request, int code) {
-        logger.warn("reject the request, reason {}, sessionId {}, srcAddr {}, serviceId {}, methodId {}",
+        logger.warn("reject the request, reason {}, sessionId {}, srcAddr {}, requestId {}, serviceId {}, methodId {}",
                 code,
                 request.getSessionId(), request.getSrcAddr(),
-                request.getServiceId(), request.getMethodId());
+                request.getRequestId(), request.getServiceId(), request.getMethodId());
         if (RpcInvokeType.isCall(request.getInvokeType())) {
             sendError(request.getSessionId(), request.getSrcAddr(), // srcAddr
                     request.getRequestId(), request.getServiceId(), request.getMethodId(),
@@ -351,9 +360,9 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
     /** 记录执行异常 */
     private static void logInvokeException(RpcRequest request, Throwable ex) {
         if (!(ex instanceof NoLogRequiredException)) {
-            logger.warn("invoke caught exception, sessionId={}, srcAddr={}, serviceId={}, methodId={}",
+            logger.warn("invoke caught exception, sessionId {}, srcAddr {}, requestId {}, serviceId {}, methodId {}",
                     request.getSessionId(), request.getSrcAddr(),
-                    request.getServiceId(), request.getMethodId(),
+                    request.getRequestId(), request.getServiceId(), request.getMethodId(),
                     ex);
         }
     }
@@ -366,13 +375,13 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
     void onRcvResponseStep3(RpcResponse response) {
         S2SSession session = getSession(response.getSessionId());
         if (session == null) {
-            logger.info("rcv rpc response, but request is timeout, requestId {}", response.getRequestId());
+            logResponseTimeout(response);
             RpcResponse.release(response);
             return;
         }
         RpcRequestStub stub = session.stubMap.remove(response.getRequestId());
         if (stub == null) {
-            logger.info("rcv rpc response, but request is timeout, requestId {}", response.getRequestId());
+            logResponseTimeout(response);
             RpcResponse.release(response);
             return;
         }
@@ -386,6 +395,11 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
         }
         stubPool.release(stub); // 回收
         RpcResponse.release(response);
+    }
+
+    private static void logResponseTimeout(RpcResponse response) {
+        logger.info("rcv rpc response, but request is timeout, sessionId {}, srcAddr {}, requestId {}",
+                response.getSessionId(), response.getSrcAddr(), response.getRequestId());
     }
 
     // endregion
@@ -443,8 +457,8 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
         response.setRequestId(requestId);
         response.setServiceId(serviceId);
         response.setMethodId(methodId);
-        response.setSuccess(result);
         response.setSharable(sharable);
+        response.setSuccess(result);
 
         // 数据可共享的情况下：进程内不序列化；如果需要发送到网络，则延迟到Node序列化
         if (!(enableLocalSharing && response.isSharable()) && response.getData() != null) {

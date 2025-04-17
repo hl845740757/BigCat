@@ -217,12 +217,9 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private void checkReturnType(ExecutableElement method) {
         // 不再支持基本类型
-        TypeMirror returnType = method.getReturnType();
-        if (isFuture(returnType)) {
-            returnType = findFirstTypeArgument(returnType, method);
-        }
-        if (returnType.getKind().isPrimitive()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "rpc no longer support primitive types!", method);
+        TypeMirror returnType = rpcReturnType(method, false);
+        if (returnType.getKind() != TypeKind.VOID && returnType.getKind() != TypeKind.DECLARED) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "rpc returnType must be void or class!", method);
         }
     }
 
@@ -308,7 +305,7 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     // 默认只对基础类型，包装类型，String做自动的判别
     private boolean isImmutableType(TypeMirror typeMirror) {
-        if (typeMirror.getKind().isPrimitive()) {
+        if (typeMirror.getKind().isPrimitive() || typeMirror.getKind() == TypeKind.VOID) {
             return true;
         }
         if (immutableTypeMirrors.contains(typeMirror)) {
@@ -373,22 +370,27 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
      * @param boxed 返回值是否进行装箱
      */
     TypeMirror rpcReturnType(ExecutableElement method, boolean boxed) {
-        // context覆盖返回值类型
-        List<? extends VariableElement> parameters = method.getParameters();
-        if (parameters.size() > 0 && isContext(parameters.get(0).asType())) {
-            return findFirstTypeArgument(parameters.get(0).asType(), method);
-        }
         TypeMirror returnType = method.getReturnType();
-        // 基础类型和void -- 现不再支持基本类型
-//        if (returnType.getKind().isPrimitive()) {
-//            return boxed ? typeUtils.boxedClass((PrimitiveType) returnType).asType() : returnType;
-//        }
         if (returnType.getKind() == TypeKind.VOID) {
+            // 包含context时，context的泛型值作为返回值类型
+            List<? extends VariableElement> parameters = method.getParameters();
+            if (parameters.size() > 0 && isContext(parameters.get(0).asType())) {
+                returnType = findFirstTypeArgument(parameters.get(0).asType(), method);
+                if (!typeUtils.isSameType(returnType, boxedVoidTypeMirror)) {
+                    return returnType;
+                }
+                return boxed ? returnType : typeUtils.getNoType(TypeKind.VOID);
+            }
+            // 确定void
             return boxed ? boxedVoidTypeMirror : returnType;
         }
-        // future类型
+        // future类型，future的泛型值作为返回值类型
         if (isFuture(returnType)) {
-            return findFirstTypeArgument(returnType, method);
+            returnType = findFirstTypeArgument(returnType, method);
+            if (!typeUtils.isSameType(returnType, boxedVoidTypeMirror)) {
+                return returnType;
+            }
+            return boxed ? returnType : typeUtils.getNoType(TypeKind.VOID);
         } else {
             return returnType;
         }

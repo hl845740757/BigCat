@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Core", "Wjybxx.BigCat.Core\Wjybxx.BigCat.Core.csproj", "{D9B8ED12-03FC-48C4-BD08-E6BAD151BC4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Tests", "Wjybxx.BigCat.Tests\Wjybxx.BigCat.Tests.csproj", "{5AA84DF5-40D3-4B15-91F1-E3D14FC892CC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{841EC805-8E63-4F10-8242-FEB238046501}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{841EC805-8E63-4F10-8242-FEB238046501}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{841EC805-8E63-4F10-8242-FEB238046501}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{841EC805-8E63-4F10-8242-FEB238046501}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9B8ED12-03FC-48C4-BD08-E6BAD151BC4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9B8ED12-03FC-48C4-BD08-E6BAD151BC4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9B8ED12-03FC-48C4-BD08-E6BAD151BC4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9B8ED12-03FC-48C4-BD08-E6BAD151BC4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AA84DF5-40D3-4B15-91F1-E3D14FC892CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AA84DF5-40D3-4B15-91F1-E3D14FC892CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AA84DF5-40D3-4B15-91F1-E3D14FC892CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AA84DF5-40D3-4B15-91F1-E3D14FC892CC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

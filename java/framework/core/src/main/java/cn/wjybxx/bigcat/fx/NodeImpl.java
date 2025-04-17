@@ -23,7 +23,6 @@ import it.unimi.dsi.fastutil.ints.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +47,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     /** Node+Worker的服务信息 */
     private volatile Int2ObjectMap<ServiceInfo> serviceInfoMap = Int2ObjectMaps.emptyMap();
 
-    public NodeImpl(NodeBuilder.DefaultNodeBuilder builder) {
+    public NodeImpl(DefaultNodeBuilder builder) {
         super(decorate(builder));
 
         String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
@@ -85,7 +84,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         chooser = chooserFactory.newChooser(children);
     }
 
-    private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(NodeBuilder.DefaultNodeBuilder builder) {
+    private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(DefaultNodeBuilder builder) {
         FxUtils.createModules(builder);
         if (builder.getAgent() == null) {
             @SuppressWarnings("unchecked") IEventLoopAgent<WorkerEvent> agent = builder.getInjector().getInstance(IEventLoopAgent.class);
@@ -106,6 +105,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         this.serviceInfoMap = Int2ObjectMaps.unmodifiable(tempMap);
     }
 
+    // ---------------------
     @Override
     public Injector injector() {
         return injector;
@@ -133,8 +133,8 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     }
 
     @Override
-    public Iterator<Worker> workers() {
-        return readonlyChildren.iterator();
+    public List<Worker> workers() {
+        return readonlyChildren;
     }
 
     @Override
@@ -151,14 +151,14 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
                 return child;
             }
         }
-        // 可能是指向自己
+        // 可能是查找自己
         if (workerId.equals(workerAddr.workerId)) {
             return this;
         }
         return null;
     }
 
-    //
+    //------------------------
     @Override
     public WorkerControlData controlData() {
         return controlData;

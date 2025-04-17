@@ -158,8 +158,8 @@ public class DefaultEventBus implements EventBus {
             throw new IllegalStateException("event had too many levels of nesting");
         }
         DynamicArray<EventHandler<? super T>> castArray = (DynamicArray<EventHandler<? super T>>) array;
-        recursionDepth++;
         castArray.beginItr();
+        recursionDepth++;
         try {
             for (int idx = 0, len = array.length(); idx < len; idx++) {
                 EventHandler<? super T> handler = castArray.get(idx);
@@ -171,8 +171,8 @@ public class DefaultEventBus implements EventBus {
                 }
             }
         } finally {
-            castArray.endItr();
             recursionDepth--;
+            castArray.endItr();
         }
     }
 

@@ -66,19 +66,18 @@ public final class S2SSession {
     /** 发出的请求信息 */
     final Long2ObjectMap<RpcRequestStub> stubMap = new Long2ObjectOpenHashMap<>();
 
-    public S2SSession(long sessionId, int nodeId, long lastPingTime) {
+    public S2SSession(long sessionId, int nodeId) {
         this.sessionId = sessionId;
         this.nodeId = nodeId;
-        this.lastPingTime = lastPingTime;
     }
 
-    /** 服务器id */
-    public int getType() {
+    /** 服务器类型 */
+    public int getServerType() {
         return NodeId.typeOfNodeId(nodeId);
     }
 
     /** 服务器id */
-    public int getSid() {
+    public int getServerId() {
         return NodeId.sidOfNodeId(nodeId);
     }
 
@@ -162,14 +161,6 @@ public final class S2SSession {
 
     public void setRoomCount(int roomCount) {
         this.roomCount = roomCount;
-    }
-
-    public long getSequencer() {
-        return sequencer;
-    }
-
-    public void setSequencer(long sequencer) {
-        this.sequencer = sequencer;
     }
 
     // endregion

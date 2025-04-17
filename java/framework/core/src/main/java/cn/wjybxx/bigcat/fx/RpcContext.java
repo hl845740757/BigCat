@@ -27,10 +27,11 @@ import java.util.concurrent.CompletableFuture;
  * ps: 由于我们会将RpcContext对象暴露给用户，以及监听Future的结果，因此RpcContext无法简单池化；
  * 由于Java端并不支持值类型，因此我们保留抽象，以方便未来扩展。
  *
+ * @param <T> 返回值类型
  * @author wjybxx
  * date 2023/4/1
  */
-public interface RpcContext<V> {
+public interface RpcContext<T> {
 
     /**
      * 会话id
@@ -68,9 +69,8 @@ public interface RpcContext<V> {
 
     /**
      * 发送正确结果
-     * 2.可通过{@link #setSharable(boolean)}设置结果是否可共享
      */
-    void sendResult(V result);
+    void sendResult(T result);
 
     /**
      * 发送已编码的正确结果，避免中途解码
@@ -89,10 +89,10 @@ public interface RpcContext<V> {
     void sendError(Throwable ex);
 
     /** 发送异步结果 */
-    void sendAsyncResult(IFuture<V> future);
+    void sendAsyncResult(IFuture<T> future);
 
     /** 发送异步结果 */
-    void sendAsyncResult(CompletableFuture<V> future);
+    void sendAsyncResult(CompletableFuture<T> future);
 
     // endregion
 }

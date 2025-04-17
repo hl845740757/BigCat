@@ -78,7 +78,29 @@ public final class RpcMethodInfo<T, R> {
     public boolean hasResult() {
         return resultType != null;
     }
+    // region util
 
+    private static <T> Class<T> voidToNull(Class<T> clazz) {
+        if (clazz == null || clazz == Void.class || clazz == void.class) {
+            return null;
+        }
+        return clazz;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Parser<T> findParser(Class<T> clazz) {
+        if (clazz == null) {
+            return null;
+        }
+        if (!Message.class.isAssignableFrom(clazz)) {
+            return null;
+        }
+        Class<? extends MessageLite> msgClazz = (Class<? extends MessageLite>) clazz;
+        return (Parser<T>) ProtobufUtils.findParser(msgClazz);
+    }
+    // endregion
+
+    // region equals
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -111,26 +133,7 @@ public final class RpcMethodInfo<T, R> {
                 ", resultType=" + resultType +
                 '}';
     }
-
-    // region util
-
-    private static <T> Class<T> voidToNull(Class<T> clazz) {
-        if (clazz == Void.class || clazz == void.class) {
-            return null;
-        }
-        return clazz;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <M> Parser<M> findParser(Class<M> clazz) {
-        if (clazz == null) {
-            return null;
-        }
-        if (!Message.class.isAssignableFrom(clazz)) {
-            return null;
-        }
-        Class<? extends MessageLite> msgClazz = (Class<? extends MessageLite>) clazz;
-        return (Parser<M>) ProtobufUtils.findParser(msgClazz);
-    }
     // endregion
+
+
 }

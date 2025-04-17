@@ -1,0 +1,21 @@
+{
+  "name" : "wjybxx.btree.core",
+  "version" : "1.0.0",
+  "displayName" : "Wjybxx.BTree.Core",
+  "description" : "行为树基础包",
+  "documentationUrl": "",
+  "license": "Apache-2.0",
+  
+  "unity": "2021.3",
+  "keywords": ["Wjybxx", "BigCat", "BTree"],
+  
+  "author": {
+    "name": "wjybxx",
+    "email": "845740757@qq.com",
+    "url": "https://github.com/hl845740757"
+  },
+  
+  "dependencies": {
+    "wjybxx.commons.core": "1.0.0"
+ }
+}

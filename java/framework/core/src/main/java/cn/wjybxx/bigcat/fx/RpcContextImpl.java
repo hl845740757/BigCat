@@ -24,11 +24,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * {@link RpcContext}的默认实现
  *
- * @param <V>
+ * @param <T>
  * @author wjybxx
  * date 2023/4/1
  */
-public final class RpcContextImpl<V> implements RpcContext<V> {
+public final class RpcContextImpl<T> implements RpcContext<T> {
 
     final RpcClientImpl rpcClient;
     final long conId;
@@ -51,6 +51,8 @@ public final class RpcContextImpl<V> implements RpcContext<V> {
         this.methodId = methodId;
         this.invokeType = invokeType;
     }
+
+    // region ----
 
     @Override
     public long sessionId() {
@@ -81,9 +83,11 @@ public final class RpcContextImpl<V> implements RpcContext<V> {
     public void setManualReturn(boolean value) {
         options = BitFlags.set(options, MASK_RESULT_MANUAL, value);
     }
+    // endregion
 
+    // region sendResult
     @Override
-    public void sendResult(V result) {
+    public void sendResult(T result) {
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
@@ -123,7 +127,7 @@ public final class RpcContextImpl<V> implements RpcContext<V> {
     }
 
     @Override
-    public void sendAsyncResult(IFuture<V> future) {
+    public void sendAsyncResult(IFuture<T> future) {
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
@@ -133,7 +137,7 @@ public final class RpcContextImpl<V> implements RpcContext<V> {
     }
 
     @Override
-    public void sendAsyncResult(CompletableFuture<V> future) {
+    public void sendAsyncResult(CompletableFuture<T> future) {
         if (invokeType == RpcInvokeType.ONEWAY) {
             return;
         }
@@ -141,6 +145,7 @@ public final class RpcContextImpl<V> implements RpcContext<V> {
                 requestId, serviceId, methodId,
                 future, isSharable());
     }
+    // endregion
 
     // region 常量
     /** 返回值可共享 */

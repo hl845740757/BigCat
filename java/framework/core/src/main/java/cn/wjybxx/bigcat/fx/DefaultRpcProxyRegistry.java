@@ -22,6 +22,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * 子类可重写{@link #setProxyData(int, int, Object)}提前解析数据
@@ -39,6 +40,7 @@ public class DefaultRpcProxyRegistry implements RpcProxyRegistry {
 
     @Override
     public <T> void register(int serviceId, int methodId, @Nonnull RpcMethodProxy<T> proxy) {
+        Objects.requireNonNull(proxy, "proxy");
         final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         if (proxyMap.containsKey(methodKey)) {
             throw new IllegalArgumentException("methodKey is duplicate, serviceId: %d, methodId: %d"

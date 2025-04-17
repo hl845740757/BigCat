@@ -60,12 +60,12 @@ import javax.annotation.Nullable;
  */
 public interface Worker extends IDisruptorEventLoop<WorkerEvent> {
 
+    /** Worker上绑定的Bean容器 - 用于解决依赖问题 */
+    Injector injector();
+
     /** Worker的Rpc地址 - NodeId和workerId都为有效值 */
     @Nonnull
     WorkerAddr workerAddr();
-
-    /** Worker上绑定的Bean容器 - 用于解决依赖问题 */
-    Injector injector();
 
     /**
      * Worker上绑定的服务id
@@ -96,18 +96,6 @@ public interface Worker extends IDisruptorEventLoop<WorkerEvent> {
     @Nullable
     @Override
     Node parent();
-
-    @Nonnull
-    @Override
-    default Worker select() {
-        return this;
-    }
-
-    @Nonnull
-    @Override
-    default Worker select(int key) {
-        return this;
-    }
 
     // endregion
 

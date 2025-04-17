@@ -1,0 +1,21 @@
+{
+  "name" : "wjybxx.dson.apt",
+  "version" : "1.0.0",
+  "displayName" : "Wjybxx.Dson.Apt",
+  "description" : "Dson 注解处理器包",
+  "documentationUrl": "",
+  "license": "Apache-2.0",
+  
+  "unity": "2021.3",
+  "keywords": ["Wjybxx", "BigCat", "Dson"],
+  
+  "author": {
+    "name": "wjybxx",
+    "email": "845740757@qq.com",
+    "url": "https://github.com/hl845740757"
+  },
+  "dependencies": {
+    "wjybxx.dson.core": "1.0.0",
+    "wjybxx.dson.codec": "1.0.0"	
+ }
+}
