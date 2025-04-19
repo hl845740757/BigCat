@@ -36,15 +36,15 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public final class RpcMethodRegistry {
 
     private volatile boolean mutable = true;
-    private final Int2ObjectMap<RpcMethodInfo<?, ?>> methodInfoMap = new Int2ObjectOpenHashMap<>(100);
+    private final Int2ObjectMap<RpcMethodInfo> methodInfoMap = new Int2ObjectOpenHashMap<>(100);
 
     /** 注册rpc方法 */
-    public void register(RpcMethodInfo<?, ?> methodInfo) {
+    public void register(RpcMethodInfo methodInfo) {
         if (!mutable) {
             throw new IllegalStateException("registry is immutable");
         }
         int methodKey = RpcMethodKey.methodKey(methodInfo.serviceId, methodInfo.methodId);
-        RpcMethodInfo<?, ?> exist = methodInfoMap.get(methodKey);
+        RpcMethodInfo exist = methodInfoMap.get(methodKey);
         if (exist == null) {
             methodInfoMap.put(methodKey, methodInfo);
         } else if (!exist.equals(methodInfo)) {
@@ -54,7 +54,7 @@ public final class RpcMethodRegistry {
     }
 
     /** @return 如果方法不存在，则返回null */
-    public RpcMethodInfo<?, ?> getMethodInfo(int serviceId, int methodId) {
+    public RpcMethodInfo getMethodInfo(int serviceId, int methodId) {
         int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return methodInfoMap.get(methodKey);
     }

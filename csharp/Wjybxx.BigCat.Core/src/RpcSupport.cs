@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Threading;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 using Wjybxx.Commons.Logger;
 
 namespace Wjybxx.BigCat.Core

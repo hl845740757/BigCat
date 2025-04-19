@@ -415,7 +415,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         if (request.getData() == null) { // null不序列化
             return;
         }
-        RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
+        RpcMethodInfo methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
         byte[] bytes;
         if (request.getData() instanceof byte[] codedBytes) {
             bytes = codedBytes.clone();
@@ -429,7 +429,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
 
     /** 反序列化rpc参数 */
     public boolean decodeParameter(RpcRequest request) {
-        RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
+        RpcMethodInfo methodInfo = methodRegistry.getMethodInfo(request.getServiceId(), request.getMethodId());
         byte[] data = (byte[]) request.getData();
         try {
             Object parameter;
@@ -454,7 +454,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         if (response.getData() == null) { // null不序列化
             return;
         }
-        RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
+        RpcMethodInfo methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
         byte[] bytes;
         if (response.getData() instanceof byte[] codedBytes) {
             bytes = codedBytes.clone();
@@ -470,7 +470,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
 
     /** 反序列化结果 */
     public boolean decodeResult(RpcResponse response) {
-        RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
+        RpcMethodInfo methodInfo = methodRegistry.getMethodInfo(response.getServiceId(), response.getMethodId());
         byte[] data = (byte[]) response.getData();
         try {
             if (response.isFailed()) {
@@ -501,7 +501,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         if (count == 1) {
             return list;
         }
-        RpcMethodInfo<?, ?> methodInfo = methodRegistry.getMethodInfo(src.getServiceId(), src.getMethodId());
+        RpcMethodInfo methodInfo = methodRegistry.getMethodInfo(src.getServiceId(), src.getMethodId());
         byte[] bytesParameters = serializer.write(src.getData(), methodInfo.parameterType);
         for (int idx = 1; idx < count; idx++) {
             RpcRequest request = RpcRequest.acquire();

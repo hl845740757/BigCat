@@ -16,10 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +38,9 @@ public class InjectorTest {
         RpcClient rpcClient2 = injector2.getInstance(RpcClient.class);
         Assertions.assertNotSame(rpcClient1, rpcClient2);
 
+        RpcClientImpl rpcClientImpl = injector1.getInstance(RpcClientImpl.class);
+        Assertions.assertSame(rpcClient1, rpcClientImpl);
+
 
         Injector childInjector = injector1.createChildInjector(new Module2());
         RpcClient rpcClient3 = childInjector.getInstance(RpcClient.class);
@@ -52,7 +52,10 @@ public class InjectorTest {
         @Override
         protected void configure() {
             binder().requireExplicitBindings();
-            bind(RpcClient.class).to(S2SRpcClient.class).in(Singleton.class);
+            bind(RpcClient.class).to(S2SRpcClient.class).in(Scopes.SINGLETON);
+//            bind(RpcClientImpl.class).to(S2SRpcClient.class); // 这会创建新的实例...
+            bind(RpcClientImpl.class).to(S2SRpcClient.class).in(Scopes.SINGLETON); // 这也会创建新的实例...
+            bind(S2SRpcClient.class).in(Scopes.SINGLETON); // 只有将实现类指定为单例才可以共享单例
         }
     }
 

@@ -16,8 +16,8 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
-using Google.Protobuf.WellKnownTypes;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
 

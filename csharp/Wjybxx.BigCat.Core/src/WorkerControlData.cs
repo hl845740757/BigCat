@@ -18,6 +18,7 @@
 
 using System;
 using Wjybxx.Commons.Attributes;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Core
 {

@@ -20,11 +20,13 @@ using System;
 using System.Collections.Generic;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Core
 {
 public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
 {
+#nullable disable
     /** 时间模块由主模块驱动 */
     protected TimeModule timeModule;
     /** 帧循环间隔 */

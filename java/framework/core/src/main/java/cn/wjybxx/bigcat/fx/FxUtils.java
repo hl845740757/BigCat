@@ -158,14 +158,14 @@ public class FxUtils {
                     }
                 }
                 // 注册方法
-                RpcMethodInfo<?, ?> methodInfo = new RpcMethodInfo<>(
+                RpcMethodInfo methodInfo = new RpcMethodInfo(
                         serviceInterface.getSimpleName(), method.getName(),
                         serviceAnno.serviceId(), methodAnno.methodId(),
                         pType, rType);
                 registry.register(methodInfo);
             }
         } catch (Exception e) {
-            throw new RuntimeException("service:" + serviceInterface.getSimpleName(), e);
+            throw new RuntimeException("service:" + serviceInterface.getName(), e);
         }
     }
 }

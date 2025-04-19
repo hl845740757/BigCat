@@ -27,12 +27,10 @@ import java.util.Objects;
  * Rpc方法信息
  * (本地用)
  *
- * @param <T> 方法参数类型，{@link Void}表示无
- * @param <R> 方法结果类型，{@link Void}表示无
  * @author wjybxx
  * date - 2023/10/12
  */
-public final class RpcMethodInfo<T, R> {
+public final class RpcMethodInfo {
 
     /** 服务名 -- 本地debug用，不参与equals比较 */
     public final String serviceName;
@@ -44,20 +42,20 @@ public final class RpcMethodInfo<T, R> {
     /** 方法id */
     public final int methodId;
     /** 方法参数类型 -- 无参数时为null */
-    public final Class<T> parameterType;
+    public final Class<?> parameterType;
     /** 方法结果类型 -- 无结果时为null */
-    public final Class<R> resultType;
+    public final Class<?> resultType;
 
     // pb特殊支持
     /** 不为null则表示参数为pb类型，不参与equals比较 */
-    public final Parser<T> parameterParser;
+    public final Parser<?> parameterParser;
     /** 不为null则表示结果为pb类型 */
-    public final Parser<R> resultParser;
+    public final Parser<?> resultParser;
 
     public RpcMethodInfo(String serviceName, String methodName,
                          int serviceId, int methodId,
-                         Class<T> parameterType,
-                         Class<R> resultType) {
+                         Class<?> parameterType,
+                         Class<?> resultType) {
         this.serviceName = Objects.requireNonNull(serviceName);
         this.methodName = Objects.requireNonNull(methodName);
         this.serviceId = serviceId;
@@ -106,7 +104,7 @@ public final class RpcMethodInfo<T, R> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        RpcMethodInfo<?, ?> that = (RpcMethodInfo<?, ?>) o;
+        RpcMethodInfo that = (RpcMethodInfo) o;
         return serviceId == that.serviceId
                 && methodId == that.methodId
                 && parameterType == that.parameterType

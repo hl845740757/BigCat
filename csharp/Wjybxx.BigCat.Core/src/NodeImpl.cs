@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Core
 {
@@ -29,8 +30,8 @@ namespace Wjybxx.BigCat.Core
 /// </summary>
 public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
 {
-    private readonly Injector injector;
-    private readonly WorkerAddr workerAdr;
+    private readonly IInjector injector;
+    private readonly WorkerAddr workerAddr;
     private readonly WorkerAddr nodeAddr;
 
     private readonly Worker[] children;
@@ -43,11 +44,44 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     /** Node+Worker的服务信息 */
     private volatile IDictionary<int, ServiceInfo> serviceInfoMap = ImmutableLinkedDictionary<int, ServiceInfo>.Empty;
 
-    public NodeImpl(NodeBuilder builder, bool bindAgent = true)
+    public NodeImpl(DefaultNodeBuilder builder, bool bindAgent = true)
         : base(Decorate(builder)) {
+        string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
+        int nodeId = builder.NodeId;
+        this.workerAddr = new WorkerAddr(nodeId, workerId);
+        this.nodeAddr = new WorkerAddr(nodeId, null);
+        this.injector = builder.Injector ?? throw new NullReferenceException("injector");
+        // 导出Rpc服务 -- 先注册到Registry但不对外发布
+        FxUtils.ExportService(builder);
+        FxUtils.ExportMethodInfo(builder);
+
+        int numberChildren = builder.NumberChildren;
+        if (numberChildren < 1) {
+            throw new ArgumentException("numberChildren must greater than 0");
+        }
+        WorkerFactory workerFactory = builder.WorkerFactory;
+        if (workerFactory == null) {
+            throw new NullReferenceException("workerFactory");
+        }
+        EventLoopChooserFactory chooserFactory = builder.ChooserFactory;
+        if (chooserFactory == null) {
+            chooserFactory = new EventLoopChooserFactory();
+        }
+        children = new Worker[numberChildren];
+        for (int idx = 0; idx < numberChildren; idx++) {
+            WorkerControlData controlData = new WorkerControlData();
+            Worker eventLoop = workerFactory(this, idx, controlData);
+            if (eventLoop.Parent != this) throw new IllegalStateException("the parent of worker is illegal");
+            if (eventLoop.ControlData != controlData)
+                throw new IllegalStateException("the controlData of worker is illegal");
+            if (builder.ManualClose != null) controlData.manualClose = builder.ManualClose;
+            children[idx] = eventLoop;
+        }
+        readonlyChildren = children.ToImmutableList2();
+        chooser = chooserFactory.NewChooser(children);
     }
 
-    private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(WorkerBuilder builder) {
+    private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(DefaultNodeBuilder builder) {
         if (builder.Agent == null) {
             builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
         }
@@ -68,8 +102,8 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     }
 
     // -----------------------
-    public Injector Injector => injector;
-    public WorkerAddr WorkerAddr => workerAdr;
+    public IInjector Injector => injector;
+    public WorkerAddr WorkerAddr => workerAddr;
     public WorkerAddr NodeAddr => nodeAddr;
     public ISet<int> Services => serviceIdSet;
     public IDictionary<int, ServiceInfo> ServiceInfoMap => serviceInfoMap;
@@ -84,7 +118,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
             }
         }
         // 可能是查找自己
-        if (workerId == workerAdr.workerId) {
+        if (workerId == workerAddr.workerId) {
             return this;
         }
         return null;

@@ -19,6 +19,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Core
 {
@@ -57,7 +58,7 @@ public interface Worker : IDisruptorEventLoop<WorkerEvent>
     /// <summary>
     /// Worker绑的对象容器
     /// </summary>
-    Injector Injector { get; }
+    IInjector Injector { get; }
 
     /// <summary>
     /// Worker的Rpc地址 - NodeId和workerId都为有效值

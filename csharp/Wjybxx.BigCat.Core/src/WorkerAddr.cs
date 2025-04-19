@@ -48,7 +48,7 @@ public readonly struct WorkerAddr : IEquatable<WorkerAddr>
     [DsonProperty(Name = "wid")]
     public readonly string? workerId;
 
-    public WorkerAddr(int nodeId, string? workerId = null) {
+    public WorkerAddr(int nodeId, string? workerId) {
         this.nodeId = nodeId;
         this.workerId = workerId;
     }

@@ -24,6 +24,7 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Ex;
+using Wjybxx.Commons.Inject;
 using Wjybxx.Commons.Logger;
 using Wjybxx.Commons.Pool;
 

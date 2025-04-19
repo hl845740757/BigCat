@@ -51,8 +51,9 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         super(decorate(builder));
 
         String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
-        this.workerAddr = new WorkerAddr(builder.getNodeId(), workerId);
-        this.nodeAddr = new WorkerAddr(builder.getNodeId(), null);
+        int nodeId = builder.getNodeId();
+        this.workerAddr = new WorkerAddr(nodeId, workerId);
+        this.nodeAddr = new WorkerAddr(nodeId, null);
         this.injector = Objects.requireNonNull(builder.getInjector(), "injector");
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
@@ -73,7 +74,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         children = new Worker[numberChildren];
         for (int idx = 0; idx < numberChildren; idx++) {
             WorkerControlData controlData = new WorkerControlData();
-            Worker eventLoop = Objects.requireNonNull(workerFactory.newChild(this, idx, controlData));
+            Worker eventLoop = workerFactory.newChild(this, idx, controlData);
             if (eventLoop.parent() != this) throw new IllegalStateException("the parent of worker is illegal");
             if (eventLoop.controlData() != controlData)
                 throw new IllegalStateException("the controlData of worker is illegal");

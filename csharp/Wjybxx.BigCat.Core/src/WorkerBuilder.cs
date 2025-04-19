@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Core
 {
@@ -37,7 +38,7 @@ public abstract class WorkerBuilder
     /// <see cref="RpcSupport"/>、<see cref="RpcRouter"/>、<see cref="RpcSerializer"/>、
     /// <see cref="RpcMethodRegistry"/>
     /// </summary>
-    private Injector injector;
+    private IInjector injector;
 
     /// <summary>
     /// Worker上挂载的模块类
@@ -83,7 +84,7 @@ public abstract class WorkerBuilder
         set => workerId = value;
     }
 
-    public Injector Injector {
+    public IInjector Injector {
         get => injector;
         set => injector = value;
     }

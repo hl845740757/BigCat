@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Core
 {
@@ -29,7 +30,7 @@ namespace Wjybxx.BigCat.Core
 public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
 {
     private readonly WorkerAddr workerAddr;
-    private readonly Injector injector;
+    private readonly IInjector injector;
     private volatile ISet<int> serviceIdSet = ImmutableLinkedHastSet<int>.Empty;
     private readonly WorkerControlData controlData;
 
@@ -55,7 +56,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
     }
 
     public WorkerAddr WorkerAddr => workerAddr;
-    public Injector Injector => injector;
+    public IInjector Injector => injector;
     public ISet<int> Services => serviceIdSet;
 
     public WorkerControlData ControlData => controlData;
