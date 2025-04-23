@@ -16,7 +16,6 @@
     <modules>
         <module>tools-config</module>
         <module>tools-excel</module>
-        <module>tools-protobuf</module>
         <module>tools-common</module>
     </modules>
 
