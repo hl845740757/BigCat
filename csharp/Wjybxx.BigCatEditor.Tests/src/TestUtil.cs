@@ -1,0 +1,43 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System;
+using System.IO;
+using Wjybxx.Commons;
+
+namespace Commons.Tests;
+
+public static class TestUtil
+{
+    /// <summary>
+    /// 获取Res文件目录
+    /// </summary>
+    /// <returns></returns>
+    public static string GetResDictionary() {
+        DirectoryInfo directoryInfo = new DirectoryInfo(Environment.CurrentDirectory);
+        while (true) {
+            if (directoryInfo.Name == "bin") {
+                return directoryInfo.Parent!.FullName + "/res";
+            }
+            directoryInfo = directoryInfo.Parent;
+            if (directoryInfo == null) {
+                throw new AssertionError();
+            }
+        }
+    }
+}

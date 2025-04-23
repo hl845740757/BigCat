@@ -44,7 +44,6 @@ public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
     /** 事件循环的事件处理器 */
     protected readonly Dictionary<int, IAgentEventHandler<WorkerEvent>> handlerMap = new(20);
 
-
     #region 事件
 
     public void Inject(IEventLoop eventLoop, long consumerId) {

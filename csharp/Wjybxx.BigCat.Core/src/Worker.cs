@@ -51,7 +51,7 @@ namespace Wjybxx.BigCat.Core
 /// 服务(Service)用于将模块的业务暴露到网络中，因此服务是对外提供服务的基本单位。
 /// 1. 不建议Module在构造方法中执行太多逻辑，避免复杂的依赖和环境问题。
 /// 2. Module之间的特殊依赖由MainModule解决。
-///3. 如果Service单导出单个Module的业务，通常由Module直接实现Service接口；否则应由门面类实现Service。
+/// 3. 如果Service单导出单个Module的业务，通常由Module直接实现Service接口；否则应由门面类实现Service。
 /// </summary>
 public interface Worker : IDisruptorEventLoop<WorkerEvent>
 {

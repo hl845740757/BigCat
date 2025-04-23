@@ -44,7 +44,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     /** Node+Worker的服务信息 */
     private volatile IDictionary<int, ServiceInfo> serviceInfoMap = ImmutableLinkedDictionary<int, ServiceInfo>.Empty;
 
-    public NodeImpl(DefaultNodeBuilder builder, bool bindAgent = true)
+    public NodeImpl(DefaultNodeBuilder builder)
         : base(Decorate(builder)) {
         string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
         int nodeId = builder.NodeId;
@@ -87,7 +87,6 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
         }
         return builder.Delegated;
     }
-
 
     private void SetServiceIdSet(ICollection<int> serviceIdSet) {
         this.serviceIdSet = ImmutableLinkedHastSet<int>.CreateRange(serviceIdSet);

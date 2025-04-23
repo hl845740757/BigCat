@@ -41,8 +41,7 @@ public final class RpcContextImpl<T> implements RpcContext<T> {
 
     public RpcContextImpl(RpcClientImpl rpcClient,
                           long conId, WorkerAddr remoteAddr,
-                          long requestId, int serviceId, int methodId,
-                          int invokeType) {
+                          long requestId, int serviceId, int methodId, int invokeType) {
         this.rpcClient = rpcClient;
         this.conId = conId;
         this.remoteAddr = remoteAddr;

@@ -1,4 +1,5 @@
 ﻿#region LICENSE
+
 // Copyright 2025 wjybxx(845740757@qq.com)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +13,35 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #endregion
 
-using NUnit.Framework;
-
-namespace Commons.Tests;
-
-public class AutofacTest
+namespace Wjybxx.BigCatEditor.Protobuf
 {
+/// <summary>
+/// PB元素类型
+/// </summary>
+public enum PBElementKind
+{
+    /** 文件 */
+    File,
 
-    [Test]
-    public void TestInject() {
-        
-    }
+    /** 服务类 */
+    Service,
+
+    /** 消息类 */
+    Message,
+
+    /** 枚举类 */
+    Enum,
+
+    /** RPC方法 */
+    Method,
+
+    /** 字段 */
+    Field,
+
+    /** 枚举值 */
+    EnumValue,
+}
 }

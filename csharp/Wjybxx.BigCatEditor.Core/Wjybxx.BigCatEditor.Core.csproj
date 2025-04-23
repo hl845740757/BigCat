@@ -1,17 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    
+
+
     <PropertyGroup>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>annotations</Nullable>
         <LangVersion>9</LangVersion> <!-- 为兼容unity我们使用c#9 -->
-        <RootNamespace>Wjybxx.BigCat.Core</RootNamespace>
+        <RootNamespace>Wjybxx.BigCatEditor.Core</RootNamespace>
 
-        <AssemblyName>Wjybxx.BigCat.Core</AssemblyName>
-        <PackageId>Wjybxx.BigCat.Core</PackageId>
+        <AssemblyName>Wjybxx.BigCatEditor.Core</AssemblyName>
+        <PackageId>Wjybxx.BigCatEditor.Core</PackageId>
         <PackageVersion>1.0.0</PackageVersion>
 
-        <Title>Wjybxx.BigCat.Core</Title>
-        <Description>BigCat核心包</Description>
+        <Title>Wjybxx.BigCatEditor.Core</Title>
+        <Description>Editor工具公共包</Description>
         <PackageTags>wjybxx;bigcat;</PackageTags>
 
         <Authors>wjybxx(845740757@qq.com)</Authors>
@@ -41,15 +42,14 @@
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.30.2" />
-      <PackageReference Include="Wjybxx.Commons.Apt" Version="1.3.0" />
-      <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.3.0" />
-      <PackageReference Include="Wjybxx.Commons.Core" Version="1.3.0" />
-      <PackageReference Include="Wjybxx.Commons.Inject" Version="1.0.0" />
-      <PackageReference Include="Wjybxx.Dson.Codec" Version="2.4.0" />
-      <PackageReference Include="Wjybxx.Dson.Core" Version="2.4.0" />
+        <PackageReference Include="Wjybxx.Commons.Apt" Version="1.3.0" />
+        <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.3.0" />
+        <PackageReference Include="Wjybxx.Commons.Core" Version="1.3.0" />
+        <PackageReference Include="Wjybxx.Commons.Inject" Version="1.0.0" />
+        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.4.0" />
+        <PackageReference Include="Wjybxx.Dson.Core" Version="2.4.0" />
     </ItemGroup>
 
 </Project>

@@ -60,7 +60,6 @@ public class EnumGenerator {
     public TypeSpec.Builder buildClass() {
         checkDuplicate();
         TypeSpec.Builder typeBuilder = TypeSpec.enumBuilder(className)
-                .addAnnotation(GenClassUtils.ANNOTATION_SERIALIZABLE)
                 .addModifiers(Modifier.PUBLIC);
 
         final ClassName selfClsName = ClassName.get(javaPackage, className);

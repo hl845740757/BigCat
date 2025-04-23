@@ -32,47 +32,56 @@ public class Utils extends ObjectUtils {
 
     // region 空白字符
 
-    /**
-     * 获取首个非空白字符
-     *
-     * @return 如果不存在则返回-1
-     */
-    public static int firstCharNonWhitespace(CharSequence cs) {
-        int idx = indexOfNonWhitespace(cs, 0);
-        return idx >= 0 ? cs.charAt(idx) : -1;
+    /** 索引首个空白字符 */
+    public static int indexOfWhitespace(CharSequence cs) {
+        return indexOfWhitespace(cs, 0);
     }
 
-    /**
-     * 获取首个非空白字符
-     *
-     * @return 如果不存在则返回-1
-     */
-    public static int firstCharNonWhitespace(CharSequence cs, int startIndex) {
-        int idx = indexOfNonWhitespace(cs, startIndex);
-        return idx >= 0 ? cs.charAt(idx) : -1;
+    /** 索引首个空白字符 */
+    public static int indexOfWhitespace(CharSequence cs, final int startIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        for (int i = startIndex; i < length; i++) {
+            if (Character.isWhitespace(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    /**
-     * 获取最后一个非空白字符
-     *
-     * @return 如果不存在则返回-1
-     */
-    public static int lastCharNonWhitespace(CharSequence cs) {
-        int idx = lastIndexOfNonWhitespace(cs, 0);
-        return idx >= 0 ? cs.charAt(idx) : -1;
+    /** 逆向索引首个空白字符 */
+    public static int lastIndexOfWhitespace(CharSequence cs) {
+        return lastIndexOfWhitespace(cs, -1);
     }
 
-    /**
-     * 获取最后一个非空白字符
-     *
-     * @return 如果不存在则返回-1
-     */
-    public static int lastCharNonWhitespace(CharSequence cs, int startIndex) {
-        int idx = lastIndexOfNonWhitespace(cs, startIndex);
-        return idx >= 0 ? cs.charAt(idx) : -1;
+    /** 逆向索引首个空白字符 */
+    public static int lastIndexOfWhitespace(CharSequence cs, int startIndex) {
+        if (startIndex < -1) {
+            throw new IllegalArgumentException("startIndex " + startIndex);
+        }
+        int length = length(cs);
+        if (length == 0) {
+            return -1;
+        }
+        if (startIndex == -1 || startIndex >= length) {
+            startIndex = length - 1;
+        }
+        for (int i = startIndex; i >= 0; i--) {
+            if (Character.isWhitespace(cs.charAt(i))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    /** 索引首个非空白字符的 */
+    // ---------------------------------------------------
+
+    /** 索引首个非空白字符 */
     public static int indexOfNonWhitespace(CharSequence cs) {
         return indexOfNonWhitespace(cs, 0);
     }
@@ -109,18 +118,13 @@ public class Utils extends ObjectUtils {
         if (startIndex < -1) {
             throw new IllegalArgumentException("startIndex " + startIndex);
         }
-
         int length = length(cs);
         if (length == 0) {
             return -1;
         }
-
-        if (startIndex == -1) {
-            startIndex = length - 1;
-        } else if (startIndex >= length) {
+        if (startIndex == -1 || startIndex >= length) {
             startIndex = length - 1;
         }
-
         for (int i = startIndex; i >= 0; i--) {
             if (!Character.isWhitespace(cs.charAt(i))) {
                 return i;
@@ -221,13 +225,26 @@ public class Utils extends ObjectUtils {
 
     /** 去除字符串的双引号 */
     public static String unquote(String str) {
+        return unquote(str, false);
+    }
+
+    /** 去除字符串的双引号 */
+    public static String unquote(String str, boolean trim) {
         int length = ObjectUtils.length(str);
-        if (length == 0) {
+        if (length < 2) {
             return str;
         }
         char firstChar = str.charAt(0);
         char lastChar = str.charAt(str.length() - 1);
         if (firstChar == '"' && lastChar == '"') {
+            if (trim) {
+                int start = Utils.indexOfNonWhitespace(str, 0);
+                int end = Utils.lastIndexOfNonWhitespace(str);
+                if (start < 0) {
+                    return "";
+                }
+                return str.substring(start, end);
+            }
             return str.substring(1, str.length() - 1);
         }
         return str;
@@ -249,10 +266,26 @@ public class Utils extends ObjectUtils {
         return '"' + str + '"';
     }
 
+    /** 删除字符串中的空白字符 */
+    public static String DeleteWhitespace(String str) {
+        if (indexOfWhitespace(str) < 0) {
+            return str;
+        }
+        int len = str.length();
+        StringBuilder sb = new StringBuilder(len);
+        for (int idx = 0; idx < len; idx++) {
+            char c = str.charAt(idx);
+            if (Character.isWhitespace(c)) {
+                continue;
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
     // endregion
 
     // region 中文
-
 
     /** 判断字符串是否包含中文 */
     public static boolean containsChinese(String str) {

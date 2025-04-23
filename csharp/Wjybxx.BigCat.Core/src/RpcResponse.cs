@@ -28,7 +28,7 @@ namespace Wjybxx.BigCat.Core
 /// <summary>
 /// 
 /// </summary>
-public class RpcResponse : RpcProtocol
+public sealed class RpcResponse : RpcProtocol
 {
     /** 请求的唯一id */
     private long requestId;

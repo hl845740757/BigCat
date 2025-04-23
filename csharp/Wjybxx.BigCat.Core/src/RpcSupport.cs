@@ -181,10 +181,10 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         } else {
             long seq = node.NextSequence();
             if (seq < 0) return; // shutdown
-            ref WorkerEvent evt = ref node.GetEventRef(seq);
+            WorkerEvent evt = default; // 发布事件到node时使用聚合发布
             evt.Type = FxUtils.TYPE_WORKER_NODE_REQUEST;
             evt.obj1 = request;
-            node.Publish(seq);
+            node.Publish(seq, in evt);
         }
     }
 
@@ -214,10 +214,10 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         } else {
             long seq = node.NextSequence();
             if (seq < 0) return; // shutdown
-            ref WorkerEvent evt = ref node.GetEventRef(seq);
+            WorkerEvent evt = default; // 发布事件到node时使用聚合发布
             evt.Type = FxUtils.TYPE_WORKER_NODE_RESPONSE;
             evt.obj1 = response;
-            node.Publish(seq);
+            node.Publish(seq, in evt);
         }
     }
 
@@ -255,10 +255,10 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         } else {
             long seq = node.NextSequence();
             if (seq < 0) return; // shutdown
-            ref WorkerEvent evt = ref node.GetEventRef(seq);
+            WorkerEvent evt = default; // 发布事件到node时使用聚合发布
             evt.Type = FxUtils.TYPE_NET_NODE_REQUEST;
             evt.obj1 = request;
-            node.Publish(seq);
+            node.Publish(seq, in evt);
         }
     }
 
@@ -391,10 +391,10 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         } else {
             long seq = node.NextSequence();
             if (seq < 0) return; // shutdown
-            ref WorkerEvent evt = ref node.GetEventRef(seq);
+            WorkerEvent evt = default; // 发布事件到node时使用聚合发布
             evt.Type = FxUtils.TYPE_NET_NODE_RESPONSE;
             evt.obj1 = response;
-            node.Publish(seq);
+            node.Publish(seq, in evt);
         }
     }
 

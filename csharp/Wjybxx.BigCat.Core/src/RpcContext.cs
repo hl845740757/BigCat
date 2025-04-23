@@ -43,8 +43,7 @@ public struct RpcContext<T>
 
     public RpcContext(RpcClientImpl rpcClient,
                       long sessionId, WorkerAddr remoteAddr,
-                      long requestId,
-                      int serviceId, int methodId, int invokeType) : this() {
+                      long requestId, int serviceId, int methodId, int invokeType) : this() {
         this.rpcClient = rpcClient ?? throw new ArgumentNullException(nameof(rpcClient));
         this.sessionId = sessionId;
         this.remoteAddr = remoteAddr;

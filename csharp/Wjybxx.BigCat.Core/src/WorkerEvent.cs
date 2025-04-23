@@ -23,19 +23,20 @@ namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// Worker线程上支持的事件
+/// (以后再删除不必要的字段，正式项目会用完的)
 /// </summary>
 public struct WorkerEvent : IAgentEvent
 {
 #nullable disable
     private int type;
     private int options;
-    public object obj1;
-    public object obj2;
-    public object obj3;
     public int intVal1;
     public int intVal2;
     public long longVal1;
     public long longVal2;
+    public object obj1;
+    public object obj2;
+    public object obj3;
 
     /// <summary>
     /// 构造函数将type声明为可选值，会导致不被调用构造函数

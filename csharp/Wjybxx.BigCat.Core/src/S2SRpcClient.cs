@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.Core
 public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEventHandler<WorkerEvent>
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<S2SRpcClient>();
-
+#nullable disable
     private Worker worker;
     private WorkerAddr selfAddr;
     private TimeModule timeModule;
@@ -67,6 +67,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         // 创建虚拟Session
         this.localSession = new S2SSession(0, selfAddr.nodeId);
     }
+#nullable enable
 
     public long TimeoutMs {
         get => timeoutMs;
@@ -112,7 +113,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public void Send(WorkerAddr destAddr, RpcMethodSpec methodSpec) {
         Debug.Assert(worker.InEventLoop());
-        S2SSession session = GetSessionOfNode(destAddr.nodeId);
+        S2SSession? session = GetSessionOfNode(destAddr.nodeId);
         if (session == null) {
             return;
         }
@@ -123,7 +124,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public void Send<V>(WorkerAddr destAddr, RpcMethodSpec<V> methodSpec) {
         Debug.Assert(worker.InEventLoop());
-        S2SSession session = GetSessionOfNode(destAddr.nodeId);
+        S2SSession? session = GetSessionOfNode(destAddr.nodeId);
         if (session == null) {
             return;
         }
@@ -134,7 +135,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public ValueFuture<V> Call<V>(WorkerAddr destAddr, RpcMethodSpec<V> methodSpec, long timeoutMs = 0) {
         Debug.Assert(worker.InEventLoop());
-        S2SSession session = GetSessionOfNode(destAddr.nodeId);
+        S2SSession? session = GetSessionOfNode(destAddr.nodeId);
         if (session == null) {
             return ValueFuture<V>.FromException(RpcClientException.SessionNotExist(destAddr));
         }
@@ -156,7 +157,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public ValueFuture<object> Call(WorkerAddr destAddr, RpcMethodSpec methodSpec, long timeoutMs = 0) {
         Debug.Assert(worker.InEventLoop());
-        S2SSession session = GetSessionOfNode(destAddr.nodeId);
+        S2SSession? session = GetSessionOfNode(destAddr.nodeId);
         if (session == null) {
             return ValueFuture<object>.FromException(RpcClientException.SessionNotExist(destAddr));
         }
@@ -181,7 +182,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public object SyncCall(WorkerAddr destAddr, RpcMethodSpec methodSpec, long timeoutMs = 0) {
         Debug.Assert(worker.InEventLoop());
-        S2SSession session = GetSessionOfNode(destAddr.nodeId);
+        S2SSession? session = GetSessionOfNode(destAddr.nodeId);
         if (session == null) {
             throw RpcClientException.SessionNotExist(destAddr);
         }
@@ -329,7 +330,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
             }
             stubQueue.Dequeue();
             // 从关联Session中删除
-            S2SSession session = GetSession(stub.sessionId);
+            S2SSession? session = GetSession(stub.sessionId);
             if (session != null) {
                 session.stubMap.Remove(stub.requestId);
             }
@@ -408,13 +409,13 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     #region rcv-response
 
     public void OnRcvResponseStep3(RpcResponse response) {
-        S2SSession session = GetSession(response.SessionId);
+        S2SSession? session = GetSession(response.SessionId);
         if (session == null) {
             LogResponseTimeout(response);
             RpcResponse.Release(response);
             return;
         }
-        if (!session.stubMap.Remove(response.RequestId, out RpcRequestStub stub)) {
+        if (!session.stubMap.Remove(response.RequestId, out RpcRequestStub? stub)) {
             LogResponseTimeout(response);
             RpcResponse.Release(response);
             return;

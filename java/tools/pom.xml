@@ -62,7 +62,7 @@
         <logback.version>1.5.17</logback.version>
         <junit.version>5.12.0</junit.version>
         <!-- 我的commons库 -->
-        <commons.version>1.6.0</commons.version>
+        <commons.version>1.6.1</commons.version>
         <!-- 基础工具库 -->
         <fastutil.version>8.5.14</fastutil.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>

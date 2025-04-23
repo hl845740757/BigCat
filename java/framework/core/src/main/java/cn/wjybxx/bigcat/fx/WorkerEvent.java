@@ -29,15 +29,13 @@ public final class WorkerEvent implements IAgentEvent {
 
     private int type = TYPE_INVALID;
     private int options;
-    public Object obj1;
-    public Object obj2;
-    public Object obj3;
-
-    // 扩展字段
     public int intVal1;
     public int intVal2;
     public long longVal1;
     public long longVal2;
+    public Object obj1;
+    public Object obj2;
+    public Object obj3;
 
     @Override
     public void clean() {
