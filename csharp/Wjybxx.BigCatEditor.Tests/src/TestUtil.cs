@@ -18,6 +18,7 @@
 
 using System;
 using System.IO;
+using Wjybxx.BigCatEditor.Core;
 using Wjybxx.Commons;
 
 namespace Commons.Tests;
@@ -28,16 +29,8 @@ public static class TestUtil
     /// 获取Res文件目录
     /// </summary>
     /// <returns></returns>
-    public static string GetResDictionary() {
-        DirectoryInfo directoryInfo = new DirectoryInfo(Environment.CurrentDirectory);
-        while (true) {
-            if (directoryInfo.Name == "bin") {
-                return directoryInfo.Parent!.FullName + "/res";
-            }
-            directoryInfo = directoryInfo.Parent;
-            if (directoryInfo == null) {
-                throw new AssertionError();
-            }
-        }
+    public static string GetResDirectory() {
+        string binPath = Util.GetDirectory("bin");
+        return new DirectoryInfo(binPath).Parent!.FullName + "/res";
     }
 }

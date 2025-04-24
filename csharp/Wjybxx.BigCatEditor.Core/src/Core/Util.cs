@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Wjybxx.Commons;
@@ -161,6 +162,25 @@ public static class Util
             sb.Append(c);
         }
         return sb.ToString();
+    }
+
+
+    /// <summary>
+    /// 从工作目录向上查找指定目录
+    /// </summary>
+    /// <param name="dirName"></param>
+    /// <returns></returns>
+    public static string GetDirectory(string dirName) {
+        DirectoryInfo directoryInfo = new DirectoryInfo(Environment.CurrentDirectory);
+        while (true) {
+            if (directoryInfo.Name == dirName) {
+                return directoryInfo.FullName;
+            }
+            directoryInfo = directoryInfo.Parent;
+            if (directoryInfo == null) {
+                throw new IOException($"dic {dirName} not found");
+            }
+        }
     }
 }
 }

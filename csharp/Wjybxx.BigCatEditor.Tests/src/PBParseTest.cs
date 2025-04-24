@@ -28,7 +28,7 @@ public class PBParseTest
 {
     [Test]
     public void Test() {
-        string resDictionary = TestUtil.GetResDictionary();
+        string resDictionary = TestUtil.GetResDirectory();
         PBFile pbFile = PBFileParser.Parse(new FileInfo(resDictionary + "/test.proto"));
         Console.WriteLine(pbFile.ToString());
     }

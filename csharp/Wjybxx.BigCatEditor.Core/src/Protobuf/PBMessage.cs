@@ -34,7 +34,7 @@ public class PBMessage : PBTypeElement
     /// </summary>
     /// <param name="includeOneof">是否包含oneof字段</param>
     /// <returns></returns>
-    public List<PBField> GetFields(bool includeOneof = false) {
+    public List<PBField> GetFields(bool includeOneof = true) {
         List<PBField> result = new List<PBField>();
         foreach (PBElement element in EnclosedElements) {
             if (element.Kind == PBElementKind.Field) {
