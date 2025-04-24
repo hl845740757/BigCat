@@ -30,7 +30,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public final class WorkerControlData {
 
-    RpcProxyRegistry rpcProxyRegistry;
     S2SRpcClient rpcClient;
     Boolean manualClose;
 
@@ -47,7 +46,6 @@ public final class WorkerControlData {
             manualClose = !unstarted;
         }
 //        assert worker.inEventLoop(); // worker尚未启动
-        this.rpcProxyRegistry = worker.injector().getInstance(RpcProxyRegistry.class);
         this.rpcClient = (S2SRpcClient) worker.injector().getInstance(RpcClient.class);
     }
 

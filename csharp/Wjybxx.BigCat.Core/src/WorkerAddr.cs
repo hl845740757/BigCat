@@ -65,9 +65,7 @@ public readonly struct WorkerAddr : IEquatable<WorkerAddr>
     }
 
     public override int GetHashCode() {
-        unchecked {
-            return (nodeId * 397) ^ (workerId != null ? workerId.GetHashCode() : 0);
-        }
+        return (nodeId * 397) ^ (workerId != null ? workerId.GetHashCode() : 0);
     }
 
     public static bool operator ==(WorkerAddr left, WorkerAddr right) {

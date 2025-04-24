@@ -566,9 +566,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         }
 
         public override int GetHashCode() {
-            unchecked {
-                return (sessionId.GetHashCode() * 397) ^ requestId.GetHashCode();
-            }
+            return (sessionId.GetHashCode() * 397) ^ requestId.GetHashCode();
         }
 
         public static bool operator ==(Key left, Key right) {

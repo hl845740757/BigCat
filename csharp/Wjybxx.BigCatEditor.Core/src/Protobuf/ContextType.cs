@@ -29,6 +29,8 @@ internal enum ContextType
 
     Message,
 
-    Enum
+    Enum,
+
+    Oneof
 }
 }

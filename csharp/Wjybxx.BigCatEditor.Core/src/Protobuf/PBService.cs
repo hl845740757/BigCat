@@ -43,7 +43,7 @@ public class PBService : PBElement
     /// <returns></returns>
     public List<PBMethod> GetMethods() {
         return EnclosedElements.Where(e => e.Kind == PBElementKind.Method)
-            .Select(e => (PBMethod)e)
+            .Cast<PBMethod>()
             .ToList();
     }
 }

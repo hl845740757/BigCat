@@ -73,7 +73,7 @@ public sealed class PBFileParser
         try {
             int ln = 0;
             while (lineIterator.MoveNext()) {
-                curLine = ParseLine(++ln, lineIterator.Current!);
+                curLine = LineInfo.Parse(++ln, lineIterator.Current!);
                 switch (context.contextType) {
                     case ContextType.File: {
                         FileReadLine(curLine);
@@ -91,6 +91,10 @@ public sealed class PBFileParser
                         EnumReadLine(curLine);
                         break;
                     }
+                    case ContextType.Oneof: {
+                        OneofReadLine(curLine);
+                        break;
+                    }
                     default: {
                         throw new AssertionError();
                     }
@@ -101,6 +105,8 @@ public sealed class PBFileParser
             throw new PBParserException($"fileName: {file.Name}, ln: {curLine.ln}", ex);
         }
     }
+
+    #region file
 
     private void FileReadLine(LineInfo lineInfo) {
         if (!lineInfo.HasContent) {
@@ -161,6 +167,8 @@ public sealed class PBFileParser
         }
     }
 
+    #endregion
+
     #region message
 
     private void MessageReadLine(LineInfo lineInfo) {
@@ -184,6 +192,10 @@ public sealed class PBFileParser
             }
             case PBKeywords.ENUM: {
                 ReadStartContainer(ContextType.Enum, lineInfo);
+                return;
+            }
+            case PBKeywords.ONE_OF: {
+                ReadStartContainer(ContextType.Oneof, lineInfo);
                 return;
             }
             case PBKeywords.OPTION: {
@@ -287,6 +299,37 @@ public sealed class PBFileParser
     }
 
     #endregion
+
+    #region oneof
+
+    private void OneofReadLine(LineInfo lineInfo) {
+        if (!context.started) {
+            CheckStart(lineInfo);
+            return;
+        }
+        if (!lineInfo.HasContent) {
+            TryAddComment(lineInfo);
+            return;
+        }
+        string content = lineInfo.content;
+        string firstWord = FirstWord(content);
+        if (firstWord == "}") {
+            // 结束行
+            context.ClearCommentLines();
+            ReadEndContainer(lineInfo);
+        } else {
+            // 判断是否字段 type name = number;
+            if (content.IndexOf('=') > 0) {
+                PBField field = ParseField(context.PopCommentLines(), lineInfo);
+                context.container.AddEnclosedElement(field);
+            } else {
+                context.ClearCommentLines();
+            }
+        }
+    }
+
+    #endregion
+
 
     #region service
 
@@ -512,6 +555,10 @@ public sealed class PBFileParser
                 context = new Context(parent, ContextType.Enum, new PBEnum());
                 break;
             }
+            case ContextType.Oneof: {
+                context = new Context(parent, ContextType.Oneof, new PBOneof());
+                break;
+            }
             default: throw new AssertionError();
         }
         context.container.StartLine = lineInfo.ln;
@@ -622,29 +669,6 @@ public sealed class PBFileParser
         }
     }
 
-    /** 解析基础行信息 */
-    private static LineInfo ParseLine(int ln, string rawLine) {
-        string content;
-        string? comment;
-        int slashIdx = rawLine.IndexOf('/');
-        if (slashIdx < 0) {
-            content = rawLine.Trim();
-            comment = null;
-        } else {
-            if (rawLine[slashIdx + 1] != '/') {
-                throw new PBParserException("incorrect comment format, ln: " + ln);
-            }
-            if (slashIdx == 0) {
-                content = "";
-                comment = rawLine;
-            } else {
-                content = rawLine.Substring2(0, slashIdx).Trim();
-                comment = rawLine.Substring(slashIdx); // 保留斜杠
-            }
-        }
-        return new LineInfo(ln, rawLine, content, comment);
-    }
-
     #endregion
 
 #nullable disable
@@ -668,10 +692,6 @@ public sealed class PBFileParser
 
         public PBFile AsFile() {
             return (PBFile)container;
-        }
-
-        public PBService AsService() {
-            return (PBService)container;
         }
 
         public PBMessage AsMessage() {

@@ -17,14 +17,16 @@
 #endregion
 
 using System;
+using System.IO;
+using Wjybxx.Commons;
 
-namespace Wjybxx.BigCatEditor.Protobuf
+namespace Wjybxx.BigCatEditor.Core
 {
 /// <summary>
 /// 文本行信息
 /// 每一行都可能既有内容又有注释，注释仅支持'//'注释
 /// </summary>
-internal sealed class LineInfo
+public sealed class LineInfo
 {
     /** 行号 */
     public readonly int ln;
@@ -69,6 +71,36 @@ internal sealed class LineInfo
 
     // 空行
     public static readonly LineInfo EMPTY = new LineInfo(0, "", "", null);
+
+    /// <summary>
+    /// 解析行信息（默认方案）
+    /// </summary>
+    /// <param name="ln">行号--不约束</param>
+    /// <param name="rawLine">原始行数据</param>
+    /// <returns></returns>
+    public static LineInfo Parse(int ln, string rawLine) {
+        if (rawLine == null) throw new ArgumentNullException(nameof(rawLine));
+
+        string content;
+        string? comment;
+        int slashIdx = rawLine.IndexOf('/');
+        if (slashIdx < 0) {
+            content = rawLine.Trim();
+            comment = null;
+        } else {
+            if (rawLine[slashIdx + 1] != '/') {
+                throw new IOException("incorrect comment format, ln: " + ln);
+            }
+            if (slashIdx == 0) {
+                content = "";
+                comment = rawLine;
+            } else {
+                content = rawLine.Substring2(0, slashIdx).Trim();
+                comment = rawLine.Substring(slashIdx); // 保留斜杠
+            }
+        }
+        return new LineInfo(ln, rawLine, content, comment);
+    }
 
     #endregion
 }

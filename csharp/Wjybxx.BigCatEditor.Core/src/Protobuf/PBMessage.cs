@@ -17,12 +17,13 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Wjybxx.BigCatEditor.Protobuf
 {
 /// <summary>
 /// Message类型
+///
+/// 注意：oneof字段会被打包为<see cref="PBOneof"/>
 /// </summary>
 public class PBMessage : PBTypeElement
 {
@@ -31,11 +32,23 @@ public class PBMessage : PBTypeElement
     /// <summary>
     /// 获取所有的字段
     /// </summary>
+    /// <param name="includeOneof">是否包含oneof字段</param>
     /// <returns></returns>
-    public List<PBField> GetFields() {
-        return EnclosedElements.Where(e => e.Kind == PBElementKind.Field)
-            .Select(e => (PBField)e)
-            .ToList();
+    public List<PBField> GetFields(bool includeOneof = false) {
+        List<PBField> result = new List<PBField>();
+        foreach (PBElement element in EnclosedElements) {
+            if (element.Kind == PBElementKind.Field) {
+                result.Add((PBField)element);
+                continue;
+            }
+            // oneof内部元素只应该是字段
+            if (includeOneof && element.Kind == PBElementKind.Oneof) {
+                foreach (PBElement oneofElement in element.EnclosedElements) {
+                    result.Add((PBField)oneofElement);
+                }
+            }
+        }
+        return result;
     }
 }
 }

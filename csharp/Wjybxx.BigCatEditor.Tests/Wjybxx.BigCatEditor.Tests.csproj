@@ -30,8 +30,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Wjybxx.BigCatEditor.Core\Wjybxx.BigCatEditor.Core.csproj" />
-        <ProjectReference Include="..\Wjybxx.BigCatEditor.Protobuf\Wjybxx.BigCatEditor.Protobuf.csproj" />
-        <ProjectReference Include="..\Wjybxx.BigCatEditor.Rpc\Wjybxx.BigCatEditor.Rpc.csproj" />
+        <ProjectReference Include="..\Wjybxx.BigCatEditor.Generator\Wjybxx.BigCatEditor.Generator.csproj" />
     </ItemGroup>
 
     <ItemGroup>

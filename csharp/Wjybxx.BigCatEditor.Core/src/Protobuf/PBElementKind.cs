@@ -43,5 +43,8 @@ public enum PBElementKind
 
     /** 枚举值 */
     EnumValue,
+
+    /** oneof块 */
+    Oneof,
 }
 }

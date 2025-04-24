@@ -61,7 +61,7 @@ public class PBFile : PBElement
     /// <returns></returns>
     public List<PBService> GetServices() {
         return EnclosedElements.Where(e => e.Kind == PBElementKind.Service)
-            .Select(e => (PBService)e)
+            .Cast<PBService>()
             .ToList();
     }
 
@@ -71,7 +71,7 @@ public class PBFile : PBElement
     /// <returns></returns>
     public List<PBMessage> GetMessages() {
         return EnclosedElements.Where(e => e.Kind == PBElementKind.Message)
-            .Select(e => (PBMessage)e)
+            .Cast<PBMessage>()
             .ToList();
     }
 
@@ -81,7 +81,7 @@ public class PBFile : PBElement
     /// <returns></returns>
     public List<PBEnum> GetEnums() {
         return EnclosedElements.Where(e => e.Kind == PBElementKind.Enum)
-            .Select(e => (PBEnum)e)
+            .Cast<PBEnum>()
             .ToList();
     }
 

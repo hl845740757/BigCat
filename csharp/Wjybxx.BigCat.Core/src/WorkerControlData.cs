@@ -33,7 +33,6 @@ public sealed class WorkerControlData
 {
 #nullable disable
     internal S2SRpcClient rpcClient;
-    internal RpcProxyRegistry rpcProxyRegistry;
     internal bool? manualClose;
 
     /// <summary>
@@ -52,7 +51,6 @@ public sealed class WorkerControlData
             manualClose = !unstarted;
         }
         this.rpcClient = (S2SRpcClient)worker.Injector.GetInstance<RpcClient>();
-        this.rpcProxyRegistry = worker.Injector.GetInstance<RpcProxyRegistry>();
     }
 }
 }

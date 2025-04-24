@@ -188,7 +188,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
 
     private void ExportServices(IList<Worker> workers) {
         // Node自身的服务
-        HashSet<int> nodeServiceIdSet = controlData.rpcProxyRegistry.Export();
+        HashSet<int> nodeServiceIdSet = injector.GetInstance<RpcProxyRegistry>().Export();
         SetServiceIdSet(nodeServiceIdSet);
 
         Dictionary<int, ServiceInfo> serviceInfoMap = new();

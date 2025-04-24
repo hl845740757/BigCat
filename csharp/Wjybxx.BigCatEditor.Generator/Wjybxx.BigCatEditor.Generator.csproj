@@ -4,13 +4,11 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>annotations</Nullable>
         <LangVersion>9</LangVersion> <!-- 为兼容unity我们使用c#9 -->
-        <RootNamespace>Wjybxx.BigCatEditor.Rpc</RootNamespace>
-
-        <AssemblyName>Wjybxx.BigCatEditor.Rpc</AssemblyName>
-        <PackageId>Wjybxx.BigCatEditor.Rpc</PackageId>
+        <RootNamespace>Wjybxx.BigCatEditor.Generator</RootNamespace>
+        <PackageId>Wjybxx.BigCatEditor.Generator</PackageId>
         <PackageVersion>1.0.0</PackageVersion>
 
-        <Title>Wjybxx.BigCatEditor.Rpc</Title>
+        <Title>Wjybxx.BigCatEditor.Generator</Title>
         <Description>Rpc代码生成工具</Description>
         <PackageTags>wjybxx;bigcat;</PackageTags>
 
@@ -48,7 +46,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Wjybxx.BigCatEditor.Core\Wjybxx.BigCatEditor.Core.csproj" />
-      <ProjectReference Include="..\Wjybxx.BigCatEditor.Protobuf\Wjybxx.BigCatEditor.Protobuf.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="src\Excel" />
     </ItemGroup>
 
 </Project>

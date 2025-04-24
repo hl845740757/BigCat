@@ -232,7 +232,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
     private void exportServices(List<Worker> workers) {
         // Node自身的服务
-        IntSet nodeServiceIdSet = controlData.rpcProxyRegistry.export();
+        IntSet nodeServiceIdSet = injector.getInstance(RpcProxyRegistry.class).export();
         setServiceIdSet(nodeServiceIdSet);
 
         Int2ObjectMap<ServiceInfo> serviceInfoMap = new Int2ObjectOpenHashMap<>();

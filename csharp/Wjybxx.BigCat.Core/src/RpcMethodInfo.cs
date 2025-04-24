@@ -100,13 +100,11 @@ public sealed class RpcMethodInfo : IEquatable<RpcMethodInfo>
     }
 
     public override int GetHashCode() {
-        unchecked {
-            int hashCode = serviceId;
-            hashCode = (hashCode * 397) ^ methodId;
-            hashCode = (hashCode * 397) ^ (parameterType != null ? parameterType.GetHashCode() : 0);
-            hashCode = (hashCode * 397) ^ (resultType != null ? resultType.GetHashCode() : 0);
-            return hashCode;
-        }
+        int hashCode = serviceId;
+        hashCode = (hashCode * 397) ^ methodId;
+        hashCode = (hashCode * 397) ^ (parameterType != null ? parameterType.GetHashCode() : 0);
+        hashCode = (hashCode * 397) ^ (resultType != null ? resultType.GetHashCode() : 0);
+        return hashCode;
     }
 
     public static bool operator ==(RpcMethodInfo? left, RpcMethodInfo? right) {

@@ -34,7 +34,7 @@ public class PBEnum : PBTypeElement
     /// <returns></returns>
     public List<PBEnumValue> GetEnumValues() {
         return EnclosedElements.Where(e => e.Kind == PBElementKind.EnumValue)
-            .Select(e => (PBEnumValue)e)
+            .Cast<PBEnumValue>()
             .ToList();
     }
 }

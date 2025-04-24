@@ -39,6 +39,7 @@ message SearchRequest {
   int32 results_per_page = 3;
   Corpus corpus = 4;
   BoxInt32 tag = 5;
+  map<int32, BoxInt32> dic = 6;
 }
 
 message SearchResponse {
@@ -100,4 +101,14 @@ enum EnumWithReserved {
   EAA_STARTED = 1;
   EAA_RUNNING = 1;
   EAA_FINISHED = 2;
+}
+
+message MessageWithOneof {
+  reserved 9, 11 to 20;
+  reserved "VA", "VB";
+  
+  oneof data {
+    string query = 1;
+    int32 page_number = 2;
+  }
 }

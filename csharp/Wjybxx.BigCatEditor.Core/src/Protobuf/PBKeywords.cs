@@ -107,7 +107,7 @@ public static class PBKeywords
 
     private static readonly ISet<string> fieldModifiers = new[]
     {
-        OPTIONAL, REQUIRED, SINGULAR, REPEATED, ONE_OF
+        OPTIONAL, REQUIRED, SINGULAR, REPEATED
     }.ToImmutableLinkedHashSet();
 
     private static readonly IDictionary<string, bool> stringValueOptions = ImmutableDictionary<string, bool>.Empty;

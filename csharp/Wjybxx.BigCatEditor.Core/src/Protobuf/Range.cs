@@ -43,9 +43,7 @@ public readonly struct Range : IEquatable<Range>
     }
 
     public override int GetHashCode() {
-        unchecked {
-            return (start * 397) ^ end;
-        }
+        return (start * 397) ^ end;
     }
 
     public static bool operator ==(Range left, Range right) {

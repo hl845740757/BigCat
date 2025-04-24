@@ -4,7 +4,12 @@
 
 ## BigCatEditor
 
-BigCatEditor为开发期工具，不可依赖BigCat下的模块。
+BigCatEditor为开发期工具，不可依赖BigCat下的模块，BigCat下的模块也不可依赖BigCat下的模块。
 
-Q: 哪些需要定义为独立的程序集？  
-A: 只有那些与业务无关，可以多项目共用的工具才建立独立的程序集，比如我们的protobuf解析工具；与项目的工具和编辑器，放一个程序集即可。
+### Core
+
+Core定义所有的公共数据结构和工具类，不含与项目业务相关的代码。
+
+### Generator
+
+Generator是所有的基础代码生成工具，如根据Excel和Protobuf生成代码的生成器。
