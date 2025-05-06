@@ -4,11 +4,14 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>annotations</Nullable>
-        
+
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>Commons.Tests</RootNamespace>
+        <RootNamespace>Wjybxx.BigCat.Tests</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- 代码生成 -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -16,21 +19,32 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofac" Version="8.2.1" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-        <PackageReference Include="NUnit" Version="3.13.3" />
-        <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
-        <PackageReference Include="NUnit.Analyzers" Version="3.6.1" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Update="appsettings.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-
+    
     <ItemGroup>
-      <ProjectReference Include="..\Wjybxx.BigCat.Core\Wjybxx.BigCat.Core.csproj" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+        <PackageReference Include="NUnit" Version="3.13.3" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
+        <PackageReference Include="NUnit.Analyzers" Version="3.6.1" />
+
+        <ProjectReference Include="..\Wjybxx.BigCat.Core\Wjybxx.BigCat.Core.csproj" />
     </ItemGroup>
 
+    <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
+    <ItemGroup>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Poet.dll"/>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll"/>
+        <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll"/>
+    </ItemGroup>
+    
+    <!-- 排除生成文件目录 -->
+    <ItemGroup>
+        <Compile Remove="Generated\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Remove="Generated\**" />
+    </ItemGroup>
 </Project>

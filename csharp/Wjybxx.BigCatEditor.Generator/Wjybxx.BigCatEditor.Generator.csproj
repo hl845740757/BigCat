@@ -25,7 +25,11 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <EmbedAllSources>true</EmbedAllSources> <!-- 嵌入源代码 -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <TargetFrameworks>net6.0;net7.0;net8.0;</TargetFrameworks>
+        <TargetFrameworks>net6.0;net8.0;</TargetFrameworks>
+        <!-- 代码生成 -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+<!--        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -38,18 +42,30 @@
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Remove="Generated\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Wjybxx.Dson.Core" Version="2.4.0" />
+        <ProjectReference Include="..\Wjybxx.BigCatEditor.Core\Wjybxx.BigCatEditor.Core.csproj" />
+    </ItemGroup>
+
+    <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
+    <ItemGroup>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Poet.dll"/>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll"/>
+        <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll"/>
+    </ItemGroup>
+    <!-- 排除生成文件目录 -->
+    <ItemGroup>
+        <Compile Remove="Generated\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Remove="Generated\**" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Wjybxx.BigCatEditor.Core\Wjybxx.BigCatEditor.Core.csproj" />
+        <Folder Include="obj\Debug" />
+        <Folder Include="src\Excel" />
+        <Folder Include="src\Generated" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="src\Excel" />
-    </ItemGroup>
-
 </Project>

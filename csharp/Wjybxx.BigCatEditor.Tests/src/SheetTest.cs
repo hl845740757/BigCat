@@ -19,7 +19,7 @@
 using NUnit.Framework;
 using Wjybxx.BigCatEditor.Excel;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.EditorTest;
 
 public class SheetTest
 {

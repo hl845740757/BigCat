@@ -4,7 +4,7 @@
 
 ## BigCatEditor
 
-BigCatEditor为开发期工具，不可依赖BigCat下的模块，BigCat下的模块也不可依赖BigCat下的模块。
+BigCatEditor为开发期工具，可以依赖BigCat中的模块（程序集）—— 通常用于代码生成，但BigCat中的模块一定不能依赖Editor下的模块。
 
 ### Core
 

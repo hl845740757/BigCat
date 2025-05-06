@@ -106,7 +106,7 @@ public interface RpcProxyRegistry
 
     /// <summary>
     /// 清理注册表
-    /// 当不再使用<see cref="RpcProxyRegistry"/>时，执行该方法可释放<see cref="RpcMethodProxy"/>捕获的对象。
+    /// 当不再使用<see cref="RpcProxyRegistry"/>时，执行该方法可释放<see cref="RpcMethodProxy{T}"/>捕获的对象。
     /// </summary>
     void Clear();
 }

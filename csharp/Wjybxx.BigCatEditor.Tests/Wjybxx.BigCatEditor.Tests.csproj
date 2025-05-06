@@ -6,8 +6,12 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>Commons.Tests</RootNamespace>
+        <RootNamespace>Wjybxx.BigCat.EditorTest</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+        <!-- 代码生成 -->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -15,7 +19,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofac" Version="8.2.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
         <PackageReference Include="NUnit" Version="3.13.3" />
         <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
@@ -27,14 +30,30 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\Wjybxx.BigCatEditor.Core\Wjybxx.BigCatEditor.Core.csproj" />
         <ProjectReference Include="..\Wjybxx.BigCatEditor.Generator\Wjybxx.BigCatEditor.Generator.csproj" />
     </ItemGroup>
 
+    <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
+    <ItemGroup>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Poet.dll"/>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll"/>
+        <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll"/>
+    </ItemGroup>
+    <!-- 排除生成文件目录 -->
+    <ItemGroup>
+        <Compile Remove="Generated\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Remove="Generated\**" />
+    </ItemGroup>
+    
     <ItemGroup>
       <Folder Include="res" />
+      <Folder Include="src\Generated" />
+      <Folder Include="temp" />
     </ItemGroup>
 
 </Project>

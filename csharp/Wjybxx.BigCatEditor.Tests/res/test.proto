@@ -1,8 +1,9 @@
 syntax = "proto3";
-import "common.proto";
-option java_outer_classname = "MsgTest";
-option java_package = "cn.wjybxx.bigcat.temp.pb2";
 option optimize_for = SPEED;
+
+import "common.proto";
+option csharp_namespace = "Wjybxx.EditorTest.Generated";
+
 
 //@RpcService{id: 1}
 service SearchService {
@@ -94,13 +95,14 @@ message MessageWithReserved {
   int32 page_number = 2;
 }
 
+// pb c#在居然不支持不同枚举下的字段名相同???
 enum EnumWithReserved {
   reserved 9, 11 to 20;
   reserved "VA", "VB";
-  EAA_UNSPECIFIED = 0;
-  EAA_STARTED = 1;
-  EAA_RUNNING = 1;
-  EAA_FINISHED = 2;
+  EAAR_UNSPECIFIED = 0;
+  EAAR_STARTED = 1;
+  EAAR_RUNNING = 2;
+  EAAR_FINISHED = 3;
 }
 
 message MessageWithOneof {

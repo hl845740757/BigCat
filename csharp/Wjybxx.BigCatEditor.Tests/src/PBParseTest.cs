@@ -18,8 +18,9 @@ using System;
 using System.IO;
 using NUnit.Framework;
 using Wjybxx.BigCatEditor.Protobuf;
+using Wjybxx.EditorTest;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.EditorTest;
 
 /// <summary>
 /// 测试pb文件解析正确性
@@ -28,8 +29,8 @@ public class PBParseTest
 {
     [Test]
     public void Test() {
-        string resDictionary = TestUtil.GetResDirectory();
-        PBFile pbFile = PBFileParser.Parse(new FileInfo(resDictionary + "/test.proto"));
+        string resDir = TestUtil.GetResDirectory();
+        PBFile pbFile = PBFileParser.Parse(new FileInfo(resDir + "/test.proto"));
         Console.WriteLine(pbFile.ToString());
     }
 }

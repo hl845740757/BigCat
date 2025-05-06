@@ -11,5 +11,10 @@ PS：我在想，到底还要不要支持根据注解反射生成代码，因为
 
 [proto文件规范](../../docs/Protobuf.md)
 
-
 ## 使用方式
+
+## 目录划分
+
+### Generated
+
+Generated目录用于存储生成的Codec等文件，用于配置文件解析。

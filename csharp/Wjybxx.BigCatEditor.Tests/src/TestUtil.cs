@@ -16,12 +16,10 @@
 
 #endregion
 
-using System;
 using System.IO;
 using Wjybxx.BigCatEditor.Core;
-using Wjybxx.Commons;
 
-namespace Commons.Tests;
+namespace Wjybxx.EditorTest;
 
 public static class TestUtil
 {
@@ -32,5 +30,23 @@ public static class TestUtil
     public static string GetResDirectory() {
         string binPath = Util.GetDirectory("bin");
         return new DirectoryInfo(binPath).Parent!.FullName + "/res";
+    }
+
+    /// <summary>
+    /// 获取Temp文件目录
+    /// </summary>
+    /// <returns></returns>
+    public static string GetTempDirectory() {
+        string binPath = Util.GetDirectory("bin");
+        return new DirectoryInfo(binPath).Parent!.FullName + "/temp";
+    }
+
+    /// <summary>
+    /// 获取生成文件目录
+    /// </summary>
+    /// <returns></returns>
+    public static string GetGeneratedDirectory() {
+        string binPath = Util.GetDirectory("bin");
+        return new DirectoryInfo(binPath).Parent!.FullName + "/src/Generated";
     }
 }
