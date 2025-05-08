@@ -55,7 +55,7 @@ public class SheetCell {
     }
 
     public String getArgs() {
-        return header.getArgs();
+        return header.getCmd();
     }
 
     public String getComment() {

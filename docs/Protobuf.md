@@ -53,14 +53,14 @@ ps：
 服务的元注有三个，分别为：
 
 ```
-    //@RpcService {id: 1}
-    //@Sparam {}
-    //@Cparam {}
+    //@RpcService {id: 1, exporter: true, proxy: true}
+    //@RpcCustom {}
 ```
 
-* id表示为服务分配的id。
-* Sparam 为服务端用参数，dson格式；单独成行，利于解析和书写
-* Cparam 为客户端用参数，dson格式
+* id表示为服务分配的id
+* `exporter`表示是否生成服务器的导出代码
+* `proxy`表示是否生成客户端使用的封装代码
+* `RpcCustom` 为服务端用参数，dson格式；单独成行，利于解析和书写
 
 ### 限制
 
@@ -79,16 +79,14 @@ ps：
 
 ```
     //@RpcMethod {id: 1, async: true, ctx: true, manual: true}
-    //@Sparam {}
-    //@Cparam {}
+    //@RpcCustom {}
 ```
 
 * id 表示方法在服务内的id
-* async 表示服务端接口是否为异步模式；默认值为false（可解析器指定）
+* async 表示服务端接口是否为异步模式；默认值为false
 * ctx 表示是否需要RpcContext参数；默认值为false
 * manual 表示是否手动管理返回时机，如果为true，应当声明tx。
-* Sparam 为服务端用参数，dson格式；单独成行，利于解析和书写
-* Cparam 为客户端用参数，dson格式
+* `RpcCustom` 为服务端用参数，dson格式；单独成行，利于解析和书写
 
 ### 限制
 

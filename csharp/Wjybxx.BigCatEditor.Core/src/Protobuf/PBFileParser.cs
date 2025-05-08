@@ -638,6 +638,24 @@ public sealed class PBFileParser
         return annotation;
     }
 
+    /** 是否是注解类型注释 */
+    public static bool IsAnnotationComment(string comment) {
+        int atIdx = Util.IndexOfNonWhitespace(comment, 2);
+        if (atIdx < 0 || comment[atIdx] != '@') {
+            return false; // '@'符号前面有其它内容
+        }
+        int valueStartIndex = comment.IndexOf('{');
+        int valueEndIndex = comment.LastIndexOf('}');
+        if (valueStartIndex < 0 || valueStartIndex >= valueEndIndex) {
+            return false;
+        }
+        string type = comment.Substring2(atIdx + 1, valueStartIndex).Trim();
+        if (string.IsNullOrWhiteSpace(type)) {
+            return false; // 类型信息为空
+        }
+        return true;
+    }
+
     /** 解析Option -- 不适用字段 */
     private static KeyValuePair<string, string> ParseOption(string content) {
         int startIdx = content.IndexOf(' '); // 跳过 'option'

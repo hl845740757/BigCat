@@ -24,7 +24,7 @@ package cn.wjybxx.bigcattools.config;
 public final class Header {
 
     /** 命令和参数，格式：{@code cs -x -y} */
-    private final String args;
+    private final String cmd;
     /** 属性名 eg: {@code  itemId} */
     private final String name;
     /** 属性的类型 eg：{@code int32 float} */
@@ -37,11 +37,11 @@ public final class Header {
     /** name定义的列索引 */
     private final int colIndex;
 
-    public Header(String args, String name, String type, String comment,
+    public Header(String cmd, String name, String type, String comment,
                   int rowIndex, int colIndex) {
-        this.name = name;
+        this.cmd = cmd;
+        this.name = name.intern();
         this.type = type.intern(); // type类型很少，而且会进行大量的equals测试，池化很有帮助
-        this.args = args;
         this.comment = comment;
         this.rowIndex = rowIndex;
         this.colIndex = colIndex;
@@ -55,8 +55,8 @@ public final class Header {
         return type;
     }
 
-    public String getArgs() {
-        return args;
+    public String getCmd() {
+        return cmd;
     }
 
     public String getComment() {
@@ -82,7 +82,7 @@ public final class Header {
 
         if (rowIndex != header.rowIndex) return false;
         if (colIndex != header.colIndex) return false;
-        if (!args.equals(header.args)) return false;
+        if (!cmd.equals(header.cmd)) return false;
         if (!name.equals(header.name)) return false;
         if (!type.equals(header.type)) return false;
         return comment.equals(header.comment);
@@ -90,7 +90,7 @@ public final class Header {
 
     @Override
     public int hashCode() {
-        int result = args.hashCode();
+        int result = cmd.hashCode();
         result = 31 * result + name.hashCode();
         result = 31 * result + type.hashCode();
         result = 31 * result + comment.hashCode();
@@ -102,7 +102,7 @@ public final class Header {
     @Override
     public String toString() {
         return "Header{" +
-                "args='" + args + '\'' +
+                "args='" + cmd + '\'' +
                 ", name='" + name + '\'' +
                 ", type='" + type + '\'' +
                 ", comment='" + comment + '\'' +

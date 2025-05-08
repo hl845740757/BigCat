@@ -16,8 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.base.TypeInfo;
 import cn.wjybxx.dsoncodec.DsonObjectReader;
-import cn.wjybxx.dsoncodec.TypeInfo;
 import cn.wjybxx.dsoncodec.annotations.DsonProperty;
 import cn.wjybxx.dsoncodec.annotations.DsonSerializable;
 

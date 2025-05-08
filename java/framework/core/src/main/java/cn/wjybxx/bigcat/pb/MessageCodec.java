@@ -17,11 +17,11 @@
 package cn.wjybxx.bigcat.pb;
 
 import cn.wjybxx.base.ObjectUtils;
+import cn.wjybxx.base.TypeInfo;
 import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dsoncodec.DsonCodec;
 import cn.wjybxx.dsoncodec.DsonObjectReader;
 import cn.wjybxx.dsoncodec.DsonObjectWriter;
-import cn.wjybxx.dsoncodec.TypeInfo;
 import cn.wjybxx.dsoncodec.annotations.DsonCodecScanIgnore;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;

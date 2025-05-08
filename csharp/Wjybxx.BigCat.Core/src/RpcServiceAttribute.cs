@@ -47,12 +47,11 @@ public sealed class RpcServiceAttribute : Attribute
     public string? CustomData { get; set; } = null;
 
     /// <summary>
-    /// 是否生成服务端用的{@code Exporter}
+    /// 是否生成服务端用的<code>Exporter</code>
     /// </summary>
     public bool GenExporter { get; set; } = true;
-
     /// <summary>
-    /// 是否生成客户端用的{@code Proxy}
+    /// 是否生成客户端用的<code>Proxy</code>
     /// </summary>
     public bool GenProxy { get; set; } = true;
 }

@@ -47,7 +47,7 @@ public sealed class PBAnnotation
         this.value = dsonValue.ToDson(ObjectStyle.Flow);
     }
 
-    public DsonObject<string>? DsonValue {
+    public DsonObject<string> DsonValue {
         get {
             if (dsonValue == null) {
                 dsonValue = Dsons.FromDson(value).AsObject();

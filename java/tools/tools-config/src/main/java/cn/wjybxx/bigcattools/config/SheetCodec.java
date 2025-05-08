@@ -23,7 +23,7 @@ import cn.wjybxx.dson.text.StringStyle;
 import cn.wjybxx.dsoncodec.DsonCodec;
 import cn.wjybxx.dsoncodec.DsonObjectReader;
 import cn.wjybxx.dsoncodec.DsonObjectWriter;
-import cn.wjybxx.dsoncodec.TypeInfo;
+import cn.wjybxx.base.TypeInfo;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ public class SheetCodec implements DsonCodec<Sheet> {
         writer.writeStartArray("headerMap", ObjectStyle.INDENT);
         for (Header header : headerMap.values()) {
             writer.writeStartObject(ObjectStyle.FLOW);
-            writer.writeString("args", header.getArgs());
+            writer.writeString("args", header.getCmd());
             writer.writeString("name", header.getName());
             writer.writeString("type", header.getType());
             writer.writeString("comment", header.getComment());

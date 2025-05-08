@@ -50,7 +50,7 @@ public class ConstantGenerator {
 
     /**
      * @param enumValueList 外部若需要保持生成代码的文档型，应在外部根据name或number排序
-     * @param stringEnum    枚举的值是否是字符串类型
+     * @param stringEnum    枚举的值是否是字符串类型；由于List可能为空数组，因此需要指定
      * @param allowAlias    是否允许不同的变量指向同一常量值
      */
     public ConstantGenerator(String javaOutDir, String javaPackage,
