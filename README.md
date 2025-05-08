@@ -5,28 +5,44 @@ BigCat(大猫)是一个游戏工具和MMO框架项目，项目的目标是像大
 
 PS：不止是游戏！底层核心线程框架具有普适性，用来做任何网络应用都是高性能的。
 
-## Unity，安排！
+## 暂不要Fork!暂不要Fork!暂不要Fork!
 
-成都这边没有合适的项目，作者最近待业在家，编码时间比较多，决定开搞C#和Unity工程。
-既是做开源分享知识，另一方面也是为以后自己的项目做准备。
+BigCat中原有的大量内容都被迁移到了Commons仓库，所以该仓库内容暂时不多，先不要Fork -- Fork会失望的。
+
+## 阅读时Csharp代码优先
+
+如果想阅读代码，建议阅读csharp代码；因为作者最近重心开始转向Csharp，计划**前后端都改用csharp**；
+限于个人精力，以后的工具部分不再提供java实现 -- 核心框架逻辑仍然提供java实现。
+
+PS：因此，下面的连接都已改为只指向csharp路径。
 
 ## 项目主要内容
 
-1. 基础工具集：Future、EventBus、序列化、热更新、状态机、行为树....
-2. 网络库：Rpc，可靠UDP协议
-3. 主循环框架（线程框架）
-4. 角色和场景框架，技能框架...
+1. 基础工具集：集合库、对象池...
+2. 状态机、行为树....
+3. 并发库：Future、EventLoop、协程...
+4. 序列化：Dson文本
+5. 网络库：Rpc，可靠UDP协议
+6. 主循环框架（线程框架）
+7. 客户端UI框架
+8. 角色和场景框架，技能框架...
+9. 数据脚本 + 编辑器
+10. 热更新，其它...
 
-## 已实现
+### 已实现
 
-1. Future和EventLoop - [Concurrent包](https://github.com/hl845740757/commons/tree/dev/java)。
-2. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信
-3. Rpc + 注解处理器 - [关于Rpc的设计解释](docs/Rpc.md)
-4. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](docs/Protobuf.md)
-5. Dson序列化 - [Dson是什么](https://github.com/hl845740757/commons/blob/dev/docs/Dson.md)
-6. 万能任务树（TaskTree），泛化的行为树 - [任务树](https://github.com/hl845740757/BTree)
-7. ~~配置抽象（Sheet） + 表格处理工具~~ Sheet只用于工具，运行时直接使用Dson。
-8. 文件热更新管理 [文件加载流程](docs/FileReload.md)
+1. Future和EventLoop - [C#Concurrent包](https://github.com/hl845740757/commons?path=csharp/Wjybxx.Commons.Concurrent))。
+2. 线程框架（主循环 + 事件驱动），线程之间支持Rpc通信 - [线程框架](csharp/Wjybxx.BigCat.Core)
+3. Dson序列化 - [Dson是什么](https://github.com/hl845740757/commons.git?path=docs/Dson.md)
+4. 万能任务树（TaskTree） - [任务树](https://github.com/hl845740757/commons.git?path=csharp/Wjybxx.BTree.Core)
+5. 依赖注入 - [C#依赖注入库](https://github.com/hl845740757/commons.git?path=csharp/Wjybxx.Commons.Inject)
+6. Rpc + 注解处理器 - [关于Rpc的设计解释](docs/Rpc.md)
+7. 通过protobuf定义客户端与服务端的Rpc通信 - [proto文件规范](docs/Protobuf.md)
+8. 文件热更新管理 - [文件加载流程](docs/FileReload.md) (C#待实现)
+
+### 废弃特性
+
+1. ~~配置抽象（Sheet） + 表格处理工具~~ Sheet只用于工具，运行时直接使用Dson。
 
 ## 资料
 

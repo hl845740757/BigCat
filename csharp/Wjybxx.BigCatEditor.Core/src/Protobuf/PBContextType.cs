@@ -21,7 +21,7 @@ namespace Wjybxx.BigCatEditor.Protobuf
 /// <summary>
 /// 当前解析上下文
 /// </summary>
-internal enum ContextType
+internal enum PBContextType
 {
     File,
 

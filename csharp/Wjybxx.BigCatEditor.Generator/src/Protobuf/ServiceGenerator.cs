@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Wjybxx.BigCatEditor.Core;
 using Wjybxx.BigCatEditor.Generator.Protobuf;
 using Wjybxx.BigCatEditor.Protobuf;
 using Wjybxx.Commons.Concurrent;
@@ -79,7 +80,7 @@ public class ServiceGenerator
     }
 
     private void BuildService(PBService service) {
-        PBAnnotation serviceAnnotation = service.GetAnnotation("RpcService");
+        Annotation serviceAnnotation = service.GetAnnotation("RpcService");
         if (serviceAnnotation == null) {
             return;
         }
@@ -106,7 +107,7 @@ public class ServiceGenerator
         }
         // 方法列表
         foreach (PBMethod method in service.GetMethods()) {
-            PBAnnotation methodAnnotation = method.GetAnnotation("RpcMethod");
+            Annotation methodAnnotation = method.GetAnnotation("RpcMethod");
             if (methodAnnotation == null) {
                 continue;
             }
@@ -124,7 +125,7 @@ public class ServiceGenerator
                     annoBuilder.AddMember("ManualReturn", "true");
                 }
                 // 自定义数据-字符串
-                PBAnnotation custom = method.GetAnnotation("RpcCustom");
+                Annotation custom = method.GetAnnotation("RpcCustom");
                 if (custom != null) {
                     annoBuilder.AddMember("CustomData", "$S", custom.value);
                 }
@@ -160,7 +161,7 @@ public class ServiceGenerator
     private CodeBlock BuildComment(List<string> comments) {
         CodeBlock.Builder codeBuilder = CodeBlock.NewBuilder();
         foreach (string comment in comments) {
-            if (PBFileParser.IsAnnotationComment(comment)) {
+            if (Annotation.IsAnnotationComment(comment)) {
                 continue;
             }
             if (!codeBuilder.IsEmpty) {
@@ -185,7 +186,7 @@ public class ServiceGenerator
 
         // 是否需要context参数
         if (IsRequireContext(method, methodData)) {
-            methodBuilder.AddParameter(ParseRpcContextType(method), "rpcCtx");
+            methodBuilder.AddParameter(ParseRpcContextType(method), "rpcContext");
         }
         // 正常参数
         if (method.ParameterType != null) {

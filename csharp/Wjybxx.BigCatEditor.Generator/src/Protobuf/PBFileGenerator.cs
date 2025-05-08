@@ -21,7 +21,6 @@ using System.IO;
 using System.Text;
 using Wjybxx.BigCatEditor.Core;
 using Wjybxx.BigCatEditor.Protobuf;
-using Range = Wjybxx.BigCatEditor.Protobuf.Range;
 
 namespace Wjybxx.BigCatEditor.Generator.Protobuf
 {

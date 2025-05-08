@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Wjybxx.BigCatEditor.Core;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCatEditor.Protobuf
@@ -32,23 +33,22 @@ public abstract class PBElement
 #nullable disable
     /** 简单名 */
     private string simpleName;
-    /** 注释 -- 包含注解的原始注释 */
-    private readonly List<string> comments = new();
-    /** 可选项 */
-    private readonly Dictionary<string, string> options = new();
-
     /** 定义该元素的元素 */
     private PBElement enclosingElement;
     /** 嵌套定义的元素 -- 任何便捷查询都是筛选后的快照 */
     private readonly List<PBElement> enclosedElements = new();
+
+    /** 注释 -- 包含注解的原始注释 */
+    private readonly List<string> comments = new();
     /** 注解数据 -- 同一类型允许重复；可能有解析器动态附加的数据 */
-    private readonly List<PBAnnotation> annotations = new();
+    private readonly List<Annotation> annotations = new();
+    /** 可选项 */
+    private readonly Dictionary<string, string> options = new();
 
     /** 定义元素的开始行号 -- -1表示非源码文件定义 */
     private int startLine = -1;
     /** 定义元素的结束行号 -- -1表示非源码文件定义 */
     private int endLine = -1;
-
 #nullable enable
 
     #region logic
@@ -67,13 +67,13 @@ public abstract class PBElement
         return this;
     }
 
-    public PBElement AddAnnotation(PBAnnotation annotation) {
-        annotations.Add(annotation);
+    public PBElement AddComment(string comment) {
+        comments.Add(comment);
         return this;
     }
 
-    public PBElement AddComment(string comment) {
-        comments.Add(comment);
+    public PBElement AddAnnotation(Annotation annotation) {
+        annotations.Add(annotation);
         return this;
     }
 
@@ -83,12 +83,12 @@ public abstract class PBElement
     }
 
     /** 获取指定类型注解 */
-    public PBAnnotation? GetAnnotation(string type) {
+    public Annotation? GetAnnotation(string type) {
         return annotations.FirstOrDefault(e => e.type == type);
     }
 
     /** 获取指定类型所有注解 */
-    public List<PBAnnotation> GetAnnotations(string type) {
+    public List<Annotation> GetAnnotations(string type) {
         return annotations.Where(e => e.type == type).ToList();
     }
 
@@ -106,15 +106,15 @@ public abstract class PBElement
         get => simpleName;
         set => simpleName = value;
     }
-    public List<string> Comments => comments;
-    public Dictionary<string, string> Options => options;
 
     public PBElement EnclosingElement {
         get => enclosingElement;
         set => enclosingElement = value;
     }
     public List<PBElement> EnclosedElements => enclosedElements;
-    public List<PBAnnotation> Annotations => annotations;
+    public List<string> Comments => comments;
+    public List<Annotation> Annotations => annotations;
+    public Dictionary<string, string> Options => options;
 
     public int StartLine {
         get => startLine;

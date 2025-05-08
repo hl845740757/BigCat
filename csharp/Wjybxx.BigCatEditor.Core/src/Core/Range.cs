@@ -18,7 +18,7 @@
 
 using System;
 
-namespace Wjybxx.BigCatEditor.Protobuf
+namespace Wjybxx.BigCatEditor.Core
 {
 /// <summary>
 /// 范围

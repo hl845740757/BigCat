@@ -46,7 +46,7 @@ public sealed class PBFileParser
         this.lineIterator = lineIterator;
 
         this.pbFile = new PBFile();
-        this.context = new Context(null, ContextType.File, pbFile);
+        this.context = new Context(null, PBContextType.File, pbFile);
         this.context.started = true;
     }
 
@@ -75,23 +75,23 @@ public sealed class PBFileParser
             while (lineIterator.MoveNext()) {
                 curLine = LineInfo.Parse(++ln, lineIterator.Current!);
                 switch (context.contextType) {
-                    case ContextType.File: {
+                    case PBContextType.File: {
                         FileReadLine(curLine);
                         break;
                     }
-                    case ContextType.Service: {
+                    case PBContextType.Service: {
                         ServiceReadLine(curLine);
                         break;
                     }
-                    case ContextType.Message: {
+                    case PBContextType.Message: {
                         MessageReadLine(curLine);
                         break;
                     }
-                    case ContextType.Enum: {
+                    case PBContextType.Enum: {
                         EnumReadLine(curLine);
                         break;
                     }
-                    case ContextType.Oneof: {
+                    case PBContextType.Oneof: {
                         OneofReadLine(curLine);
                         break;
                     }
@@ -118,15 +118,15 @@ public sealed class PBFileParser
         switch (firstWord) {
             // 内嵌结构
             case PBKeywords.SERVICE: {
-                ReadStartContainer(ContextType.Service, lineInfo);
+                ReadStartContainer(PBContextType.Service, lineInfo);
                 return;
             }
             case PBKeywords.MESSAGE: {
-                ReadStartContainer(ContextType.Message, lineInfo);
+                ReadStartContainer(PBContextType.Message, lineInfo);
                 return;
             }
             case PBKeywords.ENUM: {
-                ReadStartContainer(ContextType.Enum, lineInfo);
+                ReadStartContainer(PBContextType.Enum, lineInfo);
                 return;
             }
             // 各类options
@@ -187,15 +187,15 @@ public sealed class PBFileParser
                 throw new PBParserException("Services should not be nested within messages");
             }
             case PBKeywords.MESSAGE: {
-                ReadStartContainer(ContextType.Message, lineInfo);
+                ReadStartContainer(PBContextType.Message, lineInfo);
                 return;
             }
             case PBKeywords.ENUM: {
-                ReadStartContainer(ContextType.Enum, lineInfo);
+                ReadStartContainer(PBContextType.Enum, lineInfo);
                 return;
             }
             case PBKeywords.ONE_OF: {
-                ReadStartContainer(ContextType.Oneof, lineInfo);
+                ReadStartContainer(PBContextType.Oneof, lineInfo);
                 return;
             }
             case PBKeywords.OPTION: {
@@ -350,11 +350,11 @@ public sealed class PBFileParser
                 throw new PBParserException("Services should not be nested within service");
             }
             case PBKeywords.MESSAGE: {
-                ReadStartContainer(ContextType.Message, lineInfo);
+                ReadStartContainer(PBContextType.Message, lineInfo);
                 return;
             }
             case PBKeywords.ENUM: {
-                ReadStartContainer(ContextType.Enum, lineInfo);
+                ReadStartContainer(PBContextType.Enum, lineInfo);
                 return;
             }
             case PBKeywords.OPTION: {
@@ -537,26 +537,26 @@ public sealed class PBFileParser
     /// </summary>
     /// <param name="contextType">新上下文类型</param>
     /// <param name="lineInfo">文件行</param>
-    private void ReadStartContainer(ContextType contextType, LineInfo lineInfo) {
+    private void ReadStartContainer(PBContextType contextType, LineInfo lineInfo) {
         if (recursionDepth > 32) throw new IllegalStateException("proto had too many levels of nesting");
 
         Context parent = this.context;
         Context context;
         switch (contextType) {
-            case ContextType.Service: {
-                context = new Context(parent, ContextType.Service, new PBService());
+            case PBContextType.Service: {
+                context = new Context(parent, PBContextType.Service, new PBService());
                 break;
             }
-            case ContextType.Message: {
-                context = new Context(parent, ContextType.Message, new PBMessage());
+            case PBContextType.Message: {
+                context = new Context(parent, PBContextType.Message, new PBMessage());
                 break;
             }
-            case ContextType.Enum: {
-                context = new Context(parent, ContextType.Enum, new PBEnum());
+            case PBContextType.Enum: {
+                context = new Context(parent, PBContextType.Enum, new PBEnum());
                 break;
             }
-            case ContextType.Oneof: {
-                context = new Context(parent, ContextType.Oneof, new PBOneof());
+            case PBContextType.Oneof: {
+                context = new Context(parent, PBContextType.Oneof, new PBOneof());
                 break;
             }
             default: throw new AssertionError();
@@ -602,7 +602,7 @@ public sealed class PBFileParser
     private static void DrainCommentLine(PBElement element, List<string> commentLines, string? trailingComment) {
         foreach (string commentLine in commentLines) {
             element.AddComment(commentLine);
-            PBAnnotation? annotation = TryParseAnnotation(commentLine);
+            Annotation? annotation = Annotation.TryParseAnnotation(commentLine);
             if (annotation != null) {
                 element.AddAnnotation(annotation);
             }
@@ -611,49 +611,6 @@ public sealed class PBFileParser
         if (trailingComment != null) {
             element.AddComment(trailingComment);
         }
-    }
-
-    /** 解析注解 */
-    private static PBAnnotation? TryParseAnnotation(string comment) {
-        // 允许'//'和'@'符号之间有空格，但'@'符号后面的类名无空格，类名和'{}'可以有空格
-        // '//@RpcService{}'
-        int atIdx = Util.IndexOfNonWhitespace(comment, 2);
-        if (atIdx < 0 || comment[atIdx] != '@') {
-            return null; // '@'符号前面有其它内容
-        }
-        int valueStartIndex = comment.IndexOf('{');
-        int valueEndIndex = comment.LastIndexOf('}');
-        if (valueStartIndex < 0 || valueStartIndex >= valueEndIndex) {
-            return null;
-        }
-        string type = comment.Substring2(atIdx + 1, valueStartIndex).Trim();
-        if (string.IsNullOrWhiteSpace(type)) {
-            return null; // 类型信息为空
-        }
-        string value = comment.Substring2(valueStartIndex, valueEndIndex + 1);
-        PBAnnotation annotation = new PBAnnotation(type, value);
-        if (annotation.DsonValue == null) { // 提前检查dson文本格式
-            throw new PBParserException("invalid dson value");
-        }
-        return annotation;
-    }
-
-    /** 是否是注解类型注释 */
-    public static bool IsAnnotationComment(string comment) {
-        int atIdx = Util.IndexOfNonWhitespace(comment, 2);
-        if (atIdx < 0 || comment[atIdx] != '@') {
-            return false; // '@'符号前面有其它内容
-        }
-        int valueStartIndex = comment.IndexOf('{');
-        int valueEndIndex = comment.LastIndexOf('}');
-        if (valueStartIndex < 0 || valueStartIndex >= valueEndIndex) {
-            return false;
-        }
-        string type = comment.Substring2(atIdx + 1, valueStartIndex).Trim();
-        if (string.IsNullOrWhiteSpace(type)) {
-            return false; // 类型信息为空
-        }
-        return true;
     }
 
     /** 解析Option -- 不适用字段 */
@@ -694,7 +651,7 @@ public sealed class PBFileParser
     private class Context
     {
         public readonly Context parent;
-        public readonly ContextType contextType;
+        public readonly PBContextType contextType;
         public readonly PBElement container;
 
         /** 是否已读取到开始符号 '{' */
@@ -702,7 +659,7 @@ public sealed class PBFileParser
         /** 下一个元素的注释缓存 -- 内容执行了trim */
         public readonly List<string> commentLines = new();
 
-        public Context(Context parent, ContextType contextType, PBElement container) {
+        public Context(Context parent, PBContextType contextType, PBElement container) {
             this.parent = parent;
             this.contextType = contextType;
             this.container = container;
