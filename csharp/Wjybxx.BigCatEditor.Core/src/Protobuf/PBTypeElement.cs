@@ -18,7 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using Wjybxx.BigCatEditor.Core;
 using Range = Wjybxx.BigCatEditor.Core.Range;
 
 namespace Wjybxx.BigCatEditor.Protobuf

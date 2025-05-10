@@ -1,3 +1,13 @@
+# BigCat
+
+## 线程进程架构
+
+![线程架构](../../docs/res/rpc_t0.png)
+
+## Rpc消息流转
+
+![进程间Rpc](../../docs/res/rpc_t2.png)
+
 ## core
 
 core为核心逻辑包

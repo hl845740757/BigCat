@@ -52,6 +52,10 @@ public class ServiceGenerator
     private readonly AttributeSpec processorInfo;
     private readonly CodeWriter _codeWriter = new CodeWriter();
 
+#nullable disable
+    /** 当前处理的文件缓存 -- 用于查询依赖 */
+    private PBFile _curFile;
+
     /// <summary>
     /// 
     /// </summary>
@@ -68,6 +72,7 @@ public class ServiceGenerator
 
     public void Execute() {
         foreach (PBFile pbFile in repository.GetFiles()) {
+            _curFile = pbFile;
             foreach (PBService service in pbFile.GetServices()) {
                 try {
                     BuildService(service);
@@ -76,6 +81,7 @@ public class ServiceGenerator
                     throw new Exception($"service: {service.SimpleName}", e);
                 }
             }
+            _curFile = null;
         }
     }
 
@@ -295,10 +301,26 @@ public class ServiceGenerator
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     private ClassName ClassNameOfType(string type) {
-        PBFile pbFile = repository.GetFileOfTopElement(type);
-        if (pbFile == null) {
-            throw new ArgumentException("class not found, type " + type);
+        // 先尝试从当前文件查询
+        PBElement topElement = repository.GetTopElement(_curFile.SimpleName, type);
+        if (topElement != null) {
+            return ClassName.Get(GetNamespace(_curFile), type);
         }
+        // 尝试从依赖的文件中查询--这里会产生一些临时字符串，不重要
+        foreach (string fileName in _curFile.ResolvedImports) {
+            string simpleName = Path.GetFileNameWithoutExtension(fileName);
+            topElement = repository.GetTopElement(simpleName, type);
+            if (topElement == null) {
+                continue;
+            }
+            PBFile pbFile = repository.GetFile(simpleName);
+            return ClassName.Get(GetNamespace(pbFile), type);
+        }
+        // 不存在的依赖
+        throw new ArgumentException("class not found, type " + type);
+    }
+
+    private static string GetNamespace(PBFile pbFile) {
         // 处理文件中定义了命名空间的情况
         string package = pbFile.GetOption(PBKeywords.CSHARP_NAMESPACE);
         if (string.IsNullOrWhiteSpace(package)) {
@@ -307,7 +329,7 @@ public class ServiceGenerator
         if (string.IsNullOrWhiteSpace(package)) {
             throw new InvalidOperationException("namespace is absent");
         }
-        return ClassName.Get(package, type);
+        return package;
     }
 }
 }

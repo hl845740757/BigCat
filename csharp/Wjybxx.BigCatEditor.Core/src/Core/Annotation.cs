@@ -17,7 +17,7 @@
 #endregion
 
 using System;
-using Wjybxx.BigCatEditor.Protobuf;
+using System.IO;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Text;
@@ -88,7 +88,7 @@ public sealed class Annotation
         string value = comment.Substring2(valueStartIndex, valueEndIndex + 1);
         Annotation annotation = new Annotation(type, value);
         if (annotation.DsonValue == null) { // 提前检查dson文本格式
-            throw new PBParserException("invalid dson value");
+            throw new IOException("invalid dson value");
         }
         return annotation;
     }

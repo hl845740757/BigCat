@@ -144,7 +144,7 @@ public sealed class PBFileParser
                 // import "other.proto";
                 int startIdx = content.IndexOf('"');
                 int endIdx = content.LastIndexOf('"');
-                string fileName = content.Substring2(startIdx, endIdx);
+                string fileName = content.Substring2(startIdx + 1, endIdx);
                 string? modifier = content.Substring2(firstWord.Length, startIdx);
                 if (string.IsNullOrWhiteSpace(modifier)) {
                     modifier = null;

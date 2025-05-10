@@ -1,15 +1,24 @@
 ﻿# C# BigCat实现
 
-## BigCat
+## 核心架构介绍
 
-## BigCatEditor
+### 线程进程架构
 
-BigCatEditor为开发期工具，可以依赖BigCat中的模块（程序集）—— 通常用于代码生成，但BigCat中的模块一定不能依赖Editor下的模块。
+![线程架构](../docs/res/rpc_t0.png)
 
-### Core
+### Rpc消息流转
 
-Core定义所有的公共数据结构和工具类，不含与项目业务相关的代码。
+![进程间Rpc](../docs/res/rpc_t2.png)
 
-### Generator
+------------------------------------------------
 
-Generator是所有的基础代码生成工具，如根据Excel和Protobuf生成代码的生成器。
+## 模块划分
+
+1. `Wjybxx.BigCat.Apt` 为注解处理器工具，在编译时执行生成静态代码 -- 非运行时代码。
+2. `Wjybxx.BigCat.XXX` 为运行时代码
+3. `Wjybxx.BigCatEditor.XXX` 为开发期工具代码，主要包含表格和协议处理工具，代码生成工具...
+
+约束：
+
+1. 运行时代码不可以依赖Editor相关的任何代码，编辑器的作用在于导出运行时需要的配置。
+2. Editor并未拆分为独立的solution，但应尽可能避免依赖运行时的程序集。

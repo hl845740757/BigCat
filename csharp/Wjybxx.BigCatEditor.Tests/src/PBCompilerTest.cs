@@ -33,12 +33,15 @@ public class PBCompilerTest
     [Test]
     public void Test() {
         PBRepository repository = new PBRepository();
-        // 解析搜友pb文件
+        // 解析所有pb文件
         string resDir = TestUtil.GetResDirectory();
         foreach (FileInfo fileInfo in new DirectoryInfo(resDir).EnumerateFiles("*.proto")) {
             PBFile pbFile = PBFileParser.Parse(fileInfo);
             repository.AddFile(pbFile);
         }
+        // 解决依赖关系
+        repository.Build();
+
         // 生成临时文件
         string tempDir = TestUtil.GetTempDirectory();
         new PBFileGenerator(repository, resDir, tempDir).Execute();

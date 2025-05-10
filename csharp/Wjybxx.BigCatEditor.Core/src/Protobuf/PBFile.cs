@@ -36,6 +36,8 @@ public class PBFile : PBElement
     private string syntax = "proto3";
     /** 导入的文件 -- value可以为null，表示未声明修饰符 */
     private readonly LinkedDictionary<string, string?> imports = new(4);
+    /** 解析后的所有依赖 -- 包括传递而来的依赖，无法保证解析顺序 */
+    private readonly HashSet<string> resolvedImports = new(4);
 #nullable enable
 
     public override PBElementKind Kind => PBElementKind.File;
@@ -52,6 +54,7 @@ public class PBFile : PBElement
             throw new ArgumentException(); // protobuf语法规范
         }
         this.imports.Add(fileName, modifier);
+        this.resolvedImports.Add(fileName);
         return this;
     }
 
@@ -95,7 +98,9 @@ public class PBFile : PBElement
         get => syntax;
         set => syntax = value;
     }
+
     public LinkedDictionary<string, string?> Imports => imports;
+    public HashSet<string> ResolvedImports => resolvedImports;
 
     #endregion
 

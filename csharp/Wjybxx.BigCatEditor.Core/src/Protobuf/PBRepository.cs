@@ -18,6 +18,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Wjybxx.BigCatEditor.Core;
 using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCatEditor.Protobuf
@@ -29,9 +31,55 @@ namespace Wjybxx.BigCatEditor.Protobuf
 /// </summary>
 public class PBRepository
 {
+    /// <summary>
+    /// 文件简单名到文件的映射
+    /// </summary>
     private readonly LinkedDictionary<string, PBFile> fileMap = new();
-    private readonly LinkedDictionary<string, PBElement> topElementNameMap = new();
+    /// <summary>
+    /// 顶层元素名到元素的映射
+    /// key为[fileSimpleName, elementName]
+    /// </summary>
+    private readonly LinkedDictionary<StringPair, PBElement> topElementMap = new();
 
+    /// <summary>
+    /// 构建最终数据 
+    /// 如果项目使用了<code>import public</code>特性，需要调用该方法
+    /// </summary>
+    public void Build() {
+        HashSet<string> tempSet = new HashSet<string>(16);
+        foreach (PBFile file in fileMap.Values) {
+            tempSet.Clear();
+            ResolvePublicImports(file, tempSet, 0);
+            file.ResolvedImports.AddAll(tempSet);
+        }
+    }
+
+    private void ResolvePublicImports(PBFile entryFile, HashSet<string> result, int deep) {
+        if (deep > 32) {
+            throw new InvalidOperationException("something is error, deep: " + deep);
+        }
+        // pb规范是包含".proto"后缀的，是可以引用其它目录的文件吗?
+        foreach (string importFileName in entryFile.Imports.Keys) {
+            string fileSimpleName = Path.GetFileNameWithoutExtension(importFileName);
+            PBFile curFile = GetFile(fileSimpleName);
+            if (curFile == null) {
+                throw new InvalidOperationException($"{entryFile.FileName} cant resolve import: {importFileName}");
+            }
+            foreach (var pair in curFile.Imports) {
+                if (pair.Value == PBKeywords.PUBLIC) {
+                    result.Add(pair.Key);
+                    ResolvePublicImports(curFile, result, deep + 1);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 添加文件
+    /// </summary>
+    /// <param name="pbFile"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public PBRepository AddFile(PBFile pbFile) {
         string simpleName = pbFile.SimpleName;
         // 检查重复
@@ -39,67 +87,68 @@ public class PBRepository
             throw new ArgumentException("duplicate fileName " + simpleName);
         }
         fileMap[simpleName] = pbFile;
-
         // 添加索引
-        topElementNameMap[simpleName] = pbFile;
         foreach (PBElement element in pbFile.EnclosedElements) {
-            topElementNameMap[element.SimpleName] = element;
+            var key = new StringPair(simpleName, element.SimpleName);
+            topElementMap[key] = element;
         }
         return this;
     }
 
+    /// <summary>
+    /// 删除文件
+    /// </summary>
+    /// <param name="simpleName"></param>
+    /// <returns></returns>
     public PBFile RemoveFile(string simpleName) {
         if (fileMap.Remove(simpleName, out PBFile pbFile)) {
             // 删除索引
-            topElementNameMap.Remove(simpleName);
             foreach (PBElement element in pbFile.EnclosedElements) {
-                topElementNameMap.Remove(element.SimpleName);
+                var key = new StringPair(simpleName, element.SimpleName);
+                topElementMap.Remove(key);
             }
         }
         return pbFile;
     }
 
-    /** 获取所有的文件 -- 不可修改 */
+    /// <summary>
+    /// 获取所有的文件 -- 不可修改
+    /// </summary>
+    /// <returns></returns>
     public ICollection<PBFile> GetFiles() {
         return fileMap.Values;
     }
 
-    /** 获取排序后的所有的文件 -- 根据文件名排序，有助于逻辑的稳定性 */
+    /// <summary>
+    /// 获取排序后的所有的文件 -- 根据文件名排序，有助于逻辑的稳定性
+    /// </summary>
+    /// <returns></returns>
     public List<PBFile> GetSortedFiles() {
         List<PBFile> result = new(fileMap.Values);
         result.Sort((a, b) => string.Compare(a.SimpleName, b.SimpleName, StringComparison.Ordinal));
         return result;
     }
 
-    /** 获取指定文件 */
-    public PBFile? GetFile(string fileSimpleName) {
-        fileMap.TryGetValue(fileSimpleName, out PBFile pbFile);
+    /// <summary>
+    /// 获取指定文件
+    /// </summary>
+    /// <param name="simpleName">文件简单名，不包含proto后缀</param>
+    /// <returns></returns>
+    public PBFile? GetFile(string simpleName) {
+        fileMap.TryGetValue(simpleName, out PBFile pbFile);
         return pbFile;
     }
 
     /// <summary>
     /// 获取顶层元素
     /// </summary>
-    /// <param name="elementName">顶层元素名，或文件名</param>
+    /// <param name="fileSimpleName">文件简单名</param>
+    /// <param name="elementName">顶层元素名</param>
     /// <returns></returns>
-    public PBElement? GetTopElement(string elementName) {
-        topElementNameMap.TryGetValue(elementName, out PBElement element);
+    public PBElement? GetTopElement(string fileSimpleName, string elementName) {
+        var key = new StringPair(fileSimpleName, elementName);
+        topElementMap.TryGetValue(key, out PBElement element);
         return element;
-    }
-
-    /// <summary>
-    /// 获取顶层元素关联的文件
-    /// </summary>
-    /// <param name="elementName">elementName 顶层元素名，或文件名</param>
-    /// <returns></returns>
-    public PBFile? GetFileOfTopElement(string elementName) {
-        if (!topElementNameMap.TryGetValue(elementName, out PBElement element)) {
-            return null;
-        }
-        if (element.Kind == PBElementKind.File) {
-            return (PBFile)element;
-        }
-        return (PBFile)element.EnclosingElement;
     }
 }
 }

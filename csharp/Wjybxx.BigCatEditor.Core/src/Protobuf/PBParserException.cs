@@ -22,7 +22,7 @@ using System.IO;
 namespace Wjybxx.BigCatEditor.Protobuf
 {
 /// <summary>
-/// PB解析异常
+/// 解析异常
 /// </summary>
 public class PBParserException : IOException
 {

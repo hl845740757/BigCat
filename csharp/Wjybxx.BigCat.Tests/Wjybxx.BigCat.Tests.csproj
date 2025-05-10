@@ -15,7 +15,10 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <NoWarn>1701;1702;1591;</NoWarn>
+        <NoWarn>1701;1702;1591;0649;NUnit2005;NUnit2006;NUnit2031;NUnit2015</NoWarn>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <NoWarn>1701;1702;1591;0649;NUnit2005;NUnit2006;NUnit2031;NUnit2015</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

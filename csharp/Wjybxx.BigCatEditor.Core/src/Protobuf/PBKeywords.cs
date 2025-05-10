@@ -38,14 +38,13 @@ public static class PBKeywords
     public const string OPTIONAL = "optional";
     /** 必要字段 */
     public const string REQUIRED = "required";
-    /** pb3中<see cref="OPTIONAL"/>的替代物 */
-    public const string SINGULAR = "singular";
 
-    /** 数组字段 */
+    /** 可重复0~1次字段 --pb3中optional的替代物 */
+    public const string SINGULAR = "singular";
+    /** 可重复0~n次字段*/
     public const string REPEATED = "repeated";
     /** 是否仅1个字段有效 */
     public const string ONE_OF = "oneof";
-
 
     /** rpc服务 */
     public const string SERVICE = "service";
@@ -58,7 +57,7 @@ public static class PBKeywords
     /** rpc方法返回值声明 */
     public const string RETURNS = "returns";
 
-    #region file
+    #region options-file
 
     /** 语法 -- 字符串值 */
     public const string SYNTAX = "syntax";
@@ -96,7 +95,7 @@ public static class PBKeywords
 
     #endregion
 
-    #region type
+    #region options-type
 
     /** 是否允许不同的枚举常量指向同一个值 */
     public const string ALLOW_ALIAS = "allow_alias";
