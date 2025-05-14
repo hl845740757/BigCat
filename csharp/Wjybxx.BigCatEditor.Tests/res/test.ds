@@ -1,0 +1,57 @@
+// 测试普通类
+class SimpleBean {
+    int32 age = 1;
+    string name = 2;
+}
+
+// 测试普通类继承
+class SimpleChildBean : SimpleBean {
+    List<string> addresses = 1;
+}
+
+// 测试结构体
+struct Vector3 {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+// 测试枚举
+enum Color {
+    White = 0;
+    Red = 1;
+    Green = 2;
+}
+
+// 测试泛型类
+class GenericBean<T, U>
+    where T: struct 
+    where U: class {
+    T? key = 1;
+    U value = 2;
+}
+
+// 测试泛型继承
+class GenericChildBean<T, U> : GenericBean<T, U>
+    where T: struct 
+    where U: class {
+    List<string> addresses = 1;
+}
+
+// 测试实例 -- {}和[]暂时需要严格缩进
+// 大写名字表示关联类型的默认值
+inst Vector3 {
+    x: 0,
+    y: 1,
+    z: 0
+}
+// 测试实例从另一个模板初始化
+inst Vector4 from Vector3 {
+    w: 0
+}
+// 测试数组实例
+inst vector3_array [
+    {x: 1, y: 0, z: 0},
+    {x: 0, y: 1, z: 0},
+    {x: 0, y: 0, z: 1}    
+]
