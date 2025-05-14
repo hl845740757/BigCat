@@ -21,7 +21,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Poet;
+using TypeName = Wjybxx.Commons.Poet.TypeName;
 
 namespace Wjybxx.BigCatEditor.Generator
 {

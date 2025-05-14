@@ -55,7 +55,6 @@
     </ItemGroup>
     
     <ItemGroup>
-      <Folder Include="res" />
       <Folder Include="src\Generated" />
       <Folder Include="temp" />
     </ItemGroup>

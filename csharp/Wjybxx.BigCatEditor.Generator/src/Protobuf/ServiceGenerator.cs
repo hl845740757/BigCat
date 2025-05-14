@@ -41,7 +41,7 @@ public class ServiceGenerator
     private static readonly ClassName anno_rpcMethod = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Core.RpcMethodAttribute");
     //
     private static readonly ClassName clsName_rpcContext_t = ClassName.Get("Wjybxx.BigCat.Core", "RpcContext",
-        new List<TypeName> { TypeVariableName.Get("T") });
+        new List<TypeName> { TypeParameterName.Get("T") });
     //
     private static readonly ClassName clsName_valueFuture = ClassName.Get(typeof(ValueFuture));
     private static readonly ClassName clsName_valueFuture_t = ClassName.Get(typeof(ValueFuture<>));
@@ -207,7 +207,7 @@ public class ServiceGenerator
         TypeName returnType;
         if (method.ResultType != null) {
             ClassName resultType = ClassNameOfType(method.ResultType);
-            returnType = clsName_valueFuture_t.WithActualTypeVariables(resultType);
+            returnType = clsName_valueFuture_t.WithTypeArguments(resultType);
         } else {
             returnType = clsName_valueFuture;
         }
@@ -229,10 +229,10 @@ public class ServiceGenerator
         TypeName contextType;
         if (method.ResultType != null) {
             ClassName resultType = ClassNameOfType(method.ResultType);
-            contextType = clsName_rpcContext_t.WithActualTypeVariables(resultType);
+            contextType = clsName_rpcContext_t.WithTypeArguments(resultType);
         } else {
             // void时使用object代替 -- 可临时返回结果
-            contextType = clsName_rpcContext_t.WithActualTypeVariables(TypeName.OBJECT);
+            contextType = clsName_rpcContext_t.WithTypeArguments(TypeName.OBJECT);
         }
         return contextType;
     }

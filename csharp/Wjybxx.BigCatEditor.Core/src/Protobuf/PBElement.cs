@@ -100,6 +100,8 @@ public abstract class PBElement
 
     #endregion
 
+#nullable disable
+
     #region props
 
     public string SimpleName {
@@ -107,10 +109,7 @@ public abstract class PBElement
         set => simpleName = value;
     }
 
-    public PBElement EnclosingElement {
-        get => enclosingElement;
-        set => enclosingElement = value;
-    }
+    public PBElement EnclosingElement => enclosingElement;
     public List<PBElement> EnclosedElements => enclosedElements;
     public List<string> Comments => comments;
     public List<Annotation> Annotations => annotations;

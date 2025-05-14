@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Wjybxx.Commons.Collections;
@@ -31,7 +32,7 @@ public class PBFile : PBElement
 {
 #nullable disable
     /** 文件名 */
-    private string fileName;
+    private readonly string fileName;
     /** 语法级别 */
     private string syntax = "proto3";
     /** 导入的文件 -- value可以为null，表示未声明修饰符 */
@@ -39,6 +40,11 @@ public class PBFile : PBElement
     /** 解析后的所有依赖 -- 包括传递而来的依赖，无法保证解析顺序 */
     private readonly HashSet<string> resolvedImports = new(4);
 #nullable enable
+
+    public PBFile(string fileName) {
+        this.fileName = fileName;
+        this.SimpleName = Path.GetFileNameWithoutExtension(fileName);
+    }
 
     public override PBElementKind Kind => PBElementKind.File;
 
@@ -50,8 +56,8 @@ public class PBFile : PBElement
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public PBFile AddImport(string fileName, string? modifier) {
-        if (!fileName.EndsWith(".proto")) {
-            throw new ArgumentException(); // protobuf语法规范
+        if (!fileName.EndsWith(".proto")) { // import需要以`.proto`结尾
+            throw new ArgumentException();
         }
         this.imports.Add(fileName, modifier);
         this.resolvedImports.Add(fileName);
@@ -90,15 +96,12 @@ public class PBFile : PBElement
 
     #region Props
 
-    public string FileName {
-        get => fileName;
-        set => fileName = value ?? throw new ArgumentNullException(nameof(value));
-    }
     public string? Syntax {
         get => syntax;
         set => syntax = value;
     }
 
+    public string FileName => fileName;
     public LinkedDictionary<string, string?> Imports => imports;
     public HashSet<string> ResolvedImports => resolvedImports;
 

@@ -33,21 +33,20 @@ public sealed class PBFileParser
 #nullable disable
     private readonly FileInfo file;
     private readonly IEnumerator<string> lineIterator;
+    private readonly PBFile pbFile;
 
     /** 当前递归深度 */
-    private int recursionDepth;
+    private int _recursionDepth;
     /** 当前上下文 */
-    private Context context;
-    /** 最终输出 */
-    private readonly PBFile pbFile;
+    private Context _context;
 
     public PBFileParser(FileInfo file, IEnumerator<string> lineIterator) {
         this.file = file;
         this.lineIterator = lineIterator;
+        this.pbFile = new PBFile(file.Name);
 
-        this.pbFile = new PBFile();
-        this.context = new Context(null, PBContextType.File, pbFile);
-        this.context.started = true;
+        this._context = new Context(null, PBContextType.File, pbFile);
+        this._context.started = true;
     }
 
     /// <summary>
@@ -66,15 +65,16 @@ public sealed class PBFileParser
 #nullable enable
 
     private void Parse() {
-        pbFile.FileName = file.Name;
-        pbFile.SimpleName = Path.GetFileNameWithoutExtension(file.Name);
-
         LineInfo curLine = LineInfo.EMPTY;
         try {
             int ln = 0;
             while (lineIterator.MoveNext()) {
                 curLine = LineInfo.Parse(++ln, lineIterator.Current!);
-                switch (context.contextType) {
+                if (!_context.started) {
+                    CheckStart(curLine);
+                    continue;
+                }
+                switch (_context.contextType) {
                     case PBContextType.File: {
                         FileReadLine(curLine);
                         break;
@@ -102,7 +102,7 @@ public sealed class PBFileParser
             }
         }
         catch (Exception ex) {
-            throw new PBParserException($"fileName: {file.Name}, ln: {curLine.ln}", ex);
+            throw new IOException($"fileName: {file.Name}, ln: {curLine.ln}", ex);
         }
     }
 
@@ -131,15 +131,15 @@ public sealed class PBFileParser
             }
             // 各类options
             case PBKeywords.SYNTAX: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 // syntax = "proto3";
                 int startIdx = content.IndexOf('"');
                 int endIdx = content.LastIndexOf('"');
-                context.AsFile().Syntax = content.Substring2(startIdx, endIdx);
+                _context.AsFile().Syntax = content.Substring2(startIdx, endIdx);
                 return;
             }
             case PBKeywords.IMPORT: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 // import public "new.proto";
                 // import "other.proto";
                 int startIdx = content.IndexOf('"');
@@ -149,19 +149,19 @@ public sealed class PBFileParser
                 if (string.IsNullOrWhiteSpace(modifier)) {
                     modifier = null;
                 }
-                context.AsFile().AddImport(fileName, modifier);
+                _context.AsFile().AddImport(fileName, modifier);
                 return;
             }
             case PBKeywords.OPTION: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 // option optimize_for = CODE_SIZE;
                 // option java_package = "com.example.foo";
                 var pair = ParseOption(content);
-                context.container.AddOption(pair.Key, pair.Value);
+                _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
             default: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 return;
             }
         }
@@ -172,10 +172,6 @@ public sealed class PBFileParser
     #region message
 
     private void MessageReadLine(LineInfo lineInfo) {
-        if (!context.started) {
-            CheckStart(lineInfo);
-            return;
-        }
         if (!lineInfo.HasContent) {
             TryAddComment(lineInfo);
             return;
@@ -184,7 +180,7 @@ public sealed class PBFileParser
         string firstWord = FirstWord(content);
         switch (firstWord) {
             case PBKeywords.SERVICE: { // 消息内不可嵌套服务
-                throw new PBParserException("Services should not be nested within messages");
+                throw new IOException("Services should not be nested within messages");
             }
             case PBKeywords.MESSAGE: {
                 ReadStartContainer(PBContextType.Message, lineInfo);
@@ -199,29 +195,29 @@ public sealed class PBFileParser
                 return;
             }
             case PBKeywords.OPTION: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 var pair = ParseOption(content);
-                context.container.AddOption(pair.Key, pair.Value);
+                _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
             case PBKeywords.RESERVED: {
-                context.ClearCommentLines();
-                ParseRevered(context.AsMessage(), content);
+                _context.ClearCommentLines();
+                ParseRevered(_context.AsMessage(), content);
                 return;
             }
             case "}": {
                 // 结束行
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 ReadEndContainer(lineInfo);
                 return;
             }
             default: {
                 // 判断是否字段 type name = number;
                 if (content.IndexOf('=') > 0) {
-                    PBField field = ParseField(context.PopCommentLines(), lineInfo);
-                    context.container.AddEnclosedElement(field);
+                    PBField field = ParseField(_context.PopCommentLines(), lineInfo);
+                    _context.container.AddEnclosedElement(field);
                 } else {
-                    context.ClearCommentLines();
+                    throw new IOException("unrecognized content: " + content);
                 }
                 return;
             }
@@ -303,10 +299,6 @@ public sealed class PBFileParser
     #region oneof
 
     private void OneofReadLine(LineInfo lineInfo) {
-        if (!context.started) {
-            CheckStart(lineInfo);
-            return;
-        }
         if (!lineInfo.HasContent) {
             TryAddComment(lineInfo);
             return;
@@ -315,15 +307,15 @@ public sealed class PBFileParser
         string firstWord = FirstWord(content);
         if (firstWord == "}") {
             // 结束行
-            context.ClearCommentLines();
+            _context.ClearCommentLines();
             ReadEndContainer(lineInfo);
         } else {
             // 判断是否字段 type name = number;
             if (content.IndexOf('=') > 0) {
-                PBField field = ParseField(context.PopCommentLines(), lineInfo);
-                context.container.AddEnclosedElement(field);
+                PBField field = ParseField(_context.PopCommentLines(), lineInfo);
+                _context.container.AddEnclosedElement(field);
             } else {
-                context.ClearCommentLines();
+                throw new IOException("unrecognized content: " + content);
             }
         }
     }
@@ -334,10 +326,6 @@ public sealed class PBFileParser
     #region service
 
     private void ServiceReadLine(LineInfo lineInfo) {
-        if (!context.started) {
-            CheckStart(lineInfo);
-            return;
-        }
         if (!lineInfo.HasContent) {
             TryAddComment(lineInfo);
             return;
@@ -347,7 +335,7 @@ public sealed class PBFileParser
         switch (firstWord) {
             // 内嵌结构
             case PBKeywords.SERVICE: { // 服务内禁止嵌套服务
-                throw new PBParserException("Services should not be nested within service");
+                throw new IOException("Services should not be nested within service");
             }
             case PBKeywords.MESSAGE: {
                 ReadStartContainer(PBContextType.Message, lineInfo);
@@ -358,20 +346,20 @@ public sealed class PBFileParser
                 return;
             }
             case PBKeywords.OPTION: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 var pair = ParseOption(content);
-                context.container.AddOption(pair.Key, pair.Value);
+                _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
             // Rpc
             case PBKeywords.RPC: {
-                PBMethod method = ParseMethod(context.PopCommentLines(), lineInfo);
-                context.container.AddEnclosedElement(method);
+                PBMethod method = ParseMethod(_context.PopCommentLines(), lineInfo);
+                _context.container.AddEnclosedElement(method);
                 return;
             }
             default: {
                 // 可能是结束行
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 if (firstWord == "}") {
                     ReadEndContainer(lineInfo);
                 }
@@ -439,10 +427,6 @@ public sealed class PBFileParser
     #region enum
 
     private void EnumReadLine(LineInfo lineInfo) {
-        if (!context.started) {
-            CheckStart(lineInfo);
-            return;
-        }
         if (!lineInfo.HasContent) {
             TryAddComment(lineInfo);
             return;
@@ -451,29 +435,29 @@ public sealed class PBFileParser
         string firstWord = FirstWord(content);
         switch (firstWord) {
             case PBKeywords.OPTION: {
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 var pair = ParseOption(content);
-                context.container.AddOption(pair.Key, pair.Value);
+                _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
             case PBKeywords.RESERVED: {
-                context.ClearCommentLines();
-                ParseRevered(context.AsEnum(), content);
+                _context.ClearCommentLines();
+                ParseRevered(_context.AsEnum(), content);
                 return;
             }
             case "}": {
                 // 结束行
-                context.ClearCommentLines();
+                _context.ClearCommentLines();
                 ReadEndContainer(lineInfo);
                 return;
             }
             default: {
                 // 判断是否是枚举 name = number;
                 if (content.IndexOf('=') > 0) {
-                    PBEnumValue enumValue = ParseEnumValue(context.PopCommentLines(), lineInfo);
-                    context.container.AddEnclosedElement(enumValue);
+                    PBEnumValue enumValue = ParseEnumValue(_context.PopCommentLines(), lineInfo);
+                    _context.container.AddEnclosedElement(enumValue);
                 } else {
-                    context.ClearCommentLines();
+                    throw new IOException("unrecognized content: " + content);
                 }
                 return;
             }
@@ -515,18 +499,18 @@ public sealed class PBFileParser
             return;
         }
         if (lineInfo.content != "{") {
-            throw new PBParserException("invalid start line : " + lineInfo.content);
+            throw new IOException("invalid start line : " + lineInfo.content);
         }
-        context.started = true;
+        _context.started = true;
     }
 
     /** 将注释行追加到context */
     private void TryAddComment(LineInfo lineInfo) {
         if (lineInfo.IsCommentLine) {
-            context.AddCommentLine(lineInfo.comment);
+            _context.AddCommentLine(lineInfo.comment);
         } else {
             // 空白行中断注释
-            context.ClearCommentLines();
+            _context.ClearCommentLines();
         }
     }
 
@@ -538,9 +522,9 @@ public sealed class PBFileParser
     /// <param name="contextType">新上下文类型</param>
     /// <param name="lineInfo">文件行</param>
     private void ReadStartContainer(PBContextType contextType, LineInfo lineInfo) {
-        if (recursionDepth > 32) throw new IllegalStateException("proto had too many levels of nesting");
+        if (_recursionDepth > 32) throw new IllegalStateException("proto had too many levels of nesting");
 
-        Context parent = this.context;
+        Context parent = this._context;
         Context context;
         switch (contextType) {
             case PBContextType.Service: {
@@ -566,18 +550,18 @@ public sealed class PBFileParser
 
         parent.container.AddEnclosedElement(context.container);
         DrainCommentLine(context.container, parent.PopCommentLines(), lineInfo.comment);
-        recursionDepth++;
-        this.context = context;
+        _recursionDepth++;
+        _context = context;
     }
 
     private void ReadEndContainer(LineInfo lineInfo) {
-        if (context.parent == null || !context.started) {
+        if (_context.parent == null || !_context.started) {
             throw new IllegalStateException();
         }
-        context.container.EndLine = lineInfo.ln;
+        _context.container.EndLine = lineInfo.ln;
 
-        recursionDepth--;
-        this.context = context.parent;
+        _recursionDepth--;
+        _context = _context.parent;
     }
 
     /** 解析容器的名字 */
@@ -634,13 +618,13 @@ public sealed class PBFileParser
                 return content.Substring2(0, idx);
             }
         }
-        return content;
+        return content; // { or }
     }
 
     /** 确保内容行以分号 ';' 结尾 */
     private static void EnsureEndWithSemicolon(string content) {
         if (content[content.Length - 1] != ';') {
-            throw new PBParserException(content);
+            throw new IOException(content);
         }
     }
 
