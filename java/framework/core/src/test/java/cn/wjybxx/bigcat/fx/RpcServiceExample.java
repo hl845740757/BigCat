@@ -35,6 +35,11 @@ public class RpcServiceExample extends EventLoopModule implements ExtensibleServ
     @Inject
     private RpcClient rpcClient;
 
+    // 测试从接口继承的方法
+    private final Map<String, Object> extBlackboard = new HashMap<>();
+
+    // region rpc
+
     @RpcMethod(methodId = 1, argSharable = true, resultSharable = true)
     public Response echo(Request request) {
         return new Response()
@@ -47,25 +52,17 @@ public class RpcServiceExample extends EventLoopModule implements ExtensibleServ
                 .setString(request.getString1());
     }
 
-    /** 测试异步返回 */
+    /** 测试void返回值 */
     @RpcMethod(methodId = 3, argSharable = true, resultSharable = true)
+    public void hello2(Request request) {
+    }
+
+    /** 测试异步返回 */
+    @RpcMethod(methodId = 4, argSharable = true, resultSharable = true)
     public IFuture<Response> helloAsync(Request request) {
         Response response = new Response()
                 .setString(request.getString1());
         return ExecutorUtils.completedFuture(response);
-    }
-
-    /** 测试void返回值 */
-    @RpcMethod(methodId = 4, argSharable = true, resultSharable = true)
-    public void hello2(Request request) {
-    }
-
-    /** 测试参数带泛型 */
-    @RpcMethod(methodId = 5, argSharable = true, resultSharable = true)
-    public Response join(Request request) {
-        String result = String.join(",", request.getStringList());
-        return new Response()
-                .setString(result);
     }
 
     /** 测试context的代码生成 -- 参数和结果都不设置为可共享的，测试反序列化 */
@@ -79,16 +76,7 @@ public class RpcServiceExample extends EventLoopModule implements ExtensibleServ
         }
         rpcClient.send(rpcContext.remoteAddr(), RpcClientExampleProxy.onMessage(Request.ofString("context -- end\n")));
     }
-
-    /** 测试context的代码生成 */
-    @RpcMethod(methodId = 7, argSharable = true, resultSharable = true)
-    public Response requestHello(RpcContext<Response> rpcContext, Request request) {
-        return new Response()
-                .setString(request.getString1());
-    }
-
-    // 测试从接口继承的方法
-    private final Map<String, Object> extBlackboard = new HashMap<>();
+    // endregion
 
     @Nonnull
     @Override

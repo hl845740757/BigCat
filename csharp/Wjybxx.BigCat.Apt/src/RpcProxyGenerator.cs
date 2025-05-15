@@ -102,7 +102,7 @@ public class RpcProxyGenerator
                 parameters[0].Name, processor.IsArgSharable(method, annoValueMap));
         }
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
-        builder.document.Add("<see cref=$S/>", (serviceTypeName + "." + method.Name));
+        builder.document.Add("<see cref=\"$T.$L\"/>", serviceTypeName, method.Name);
         return builder.Build();
     }
 }

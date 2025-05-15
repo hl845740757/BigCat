@@ -37,10 +37,10 @@ namespace Wjybxx.BigCatEditor.Generator.Rpc
 /// </summary>
 public class ServiceGenerator
 {
-    private static readonly ClassName anno_rpcService = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Core.RpcServiceAttribute");
-    private static readonly ClassName anno_rpcMethod = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Core.RpcMethodAttribute");
+    private static readonly ClassName anno_rpcService = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
+    private static readonly ClassName anno_rpcMethod = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
     //
-    private static readonly ClassName clsName_rpcContext_t = ClassName.Get("Wjybxx.BigCat.Core", "RpcContext",
+    private static readonly ClassName clsName_rpcContext_t = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
         new List<TypeName> { TypeParameterName.Get("T") });
     //
     private static readonly ClassName clsName_valueFuture = ClassName.Get(typeof(ValueFuture));

@@ -41,8 +41,6 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
 
     /** worker */
     private Worker worker;
-    /** 在node上，不能直接注入 */
-    private TestRpcRouter rpcRouter;
     /** 定时器 */
     private final Regulator regulator = Regulator.newFixedDelay(1, 50);
 
@@ -79,7 +77,6 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     @Override
     public void resolveDependence() {
         this.worker = (Worker) getEntity();
-        this.rpcRouter = worker.node().injector().getInstance(TestRpcRouter.class);
         this.serverAddr = worker.node().nodeAddr();
     }
 

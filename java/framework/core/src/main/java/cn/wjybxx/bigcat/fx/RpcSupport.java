@@ -17,7 +17,7 @@
 package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.ObjectUtils;
-import cn.wjybxx.bigcat.pb.ProtobufUtils;
+import cn.wjybxx.bigcat.util.ProtobufUtils;
 import cn.wjybxx.concurrent.EventLoopModule;
 import cn.wjybxx.concurrent.IAgentEventHandler;
 import cn.wjybxx.concurrent.IPromise;

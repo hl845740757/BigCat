@@ -90,6 +90,30 @@ public interface RpcProxyRegistry {
     RpcMethodProxy<?> removeProxy(int serviceId, int methodId);
 
     /**
+     * 临时禁用服务（用于线上临时关闭功能）
+     *
+     * @param serviceId 服务id
+     * @param methodId  -1表示全部
+     */
+    void disable(int serviceId, int methodId);
+
+    /**
+     * 解除禁用
+     *
+     * @param serviceId 服务id
+     * @param methodId  -1表示全部
+     */
+    void enable(int serviceId, int methodId);
+
+    /**
+     * 查询服务是否被禁用
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     */
+    boolean isDisabled(int serviceId, int methodId);
+
+    /**
      * 导出注册表中包含的服务
      *
      * @return 注册的所有服务的id

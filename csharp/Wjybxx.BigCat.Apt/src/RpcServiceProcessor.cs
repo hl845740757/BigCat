@@ -33,12 +33,12 @@ public class RpcServiceProcessor : IIncrementalGenerator
 {
     #region const
 
-    private const string CNAME_RPC_SERVICE = "Wjybxx.BigCat.Core.RpcServiceAttribute";
+    private const string CNAME_RPC_SERVICE = "Wjybxx.BigCat.Fx.RpcServiceAttribute";
     private const string PNAME_SERVICE_ID = "ServiceId";
     private const string PNAME_GEN_EXPORTER = "GenExporter";
     private const string PNAME_GEN_PROXY = "GenProxy";
 
-    private const string CNAME_RPC_METHOD = "Wjybxx.BigCat.Core.RpcMethodAttribute";
+    private const string CNAME_RPC_METHOD = "Wjybxx.BigCat.Fx.RpcMethodAttribute";
     private const string PNAME_METHOD_ID = "MethodId";
     private const string PNAME_ARG_SHARABLE = "ArgSharable";
     private const string PNAME_RESULT_SHARABLE = "ResultSharable";
@@ -47,10 +47,10 @@ public class RpcServiceProcessor : IIncrementalGenerator
     private const string PNAME_BUILDER_PATTERN = "builderPattern";
 
     // C#的RpcMethodSpec包含一个泛型类和一个非泛型类
-    private const string CNAME_METHOD_SPEC = "Wjybxx.BigCat.Core.RpcMethodSpec";
-    private const string CNAME_METHOD_SPEC_T = "Wjybxx.BigCat.Core.RpcMethodSpec`1";
-    private const string CNAME_METHOD_REGISTRY = "Wjybxx.BigCat.Core.RpcProxyRegistry";
-    private const string CNAME_CONTEXT = "Wjybxx.BigCat.Core.RpcContext`1";
+    private const string CNAME_METHOD_SPEC = "Wjybxx.BigCat.Fx.RpcMethodSpec";
+    private const string CNAME_METHOD_SPEC_T = "Wjybxx.BigCat.Fx.RpcMethodSpec`1";
+    private const string CNAME_METHOD_REGISTRY = "Wjybxx.BigCat.Fx.RpcProxyRegistry";
+    private const string CNAME_CONTEXT = "Wjybxx.BigCat.Fx.RpcContext`1";
 
     private const int MAX_PARAMETER_COUNT = 1; // 限制最大一个参数
 

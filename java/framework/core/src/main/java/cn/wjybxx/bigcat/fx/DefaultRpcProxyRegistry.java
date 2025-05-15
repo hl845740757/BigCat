@@ -16,10 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.*;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -36,6 +33,7 @@ public class DefaultRpcProxyRegistry implements RpcProxyRegistry {
      * 所有的Rpc请求处理函数, methodKey -> methodProxy
      */
     private final Int2ObjectMap<RpcMethodProxy<?>> proxyMap = new Int2ObjectOpenHashMap<>(512);
+    private final Int2ObjectMap<Boolean> disabledMap = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectMap<Object> proxyDataMap = new Int2ObjectOpenHashMap<>(512);
 
     @Override
@@ -75,6 +73,42 @@ public class DefaultRpcProxyRegistry implements RpcProxyRegistry {
     public RpcMethodProxy<?> removeProxy(int serviceId, int methodId) {
         final int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
         return proxyMap.remove(methodKey);
+    }
+
+    @Override
+    public void disable(int serviceId, int methodId) {
+        if (methodId == -1) {
+            for (var pair : proxyMap.int2ObjectEntrySet()) {
+                if (RpcMethodKey.serviceIdOfKey(pair.getIntKey()) == serviceId) {
+                    disabledMap.put(pair.getIntKey(), Boolean.TRUE);
+                }
+            }
+        } else {
+            int key = RpcMethodKey.methodKey(serviceId, methodId);
+            disabledMap.put(key, Boolean.TRUE);
+        }
+    }
+
+    @Override
+    public void enable(int serviceId, int methodId) {
+        if (methodId == -1) {
+            IntList keys = new IntArrayList();
+            for (var pair : disabledMap.int2ObjectEntrySet()) {
+                if (RpcMethodKey.serviceIdOfKey(pair.getIntKey()) == serviceId) {
+                    keys.add(pair.getIntKey());
+                }
+            }
+            keys.forEach(disabledMap::remove);
+        } else {
+            int key = RpcMethodKey.methodKey(serviceId, methodId);
+            disabledMap.remove(key);
+        }
+    }
+
+    @Override
+    public boolean isDisabled(int serviceId, int methodId) {
+        int key = RpcMethodKey.methodKey(serviceId, methodId);
+        return disabledMap.containsKey(key);
     }
 
     @Override

@@ -118,7 +118,7 @@ public class RpcExporterGenerator
         // 注册切面数据
         string customData = processor.GetCustomData(method, annoValueMap);
         if (customData != null) {
-            builder.codeBuilder.AddStatement("$L.setProxyData($L, $L, $S)", varName_registry, serviceId, methodId, customData);
+            builder.codeBuilder.AddStatement("$L.SetProxyData($L, $L, $S)", varName_registry, serviceId, methodId, customData);
         }
         return builder.Build();
     }
@@ -144,7 +144,7 @@ public class RpcExporterGenerator
         if (method.ReturnsVoid) {
             StringBuilder format = new StringBuilder(32);
             List<object> arguments = new(4);
-            genInvokeStatement(method, format, arguments);
+            GenInvokeStatement(method, format, arguments);
             codeBuilder.AddStatement(format.ToString(), arguments.ToArray()); // 需要ToArray
         } else {
             StringBuilder format = new StringBuilder(32);
@@ -153,7 +153,7 @@ public class RpcExporterGenerator
                 format.Append("$T tempR = ");
                 arguments.Add(AptUtils.ParseType(method.ReturnType));
             }
-            genInvokeStatement(method, format, arguments);
+            GenInvokeStatement(method, format, arguments);
             codeBuilder.AddStatement(format.ToString(), arguments.ToArray()); // 需要ToArray
 
             codeBuilder.AddStatement("if (context.IsManualReturn) return");
@@ -180,7 +180,7 @@ public class RpcExporterGenerator
      * 生成方法调用代码，没有分号和换行符。
      * {@code instance.rpcMethod(a, b, c)}
      */
-    private void genInvokeStatement(IMethodSymbol method, StringBuilder format, List<object> arguments) {
+    private void GenInvokeStatement(IMethodSymbol method, StringBuilder format, List<object> arguments) {
         // 调用方法
         format.Append("$L.$L(");
         arguments.Add(varName_instance);

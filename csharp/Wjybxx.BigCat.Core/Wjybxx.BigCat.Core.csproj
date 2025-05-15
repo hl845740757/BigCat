@@ -4,7 +4,7 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>annotations</Nullable>
         <LangVersion>9</LangVersion> <!-- 为兼容unity我们使用c#9 -->
-        <RootNamespace>Wjybxx.BigCat.Core</RootNamespace>
+        <RootNamespace>Wjybxx.BigCat</RootNamespace>
 
         <AssemblyName>Wjybxx.BigCat.Core</AssemblyName>
         <PackageId>Wjybxx.BigCat.Core</PackageId>
@@ -56,7 +56,7 @@
         <PackageReference Include="Wjybxx.Dson.Core" Version="2.4.2" />
         <PackageReference Include="Wjybxx.Dson.Codec" Version="2.4.2" />
 
-        <ProjectReference Include="..\Wjybxx.BigCat.Apt\Wjybxx.BigCat.Apt.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\Wjybxx.BigCat.Apt\Wjybxx.BigCat.Apt.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->

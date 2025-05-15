@@ -1,0 +1,152 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using NUnit.Framework;
+using Wjybxx.BigCat.Fx;
+using Wjybxx.BigCat.Util;
+using Wjybxx.Commons;
+using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject.Attributes;
+using Wjybxx.Commons.Logger;
+using static Wjybxx.BigCat.Fx.ExtensibleService;
+
+namespace Commons.Tests;
+
+[RpcService(ServiceId = 12)]
+public class RpcClientExample : EventLoopModule, ExtensibleService
+{
+    private static readonly ILogger logger = LoggerFactory.GetLogger<RpcClientExample>();
+#nullable disable
+    /** worker */
+    private Worker worker;
+    /** 定时器 */
+    private readonly GRegulator regulator = GRegulator.NewFixedDelay(1, 50);
+
+    [Inject] private RpcClient rpcClient;
+    [Inject] private TimeModule timeModule;
+
+    // 测试从接口继承的方法
+    private readonly Dictionary<string, object> extBlackboard = new();
+    // 目标地址 -- 本地
+    private WorkerAddr serverAddr;
+#nullable enable
+
+    /// <summary>
+    /// 接收服务端发来的通知
+    /// </summary>
+    /// <param name="request"></param>
+    [RpcMethod(MethodId = 1)]
+    public void OnMessage(Request request) {
+        Console.WriteLine(request.String1);
+    }
+
+    public Dictionary<string, object> ExtBlackboard => extBlackboard;
+
+    public ExecuteResult Execute(ExecuteRequest request) {
+        return new ExecuteResult();
+    }
+
+    #region logic
+
+    override
+        public void ResolveDependence() {
+        this.worker = (Worker)Entity;
+        this.serverAddr = worker.Node.NodeAddr;
+    }
+
+    override
+        public void Start() {
+        regulator.Restart(timeModule.Time);
+    }
+
+    override
+        public void Stop() {
+        Console.WriteLine("triggerCount: " + regulator.Count);
+    }
+
+    override
+        public void Update() {
+        if (!regulator.IsReady(timeModule.Time)) {
+            return;
+        }
+        int seed = MathCommon.SharedRandom.Next(4);
+        switch (seed) {
+            case 0:
+                TestOneway();
+                break;
+            case 1:
+                TestAsyncCall().Forget();
+                break;
+            case 2:
+                TestSyncCall();
+                break;
+            case 3:
+                TestContext().Forget();
+                break;
+        }
+    }
+
+    private void TestOneway() {
+        string msg = CreateMessage("这是一个通知，不接收结果");
+        rpcClient.Send(serverAddr, RpcServiceExampleProxy.Hello(Request.OfString(msg)));
+    }
+
+    private async ValueFuture TestAsyncCall() {
+        string msg = CreateMessage("这是一个异步调用，可监听结果");
+        Response result = await rpcClient.Call(serverAddr, RpcServiceExampleProxy.Hello(Request.OfString(msg)));
+
+        // 启用本地共享的情况下应当是同一个字符串
+        Assert.AreSame(msg, result.StringVal);
+        Assert.IsTrue(worker.InEventLoop(), "worker.inEventLoop");
+
+        Console.WriteLine("callResult: " + result.StringVal);
+        Console.WriteLine();
+    }
+
+    private void TestSyncCall() {
+        try {
+            string msg = CreateMessage("这是一个同步调用，远程异步执行");
+            Response result = rpcClient.SyncCall(serverAddr, RpcServiceExampleProxy.HelloAsync(Request.OfString(msg)));
+            Console.WriteLine("syncResult: " + result.StringVal);
+            Console.WriteLine();
+        }
+        catch (ThreadInterruptedException) {
+            logger.Info("syncCall interrupted");
+        }
+        catch (TimeoutException ex) {
+            logger.Info("syncCall timeout", ex);
+        }
+    }
+
+    private async ValueFuture TestContext() {
+        string msg = CreateMessage("这是一个异步调用，目标函数有Context");
+        Response response = await rpcClient.Call(serverAddr, RpcServiceExampleProxy.ContextHello(Request.OfString(msg)));
+        Console.WriteLine(response.ToString());
+    }
+
+    private string CreateMessage(string msg) {
+        long offsetMillis = (long)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
+        DateTime dateTime = DatetimeUtil.ToDateTime((long)regulator.LastUpdateTime - offsetMillis);
+        return "time: " + dateTime.ToString("s") + " # " + msg;
+    }
+
+    #endregion
+}

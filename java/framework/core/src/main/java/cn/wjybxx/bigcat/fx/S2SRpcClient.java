@@ -313,7 +313,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
     @SuppressWarnings("unchecked")
     <T> void onRcvRequestStep3(RpcRequest request) {
         RpcMethodProxy<T> proxy = (RpcMethodProxy<T>) proxyRegistry.getProxy(request.getServiceId(), request.getMethodId());
-        if (proxy == null) {
+        if (proxy == null || proxyRegistry.isDisabled(request.getServiceId(), request.getMethodId())) {
             reject(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE);
             return;
         }

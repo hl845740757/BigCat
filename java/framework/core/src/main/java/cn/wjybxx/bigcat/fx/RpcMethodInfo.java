@@ -16,7 +16,7 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import cn.wjybxx.bigcat.pb.ProtobufUtils;
+import cn.wjybxx.bigcat.util.ProtobufUtils;
 import com.google.protobuf.Message;
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
