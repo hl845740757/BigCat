@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatEditor.Core", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatEditor.Tests", "Wjybxx.BigCatEditor.Tests\Wjybxx.BigCatEditor.Tests.csproj", "{6C637C0C-0062-40F6-8407-24692641946E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Apt", "Wjybxx.BigCat.Apt\Wjybxx.BigCat.Apt.csproj", "{456126AA-8587-4A60-8A17-707CB8A99FA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,5 +42,9 @@ Global
 		{6C637C0C-0062-40F6-8407-24692641946E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C637C0C-0062-40F6-8407-24692641946E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C637C0C-0062-40F6-8407-24692641946E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{456126AA-8587-4A60-8A17-707CB8A99FA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{456126AA-8587-4A60-8A17-707CB8A99FA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{456126AA-8587-4A60-8A17-707CB8A99FA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{456126AA-8587-4A60-8A17-707CB8A99FA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -20,9 +20,6 @@ using System;
 using System.IO;
 using NUnit.Framework;
 using Wjybxx.BigCatEditor.DataScript;
-using Wjybxx.BigCatEditor.Generator.Protobuf;
-using Wjybxx.BigCatEditor.Generator.Rpc;
-using Wjybxx.BigCatEditor.Protobuf;
 using Wjybxx.Dson;
 using Wjybxx.EditorTest;
 
@@ -47,6 +44,12 @@ public class DSCompilerTest
 
         DSNamedTypeElement builtinType = repository.GetBuiltinType(DSKeywords.TYPE_INT32);
         repository.MakeNullableType(builtinType);
+
+        DSNamedTypeElement namedTypeElement = repository.FindType("GenericChildBean2");
+        Assert.NotNull(namedTypeElement);
+        DSField keyField = namedTypeElement.GetField("key");
+        Assert.NotNull(keyField);
+        Console.WriteLine(keyField.Type.TypeName); // List`1[string]
 
         DSInst inst = repository.FindInst("vector3_array");
         Assert.NotNull(inst);

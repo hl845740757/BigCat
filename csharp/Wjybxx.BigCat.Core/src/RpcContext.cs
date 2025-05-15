@@ -28,7 +28,9 @@ namespace Wjybxx.BigCat.Core
 ///
 /// 由于我们会将RpcContext对象暴露给用户，以及监听Future的结果，因此RpcContext无法简单池化；
 /// 在C#端我们选择将Context实现为值类型，这样就无需池化。
-/// 结构体较大，当传递给其它方法时应当使用in修饰。
+///
+/// 1.结构体较大，当传递给其它方法时应当使用in或ref修饰。
+/// 2.泛型参数建议使用object代替void，这样在特殊情况下可以传递结果给请求方。
 /// </summary>
 public struct RpcContext<T>
 {
@@ -178,7 +180,7 @@ public struct RpcContext<T>
         }
         rpcClient.SendAsyncResult(sessionId, remoteAddr,
             requestId, serviceId, methodId,
-            future);
+            future, IsSharable);
     }
 
     #region 常量

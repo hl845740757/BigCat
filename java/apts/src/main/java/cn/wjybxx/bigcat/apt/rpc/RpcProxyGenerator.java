@@ -37,13 +37,13 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
 
     private final int serviceId;
     private final List<ExecutableElement> rpcMethods;
-    private final ClassName typeClassName;
+    private final ClassName serviceTypeName;
 
     RpcProxyGenerator(RpcServiceProcessor processor, TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         super(processor, typeElement);
         this.serviceId = serviceId;
         this.rpcMethods = rpcMethods;
-        this.typeClassName = ClassName.get(typeElement);
+        this.serviceTypeName = ClassName.get(typeElement);
     }
 
     @Override
@@ -89,9 +89,10 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         AptUtils.copyTypeVariables(builder, method);
 
         // 添加返回类型 - 带泛型
-        final TypeMirror originReturnType = processor.rpcReturnType(method, true);
-        final DeclaredType realReturnType = typeUtils.getDeclaredType(processor.methodSpecElement, originReturnType);
-        builder.returns(TypeName.get(realReturnType));
+        final TypeMirror rpcReturnType = processor.rpcReturnType(method);
+        final DeclaredType proxyReturnType = typeUtils.getDeclaredType(processor.type_MethodSpec, rpcReturnType);
+        final TypeName proxyReturnTypeName = TypeName.get(proxyReturnType);
+        builder.returns(proxyReturnTypeName);
 
         // 拷贝方法参数
         AptUtils.copyParameters(builder, method);
@@ -99,7 +100,8 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
 
         // 去除context参数
         final List<ParameterSpec> parameters = builder.parameters;
-        if (processor.firstArgType(method).isContext()) {
+        FirstArgType firstArgType = processor.getFirstArgType(method);
+        if (firstArgType == FirstArgType.CONTEXT) {
             parameters.remove(0);
         }
         // 替换Builder参数
@@ -114,18 +116,18 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
         if (parameters.size() == 0) {
             // 无参(serviceId, methodId, null, true)
             builder.addStatement("return new $T<>($L, $L, null, true)",
-                    processor.methodSpecRawTypeName,
+                    processor.typeName_MethodSpecRaw,
                     serviceId, processor.getMethodId(method, annoValueMap));
         } else {
             // 1个参数(serviceId, methodId, parameter, sharable) -- builder强制不可共享
             builder.addStatement("return new $T<>($L, $L, $L, $L)",
-                    processor.methodSpecRawTypeName,
+                    processor.typeName_MethodSpecRaw,
                     serviceId, processor.getMethodId(method, annoValueMap),
                     parameters.get(0).name,
                     !isBuildPattern && processor.isArgSharable(method, annoValueMap));
         }
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
-        builder.addJavadoc("{@link $T#$L}", typeClassName, method.getSimpleName().toString());
+        builder.addJavadoc("{@link $T#$L}", serviceTypeName, method.getSimpleName().toString());
         return builder.build();
     }
 

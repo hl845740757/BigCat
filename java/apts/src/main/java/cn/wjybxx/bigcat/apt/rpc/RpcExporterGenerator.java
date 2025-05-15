@@ -23,7 +23,6 @@ import com.squareup.javapoet.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,11 +40,13 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
     private final int serviceId;
     private final List<ExecutableElement> rpcMethods;
+    private final ClassName serviceTypeName;
 
     RpcExporterGenerator(RpcServiceProcessor processor, TypeElement typeElement, int serviceId, List<ExecutableElement> rpcMethods) {
         super(processor, typeElement);
         this.serviceId = serviceId;
         this.rpcMethods = rpcMethods;
+        this.serviceTypeName = ClassName.get(typeElement);
     }
 
     @Override
@@ -59,18 +60,18 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
         final List<MethodSpec> serverMethodProxyList = new ArrayList<>(rpcMethods.size());
         // 生成代理方法
         for (final ExecutableElement method : rpcMethods) {
-            serverMethodProxyList.add(genServerMethodProxy(typeElement, serviceId, method));
+            serverMethodProxyList.add(genServerMethodProxy(method));
         }
         typeBuilder.addMethods(serverMethodProxyList);
 
         // 生成注册方法
-        typeBuilder.addMethod(genRegisterMethod(typeElement, serverMethodProxyList));
+        typeBuilder.addMethod(genRegisterMethod(serverMethodProxyList));
 
         // 写入文件
         AptUtils.writeToFile(typeElement, typeBuilder, elementUtils, messager, filer);
     }
 
-    private String getServerProxyClassName(TypeElement typeElement) {
+    private static String getServerProxyClassName(TypeElement typeElement) {
         return typeElement.getSimpleName().toString() + "Exporter";
     }
 
@@ -85,18 +86,16 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      *
      * @param serverProxyMethodList 被代理的服务器方法
      */
-    private MethodSpec genRegisterMethod(TypeElement typeElement, List<MethodSpec> serverProxyMethodList) {
+    private MethodSpec genRegisterMethod(List<MethodSpec> serverProxyMethodList) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("export")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(TypeName.VOID)
-                .addParameter(processor.methodRegistryTypeName, varName_registry)
-                .addParameter(TypeName.get(typeElement.asType()), varName_instance);
-
+                .addParameter(processor.typeName_MethodRegistry, varName_registry)
+                .addParameter(serviceTypeName, varName_instance);
         // 添加调用
         for (MethodSpec method : serverProxyMethodList) {
             builder.addStatement("$L($L, $L)", method.name, varName_registry, varName_instance);
         }
-
         return builder.build();
     }
 
@@ -134,18 +133,18 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * }
      * </pre>
      */
-    private MethodSpec genServerMethodProxy(TypeElement typeElement, int serviceId, ExecutableElement method) {
+    private MethodSpec genServerMethodProxy(ExecutableElement method) {
         final Map<String, AnnotationValue> annoValueMap = processor.getMethodAnnoValueMap(method);
         final int methodId = processor.getMethodId(method, annoValueMap);
         final MethodSpec.Builder builder = MethodSpec.methodBuilder(getServerProxyMethodName(methodId, method))
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .returns(TypeName.VOID)
-                .addParameter(processor.methodRegistryTypeName, varName_registry)
-                .addParameter(TypeName.get(typeElement.asType()), varName_instance);
+                .addParameter(processor.typeName_MethodRegistry, varName_registry)
+                .addParameter(serviceTypeName, varName_instance);
         // 拷贝泛型参数
         AptUtils.copyTypeVariables(builder, method);
         // 注册方法代理
-        builder.addCode(genMethodProxy(serviceId, method, methodId, annoValueMap).build());
+        builder.addCode(genMethodProxy(method, methodId, annoValueMap).build());
         // 注册切面数据
         String customData = processor.getCustomData(method, annoValueMap);
         if (customData != null) {
@@ -155,13 +154,13 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     }
 
     /** 生成方法代理 */
-    private CodeBlock.Builder genMethodProxy(int serviceId, ExecutableElement method, int methodId,
+    private CodeBlock.Builder genMethodProxy(ExecutableElement method, int methodId,
                                              Map<String, AnnotationValue> annoValueMap) {
         CodeBlock.Builder codeBuilder = CodeBlock.builder();
         // registry -- 传入泛型参数，可以避免不必要的类型转换
-        TypeMirror rpcReturnType = processor.rpcReturnType(method, true);
+        TypeName rpcReturnTypeName = TypeName.get(processor.rpcReturnType(method));
         codeBuilder.beginControlFlow("$L.<$T>register($L, $L, (context, $L) ->",
-                varName_registry, rpcReturnType, serviceId, methodId, varName_parameter);
+                varName_registry, rpcReturnTypeName, serviceId, methodId, varName_parameter);
         // 可变性设置
         if (processor.isResultSharable(method, annoValueMap)) {
             codeBuilder.addStatement("context.setSharable(true)");
@@ -222,7 +221,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
             if (parameters.size() > 1) {
                 format.append(", ");
             }
-            parameters = method.getParameters().subList(1, parameters.size());
+            parameters = parameters.subList(1, parameters.size());
         }
         // 方法参数已限定为最多1个，Object向下转换
         if (parameters.size() > 0) {

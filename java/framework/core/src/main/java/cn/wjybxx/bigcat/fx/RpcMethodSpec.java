@@ -23,6 +23,7 @@ import cn.wjybxx.base.annotation.StableName;
  * 1.不记录方法参数类型，没有太大的意义
  * 2.该对象为临时对象，不序列化
  * 3.该对象赢得保持简单，以便用户可自行构造
+ * 4.注解处理器使用object代替void，这样在特殊情况下可以传递结果给请求方
  *
  * @param <V> 用于捕获返回值类型
  * @author wjybxx

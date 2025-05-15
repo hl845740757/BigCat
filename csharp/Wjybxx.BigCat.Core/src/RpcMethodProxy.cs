@@ -23,7 +23,7 @@ namespace Wjybxx.BigCat.Core
 /// <summary>
 /// Rpc方法代理
 /// </summary>
-public delegate void RpcMethodProxy<T>(in RpcContext<T> context, object parameter);
+public delegate void RpcMethodProxy<T>(ref RpcContext<T> context, object parameter);
 
 /// <summary>
 /// Rpc方法调用器--用于解决泛型问题
@@ -56,7 +56,7 @@ public sealed class RpcMethodInvoker<T> : RpcMethodInvoker
             request.RequestId,
             request.ServiceId, request.MethodId,
             request.InvokeType);
-        proxy.Invoke(in context, request);
+        proxy.Invoke(ref context, request);
     }
 }
 }

@@ -10,7 +10,7 @@ service SearchService {
   //@RpcMethod {id: 1}
   rpc Search(SearchRequest) returns (SearchResponse);
 
-  //@RpcMethod {id: 2, async: true}
+  //@RpcMethod {id: 2, async: true, ctx: true}
   //@Sparam {interval: 500}
   rpc SearchAsync(SearchRequest) returns (SearchResponse);
 

@@ -27,8 +27,4 @@ enum FirstArgType {
     NONE,
     CONTEXT,
     OTHER;
-
-    public boolean isContext() {
-        return this == CONTEXT;
-    }
 }

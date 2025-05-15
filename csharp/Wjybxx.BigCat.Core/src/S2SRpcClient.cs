@@ -243,57 +243,34 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
                                 long requestId, int serviceId, int methodId,
                                 IFuture future, bool sharable) {
         SendAsyncResult0(sessionId, destAddr, requestId, serviceId,
-            methodId, future, sharable).Forget();
+            methodId, new ValueFuture(future), sharable).Forget();
     }
 
     public void SendAsyncResult<T>(long sessionId, WorkerAddr destAddr,
                                    long requestId, int serviceId, int methodId,
                                    ValueFuture<T> future, bool sharable) {
         SendAsyncResult0(sessionId, destAddr, requestId, serviceId,
-            methodId, future, sharable).Forget();
+            methodId, future.Box(), sharable).Forget();
     }
 
     public void SendAsyncResult(long sessionId, WorkerAddr destAddr,
                                 long requestId, int serviceId, int methodId,
-                                ValueFuture future) {
+                                ValueFuture future, bool sharable) {
         SendAsyncResult0(sessionId, destAddr, requestId, serviceId,
-            methodId, future).Forget();
+            methodId, future, sharable).Forget();
     }
 
-    // 用await封装的开销会更低一些
+    /// <summary>
+    /// 全部转为ValueFuture类型，可以减少生成的状态机代码，池化对象的利用率也就更好
+    /// </summary>
     private async ValueFuture SendAsyncResult0(long sessionId, WorkerAddr destAddr,
                                                long requestId, int serviceId, int methodId,
-                                               IFuture future, bool sharable) {
-        try {
-            await future.GetAwaitable(worker, TaskOptions.STAGE_TRY_INLINE);
-            SendResult(sessionId, destAddr, requestId, serviceId, methodId, future.ResultNow(), sharable);
-        }
-        catch (Exception e) {
-            SendError(sessionId, destAddr, requestId, serviceId, methodId, e);
-        }
-    }
-
-    private async ValueFuture SendAsyncResult0<T>(long sessionId, WorkerAddr destAddr,
-                                                  long requestId, int serviceId, int methodId,
-                                                  ValueFuture<T> future, bool sharable) {
-        try {
-            T r = await future.GetAwaitable(worker, TaskOptions.STAGE_TRY_INLINE);
-            SendResult(sessionId, destAddr, requestId, serviceId, methodId, r, sharable);
-        }
-        catch (Exception e) {
-            SendError(sessionId, destAddr, requestId, serviceId, methodId, e);
-        }
-    }
-
-    private async ValueFuture SendAsyncResult0(long sessionId, WorkerAddr destAddr,
-                                               long requestId, int serviceId, int methodId,
-                                               ValueFuture future) {
-        try {
-            await future.GetAwaitable(worker, TaskOptions.STAGE_TRY_INLINE);
-            SendResult(sessionId, destAddr, requestId, serviceId, methodId, null, true);
-        }
-        catch (Exception e) {
-            SendError(sessionId, destAddr, requestId, serviceId, methodId, e);
+                                               ValueFuture future, bool sharable) {
+        TaskResult r = await future.GetAwaitable(worker, SuppressedTypes.All, TaskOptions.STAGE_TRY_INLINE);
+        if (r.IsSucceeded) {
+            SendResult(sessionId, destAddr, requestId, serviceId, methodId, r.Result, sharable);
+        } else {
+            SendError(sessionId, destAddr, requestId, serviceId, methodId, r.Exception!);
         }
     }
 
@@ -357,7 +334,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public void OnRcvRequestStep3(RpcRequest request) {
         RpcMethodInvoker? invoker = proxyRegistry.GetInvoker(request.ServiceId, request.MethodId);
-        if (invoker == null) {
+        if (invoker == null || proxyRegistry.IsDisabled(request.ServiceId, request.MethodId)) {
             Reject(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE);
             return;
         }

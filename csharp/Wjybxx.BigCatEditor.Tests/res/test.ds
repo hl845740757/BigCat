@@ -38,6 +38,13 @@ class GenericChildBean<T, U> : GenericBean<T, U>
     List<string> addresses = 1;
 }
 
+// 测试泛型继承2
+class GenericChildBean2<T, U> : GenericBean<List<string>, U>
+    where T: struct 
+    where U: class {
+    List<string> addresses = 1;
+}
+
 // 测试实例 -- {}和[]暂时需要严格缩进
 // 大写名字表示关联类型的默认值
 inst Vector3 {

@@ -107,8 +107,9 @@ public interface RpcClientImpl
     /// <param name="serviceId">服务id</param>
     /// <param name="methodId">方法id</param>
     /// <param name="future">异步结果</param>
+    /// <param name="sharable">是否可共享</param>
     void SendAsyncResult(long sessionId, WorkerAddr destAddr,
                          long requestId, int serviceId, int methodId,
-                         ValueFuture future);
+                         ValueFuture future, bool sharable);
 }
 }

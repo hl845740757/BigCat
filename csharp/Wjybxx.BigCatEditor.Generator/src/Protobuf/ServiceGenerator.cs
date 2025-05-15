@@ -234,7 +234,8 @@ public class ServiceGenerator
             // void时使用object代替 -- 可临时返回结果
             contextType = clsName_rpcContext_t.WithTypeArguments(TypeName.OBJECT);
         }
-        return contextType;
+        // c#需要传引用
+        return contextType.MakeByRefType();
     }
 
     #region 注解解析

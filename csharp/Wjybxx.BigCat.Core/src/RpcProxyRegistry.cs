@@ -99,6 +99,28 @@ public interface RpcProxyRegistry
     RpcMethodInvoker? GetInvoker(int serviceId, int methodId);
 
     /// <summary>
+    /// 临时禁用服务（用于线上临时关闭功能）
+    /// </summary>
+    /// <param name="serviceId">服务id</param>
+    /// <param name="methodId">方法id，-1表示全部</param>
+    void Disable(int serviceId, int methodId);
+
+    /// <summary>
+    /// 临时启用服务
+    /// </summary>
+    /// <param name="serviceId">服务id</param>
+    /// <param name="methodId">方法id，-1表示全部</param>
+    void Enable(int serviceId, int methodId);
+
+    /// <summary>
+    /// 查询方法是否被禁用
+    /// </summary>
+    /// <param name="serviceId"></param>
+    /// <param name="methodId"></param>
+    /// <returns></returns>
+    bool IsDisabled(int serviceId, int methodId);
+    
+    /// <summary>
     /// 导出注册表中包含的服务
     /// </summary>
     /// <returns>注册的所有服务的id</returns>

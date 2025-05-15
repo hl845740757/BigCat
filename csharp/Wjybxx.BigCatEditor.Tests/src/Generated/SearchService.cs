@@ -13,7 +13,7 @@ namespace Wjybxx.EditorTest.Generated
     SearchResponse Search(SearchRequest request);
 
     [RpcMethod(MethodId = 2)]
-    ValueFuture<SearchResponse> SearchAsync(SearchRequest request);
+    ValueFuture<SearchResponse> SearchAsync(ref RpcContext<SearchResponse> rpcCtx, SearchRequest request);
 
     /// <summary>
     /// 以下两种形式不符合proto的rpc语法，但符合我们的约定

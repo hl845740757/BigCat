@@ -28,6 +28,7 @@ public class DefaultRpcProxyRegistry : RpcProxyRegistry
 {
     private readonly Dictionary<int, Delegate> proxyMap = new(512);
     private readonly Dictionary<int, RpcMethodInvoker> invokerMap = new(512);
+    private readonly Dictionary<int, bool> disabledMap = new();
     private readonly Dictionary<int, object?> proxyDataMap = new(512);
 
     public void Register<T>(int serviceId, int methodId, RpcMethodProxy<T> proxy) {
@@ -72,6 +73,45 @@ public class DefaultRpcProxyRegistry : RpcProxyRegistry
         int methodKey = RpcMethodKey.MethodKey(serviceId, methodId);
         invokerMap.TryGetValue(methodKey, out RpcMethodInvoker? invoker);
         return invoker;
+    }
+
+    public void Disable(int serviceId, int methodId) {
+        if (methodId == -1) {
+            List<int> keys = new List<int>();
+            foreach (var pair in proxyMap) {
+                if (RpcMethodKey.ServiceIdOfKey(pair.Key) == serviceId) {
+                    keys.Add(pair.Key);
+                }
+            }
+            foreach (int key in keys) {
+                disabledMap[key] = true;
+            }
+        } else {
+            int key = RpcMethodKey.MethodKey(serviceId, methodId);
+            disabledMap[key] = true;
+        }
+    }
+
+    public void Enable(int serviceId, int methodId) {
+        if (methodId == -1) {
+            List<int> keys = new List<int>();
+            foreach (var pair in disabledMap) {
+                if (RpcMethodKey.ServiceIdOfKey(pair.Key) == serviceId) {
+                    keys.Add(pair.Key);
+                }
+            }
+            foreach (int key in keys) {
+                disabledMap.Remove(key);
+            }
+        } else {
+            int key = RpcMethodKey.MethodKey(serviceId, methodId);
+            disabledMap.Remove(key);
+        }
+    }
+
+    public bool IsDisabled(int serviceId, int methodId) {
+        int key = RpcMethodKey.MethodKey(serviceId, methodId);
+        return disabledMap.TryGetValue(key, out bool r) && r;
     }
 
     public HashSet<int> Export() {

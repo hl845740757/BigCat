@@ -211,6 +211,24 @@ public sealed class DSNamedTypeElement : DSTypeElement
     #region logic
 
     /// <summary>
+    /// 获取指定Name的字段
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="flatInherit"></param>
+    /// <returns></returns>
+    public DSField? GetField(string name, bool flatInherit = true) {
+        foreach (var element in EnclosedElements) {
+            if (element.Kind == DSElementKind.Field && element.SimpleName == name) {
+                return (DSField?)element;
+            }
+        }
+        if (flatInherit && _baseType != null) {
+            return _baseType.GetField(name);
+        }
+        return null;
+    }
+    
+    /// <summary>
     /// 获取所有的字段，默认超类字段在前
     /// </summary>
     /// <param name="flatInherit">是否拉取继承的字段，默认true</param>

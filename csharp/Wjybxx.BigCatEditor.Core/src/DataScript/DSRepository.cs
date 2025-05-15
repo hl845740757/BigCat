@@ -145,12 +145,13 @@ public class DSRepository
     }
 
     /// <summary>
-    /// 获取顶层类型元素
+    /// 获取顶层类型
+    /// (只查询顶层类)
     /// </summary>
     /// <param name="fileSimpleName">文件简单名</param>
     /// <param name="elementName">顶层元素名</param>
     /// <returns></returns>
-    public DSNamedTypeElement? GetTopTypeElement(string fileSimpleName, string elementName) {
+    public DSNamedTypeElement? GetType(string fileSimpleName, string elementName) {
         var key = new StringPair(fileSimpleName, elementName);
         topTypeMap.TryGetValue(key, out DSNamedTypeElement element);
         return element;
@@ -158,10 +159,11 @@ public class DSRepository
 
     /// <summary>
     /// 根据name查询类型，会返回第一个匹配的类型
+    /// (只查询顶层类)
     /// </summary>
     /// <param name="elementName"></param>
     /// <returns></returns>
-    public DSNamedTypeElement? FindTopTypeElement(string elementName) {
+    public DSNamedTypeElement? FindType(string elementName) {
         foreach (var pair in topTypeMap) {
             if (pair.Value.SimpleName == elementName) {
                 return pair.Value;
@@ -286,12 +288,22 @@ public class DSRepository
         }
         // 解析字段和超类类型
         foreach (DSFile file in fileMap.Values) {
-            ResolveTypeSymbols(file);
+            try {
+                ResolveTypeSymbols(file);
+            }
+            catch (Exception e) {
+                throw new Exception("file: " + file.FileName, e);
+            }
         }
         // 解析实例引用： inst $name from t1, t2 ...
         foreach (DSFile file in fileMap.Values) {
-            foreach (DSInst inst in file.GetInsts()) {
-                BuildInst(inst, 0);
+            try {
+                foreach (DSInst inst in file.GetInsts()) {
+                    BuildInst(inst, 0);
+                }
+            }
+            catch (Exception e) {
+                throw new Exception("file: " + file.FileName, e);
             }
         }
     }
@@ -362,7 +374,7 @@ public class DSRepository
             }
 
             // 需要避免内存共享
-            DsonObject<string> copiedObject = Dsons.MutableDeepCopy<string>(instTemplate.DsonValue).AsObject();
+            DsonObject<string> copiedObject = Dsons.MutableDeepCopy<string>(instTemplate.DsonValue!).AsObject();
             foreach (var pair in copiedObject) {
                 dsonObject[pair.Key] = pair.Value;
             }
@@ -500,13 +512,13 @@ public class DSRepository
     /// <param name="scopeEntry">作用域的入口，还用于解析泛型参数</param>
     /// <param name="typeSymbol">引用的类型符号，非泛型类型，也不是非空类型</param>
     /// <returns>可能是泛型参数</returns>
-    public DSTypeElement? FindType(DSNamedTypeElement scopeEntry, string typeSymbol) {
+    private DSTypeElement? FindType(DSNamedTypeElement scopeEntry, string typeSymbol) {
         Debug.Assert(!typeSymbol.Contains('?'));
         // 查询内建类型 -- 基础类型使用频率最高
         if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedTypeElement r)) {
             return r;
         }
-        // 查找泛型变量 -- 需要通过泛型原型查询
+        // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
         for (int idx = 0; idx < scopeEntry.OriginDefine.TypeParameters.Count; idx++) {
             var typeParameter = scopeEntry.OriginDefine.TypeParameters[idx];
             if (typeParameter.SimpleName == typeSymbol) {
@@ -527,7 +539,7 @@ public class DSRepository
             return null;
         }
         foreach (string resolvedImport in enclosingFile.ResolvedImports) {
-            DSNamedTypeElement? typeElement = GetTopTypeElement(resolvedImport, typeSymbol);
+            DSNamedTypeElement? typeElement = GetType(resolvedImport, typeSymbol);
             if (typeElement != null) return typeElement;
         }
         // 查找失败
@@ -539,7 +551,7 @@ public class DSRepository
     /// </summary>
     /// <param name="scopeEntry">作用域的入口</param>
     /// <param name="outList"></param>
-    public void CollectAccessibleTypes(DSNamedTypeElement scopeEntry, List<DSNamedTypeElement> outList) {
+    private void CollectAccessibleTypes(DSNamedTypeElement scopeEntry, List<DSNamedTypeElement> outList) {
         // 只有原始定义类才可以访问Elements
         scopeEntry = scopeEntry.OriginDefine;
 
