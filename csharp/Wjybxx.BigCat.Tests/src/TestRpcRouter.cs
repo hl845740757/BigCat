@@ -19,7 +19,7 @@
 using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.Tests;
 
 public class TestRpcRouter : EventLoopModule, RpcRouter
 {

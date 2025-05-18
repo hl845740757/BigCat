@@ -56,7 +56,7 @@ public sealed class RpcMethodInvoker<T> : RpcMethodInvoker
             request.RequestId,
             request.ServiceId, request.MethodId,
             request.InvokeType);
-        proxy.Invoke(ref context, request);
+        proxy.Invoke(ref context, request.Data);
     }
 }
 }

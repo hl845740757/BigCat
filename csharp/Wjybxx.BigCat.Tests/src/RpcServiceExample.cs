@@ -21,7 +21,7 @@ using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject.Attributes;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.Tests;
 
 [RpcService(ServiceId = 11)]
 public class RpcServiceExample : EventLoopModule, ExtensibleService

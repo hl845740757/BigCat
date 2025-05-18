@@ -30,7 +30,7 @@ public class DefaultNodeBuilder : NodeBuilder
 
     public new DisruptorEventLoopBuilder<WorkerEvent> Delegated => (DisruptorEventLoopBuilder<WorkerEvent>)delegated;
 
-    public override Worker Build() {
+    public override Node Build() {
         if (EventSequencer == null) {
             EventSequencer = new MpUnboundedEventSequencer<WorkerEvent>.Builder(WorkerEvent.FACTORY)
             {
@@ -43,7 +43,8 @@ public class DefaultNodeBuilder : NodeBuilder
                 {
                     Parent = parent,
                     Index = index,
-                    ControlData = controlData
+                    ControlData = controlData,
+                    WorkerId = "Worker-" + index,
                 }.Build();
             };
         }

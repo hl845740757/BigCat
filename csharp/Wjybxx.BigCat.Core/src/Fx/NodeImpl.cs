@@ -45,7 +45,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     private volatile IDictionary<int, ServiceInfo> serviceInfoMap = ImmutableLinkedDictionary<int, ServiceInfo>.Empty;
 
     public NodeImpl(DefaultNodeBuilder builder)
-        : base(Decorate(builder)) {
+        : base(Decorate(builder), false) {
         string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
         int nodeId = builder.NodeId;
         this.workerAddr = new WorkerAddr(nodeId, workerId);
@@ -79,9 +79,13 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
         }
         readonlyChildren = children.ToImmutableList2();
         chooser = chooserFactory.NewChooser(children);
+        
+        // 构造完成后再初始化模块
+        agent.Inject(this, ConsumerId);
     }
 
     private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(DefaultNodeBuilder builder) {
+        FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
             builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
         }
@@ -126,9 +130,10 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     // -----------------
     public WorkerControlData ControlData => controlData;
     public Node Node => this;
-    public override IEventLoopGroup? Parent => null;
 
 #if NET6_0_OR_GREATER
+    public override IEventLoopGroup? Parent => null;
+
     public override Worker Select() {
         return (Worker)chooser.Select();
     }
@@ -209,6 +214,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
                 serviceInfo.AddWorker(worker);
             }
         }
+        SetServiceInfoMap(serviceInfoMap);
     }
 
     private void StartWorkers() {

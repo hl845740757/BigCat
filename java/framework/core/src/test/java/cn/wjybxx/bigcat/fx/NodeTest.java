@@ -42,7 +42,7 @@ public class NodeTest {
         LoggerFactory.getLogger("Main");
         System.out.println();
 
-        node = NodeBuilder.newDefaultNodeBuilder()
+        var nodeBuilder = NodeBuilder.newDefaultNodeBuilder()
                 .setNodeId(NodeId.makeNodeId(1, 1))
                 .setWorkerId("Node")
                 // 初始化模块
@@ -55,7 +55,7 @@ public class NodeTest {
                 // 初始化Worker，1号worker是client，2号是server，否则无法支持同步调用
                 .setNumberChildren(2)
                 .setWorkerFactory((parent, index, controlData) -> {
-                    DefaultWorkerBuilder workerBuilder = WorkerBuilder.newDisruptorWorkerBuilder()
+                    DefaultWorkerBuilder workerBuilder = WorkerBuilder.newDefaultWorkerBuilder()
                             .setWorkerId("Worker-" + index)
                             .setParent(parent)
                             .setControlData(controlData)
@@ -70,10 +70,14 @@ public class NodeTest {
                         workerBuilder.addModule(RpcServiceExample.class)
                                 .addService(RpcServiceExample.class);
                     }
+                    //noinspection unchecked
+                    workerBuilder.setAgent(workerBuilder.getInjector().getInstance(IEventLoopAgent.class));
                     return workerBuilder.build();
-                })
-                .build();
+                });
 
+        //noinspection unchecked
+        nodeBuilder.setAgent(nodeBuilder.getInjector().getInstance(IEventLoopAgent.class));
+        node = nodeBuilder.build();
         node.start().join();
     }
 
@@ -129,8 +133,8 @@ public class NodeTest {
                 bind(RpcProxyRegistry.class).to(DefaultRpcProxyRegistry.class).in(Singleton.class);
                 bind(S2SSessionMgr.class).in(Singleton.class); // 具体项目需要绑定子类
 
-                bind(RpcClientExample.class).in(Singleton.class);
-                bind(RpcServiceExample.class).in(Singleton.class);
+                bind(RpcClientExample.class).in(Singleton.class); // worker1
+                bind(RpcServiceExample.class).in(Singleton.class); // worker2
             }
         });
     }

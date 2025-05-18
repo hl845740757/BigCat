@@ -16,6 +16,8 @@
 
 package cn.wjybxx.bigcat.fx;
 
+import cn.wjybxx.base.ObjectUtils;
+
 /**
  * rpc异常的超类
  *
@@ -31,23 +33,28 @@ public abstract class RpcException extends RuntimeException {
     }
 
     public RpcException(int errorCode, String message) {
-        super(message);
+        super(formatMessage(message, errorCode));
         this.errorCode = errorCode;
     }
 
     public RpcException(int errorCode, String message, Throwable cause) {
-        super(message, cause);
+        super(formatMessage(message, errorCode), cause);
         this.errorCode = errorCode;
     }
 
     public RpcException(int errorCode, Throwable cause) {
-        super(cause);
+        super(formatMessage(null, errorCode), cause);
         this.errorCode = errorCode;
     }
 
     public RpcException(int errorCode, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
+        super(formatMessage(message, errorCode), cause, enableSuppression, writableStackTrace);
         this.errorCode = errorCode;
+    }
+
+    private static String formatMessage(String message, int errorCode) {
+        if (ObjectUtils.isBlank(message)) return "code: " + errorCode;
+        return "msg: " + message + ", code: " + errorCode;
     }
 
     /**
@@ -55,14 +62,6 @@ public abstract class RpcException extends RuntimeException {
      */
     public final int getErrorCode() {
         return errorCode;
-    }
-
-    public final boolean isClientException() {
-        return this instanceof RpcClientException;
-    }
-
-    public final boolean isServerException() {
-        return this instanceof RpcServerException;
     }
 
 }

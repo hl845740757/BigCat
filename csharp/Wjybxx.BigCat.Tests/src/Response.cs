@@ -16,12 +16,13 @@
 
 #endregion
 
+using System;
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.Tests;
 
 [DsonSerializable]
-public class Response
+public class Response : IEquatable<Response>
 {
 #nullable disable
     private int val;
@@ -38,5 +39,23 @@ public class Response
 
     public override string ToString() {
         return $"{nameof(val)}: {val}, {nameof(stringVal)}: {stringVal}";
+    }
+
+    public bool Equals(Response other) {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return val == other.val && stringVal == other.stringVal;
+    }
+
+    public override bool Equals(object obj) {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((Response)obj);
+    }
+
+    // ReSharper disable NonReadonlyMemberInGetHashCode
+    public override int GetHashCode() {
+        return (val * 397) ^ (stringVal != null ? stringVal.GetHashCode() : 0);
     }
 }

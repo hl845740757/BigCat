@@ -48,6 +48,7 @@ public abstract class NodeBuilder extends WorkerBuilder {
 
     protected NodeBuilder(EventLoopBuilder<WorkerEvent> delegateBuilder) {
         super(delegateBuilder);
+        setWorkerId("Node");
     }
 
     @Override

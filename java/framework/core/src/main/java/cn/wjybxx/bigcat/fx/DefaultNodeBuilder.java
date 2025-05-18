@@ -44,7 +44,7 @@ public class DefaultNodeBuilder extends NodeBuilder {
         }
         if (getWorkerFactory() == null) {
             setWorkerFactory((parent, index, controlData) -> {
-                return WorkerBuilder.newDisruptorWorkerBuilder()
+                return WorkerBuilder.newDefaultWorkerBuilder()
                         .setParent(parent)
                         .setControlData(controlData)
                         .setWorkerId("Worker-" + index)

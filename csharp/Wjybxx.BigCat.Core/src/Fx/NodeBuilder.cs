@@ -41,6 +41,7 @@ public abstract class NodeBuilder : WorkerBuilder
 
     protected NodeBuilder(EventLoopBuilder<WorkerEvent> delegated)
         : base(delegated) {
+        WorkerId = "Node";
     }
 
     public int NumberChildren {

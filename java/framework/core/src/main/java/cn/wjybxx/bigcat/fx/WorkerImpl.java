@@ -18,7 +18,6 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.concurrent.DisruptorEventLoop;
 import cn.wjybxx.concurrent.EventLoopBuilder;
-import cn.wjybxx.concurrent.IEventLoopAgent;
 import com.google.inject.Injector;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -40,7 +39,7 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
     private final WorkerControlData controlData;
 
     public WorkerImpl(DefaultWorkerBuilder builder) {
-        super(decorate(builder));
+        super(decorate(builder), false);
 
         final int nodeId = parent().nodeAddr().nodeId;
         final String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
@@ -49,14 +48,13 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
         this.controlData = builder.getControlData();
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.exportService(builder);
+
+        // 构造完成后再初始化模块
+        agent.inject(this, getConsumerId());
     }
 
     private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(DefaultWorkerBuilder builder) {
         FxUtils.createModules(builder);
-        if (builder.getAgent() == null) {
-            @SuppressWarnings("unchecked") IEventLoopAgent<WorkerEvent> agent = builder.getInjector().getInstance(IEventLoopAgent.class);
-            builder.setAgent(agent);
-        }
         return builder.getDelegated();
     }
 

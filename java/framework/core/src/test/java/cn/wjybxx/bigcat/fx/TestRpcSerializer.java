@@ -45,9 +45,9 @@ public class TestRpcSerializer implements RpcSerializer {
     public TestRpcSerializer() {
         List<Class<?>> codecClsList = scanCodecs();
         DsonConverterBuilder builder = new DsonConverterBuilder();
-        for (Class<?> cls : codecClsList) {
+        for (Class<?> codecType : codecClsList) {
             // 添加Codec
-            DsonCodec<?> dsonCodec = newInstance(cls);
+            DsonCodec<?> dsonCodec = newInstance(codecType);
             builder.addCodec(dsonCodec);
             // 添加TypeMeta
             TypeInfo encoderType = dsonCodec.getEncoderType();

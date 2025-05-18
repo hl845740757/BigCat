@@ -144,7 +144,8 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         }
         RpcMethodSpec unwrap = methodSpec.Unwrap();
         RpcRequest request = NewRequest(session, destAddr, in unwrap, RpcInvokeType.CALL);
-        IValuePromise<V> promise = ValuePromise<V>.Acquire(out int rid, worker); // 不可在Worker上阻塞
+        // 注意：我们创建的不是Promise<V>，而是Promise<object>；这是特意加的专项优化，以提高对象池的复用率
+        ValuePromise<object> promise = ValuePromise<object>.Acquire(out int rid, worker);
         // 先保留存根再发送
         {
             RpcRequestStub stub = NewStub(request, promise, rid, timeModule.Time + timeoutMs);
@@ -152,7 +153,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
             stubQueue.Add(stub);
         }
         rpcSupport.SendRequest(request); // send以后不可再访问request，可能已被回收
-        return promise.Future;
+        return ValueFuture<V>.UnsafeCreate(promise, rid);
     }
 
     public ValueFuture<object> Call(WorkerAddr destAddr, RpcMethodSpec methodSpec, long timeoutMs = 0) {
@@ -165,7 +166,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
             timeoutMs = this.timeoutMs;
         }
         RpcRequest request = NewRequest(session, destAddr, in methodSpec, RpcInvokeType.CALL);
-        IValuePromise<object> promise = ValuePromise<object>.Acquire(out int rid, worker); // 不可在Worker上阻塞
+        ValuePromise<object> promise = ValuePromise<object>.Acquire(out int rid, worker);
         // 先保留存根再发送
         {
             RpcRequestStub stub = NewStub(request, promise, rid, timeModule.Time + timeoutMs);
@@ -266,7 +267,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     private async ValueFuture SendAsyncResult0(long sessionId, WorkerAddr destAddr,
                                                long requestId, int serviceId, int methodId,
                                                ValueFuture future, bool sharable) {
-        TaskResult r = await future.GetAwaitable(worker, SuppressedTypes.All, TaskOptions.STAGE_TRY_INLINE);
+        TaskResult r = await future.GetAwaitable(worker, SuppressedTypes.All, TaskOptions.STAGE_TRY_INLINE, true);
         if (r.IsSucceeded) {
             SendResult(sessionId, destAddr, requestId, serviceId, methodId, r.Result, sharable);
         } else {
@@ -419,7 +420,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     #region factory
 
-    private RpcRequestStub NewStub(RpcRequest request, IValuePromise promise, int rid, long deadline) {
+    private RpcRequestStub NewStub(RpcRequest request, ValuePromise<object> promise, int rid, long deadline) {
         RpcRequestStub stub = stubPool.Acquire();
         stub.deadline = deadline;
         stub.rid = rid;

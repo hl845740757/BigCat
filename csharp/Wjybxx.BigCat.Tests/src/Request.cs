@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.Tests;
 
 [DsonSerializable]
 public class Request

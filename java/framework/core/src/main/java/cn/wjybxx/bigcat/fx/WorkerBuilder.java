@@ -202,7 +202,7 @@ public abstract class WorkerBuilder {
 
     // endregion
 
-    public static DefaultWorkerBuilder newDisruptorWorkerBuilder() {
+    public static DefaultWorkerBuilder newDefaultWorkerBuilder() {
         return new DefaultWorkerBuilder();
     }
 

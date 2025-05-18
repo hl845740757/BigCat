@@ -19,7 +19,7 @@
 using System;
 using NUnit.Framework;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.Tests;
 
 /// <summary>
 /// 

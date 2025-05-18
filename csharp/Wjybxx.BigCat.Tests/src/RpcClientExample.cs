@@ -28,7 +28,7 @@ using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using static Wjybxx.BigCat.Fx.ExtensibleService;
 
-namespace Commons.Tests;
+namespace Wjybxx.BigCat.Tests;
 
 [RpcService(ServiceId = 12)]
 public class RpcClientExample : EventLoopModule, ExtensibleService
@@ -66,24 +66,21 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
 
     #region logic
 
-    override
-        public void ResolveDependence() {
+    public override void ResolveDependence() {
         this.worker = (Worker)Entity;
         this.serverAddr = worker.Node.NodeAddr;
     }
 
-    override
-        public void Start() {
+    public override void Start() {
         regulator.Restart(timeModule.Time);
     }
 
-    override
-        public void Stop() {
+
+    public override void Stop() {
         Console.WriteLine("triggerCount: " + regulator.Count);
     }
-
-    override
-        public void Update() {
+    
+    public override void Update() {
         if (!regulator.IsReady(timeModule.Time)) {
             return;
         }
@@ -142,8 +139,9 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
         Console.WriteLine(response.ToString());
     }
 
+    private readonly long offsetMillis = (long)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
+
     private string CreateMessage(string msg) {
-        long offsetMillis = (long)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
         DateTime dateTime = DatetimeUtil.ToDateTime((long)regulator.LastUpdateTime - offsetMillis);
         return "time: " + dateTime.ToString("s") + " # " + msg;
     }

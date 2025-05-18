@@ -34,7 +34,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
     private volatile ISet<int> serviceIdSet = ImmutableLinkedHastSet<int>.Empty;
     private readonly WorkerControlData controlData;
 
-    public WorkerImpl(DefaultWorkerBuilder builder) : base(decorate(builder)) {
+    public WorkerImpl(DefaultWorkerBuilder builder) : base(decorate(builder), false) {
         int nodeId = builder.Parent.NodeAddr.nodeId;
         string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
         this.workerAddr = new WorkerAddr(nodeId, workerId);
@@ -42,9 +42,13 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
         this.controlData = builder.ControlData;
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.ExportService(builder);
+        
+        // 构造完成后再初始化模块
+        agent.Inject(this, ConsumerId);
     }
 
     private static DisruptorEventLoopBuilder<WorkerEvent> decorate(DefaultWorkerBuilder builder) {
+        FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
             builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
         }
@@ -63,7 +67,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
     public Node Node => (Node)base.Parent!;
 
 #if NET6_0_OR_GREATER
-    public override Node? Parent => null;
+    public override Node? Parent => (Node)base.Parent;
 
     public override Worker Select() {
         return this;
@@ -73,8 +77,6 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
         return this;
     }
 #else
-    Node? Worker.Parent => null;
-
     Worker Worker.Select() {
         return this;
     }

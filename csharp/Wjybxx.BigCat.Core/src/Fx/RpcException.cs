@@ -27,30 +27,26 @@ public abstract class RpcException : Exception
 {
     private readonly int errorCode;
 
-    protected RpcException(int errorCode) {
+    protected RpcException(int errorCode)
+        : base(FormatMessage(null, errorCode)) {
         this.errorCode = errorCode;
     }
 
     protected RpcException(int errorCode, string? message)
-        : base(message) {
+        : base(FormatMessage(message, errorCode)) {
         this.errorCode = errorCode;
     }
 
     protected RpcException(int errorCode, string? message, Exception? innerException)
-        : base(message, innerException) {
+        : base(FormatMessage(message, errorCode)) {
         this.errorCode = errorCode;
     }
 
+    private static string FormatMessage(string? message, int errorCode) {
+        if (string.IsNullOrWhiteSpace(message)) return "code: " + errorCode;
+        return "msg: " + message + ", code: " + errorCode;
+    }
+
     public int ErrorCode => errorCode;
-
-    /// <summary>
-    /// 是否是客户端异常
-    /// </summary>
-    public bool IsClientException => this is RpcClientException;
-
-    /// <summary>
-    /// 是否是服务端异常
-    /// </summary>
-    public bool IsServerException => this is RpcServerException;
 }
 }

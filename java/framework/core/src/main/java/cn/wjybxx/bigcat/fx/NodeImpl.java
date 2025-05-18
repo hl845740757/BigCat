@@ -48,7 +48,7 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
     private volatile Int2ObjectMap<ServiceInfo> serviceInfoMap = Int2ObjectMaps.emptyMap();
 
     public NodeImpl(DefaultNodeBuilder builder) {
-        super(decorate(builder));
+        super(decorate(builder), false);
 
         String workerId = Objects.requireNonNull(builder.getWorkerId(), "workerId");
         int nodeId = builder.getNodeId();
@@ -83,14 +83,13 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
         }
         readonlyChildren = List.of(children);
         chooser = chooserFactory.newChooser(children);
+
+        // 构造完成后再初始化模块
+        agent.inject(this, getConsumerId());
     }
 
     private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(DefaultNodeBuilder builder) {
         FxUtils.createModules(builder);
-        if (builder.getAgent() == null) {
-            @SuppressWarnings("unchecked") IEventLoopAgent<WorkerEvent> agent = builder.getInjector().getInstance(IEventLoopAgent.class);
-            builder.setAgent(agent);
-        }
         return builder.getDelegated();
     }
 

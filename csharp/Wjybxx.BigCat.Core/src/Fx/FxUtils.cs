@@ -24,6 +24,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
 
@@ -69,8 +70,27 @@ public static class FxUtils
     /** node发到worker的rpc结果 - 设置Promise，包含Response */
     public const int TYPE_NODE_WORKER_RESPONSE = 6;
 
+    /** 创建所有的模块 */
+    public static void CreateModules(WorkerBuilder builder) {
+        List<EventLoopModule> moduleList = new(builder.ModuleClasses.Count);
+        if (builder.Delegated.ModuleList.Count > 0) {
+            moduleList.AddRange(builder.Delegated.ModuleList);
+        }
+        IInjector injector = builder.Injector;
+        foreach (Type moduleClass in builder.ModuleClasses) {
+            EventLoopModule workerModule = (EventLoopModule)injector.GetInstance(moduleClass);
+            if (CollectionUtil.ContainsRef(moduleList, workerModule)) {
+                throw new ArgumentException("Duplicate Module: " + moduleClass);
+            }
+            moduleList.Add(workerModule);
+        }
+        foreach (EventLoopModule module in moduleList) {
+            builder.Delegated.AddModule(module);
+        }
+    }
+
     /// <summary>
-    /// 导出服务到
+    /// 导出服务到注册表
     /// </summary>
     public static void ExportService(WorkerBuilder builder) {
         IInjector injector = builder.Injector;
@@ -137,6 +157,9 @@ public static class FxUtils
                 if (parameters.Length > 0 && IsRpcContextType(parameters[0].ParameterType)) {
                     ctxType = parameters[0].ParameterType;
                     pType = parameters.Length > 1 ? parameters[1].ParameterType : null;
+                    if (ctxType.IsByRef) { // ref RpcContext
+                        ctxType = ctxType.GetElementType();
+                    }
                 } else {
                     ctxType = null;
                     pType = parameters.Length > 0 ? parameters[0].ParameterType : null;
@@ -165,16 +188,21 @@ public static class FxUtils
     }
 
     private static bool IsRpcContextType(Type type) {
+        if (type.IsByRef) { // ref RpcContext
+            type = type.GetElementType();
+        }
         return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(RpcContext<>);
     }
 
     private static bool IsFutureType(Type type) {
         if (!type.IsGenericType) {
             return type == typeof(ValueFuture) || type == typeof(Task)
+                                               || type == typeof(IFuture) // 可能就是Future类型
                                                || type.GetInterface(typeof(IFuture).FullName!) != null;
         }
         type = type.GetGenericTypeDefinition();
         return type == typeof(ValueFuture<>) || type == typeof(Task<>)
+                                             || type == typeof(IFuture<>)
                                              || type.GetInterface(typeof(IFuture<>).FullName!) != null;
     }
 }

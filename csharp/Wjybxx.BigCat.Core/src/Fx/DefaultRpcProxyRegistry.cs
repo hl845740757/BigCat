@@ -111,7 +111,11 @@ public class DefaultRpcProxyRegistry : RpcProxyRegistry
     }
 
     public HashSet<int> Export() {
-        return new HashSet<int>(proxyMap.Keys);
+        var result = new HashSet<int>(proxyMap.Count);
+        foreach (int key in proxyMap.Keys) {
+            result.Add(RpcMethodKey.ServiceIdOfKey(key));
+        }
+        return result;
     }
 
     public void Clear() {

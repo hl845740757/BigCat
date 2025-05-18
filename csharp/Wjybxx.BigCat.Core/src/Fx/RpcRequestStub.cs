@@ -37,7 +37,7 @@ public sealed class RpcRequestStub : IIndexedElement
     /// <summary>
     /// Call调用的Promise
     /// </summary>
-    public IValuePromise promise;
+    public ValuePromise<object> promise;
     /// <summary>
     /// <see cref="IValuePromise"/>的rid
     /// </summary>
