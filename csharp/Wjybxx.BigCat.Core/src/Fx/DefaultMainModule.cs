@@ -88,26 +88,27 @@ public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
 
     /// <summary>
     /// 实时的主循环耗时
+    /// 注意：我们这里需要使用Unix时间戳，而不是系统Tick对应的毫秒数
     /// </summary>
-    public long MainLoopElapsed => ObjectUtil.SystemTickMillis() - timeBeforeMainLoop;
+    public long MainLoopElapsed => DatetimeUtil.CurrentEpochMillis() - timeBeforeMainLoop;
 
     public void BeforeEventLoopStart() {
-        timeModule.Start(ObjectUtil.SystemTickMillis());
+        timeModule.Start(DatetimeUtil.CurrentEpochMillis());
         timeBeforeMainLoop = timeAfterMainLoop = timeModule.Time;
     }
 
     public bool CheckMainLoop(long threadTime) {
-        return ObjectUtil.SystemTickMillis() - timeModule.Time >= frameInterval;
+        return DatetimeUtil.CurrentEpochMillis() - timeModule.Time >= frameInterval;
     }
 
     public void BeforeMainLoop(long threadTime) {
-        long timeMillis = ObjectUtil.SystemTickMillis();
+        long timeMillis = DatetimeUtil.CurrentEpochMillis();
         timeModule.Update(timeMillis);
         timeBeforeMainLoop = timeMillis;
     }
 
     public void AfterMainLoop(long threadTime) {
-        timeAfterMainLoop = ObjectUtil.SystemTickMillis();
+        timeAfterMainLoop = DatetimeUtil.CurrentEpochMillis();
         mainLoopTimeSpan = timeAfterMainLoop - timeBeforeMainLoop;
     }
 

@@ -121,7 +121,6 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         rpcSupport.SendRequest(request);
     }
 
-
     public void Send<V>(WorkerAddr destAddr, RpcMethodSpec<V> methodSpec) {
         Debug.Assert(worker.InEventLoop());
         S2SSession? session = GetSessionOfNode(destAddr.nodeId);

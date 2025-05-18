@@ -79,7 +79,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     public override void Stop() {
         Console.WriteLine("triggerCount: " + regulator.Count);
     }
-    
+
     public override void Update() {
         if (!regulator.IsReady(timeModule.Time)) {
             return;
@@ -139,10 +139,12 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
         Console.WriteLine(response.ToString());
     }
 
-    private readonly long offsetMillis = (long)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
+    private readonly int offsetSeconds = (int)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
 
     private string CreateMessage(string msg) {
-        DateTime dateTime = DatetimeUtil.ToDateTime((long)regulator.LastUpdateTime - offsetMillis);
+        // Kind会影响ToString
+        DateTime dateTime = DatetimeUtil.ToDateTime((long)regulator.LastUpdateTime);
+        dateTime = new DateTime(dateTime.AddSeconds(offsetSeconds).Ticks, DateTimeKind.Unspecified);
         return "time: " + dateTime.ToString("s") + " # " + msg;
     }
 
