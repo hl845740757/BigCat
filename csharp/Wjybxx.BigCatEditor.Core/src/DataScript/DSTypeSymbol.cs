@@ -27,7 +27,7 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// </summary>
 public readonly struct DSTypeSymbol
 {
-    public readonly string symbol; // 暂不支持A.B.C
+    public readonly string symbol; // 暂不支持解析A.B.C
     public readonly string name;
     public readonly List<DSTypeSymbol>? typeArguments;
     public readonly bool isNullable;

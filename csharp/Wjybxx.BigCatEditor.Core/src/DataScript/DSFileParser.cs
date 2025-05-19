@@ -303,7 +303,7 @@ public class DSFileParser
     }
 
     /** 解析保留字段信息 */
-    private static void ParseRevered(DSNamedTypeElement typeElement, string content) {
+    private static void ParseRevered(DSNamedType namedType, string content) {
         EnsureEndWithSemicolon(content);
         // 不可在同一行reserved声明中同时声明域名字和tag number。
         // reversed 1, 2, 3 to 10;
@@ -314,19 +314,19 @@ public class DSFileParser
         for (int idx = 0; idx < values.Length; idx++) {
             string value = values[idx].Trim();
             if (value[0] == '"') {
-                typeElement.AddReservedName(Util.Unquote(value));
+                namedType.AddReservedName(Util.Unquote(value));
                 continue;
             }
             // 判断是否有to关键字 -- 是否是范围
             int toIdx = value.IndexOf("to", StringComparison.Ordinal);
             if (toIdx < 0) {
                 int number = int.Parse(value);
-                typeElement.AddReservedNumber(number);
+                namedType.AddReservedNumber(number);
                 continue;
             }
             int start = int.Parse(value.Substring2(0, toIdx).Trim());
             int end = int.Parse(value.Substring(toIdx + 2).Trim()); // 跳过to
-            typeElement.AddReservedNumber(start, end);
+            namedType.AddReservedNumber(start, end);
         }
     }
 
@@ -440,19 +440,19 @@ public class DSFileParser
         Context context;
         switch (contextType) {
             case DSContextType.Class: {
-                context = new Context(parent, DSContextType.Class, DSNamedTypeElement.NewClassType(className, typeParameters,
+                context = new Context(parent, DSContextType.Class, DSNamedType.NewClassType(className, typeParameters,
                     baseTypeSymbol));
                 break;
             }
             case DSContextType.Struct: {
                 Debug.Assert(baseTypeSymbol == null);
-                context = new Context(parent, DSContextType.Struct, DSNamedTypeElement.NewStructType(className, typeParameters));
+                context = new Context(parent, DSContextType.Struct, DSNamedType.NewStructType(className, typeParameters));
                 break;
             }
             case DSContextType.Enum: {
                 Debug.Assert(baseTypeSymbol == null);
                 Debug.Assert(typeParameters.Count == 0);
-                context = new Context(parent, DSContextType.Enum, DSNamedTypeElement.NewEnumType(className));
+                context = new Context(parent, DSContextType.Enum, DSNamedType.NewEnumType(className));
                 break;
             }
             default: throw new AssertionError();
@@ -627,8 +627,8 @@ public class DSFileParser
             return (DSFile)container;
         }
 
-        public DSNamedTypeElement AsTypeElement() {
-            return (DSNamedTypeElement)container;
+        public DSNamedType AsTypeElement() {
+            return (DSNamedType)container;
         }
 
         /** 添加注释行 */

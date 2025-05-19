@@ -25,14 +25,14 @@ public static class DSUtil
     /// <summary>
     /// 将继承打平
     /// </summary>
-    /// <param name="typeElement">当前类型</param>
+    /// <param name="namedType">当前类型</param>
     /// <param name="reverse">超类是否在前</param>
     /// <returns></returns>
-    public static List<DSNamedTypeElement> FlatInherit(DSNamedTypeElement typeElement, bool reverse = true) {
-        List<DSNamedTypeElement> result = new List<DSNamedTypeElement>();
-        result.Add(typeElement);
-        while ((typeElement = typeElement.BaseType) != null) {
-            result.Add(typeElement);
+    public static List<DSNamedType> FlatInherit(DSNamedType namedType, bool reverse = true) {
+        List<DSNamedType> result = new List<DSNamedType>();
+        result.Add(namedType);
+        while ((namedType = namedType.BaseType) != null) {
+            result.Add(namedType);
         }
         if (reverse) {
             result.Reverse();
@@ -72,8 +72,8 @@ public static class DSUtil
     /// </summary>
     /// <param name="root"></param>
     /// <returns></returns>
-    public static List<DSNamedTypeElement> GetAllEnclosedTypes(DSElement root) {
-        List<DSNamedTypeElement> result = new List<DSNamedTypeElement>();
+    public static List<DSNamedType> GetAllEnclosedTypes(DSElement root) {
+        List<DSNamedType> result = new List<DSNamedType>();
         GetAllEnclosedTypes(root, result);
         return result;
     }
@@ -84,12 +84,12 @@ public static class DSUtil
     /// </summary>
     /// <param name="current"></param>
     /// <param name="outList"></param>
-    public static void GetAllEnclosedTypes(DSElement current, List<DSNamedTypeElement> outList) {
+    public static void GetAllEnclosedTypes(DSElement current, List<DSNamedType> outList) {
         foreach (var element in current.EnclosedElements) {
             if (!element.IsTypeElement) {
                 continue;
             }
-            outList.Add((DSNamedTypeElement)element);
+            outList.Add((DSNamedType)element);
             if (element.EnclosedElements.Count > 0) {
                 GetAllEnclosedTypes(element, outList);
             }
@@ -101,7 +101,7 @@ public static class DSUtil
     /// </summary>
     public static bool HasNonRuntimeTypeArgument(this DSTypeElement typeElement) {
         if (typeElement.TypeKind == DSTypeKind.TypeParameter) return true;
-        if (typeElement is DSNamedTypeElement namedTypeElement) {
+        if (typeElement is DSNamedType namedTypeElement) {
             if (namedTypeElement.TypeParameters.Count > 0) return true;
             foreach (DSTypeElement typeArgument in namedTypeElement.TypeArguments) {
                 if (HasNonRuntimeTypeArgument(typeArgument)) return true;

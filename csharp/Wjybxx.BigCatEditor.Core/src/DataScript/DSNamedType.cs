@@ -55,7 +55,7 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// <h3>关于语法</h3>
 /// 不要在'{'和'}'所在行声明字段等，内容必须和开始和结束Token字符分离 -- 降低解析难度。
 /// </summary>
-public sealed class DSNamedTypeElement : DSTypeElement
+public sealed class DSNamedType : DSTypeElement
 {
 #nullable disable
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     /// <summary>
     /// 基类的类型引用 -- 类型是延迟解析的
     /// </summary>
-    private DSNamedTypeElement? _baseType;
+    private DSNamedType? _baseType;
 
     /// <summary>
     /// 泛型形参列表，只有泛型定义类有值。
@@ -91,7 +91,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     /// 泛型类的原始定义类
     /// 当构造泛型时，保留指向的原型，泛型定义类则返回自身；
     /// </summary>
-    private readonly DSNamedTypeElement _originDefine;
+    private readonly DSNamedType _originDefine;
 #nullable enable
 
     /// <summary>
@@ -111,10 +111,10 @@ public sealed class DSNamedTypeElement : DSTypeElement
     /// <param name="className">类型名缓存</param>
     /// <param name="typeParameters">泛型变量</param>
     /// <param name="baseTypeSymbol">基类类型符号</param>
-    private DSNamedTypeElement(DSElementKind elementKind, DSTypeKind typeKind,
-                               ClassName className,
-                               IList<DSTypeParameter> typeParameters,
-                               string? baseTypeSymbol)
+    private DSNamedType(DSElementKind elementKind, DSTypeKind typeKind,
+                        ClassName className,
+                        IList<DSTypeParameter> typeParameters,
+                        string? baseTypeSymbol)
         : base(className.simpleName, className) {
         _elementKind = elementKind;
         _typeKind = typeKind;
@@ -125,7 +125,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     }
 
     /** 用于构造泛型 -- 内部元素的处理由外部克隆再添加 */
-    internal DSNamedTypeElement(DSNamedTypeElement originDefine, ClassName className, List<DSTypeElement> typeArguments)
+    internal DSNamedType(DSNamedType originDefine, ClassName className, List<DSTypeElement> typeArguments)
         : base(className.simpleName, className) {
         _originDefine = originDefine;
         _baseTypeSymbol = null;
@@ -138,22 +138,22 @@ public sealed class DSNamedTypeElement : DSTypeElement
 
     #region factory
 
-    public static DSNamedTypeElement NewClassType(ClassName className, IList<DSTypeParameter>? typeParameters = null, string? baseTypeSymbol = null) {
+    public static DSNamedType NewClassType(ClassName className, IList<DSTypeParameter>? typeParameters = null, string? baseTypeSymbol = null) {
         if (typeParameters == null) {
             typeParameters = CreateTypeParameters(className);
         }
-        return new DSNamedTypeElement(DSElementKind.Class, DSTypeKind.Class, className, typeParameters, baseTypeSymbol);
+        return new DSNamedType(DSElementKind.Class, DSTypeKind.Class, className, typeParameters, baseTypeSymbol);
     }
 
-    public static DSNamedTypeElement NewStructType(ClassName className, IList<DSTypeParameter>? typeParameters = null) {
+    public static DSNamedType NewStructType(ClassName className, IList<DSTypeParameter>? typeParameters = null) {
         if (typeParameters == null) {
             typeParameters = CreateTypeParameters(className);
         }
-        return new DSNamedTypeElement(DSElementKind.Strut, DSTypeKind.Struct, className, typeParameters, null);
+        return new DSNamedType(DSElementKind.Strut, DSTypeKind.Struct, className, typeParameters, null);
     }
 
-    public static DSNamedTypeElement NewEnumType(ClassName className) {
-        return new DSNamedTypeElement(DSElementKind.Enum, DSTypeKind.Enum, className, ImmutableList<DSTypeParameter>.Empty, null);
+    public static DSNamedType NewEnumType(ClassName className) {
+        return new DSNamedType(DSElementKind.Enum, DSTypeKind.Enum, className, ImmutableList<DSTypeParameter>.Empty, null);
     }
 
     /** 根据name中的泛型变量构建类型参数 */
@@ -189,7 +189,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     /// 获取类型的原始定义：
     /// 如果当前是泛型类，则返回泛型类定义；否则返回自身；用于获取类型的原始注解等数据。
     /// </summary>
-    public override DSNamedTypeElement OriginDefine => _originDefine != null ? _originDefine : this;
+    public override DSNamedType OriginDefine => _originDefine != null ? _originDefine : this;
 
     /// <summary>
     /// 是否是泛型定义类
@@ -227,7 +227,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
         }
         return null;
     }
-    
+
     /// <summary>
     /// 获取所有的字段，默认超类字段在前
     /// </summary>
@@ -240,7 +240,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
                 .ToList();
         }
         List<DSField> result = new List<DSField>();
-        foreach (DSNamedTypeElement typeElement in DSUtil.FlatInherit(this)) {
+        foreach (DSNamedType typeElement in DSUtil.FlatInherit(this)) {
             foreach (DSElement element in typeElement.EnclosedElements) {
                 if (element.Kind == DSElementKind.Field) {
                     result.Add((DSField)element);
@@ -306,6 +306,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     #endregion
 
 #nullable disable
+
     #region props
 
     /// <summary>
@@ -317,7 +318,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     /// <summary>
     /// 基类的类型引用，未显式声明的情况下为null
     /// </summary>
-    public DSNamedTypeElement? BaseType {
+    public DSNamedType? BaseType {
         get => _baseType;
         set => _baseType = value;
     }
@@ -331,7 +332,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
 
     #region equals
 
-    private bool Equals(DSNamedTypeElement other) {
+    private bool Equals(DSNamedType other) {
         return _typeName.Equals(other._typeName)
                && _elementKind == other._elementKind
                && _typeKind == other._typeKind
@@ -340,7 +341,7 @@ public sealed class DSNamedTypeElement : DSTypeElement
     }
 
     public override bool Equals(object? obj) {
-        return ReferenceEquals(this, obj) || obj is DSNamedTypeElement other && Equals(other);
+        return ReferenceEquals(this, obj) || obj is DSNamedType other && Equals(other);
     }
 
     public override int GetHashCode() {

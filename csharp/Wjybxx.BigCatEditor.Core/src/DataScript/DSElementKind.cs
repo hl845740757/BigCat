@@ -66,7 +66,7 @@ public enum DSElementKind
     /// 泛型参数
     /// </summary>
     TypeParameter = 7,
-    
+
     // Service
     // Function
 }

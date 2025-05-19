@@ -42,12 +42,12 @@ public class DSCompilerTest
         // 解决依赖关系
         repository.Build();
 
-        DSNamedTypeElement builtinType = repository.GetBuiltinType(DSKeywords.TYPE_INT32);
+        DSNamedType builtinType = repository.GetBuiltinType(DSKeywords.TYPE_INT32);
         repository.MakeNullableType(builtinType);
 
-        DSNamedTypeElement namedTypeElement = repository.FindType("GenericChildBean2");
-        Assert.NotNull(namedTypeElement);
-        DSField keyField = namedTypeElement.GetField("key");
+        DSNamedType namedType = repository.FindType("GenericChildBean2");
+        Assert.NotNull(namedType);
+        DSField keyField = namedType.GetField("key");
         Assert.NotNull(keyField);
         Console.WriteLine(keyField.Type.TypeName); // List`1[string]
 

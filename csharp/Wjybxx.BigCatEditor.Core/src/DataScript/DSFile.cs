@@ -62,9 +62,9 @@ public class DSFile : DSElement
     /// 获取所有的顶层类型
     /// </summary>
     /// <returns></returns>
-    public List<DSNamedTypeElement> GetTypes() {
+    public List<DSNamedType> GetTypes() {
         return EnclosedElements.Where(e => e.Kind == DSElementKind.Class)
-            .Cast<DSNamedTypeElement>()
+            .Cast<DSNamedType>()
             .ToList();
     }
 
@@ -72,9 +72,9 @@ public class DSFile : DSElement
     /// 获取所有的顶层类
     /// </summary>
     /// <returns></returns>
-    public List<DSNamedTypeElement> GetClasses() {
+    public List<DSNamedType> GetClasses() {
         return EnclosedElements.Where(e => e.Kind == DSElementKind.Class)
-            .Cast<DSNamedTypeElement>()
+            .Cast<DSNamedType>()
             .ToList();
     }
 
@@ -82,9 +82,9 @@ public class DSFile : DSElement
     /// 获取所有的顶层结构体
     /// </summary>
     /// <returns></returns>
-    public List<DSNamedTypeElement> GetStructs() {
+    public List<DSNamedType> GetStructs() {
         return EnclosedElements.Where(e => e.Kind == DSElementKind.Strut)
-            .Cast<DSNamedTypeElement>()
+            .Cast<DSNamedType>()
             .ToList();
     }
 
@@ -92,9 +92,9 @@ public class DSFile : DSElement
     /// 获取所有的顶层枚举
     /// </summary>
     /// <returns></returns>
-    public List<DSNamedTypeElement> GetEnums() {
+    public List<DSNamedType> GetEnums() {
         return EnclosedElements.Where(e => e.Kind == DSElementKind.Enum)
-            .Cast<DSNamedTypeElement>()
+            .Cast<DSNamedType>()
             .ToList();
     }
 
@@ -108,6 +108,7 @@ public class DSFile : DSElement
             .ToList();
     }
 #nullable disable
+
     #region props
 
     public override DSElementKind Kind => DSElementKind.File;

@@ -96,11 +96,17 @@ public class RpcProxyGenerator
             builder.codeBuilder.AddStatement("return new ($L, $L, null, true)",
                 serviceId, processor.GetMethodId(method, annoValueMap));
         } else {
+            // C# 额外逻辑：sharable参数追加到方法参数列表
+            builder.AddParameter(ParameterSpec.NewBuilder(TypeName.BOOL, "sharable")
+                .DefaultValue("$L", processor.IsArgSharable(method, annoValueMap))
+                .Build());
+
             // 1个参数(serviceId, methodId, parameter, sharable)
-            builder.codeBuilder.AddStatement("return new ($L, $L, $L, $L)",
+            builder.codeBuilder.AddStatement("return new ($L, $L, $L, sharable)",
                 serviceId, processor.GetMethodId(method, annoValueMap),
-                parameters[0].Name, processor.IsArgSharable(method, annoValueMap));
+                parameters[0].Name);
         }
+
         // 添加一个引用，方便定位 -- 不完全准确，但胜过没有
         builder.document.Add("<see cref=\"$T.$L\"/>", serviceTypeName, method.Name);
         return builder.Build();

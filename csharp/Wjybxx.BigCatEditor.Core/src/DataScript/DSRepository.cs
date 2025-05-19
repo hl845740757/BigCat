@@ -45,7 +45,7 @@ public class DSRepository
     ///
     /// 跨文件访问时，只可访问其它文件的顶层类型
     /// </summary>
-    private readonly LinkedDictionary<StringPair, DSNamedTypeElement> topTypeMap = new();
+    private readonly LinkedDictionary<StringPair, DSNamedType> topTypeMap = new();
     /// <summary>
     /// 所有的实例映射
     /// key为[fileSimpleName, elementName]
@@ -62,11 +62,11 @@ public class DSRepository
     /// <summary>
     /// 内建类型字典
     /// </summary>
-    private readonly LinkedDictionary<string, DSNamedTypeElement> builtinTypeMap = new();
+    private readonly LinkedDictionary<string, DSNamedType> builtinTypeMap = new();
     /// <summary>
     /// 类型解析缓存(含内建类型)
     /// </summary>
-    private readonly Dictionary<ClassName, DSNamedTypeElement> resolveCache = new();
+    private readonly Dictionary<ClassName, DSNamedType> resolveCache = new();
 
     public DSRepository() {
         AddBuiltinTypes();
@@ -77,19 +77,19 @@ public class DSRepository
 
     private void AddBuiltinTypes() {
         // 原子类型
-        builtinTypeMap[DSKeywords.TYPE_INT32] = DSNamedTypeElement.NewStructType(DSKeywords.TYPE_NAME_INT32);
-        builtinTypeMap[DSKeywords.TYPE_INT64] = DSNamedTypeElement.NewStructType(DSKeywords.TYPE_NAME_INT64);
-        builtinTypeMap[DSKeywords.TYPE_FLOAT] = DSNamedTypeElement.NewStructType(DSKeywords.TYPE_NAME_FLOAT);
-        builtinTypeMap[DSKeywords.TYPE_DOUBLE] = DSNamedTypeElement.NewStructType(DSKeywords.TYPE_NAME_DOUBLE);
-        builtinTypeMap[DSKeywords.TYPE_BOOL] = DSNamedTypeElement.NewStructType(DSKeywords.TYPE_NAME_BOOL);
-        builtinTypeMap[DSKeywords.TYPE_STRING] = DSNamedTypeElement.NewClassType(DSKeywords.TYPE_NAME_STRING);
-        builtinTypeMap[DSKeywords.TYPE_BYTES] = DSNamedTypeElement.NewClassType(DSKeywords.TYPE_NAME_BYTES);
+        builtinTypeMap[DSKeywords.TYPE_INT32] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32);
+        builtinTypeMap[DSKeywords.TYPE_INT64] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64);
+        builtinTypeMap[DSKeywords.TYPE_FLOAT] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT);
+        builtinTypeMap[DSKeywords.TYPE_DOUBLE] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE);
+        builtinTypeMap[DSKeywords.TYPE_BOOL] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL);
+        builtinTypeMap[DSKeywords.TYPE_STRING] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING);
+        builtinTypeMap[DSKeywords.TYPE_BYTES] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES);
         // 基础容器
-        builtinTypeMap[DSKeywords.TYPE_LIST] = DSNamedTypeElement.NewClassType(DSKeywords.TYPE_NAME_LIST);
-        builtinTypeMap[DSKeywords.TYPE_MAP] = DSNamedTypeElement.NewClassType(DSKeywords.TYPE_NAME_MAP);
+        builtinTypeMap[DSKeywords.TYPE_LIST] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST);
+        builtinTypeMap[DSKeywords.TYPE_MAP] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP);
         // 装箱类型
-        builtinTypeMap[DSKeywords.TYPE_OBJECT] = DSNamedTypeElement.NewClassType(DSKeywords.TYPE_NAME_OBJECT);
-        builtinTypeMap[DSKeywords.TYPE_NULLABLE] = DSNamedTypeElement.NewStructType(DSKeywords.TYPE_NAME_NULLABLE);
+        builtinTypeMap[DSKeywords.TYPE_OBJECT] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT);
+        builtinTypeMap[DSKeywords.TYPE_NULLABLE] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE);
     }
 
     /// <summary>
@@ -112,13 +112,13 @@ public class DSRepository
             if (isInst) {
                 instanceMap.Add(key, (DSInst)element);
             } else {
-                topTypeMap.Add(key, (DSNamedTypeElement)element);
+                topTypeMap.Add(key, (DSNamedType)element);
             }
             IndexKey indexKey = new IndexKey(isInst, element.SimpleName);
             indexedTopElementMap.TryAdd(indexKey, element);
         }
         // 添加已解析缓存
-        foreach (DSNamedTypeElement namedTypeElement in DSUtil.GetAllEnclosedTypes(pbFile)) {
+        foreach (DSNamedType namedTypeElement in DSUtil.GetAllEnclosedTypes(pbFile)) {
             resolveCache.Add(namedTypeElement.TypeName, namedTypeElement);
         }
         return this;
@@ -159,9 +159,9 @@ public class DSRepository
     /// <param name="fileSimpleName">文件简单名</param>
     /// <param name="elementName">顶层元素名</param>
     /// <returns></returns>
-    public DSNamedTypeElement? GetType(string fileSimpleName, string elementName) {
+    public DSNamedType? GetType(string fileSimpleName, string elementName) {
         var key = new StringPair(fileSimpleName, elementName);
-        topTypeMap.TryGetValue(key, out DSNamedTypeElement element);
+        topTypeMap.TryGetValue(key, out DSNamedType element);
         return element;
     }
 
@@ -171,10 +171,10 @@ public class DSRepository
     /// </summary>
     /// <param name="elementName"></param>
     /// <returns></returns>
-    public DSNamedTypeElement? FindType(string elementName) {
+    public DSNamedType? FindType(string elementName) {
         IndexKey key = new IndexKey(isInst: false, elementName);
         indexedTopElementMap.TryGetValue(key, out DSElement element);
-        return element as DSNamedTypeElement;
+        return element as DSNamedType;
     }
 
     /// <summary>
@@ -212,8 +212,8 @@ public class DSRepository
     /// <summary>
     /// 获取内建类型
     /// </summary>
-    public DSNamedTypeElement GetBuiltinType(string typeSymbol) {
-        if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedTypeElement result)) {
+    public DSNamedType GetBuiltinType(string typeSymbol) {
+        if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedType result)) {
             return result;
         }
         throw new ArgumentException("invalid typeSymbol: " + typeSymbol);
@@ -224,8 +224,8 @@ public class DSRepository
     /// </summary>
     /// <param name="typeArgument"></param>
     /// <returns></returns>
-    public DSNamedTypeElement MakeNullableType(DSTypeElement typeArgument) {
-        DSNamedTypeElement nullableType = GetBuiltinType(DSKeywords.TYPE_NULLABLE);
+    public DSNamedType MakeNullableType(DSTypeElement typeArgument) {
+        DSNamedType nullableType = GetBuiltinType(DSKeywords.TYPE_NULLABLE);
         return MakeGenericType(nullableType, new List<DSTypeElement>() { typeArgument });
     }
 
@@ -235,30 +235,30 @@ public class DSRepository
     /// Q：为什么定义在这里？
     /// A：因为符号解析需要由repository处理。
     /// </summary>
-    /// <param name="typeElement">要处理的泛型</param>
+    /// <param name="namedType">要处理的泛型</param>
     /// <param name="typeArguments">泛型实参</param>
     /// <returns></returns>
-    public DSNamedTypeElement MakeGenericType(DSNamedTypeElement typeElement, List<DSTypeElement> typeArguments) {
-        if (!typeElement.IsGenericTypeDefinition) throw new InvalidOperationException();
-        if (typeArguments.Count != typeElement.TypeParameters.Count) {
+    public DSNamedType MakeGenericType(DSNamedType namedType, List<DSTypeElement> typeArguments) {
+        if (!namedType.IsGenericTypeDefinition) throw new InvalidOperationException();
+        if (typeArguments.Count != namedType.TypeParameters.Count) {
             throw new ArgumentException("typeArguments.Length != _typeParameters.Count");
         }
         // 避免每个符号都创建一个Type
-        ClassName className = MakeGenericClassName(typeElement.TypeName, typeArguments);
-        if (resolveCache.TryGetValue(className, out DSNamedTypeElement result)) {
+        ClassName className = MakeGenericClassName(namedType.TypeName, typeArguments);
+        if (resolveCache.TryGetValue(className, out DSNamedType result)) {
             return result;
         }
-        result = new DSNamedTypeElement(typeElement, className, typeArguments);
+        result = new DSNamedType(namedType, className, typeArguments);
         resolveCache.Add(className, result);
 
         // 克隆字段
-        foreach (DSField field in typeElement.GetFields(false)) {
+        foreach (DSField field in namedType.GetFields(false)) {
             DSTypeElement fieldType = ResolveTypeSymbol(result, field.TypeSymbol);
             result.AddEnclosedElement(new DSField(field, fieldType));
         }
         // 递归构造超类
-        if (typeElement.BaseTypeSymbol != null) {
-            result.BaseType = (DSNamedTypeElement)ResolveTypeSymbol(result, typeElement.BaseTypeSymbol);
+        if (namedType.BaseTypeSymbol != null) {
+            result.BaseType = (DSNamedType)ResolveTypeSymbol(result, namedType.BaseTypeSymbol);
         }
         return result;
     }
@@ -338,9 +338,9 @@ public class DSRepository
     /// </summary>
     /// <param name="file"></param>
     private void ResolveTypeSymbols(DSFile file) {
-        foreach (DSNamedTypeElement typeElement in DSUtil.GetAllEnclosedTypes(file)) {
+        foreach (DSNamedType typeElement in DSUtil.GetAllEnclosedTypes(file)) {
             if (typeElement.BaseTypeSymbol != null && typeElement.BaseType == null) {
-                typeElement.BaseType = (DSNamedTypeElement)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);
+                typeElement.BaseType = (DSNamedType)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);
                 continue;
             }
             foreach (DSField field in typeElement.GetFields(false)) {
@@ -421,12 +421,12 @@ public class DSRepository
     /// <param name="scopeEntry">作用域入口，包含必要的泛型参数</param>
     /// <param name="typeSymbol">引用的类型符号</param>
     /// <returns></returns>
-    public DSTypeElement ResolveTypeSymbol(DSNamedTypeElement scopeEntry, string typeSymbol) {
+    public DSTypeElement ResolveTypeSymbol(DSNamedType scopeEntry, string typeSymbol) {
         typeSymbol = ObjectUtil.DeleteWhitespace(typeSymbol);
         return ResolveTypeSymbol(scopeEntry, DSTypeSymbol.Parse(typeSymbol));
     }
 
-    private DSTypeElement ResolveTypeSymbol(DSNamedTypeElement scopeEntry, DSTypeSymbol typeSymbol) {
+    private DSTypeElement ResolveTypeSymbol(DSNamedType scopeEntry, DSTypeSymbol typeSymbol) {
         DSTypeElement typeElement = FindType(scopeEntry, typeSymbol.name);
         if (typeElement == null) {
             throw new InvalidOperationException("cant resolve typeSymbol: " + typeSymbol.symbol);
@@ -451,8 +451,8 @@ public class DSRepository
             DSTypeElement typeArgument = ResolveTypeSymbol(scopeEntry, typeArgumentSymbol);
             typeArguments.Add(typeArgument);
         }
-        DSNamedTypeElement namedTypeElement = (DSNamedTypeElement)typeElement;
-        return MakeGenericType(namedTypeElement, typeArguments);
+        DSNamedType namedType = (DSNamedType)typeElement;
+        return MakeGenericType(namedType, typeArguments);
     }
 
     /// <summary>
@@ -465,10 +465,10 @@ public class DSRepository
     /// <param name="scopeEntry">作用域的入口，还用于解析泛型参数</param>
     /// <param name="typeSymbol">引用的类型符号，非泛型类型，也不是非空类型</param>
     /// <returns>可能是泛型参数</returns>
-    private DSTypeElement? FindType(DSNamedTypeElement scopeEntry, string typeSymbol) {
+    private DSTypeElement? FindType(DSNamedType scopeEntry, string typeSymbol) {
         Debug.Assert(!typeSymbol.Contains('?'));
         // 查询内建类型 -- 基础类型使用频率最高
-        if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedTypeElement r)) {
+        if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedType r)) {
             return r;
         }
         // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
@@ -479,9 +479,9 @@ public class DSRepository
             }
         }
         // 在当前文件内部查询
-        List<DSNamedTypeElement> accessibleTypes = new List<DSNamedTypeElement>();
+        List<DSNamedType> accessibleTypes = new List<DSNamedType>();
         CollectAccessibleTypes(scopeEntry, accessibleTypes);
-        foreach (DSNamedTypeElement typeElement in accessibleTypes) {
+        foreach (DSNamedType typeElement in accessibleTypes) {
             if (typeElement.SimpleName == typeSymbol) {
                 return typeElement;
             }
@@ -492,7 +492,7 @@ public class DSRepository
             return null;
         }
         foreach (string resolvedImport in enclosingFile.ResolvedImports) {
-            DSNamedTypeElement? typeElement = GetType(resolvedImport, typeSymbol);
+            DSNamedType? typeElement = GetType(resolvedImport, typeSymbol);
             if (typeElement != null) return typeElement;
         }
         // 查找失败
@@ -504,7 +504,7 @@ public class DSRepository
     /// </summary>
     /// <param name="scopeEntry">作用域的入口</param>
     /// <param name="outList"></param>
-    private void CollectAccessibleTypes(DSNamedTypeElement scopeEntry, List<DSNamedTypeElement> outList) {
+    private void CollectAccessibleTypes(DSNamedType scopeEntry, List<DSNamedType> outList) {
         // 只有原始定义类才可以访问Elements
         scopeEntry = scopeEntry.OriginDefine;
 
@@ -513,13 +513,13 @@ public class DSRepository
         // 当前类的平级类（同文件夹）
         foreach (DSElement peerElement in scopeEntry.EnclosingElement.EnclosedElements) {
             if (peerElement.IsTypeElement && !ReferenceEquals(peerElement, scopeEntry)) {
-                outList.Add((DSNamedTypeElement)peerElement);
+                outList.Add((DSNamedType)peerElement);
             }
         }
         // 直系祖先节点（不访问祖先的兄弟节点）
         var enclosingElement = scopeEntry.EnclosingElement;
         while (enclosingElement != null && enclosingElement.IsTypeElement) {
-            outList.Add((DSNamedTypeElement)enclosingElement);
+            outList.Add((DSNamedType)enclosingElement);
             enclosingElement = enclosingElement.EnclosingElement;
         }
     }
