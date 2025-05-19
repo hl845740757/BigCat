@@ -79,7 +79,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
         }
         readonlyChildren = children.ToImmutableList2();
         chooser = chooserFactory.NewChooser(children);
-        
+
         // 构造完成后再初始化模块
         agent.Inject(this, ConsumerId);
     }

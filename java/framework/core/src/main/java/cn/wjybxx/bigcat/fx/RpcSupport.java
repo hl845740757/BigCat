@@ -361,7 +361,11 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
         // watcher需要在IO线程测试
         Key key = new Key(response.getSessionId(), response.getRequestId());
         IPromise<RpcResult> watcher = watcherMap.remove(key);
-        if (watcher != null) { // 同步调用结果
+        if (watcher != null) {
+            // 同步调用的结果在IO线程反序列化
+            if (response.isBytes() && !decodeResult(response)) {
+                response.setFailed(RpcErrorCodes.LOCAL_DESERIALIZE_FAILED, "data error");
+            }
             RpcResult result = new RpcResult(response.getErrorCode(), response.getData());
             watcher.trySetResult(result);
             return;

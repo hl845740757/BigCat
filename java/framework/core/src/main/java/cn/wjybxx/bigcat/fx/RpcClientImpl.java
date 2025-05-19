@@ -21,7 +21,7 @@ import cn.wjybxx.concurrent.IFuture;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 1.该接口和{@link RpcClient}分离，属于关注点分离。
+ * 1.该接口和{@link RpcClient}分离，属于关注点分离；以允许{@code PlayerSessionMgr}也实现该接口。
  * 2.该接口不继承{@link RpcClient}，是因为{@link RpcClient}的接口是针对服务器通信的，而该接口的方法也适用和玩家之间通信。
  * 3.这里的接口由{@link RpcContext}调用，
  * 4.我们这里不再封装额外的方法对象来传输参数，因为用户基本不会手动调用这里的方法。

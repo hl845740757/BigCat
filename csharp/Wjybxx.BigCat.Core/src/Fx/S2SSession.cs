@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Wjybxx.BigCat.Fx
 {
@@ -124,6 +125,7 @@ public sealed class S2SSession
 
     #region internal
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal long NextRequestId() {
         return ++sequencer;
     }

@@ -119,7 +119,7 @@ public interface RpcProxyRegistry
     /// <param name="methodId"></param>
     /// <returns></returns>
     bool IsDisabled(int serviceId, int methodId);
-    
+
     /// <summary>
     /// 导出注册表中包含的服务
     /// </summary>

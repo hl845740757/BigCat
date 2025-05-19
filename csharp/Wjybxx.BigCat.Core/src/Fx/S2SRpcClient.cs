@@ -39,7 +39,6 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     private TimeModule timeModule;
     private RpcProxyRegistry proxyRegistry;
     private S2SSessionMgr sessionMgr;
-    private RpcMethodRegistry methodRegistry;
     private RpcSupport rpcSupport;
 
     /** rpc默认超时时间 */
@@ -63,7 +62,6 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         // Node上的组件
         Node node = worker.Node;
         this.rpcSupport = node.Injector.GetInstance<RpcSupport>();
-        this.methodRegistry = node.Injector.GetInstance<RpcMethodRegistry>();
         // 创建虚拟Session
         this.localSession = new S2SSession(0, selfAddr.nodeId);
     }
@@ -100,11 +98,13 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private S2SSession? GetSession(long sessionId) {
         if (sessionId == 0) return localSession;
         return sessionMgr.GetSession(sessionId);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private S2SSession? GetSessionOfNode(int nodeId) {
         return nodeId == selfAddr.nodeId ? localSession : sessionMgr.GetSessionOfNode(nodeId);
     }

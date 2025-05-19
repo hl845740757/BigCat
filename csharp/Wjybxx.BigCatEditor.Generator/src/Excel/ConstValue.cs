@@ -65,19 +65,6 @@ public readonly struct ConstValue
     /// 
     /// </summary>
     /// <param name="name">常量名</param>
-    /// <param name="numValue">bool值</param>
-    /// <param name="comment">注释</param>
-    public ConstValue(string name, bool numValue, string? comment) : this() {
-        this.name = name;
-        this.numValue = numValue ? 1 : 0;
-        this.comment = comment;
-        this.kind = ConstKind.Bool;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="name">常量名</param>
     /// <param name="strValue">字符串值</param>
     /// <param name="comment">注释</param>
     public ConstValue(string name, string? strValue, string? comment) : this() {
@@ -85,6 +72,19 @@ public readonly struct ConstValue
         this.strValue = strValue;
         this.comment = comment;
         this.kind = ConstKind.String;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="name">常量名</param>
+    /// <param name="boolValue">bool值</param>
+    /// <param name="comment">注释</param>
+    public ConstValue(string name, bool boolValue, string? comment) : this() {
+        this.name = name;
+        this.numValue = boolValue ? 1 : 0;
+        this.comment = comment;
+        this.kind = ConstKind.Bool;
     }
 
     public int IntVal => (int)numValue;

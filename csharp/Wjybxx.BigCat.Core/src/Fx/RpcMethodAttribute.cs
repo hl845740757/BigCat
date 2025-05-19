@@ -40,7 +40,7 @@ namespace Wjybxx.BigCat.Fx
 /// Context有助于实现复杂的消息交互，允许在返回结果前后向对方发送额外的消息，这在与客户端通信的过程中非常有用。
 /// 1. 如果需要Ctx，必须将<see cref="RpcContext{T}"/>定义为方法的第一个参数。
 /// 2. Context不会导出给客户端的Proxy。
-/// 3. 需要自行管理结果的返回实际时，需要设置<see cref="ManualReturn"/>
+/// 3. 需要自行管理结果的返回时机时，需要设置<see cref="ManualReturn"/>
 /// 4. 关于context的用法可查看测试用例(NodeTest)
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]

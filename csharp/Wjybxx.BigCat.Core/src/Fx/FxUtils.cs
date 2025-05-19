@@ -52,6 +52,8 @@ public static class FxUtils
     public static readonly ConcurrentDictionary<Node, bool> CURRENT_NODES = new();
     /// <summary>
     /// Rpc对象池大小
+    ///
+    /// TODO 抽取全局框架配置类
     /// </summary>
     public static readonly int RPC_POOL_SIZE = EnvironmentUtil.GetIntVar("Wjybxx.BigCat.Fx.RpcPoolSize", 1024);
 
@@ -189,7 +191,7 @@ public static class FxUtils
 
     private static bool IsRpcContextType(Type type) {
         if (type.IsByRef) { // ref RpcContext
-            type = type.GetElementType();
+            type = type.GetElementType()!;
         }
         return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(RpcContext<>);
     }

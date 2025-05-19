@@ -16,6 +16,8 @@
 
 #endregion
 
+using System.Runtime.CompilerServices;
+
 namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
@@ -30,11 +32,13 @@ public static class RpcInvokeType
 //    public const int RESPONSE = 4; // 写入网络包时，RpcResponse为4
 
     /** 是否是消息 -- 远程不需要结果 */
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsMessage(int type) {
         return type == ONEWAY;
     }
 
     /** 是否是调用 -- 远程需要结果 */
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsCall(int type) {
         return type == CALL || type == SYNC_CALL;
     }

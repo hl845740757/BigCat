@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
@@ -121,6 +122,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
     /// 该方法可能被Worker并发调用
     /// </summary>
     /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public long NextRequestId() {
         return Interlocked.Increment(ref sequencer);
     }
@@ -382,7 +384,11 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         }
         // watcher需要在IO线程测试
         Key key = new Key(response.SessionId, response.RequestId);
-        if (watcherMap.TryRemove(key, out IPromise<RpcResult>? watcher)) { // 同步调用结果
+        if (watcherMap.TryRemove(key, out IPromise<RpcResult>? watcher)) {
+            // 同步调用在IO线程反序列化
+            if (response.IsBytes && !DecodeResult(response)) {
+                response.SetFailed(RpcErrorCodes.LOCAL_DESERIALIZE_FAILED, "data error");
+            }
             RpcResult result = new RpcResult(response.ErrorCode, response.Data);
             watcher.TrySetResult(result);
             return;

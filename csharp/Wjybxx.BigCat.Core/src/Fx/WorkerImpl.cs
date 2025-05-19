@@ -42,7 +42,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
         this.controlData = builder.ControlData;
         // 导出Rpc服务 -- 先注册到Registry但不对外发布
         FxUtils.ExportService(builder);
-        
+
         // 构造完成后再初始化模块
         agent.Inject(this, ConsumerId);
     }
