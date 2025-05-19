@@ -53,6 +53,11 @@ public class DSRepository
     /// 所有的实例都属于顶层元素，且也按文件存储，即只能访问import的文件中的实例。
     /// </summary>
     private readonly LinkedDictionary<StringPair, DSInst> instanceMap = new();
+    /// <summary>
+    /// 顶层元素名到元素的映射，用于解决查询效率问题
+    /// key为elementName
+    /// </summary>
+    private readonly LinkedDictionary<IndexKey, DSElement> indexedTopElementMap = new();
 
     /// <summary>
     /// 内建类型字典
@@ -103,11 +108,14 @@ public class DSRepository
         // 添加索引，类型和实例分开
         foreach (DSElement element in pbFile.EnclosedElements) {
             var key = new StringPair(simpleName, element.SimpleName);
-            if (element.Kind == DSElementKind.Inst) {
+            bool isInst = element.Kind == DSElementKind.Inst;
+            if (isInst) {
                 instanceMap.Add(key, (DSInst)element);
             } else {
                 topTypeMap.Add(key, (DSNamedTypeElement)element);
             }
+            IndexKey indexKey = new IndexKey(isInst, element.SimpleName);
+            indexedTopElementMap.TryAdd(indexKey, element);
         }
         // 添加已解析缓存
         foreach (DSNamedTypeElement namedTypeElement in DSUtil.GetAllEnclosedTypes(pbFile)) {
@@ -164,12 +172,9 @@ public class DSRepository
     /// <param name="elementName"></param>
     /// <returns></returns>
     public DSNamedTypeElement? FindType(string elementName) {
-        foreach (var pair in topTypeMap) {
-            if (pair.Value.SimpleName == elementName) {
-                return pair.Value;
-            }
-        }
-        return null;
+        IndexKey key = new IndexKey(isInst: false, elementName);
+        indexedTopElementMap.TryGetValue(key, out DSElement element);
+        return element as DSNamedTypeElement;
     }
 
     /// <summary>
@@ -190,12 +195,9 @@ public class DSRepository
     /// <param name="elementName"></param>
     /// <returns></returns>
     public DSInst? FindInst(string elementName) {
-        foreach (var pair in instanceMap) {
-            if (pair.Value.SimpleName == elementName) {
-                return pair.Value;
-            }
-        }
-        return null;
+        IndexKey key = new IndexKey(isInst: true, elementName);
+        indexedTopElementMap.TryGetValue(key, out DSElement element);
+        return element as DSInst;
     }
 
     /// <summary>
@@ -413,93 +415,44 @@ public class DSRepository
 
     /// <summary>
     /// 如果typeSymbol是泛型类型，则会构造目标泛型
+    ///
+    /// 这里不能直接建立typeSymbol到结果的缓存，因为scopeEntry可能不同...
     /// </summary>
     /// <param name="scopeEntry">作用域入口，包含必要的泛型参数</param>
     /// <param name="typeSymbol">引用的类型符号</param>
     /// <returns></returns>
     public DSTypeElement ResolveTypeSymbol(DSNamedTypeElement scopeEntry, string typeSymbol) {
         typeSymbol = ObjectUtil.DeleteWhitespace(typeSymbol);
-        // 这里不能直接建立typeSymbol到结果的缓存，因为需要包含scopeEntry...
-        TypeSymbolItem item = ParseTypeSymbol(typeSymbol);
-        return ResolveTypeSymbol(scopeEntry, item);
+        return ResolveTypeSymbol(scopeEntry, DSTypeSymbol.Parse(typeSymbol));
     }
 
-    private DSTypeElement ResolveTypeSymbol(DSNamedTypeElement scopeEntry, TypeSymbolItem item) {
-        DSTypeElement typeElement = FindType(scopeEntry, item.name);
+    private DSTypeElement ResolveTypeSymbol(DSNamedTypeElement scopeEntry, DSTypeSymbol typeSymbol) {
+        DSTypeElement typeElement = FindType(scopeEntry, typeSymbol.name);
         if (typeElement == null) {
-            throw new InvalidOperationException("cant resolve typeSymbol: " + item.symbol);
+            throw new InvalidOperationException("cant resolve typeSymbol: " + typeSymbol.symbol);
         }
         // 找到的可能是泛型变量
         if (typeElement is DSTypeParameter typeParameter) {
             // '?'作用于值类型时需要转为Nullable类型
-            return (typeParameter.HasValueTypeConstraint && item.isNullable)
+            return (typeParameter.HasValueTypeConstraint && typeSymbol.isNullable)
                 ? MakeNullableType(typeParameter)
                 : typeParameter;
         }
         // 非泛型
-        if (item.typeArguments == null) {
+        if (typeSymbol.typeArguments == null) {
             // '?'作用于值类型时需要转为Nullable类型
-            return (item.isNullable && typeElement.IsValueType)
+            return (typeSymbol.isNullable && typeElement.IsValueType)
                 ? MakeNullableType(typeElement)
                 : typeElement;
         }
         // 构建泛型 -- 还好我们没数组，不然还要处理数组的问题
-        List<DSTypeElement> typeArguments = new List<DSTypeElement>(item.typeArguments.Count);
-        foreach (TypeSymbolItem typeArgumentItem in item.typeArguments) {
-            DSTypeElement typeArgument = ResolveTypeSymbol(scopeEntry, typeArgumentItem);
+        List<DSTypeElement> typeArguments = new List<DSTypeElement>(typeSymbol.typeArguments.Count);
+        foreach (DSTypeSymbol typeArgumentSymbol in typeSymbol.typeArguments) {
+            DSTypeElement typeArgument = ResolveTypeSymbol(scopeEntry, typeArgumentSymbol);
             typeArguments.Add(typeArgument);
         }
         DSNamedTypeElement namedTypeElement = (DSNamedTypeElement)typeElement;
         return MakeGenericType(namedTypeElement, typeArguments);
-    }
-
-    private TypeSymbolItem ParseTypeSymbol(string typeSymbol) {
-        int startIdx = typeSymbol.IndexOf('<');
-        bool isNullable = typeSymbol.EndsWith('?');
-        if (startIdx < 0) {
-            string name = isNullable ? typeSymbol.Substring2(0, typeSymbol.Length - 1) : typeSymbol;
-            return new TypeSymbolItem(typeSymbol, name, null, isNullable);
-        }
-        List<TypeSymbolItem> typeArguments = new List<TypeSymbolItem>();
-        // 需要通过出入栈确定范围
-        int stack = 1;
-        int endIdx = startIdx + 1;
-        int argStart = startIdx + 1;
-        for (int len = typeSymbol.Length; endIdx < len; endIdx++) {
-            char c = typeSymbol[endIdx];
-            if (c == '<') {
-                stack++;
-            } else if (c == '>') { // 同时切割了'?'
-                if (stack == 1) {
-                    TypeSymbolItem typeArgument = ParseTypeSymbol(typeSymbol.Substring2(argStart, endIdx));
-                    typeArguments.Add(typeArgument);
-                    argStart = -1;
-                }
-                stack--;
-                if (stack == 0) {
-                    break;
-                }
-            } else if (c == ',') { // 同时切割了'?'
-                if (stack == 1) {
-                    TypeSymbolItem typeArgument = ParseTypeSymbol(typeSymbol.Substring2(argStart, endIdx));
-                    typeArguments.Add(typeArgument);
-                    argStart = -1;
-                }
-            } else {
-                if (stack == 1 && argStart < 0) {
-                    argStart = endIdx;
-                }
-            }
-        }
-        // 处理校验
-        if (isNullable) endIdx++;
-        if (endIdx + 1 != typeSymbol.Length) {
-            throw new ArgumentException("invalid typeSymbol: " + typeSymbol);
-        }
-        {
-            string name = typeSymbol.Substring2(0, startIdx);
-            return new TypeSymbolItem(typeSymbol, name, typeArguments, isNullable);
-        }
     }
 
     /// <summary>
@@ -573,21 +526,38 @@ public class DSRepository
 
     #endregion
 
-    /// <summary>
-    /// 其实等效ClassName，但开销更小
-    /// </summary>
-    private readonly struct TypeSymbolItem
+    private readonly struct IndexKey : IEquatable<IndexKey>
     {
-        public readonly string symbol;
-        public readonly string name;
-        public readonly List<TypeSymbolItem>? typeArguments;
-        public readonly bool isNullable;
+        public readonly bool isInst;
+        public readonly string simpleName;
 
-        public TypeSymbolItem(string symbol, string name, List<TypeSymbolItem>? typeArguments, bool isNullable) {
-            this.symbol = symbol;
-            this.name = name;
-            this.typeArguments = typeArguments;
-            this.isNullable = isNullable;
+        public IndexKey(bool isInst, string simpleName) {
+            this.isInst = isInst;
+            this.simpleName = simpleName;
+        }
+
+        public bool Equals(IndexKey other) {
+            return isInst == other.isInst && simpleName == other.simpleName;
+        }
+
+        public override bool Equals(object? obj) {
+            return obj is IndexKey other && Equals(other);
+        }
+
+        public override int GetHashCode() {
+            return (isInst.GetHashCode() * 397) ^ simpleName.GetHashCode();
+        }
+
+        public static bool operator ==(IndexKey left, IndexKey right) {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(IndexKey left, IndexKey right) {
+            return !left.Equals(right);
+        }
+
+        public override string ToString() {
+            return $"{nameof(isInst)}: {isInst}, {nameof(simpleName)}: {simpleName}";
         }
     }
 }

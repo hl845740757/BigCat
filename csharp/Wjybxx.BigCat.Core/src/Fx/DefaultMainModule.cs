@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
+using Wjybxx.Commons.Inject.Attributes;
 
 namespace Wjybxx.BigCat.Fx
 {
@@ -28,6 +29,7 @@ public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
 {
 #nullable disable
     /** 时间模块由主模块驱动 */
+    [Inject]
     protected TimeModule timeModule;
     /** 帧循环间隔 */
     private int frameInterval = 30;
@@ -48,7 +50,6 @@ public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
 
     public void Inject(IEventLoop eventLoop, long consumerId) {
         this.worker = (Worker)eventLoop;
-        this.timeModule = worker.Injector.GetInstance<TimeModule>();
     }
 
     public void Subscribe(int type, IAgentEventHandler<WorkerEvent> handler) {

@@ -50,7 +50,6 @@ public class ServiceGenerator
     private readonly string outDir;
     private readonly ServiceGeneratorHandler? handler;
     private readonly AttributeSpec processorInfo;
-    private readonly CodeWriter _codeWriter = new CodeWriter();
 
 #nullable disable
     /** 当前处理的文件缓存 -- 用于查询依赖 */
@@ -155,13 +154,7 @@ public class ServiceGenerator
         }
         // 构建csFile
         ClassName serviceTypeName = ClassNameOfType(service.SimpleName);
-        CsharpFile csharpFile = CsharpFile.NewBuilder(typeBuilder.name)
-            .AddSpec(NamespaceSpec.Of(serviceTypeName.ns, typeBuilder.Build()))
-            .Build();
-
-        string path = outDir + "/" + service.SimpleName + ".cs";
-        _codeWriter.Reset();
-        File.WriteAllText(path, _codeWriter.Write(csharpFile));
+        GeneratorUtil.WriteToFile(outDir, serviceTypeName, typeBuilder.Build());
     }
 
     private CodeBlock BuildComment(List<string> comments) {

@@ -18,11 +18,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Commons.Pool;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
 
 namespace Wjybxx.BigCatEditor.Generator
@@ -34,6 +36,10 @@ public static class GeneratorUtil
 {
     private static readonly ClassName clsName_GeneratedAttribute = ClassName.Get("Wjybxx.Commons.Attributes", "GeneratedAttribute");
     private static readonly ClassName clsName_SourceFileRef = ClassName.Get("Wjybxx.Commons.Attributes", "SourceFileRefAttribute");
+
+    public static readonly ClassName clsName_Flags = ClassName.Get(typeof(FlagsAttribute));
+    public static readonly ConcurrentObjectPool<CodeWriter> codeWriterPool = new ConcurrentObjectPool<CodeWriter>(
+        () => new CodeWriter(), e => e.Reset());
 
     /// <summary>
     /// 为生成代码的注解处理器创建一个通用注解
@@ -96,22 +102,37 @@ public static class GeneratorUtil
     }
 
     /// <summary>
-    /// 获取类的所有字段和方法，包含继承得到的字段和方法和属性。
-    /// (查询的开销较大，用户应当缓存结果)
+    /// 将类型写入文件
     /// </summary>
-    /// <param name="type"></param>
-    /// <param name="memberTypes"></param>
-    /// <returns></returns>
-    public static List<MemberInfo> GetAllMembersWithInherit(Type type, MemberTypes memberTypes = MemberTypes.Field
-                                                                                                 | MemberTypes.Property
-                                                                                                 | MemberTypes.Method) {
-        // FlattenHierarchy 不能拉取到超类的private字段
-        return FlatInheritAndReverse(type)
-            .SelectMany(e => e.GetMembers(BindingFlags.DeclaredOnly
-                                          | BindingFlags.Public | BindingFlags.NonPublic
-                                          | BindingFlags.Static | BindingFlags.Instance))
-            .Where(e => (e.MemberType & memberTypes) != 0)
-            .ToList();
+    /// <param name="outDir"></param>
+    /// <param name="className"></param>
+    /// <param name="typeSpec"></param>
+    public static void WriteToFile(string outDir, ClassName className, TypeSpec typeSpec) {
+        CsharpFile csharpFile = CsharpFile.NewBuilder(className.simpleName)
+            .AddSpec(NamespaceSpec.Of(className.ns, typeSpec))
+            .Build();
+        CodeWriter codeWriter = codeWriterPool.Acquire();
+        try {
+            string path = outDir + "/" + className.simpleName + ".cs";
+            File.WriteAllText(path, codeWriter.Write(csharpFile));
+        }
+        finally {
+            codeWriterPool.Release(codeWriter);
+        }
+    }
+
+    public static void WriteToFile(string outDir, string fileSimpleName, NamespaceSpec namespaceSpec) {
+        CsharpFile csharpFile = CsharpFile.NewBuilder(fileSimpleName)
+            .AddSpec(namespaceSpec)
+            .Build();
+        CodeWriter codeWriter = codeWriterPool.Acquire();
+        try {
+            string path = outDir + "/" + fileSimpleName + ".cs";
+            File.WriteAllText(path, codeWriter.Write(csharpFile));
+        }
+        finally {
+            codeWriterPool.Release(codeWriter);
+        }
     }
 }
 }

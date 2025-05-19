@@ -66,6 +66,5 @@
 
     <ItemGroup>
         <Folder Include="obj\Debug" />
-        <Folder Include="src\Excel" />
     </ItemGroup>
 </Project>

@@ -43,7 +43,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
 
     /** 是否启用日志 -- 允许运行时调整 */
     private volatile bool enableLog;
-    /** 用于为Worker间的Rpc分配RequestId -- 原子更新 */
+    /** 用于为进程间的Rpc分配RequestId -- 原子更新 */
     private long sequencer = 0;
     /** 用于支持同步调用 -- sessionId到worker的映射 */
     private readonly ConcurrentDictionary<long, Worker> session2WorkerMap = new();
