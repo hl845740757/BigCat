@@ -1,0 +1,27 @@
+{
+  "name" : "wjybxx.bigcat.core",
+  "version" : "1.0.0-prev",
+  "displayName" : "Wjybxx.BigCat.Core",
+  "description" : "BigCat核心框架包",
+  "documentationUrl": "",
+  "license": "Apache-2.0",
+
+  "unity": "2021.3",
+  "keywords": ["Wjybxx", "BigCat"],
+
+  "author": {
+    "name": "wjybxx",
+    "email": "845740757@qq.com",
+    "url": "https://github.com/hl845740757"
+  },
+  "dependencies": {
+    "wjybxx.commons.core": "1.0.0-prev",
+    "wjybxx.commons.inject": "1.0.0-prev",    
+    "wjybxx.commons.concurrent": "1.0.0-prev",
+    "wjybxx.disruptor": "1.0.0",
+    "wjybxx.btree.core": "1.0.0-prev",
+    "wjybxx.btree.codec": "1.0.0-prev",
+    "wjybxx.dson.core": "1.0.0-prev",
+    "wjybxx.dson.codec": "1.0.0-prev"
+  }
+}

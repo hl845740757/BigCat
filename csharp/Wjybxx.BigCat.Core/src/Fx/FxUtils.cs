@@ -176,6 +176,7 @@ public static class FxUtils
                         rType = rType.IsGenericType ? rType.GenericTypeArguments[0] : null;
                     }
                 }
+                rType = VoidToObject(rType);
                 // 注册方法
                 RpcMethodInfo methodInfo = new RpcMethodInfo(
                     serviceInterface.Name, method.Name,
@@ -187,6 +188,13 @@ public static class FxUtils
         catch (Exception e) {
             throw new Exception("service:" + serviceInterface.FullName, e);
         }
+    }
+
+    private static Type? VoidToObject(Type? clazz) {
+        if (clazz == null || clazz == typeof(VoidClass) || clazz == typeof(void)) {
+            return typeof(object);
+        }
+        return clazz;
     }
 
     private static bool IsRpcContextType(Type type) {

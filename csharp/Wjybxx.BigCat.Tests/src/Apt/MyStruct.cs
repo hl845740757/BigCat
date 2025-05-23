@@ -19,8 +19,8 @@
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.Dson.Tests.Apt;
-
+namespace Wjybxx.Dson.Tests.Apt
+{
 /// <summary>
 /// 测试结构体钩子
 /// </summary>
@@ -32,4 +32,5 @@ public struct MyStruct
 
     public void BeforeEncode(ConverterOptions options) {
     }
+}
 }

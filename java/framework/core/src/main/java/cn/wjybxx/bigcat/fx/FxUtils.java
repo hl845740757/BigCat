@@ -157,6 +157,7 @@ public class FxUtils {
                         rType = (Class<?>) genericReturnType.getActualTypeArguments()[0];
                     }
                 }
+                rType = voidToObject(rType);
                 // 注册方法
                 RpcMethodInfo methodInfo = new RpcMethodInfo(
                         serviceInterface.getSimpleName(), method.getName(),
@@ -167,5 +168,12 @@ public class FxUtils {
         } catch (Exception e) {
             throw new RuntimeException("service:" + serviceInterface.getName(), e);
         }
+    }
+
+    private static Class<?> voidToObject(Class<?> clazz) {
+        if (clazz == null || clazz == Void.class || clazz == void.class) {
+            return Object.class;
+        }
+        return clazz;
     }
 }

@@ -44,6 +44,10 @@ public abstract class NodeBuilder : WorkerBuilder
         WorkerId = "Node";
     }
 
+#if NET6_0_OR_GREATER
+    public abstract override Node Build();
+#endif
+
     public int NumberChildren {
         get => numberChildren;
         set => numberChildren = value;

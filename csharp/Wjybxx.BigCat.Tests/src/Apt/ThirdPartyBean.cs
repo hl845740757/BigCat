@@ -18,8 +18,8 @@
 
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.Dson.Tests.Apt;
-
+namespace Wjybxx.Dson.Tests.Apt
+{
 /// <summary>
 /// 假设为一个外部类，测试<see cref="DsonCodecLinkerGroupAttribute"/>
 /// </summary>
@@ -36,4 +36,5 @@ public class ThirdPartyBean
         get => name;
         set => name = value;
     }
+}
 }

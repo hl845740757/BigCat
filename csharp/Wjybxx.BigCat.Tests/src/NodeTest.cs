@@ -22,8 +22,8 @@ using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 /// <summary>
 /// 
 /// </summary>
@@ -126,4 +126,5 @@ public class NodeTest
             binder.Bind<RpcServiceExample>(); // worker2
         }
     }
+}
 }

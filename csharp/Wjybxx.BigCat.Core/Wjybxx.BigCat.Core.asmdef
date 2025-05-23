@@ -1,0 +1,23 @@
+{
+  "name": "Wjybxx.BigCat.Core",
+  "rootNamespace": "Wjybxx.BigCat.Core",
+  "references": [
+    "Wjybxx.Commons.Core",
+    "Wjybxx.Commons.Inject",
+    "Wjybxx.Commons.Concurrent",
+    "Wjybxx.Disruptor",    
+    "Wjybxx.BTree.Codec",
+    "Wjybxx.BTree.Core",
+    "Wjybxx.Dson.Codec",
+    "Wjybxx.Dson.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

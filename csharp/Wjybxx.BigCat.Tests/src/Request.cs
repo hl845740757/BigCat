@@ -21,8 +21,8 @@ using System.Collections.Generic;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 [DsonSerializable]
 public class Request
 {
@@ -75,4 +75,5 @@ public class Request
                $" {nameof(string2)}: {string2}," +
                $" {nameof(stringList)}: {CollectionUtil.ToString(stringList)}";
     }
+}
 }

@@ -28,8 +28,8 @@ using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using static Wjybxx.BigCat.Fx.ExtensibleService;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 [RpcService(ServiceId = 12)]
 public class RpcClientExample : EventLoopModule, ExtensibleService
 {
@@ -149,4 +149,5 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     }
 
     #endregion
+}
 }

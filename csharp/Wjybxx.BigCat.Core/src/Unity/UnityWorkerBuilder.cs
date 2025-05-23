@@ -17,45 +17,33 @@
 #endregion
 
 using System;
+using System.Threading;
+using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Disruptor;
 
-namespace Wjybxx.BigCat.Fx
+namespace Wjybxx.BigCat.Unity
 {
-public class DefaultNodeBuilder : NodeBuilder
+public class UnityWorkerBuilder : WorkerBuilder
 {
-    public DefaultNodeBuilder()
-        : base(new DisruptorEventLoopBuilder<WorkerEvent>()) {
+    public UnityWorkerBuilder(Thread thread)
+        : base(new UnityEventLoopBuilder<WorkerEvent>(thread)) {
     }
 
-    public new DisruptorEventLoopBuilder<WorkerEvent> Delegated => (DisruptorEventLoopBuilder<WorkerEvent>)delegated;
+    public new UnityEventLoopBuilder<WorkerEvent> Delegated => (UnityEventLoopBuilder<WorkerEvent>)delegated;
 
-#if NET6_0_OR_GREATER
-    public override Node Build() {
-#else
     public override Worker Build() {
-#endif
         if (EventSequencer == null) {
-            EventSequencer = new MpUnboundedEventSequencer<WorkerEvent>.Builder(WorkerEvent.FACTORY)
+            EventSequencer = new RingBufferEventSequencer<WorkerEvent>.Builder(WorkerEvent.FACTORY)
             {
+                BufferLength = 16 * 1024,
                 WaitStrategy = TimeoutSleepingWaitStrategy.Inst
             }.Build();
-        }
-        if (WorkerFactory == null) {
-            WorkerFactory = (parent, index, controlData) => {
-                return new DefaultWorkerBuilder()
-                {
-                    Parent = parent,
-                    Index = index,
-                    ControlData = controlData,
-                    WorkerId = "Worker-" + index,
-                }.Build();
-            };
         }
         if (ThreadFactory == null) {
             ThreadFactory = new DefaultThreadFactory("Worker");
         }
-        return new NodeImpl(this);
+        return new UnityWorker(this);
     }
 
     /// <summary>

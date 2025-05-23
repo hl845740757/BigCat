@@ -18,23 +18,37 @@
 
 using System;
 using System.Collections.Generic;
+using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Inject;
 
-namespace Wjybxx.BigCat.Fx
+namespace Wjybxx.BigCat.Unity
 {
 /// <summary>
-/// 基础的Worker实现
+/// UnityWorker是指没有自己的线程，由引擎调度的Worker。
+///
+/// <h3>场景的Update</h3>
+/// 场景外的逻辑Module直接挂载在Worker上，而场景内的Module则需要看情况：
+/// 1.如果想让场景内代码跑在服务器和本地的结果是一致的，那么我们应当设计一个Module来Update场景，并提供FixedUpdate、LateUpdate等逻辑。
+/// 2.如果前后端代码是分离的，那么可以由Unity来驱动场景内的逻辑，我们就无需手动管理帧率。
+///
+/// <h3>驱动方式</h3>
+/// 在Unity下，用户需要实现一个MonoBehavior来驱动该Worker和UI，以及场景的Update（分情况）。
+/// UIMgr等需要外部驱动的特殊组件，可以实现为<see cref="EventLoopModule"/>，但将类型标记为<see cref="ComponentKind.Behavior"/>。
+/// 
+/// PS：该实现和<see cref="WorkerImpl"/>基本相同，只是超类不同。
 /// </summary>
-public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
+public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
 {
     private readonly WorkerAddr workerAddr;
     private readonly IInjector injector;
     private volatile ISet<int> serviceIdSet = ImmutableLinkedHastSet<int>.Empty;
     private readonly WorkerControlData controlData;
 
-    public WorkerImpl(DefaultWorkerBuilder builder) : base(decorate(builder), false) {
+    public UnityWorker(UnityWorkerBuilder builder)
+        : base(decorate(builder), false) {
         int nodeId = builder.Parent.NodeAddr.nodeId;
         string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
         this.workerAddr = new WorkerAddr(nodeId, workerId);
@@ -47,7 +61,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
         agent.Inject(this, ConsumerId);
     }
 
-    private static DisruptorEventLoopBuilder<WorkerEvent> decorate(DefaultWorkerBuilder builder) {
+    private static UnityEventLoopBuilder<WorkerEvent> decorate(UnityWorkerBuilder builder) {
         FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
             builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();

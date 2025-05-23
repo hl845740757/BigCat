@@ -19,10 +19,11 @@
 using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 public class TestRpcRouter : EventLoopModule, RpcRouter
 {
     public void Send(RpcProtocol protocol) {
     }
+}
 }

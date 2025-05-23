@@ -21,8 +21,8 @@ using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject.Attributes;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 [RpcService(ServiceId = 11)]
 public class RpcServiceExample : EventLoopModule, ExtensibleService
 {
@@ -95,4 +95,5 @@ public class RpcServiceExample : EventLoopModule, ExtensibleService
     public ExtensibleService.ExecuteResult Execute(ExtensibleService.ExecuteRequest request) {
         return new ExtensibleService.ExecuteResult();
     }
+}
 }

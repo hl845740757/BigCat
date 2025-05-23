@@ -52,6 +52,10 @@ namespace Wjybxx.BigCat.Fx
 /// 1. 不建议Module在构造方法中执行太多逻辑，避免复杂的依赖和环境问题。
 /// 2. Module之间的特殊依赖由MainModule解决。
 /// 3. 如果Service单导出单个Module的业务，通常由Module直接实现Service接口；否则应由门面类实现Service。
+///
+/// <h3>延时任务</h3>
+/// 游戏业务应该避免将延时任务提交到事件循环，应该通过额外的Module定义自己的延时任务调度策略，
+/// 事件循环更多的是负责与其它线程打交道。
 /// </summary>
 public interface Worker : IDisruptorEventLoop<WorkerEvent>
 {

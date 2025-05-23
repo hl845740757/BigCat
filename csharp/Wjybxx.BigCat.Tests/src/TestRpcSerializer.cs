@@ -25,8 +25,8 @@ using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 using Wjybxx.Dson.Text;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 public class TestRpcSerializer : RpcSerializer
 {
     private readonly IDsonConverter converter;
@@ -77,4 +77,5 @@ public class TestRpcSerializer : RpcSerializer
     public object Read(byte[] source, Type declaredType) {
         return converter.Read(source, declaredType);
     }
+}
 }

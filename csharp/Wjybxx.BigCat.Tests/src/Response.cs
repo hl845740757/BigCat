@@ -19,8 +19,8 @@
 using System;
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 [DsonSerializable]
 public class Response : IEquatable<Response>
 {
@@ -58,4 +58,5 @@ public class Response : IEquatable<Response>
     public override int GetHashCode() {
         return (val * 397) ^ (stringVal != null ? stringVal.GetHashCode() : 0);
     }
+}
 }

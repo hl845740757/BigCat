@@ -60,8 +60,8 @@ public final class RpcMethodInfo {
         this.methodName = Objects.requireNonNull(methodName);
         this.serviceId = serviceId;
         this.methodId = methodId;
-        this.parameterType = voidToNull(parameterType);
-        this.resultType = voidToNull(resultType);
+        this.parameterType = parameterType;
+        this.resultType = resultType;
 
         this.parameterParser = findParser(this.parameterType);
         this.resultParser = findParser(this.resultType);
@@ -76,14 +76,8 @@ public final class RpcMethodInfo {
     public boolean hasResult() {
         return resultType != null;
     }
-    // region util
 
-    private static <T> Class<T> voidToNull(Class<T> clazz) {
-        if (clazz == null || clazz == Void.class || clazz == void.class) {
-            return null;
-        }
-        return clazz;
-    }
+    // region util
 
     @SuppressWarnings("unchecked")
     private static <T> Parser<T> findParser(Class<T> clazz) {

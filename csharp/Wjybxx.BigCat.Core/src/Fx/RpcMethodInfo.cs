@@ -57,21 +57,14 @@ public sealed class RpcMethodInfo : IEquatable<RpcMethodInfo>
         this.methodName = methodName;
         this.serviceId = serviceId;
         this.methodId = methodId;
-        this.parameterType = VoidToNull(parameterType);
-        this.resultType = VoidToNull(resultType);
+        this.parameterType = parameterType;
+        this.resultType = resultType;
 
         this.parameterParser = FindParser(this.parameterType);
         this.resultParser = FindParser(this.resultType);
     }
 
     #region util
-
-    private static Type? VoidToNull(Type? clazz) {
-        if (clazz == null || clazz == typeof(VoidClass) || clazz == typeof(void)) {
-            return null;
-        }
-        return clazz;
-    }
 
     private static MessageParser? FindParser(Type? clazz) {
         if (clazz == null) {

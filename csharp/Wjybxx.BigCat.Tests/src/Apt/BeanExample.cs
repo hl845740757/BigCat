@@ -22,8 +22,8 @@ using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 using Wjybxx.Dson.Text;
 
-namespace Wjybxx.Dson.Tests.Apt;
-
+namespace Wjybxx.Dson.Tests.Apt
+{
 /// <summary>
 /// 用于测试继承问题
 /// </summary>
@@ -167,4 +167,5 @@ public class BeanExample : BaseTypeExample
     /// <param name="options"></param>
     public void AfterDecode(ConverterOptions options) {
     }
+}
 }

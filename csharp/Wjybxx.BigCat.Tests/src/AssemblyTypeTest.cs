@@ -19,8 +19,8 @@
 using System;
 using NUnit.Framework;
 
-namespace Wjybxx.BigCat.Tests;
-
+namespace Wjybxx.BigCat.Tests
+{
 /// <summary>
 /// 
 /// </summary>
@@ -35,4 +35,5 @@ public class AssemblyTypeTest
         Type type = GetType().Assembly.GetType(GetType().Namespace + ".Exporter");
         Assert.IsNotNull(type);
     }
+}
 }

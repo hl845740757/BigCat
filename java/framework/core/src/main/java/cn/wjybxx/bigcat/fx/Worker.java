@@ -55,6 +55,10 @@ import javax.annotation.Nullable;
  * 2. Module之间的特殊依赖由MainModule解决。
  * 3. 如果Service单导出单个Module的业务，通常由Module直接实现Service接口；否则应由门面类实现Service。
  *
+ * <h3>延时任务</h3>
+ * 游戏业务应该避免将延时任务提交到事件循环，应该通过额外的Module定义自己的延时任务调度策略，
+ * 事件循环更多的是负责与其它线程打交道
+ *
  * @author wjybxx
  * date - 2023/10/4
  */

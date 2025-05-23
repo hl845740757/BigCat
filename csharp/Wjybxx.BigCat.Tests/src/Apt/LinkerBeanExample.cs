@@ -22,7 +22,8 @@ using Wjybxx.Dson.Text;
 
 #pragma warning disable CS0169
 
-namespace Wjybxx.Dson.Tests.Apt;
+namespace Wjybxx.Dson.Tests.Apt
+{
 #nullable disable
 
 [DsonCodecLinkerBean(typeof(ThirdPartyBean))]
@@ -57,4 +58,5 @@ public class LinkerBeanExample
     public static void ReadAge(ThirdPartyBean inst, IDsonObjectReader reader, string name) {
         inst.Age = reader.ReadInt(name);
     }
+}
 }
