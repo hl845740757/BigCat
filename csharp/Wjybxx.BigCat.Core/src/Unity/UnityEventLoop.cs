@@ -64,6 +64,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /** 删除延时任务，参数列表为：taskId */
     internal const int TYPE_REMOVE_SCHEDULE = -1;
 
+#pragma warning disable CS0169
     // 填充开始 - 字段定义顺序不要随意调整
     private long p1, p2, p3, p4, p5, p6, p7;
     /** 线程本地时间 -- 时间的更新频率极高，进行缓存行填充隔离；使用volatile读写 */
@@ -74,6 +75,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     private long p21, p22, p23, p24, p25, p26, p27, p28;
     /** 线程状态 -- 下面的final字段充当缓存行填充 */
     private volatile int state = ST_UNSTARTED;
+#pragma warning restore CS0169
 
     /** 事件队列 */
     private readonly EventSequencer<T> eventSequencer;
@@ -479,11 +481,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (module.Entity != null) {
                 continue; // 通常是主模块提前完成了绑定
             }
-#if UNITY_2021_3_OR_NEWER
-            EventLoopModuleUtil.SetEventLoop(this, module);
-#else
             module.SetEventLoop(this);
-#endif
         }
         // 解决模块之间的依赖
         foreach (EventLoopModule module in _moduleList) {
@@ -497,11 +495,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (!module.Cid.IsPrivateScript) {
                 continue;
             }
-#if UNITY_2021_3_OR_NEWER
-            Exception? ex = EventLoopModuleUtil.InvokeStart(module);
-#else
             Exception? ex = module.InvokeStart();
-#endif
             if (ex != null) {
                 ExceptionDispatchInfo.Throw(ex);
             }
@@ -520,11 +514,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                 && module.Status != ComponentStatus.Running) {
                 continue; // 未启动
             }
-#if UNITY_2021_3_OR_NEWER
-            Exception? ex = EventLoopModuleUtil.InvokeStop(module);
-#else
             Exception? ex = module.InvokeStop();
-#endif
             if (ex != null) { // stop异常记录下来，继续停止其它模块
                 logger.Warn(ex, "stop module caught exception");
             }
@@ -541,11 +531,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (module.Status == ComponentStatus.New) {
                 continue; // 未执行OnReady
             }
-#if UNITY_2021_3_OR_NEWER
-            Exception? ex = EventLoopModuleUtil.InvokeDestroy(module);
-#else
             Exception? ex = module.InvokeDestroy();
-#endif
             if (ex != null) { // destroy异常记录下来，继续销毁其它模块
                 logger.Warn(ex, "module.destroy caught exception");
             }

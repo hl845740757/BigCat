@@ -1,0 +1,24 @@
+{
+    "name": "Wjybxx.BigCat.GamePlay",
+    "rootNamespace": "Wjybxx.BigCat.GamePlay",
+    "references": [
+        "Wjybxx.Disruptor",
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Commons.Inject",
+        "Wjybxx.Commons.Concurrent",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.Dson.Codec",
+        "Wjybxx.BTree.Core",
+        "Wjybxx.BTree.Codec",
+        "Wjybxx.BigCat.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,33 @@
+{
+    "name": "Wjybxx.BigCat.EditorTests",
+    "rootNamespace": "Wjybxx.BigCat.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Wjybxx.BTree.Codec",
+        "Wjybxx.BTree.Core",
+        "Wjybxx.Commons.Concurrent",
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Commons.Inject",
+        "Wjybxx.Disruptor",
+        "Wjybxx.Dson.Codec",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.BigCat.Core",
+        "Wjybxx.BigCat.Unity"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

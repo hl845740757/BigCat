@@ -14,24 +14,20 @@
 // limitations under the License.
 #endregion
 
-using Wjybxx.Dson.Codec.Attributes;
+using Wjybxx.BigCat.Fx;
 
-namespace Wjybxx.BigCat.Unity
+namespace Wjybxx.BigCat.GamePlay
 {
-[DsonSerializable]
-public class MyBean
+/// <summary>
+/// 测试rpc生成是否正确
+/// </summary>
+[RpcService(ServiceId = 1)]
+public interface LoginService
 {
-    private string name;
-    private int age;
+    [RpcMethod(MethodId = 1)]
+    public void CheckToken(string token);
 
-    public string Name {
-        get => name;
-        set => name = value;
-    }
-    public int Age {
-        
-        get => age;
-        set => age = value;
-    }
+    [RpcMethod(MethodId = 2)]
+    public void NotifyResult(string r);
 }
 }

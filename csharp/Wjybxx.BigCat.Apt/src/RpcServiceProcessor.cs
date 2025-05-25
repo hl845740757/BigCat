@@ -19,7 +19,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Wjybxx.Commons.Apt;
 using Wjybxx.Commons.Poet;
 
@@ -29,7 +31,7 @@ namespace Wjybxx.BigCat.Apt
 /// RpcService注解处理器
 /// </summary>
 [Generator]
-public class RpcServiceProcessor : IIncrementalGenerator
+public class RpcServiceProcessor : ISourceGenerator
 {
     #region const
 
@@ -80,7 +82,7 @@ public class RpcServiceProcessor : IIncrementalGenerator
     private ITypeSymbol type_Object;
     private List<INamedTypeSymbol> futureTypeMirrors = new(6);
 
-    private SourceProductionContext sourceProductionContext;
+    private GeneratorExecutionContext sourceProductionContext;
     private Compilation compilation;
     internal AttributeSpec processorInfoAnnotation;
     private readonly CodeWriter _codeWriter = new CodeWriter();
@@ -88,7 +90,7 @@ public class RpcServiceProcessor : IIncrementalGenerator
 
     #region Init
 
-    private void EnsureInited(SourceProductionContext sourceProductionContext, Compilation compilation) {
+    private void EnsureInited(GeneratorExecutionContext sourceProductionContext, Compilation compilation) {
         if (this.compilation != null) return;
         this.sourceProductionContext = sourceProductionContext;
         this.compilation = compilation;
@@ -127,33 +129,56 @@ public class RpcServiceProcessor : IIncrementalGenerator
         ReportDiagnostic(DiagnosticSeverity.Error, symbol, 0001, "Processor Caught Exception message: {0}, stackTrace: {1}",
             ex.Message, ex.StackTrace);
     }
+    
+    private bool IsBuildingAssemblyNode(INamedTypeSymbol typeSymbol) {
+        IAssemblySymbol buildingAssembly = compilation.Assembly;
+        IAssemblySymbol nodeAssembly = typeSymbol.ContainingAssembly;
+        return buildingAssembly.Name == nodeAssembly.Name;
+        // return nodeAssembly.Equals(buildingAssembly, SymbolEqualityComparer.Default);
+    }
 
-    public void Initialize(IncrementalGeneratorInitializationContext context) {
-        {
-            var provider = context.SyntaxProvider.ForAttributeWithMetadataName(CNAME_RPC_SERVICE,
-                (node, _) => node.GetLocation().IsInSource,
-                (node, _) => node);
-            context.RegisterSourceOutput(provider, (a, b) => {
-                try {
-                    EnsureInited(a, b.SemanticModel.Compilation);
-                    if (IsBuildingAssemblyNode(b)) {
-                        INamedTypeSymbol typeSymbol = (INamedTypeSymbol)b.TargetSymbol;
-                        List<IMethodSymbol> rpcMethods = CheckBase(typeSymbol);
-                        GenProxyClass(typeSymbol, rpcMethods);
-                    }
-                }
-                catch (Exception ex) {
-                    ReportException(ex, b.TargetSymbol);
-                }
-            });
+    public void Initialize(GeneratorInitializationContext context) {
+        context.RegisterForSyntaxNotifications(() => new OptionsSyntaxReceiver());
+    }
+
+    public void Execute(GeneratorExecutionContext context) {
+        EnsureInited(context, context.Compilation);
+        if (context.SyntaxReceiver is not OptionsSyntaxReceiver optionsSyntaxReceiver) {
+            return;
+        }
+        foreach (var declarationSyntax in optionsSyntaxReceiver.typeDeclarationNodes) {
+            var semanticModel = context.Compilation.GetSemanticModel(declarationSyntax.SyntaxTree);
+            var typeSymbol = semanticModel.GetDeclaredSymbol(declarationSyntax) as INamedTypeSymbol;
+            if (typeSymbol == null) {
+                continue;
+            }
+            if (!IsBuildingAssemblyNode(typeSymbol)) {
+                continue;
+            }
+            var attributeData = AptUtils.GetAttribute(typeSymbol.GetAttributes(), CNAME_RPC_SERVICE);
+            if (attributeData == null) {
+                continue;
+            }
+            try {
+                List<IMethodSymbol> rpcMethods = CheckBase(typeSymbol);
+                GenProxyClass(typeSymbol, rpcMethods);
+            }
+            catch (Exception ex) {
+                ReportException(ex, typeSymbol);
+            }
         }
     }
 
-    private static bool IsBuildingAssemblyNode(GeneratorAttributeSyntaxContext node) {
-        IAssemblySymbol buildingAssembly = node.SemanticModel.Compilation.Assembly;
-        IAssemblySymbol nodeAssembly = node.TargetSymbol.ContainingAssembly;
-        return buildingAssembly.Name == nodeAssembly.Name;
-        // return nodeAssembly.Equals(buildingAssembly, SymbolEqualityComparer.Default);
+    private class OptionsSyntaxReceiver : ISyntaxReceiver
+    {
+        public readonly List<TypeDeclarationSyntax> typeDeclarationNodes = new();
+
+        public void OnVisitSyntaxNode(SyntaxNode syntaxNode) {
+            // 3.8.0 API太原始了...我们把所有有注解的类型都扫描进去，然后在Execute的时候通过语义模型处理
+            if (syntaxNode is TypeDeclarationSyntax classDecl && classDecl.AttributeLists.Count > 0) {
+                typeDeclarationNodes.Add(classDecl);
+            }
+        }
     }
 
     #endregion
