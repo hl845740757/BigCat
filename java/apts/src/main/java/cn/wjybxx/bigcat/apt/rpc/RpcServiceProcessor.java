@@ -21,6 +21,7 @@ import cn.wjybxx.apt.BeanUtils;
 import cn.wjybxx.apt.MyAbstractProcessor;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.TypeSpec;
 
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -43,8 +44,6 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
 
     private static final String CNAME_RPC_SERVICE = "cn.wjybxx.bigcat.fx.RpcService";
     private static final String PNAME_SERVICE_ID = "serviceId";
-    private static final String PNAME_GEN_EXPORTER = "genExporter";
-    private static final String PNAME_GEN_PROXY = "genProxy";
 
     private static final String CNAME_RPC_METHOD = "cn.wjybxx.bigcat.fx.RpcMethod";
     private static final String PNAME_METHOD_ID = "methodId";
@@ -246,14 +245,11 @@ public class RpcServiceProcessor extends MyAbstractProcessor {
     private void genProxyClass(TypeElement typeElement, List<ExecutableElement> rpcMethodList) {
         AnnotationMirror serviceAnnoMirror = AptUtils.findAnnotation(typeUtils, typeElement, anno_rpcServiceElement.asType());
         final int serviceId = AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_SERVICE_ID, null);
-        if (AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_GEN_EXPORTER, Boolean.TRUE)) {
-            new RpcExporterGenerator(this, typeElement, serviceId, rpcMethodList)
-                    .execute();
-        }
-        if (AptUtils.getAnnotationValueValue(serviceAnnoMirror, PNAME_GEN_PROXY, Boolean.TRUE)) {
-            new RpcProxyGenerator(this, typeElement, serviceId, rpcMethodList)
-                    .execute();
-        }
+        TypeSpec.Builder builder = new RpcProxyGenerator(this, typeElement, serviceId, rpcMethodList)
+                .execute2();
+        new RpcExporterGenerator(this, typeElement, serviceId, rpcMethodList)
+                .execute2(builder);
+        AptUtils.writeToFile(typeElement, builder, elementUtils, messager, filer);
     }
 
     // endregion

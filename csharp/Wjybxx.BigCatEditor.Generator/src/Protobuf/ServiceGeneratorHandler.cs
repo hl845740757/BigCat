@@ -30,20 +30,6 @@ namespace Wjybxx.BigCatEditor.Generator.Protobuf
 public interface ServiceGeneratorHandler
 {
     /// <summary>
-    /// 是否生成服务端用的Exporter
-    /// </summary>
-    /// <param name="service"></param>
-    /// <returns></returns>
-    bool GenExporter(PBService service) => true;
-
-    /// <summary>
-    /// 是否生成客户端用的Proxy
-    /// </summary>
-    /// <param name="service"></param>
-    /// <returns></returns>
-    bool GenProxy(PBService service) => true;
-
-    /// <summary>
     /// 如果rpc方法没有指定方法参数的名字，则由该函数计算默认的名字
     /// </summary>
     /// <param name="typeName"></param>

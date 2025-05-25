@@ -37,8 +37,6 @@ public class RpcServiceProcessor : ISourceGenerator
 
     private const string CNAME_RPC_SERVICE = "Wjybxx.BigCat.Fx.RpcServiceAttribute";
     private const string PNAME_SERVICE_ID = "ServiceId";
-    private const string PNAME_GEN_EXPORTER = "GenExporter";
-    private const string PNAME_GEN_PROXY = "GenProxy";
 
     private const string CNAME_RPC_METHOD = "Wjybxx.BigCat.Fx.RpcMethodAttribute";
     private const string PNAME_METHOD_ID = "MethodId";
@@ -129,7 +127,7 @@ public class RpcServiceProcessor : ISourceGenerator
         ReportDiagnostic(DiagnosticSeverity.Error, symbol, 0001, "Processor Caught Exception message: {0}, stackTrace: {1}",
             ex.Message, ex.StackTrace);
     }
-    
+
     private bool IsBuildingAssemblyNode(INamedTypeSymbol typeSymbol) {
         IAssemblySymbol buildingAssembly = compilation.Assembly;
         IAssemblySymbol nodeAssembly = typeSymbol.ContainingAssembly;
@@ -142,6 +140,10 @@ public class RpcServiceProcessor : ISourceGenerator
     }
 
     public void Execute(GeneratorExecutionContext context) {
+        // 在unity下可能处理到其它程序集文件
+        if (context.Compilation.GetTypeByMetadataName(CNAME_RPC_SERVICE) == null) {
+            return;
+        }
         EnsureInited(context, context.Compilation);
         if (context.SyntaxReceiver is not OptionsSyntaxReceiver optionsSyntaxReceiver) {
             return;
@@ -282,16 +284,13 @@ public class RpcServiceProcessor : ISourceGenerator
             return;
         }
         int serviceId = (int)annoValue.Value!;
-        if (GetAttributeValueValue(serviceAnnoMirror, PNAME_GEN_EXPORTER, true)) {
-            TypeSpec typeSpec = new RpcExporterGenerator(this, typeElement, serviceId, rpcMethodList)
-                .Execute();
-            WriteToFile(typeSpec, typeElement);
-        }
-        if (GetAttributeValueValue(serviceAnnoMirror, PNAME_GEN_PROXY, true)) {
-            TypeSpec typeSpec = new RpcProxyGenerator(this, typeElement, serviceId, rpcMethodList)
-                .Execute();
-            WriteToFile(typeSpec, typeElement);
-        }
+        var builder = new RpcProxyGenerator(this, typeElement, serviceId, rpcMethodList)
+            .Execute()
+            .AddSpec(new CodeBlockSpec(CodeBlock.Of("\n"))); // 插入换行符
+
+        new RpcExporterGenerator(this, typeElement, serviceId, rpcMethodList)
+            .Execute(builder);
+        WriteToFile(builder.Build(), typeElement);
     }
 
     private void WriteToFile(TypeSpec typeSpec, INamedTypeSymbol typeSymbol) {

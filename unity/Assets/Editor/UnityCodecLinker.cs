@@ -16,24 +16,22 @@
 
 #endregion
 
-using System;
-using NUnit.Framework;
+using UnityEngine;
+using Wjybxx.Commons.Attributes;
+using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.BigCat.Tests
+namespace Editor
 {
 /// <summary>
-/// 
+/// 用于为Unity的常用类型生成DsonCodec
 /// </summary>
-public sealed class Exporter
+[UsedForReflectionBasedGenerator]
+[DsonCodecLinkerGroup]
+public class UnityCodecLinker
 {
-}
-
-public class AssemblyTypeTest
-{
-    [Test]
-    public void LoadTest() {
-        Type type = GetType().Assembly.GetType(GetType().Namespace + ".Exporter");
-        Assert.IsNotNull(type);
-    }
+    private Vector2 _vector2;
+    private Vector3 _vector3;
+    private Vector4 _vector4;
+    private Color _color;
 }
 }

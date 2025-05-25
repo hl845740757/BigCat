@@ -51,22 +51,19 @@ public class RpcExporterGenerator
         this.serviceTypeName = (ClassName)AptUtils.ParseType(typeSymbol);
     }
 
-    public TypeSpec Execute() {
-        TypeSpec.Builder typeBuilder = TypeSpec.NewClassBuilder(GetServerProxyClassName(typeSymbol))
-            .AddModifiers(Modifiers.Public | Modifiers.Sealed)
-            .AddAttribute(processor.processorInfoAnnotation)
-            .AddAttribute(AptUtils.NewSourceFileRefAnnotation(AptUtils.ParseType(typeSymbol)));
+    public void Execute(TypeSpec.Builder typeBuilder) {
+        typeBuilder.AddSpec(MacroSpec.Get("region", "export"));
 
-        List<MethodSpec> serverMethodProxyList = new(rpcMethods.Count);
         // 生成代理方法
+        List<MethodSpec> serverMethodProxyList = new(rpcMethods.Count);
         foreach (IMethodSymbol method in rpcMethods) {
             serverMethodProxyList.Add(GenServerMethodProxy(method));
         }
+        // 总方法放前面
+        typeBuilder.AddMethod(GenRegisterMethod(serverMethodProxyList));
         typeBuilder.AddMethods(serverMethodProxyList);
 
-        // 生成注册方法
-        typeBuilder.AddMethod(GenRegisterMethod(serverMethodProxyList));
-        return typeBuilder.Build();
+        typeBuilder.AddSpec(MacroSpec.Get("endregion"));
     }
 
     private static string GetServerProxyClassName(INamedTypeSymbol typeSymbol) {
@@ -173,7 +170,7 @@ public class RpcExporterGenerator
      */
     private static string GetServerProxyMethodName(int methodId, IMethodSymbol method) {
         // 加上methodId防止重复
-        return "_Export" + Util.FirstCharToUpperCase(method.Name) + "_" + methodId;
+        return $"Export{methodId}_{Util.FirstCharToUpperCase(method.Name)}";
     }
 
     /**

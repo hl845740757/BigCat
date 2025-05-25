@@ -103,7 +103,7 @@ public class FxUtils {
         }
         // public static void export(RpcProxyRegistry registry, RpcServiceExample instance) {}
         try {
-            Class<?> exporter = Class.forName(serviceInterface.getName() + "Exporter");
+            Class<?> exporter = Class.forName(serviceInterface.getName() + "Proxy");
             Method method = exporter.getDeclaredMethod("export", RpcProxyRegistry.class, serviceInterface); // 生成的静态export方法
             method.invoke(null, registry, serviceImpl);
         } catch (Exception e) {

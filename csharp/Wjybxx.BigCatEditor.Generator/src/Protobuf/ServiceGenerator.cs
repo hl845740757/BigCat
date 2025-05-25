@@ -102,12 +102,6 @@ public class ServiceGenerator
             DsonObject<string> serviceData = serviceAnnotation.DsonValue;
             AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(anno_rpcService)
                 .AddMember("ServiceId", GetServiceId(service, serviceData).ToString());
-            if (!IsGenExporter(service, serviceData)) {
-                annoBuilder.AddMember("GenExporter", "false");
-            }
-            if (!IsGenProxy(service, serviceData)) {
-                annoBuilder.AddMember("GenProxy", "false");
-            }
             typeBuilder.AddAttribute(annoBuilder.Build());
         }
         // 方法列表
@@ -237,20 +231,6 @@ public class ServiceGenerator
     private int GetServiceId(PBService service, DsonObject<string> serviceData) {
         // 默认是double类型
         return serviceData["id"].AsDsonNumber().IntValue;
-    }
-
-    private bool IsGenProxy(PBService service, DsonObject<string> serviceData) {
-        if (!serviceData.TryGetValue("proxy", out DsonValue value)) {
-            return handler == null || handler.GenProxy(service); // 默认true
-        }
-        return GetBool(value);
-    }
-
-    private bool IsGenExporter(PBService service, DsonObject<string> serviceData) {
-        if (!serviceData.TryGetValue("exporter", out DsonValue value)) {
-            return handler == null || handler.GenExporter(service); // 默认true
-        }
-        return GetBool(value);
     }
 
     //@RpcMethod {id: 1, async: true, ctx: true, manual: true}

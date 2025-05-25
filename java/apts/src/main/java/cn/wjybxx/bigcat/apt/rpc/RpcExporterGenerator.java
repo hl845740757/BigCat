@@ -51,24 +51,18 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
 
     @Override
     public void execute() {
-        final TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(getServerProxyClassName(typeElement))
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addAnnotation(AptUtils.SUPPRESS_UNCHECKED_RAWTYPES)
-                .addAnnotation(processorInfoAnnotation)
-                .addAnnotation(AptUtils.newSourceFileRefAnnotation(ClassName.get(typeElement)));
 
+    }
+
+    public void execute2(TypeSpec.Builder typeBuilder) {
         final List<MethodSpec> serverMethodProxyList = new ArrayList<>(rpcMethods.size());
         // 生成代理方法
         for (final ExecutableElement method : rpcMethods) {
             serverMethodProxyList.add(genServerMethodProxy(method));
         }
-        typeBuilder.addMethods(serverMethodProxyList);
-
-        // 生成注册方法
+        // 总注册方法在前面
         typeBuilder.addMethod(genRegisterMethod(serverMethodProxyList));
-
-        // 写入文件
-        AptUtils.writeToFile(typeElement, typeBuilder, elementUtils, messager, filer);
+        typeBuilder.addMethods(serverMethodProxyList);
     }
 
     private static String getServerProxyClassName(TypeElement typeElement) {
@@ -201,7 +195,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      */
     private static String getServerProxyMethodName(int methodId, ExecutableElement method) {
         // 加上methodId防止重复
-        return "_export" + BeanUtils.firstCharToUpperCase(method.getSimpleName().toString()) + "_" + methodId;
+        return "export" + methodId + "_" + BeanUtils.firstCharToUpperCase(method.getSimpleName().toString());
     }
 
     /**

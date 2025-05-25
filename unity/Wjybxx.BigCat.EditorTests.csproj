@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Tests\Editor\Apt\MyBean.cs" />
+     <Compile Include="Assets\Tests\Editor\Apt\DVector.cs" />
      <Folder Include="Assets\Tests\Editor" />
      <Folder Include="Assets\Tests\Editor\Apt" />
      <None Include="Assets\Tests\Editor\Wjybxx.BigCat.EditorTests.asmdef" />

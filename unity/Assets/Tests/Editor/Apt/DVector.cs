@@ -14,12 +14,13 @@
 // limitations under the License.
 #endregion
 
-using Wjybxx.Commons.Poet;
+using Wjybxx.Dson.Codec.Attributes;
 
-namespace Editor
+namespace Wjybxx.BigCat.EditorTests
 {
-public class Codec
+[DsonSerializable]
+public struct DVector3
 {
-    private ClassName ClassName;
+    public float x, y, z;
 }
 }

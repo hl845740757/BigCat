@@ -48,6 +48,9 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
 
     @Override
     public void execute() {
+    }
+
+    public TypeSpec.Builder execute2() {
         final TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(getClientProxyClassName(typeElement))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addAnnotation(processorInfoAnnotation)
@@ -64,9 +67,7 @@ class RpcProxyGenerator extends AbstractGenerator<RpcServiceProcessor> {
                 typeBuilder.addMethod(methodSpec2);
             }
         }
-
-        // 写入文件
-        AptUtils.writeToFile(typeElement, typeBuilder, elementUtils, messager, filer);
+        return typeBuilder;
     }
 
     private static String getClientProxyClassName(TypeElement typeElement) {

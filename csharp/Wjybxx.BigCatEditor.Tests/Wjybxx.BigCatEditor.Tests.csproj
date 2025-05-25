@@ -49,17 +49,11 @@
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll" />
     </ItemGroup>
+    
     <!-- 排除生成文件目录 -->
     <ItemGroup>
+        <None Remove="Generated\**" />
         <Compile Remove="Generated\**" />
-    </ItemGroup>
-    <ItemGroup>
         <EmbeddedResource Remove="Generated\**" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="src\Generated" />
-      <Folder Include="temp" />
-    </ItemGroup>
-
 </Project>

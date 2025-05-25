@@ -44,19 +44,21 @@ public class RpcProxyGenerator
         this.serviceTypeName = (ClassName)AptUtils.ParseType(typeSymbol);
     }
 
-    public TypeSpec Execute() {
+    public TypeSpec.Builder Execute() {
         TypeSpec.Builder typeBuilder = TypeSpec.NewClassBuilder(GetClientProxyClassName(typeSymbol))
             .AddModifiers(Modifiers.Public | Modifiers.Sealed)
             .AddAttribute(processor.processorInfoAnnotation)
             .AddAttribute(AptUtils.NewSourceFileRefAnnotation(AptUtils.ParseType(typeSymbol)));
 
+        typeBuilder.AddSpec(MacroSpec.Get("region", "proxy"));
         // 生成代理方法
         foreach (IMethodSymbol method in rpcMethods) {
             AttributeData annoValueMap = processor.GetMethodAnnoValueMap(method)!;
             MethodSpec proxyMethodSpec = GenClientMethodProxy(method, annoValueMap);
             typeBuilder.AddMethod(proxyMethodSpec);
         }
-        return typeBuilder.Build();
+        typeBuilder.AddSpec(MacroSpec.Get("endregion"));
+        return typeBuilder;
     }
 
     private static string GetClientProxyClassName(INamedTypeSymbol typeSymbol) {

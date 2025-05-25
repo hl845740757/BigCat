@@ -45,17 +45,16 @@
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
-        <None Remove="Generated\**" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.31.0" />
-        <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.4.1" />
-        <PackageReference Include="Wjybxx.Commons.Core" Version="1.4.1" />
-        <PackageReference Include="Wjybxx.Commons.Inject" Version="1.4.1" />
+        <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.4.2" />
+        <PackageReference Include="Wjybxx.Commons.Core" Version="1.4.2" />
+        <PackageReference Include="Wjybxx.Commons.Inject" Version="1.4.2" />
         <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.0" />
         <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.0" />
-        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.2" />
+        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.3" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
@@ -66,12 +65,8 @@
     </ItemGroup>
     <!-- 排除生成文件目录 -->
     <ItemGroup>
+        <None Remove="Generated\**" />
         <Compile Remove="Generated\**" />
-    </ItemGroup>
-    <ItemGroup>
         <EmbeddedResource Remove="Generated\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="obj\Debug" />
     </ItemGroup>
 </Project>

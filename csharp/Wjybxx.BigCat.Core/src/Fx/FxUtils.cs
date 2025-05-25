@@ -110,9 +110,9 @@ public static class FxUtils
         }
         // public static void export(RpcProxyRegistry registry, RpcServiceExample instance) {}
         // Exporter默认在同命名空间下
-        Type exporter = serviceInterface.Assembly.GetType(serviceInterface.FullName + "Exporter");
+        Type exporter = serviceInterface.Assembly.GetType(serviceInterface.FullName + "Proxy");
         if (exporter == null) {
-            throw new Exception("Exporter is absent, service:" + serviceInterface);
+            throw new Exception("Proxy is absent, service:" + serviceInterface);
         }
         try {
             MethodInfo? methodInfo = exporter.GetMethod("Export", BindingFlags.Public | BindingFlags.Static);

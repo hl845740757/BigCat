@@ -47,7 +47,7 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Editor\Codec.cs" />
+     <Compile Include="Assets\Editor\UnityCodecLinker.cs" />
      <Compile Include="Assets\Editor\FileSyncMgr.cs" />
      <Folder Include="Assets\Editor" />
      <Reference Include="UnityEngine">
@@ -311,6 +311,9 @@
      <Reference Include="unityplastic">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.0.5\Lib\Editor\PlasticSCM\unityplastic.dll</HintPath>
      </Reference>
+     <Reference Include="Wjybxx.Dson.Apt2">
+     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Dson.Apt2.dll</HintPath>
+     </Reference>
      <Reference Include="Unity.Plastic.Antlr3.Runtime">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.0.5\Lib\Editor\PlasticSCM\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
      </Reference>
@@ -337,6 +340,12 @@
      </Reference>
      <Reference Include="Google.Protobuf">
      <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Google.Protobuf.dll</HintPath>
+     </Reference>
+     <Reference Include="ExcelDataReader">
+     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
+     </Reference>
+     <Reference Include="ExcelDataReader.DataSet">
+     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.DataSet.dll</HintPath>
      </Reference>
      <Reference Include="nunit.framework">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.ext.nunit@1.0.6\net35\unity-custom\nunit.framework.dll</HintPath>
@@ -796,9 +805,17 @@
      </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Wjybxx.BigCat.EditorTests.csproj">
+      <Project>{a7d06e35-a95f-ede6-56ce-70d210a77692}</Project>
+      <Name>Wjybxx.BigCat.EditorTests</Name>
+    </ProjectReference>
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
       <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
       <Name>Wjybxx.BigCat.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.GamePlay.csproj">
+      <Project>{2091e686-164b-cb1c-9484-8216e5c13078}</Project>
+      <Name>Wjybxx.BigCat.GamePlay</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>
@@ -807,14 +824,6 @@
     <ProjectReference Include="UnityEngine.UI.csproj">
       <Project>{ff8527d1-008a-d49a-39ff-8369ade6a345}</Project>
       <Name>UnityEngine.UI</Name>
-    </ProjectReference>
-    <ProjectReference Include="Wjybxx.BigCat.EditorTests.csproj">
-      <Project>{a7d06e35-a95f-ede6-56ce-70d210a77692}</Project>
-      <Name>Wjybxx.BigCat.EditorTests</Name>
-    </ProjectReference>
-    <ProjectReference Include="Wjybxx.BigCat.GamePlay.csproj">
-      <Project>{2091e686-164b-cb1c-9484-8216e5c13078}</Project>
-      <Name>Wjybxx.BigCat.GamePlay</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

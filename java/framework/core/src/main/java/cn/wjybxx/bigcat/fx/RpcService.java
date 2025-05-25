@@ -60,12 +60,6 @@ public @interface RpcService {
     @StableName
     String customData() default "";
 
-    /** 是否生成服务端用的{@code Exporter} */
-    boolean genExporter() default true;
-
-    /** 是否生成客户端用的{@code Proxy} */
-    boolean genProxy() default true;
-
     /**
      * 生成的proxy是否支持实例化
      * <p>
