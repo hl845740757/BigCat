@@ -354,11 +354,17 @@
      <Reference Include="Wjybxx.Dson.Apt2">
      <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Dson.Apt2.dll</HintPath>
      </Reference>
+     <Reference Include="ExcelDataReader">
+     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
+     </Reference>
      <Reference Include="Unity.Plastic.Antlr3.Runtime">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.0.5\Lib\Editor\PlasticSCM\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
      </Reference>
      <Reference Include="Unity.VisualScripting.YamlDotNet">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.8.0\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
+     </Reference>
+     <Reference Include="ExcelDataReader.DataSet">
+     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.DataSet.dll</HintPath>
      </Reference>
      <Reference Include="Unity.VisualScripting.TextureAssets">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.8.0\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
@@ -380,12 +386,6 @@
      </Reference>
      <Reference Include="Google.Protobuf">
      <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Google.Protobuf.dll</HintPath>
-     </Reference>
-     <Reference Include="ExcelDataReader">
-     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
-     </Reference>
-     <Reference Include="ExcelDataReader.DataSet">
-     <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.DataSet.dll</HintPath>
      </Reference>
      <Reference Include="nunit.framework">
      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.ext.nunit@1.0.6\net35\unity-custom\nunit.framework.dll</HintPath>

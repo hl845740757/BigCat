@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using NUnit.Framework;
+using UnityEngine;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
@@ -27,6 +27,7 @@ using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using static Wjybxx.BigCat.Fx.ExtensibleService;
+using ILogger = Wjybxx.Commons.Logger.ILogger;
 
 namespace Wjybxx.BigCat.Tests
 {
@@ -38,7 +39,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     /** worker */
     private Worker worker;
     /** 定时器 */
-    private readonly GRegulator regulator = GRegulator.NewFixedDelay(1, 50);
+    private readonly GRegulator regulator = GRegulator.NewFixedDelay(1, 100);
 
     [Inject] private RpcClient rpcClient;
     [Inject] private TimeModule timeModule;
@@ -55,7 +56,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     /// <param name="request"></param>
     [RpcMethod(MethodId = 1)]
     public void OnMessage(Request request) {
-        Console.WriteLine(request.String1);
+        Debug.Log(request.String1);
     }
 
     public Dictionary<string, object> ExtBlackboard => extBlackboard;
@@ -77,7 +78,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
 
 
     public override void Stop() {
-        Console.WriteLine("triggerCount: " + regulator.Count);
+        Debug.Log("triggerCount: " + regulator.Count);
     }
 
     public override void Update() {
@@ -111,19 +112,16 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
         Response result = await rpcClient.Call(serverAddr, RpcServiceExampleProxy.Hello(Request.OfString(msg)));
 
         // 启用本地共享的情况下应当是同一个字符串
-        Assert.AreSame(msg, result.StringVal);
-        Assert.IsTrue(worker.InEventLoop(), "worker.inEventLoop");
-
-        Console.WriteLine("callResult: " + result.StringVal);
-        Console.WriteLine();
+        // Assert.AreEqual(msg, result.StringVal);
+        // Assert.IsTrue(worker.InEventLoop(), "worker.inEventLoop");
+        Debug.Log("callResult: " + result.StringVal + "\n"); // 避免冗余堆栈
     }
 
     private void TestSyncCall() {
         try {
             string msg = CreateMessage("这是一个同步调用，远程异步执行");
             Response result = rpcClient.SyncCall(serverAddr, RpcServiceExampleProxy.HelloAsync(Request.OfString(msg)));
-            Console.WriteLine("syncResult: " + result.StringVal);
-            Console.WriteLine();
+            Debug.Log("syncResult: " + result.StringVal + "\n");
         }
         catch (ThreadInterruptedException) {
             logger.Info("syncCall interrupted");
@@ -135,9 +133,9 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
 
     private async ValueFuture TestContext() {
         string msg = CreateMessage("这是一个异步调用，目标函数有Context");
-        RpcMethodSpec<Response> methodSpec = RpcServiceExampleProxy.ContextHello(Request.OfString(msg));
+        var methodSpec = RpcServiceExampleProxy.ContextHello(Request.OfString(msg));
         Response response = await rpcClient.Call(serverAddr, methodSpec);
-        Console.WriteLine(response.ToString());
+        Debug.Log(response.ToString());
     }
 
     private readonly int offsetSeconds = (int)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;

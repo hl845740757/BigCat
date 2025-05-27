@@ -26,10 +26,9 @@
         <EmbedAllSources>true</EmbedAllSources> <!-- 嵌入源代码 -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <TargetFrameworks>net6.0;net8.0;</TargetFrameworks>
-        <!-- 代码生成 -->
+        
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
-<!--        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

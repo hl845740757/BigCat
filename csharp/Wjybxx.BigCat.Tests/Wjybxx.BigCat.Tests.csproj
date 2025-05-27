@@ -10,7 +10,7 @@
         <IsTestProject>true</IsTestProject>
         <RootNamespace>Wjybxx.BigCat.Tests</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <!-- 代码生成 -->
+        
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
@@ -44,12 +44,11 @@
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll" />
     </ItemGroup>
-    
+
     <!-- 排除生成文件目录 -->
     <ItemGroup>
+        <None Remove="Generated\**" />
         <Compile Remove="Generated\**" />
-    </ItemGroup>
-    <ItemGroup>
         <EmbeddedResource Remove="Generated\**" />
     </ItemGroup>
 </Project>

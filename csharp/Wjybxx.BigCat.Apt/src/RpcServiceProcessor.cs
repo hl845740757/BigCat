@@ -157,6 +157,9 @@ public class RpcServiceProcessor : ISourceGenerator
             if (!IsBuildingAssemblyNode(typeSymbol)) {
                 continue;
             }
+            if (AptUtils.HasUsedForReflectionAttribute(typeSymbol.GetAttributes())) {
+                continue;
+            }
             var attributeData = AptUtils.GetAttribute(typeSymbol.GetAttributes(), CNAME_RPC_SERVICE);
             if (attributeData == null) {
                 continue;
@@ -307,15 +310,6 @@ public class RpcServiceProcessor : ISourceGenerator
     #endregion
 
     #region 注解解析
-
-    private bool GetAttributeValueValue(AttributeData attributeData, string propertyName, bool def) {
-        foreach (var pair in attributeData.NamedArguments) {
-            if (pair.Key == propertyName) {
-                return (bool)pair.Value.Value!;
-            }
-        }
-        return def;
-    }
 
     internal AttributeData? GetMethodAnnoValueMap(IMethodSymbol method) {
         return AptUtils.GetAttribute(method.GetAttributes(), CNAME_RPC_METHOD);

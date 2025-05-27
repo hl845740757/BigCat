@@ -29,10 +29,9 @@
         <EmbedAllSources>true</EmbedAllSources> <!-- 嵌入源代码 -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <TargetFrameworks>net6.0;net8.0;</TargetFrameworks>
-        <!-- 代码生成 -->
+        
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
-<!--        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -54,7 +53,7 @@
         <PackageReference Include="Wjybxx.Commons.Inject" Version="1.4.2" />
         <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.0" />
         <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.0" />
-        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.3" />
+        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.4" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->

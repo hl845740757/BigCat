@@ -8,8 +8,7 @@
         <IsTestProject>true</IsTestProject>
         <RootNamespace>Wjybxx.BigCat.EditorTest</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-
-        <!-- 代码生成 -->
+        
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>

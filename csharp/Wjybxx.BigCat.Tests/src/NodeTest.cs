@@ -92,7 +92,7 @@ public class NodeTest
     [Test]
     public void Test() {
         // 查看日志
-        Thread.Sleep(10 * 1000);
+        Thread.Sleep(5 * 1000);
         node.Shutdown();
     }
 

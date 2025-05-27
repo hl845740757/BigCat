@@ -1,4 +1,5 @@
 ﻿#region LICENSE
+
 // Copyright 2025 wjybxx(845740757@qq.com)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +13,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #endregion
 
 using Wjybxx.BigCat.Fx;
+using Wjybxx.Commons.Concurrent;
 
-namespace Wjybxx.BigCat.GamePlay
+namespace Wjybxx.BigCat.Tests
 {
-/// <summary>
-/// 测试rpc生成是否正确
-/// </summary>
-[RpcService(ServiceId = 1)]
-public interface LoginService
+public class TestRpcRouter : EventLoopModule, RpcRouter
 {
-    [RpcMethod(MethodId = 1)]
-    public void CheckToken(string token);
-
-    [RpcMethod(MethodId = 2)]
-    public void NotifyResult(string r);
+    public void Send(RpcProtocol protocol) {
+    }
 }
 }

@@ -47,8 +47,8 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Tests\Editor\Apt\MyBean.cs" />
      <Compile Include="Assets\Tests\Editor\Apt\DVector.cs" />
+     <Compile Include="Assets\Tests\Editor\Apt\MyBean.cs" />
      <Folder Include="Assets\Tests\Editor" />
      <Folder Include="Assets\Tests\Editor\Apt" />
      <None Include="Assets\Tests\Editor\Wjybxx.BigCat.EditorTests.asmdef" />
@@ -685,12 +685,6 @@
      <Reference Include="System.Xml.XPath.XDocument">
      <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\Facades\System.Xml.XPath.XDocument.dll</HintPath>
      </Reference>
-     <Reference Include="UnityEngine.TestRunner">
-     <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
-     </Reference>
-     <Reference Include="UnityEditor.TestRunner">
-     <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEditor.TestRunner.dll</HintPath>
-     </Reference>
      <Reference Include="Wjybxx.BTree.Codec">
      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Codec.dll</HintPath>
      </Reference>
@@ -714,6 +708,12 @@
      </Reference>
      <Reference Include="Wjybxx.Dson.Core">
      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
+     </Reference>
+     <Reference Include="UnityEngine.TestRunner">
+     <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
+     </Reference>
+     <Reference Include="UnityEditor.TestRunner">
+     <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEditor.TestRunner.dll</HintPath>
      </Reference>
   </ItemGroup>
   <ItemGroup>
