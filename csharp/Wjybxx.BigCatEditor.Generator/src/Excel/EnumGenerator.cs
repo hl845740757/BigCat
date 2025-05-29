@@ -31,6 +31,8 @@ namespace Wjybxx.BigCatEditor.Generator.Excel
 /// </summary>
 public class EnumGenerator
 {
+    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(EnumGenerator));
+
     private readonly string outDir;
     private readonly ClassName className;
     private readonly List<ConstValue> enumValues;
@@ -63,7 +65,8 @@ public class EnumGenerator
             CheckAlias();
         }
         TypeSpec.Builder typeBuilder = TypeSpec.NewEnumBuilder(className.simpleName)
-            .AddModifiers(Modifiers.Public);
+            .AddModifiers(Modifiers.Public)
+            .AddAttribute(processorInfo);
         if (isFlags) {
             typeBuilder.AddAttribute(AttributeSpec.NewBuilder(GeneratorUtil.clsName_Flags).Build());
         }

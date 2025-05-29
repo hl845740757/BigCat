@@ -23,6 +23,17 @@ namespace Wjybxx.BigCatEditor.DataScript
 public static class DSUtil
 {
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="kind"></param>
+    /// <returns></returns>
+    public static bool IsNamedType(this DSElementKind kind) {
+        return kind == DSElementKind.Class
+               || kind == DSElementKind.Strut
+               || kind == DSElementKind.Enum;
+    }
+
+    /// <summary>
     /// 将继承打平
     /// </summary>
     /// <param name="namedType">当前类型</param>

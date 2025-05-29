@@ -39,23 +39,29 @@ public static class DSAnnotations
     /// 2.显式指定单个类型的命名空间时，需要使用全路径
     /// </summary>
     public const string NAMESPACE = "Namespace";
-
-    /// <summary>
-    /// 类型的序列化配置
-    /// -支持用于类型和字段
-    ///
-    /// 语法如下：
-    /// <code>// @DsonCodec{style: flow, name: xxx, alias: [xxx, xxx, xxx]} </code>
-    /// - name 表示类型或字段序列化的名字
-    /// - alias 表示类型序列化时支持的别名，别名用于简化Dson文本编写；字段暂不支持别名
-    /// - style 的值可见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>；不区分大小写；不认识的值将被忽略。
-    /// </summary>
-    public const string DSON_CODEC = "DsonCodec";
-
+    
     /// <summary>
     /// 表示枚举类型是一个Flags类型
     /// (对应C#的<see cref="FlagsAttribute"/>注解)
     /// </summary>
     public const string ENUM_FLAGS = "Flags";
+
+    /// <summary>
+    /// 用于定义类型、字段、枚举值的可选项
+    /// </summary>
+    public const string OPTIONS = "Options";
+    
+    /// <summary>
+    /// 类型的序列化配置
+    /// -支持用于类型和字段
+    ///
+    /// 语法如下：
+    /// <code>// @DsonCodec{style: flow, name: xxx, alias: [xxx, xxx, xxx], elemStyle: flow} </code>
+    /// - name 表示类型或字段序列化的名字
+    /// - alias 表示类型序列化时支持的别名，别名用于简化Dson文本编写；字段暂不支持别名
+    /// - style 表示该类型输出为Dson文本时的默认排版，其值可见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>；不区分大小写，不认识的值将被忽略。
+    /// - elemStyle 用于指定数组元素或字典的Value的排版。
+    /// </summary>
+    public const string CODEC = "Codec";
 }
 }

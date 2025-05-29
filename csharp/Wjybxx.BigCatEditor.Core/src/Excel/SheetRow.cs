@@ -104,5 +104,9 @@ public sealed class SheetRow
     /// 获取内部字典
     /// </summary>
     public LinkedDictionary<string, string> Name2ValueMap => name2ValueMap;
+
+    public override string ToString() {
+        return $"{nameof(LineNumber)}: {LineNumber}, {nameof(Name2ValueMap)}: {CollectionUtil.ToString(Name2ValueMap)}";
+    }
 }
 }

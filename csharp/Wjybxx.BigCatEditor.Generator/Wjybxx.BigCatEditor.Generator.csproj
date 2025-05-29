@@ -53,6 +53,12 @@
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll" />
     </ItemGroup>
+    <ItemGroup>
+        <!-- 定制的excel实现 -->
+        <Reference Include="ExcelDataReader">
+            <HintPath>..\lib\ExcelDataReader.dll</HintPath>
+        </Reference>
+    </ItemGroup>
     
     <!-- 排除生成文件目录 -->
     <ItemGroup>

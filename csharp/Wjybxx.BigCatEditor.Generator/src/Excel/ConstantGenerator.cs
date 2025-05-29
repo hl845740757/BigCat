@@ -29,6 +29,8 @@ namespace Wjybxx.BigCatEditor.Generator.Excel
 /// </summary>
 public class ConstantGenerator
 {
+    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ConstantGenerator));
+    
     private readonly string outDir;
     private readonly ClassName className;
     private readonly List<ConstValue> enumValues;
@@ -48,7 +50,8 @@ public class ConstantGenerator
 
     public void Execute() {
         TypeSpec.Builder typeBuilder = TypeSpec.NewEnumBuilder(className.simpleName)
-            .AddModifiers(Modifiers.Public);
+            .AddModifiers(Modifiers.Public)
+            .AddAttribute(processorInfo);
 
         List<int> intValues = new List<int>(enumValues.Count);
         foreach (ConstValue enumValue in enumValues) {

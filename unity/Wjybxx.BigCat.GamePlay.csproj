@@ -55,6 +55,7 @@
      <Compile Include="Assets\Scripts\GamePlay\GameLauncher.cs" />
      <Compile Include="Assets\Scripts\GamePlay\Response.cs" />
      <None Include="Assets\Scripts\GamePlay\Wjybxx.BigCat.GamePlay.asmdef" />
+     <Folder Include="Assets\Scripts\GamePlay" />
      <Reference Include="UnityEngine">
      <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
      </Reference>

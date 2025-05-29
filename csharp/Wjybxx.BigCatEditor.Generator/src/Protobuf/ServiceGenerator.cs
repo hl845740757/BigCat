@@ -20,15 +20,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Wjybxx.BigCatEditor.Core;
-using Wjybxx.BigCatEditor.Generator.Protobuf;
 using Wjybxx.BigCatEditor.Protobuf;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson;
-using PoetUtil = Wjybxx.Commons.Poet.Util;
 using CoreUtil = Wjybxx.BigCatEditor.Core.Util;
 
-namespace Wjybxx.BigCatEditor.Generator.Rpc
+namespace Wjybxx.BigCatEditor.Generator.Protobuf
 {
 /// <summary>
 /// 根据PB文件生成Rpc服务类

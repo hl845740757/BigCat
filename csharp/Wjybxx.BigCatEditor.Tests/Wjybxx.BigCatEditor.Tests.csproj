@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net6.0;net8.0;</TargetFrameworks>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>annotations</Nullable>
 
@@ -22,7 +22,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-        <PackageReference Include="NUnit" Version="3.13.3" />
+        <PackageReference Include="NUnit" Version="3.14.0" />
         <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
         <PackageReference Include="NUnit.Analyzers" Version="3.6.1" />
     </ItemGroup>
@@ -47,6 +47,12 @@
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Poet.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- 定制的excel实现 -->
+        <Reference Include="ExcelDataReader">
+            <HintPath>..\lib\ExcelDataReader.dll</HintPath>
+        </Reference>
     </ItemGroup>
     
     <!-- 排除生成文件目录 -->

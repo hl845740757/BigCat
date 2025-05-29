@@ -23,8 +23,8 @@ namespace Wjybxx.BigCatEditor.Excel
 /// </summary>
 public sealed class SheetHeader
 {
-    /** 命令和参数，格式：{@code cs -x -y} */
-    public readonly string? cmd;
+    /** 字段选项 -- 格式自定义 */
+    public readonly string? options;
     /** 字段类型 eg：{@code int32} */
     public readonly string type;
     /** 字段名 eg: {@code  itemId} */
@@ -32,14 +32,14 @@ public sealed class SheetHeader
     /** 字段注释 */
     public readonly string? comment;
 
-    /** 定义name的行索引 */
+    /** 定义name的行索引(0-based) */
     public readonly int rowIndex;
-    /** 定义name的列索引 */
+    /** 定义name的列索引(0-based) */
     public readonly int colIndex;
 
-    public SheetHeader(string? cmd, string type, string name, string? comment,
+    public SheetHeader(string? options, string type, string name, string? comment,
                        int rowIndex, int colIndex) {
-        this.cmd = cmd;
+        this.options = options;
         this.name = name;
         this.type = type;
         this.comment = comment;
@@ -48,7 +48,7 @@ public sealed class SheetHeader
     }
 
     public override string ToString() {
-        return $"{nameof(cmd)}: {cmd}," +
+        return $"{nameof(options)}: {options}," +
                $" {nameof(name)}: {name}," +
                $" {nameof(type)}: {type}," +
                $" {nameof(comment)}: {comment}," +

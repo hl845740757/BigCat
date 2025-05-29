@@ -63,7 +63,7 @@ public class DSFile : DSElement
     /// </summary>
     /// <returns></returns>
     public List<DSNamedType> GetTypes() {
-        return EnclosedElements.Where(e => e.Kind == DSElementKind.Class)
+        return EnclosedElements.Where(e => e.Kind.IsNamedType())
             .Cast<DSNamedType>()
             .ToList();
     }

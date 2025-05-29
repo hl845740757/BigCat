@@ -19,7 +19,6 @@
 using System.IO;
 using NUnit.Framework;
 using Wjybxx.BigCatEditor.Generator.Protobuf;
-using Wjybxx.BigCatEditor.Generator.Rpc;
 using Wjybxx.BigCatEditor.Protobuf;
 using Wjybxx.EditorTest;
 

@@ -28,8 +28,9 @@ namespace Wjybxx.BigCatEditor.Excel
 ///
 /// 1.该抽象仅用于表格导出等工具，而不适用表格编辑器，表格编辑器需要更质朴的二维表抽象。
 /// 2.该抽象不再用于运行时，因为我们设计为可变的，以允许工具动态修改数据。
-/// 3.内容行必须是连续的，行号不能跳跃。
-/// 4.读表工具需要把所有的有name的列都读取进来，部分注释列我们也需要导出给翻译。
+/// 3.读表工具需要把所有的有name的列都读取进来，部分注释列我们也需要导出给翻译。
+///
+/// PS：其实也可以用于表格编辑器，但编辑器里不能修改元数据。
 /// </summary>
 public sealed class Sheet
 {
@@ -39,10 +40,10 @@ public sealed class Sheet
     public readonly string sheetName;
     /** 页索引，默认应该为0 */
     public readonly int sheetIndex;
-    /** 是否是参数表 */
+    /** 是否是参数表(纵表) */
     private readonly bool isParamSheet;
 
-    /** 所有的表头信息 */
+    /** 所有的表头信息 -- 如果是普通表，列号不一定连续；如果是参数表，行号不一定连续 */
     public readonly LinkedDictionary<string, SheetHeader> headers = new();
     /** 只包含内容部分 -- 因此第一个内容行的起始行号通常不是1；使用二分查找 */
     public readonly List<SheetRow> valueRows = new();
@@ -56,9 +57,12 @@ public sealed class Sheet
         this.sheetIndex = sheetIndex;
         this.isParamSheet = isParamSheet;
     }
-
+    
+    /// <summary>
+    /// 根据Excel等文件初始化Sheet
+    /// </summary>
     public Sheet(string fileName, string sheetName, int sheetIndex, bool isParamSheet,
-                 ICollection<SheetHeader> headers, ICollection<SheetRow> valueRows) {
+                 IList<SheetHeader> headers, IList<SheetRow> valueRows) {
         this.fileName = fileName;
         this.sheetName = sheetName;
         this.sheetIndex = sheetIndex;
