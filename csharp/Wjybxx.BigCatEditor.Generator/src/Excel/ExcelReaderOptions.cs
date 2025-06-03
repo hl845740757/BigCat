@@ -34,7 +34,7 @@ public sealed class ExcelReaderOptions
     /// 默认的配置
     /// </summary>
     public static ExcelReaderOptions Default { get; } = new Builder().Build();
-    
+
     /// <summary>
     /// 表格默认的注释行行数
     /// </summary>
@@ -47,10 +47,9 @@ public sealed class ExcelReaderOptions
     public readonly string commentLinePrefix;
 
     /// <summary>
-    /// 文本的代码页<see cref="Encoding"/>
-    /// 即文件的编码格式，默认为UTF8
+    /// 文件的编码格式，默认为UTF8
     /// </summary>
-    public readonly int codePage;
+    public readonly Encoding encoding;
     /// <summary>
     /// SheetName解析函数
     /// 参数为：文件名，原始表单名；
@@ -62,7 +61,7 @@ public sealed class ExcelReaderOptions
         this.skipRows = builder.SkipRows;
         this.commentLinePrefix = builder.CommentLinePrefix ?? "#";
 
-        this.codePage = builder.CodePage > 0 ? builder.CodePage : Encoding.UTF8.CodePage;
+        this.encoding = builder.Encoding ?? Encoding.UTF8;
         this.sheetNameParser = builder.SheetNameParser ?? ParseSheetName;
     }
 
@@ -84,7 +83,7 @@ public sealed class ExcelReaderOptions
         /// 文本的代码页<see cref="Encoding"/>
         /// 即文件的编码格式，默认为UTF8
         /// </summary>
-        public int CodePage { get; set; }
+        public Encoding Encoding { get; set; }
         /// <summary>
         /// SheetName解析函数
         /// 参数为：文件名，原始表单名；
@@ -102,8 +101,9 @@ public sealed class ExcelReaderOptions
 
     /// <summary>
     /// SheetName的正则表达式
+    /// 分表使用下划线'_'或点号'.'分隔。
     /// </summary>
-    private static readonly Regex regex = new Regex("^[a-zA-Z][a-zA-Z0-9_]*$", RegexOptions.Compiled);
+    private static readonly Regex regex = new Regex("^[a-zA-Z][a-zA-Z0-9_\\.]*$", RegexOptions.Compiled);
 
     /// <summary>
     /// 默认的SheetName解析函数
@@ -117,10 +117,7 @@ public sealed class ExcelReaderOptions
         if (sheetName.StartsWith("Sheet") || sheetName.StartsWith("sheet")) return null; // 非正式表名
         if (sheetName == "ExamleLang") return null; // Excel自带的隐藏表
         if (!regex.IsMatch(sheetName)) return null; // 不符合命名规范
-
-        // Item|物品表
-        int spIndex = sheetName.IndexOf('|');
-        return spIndex > 0 ? sheetName.Substring2(0, spIndex).Trim() : sheetName;
+        return sheetName;
     }
 
     #endregion

@@ -147,7 +147,6 @@ public static class Util
     /// </summary>
     /// <param name="str"></param>
     /// <returns></returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string DeleteWhitespace(string str) {
         if (IndexOfWhitespace(str) < 0) {
             return str;
@@ -163,7 +162,29 @@ public static class Util
         }
         return sb.ToString();
     }
-    
+
+    /// <summary>
+    /// 删除特定字符
+    /// </summary>
+    /// <param name="str"></param>
+    /// <param name="c"></param>
+    /// <returns></returns>
+    public static string DeleteChar(string str, char c) {
+        if (str.IndexOf(c) < 0) {
+            return str;
+        }
+        int len = str.Length;
+        StringBuilder sb = new StringBuilder(len);
+        for (int idx = 0; idx < len; idx++) {
+            char c2 = str[idx];
+            if (c2 == c) {
+                continue;
+            }
+            sb.Append(c2);
+        }
+        return sb.ToString();
+    }
+
     /// <summary>
     /// 从工作目录向上查找指定目录
     /// </summary>

@@ -34,8 +34,8 @@ public class SheetTest
     [SetUp]
     public void SetUp() {
         sheet = new Sheet("Test.xlsx", "Test", 0, false);
-        sheet.AddHeader(new SheetHeader("cs", "id", "id", "", nameRowIndex, 0));
-        sheet.AddHeader(new SheetHeader("cs", "string", "name", "", nameRowIndex, 1));
+        sheet.AddHeader(new Header("cs", "id", "id", "", nameRowIndex, 0));
+        sheet.AddHeader(new Header("cs", "string", "name", "", nameRowIndex, 1));
     }
     
     [Test]

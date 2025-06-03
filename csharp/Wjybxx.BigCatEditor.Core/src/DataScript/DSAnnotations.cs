@@ -39,7 +39,7 @@ public static class DSAnnotations
     /// 2.显式指定单个类型的命名空间时，需要使用全路径
     /// </summary>
     public const string NAMESPACE = "Namespace";
-    
+
     /// <summary>
     /// 表示枚举类型是一个Flags类型
     /// (对应C#的<see cref="FlagsAttribute"/>注解)
@@ -50,7 +50,7 @@ public static class DSAnnotations
     /// 用于定义类型、字段、枚举值的可选项
     /// </summary>
     public const string OPTIONS = "Options";
-    
+
     /// <summary>
     /// 类型的序列化配置
     /// -支持用于类型和字段

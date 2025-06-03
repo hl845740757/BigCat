@@ -5,7 +5,7 @@ using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.EditorTest.Generated
 {
-  [Generated("Wjybxx.BigCatEditor.Generator.Rpc.ServiceGenerator")]
+  [Generated("Wjybxx.BigCatEditor.Generator.Protobuf.ServiceGenerator")]
   [RpcService(ServiceId = 1)]
   public interface SearchService
   {

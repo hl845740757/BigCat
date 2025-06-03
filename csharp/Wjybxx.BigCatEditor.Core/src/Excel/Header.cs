@@ -20,8 +20,11 @@ namespace Wjybxx.BigCatEditor.Excel
 {
 /// <summary>
 /// 表头
+///
+/// 如果是普通表，行号相同，列号不一定连续；
+/// 如果是参数表，列号相同，行号不一定连续。
 /// </summary>
-public sealed class SheetHeader
+public sealed class Header
 {
     /** 字段选项 -- 格式自定义 */
     public readonly string? options;
@@ -37,8 +40,8 @@ public sealed class SheetHeader
     /** 定义name的列索引(0-based) */
     public readonly int colIndex;
 
-    public SheetHeader(string? options, string type, string name, string? comment,
-                       int rowIndex, int colIndex) {
+    public Header(string? options, string type, string name, string? comment,
+                  int rowIndex, int colIndex) {
         this.options = options;
         this.name = name;
         this.type = type;

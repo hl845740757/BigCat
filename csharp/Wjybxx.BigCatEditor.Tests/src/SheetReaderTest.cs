@@ -1,4 +1,5 @@
 ﻿#region LICENSE
+
 // Copyright 2023 wjybxx(845740757@qq.com)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +13,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #endregion
 
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.BigCatEditor.Generator.Excel;
@@ -28,8 +31,9 @@ public class SheetReaderTest
     [Test]
     public void Test() {
         string resDir = TestUtil.GetResDirectory();
-        string filePath = resDir + "/test.xlsx";
+        string tempDir = TestUtil.GetTempDirectory();
 
+        string filePath = resDir + "/test.xlsx";
         FileInfo fileInfo = new FileInfo(filePath);
         if (!fileInfo.Exists) {
             return;
@@ -39,12 +43,49 @@ public class SheetReaderTest
             SkipRows = 10
         }.Build();
 
-        List<Sheet> sheets = ExcelUtil.Read(fileInfo, readerOptions);
-        foreach (Sheet sheet in sheets) {
-            
+        SheetRepository repository = new SheetRepository();
+        foreach (Sheet sheet in ExcelUtil.Read(fileInfo, readerOptions)) {
+            repository.AddSheet(sheet);
         }
+        // 合并单元格
+        new SheetCellMerger(repository).Execute();
+
+        // 生成ds文件
+        var templateFile = new FileInfo(resDir + "/SheetCfg.tt");
+        new DataScriptGenerator(repository, templateFile, tempDir, Mode.All).Execute();
     }
-    
+
+    /// <summary>
+    /// 表单名正则表达式
+    /// </summary>
+    private static readonly Regex sheetNameRegex = new Regex("^[a-zA-Z][a-zA-Z0-9_\\.]*$", RegexOptions.Compiled);
+    /// <summary>
+    /// 字段名正则表达式
+    /// </summary>
+    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_][a-zA-Z0-9_]*(?:[#@][KV]?\\d+)?$", RegexOptions.Compiled);
+
+    [Test]
+    public void SheetNameTest() {
+        Assert.That(sheetNameRegex.IsMatch("Item.Equip"));
+        Assert.That(sheetNameRegex.IsMatch("Item_Equip"));
+    }
+
+    /// <summary>
+    /// 测试字段名检测的正确性
+    /// </summary>
+    [Test]
+    public void FieldNameTest() {
+        Assert.That(fieldNameRegex.IsMatch("itemArray#1"));
+        Assert.That(fieldNameRegex.IsMatch("itemArray@1"));
+
+        Assert.That(fieldNameRegex.IsMatch("itemDic#1")); // KV在同一个单元格
+        Assert.That(fieldNameRegex.IsMatch("itemDic#K1")); // Key在单独单元格
+        Assert.That(fieldNameRegex.IsMatch("itemDic#V1")); // Value在单独单元格
+
+        Assert.That(!fieldNameRegex.IsMatch("itemDic#KK1"));
+        Assert.That(!fieldNameRegex.IsMatch("itemDic#KV1")); // KV配置非法
+    }
+
     private void test() {
         // Map<String, Sheet> sheetMap = ExcelUtils.readExcel(new File(TestUtil.testResPath + "/test.xlsx"));
         // Sheet skillSheet = sheetMap.get("Skill");

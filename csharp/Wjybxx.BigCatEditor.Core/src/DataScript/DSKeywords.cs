@@ -84,6 +84,7 @@ public static class DSKeywords
     // 容器类型
     public const string TYPE_LIST = "List";
     public const string TYPE_MAP = "Map";
+    public const string TYPE_PAIR = "Pair";
     // 装箱类型
     public const string TYPE_OBJECT = "Object";
     public const string TYPE_NULLABLE = "Nullable";
@@ -102,6 +103,11 @@ public static class DSKeywords
         TypeParameterName.Get("T")
     });
     public static readonly ClassName TYPE_NAME_MAP = ClassName.Get("ds", "Map", new List<TypeName>()
+    {
+        TypeParameterName.Get("K"),
+        TypeParameterName.Get("V")
+    });
+    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get("ds", "Pair", new List<TypeName>()
     {
         TypeParameterName.Get("K"),
         TypeParameterName.Get("V")

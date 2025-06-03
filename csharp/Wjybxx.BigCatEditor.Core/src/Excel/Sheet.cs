@@ -18,6 +18,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Wjybxx.BigCatEditor.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
@@ -41,10 +43,10 @@ public sealed class Sheet
     /** 页索引，默认应该为0 */
     public readonly int sheetIndex;
     /** 是否是参数表(纵表) */
-    private readonly bool isParamSheet;
+    public readonly bool isParamSheet;
 
-    /** 所有的表头信息 -- 如果是普通表，列号不一定连续；如果是参数表，行号不一定连续 */
-    public readonly LinkedDictionary<string, SheetHeader> headers = new();
+    /** 所有的表头信息 */
+    public readonly LinkedDictionary<string, Header> headers = new();
     /** 只包含内容部分 -- 因此第一个内容行的起始行号通常不是1；使用二分查找 */
     public readonly List<SheetRow> valueRows = new();
 
@@ -57,19 +59,19 @@ public sealed class Sheet
         this.sheetIndex = sheetIndex;
         this.isParamSheet = isParamSheet;
     }
-    
+
     /// <summary>
     /// 根据Excel等文件初始化Sheet
     /// </summary>
     public Sheet(string fileName, string sheetName, int sheetIndex, bool isParamSheet,
-                 IList<SheetHeader> headers, IList<SheetRow> valueRows) {
+                 IList<Header> headers, IList<SheetRow> valueRows) {
         this.fileName = fileName;
         this.sheetName = sheetName;
         this.sheetIndex = sheetIndex;
         this.isParamSheet = isParamSheet;
         // 
         this.headers.AdjustCapacity(headers.Count);
-        foreach (SheetHeader header in headers) {
+        foreach (Header header in headers) {
             this.headers[header.name] = header;
         }
         this.valueRows.AddRange(valueRows);
@@ -83,8 +85,8 @@ public sealed class Sheet
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public SheetHeader? GetHeader(string name) {
-        headers.TryGetValue(name, out SheetHeader header);
+    public Header? GetHeader(string name) {
+        headers.TryGetValue(name, out Header header);
         return header;
     }
 
@@ -93,7 +95,7 @@ public sealed class Sheet
     /// (会覆盖旧值)
     /// </summary>
     /// <param name="header"></param>
-    public void AddHeader(SheetHeader header) {
+    public void AddHeader(Header header) {
         headers[header.name] = header;
     }
 
@@ -102,8 +104,8 @@ public sealed class Sheet
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public SheetHeader? RemoveHeader(string name) {
-        headers.Remove(name, out SheetHeader header);
+    public Header? RemoveHeader(string name) {
+        headers.Remove(name, out Header header);
         return header;
     }
 
@@ -115,7 +117,7 @@ public sealed class Sheet
     public SheetRow GetRow(int rowIndex) {
         int idx = CollectionUtil.BinarySearch(valueRows, midRow => midRow.RowIndex.CompareTo(rowIndex));
         if (idx < 0) {
-            throw new IndexOutOfRangeException($"rowIndex:{rowIndex}, minLn: {MinLineNumber}, maxLn: {MaxLineNumber}");
+            throw new IndexOutOfRangeException($"rowIndex:{rowIndex}");
         }
         return valueRows[idx];
     }
@@ -192,7 +194,7 @@ public sealed class Sheet
         if (!isParamSheet) {
             throw new IllegalStateException();
         }
-        SheetHeader header = headers[name];
+        Header header = headers[name];
         if (header == null) {
             throw new ArgumentException($"col: {name} is absent");
         }
@@ -211,7 +213,7 @@ public sealed class Sheet
         if (!isParamSheet) {
             throw new IllegalStateException();
         }
-        SheetHeader header = headers[name];
+        Header header = headers[name];
         if (header == null) {
             throw new ArgumentException($"col: {name} is absent");
         }

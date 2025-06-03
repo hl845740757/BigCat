@@ -35,10 +35,10 @@ public static class ExcelUtil
     /// </summary>
     /// <returns>有效表单页</returns>
     public static List<Sheet> Read(FileInfo fileInfo, ExcelReaderOptions options) {
-        using var stream = File.Open(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var reader = ExcelReaderFactory.CreateReader(stream, new ExcelReaderConfiguration(options.codePage)
+        using var stream = File.Open(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); // 允许其它文件读写
+        using var reader = ExcelReaderFactory.CreateReader(stream, new ExcelReaderConfiguration(options.encoding)
         {
-            ReturnsRawValue = true // 定时版
+            ReturnsRawValue = true // 定制版
         });
 
         List<Sheet> results = new List<Sheet>();

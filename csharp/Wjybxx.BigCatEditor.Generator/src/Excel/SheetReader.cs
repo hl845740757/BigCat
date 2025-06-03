@@ -18,11 +18,11 @@
 
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using ExcelDataReader;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.Commons;
+using static Wjybxx.BigCatEditor.Generator.Excel.SheetConstants;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
@@ -38,20 +38,10 @@ namespace Wjybxx.BigCatEditor.Generator.Excel
 /// </summary>
 internal class SheetReader
 {
-    private const string COL_ARGS = "args";
-    private const string COL_NAME = "name";
-    private const string COL_TYPE = "type";
-    private const string COL_VALUE = "value";
-    private const string COL_COMMENT = "comment";
-
-    /** 参数表的所有列 */
-    private static readonly List<string> PARAM_SHEET_COL_NAMES = new() { COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE, COL_COMMENT };
-    /** 参数表至少具备的列 - 注释列可选 */
-    private static readonly List<string> PARAM_SHEET_REQUIRED_COL_NAMES = new() { COL_ARGS, COL_NAME, COL_TYPE, COL_VALUE };
-    /** 表头行的行数 */
+    /** 普通表的表头行数 */
     private const int HEADER_ROW_COUNT = 4;
-    /** 字段名的正则表达式 */
-    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_$][a-zA-Z0-9_$]*$", RegexOptions.Compiled);
+    /** 字段名的正则表达式 - 数组和字典支持#index语法 */
+    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_][a-zA-Z0-9_]*(?:[#]\\d+)?$", RegexOptions.Compiled);
 
     private readonly string fileName;
     private readonly string sheetName;
@@ -140,7 +130,7 @@ internal class SheetReader
     /// <param name="firstRowValues"></param>
     /// <returns></returns>
     private static bool IsParamSheet(List<string> firstRowValues) {
-        foreach (string value in PARAM_SHEET_REQUIRED_COL_NAMES) {
+        foreach (string value in PARAM_SHEET_COLS) {
             if (!firstRowValues.Contains(value)) {
                 return false;
             }
@@ -161,7 +151,7 @@ internal class SheetReader
         int nameCount = 0;
         foreach (string value in thirdRowValues) {
             if (string.IsNullOrWhiteSpace(value)) continue;
-            if (!fieldNameRegex.IsMatch(value)) return false;
+            if (!fieldNameRegex.IsMatch(value.Trim())) return false;
             nameCount++;
         }
         return nameCount > 0;
@@ -190,10 +180,10 @@ internal class SheetReader
 
     private struct SheetContent
     {
-        internal readonly List<SheetHeader> headers;
+        internal readonly List<Header> headers;
         internal readonly List<SheetRow> valueRowList;
 
-        public SheetContent(List<SheetHeader> headers, List<SheetRow> valueRowList) {
+        public SheetContent(List<Header> headers, List<SheetRow> valueRowList) {
             this.headers = headers;
             this.valueRowList = valueRowList;
         }
@@ -213,13 +203,13 @@ internal class SheetReader
     /// <param name="firstRowValues"></param>
     /// <returns></returns>
     private SheetContent ReadParamSheet(List<string> firstRowValues) {
-        int argsColIndex = firstRowValues.IndexOf(COL_ARGS);
+        int argsColIndex = firstRowValues.IndexOf(COL_OPTIONS);
         int nameColIndex = firstRowValues.IndexOf(COL_NAME);
         int typeColIndex = firstRowValues.IndexOf(COL_TYPE);
         int valueColIndex = firstRowValues.IndexOf(COL_VALUE);
         int commentColIndex = firstRowValues.IndexOf(COL_COMMENT);
 
-        List<SheetHeader> headers = new List<SheetHeader>();
+        List<Header> headers = new List<Header>();
         List<SheetRow> valueRowList = new(rowCount - options.skipRows);
 
         HashSet<string> nameSet = new HashSet<string>();
@@ -239,7 +229,7 @@ internal class SheetReader
                 throw new IOException($"the name is duplicate, name: {name}");
             }
             int rowIndex = reader.Depth;
-            SheetHeader header = new(args, name, type, comment, rowIndex, nameColIndex);
+            Header header = new(args, type, name, comment, rowIndex, nameColIndex);
             headers.Add(header);
 
             Dictionary<string, string?> name2ValueMap = new Dictionary<string, string?>() { { name, value } };
@@ -261,11 +251,11 @@ internal class SheetReader
                                          List<string> nameRow,
                                          List<string> commentRow) {
         // 读取Header
-        List<SheetHeader> headers = new List<SheetHeader>(nameRow.Count);
-        int nameRowIndex = options.skipRows + HEADER_ROW_COUNT - 2;
+        List<Header> headers = new List<Header>(nameRow.Count);
+        int nameRowIndex = options.skipRows + 2;
 
         HashSet<string> nameSet = new HashSet<string>();
-        List<SheetHeader?> indexedHeaders = new List<SheetHeader?>(nameRow.Count);
+        List<Header?> indexedHeaders = new List<Header?>(nameRow.Count);
         for (int colIndex = 0; colIndex < nameRow.Count; colIndex++) {
             indexedHeaders.Add(null);
 
@@ -279,7 +269,7 @@ internal class SheetReader
             if (!nameSet.Add(name)) { // 字段名不可以重复
                 throw new IOException($"the name is duplicate, name: {name}");
             }
-            SheetHeader header = new SheetHeader(args, type, name, comment, nameRowIndex, colIndex);
+            Header header = new Header(args, type, name, comment, nameRowIndex, colIndex);
             headers.Add(header);
             indexedHeaders[colIndex] = header;
         }
@@ -300,7 +290,7 @@ internal class SheetReader
 
             SheetRow sheetRow = new SheetRow(reader.Depth);
             for (int colIndex = 0; colIndex < nameRow.Count; colIndex++) {
-                SheetHeader? header = indexedHeaders[colIndex];
+                Header? header = indexedHeaders[colIndex];
                 if (header == null) continue;
                 sheetRow.SetValue(header.name, rowValues[colIndex]);
             }

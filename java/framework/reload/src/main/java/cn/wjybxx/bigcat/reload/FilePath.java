@@ -76,7 +76,7 @@ public final class FilePath<T> extends AbstractConstant {
         return POOL.newVirtualPath(path);
     }
 
-    public static <T> FilePath<T> newPath(Builder builder) {
+    public static <T> FilePath<T> newPath(Builder<T> builder) {
         return POOL.newPath(builder);
     }
 

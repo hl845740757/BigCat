@@ -87,6 +87,7 @@ public class DSRepository
         // 基础容器
         builtinTypeMap[DSKeywords.TYPE_LIST] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST);
         builtinTypeMap[DSKeywords.TYPE_MAP] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP);
+        builtinTypeMap[DSKeywords.TYPE_PAIR] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR);
         // 装箱类型
         builtinTypeMap[DSKeywords.TYPE_OBJECT] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT);
         builtinTypeMap[DSKeywords.TYPE_NULLABLE] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE);
