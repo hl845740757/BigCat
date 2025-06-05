@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.BigCatEditor.Generator.Excel;
 using Wjybxx.EditorTest;
@@ -30,9 +31,13 @@ public class SheetReaderTest
 {
     [Test]
     public void Test() {
-        string resDir = TestUtil.GetResDirectory();
-        string tempDir = TestUtil.GetTempDirectory();
+        // 更改为生成单文件
+        string outDir = TestUtil.GetTempDirectory() + "/table";
+        if (!Directory.Exists(outDir)) {
+            Directory.CreateDirectory(outDir);
+        }
 
+        string resDir = TestUtil.GetResDirectory();
         string filePath = resDir + "/test.xlsx";
         FileInfo fileInfo = new FileInfo(filePath);
         if (!fileInfo.Exists) {
@@ -47,12 +52,21 @@ public class SheetReaderTest
         foreach (Sheet sheet in ExcelUtil.Read(fileInfo, readerOptions)) {
             repository.AddSheet(sheet);
         }
-        // 合并单元格
-        new SheetCellMerger(repository).Execute();
-
         // 生成ds文件
         var templateFile = new FileInfo(resDir + "/SheetCfg.tt");
-        new DataScriptGenerator(repository, templateFile, tempDir, Mode.All).Execute();
+        var dsFilePath = outDir + "/tables.ds";
+        new DataScriptGenerator(repository, templateFile, dsFilePath, RequireMode.All).Execute();
+
+        // 构建ds仓库
+        DSRepository dsRepository = new DSRepository();
+        {
+            DSFile dsFile = DSFileParser.Parse(new FileInfo(dsFilePath));
+            dsRepository.AddFile(dsFile);
+        }
+        dsRepository.Build();
+
+        // 导出Dson
+        new DsonGenerator(repository, dsRepository, RequireMode.All, outDir, true).Execute();
     }
 
     /// <summary>

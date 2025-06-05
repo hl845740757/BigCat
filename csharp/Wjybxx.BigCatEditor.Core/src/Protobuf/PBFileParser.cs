@@ -62,6 +62,19 @@ public sealed class PBFileParser
         }
     }
 
+    /// <summary>
+    /// 解析DataScript文件为内存结构
+    /// </summary>
+    /// <param name="fileInfo">文件信息--可以不存在</param>
+    /// <param name="text">文件内容</param>
+    /// <returns></returns>
+    public static PBFile Parse(FileInfo fileInfo, string text) {
+        using (IEnumerator<string> lineIterator = Util.GetLines(text).GetEnumerator()) {
+            PBFileParser parser = new PBFileParser(fileInfo, lineIterator);
+            parser.Parse();
+            return parser.pbFile;
+        }
+    }
 #nullable enable
 
     private void Parse() {

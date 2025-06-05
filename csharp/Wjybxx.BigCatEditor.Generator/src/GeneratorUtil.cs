@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
@@ -36,11 +37,12 @@ public static class GeneratorUtil
 {
     private static readonly ClassName clsName_GeneratedAttribute = ClassName.Get("Wjybxx.Commons.Attributes", "GeneratedAttribute");
     private static readonly ClassName clsName_SourceFileRef = ClassName.Get("Wjybxx.Commons.Attributes", "SourceFileRefAttribute");
+    private static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
 
     public static readonly ClassName clsName_Flags = ClassName.Get(typeof(FlagsAttribute));
     public static readonly ConcurrentObjectPool<CodeWriter> codeWriterPool = new ConcurrentObjectPool<CodeWriter>(
         () => new CodeWriter(), e => e.Reset());
-
+    
     /// <summary>
     /// 为生成代码的注解处理器创建一个通用注解
     /// </summary>
@@ -114,7 +116,7 @@ public static class GeneratorUtil
         CodeWriter codeWriter = codeWriterPool.Acquire();
         try {
             string path = outDir + "/" + className.simpleName + ".cs";
-            File.WriteAllText(path, codeWriter.Write(csharpFile));
+            File.WriteAllText(path, codeWriter.Write(csharpFile), ENCODING_UTF8);
         }
         finally {
             codeWriterPool.Release(codeWriter);
@@ -128,7 +130,7 @@ public static class GeneratorUtil
         CodeWriter codeWriter = codeWriterPool.Acquire();
         try {
             string path = outDir + "/" + fileSimpleName + ".cs";
-            File.WriteAllText(path, codeWriter.Write(csharpFile));
+            File.WriteAllText(path, codeWriter.Write(csharpFile), ENCODING_UTF8);
         }
         finally {
             codeWriterPool.Release(codeWriter);

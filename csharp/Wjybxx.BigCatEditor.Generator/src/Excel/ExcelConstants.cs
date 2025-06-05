@@ -20,40 +20,16 @@ using System;
 using Wjybxx.BigCatEditor.Core;
 using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
 using Wjybxx.Dson;
+using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
 /// <summary>
 /// 表单常量
 /// </summary>
-public static class SheetConstants
+public static class ExcelConstants
 {
-    #region 参数表表头
-
-    public const string COL_OPTIONS = "options";
-    public const string COL_TYPE = "type";
-    public const string COL_NAME = "name";
-    public const string COL_VALUE = "value";
-    public const string COL_COMMENT = "comment";
-
-    /// <summary>
-    /// 参数表的列
-    ///
-    /// PS：虽然定义为普通表的转置看似更规范，但只配置单值的情况下，commit放在value前面的体验并不好。
-    /// </summary>
-    public static readonly ImmutableList<string> PARAM_SHEET_COLS = new[]
-    {
-        COL_OPTIONS,
-        COL_TYPE,
-        COL_NAME,
-        COL_VALUE,
-        COL_COMMENT,
-    }.ToImmutableList2();
-
-    #endregion
-
     #region options
 
     /// <summary>
@@ -94,6 +70,15 @@ public static class SheetConstants
     /// </summary>
     public const string KEY_IS_RECORD = "isRecord";
     /// <summary>
+    /// 标记int32和int64类型为Flags类型，允许采用‘|’表示进行或操作。
+    /// 格式：<code>isFlags: true</code>
+    /// 示例：<code>A | B | C</code>
+    ///
+    /// 如果期望A,B,C为下标，那么应该新建一个BitArray类型，然后通过<see cref="DSTypeHandler"/>进行转换。
+    /// </summary>
+    public const string KEY_IS_FLAGS = "isFlags";
+
+    /// <summary>
     /// value禁止重复
     /// 适用number类型和字符串类型
     /// <code>unique: true</code>
@@ -109,6 +94,11 @@ public static class SheetConstants
     /// <code>max: 999</code>
     /// </summary>
     public const string KEY_MAX = "max";
+    /// <summary>
+    /// 当前列数据不进行检查
+    /// 比如期望在List和Map的元数据列配置注释时，可以禁用元数据列检查
+    /// </summary>
+    public const string KEY_NO_CHECK = "noCheck";
 
     #endregion
 
@@ -118,14 +108,14 @@ public static class SheetConstants
     /// 是否需要该单元格
     /// </summary>
     /// <param name="options"></param>
-    /// <param name="mode"></param>
+    /// <param name="requireMode"></param>
     /// <returns></returns>
-    public static bool IsRequired(string? options, Mode mode) {
-        return mode switch
+    public static bool IsRequired(string? options, RequireMode requireMode) {
+        return requireMode switch
         {
-            Mode.Client => IsClientRequired(options),
-            Mode.Server => IsServerRequired(options),
-            Mode.All => IsClientRequired(options) || IsServerRequired(options),
+            RequireMode.Client => IsClientRequired(options),
+            RequireMode.Server => IsServerRequired(options),
+            RequireMode.All => IsClientRequired(options) || IsServerRequired(options),
             _ => false
         };
     }
@@ -275,11 +265,17 @@ public static class SheetConstants
         if (IsNumberType(type)) return "0";
         if (IsStringType(type)) return "";
         if (IsBoolType(type)) return "false";
+        if (IsListType(type)) return "[]";
+        if (IsMapType(type)) return "{}";
+        // 指针、日期和时间戳...
         return "null";
     }
 
     /// <summary>
     /// 是否是数字类型
+    ///
+    /// 数字类型支持Dson文本支持的所有格式，此外还支持Flags格式<code>A|B|C</code>；
+    /// 如果其它类型也期望使用支持Flags类型，需要自定义<see cref="DSTypeHandler"/>。
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
@@ -292,6 +288,8 @@ public static class SheetConstants
 
     /// <summary>
     /// 是否是bool类型
+    ///
+    /// bool类型支持4个值<code>true, false, 0, 1</code>
     /// </summary>
     /// <param name="typed"></param>
     /// <returns></returns>
@@ -310,29 +308,36 @@ public static class SheetConstants
 
     /// <summary>
     /// 是否是List类型
+    ///
+    /// List类型格式<code>[V1, V2]</code>
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsListType(string type) {
-        return type.StartsWith(DSKeywords.TYPE_LIST + "<");
+        return type == DSKeywords.TYPE_LIST || type.StartsWith(DSKeywords.TYPE_LIST + "<");
     }
 
     /// <summary>
     /// 是否是字典类型
+    ///
+    /// 字典类型格式<code>{K1: V1, K2: V2}</code>
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsMapType(string type) {
-        return type.StartsWith(DSKeywords.TYPE_MAP + "<");
+        return type == DSKeywords.TYPE_MAP || type.StartsWith(DSKeywords.TYPE_MAP + "<");
     }
 
     /// <summary>
     /// 是否是Pair类型
+    ///
+    /// Pair类型格式<code>{K: V}</code>，
+    /// Excel中的Pair的Key限<code>int32, int64, string, enum</code>类型。
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsPairType(string type) {
-        return type.StartsWith(DSKeywords.TYPE_PAIR + "<");
+        return type == DSKeywords.TYPE_PAIR || type.StartsWith(DSKeywords.TYPE_PAIR + "<");
     }
 
     #endregion
@@ -346,7 +351,20 @@ public static class SheetConstants
     /// <summary>
     /// 分表的基础表表名
     /// </summary>
-    private const string STRING_BASE = "Base";
+    public const string STRING_BASE = "Base";
+
+    /// <summary>
+    /// 表格对应的Class名字
+    /// </summary>
+    public const string STRING_CLS_NAME = "clsName";
+    /// <summary>
+    /// 序列化版本
+    /// </summary>
+    public const string STRING_SERIAL_VERSION = "serialVersion";
+    /// <summary>
+    /// 序列化的内容行数(限普通表)
+    /// </summary>
+    public const string STRING_ROW_COUNT = "rowCount";
 
     /// <summary>
     /// 是否是分区表
@@ -403,20 +421,48 @@ public static class SheetConstants
     /// <param name="sheetName"></param>
     /// <returns></returns>
     public static string GetBaseTypeSheetName(string sheetName) {
-        return sheetName + ".Base";
+        return GetFirstSheetName(sheetName) + ".Base";
     }
 
     /// <summary>
-    /// 获取顶层表名
+    /// 获取子类型表的名字
+    /// </summary>
+    public static string GetSubTypeSheetName(string sheetName, string subTypeName) {
+        return GetFirstSheetName(sheetName) + "." + subTypeName;
+    }
+
+    /// <summary>
+    /// 获取第一级表名
     ///
+    /// <code>Item => Item</code>
     /// <code>Item.Base => Item</code>
     /// <code>Item.Base.0 => Item</code>
-    ///
-    /// PS：实在不知道取啥名了...
     /// </summary>
-    public static string GetRootSheetName(string sheetName) {
+    public static string GetFirstSheetName(string sheetName) {
         int idx = sheetName.IndexOf('.');
         return idx < 0 ? sheetName : sheetName.Substring2(0, idx);
+    }
+
+    /// <summary>
+    /// 获取第二级表名
+    ///
+    /// <code>Item.Base => Base</code>
+    /// <code>Item.Base.0 => Base</code>
+    /// </summary>
+    public static string GetSecondSheetName(string sheetName) {
+        int start = sheetName.IndexOf('.');
+        int end = sheetName.LastIndexOf('.');
+        if (start < 0) {
+            throw new ArgumentException("Sheet name is invalid: " + sheetName);
+        }
+        if (start < end) { // Item.Base.0
+            return sheetName.Substring2(start + 1, end);
+        }
+        string r = sheetName.Substring2(start + 1);
+        if (int.TryParse(r, out _)) { // Item.0
+            throw new ArgumentException("Sheet name is invalid: " + sheetName);
+        }
+        return r;
     }
 
     #endregion

@@ -80,19 +80,17 @@ public class PBRepository
     /// <param name="pbFile"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public PBRepository AddFile(PBFile pbFile) {
+    public void AddFile(PBFile pbFile) {
         string simpleName = pbFile.SimpleName;
         // 检查重复
-        if (fileMap.ContainsKey(simpleName)) {
+        if (!fileMap.TryAdd(simpleName, pbFile)) {
             throw new ArgumentException("duplicate fileName " + simpleName);
         }
-        fileMap[simpleName] = pbFile;
         // 添加索引
         foreach (PBElement element in pbFile.EnclosedElements) {
             var key = new StringPair(simpleName, element.SimpleName);
             topElementMap[key] = element;
         }
-        return this;
     }
 
     /// <summary>

@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -29,6 +30,8 @@ namespace Wjybxx.BigCatEditor.Core
 /// </summary>
 public static class Util
 {
+    public static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
+
     #region 空白字符
 
     /// <summary>
@@ -114,6 +117,21 @@ public static class Util
     }
 
     #endregion
+
+    /// <summary>
+    /// 将字符串拆分为行
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static List<string> GetLines(string str) {
+        List<string> stringList = new List<string>();
+        using (StringReader stringReader = new StringReader(str)) {
+            string str1;
+            while ((str1 = stringReader.ReadLine()) != null)
+                stringList.Add(str1);
+        }
+        return stringList;
+    }
 
     /// <summary>
     /// 去除字符串的双引号

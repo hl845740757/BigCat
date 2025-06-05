@@ -31,6 +31,11 @@ public class PBCompilerTest
 {
     [Test]
     public void Test() {
+        string tempDir = TestUtil.GetTempDirectory() + "/pb";
+        if (!Directory.Exists(tempDir)) {
+            Directory.CreateDirectory(tempDir);
+        }
+
         PBRepository repository = new PBRepository();
         // 解析所有pb文件
         string resDir = TestUtil.GetResDirectory();
@@ -42,12 +47,11 @@ public class PBCompilerTest
         repository.Build();
 
         // 生成临时文件
-        string tempDir = TestUtil.GetTempDirectory();
         new PBFileGenerator(repository, resDir, tempDir).Execute();
         // 编译protobuf
         string generatedDir = TestUtil.GetGeneratedDirectory();
         new PBFileCompiler(null, tempDir, generatedDir).Execute();
         // 生成rpc代码
-        new ServiceGenerator(repository, generatedDir,null).Execute();
+        new ServiceGenerator(repository, generatedDir, null).Execute();
     }
 }

@@ -47,7 +47,7 @@ public class MessageCodec<T> : IDsonCodec<T> where T : IMessage<T>
         writer.WriteBytes(null, inst.ToByteArray());
     }
 
-    public T ReadObject(IDsonObjectReader reader, Func<object>? factory = null) {
+    public T ReadObject(IDsonObjectReader reader, Type declaredType, Func<object>? factory = null) {
         byte[] bytes = reader.ReadBytes(reader.CurrentName);
         if (bytes == null) {
             return default;

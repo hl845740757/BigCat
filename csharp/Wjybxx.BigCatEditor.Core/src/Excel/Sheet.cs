@@ -18,10 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Wjybxx.BigCatEditor.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using static Wjybxx.BigCatEditor.Excel.SheetConstants;
 
 namespace Wjybxx.BigCatEditor.Excel
 {
@@ -45,9 +44,9 @@ public sealed class Sheet
     /** 是否是参数表(纵表) */
     public readonly bool isParamSheet;
 
-    /** 所有的表头信息 */
+    /** 所有的表头信息 -- 参数表由内容行构建，属于缓存数据 */
     public readonly LinkedDictionary<string, Header> headers = new();
-    /** 只包含内容部分 -- 因此第一个内容行的起始行号通常不是1；使用二分查找 */
+    /** 只包含内容部分 -- 因此第一个内容行的起始行号通常不是1；由于内容行可能不连续，使用二分查找 */
     public readonly List<SheetRow> valueRows = new();
 
     /// <summary>
@@ -69,11 +68,17 @@ public sealed class Sheet
         this.sheetName = sheetName;
         this.sheetIndex = sheetIndex;
         this.isParamSheet = isParamSheet;
-        // 
-        this.headers.AdjustCapacity(headers.Count);
-        foreach (Header header in headers) {
-            this.headers[header.name] = header;
+        //
+        if (isParamSheet && headers.Count == 0) {
+            this.headers.AdjustCapacity(valueRows.Count);
+            RefreshHeaders();
+        } else {
+            this.headers.AdjustCapacity(headers.Count);
+            foreach (Header header in headers) {
+                this.headers[header.name] = header;
+            }
         }
+        // 
         this.valueRows.AddRange(valueRows);
         this.valueRows.Sort((a, b) => a.RowIndex.CompareTo(b.RowIndex));
     }
@@ -155,6 +160,9 @@ public sealed class Sheet
             valueRows[nextIdx].RowIndex++;
         }
         valueRows.Insert(idx, row);
+        if (isParamSheet) {
+            RefreshHeaders();
+        }
     }
 
     /// <summary>
@@ -170,6 +178,9 @@ public sealed class Sheet
             valueRows[nextIdx].RowIndex--;
         }
         valueRows.RemoveAt(idx);
+        if (isParamSheet) {
+            RefreshHeaders();
+        }
     }
 
     /// <summary>
@@ -179,6 +190,41 @@ public sealed class Sheet
     public void ClearRow(int rowIndex) {
         SheetRow row = GetRow(rowIndex);
         row.Clear();
+        if (isParamSheet) {
+            RefreshHeaders();
+        }
+    }
+
+
+    /// <summary>
+    /// 刷新参数表的表头
+    /// </summary>
+    public void RefreshHeaders() {
+        if (!isParamSheet) {
+            return;
+        }
+        headers.Clear();
+        foreach (SheetRow valueRow in valueRows) {
+            Header header = TryCreateHeader(valueRow);
+            if (header != null) {
+                this.headers[header.name] = header;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 刷新指定行关联的header
+    /// </summary>
+    /// <param name="rowIndex"></param>
+    public void RefreshHeader(int rowIndex) {
+        if (!isParamSheet) {
+            return;
+        }
+        SheetRow valueRow = GetRow(rowIndex);
+        Header header = TryCreateHeader(valueRow);
+        if (header != null) {
+            this.headers[header.name] = header;
+        }
     }
 
     #endregion
@@ -199,7 +245,7 @@ public sealed class Sheet
             throw new ArgumentException($"col: {name} is absent");
         }
         SheetRow row = GetRow(header.rowIndex);
-        return row.GetValue(name);
+        return row.GetValue(COL_VALUE);
     }
 
     /// <summary>
@@ -218,7 +264,7 @@ public sealed class Sheet
             throw new ArgumentException($"col: {name} is absent");
         }
         SheetRow row = GetRow(header.rowIndex);
-        row.SetValue(name, value);
+        row.SetValue(COL_VALUE, value);
     }
 
     /// <summary>
@@ -254,10 +300,7 @@ public sealed class Sheet
     public int MinLineNumber {
         get {
             int count = valueRows.Count;
-            if (count == 0) {
-                return 0;
-            }
-            return valueRows[0].LineNumber;
+            return count == 0 ? 0 : valueRows[0].LineNumber;
         }
     }
 
@@ -268,10 +311,7 @@ public sealed class Sheet
     public int MaxLineNumber {
         get {
             int count = valueRows.Count;
-            if (count == 0) {
-                return 0;
-            }
-            return valueRows[count - 1].LineNumber;
+            return count == 0 ? 0 : valueRows[count - 1].LineNumber;
         }
     }
 

@@ -23,7 +23,7 @@ namespace Wjybxx.BigCatEditor.DataScript
 {
 /// <summary>
 /// 类型元素
-/// 普通类型、数组、指针、类型变量的共同超类
+/// 普通类型、类型变量的共同超类
 /// </summary>
 public abstract class DSTypeElement : DSElement
 {

@@ -16,6 +16,8 @@
 
 #endregion
 
+using System;
+
 namespace Wjybxx.BigCatEditor.Excel
 {
 /// <summary>
@@ -27,7 +29,7 @@ namespace Wjybxx.BigCatEditor.Excel
 public sealed class Header
 {
     /** 字段选项 -- 格式自定义 */
-    public readonly string? options;
+    public readonly string options;
     /** 字段类型 eg：{@code int32} */
     public readonly string type;
     /** 字段名 eg: {@code  itemId} */
@@ -40,11 +42,11 @@ public sealed class Header
     /** 定义name的列索引(0-based) */
     public readonly int colIndex;
 
-    public Header(string? options, string type, string name, string? comment,
+    public Header(string? options, string? type, string name, string? comment,
                   int rowIndex, int colIndex) {
-        this.options = options;
-        this.name = name;
-        this.type = type;
+        this.options = options ?? "";
+        this.type = type ?? "";
+        this.name = name ?? throw new ArgumentNullException(nameof(name));
         this.comment = comment;
         this.rowIndex = rowIndex;
         this.colIndex = colIndex;

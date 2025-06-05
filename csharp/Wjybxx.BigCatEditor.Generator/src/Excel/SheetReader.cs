@@ -22,7 +22,7 @@ using System.Text.RegularExpressions;
 using ExcelDataReader;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.Commons;
-using static Wjybxx.BigCatEditor.Generator.Excel.SheetConstants;
+using static Wjybxx.BigCatEditor.Excel.SheetConstants;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
@@ -220,7 +220,7 @@ internal class SheetReader
             string name = rowValues[nameColIndex].Trim();
             string type = rowValues[typeColIndex].Trim();
             string value = rowValues[valueColIndex]; // value不可以trim
-            string comment = commentColIndex >= 0 ? rowValues[commentColIndex].Trim() : "";
+            string comment = rowValues[commentColIndex].Trim();
 
             if (string.IsNullOrWhiteSpace(name)) { // 注释行
                 continue;
@@ -228,12 +228,18 @@ internal class SheetReader
             if (!nameSet.Add(name)) { // 参数名不可以重复
                 throw new IOException($"the name is duplicate, name: {name}");
             }
-            int rowIndex = reader.Depth;
-            Header header = new(args, type, name, comment, rowIndex, nameColIndex);
-            headers.Add(header);
+            // 保留原始行数据
+            SheetRow sheetRow = new SheetRow(reader.Depth);
+            sheetRow.SetValue(COL_OPTIONS, args);
+            sheetRow.SetValue(COL_TYPE, type);
+            sheetRow.SetValue(COL_NAME, name);
+            sheetRow.SetValue(COL_VALUE, value);
+            sheetRow.SetValue(COL_COMMENT, comment);
+            valueRowList.Add(sheetRow);
 
-            Dictionary<string, string?> name2ValueMap = new Dictionary<string, string?>() { { name, value } };
-            valueRowList.Add(new SheetRow(rowIndex, name2ValueMap));
+            // 保留原始的行列索引
+            Header header = TryCreateHeader(sheetRow, nameColIndex);
+            headers.Add(header);
         }
         return new SheetContent(headers, valueRowList);
     }

@@ -73,6 +73,7 @@ public static class DSKeywords
 
     #region builtin-types
 
+    public const string BUILTIN_NAMESPACE = "ds";
     // 原子类型
     public const string TYPE_INT32 = "int32";
     public const string TYPE_INT64 = "int64";
@@ -81,40 +82,50 @@ public static class DSKeywords
     public const string TYPE_BOOL = "bool";
     public const string TYPE_STRING = "string";
     public const string TYPE_BYTES = "bytes";
+    // 内建结构
+    public const string TYPE_PTR = "Ptr";
+    public const string TYPE_LPTR = "LPtr";
+    public const string TYPE_DATETIME = "DateTime";
+    public const string TYPE_TIMESTAMP = "Timestamp";
+    public const string TYPE_PAIR = "Pair";
     // 容器类型
     public const string TYPE_LIST = "List";
     public const string TYPE_MAP = "Map";
-    public const string TYPE_PAIR = "Pair";
     // 装箱类型
     public const string TYPE_OBJECT = "Object";
     public const string TYPE_NULLABLE = "Nullable";
 
     // 原子类型
-    public static readonly ClassName TYPE_NAME_INT32 = ClassName.Get("ds", "int32");
-    public static readonly ClassName TYPE_NAME_INT64 = ClassName.Get("ds", "int64");
-    public static readonly ClassName TYPE_NAME_FLOAT = ClassName.Get("ds", "float");
-    public static readonly ClassName TYPE_NAME_DOUBLE = ClassName.Get("ds", "double");
-    public static readonly ClassName TYPE_NAME_BOOL = ClassName.Get("ds", "bool");
-    public static readonly ClassName TYPE_NAME_STRING = ClassName.Get("ds", "string");
-    public static readonly ClassName TYPE_NAME_BYTES = ClassName.Get("ds", "bytes");
-    // 容器类型
-    public static readonly ClassName TYPE_NAME_LIST = ClassName.Get("ds", "List", new List<TypeName>()
-    {
-        TypeParameterName.Get("T")
-    });
-    public static readonly ClassName TYPE_NAME_MAP = ClassName.Get("ds", "Map", new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_INT32 = ClassName.Get(BUILTIN_NAMESPACE, TYPE_INT32);
+    public static readonly ClassName TYPE_NAME_INT64 = ClassName.Get(BUILTIN_NAMESPACE, TYPE_INT64);
+    public static readonly ClassName TYPE_NAME_FLOAT = ClassName.Get(BUILTIN_NAMESPACE, TYPE_FLOAT);
+    public static readonly ClassName TYPE_NAME_DOUBLE = ClassName.Get(BUILTIN_NAMESPACE, TYPE_DOUBLE);
+    public static readonly ClassName TYPE_NAME_BOOL = ClassName.Get(BUILTIN_NAMESPACE, TYPE_BOOL);
+    public static readonly ClassName TYPE_NAME_STRING = ClassName.Get(BUILTIN_NAMESPACE, TYPE_STRING);
+    public static readonly ClassName TYPE_NAME_BYTES = ClassName.Get(BUILTIN_NAMESPACE, TYPE_BYTES);
+    // 内建结构
+    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(BUILTIN_NAMESPACE, TYPE_PTR);
+    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(BUILTIN_NAMESPACE, TYPE_LPTR);
+    public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(BUILTIN_NAMESPACE, TYPE_DATETIME);
+    public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(BUILTIN_NAMESPACE, TYPE_TIMESTAMP);
+    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(BUILTIN_NAMESPACE, TYPE_PAIR, new List<TypeName>()
     {
         TypeParameterName.Get("K"),
         TypeParameterName.Get("V")
     });
-    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get("ds", "Pair", new List<TypeName>()
+    // 容器类型
+    public static readonly ClassName TYPE_NAME_LIST = ClassName.Get(BUILTIN_NAMESPACE, TYPE_LIST, new List<TypeName>()
+    {
+        TypeParameterName.Get("T")
+    });
+    public static readonly ClassName TYPE_NAME_MAP = ClassName.Get(BUILTIN_NAMESPACE, TYPE_MAP, new List<TypeName>()
     {
         TypeParameterName.Get("K"),
         TypeParameterName.Get("V")
     });
     // 装箱类型
-    public static readonly ClassName TYPE_NAME_OBJECT = ClassName.Get("ds", "Object");
-    public static readonly ClassName TYPE_NAME_NULLABLE = ClassName.Get("ds", "Nullable", new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_OBJECT = ClassName.Get(BUILTIN_NAMESPACE, TYPE_OBJECT);
+    public static readonly ClassName TYPE_NAME_NULLABLE = ClassName.Get(BUILTIN_NAMESPACE, TYPE_NULLABLE, new List<TypeName>()
     {
         TypeParameterName.Get("T")
     });

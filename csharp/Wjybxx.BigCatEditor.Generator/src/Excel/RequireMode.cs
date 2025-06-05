@@ -19,9 +19,9 @@
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
 /// <summary>
-/// 表格导出模式
+/// 表格读取模式
 /// </summary>
-public enum Mode
+public enum RequireMode
 {
     /// <summary>
     /// 客户端模式
