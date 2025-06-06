@@ -46,11 +46,11 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// 3.内部类的泛型变量是拷贝的，和外部类无关的。
 /// 4.泛型支持指定值类型或引用类型，也支持指定包含默认构造函数。
 /// 5.泛型不支持指定上界（边界），泛型参数上界对于数据存储来说不是必须的，但不支持可大幅降低复杂度。
+/// 6.避免泛型类和非泛型类使用相同的简单名 -- 做此支持会导致较大的复杂度，也会影响脚本的跨语言性。
 ///
 /// <h3>关于内部类</h3>
 /// 0.尽量避免使用内部类。
 /// 1.避免嵌套超过2层。
-/// 2.不支持引用其它类型的内部类。
 ///
 /// <h3>关于语法</h3>
 /// 不要在'{'和'}'所在行声明字段等，内容必须和开始和结束Token字符分离 -- 降低解析难度。
@@ -91,7 +91,7 @@ public sealed class DSNamedType : DSTypeElement
     /// 泛型类的原始定义类
     /// 当构造泛型时，保留指向的原型，泛型定义类则返回自身；
     /// </summary>
-    private readonly DSNamedType _originDefine;
+    private readonly DSNamedType? _originDefine;
 #nullable enable
 
     /// <summary>
@@ -156,7 +156,7 @@ public sealed class DSNamedType : DSTypeElement
         return new DSNamedType(DSElementKind.Enum, DSTypeKind.Enum, className, ImmutableList<DSTypeParameter>.Empty, null);
     }
 
-    /** 根据name中的泛型变量构建类型参数 */
+    /** 根据name中的泛型变量构建类型参数 -- 不包含特殊约束时可使用 */
     private static IList<DSTypeParameter> CreateTypeParameters(ClassName className) {
         if (!className.IsGenericType) {
             return ImmutableList<DSTypeParameter>.Empty;
@@ -261,15 +261,41 @@ public sealed class DSNamedType : DSTypeElement
     }
 
     /// <summary>
-    /// 获取定义类型的文件，内建类型返回null
+    /// 获取定义类型的文件，内建类型返回对应的虚拟文件
     /// </summary>
     /// <returns></returns>
-    public DSFile? GetEnclosingFile() {
-        DSElement? enclosing = EnclosingElement;
-        while (enclosing != null && enclosing.Kind != DSElementKind.File) {
+    public DSFile GetEnclosingFile() {
+        DSElement enclosing = OriginDefine.EnclosingElement;
+        while (enclosing.Kind != DSElementKind.File) {
             enclosing = enclosing.EnclosingElement;
         }
-        return (DSFile?)enclosing;
+        return (DSFile)enclosing;
+    }
+
+    /// <summary>
+    /// 获取类型的全限定名
+    /// 
+    /// <code>FileName.A.B.C.D</code>
+    /// 可以认为文件名充当了命名空间
+    /// </summary>
+    /// <returns></returns>
+    public string GetFullName(bool includeFileName = true) {
+        StringBuilder sb = new StringBuilder();
+        sb.Insert(0, SimpleName);
+        sb.Insert(0, '.');
+        // 父节点
+        DSElement enclosing = OriginDefine.EnclosingElement;
+        while (enclosing.Kind != DSElementKind.File) {
+            sb.Insert(0, enclosing.SimpleName);
+            sb.Insert(0, '.');
+            enclosing = enclosing.EnclosingElement;
+        }
+        // 文件名
+        if (!includeFileName) {
+            return sb.ToString(1, sb.Length - 1);
+        }
+        sb.Insert(0, enclosing.SimpleName); // 文件名
+        return sb.ToString();
     }
 
     #endregion
@@ -311,7 +337,9 @@ public sealed class DSNamedType : DSTypeElement
 
     /// <summary>
     /// 基类型的类型符号 -- 未解析的原始字符串
-    /// 业务不要据此判断是否有超类，应当根据<see cref="BaseType"/>判断
+    ///
+    /// 1.只有原始定义类可访问。
+    /// 2.业务不要据此判断是否有超类，可根据<see cref="BaseType"/>判断。
     /// </summary>
     public string? BaseTypeSymbol => _baseTypeSymbol;
 

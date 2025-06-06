@@ -69,21 +69,6 @@ public abstract class DSElement
     public virtual DSElement OriginDefine => this;
 
     /// <summary>
-    /// 是否是类型元素
-    /// </summary>
-    public bool IsTypeElement {
-        get {
-            return Kind switch
-            {
-                DSElementKind.Class => true,
-                DSElementKind.Strut => true,
-                DSElementKind.Enum => true,
-                _ => false
-            };
-        }
-    }
-
-    /// <summary>
     /// 添加嵌套元素
     /// </summary>
     public void AddEnclosedElement(DSElement enclosed) {

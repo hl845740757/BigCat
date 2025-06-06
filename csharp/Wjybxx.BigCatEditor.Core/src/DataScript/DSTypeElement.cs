@@ -46,7 +46,7 @@ public abstract class DSTypeElement : DSElement
     /// <summary>
     /// 类型的原始定义
     /// </summary>
-    public abstract override DSTypeElement OriginDefine { get; }
+    public override abstract DSTypeElement OriginDefine { get; }
 
     /// <summary>
     /// 类型
@@ -66,11 +66,16 @@ public abstract class DSTypeElement : DSElement
     /// </summary>
     public bool IsValueType => TypeKind == DSTypeKind.Struct || TypeKind == DSTypeKind.Enum;
 
+    /// <summary>
+    /// 是否是枚举类型
+    /// </summary>
+    public bool IsEnum => TypeKind == DSTypeKind.Enum;
+
     #region equals
 
-    public abstract override bool Equals(object? obj);
+    public override abstract bool Equals(object? obj);
 
-    public abstract override int GetHashCode();
+    public override abstract int GetHashCode();
 
     public static bool operator ==(DSTypeElement? left, DSTypeElement? right) {
         return Equals(left, right);

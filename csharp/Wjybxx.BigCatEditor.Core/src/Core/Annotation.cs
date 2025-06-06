@@ -33,28 +33,27 @@ public sealed class Annotation
 {
     /** 注解类型 */
     public readonly string type;
-    /** 注解值 -- dson格式 */
+    /** 注解值 -- dson格式，object或array */
     public readonly string value;
 
     /** 解析缓存 -- 延迟初始化 */
-    [NonSerialized] private DsonObject<string>? dsonValue;
+    [NonSerialized] private DsonValue? dsonValue;
 
     public Annotation(string type, string value) {
         this.type = type;
         this.value = value;
     }
 
-    /** 用于程序动态构造注解 */
-    public Annotation(string type, DsonObject<string> dsonValue) {
+    public Annotation(string type, DsonValue dsonValue) {
         this.type = type;
         this.dsonValue = dsonValue ?? throw new ArgumentNullException(nameof(dsonValue));
         this.value = dsonValue.ToDson(ObjectStyle.Flow);
     }
 
-    public DsonObject<string> DsonValue {
+    public DsonValue DsonValue {
         get {
             if (dsonValue == null) {
-                dsonValue = Dsons.FromDson(value).AsObject();
+                dsonValue = Dsons.FromDson(value);
             }
             return dsonValue;
         }
@@ -75,21 +74,28 @@ public sealed class Annotation
         if (atIdx < 0 || comment[atIdx] != '@') {
             return null; // '@'符号前面有其它内容
         }
-        int valueStartIndex = comment.IndexOf('{');
-        int valueEndIndex = comment.LastIndexOf('}');
-        if (valueStartIndex < 0 || valueStartIndex >= valueEndIndex) {
-            return null;
+        // 允许object和array格式
+        int startIndex = comment.IndexOf('{');
+        int endIndex = comment.LastIndexOf('}');
+        if (startIndex < 0 || startIndex >= endIndex) {
+            startIndex = comment.IndexOf('[');
+            endIndex = comment.LastIndexOf(']');
+            if (startIndex < 0 || startIndex >= endIndex) {
+                return null;
+            }
         }
-        string type = comment.Substring2(atIdx + 1, valueStartIndex).Trim();
+        string type = comment.Substring2(atIdx + 1, startIndex).Trim();
         if (string.IsNullOrWhiteSpace(type)) {
             return null; // 类型信息为空
         }
-        string value = comment.Substring2(valueStartIndex, valueEndIndex + 1);
-        Annotation annotation = new Annotation(type, value);
-        if (annotation.DsonValue == null) { // 提前检查dson文本格式
-            throw new IOException("invalid dson value");
+        DsonValue dsonValue;
+        if (startIndex > 0) {
+            string rawValue = comment.Substring2(startIndex, endIndex + 1);
+            dsonValue = Dsons.FromDson(rawValue);
+        } else {
+            dsonValue = DsonNull.NULL;
         }
-        return annotation;
+        return new Annotation(type, dsonValue);
     }
 
     /** 是否是注解类型注释 */
@@ -98,12 +104,16 @@ public sealed class Annotation
         if (atIdx < 0 || comment[atIdx] != '@') {
             return false; // '@'符号前面有其它内容
         }
-        int valueStartIndex = comment.IndexOf('{');
-        int valueEndIndex = comment.LastIndexOf('}');
-        if (valueStartIndex < 0 || valueStartIndex >= valueEndIndex) {
-            return false;
+        int startIndex = comment.IndexOf('{');
+        int endIndex = comment.LastIndexOf('}');
+        if (startIndex < 0 || startIndex >= endIndex) {
+            startIndex = comment.IndexOf('[');
+            endIndex = comment.LastIndexOf(']');
+            if (startIndex < 0 || startIndex >= endIndex) {
+                return false;
+            }
         }
-        string type = comment.Substring2(atIdx + 1, valueStartIndex).Trim();
+        string type = comment.Substring2(atIdx + 1, startIndex).Trim();
         if (string.IsNullOrWhiteSpace(type)) {
             return false; // 类型信息为空
         }

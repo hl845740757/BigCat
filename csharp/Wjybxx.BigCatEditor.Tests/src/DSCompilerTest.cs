@@ -45,13 +45,13 @@ public class DSCompilerTest
         DSNamedType builtinType = repository.GetBuiltinType(DSKeywords.TYPE_INT32);
         repository.MakeNullableType(builtinType);
 
-        DSNamedType namedType = repository.FindType("GenericChildBean2");
+        DSNamedType namedType = repository.GetType("GenericChildBean2");
         Assert.NotNull(namedType);
         DSField keyField = namedType.GetField("key");
         Assert.NotNull(keyField);
         Console.WriteLine(keyField.Type.TypeName); // List`1[string]
 
-        DSInst inst = repository.FindInst("vector3_array");
+        DSInst inst = repository.GetInst("vector3_array");
         Assert.NotNull(inst);
         Console.WriteLine(inst.DsonValue.ToDson());
     }

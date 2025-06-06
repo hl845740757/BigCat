@@ -33,110 +33,81 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// 
 /// 注意：与DS的仓库不同，我们的数据脚本顶层有Inst类型，而Inst的名字可以和其它元素重复。
 /// </summary>
-public class DSRepository
+public sealed class DSRepository
 {
     /// <summary>
-    /// 文件简单名到文件的映射
+    /// 虚拟全局文件
+    /// </summary>
+    private readonly DSFile globalFile = new DSFile(DSKeywords.GLOBAL, isVirtualFile: true);
+    /// <summary>
+    /// 真实文件映射(运行时不使用)
+    /// key为文件简单名
     /// </summary>
     private readonly LinkedDictionary<string, DSFile> fileMap = new();
     /// <summary>
-    /// 顶层元素名到元素的映射
-    /// key为[fileSimpleName, elementName]
-    ///
-    /// 跨文件访问时，只可访问其它文件的顶层类型
+    /// 逻辑文件映射(包含内建结构所属的虚拟文件)
+    /// key为文件简单名
     /// </summary>
-    private readonly LinkedDictionary<StringPair, DSNamedType> topTypeMap = new();
-    /// <summary>
-    /// 所有的实例映射
-    /// key为[fileSimpleName, elementName]
-    ///
-    /// 所有的实例都属于顶层元素，且也按文件存储，即只能访问import的文件中的实例。
-    /// </summary>
-    private readonly LinkedDictionary<StringPair, DSInst> instanceMap = new();
-    /// <summary>
-    /// 顶层元素名到元素的映射，用于解决查询效率问题
-    /// key为elementName
-    /// </summary>
-    private readonly LinkedDictionary<IndexKey, DSElement> indexedTopElementMap = new();
-
-    /// <summary>
-    /// 内建类型字典
-    /// </summary>
-    private readonly LinkedDictionary<string, DSNamedType> builtinTypeMap = new();
-    /// <summary>
-    /// 类型解析缓存
-    /// </summary>
-    private readonly Dictionary<ClassName, DSNamedType> resolveCache = new();
+    private readonly LinkedDictionary<string, DSFile> logicFileMap = new();
     /// <summary>
     /// 扩展工具类
     /// </summary>
     private readonly Dictionary<string, DSTypeHandler> handlerMap = new();
 
+    /// <summary>
+    /// 元素名到元素的映射，用于解决查询效率问题
+    /// key为fullNAme
+    /// </summary>
+    private readonly LinkedDictionary<IndexKey, DSElement> indexedElementMap = new();
+    /// <summary>
+    /// 类型解析缓存，用于避免泛型类重复构造
+    /// </summary>
+    private readonly Dictionary<ClassName, DSNamedType> resolveCache = new();
+
     public DSRepository() {
         // 用户可在build前修改内建类型数据
-        AddBuiltinTypes();
+        foreach (DSNamedType namedType in DSUtil.builtinTypes) {
+            globalFile.AddEnclosedElement(namedType);
+        }
+        AddFile(globalFile);
     }
 
-    private void AddBuiltinTypes() {
-        // 原子类型
-        builtinTypeMap[DSKeywords.TYPE_INT32] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32);
-        builtinTypeMap[DSKeywords.TYPE_INT64] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64);
-        builtinTypeMap[DSKeywords.TYPE_FLOAT] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT);
-        builtinTypeMap[DSKeywords.TYPE_DOUBLE] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE);
-        builtinTypeMap[DSKeywords.TYPE_BOOL] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL);
-        builtinTypeMap[DSKeywords.TYPE_STRING] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING);
-        builtinTypeMap[DSKeywords.TYPE_BYTES] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES);
-        // 内建结构
-        builtinTypeMap[DSKeywords.TYPE_PTR] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PTR);
-        builtinTypeMap[DSKeywords.TYPE_LPTR] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_LPTR);
-        builtinTypeMap[DSKeywords.TYPE_DATETIME] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME);
-        builtinTypeMap[DSKeywords.TYPE_TIMESTAMP] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP);
-        builtinTypeMap[DSKeywords.TYPE_PAIR] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR);
+    #region props
 
-        // 基础容器
-        builtinTypeMap[DSKeywords.TYPE_LIST] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST);
-        builtinTypeMap[DSKeywords.TYPE_MAP] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP);
-        // 装箱类型
-        builtinTypeMap[DSKeywords.TYPE_OBJECT] = DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT);
-        builtinTypeMap[DSKeywords.TYPE_NULLABLE] = DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE);
-    }
+    /// <summary>
+    /// 虚拟全局文件
+    /// </summary>
+    public DSFile GlobalFile => globalFile;
+    /// <summary>
+    /// 真实文件字典
+    /// </summary>
+    public LinkedDictionary<string, DSFile> FileMap => fileMap;
+    /// <summary>
+    /// 逻辑文件字典(包含虚拟文件)
+    /// </summary>
+    public LinkedDictionary<string, DSFile> LogicFileMap => logicFileMap;
+    /// <summary>
+    /// 所有的Handler--可按应用修改
+    /// </summary>
+    public Dictionary<string, DSTypeHandler> HandlerMap => handlerMap;
+
+    #endregion
+
+    #region file
 
     /// <summary>
     /// 添加文件
     /// </summary>
-    /// <param name="pbFile"></param>
+    /// <param name="dsFile"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public void AddFile(DSFile pbFile) {
-        string simpleName = pbFile.SimpleName;
-        // 检查重复
-        if (!fileMap.TryAdd(simpleName, pbFile)) {
-            throw new ArgumentException("duplicate fileName " + simpleName);
+    public void AddFile(DSFile dsFile) {
+        if (!logicFileMap.TryAdd(dsFile.SimpleName, dsFile)) {
+            throw new ArgumentException("duplicate fileName " + dsFile.SimpleName);
         }
-        // 添加索引，类型和实例分开
-        foreach (DSElement element in pbFile.EnclosedElements) {
-            var key = new StringPair(simpleName, element.SimpleName);
-            bool isInst = element.Kind == DSElementKind.Inst;
-            if (isInst) {
-                instanceMap.Add(key, (DSInst)element);
-            } else {
-                topTypeMap.Add(key, (DSNamedType)element);
-            }
-            IndexKey indexKey = new IndexKey(isInst, element.SimpleName);
-            indexedTopElementMap.TryAdd(indexKey, element);
+        if (!dsFile.IsVirtualFile) {
+            fileMap.Add(dsFile.SimpleName, dsFile);
         }
-        // 添加已解析缓存
-        foreach (DSNamedType namedTypeElement in DSUtil.GetAllEnclosedTypes(pbFile)) {
-            resolveCache.Add(namedTypeElement.TypeName, namedTypeElement);
-        }
-    }
-
-    /// <summary>
-    /// 获取所有的文件 -- 不可修改
-    /// </summary>
-    /// <returns></returns>
-    public ICollection<DSFile> GetFiles() {
-        return fileMap.Values;
     }
 
     /// <summary>
@@ -155,97 +126,70 @@ public class DSRepository
     /// <param name="simpleName">文件简单名，不包含proto后缀</param>
     /// <returns></returns>
     public DSFile? GetFile(string simpleName) {
-        fileMap.TryGetValue(simpleName, out DSFile pbFile);
-        return pbFile;
+        fileMap.TryGetValue(simpleName, out DSFile dsFile);
+        return dsFile;
+    }
+
+    #endregion
+
+    #region query
+
+    /// <summary>
+    /// 根据name查询类型
+    /// 1.该接口必须从顶层类查询，支持指定文件名。
+    /// 2.如果不指定文件名，则会尝试匹配所有文件。
+    /// 
+    /// <code>FileSimpleName.A.B.C</code>
+    /// <code>A.B.C</code>
+    /// </summary>
+    /// <param name="typeName">类型名</param>
+    /// <returns></returns>
+    public DSNamedType? GetType(string typeName) {
+        IndexKey indexKey = new IndexKey(isInst: false, typeName);
+        if (indexedElementMap.TryGetValue(indexKey, out DSElement element)) {
+            return element as DSNamedType;
+        }
+        // 不存在精确匹配项，要么文件名错误，要么不包含文件名
+        foreach (DSFile dsFile in logicFileMap.Values) {
+            DSNamedType namedType = dsFile.GetType(typeName);
+            if (namedType != null) return namedType;
+        }
+        return null;
     }
 
     /// <summary>
-    /// 获取所有的顶层类型
+    /// 根据name查询实例
+    /// 1.该接口必须从顶层类查询，支持指定文件名。
+    /// 2.如果不指定文件名，则会尝试匹配所有文件。
+    /// 
+    /// <code>FileSimpleName.InstName</code>
+    /// <code>InstName</code>
     /// </summary>
+    /// <param name="instName"></param>
     /// <returns></returns>
-    public ICollection<DSNamedType> GetAllTypes() {
-        return topTypeMap.Values;
-    }
-
-    /// <summary>
-    /// 获取顶层类型
-    /// (只查询顶层类)
-    /// </summary>
-    /// <param name="fileSimpleName">文件简单名</param>
-    /// <param name="elementName">顶层元素名</param>
-    /// <returns></returns>
-    public DSNamedType? GetType(string fileSimpleName, string elementName) {
-        var key = new StringPair(fileSimpleName, elementName);
-        topTypeMap.TryGetValue(key, out DSNamedType element);
-        return element;
-    }
-
-    /// <summary>
-    /// 根据name查询类型，会返回第一个匹配的类型
-    /// (只查询顶层类)
-    /// </summary>
-    /// <param name="elementName"></param>
-    /// <returns></returns>
-    public DSNamedType? FindType(string elementName) {
-        IndexKey key = new IndexKey(isInst: false, elementName);
-        indexedTopElementMap.TryGetValue(key, out DSElement element);
-        return element as DSNamedType;
-    }
-
-    /// <summary>
-    /// 获取所有的实例
-    /// </summary>
-    /// <returns></returns>
-    public ICollection<DSInst> GetAllInsts() {
-        return instanceMap.Values;
-    }
-
-    /// <summary>
-    /// 获取顶层实例
-    /// </summary>
-    /// <param name="fileSimpleName"></param>
-    /// <param name="elementName"></param>
-    /// <returns></returns>
-    public DSInst? GetInst(string fileSimpleName, string elementName) {
-        var key = new StringPair(fileSimpleName, elementName);
-        instanceMap.TryGetValue(key, out DSInst element);
-        return element;
-    }
-
-    /// <summary>
-    /// 根据name查询实例，会返回第一个匹配的实例
-    /// </summary>
-    /// <param name="elementName"></param>
-    /// <returns></returns>
-    public DSInst? FindInst(string elementName) {
-        IndexKey key = new IndexKey(isInst: true, elementName);
-        indexedTopElementMap.TryGetValue(key, out DSElement element);
-        return element as DSInst;
-    }
-
-    /// <summary>
-    /// 查询是否是内建类型
-    /// </summary>
-    /// <param name="typeSymbol"></param>
-    /// <returns></returns>
-    public bool IsBuiltinType(string typeSymbol) {
-        return builtinTypeMap.ContainsKey(typeSymbol);
+    public DSInst? GetInst(string instName) {
+        IndexKey indexKey = new IndexKey(isInst: true, instName);
+        if (indexedElementMap.TryGetValue(indexKey, out DSElement element)) {
+            return element as DSInst;
+        }
+        // 不存在精确匹配项，要么文件名错误，要么不包含文件名
+        foreach (DSFile dsFile in logicFileMap.Values) {
+            DSInst inst = dsFile.GetInst(instName);
+            if (inst != null) return inst;
+        }
+        return null;
     }
 
     /// <summary>
     /// 获取内建类型
     /// </summary>
-    public DSNamedType GetBuiltinType(string typeSymbol) {
-        if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedType result)) {
-            return result;
+    public DSNamedType GetBuiltinType(string typeName) {
+        DSNamedType result = globalFile.GetType(typeName);
+        if (result == null) {
+            throw new ArgumentException("invalid typeName: " + typeName);
         }
-        throw new ArgumentException("invalid typeSymbol: " + typeSymbol);
+        return result;
     }
-
-    /// <summary>
-    /// 所有的内建类型--可按应用修改
-    /// </summary>
-    public LinkedDictionary<string, DSNamedType> BuiltinTypeMap => builtinTypeMap;
 
     /// <summary>
     /// 添加类型关联的handler
@@ -266,10 +210,9 @@ public class DSRepository
         return handler;
     }
 
-    /// <summary>
-    /// 所有的Handler--可按应用修改
-    /// </summary>
-    public Dictionary<string, DSTypeHandler> HandlerMap => handlerMap;
+    #endregion
+
+    #region 泛型
 
     /// <summary>
     /// 构造一个可空类型
@@ -323,23 +266,26 @@ public class DSRepository
         return origin.WithTypeArguments(typeArgumentNames.ToArray());
     }
 
+    #endregion
+
     #region resolve-type
 
     /// <summary>
     /// 如果typeSymbol是泛型类型，则会构造目标泛型
     /// </summary>
-    public DSTypeElement ResolveTypeSymbol(DSNamedType? scopeEntry, string typeSymbol) {
+    public DSTypeElement ResolveTypeSymbol(DSElement? scopeEntry, string typeSymbol) {
         return ResolveTypeSymbol(scopeEntry, DSTypeSymbol.Parse(typeSymbol));
     }
 
     /// <summary>
     /// 如果typeSymbol是泛型类型，则会构造目标泛型
+    ///
     /// </summary>
-    /// <param name="scopeEntry">作用域入口，包含必要的泛型参数；如果为null，则表示使用全局作用域</param>
+    /// <param name="scopeEntry">作用域入口，即从哪里访问目标类型；可以是文件或类型；如果为null，则表示使用全局作用域</param>
     /// <param name="typeSymbol">引用的类型符号</param>
     /// <returns></returns>
-    public DSTypeElement ResolveTypeSymbol(DSNamedType? scopeEntry, DSTypeSymbol typeSymbol) {
-        // 这里不能建立typeSymbol到结果的缓存，因为scopeEntry不同结果也不同...
+    public DSTypeElement ResolveTypeSymbol(DSElement? scopeEntry, DSTypeSymbol typeSymbol) {
+        // 这里不能建立查询缓存，因为scopeEntry不同，结果可能不同...
         DSTypeElement typeElement = FindType(scopeEntry, typeSymbol.name);
         if (typeElement == null) {
             throw new InvalidOperationException("cant resolve typeSymbol: " + typeSymbol.symbol);
@@ -371,73 +317,113 @@ public class DSRepository
     /// <summary>
     /// 查找类型(原始类型)
     /// 从内部类、外部类、内建类型以及导入的文件查询
-    ///
+    /// 
     /// 1.如果是解析字段的typeSymbol，scopeEntry为字段的声明类
     /// 2.如果是解析超类的typeSymbol，scopeEntry为子类
     /// </summary>
     /// <param name="scopeEntry">作用域的入口，还用于解析泛型参数；null表示全局作用域</param>
-    /// <param name="typeSymbol">引用的类型符号，非泛型类型，也不是非空类型</param>
+    /// <param name="typeName">类型名，可能是A.B.C</param>
     /// <returns>可能是泛型参数</returns>
-    private DSTypeElement? FindType(DSNamedType? scopeEntry, string typeSymbol) {
-        Debug.Assert(!typeSymbol.Contains('?'));
-        // 查询全局顶层作用域
+    private DSTypeElement? FindType(DSElement? scopeEntry, string typeName) {
+        Debug.Assert(!typeName.Contains('?'));
+        // 从全局作用域查询
         if (scopeEntry == null) {
-            return FindType(typeSymbol);
+            return GetType(typeName);
         }
         // 查询内建类型 -- 内建类型不限作用域；基础类型使用频率也最高
-        if (builtinTypeMap.TryGetValue(typeSymbol, out DSNamedType r)) {
+        DSNamedType? r = globalFile.GetType(typeName);
+        if (r != null) {
             return r;
         }
         // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
-        for (int idx = 0; idx < scopeEntry.OriginDefine.TypeParameters.Count; idx++) {
-            var typeParameter = scopeEntry.OriginDefine.TypeParameters[idx];
-            if (typeParameter.SimpleName == typeSymbol) {
-                return scopeEntry.IsGenericTypeDefinition ? typeParameter : scopeEntry.TypeArguments[idx];
+        DSFile enclosingFile;
+        if (scopeEntry is DSNamedType namedType) {
+            enclosingFile = namedType.GetEnclosingFile();
+            ImmutableList<DSTypeParameter> typeParameters = namedType.OriginDefine.TypeParameters;
+            for (int idx = 0; idx < typeParameters.Count; idx++) {
+                var typeParameter = typeParameters[idx];
+                if (typeParameter.SimpleName == typeName) {
+                    return namedType.IsGenericTypeDefinition ? typeParameter : namedType.TypeArguments[idx];
+                }
+            }
+            // 当typeName是A.B.C的时候，不确定A是内部类还是父兄类，先根据A定位
+            int spIndex = typeName.IndexOf('.');
+            string firstName = spIndex < 0 ? typeName : typeName.Substring2(0, spIndex);
+            r = FindFirstType(namedType, firstName);
+            if (r != null) {
+                return spIndex < 0 ? r : FindEnclosedType(r, typeName.Substring2(spIndex + 1));
+            }
+        } else {
+            enclosingFile = (DSFile)scopeEntry;
+            // 在当前文件内部查询
+            r = enclosingFile.GetType(typeName);
+            if (r != null) {
+                return r;
             }
         }
-        // 在当前文件内部查询
-        List<DSNamedType> accessibleTypes = new List<DSNamedType>();
-        CollectAccessibleTypes(scopeEntry, accessibleTypes);
-        foreach (DSNamedType typeElement in accessibleTypes) {
-            if (typeElement.SimpleName == typeSymbol) {
-                return typeElement;
-            }
-        }
-        // 从导入的文件中查询顶层类
-        DSFile enclosingFile = scopeEntry.GetEnclosingFile();
-        if (enclosingFile == null) {
-            return null;
-        }
+        // 从导入的文件中查询 -- 提前缓存了import，因此不是递归调用FindType
         foreach (string resolvedImport in enclosingFile.ResolvedImports) {
-            DSNamedType? typeElement = GetType(resolvedImport, typeSymbol);
+            if (!logicFileMap.TryGetValue(resolvedImport, out DSFile importFile)) {
+                continue;
+            }
+            DSNamedType? typeElement = importFile.GetType(typeName);
             if (typeElement != null) return typeElement;
         }
         // 查找失败
         return null;
     }
 
-    /// <summary>
-    /// 收集一个类型可访问的所有类型（当前文件内）
-    /// </summary>
-    /// <param name="scopeEntry">作用域的入口</param>
-    /// <param name="outList"></param>
-    private void CollectAccessibleTypes(DSNamedType scopeEntry, List<DSNamedType> outList) {
-        // 只有原始定义类才可以访问Elements
+    private static DSNamedType? FindFirstType(DSNamedType scopeEntry, string firstName) {
         scopeEntry = scopeEntry.OriginDefine;
-
-        // 所有的内部类
-        DSUtil.GetAllEnclosedTypes(scopeEntry, outList);
-        // 当前类的平级类（同文件夹）
-        foreach (DSElement peerElement in scopeEntry.EnclosingElement.EnclosedElements) {
-            if (peerElement.IsTypeElement && !ReferenceEquals(peerElement, scopeEntry)) {
-                outList.Add((DSNamedType)peerElement);
+        if (scopeEntry.SimpleName == firstName) {
+            return scopeEntry;
+        }
+        // 先查询内部类--递归向下，广度优先遍历
+        Queue<DSNamedType> queue = new Queue<DSNamedType>(4);
+        queue.Enqueue(scopeEntry);
+        while (queue.Count > 0) {
+            DSNamedType namedType = queue.Dequeue().OriginDefine;
+            foreach (DSElement enclosedElement in namedType.EnclosedElements) {
+                if (!enclosedElement.Kind.IsNamedType()) continue;
+                if (enclosedElement.SimpleName == firstName) {
+                    return namedType;
+                }
+                queue.Enqueue((DSNamedType)enclosedElement);
             }
         }
-        // 直系祖先节点（不访问祖先的兄弟节点）
+        // 平级节点、父节点、叔父节点--递归向上，广度优先遍历
         var enclosingElement = scopeEntry.EnclosingElement;
-        while (enclosingElement != null && enclosingElement.IsTypeElement) {
-            outList.Add((DSNamedType)enclosingElement);
+        while (enclosingElement != null) {
+            foreach (DSElement peerElement in enclosingElement.EnclosedElements) {
+                if (ReferenceEquals(peerElement, scopeEntry)) continue;
+                if (!peerElement.Kind.IsNamedType()) continue;
+                if (peerElement.SimpleName == firstName) {
+                    return (DSNamedType?)peerElement;
+                }
+            }
             enclosingElement = enclosingElement.EnclosingElement;
+        }
+        return null;
+    }
+
+    private static DSNamedType? FindEnclosedType(DSElement root, string accessName) {
+        int idx = accessName.IndexOf('.');
+        if (idx < 0) {
+            string firstName = accessName;
+            foreach (DSElement enclosedElement in root.EnclosedElements) {
+                if (enclosedElement.Kind.IsNamedType() && enclosedElement.SimpleName == firstName) {
+                    return (DSNamedType)enclosedElement;
+                }
+            }
+            return null;
+        } else {
+            string firstName = accessName.Substring2(0, idx);
+            foreach (DSElement enclosedElement in root.EnclosedElements) {
+                if (enclosedElement.Kind.IsNamedType() && enclosedElement.SimpleName == firstName) {
+                    return FindEnclosedType(enclosedElement, accessName.Substring2(idx + 1));
+                }
+            }
+            return null;
         }
     }
 
@@ -453,21 +439,27 @@ public class DSRepository
     /// 3.解析实例之间的引用：模板引用
     /// </summary>
     public void Build() {
-        // 初始化内建类型
-        foreach (DSNamedType namedType in builtinTypeMap.Values) {
-            topTypeMap.Add(new StringPair("ds", namedType.SimpleName), namedType);
-            indexedTopElementMap.Add(new IndexKey(isInst: false, namedType.SimpleName), namedType);
-            resolveCache.Add(namedType.TypeName, namedType);
+        // 初始化File缓存
+        foreach (DSFile dsFile in logicFileMap.Values) {
+            dsFile.BuildCache();
+            foreach (DSNamedType namedType in dsFile.TypeMap.Values) {
+                indexedElementMap.Add(new IndexKey(isInst: false, namedType.GetFullName()), namedType);
+                resolveCache.Add(namedType.TypeName, namedType);
+            }
+            foreach (DSInst inst in dsFile.InstMap.Values) {
+                string fullName = dsFile.SimpleName + "." + inst.SimpleName;
+                indexedElementMap.Add(new IndexKey(isInst: true, fullName), inst);
+            }
         }
         // 解析import
         HashSet<string> tempSet = new HashSet<string>(16);
-        foreach (DSFile file in fileMap.Values) {
+        foreach (DSFile file in logicFileMap.Values) {
             tempSet.Clear();
             ResolvePublicImports(file, tempSet, 0);
             file.ResolvedImports.AddAll(tempSet);
         }
         // 解析字段和超类类型
-        foreach (DSFile file in fileMap.Values) {
+        foreach (DSFile file in logicFileMap.Values) {
             try {
                 ResolveTypeSymbols(file);
             }
@@ -476,7 +468,7 @@ public class DSRepository
             }
         }
         // 解析实例引用： inst $name from t1, t2 ...
-        foreach (DSFile file in fileMap.Values) {
+        foreach (DSFile file in logicFileMap.Values) {
             try {
                 foreach (DSInst inst in file.GetInsts()) {
                     BuildInst(inst, 0);
@@ -572,14 +564,24 @@ public class DSRepository
     /// <param name="scopeEntry"></param>
     /// <param name="instName"></param>
     /// <returns></returns>
-    private DSInst? FindInst(DSFile scopeEntry, string instName) {
-        // 先从当前文件查询，再从导入的文件查询
-        DSInst inst = GetInst(scopeEntry.SimpleName, instName);
-        if (inst != null) {
-            return inst;
+    private DSInst? FindInst(DSFile? scopeEntry, string instName) {
+        // 未指定作用域，从所有文件查询
+        DSInst inst;
+        if (scopeEntry == null) {
+            foreach (DSFile dsFile in logicFileMap.Values) {
+                inst = dsFile.GetInst(instName);
+                if (inst != null) return inst;
+            }
+            return null;
         }
+        // 先从当前文件查询
+        inst = scopeEntry.GetInst(instName);
+        if (inst != null) return inst;
+
+        // 再从导入的文件查询
         foreach (string resolvedImport in scopeEntry.ResolvedImports) {
-            inst = GetInst(resolvedImport, instName);
+            if (!logicFileMap.TryGetValue(resolvedImport, out DSFile importFile)) continue;
+            inst = importFile.GetInst(instName);
             if (inst != null) {
                 return inst;
             }
@@ -594,15 +596,15 @@ public class DSRepository
     private readonly struct IndexKey : IEquatable<IndexKey>
     {
         public readonly bool isInst;
-        public readonly string simpleName;
+        public readonly string fullName;
 
-        public IndexKey(bool isInst, string simpleName) {
+        public IndexKey(bool isInst, string fullName) {
             this.isInst = isInst;
-            this.simpleName = simpleName;
+            this.fullName = fullName;
         }
 
         public bool Equals(IndexKey other) {
-            return isInst == other.isInst && simpleName == other.simpleName;
+            return isInst == other.isInst && fullName == other.fullName;
         }
 
         public override bool Equals(object? obj) {
@@ -610,7 +612,7 @@ public class DSRepository
         }
 
         public override int GetHashCode() {
-            return (isInst.GetHashCode() * 397) ^ simpleName.GetHashCode();
+            return (isInst.GetHashCode() * 397) ^ fullName.GetHashCode();
         }
 
         public static bool operator ==(IndexKey left, IndexKey right) {
@@ -622,7 +624,7 @@ public class DSRepository
         }
 
         public override string ToString() {
-            return $"{nameof(isInst)}: {isInst}, {nameof(simpleName)}: {simpleName}";
+            return $"{nameof(isInst)}: {isInst}, {nameof(fullName)}: {fullName}";
         }
     }
 

@@ -64,16 +64,30 @@ public static class DSKeywords
 
     #region options-type
 
-    /** 是否允许不同的枚举常量指向同一个值 */
+    /// <summary>
+    /// 是否允许不同的枚举常量指向同一个值
+    /// (语法同protobuf)
+    ///
+    /// <code>allow_alias = true;</code>
+    /// </summary>
     public const string ALLOW_ALIAS = "allow_alias";
-    /** 保留字段编号 */
+    /// <summary>
+    /// 保留字段编号
+    /// (语法同protobuf)
+    /// 
+    /// <code>reversed 1, 2, 3 to 10;</code>
+    /// <code>reversed "age", "env";</code>
+    /// </summary>
     public const string RESERVED = "reserved";
 
     #endregion
 
     #region builtin-types
 
-    public const string BUILTIN_NAMESPACE = "ds";
+    /// <summary>
+    /// 全局命名空间(文件名)
+    /// </summary>
+    public const string GLOBAL = "global";
     // 原子类型
     public const string TYPE_INT32 = "int32";
     public const string TYPE_INT64 = "int64";
@@ -96,36 +110,36 @@ public static class DSKeywords
     public const string TYPE_NULLABLE = "Nullable";
 
     // 原子类型
-    public static readonly ClassName TYPE_NAME_INT32 = ClassName.Get(BUILTIN_NAMESPACE, TYPE_INT32);
-    public static readonly ClassName TYPE_NAME_INT64 = ClassName.Get(BUILTIN_NAMESPACE, TYPE_INT64);
-    public static readonly ClassName TYPE_NAME_FLOAT = ClassName.Get(BUILTIN_NAMESPACE, TYPE_FLOAT);
-    public static readonly ClassName TYPE_NAME_DOUBLE = ClassName.Get(BUILTIN_NAMESPACE, TYPE_DOUBLE);
-    public static readonly ClassName TYPE_NAME_BOOL = ClassName.Get(BUILTIN_NAMESPACE, TYPE_BOOL);
-    public static readonly ClassName TYPE_NAME_STRING = ClassName.Get(BUILTIN_NAMESPACE, TYPE_STRING);
-    public static readonly ClassName TYPE_NAME_BYTES = ClassName.Get(BUILTIN_NAMESPACE, TYPE_BYTES);
+    public static readonly ClassName TYPE_NAME_INT32 = ClassName.Get(GLOBAL, TYPE_INT32);
+    public static readonly ClassName TYPE_NAME_INT64 = ClassName.Get(GLOBAL, TYPE_INT64);
+    public static readonly ClassName TYPE_NAME_FLOAT = ClassName.Get(GLOBAL, TYPE_FLOAT);
+    public static readonly ClassName TYPE_NAME_DOUBLE = ClassName.Get(GLOBAL, TYPE_DOUBLE);
+    public static readonly ClassName TYPE_NAME_BOOL = ClassName.Get(GLOBAL, TYPE_BOOL);
+    public static readonly ClassName TYPE_NAME_STRING = ClassName.Get(GLOBAL, TYPE_STRING);
+    public static readonly ClassName TYPE_NAME_BYTES = ClassName.Get(GLOBAL, TYPE_BYTES);
     // 内建结构
-    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(BUILTIN_NAMESPACE, TYPE_PTR);
-    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(BUILTIN_NAMESPACE, TYPE_LPTR);
-    public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(BUILTIN_NAMESPACE, TYPE_DATETIME);
-    public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(BUILTIN_NAMESPACE, TYPE_TIMESTAMP);
-    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(BUILTIN_NAMESPACE, TYPE_PAIR, new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(GLOBAL, TYPE_PTR);
+    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(GLOBAL, TYPE_LPTR);
+    public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(GLOBAL, TYPE_DATETIME);
+    public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(GLOBAL, TYPE_TIMESTAMP);
+    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(GLOBAL, TYPE_PAIR, new List<TypeName>()
     {
         TypeParameterName.Get("K"),
         TypeParameterName.Get("V")
     });
     // 容器类型
-    public static readonly ClassName TYPE_NAME_LIST = ClassName.Get(BUILTIN_NAMESPACE, TYPE_LIST, new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_LIST = ClassName.Get(GLOBAL, TYPE_LIST, new List<TypeName>()
     {
         TypeParameterName.Get("T")
     });
-    public static readonly ClassName TYPE_NAME_MAP = ClassName.Get(BUILTIN_NAMESPACE, TYPE_MAP, new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_MAP = ClassName.Get(GLOBAL, TYPE_MAP, new List<TypeName>()
     {
         TypeParameterName.Get("K"),
         TypeParameterName.Get("V")
     });
     // 装箱类型
-    public static readonly ClassName TYPE_NAME_OBJECT = ClassName.Get(BUILTIN_NAMESPACE, TYPE_OBJECT);
-    public static readonly ClassName TYPE_NAME_NULLABLE = ClassName.Get(BUILTIN_NAMESPACE, TYPE_NULLABLE, new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_OBJECT = ClassName.Get(GLOBAL, TYPE_OBJECT);
+    public static readonly ClassName TYPE_NAME_NULLABLE = ClassName.Get(GLOBAL, TYPE_NULLABLE, new List<TypeName>()
     {
         TypeParameterName.Get("T")
     });

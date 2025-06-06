@@ -27,8 +27,8 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// </summary>
 public readonly struct DSTypeSymbol
 {
-    public readonly string symbol; // List<String> 暂不支持解析A.B.C
-    public readonly string name; // List
+    public readonly string symbol; // List<String>
+    public readonly string name; // List 支持A.B.C
     public readonly List<DSTypeSymbol>? typeArguments; // String
     public readonly bool isNullable;
 
@@ -40,6 +40,7 @@ public readonly struct DSTypeSymbol
     }
 
     public bool HasTypeArguments => typeArguments != null && typeArguments.Count > 0;
+    public int TypeArgumentCount => typeArguments != null ? typeArguments.Count : 0;
 
     public static DSTypeSymbol Parse(string typeSymbol) {
         typeSymbol = ObjectUtil.DeleteWhitespace(typeSymbol);

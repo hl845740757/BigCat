@@ -16,17 +16,53 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Poet;
 
 namespace Wjybxx.BigCatEditor.DataScript
 {
 public static class DSUtil
 {
     /// <summary>
-    /// 
+    /// 默认的内建类型
     /// </summary>
-    /// <param name="kind"></param>
-    /// <returns></returns>
+    public static readonly ImmutableList<DSNamedType> builtinTypes = new[]
+    {
+        // 原子类型
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL),
+        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING),
+        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES),
+        // 内建结构
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PTR),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_LPTR),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR),
+        // 基础容器
+        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST),
+        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP),
+        // 装箱类型
+        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT),
+        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE, new List<DSTypeParameter>(1)
+        {
+            new DSTypeParameter("T", TypeParameterConstraints.ValueTypeConstraint)
+        })
+    }.ToImmutableList2();
+
+    public static bool IsType(this DSElementKind kind) {
+        return kind == DSElementKind.Class
+               || kind == DSElementKind.Strut
+               || kind == DSElementKind.Enum
+               || kind == DSElementKind.TypeParameter;
+    }
+
     public static bool IsNamedType(this DSElementKind kind) {
         return kind == DSElementKind.Class
                || kind == DSElementKind.Strut
@@ -97,7 +133,7 @@ public static class DSUtil
     /// <param name="outList"></param>
     public static void GetAllEnclosedTypes(DSElement current, List<DSNamedType> outList) {
         foreach (var element in current.EnclosedElements) {
-            if (!element.IsTypeElement) {
+            if (!element.Kind.IsNamedType()) {
                 continue;
             }
             outList.Add((DSNamedType)element);
@@ -110,15 +146,54 @@ public static class DSUtil
     /// <summary>
     /// 是否包含非运行时类型参数(未确定的类型参数)
     /// </summary>
-    public static bool HasNonRuntimeTypeArgument(this DSTypeElement typeElement) {
+    public static bool HasNonRuntimeTypeArgument(DSTypeElement typeElement) {
         if (typeElement.TypeKind == DSTypeKind.TypeParameter) return true;
-        if (typeElement is DSNamedType namedTypeElement) {
-            if (namedTypeElement.TypeParameters.Count > 0) return true;
-            foreach (DSTypeElement typeArgument in namedTypeElement.TypeArguments) {
+        if (typeElement is DSNamedType namedType) {
+            if (namedType.TypeParameters.Count > 0) return true;
+            foreach (DSTypeElement typeArgument in namedType.TypeArguments) {
                 if (HasNonRuntimeTypeArgument(typeArgument)) return true;
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// 获取第一级名字
+    ///
+    /// <code>A.B => A</code>
+    /// <code>A.B.C => A</code>>
+    /// </summary>
+    public static string GetFirstName(string fullName) {
+        int idx = fullName.IndexOf('.');
+        return idx < 0 ? fullName : fullName.Substring2(0, idx);
+    }
+
+    /// <summary>
+    /// 获取第二级名字
+    ///
+    /// <code>A.B => B</code>
+    /// <code>A.B.C => B</code>
+    /// </summary>
+    public static string GetSecondName(string fullName) {
+        int start = fullName.IndexOf('.');
+        int end = fullName.LastIndexOf('.');
+        if (start < 0) {
+            throw new ArgumentException("name is invalid: " + fullName);
+        }
+        if (start < end) { // A.B.C
+            return fullName.Substring2(start + 1, end);
+        }
+        return fullName.Substring2(start + 1); // A.B
+    }
+
+    /// <summary>
+    /// className的元数据名
+    /// </summary>
+    /// <param name="className"></param>
+    /// <returns></returns>
+    public static string MetaName(this ClassName className) {
+        int c = className.declaredTypeArguments.Count;
+        return c == 0 ? className.simpleName : className.simpleName + "`" + c;
     }
 }
 }

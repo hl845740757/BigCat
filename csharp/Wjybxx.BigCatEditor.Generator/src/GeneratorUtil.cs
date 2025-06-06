@@ -23,9 +23,14 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Wjybxx.BigCatEditor.Core;
+using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
+using Wjybxx.Dson;
+using Wjybxx.Dson.Text;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
 
 namespace Wjybxx.BigCatEditor.Generator
@@ -42,7 +47,7 @@ public static class GeneratorUtil
     public static readonly ClassName clsName_Flags = ClassName.Get(typeof(FlagsAttribute));
     public static readonly ConcurrentObjectPool<CodeWriter> codeWriterPool = new ConcurrentObjectPool<CodeWriter>(
         () => new CodeWriter(), e => e.Reset());
-    
+
     /// <summary>
     /// 为生成代码的注解处理器创建一个通用注解
     /// </summary>
@@ -80,10 +85,12 @@ public static class GeneratorUtil
         return ClassName.Get(cname.Substring2(0, index), cname.Substring2(index + 1));
     }
 
-    /**
-     * 将继承体系展开，不包含实现的接口。
-     * （超类在后，包含object）
-     */
+    /// <summary>
+    /// 将继承体系展开，不包含实现的接口。
+    /// （超类在后，包含object）
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
     public static List<Type> FlatInherit(Type type) {
         List<Type> result = new List<Type>(4);
         result.Add(type);
@@ -93,10 +100,12 @@ public static class GeneratorUtil
         return result;
     }
 
-    /**
-     * 将继承体系展开，并逆序返回，不包含实现的接口。
-     * （超类在前，包含object）
-     */
+    /// <summary>
+    /// 将继承体系展开，并逆序返回，不包含实现的接口。
+    /// （超类在前，包含object）
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
     public static List<Type> FlatInheritAndReverse(Type type) {
         List<Type> result = FlatInherit(type);
         result.Reverse();
@@ -106,9 +115,6 @@ public static class GeneratorUtil
     /// <summary>
     /// 将类型写入文件
     /// </summary>
-    /// <param name="outDir"></param>
-    /// <param name="className"></param>
-    /// <param name="typeSpec"></param>
     public static void WriteToFile(string outDir, ClassName className, TypeSpec typeSpec) {
         CsharpFile csharpFile = CsharpFile.NewBuilder(className.simpleName)
             .AddSpec(NamespaceSpec.Of(className.ns, typeSpec))
@@ -123,6 +129,12 @@ public static class GeneratorUtil
         }
     }
 
+    /// <summary>
+    /// 将包含多个类型的
+    /// </summary>
+    /// <param name="outDir"></param>
+    /// <param name="fileSimpleName"></param>
+    /// <param name="namespaceSpec"></param>
     public static void WriteToFile(string outDir, string fileSimpleName, NamespaceSpec namespaceSpec) {
         CsharpFile csharpFile = CsharpFile.NewBuilder(fileSimpleName)
             .AddSpec(namespaceSpec)
@@ -136,5 +148,63 @@ public static class GeneratorUtil
             codeWriterPool.Release(codeWriter);
         }
     }
+
+    #region Dson-Cdoec
+
+    public static readonly ImmutableLinkedDictionary<string, ObjectStyle>
+        name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
+            .ToDictionary(e => e.ToString().ToLower(), e => e)
+            .ToImmutableLinkedDictionary();
+
+    public static readonly ImmutableLinkedDictionary<string, NumberStyle>
+        name2NumberStyleDic = EnumUtil.GetValues<NumberStyle>()
+            .ToDictionary(e => e.ToString().ToLower(), e => e)
+            .ToImmutableLinkedDictionary();
+
+    public static readonly ImmutableLinkedDictionary<string, StringStyle>
+        name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
+            .ToDictionary(e => e.ToString().ToLower(), e => e)
+            .ToImmutableLinkedDictionary();
+
+    /// <summary>
+    /// 获取类型用于Dson编码时的别名
+    /// </summary>
+    /// <param name="namedType"></param>
+    /// <returns></returns>
+    public static List<string> GetCodecAliases(DSNamedType namedType) {
+        Annotation? annotation = namedType.GetAnnotation(DSAnnotations.CODEC);
+        if (annotation == null) return new List<string>();
+
+        DsonObject<string> dsonObject = annotation.DsonValue.AsObject();
+        if (dsonObject.Count == 0 || !dsonObject.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue value)) {
+            return new List<string>();
+        }
+        DsonArray<string> dsonArray = value.AsArray();
+        if (dsonArray.Count == 0) return new List<string>();
+        //
+        List<string> result = new List<string>(dsonObject.Count);
+        foreach (DsonValue dsonValue in dsonArray) {
+            result.Add(dsonValue.AsString().Trim());
+        }
+        return result;
+    }
+
+    public static ObjectStyle GetCodecStyle(DSNamedType namedType, ObjectStyle defaultStyle = ObjectStyle.Indent) {
+        Annotation? annotation = namedType.GetAnnotation(DSAnnotations.CODEC);
+        if (annotation == null) {
+            return defaultStyle;
+        }
+        annotation.DsonValue.AsObject().TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value);
+        if (value == null) {
+            return defaultStyle;
+        }
+        if (value.IsNumber) {
+            return (ObjectStyle)value.AsDsonNumber().IntValue;
+        }
+        string style = value.AsString().ToLower();
+        return name2ObjectStyleDic.TryGetValue(style, out ObjectStyle result) ? result : defaultStyle;
+    }
+
+    #endregion
 }
 }

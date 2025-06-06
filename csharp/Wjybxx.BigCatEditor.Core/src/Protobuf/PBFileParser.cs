@@ -568,13 +568,14 @@ public sealed class PBFileParser
     }
 
     private void ReadEndContainer(LineInfo lineInfo) {
-        if (_context.parent == null || !_context.started) {
+        Context context = _context;
+        if (context.parent == null || !context.started) {
             throw new IllegalStateException();
         }
-        _context.container.EndLine = lineInfo.ln;
+        context.container.EndLine = lineInfo.ln;
 
         _recursionDepth--;
-        _context = _context.parent;
+        _context = context.parent;
     }
 
     /** 解析容器的名字 */

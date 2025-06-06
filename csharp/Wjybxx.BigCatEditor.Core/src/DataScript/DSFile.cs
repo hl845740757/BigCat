@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCatEditor.DataScript
@@ -33,14 +34,27 @@ public class DSFile : DSElement
 {
     /** 文件名 */
     private readonly string fileName;
+    /** 是否是虚拟文件 */
+    private readonly bool isVirtualFile;
     /** 导入的文件 -- value可以为null，表示未声明修饰符 */
     private readonly LinkedDictionary<string, string?> imports = new(4);
     /** 解析后的所有依赖 -- 包括传递而来的依赖，无法保证解析顺序 */
     private readonly HashSet<string> resolvedImports = new(4);
 
-    public DSFile(string fileName)
+    /** 文件内的类型缓存 -- A.B.C => Type */
+    private readonly LinkedDictionary<string, DSNamedType> typeMap = new(4);
+    /** 文件内的实例缓存 -- Name => Inst */
+    private readonly LinkedDictionary<string, DSInst> instMap = new(4);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="fileName">文件名</param>
+    /// <param name="isVirtualFile">是否是虚拟文件</param>
+    public DSFile(string fileName, bool isVirtualFile = false)
         : base(Path.GetFileNameWithoutExtension(fileName)) {
         this.fileName = fileName;
+        this.isVirtualFile = isVirtualFile;
     }
 
     /// <summary>`
@@ -107,14 +121,42 @@ public class DSFile : DSElement
             .Cast<DSInst>()
             .ToList();
     }
+
+    public DSNamedType? GetType(string fullName) {
+        return typeMap.TryGetValue(fullName, out DSNamedType? r) ? r : null;
+    }
+
+    public DSInst? GetInst(string name) {
+        return instMap.TryGetValue(name, out DSInst? r) ? r : null;
+    }
+
+    internal void BuildCache() {
+        typeMap.Clear();
+        foreach (DSNamedType namedType in DSUtil.GetAllEnclosedTypes(this)) {
+            string fullName = namedType.GetFullName(false);
+            int idx = fullName.IndexOf('.');
+            string accessName = idx < 0 ? fullName : fullName.Substring2(idx);
+            typeMap.Add(accessName, namedType);
+        }
+        instMap.Clear();
+        foreach (DSElement element in EnclosedElements) {
+            if (element.Kind == DSElementKind.Inst) {
+                instMap.Add(element.SimpleName, (DSInst)element);
+            }
+        }
+    }
+
 #nullable disable
 
     #region props
 
     public override DSElementKind Kind => DSElementKind.File;
     public string FileName => fileName;
+    public bool IsVirtualFile => isVirtualFile;
     public LinkedDictionary<string, string?> Imports => imports;
     public HashSet<string> ResolvedImports => resolvedImports;
+    public LinkedDictionary<string, DSNamedType> TypeMap => typeMap;
+    public LinkedDictionary<string, DSInst> InstMap => instMap;
 
     #endregion
 

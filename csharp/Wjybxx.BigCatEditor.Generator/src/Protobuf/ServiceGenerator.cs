@@ -97,7 +97,7 @@ public class ServiceGenerator
         }
         // service注解
         {
-            DsonObject<string> serviceData = serviceAnnotation.DsonValue;
+            DsonObject<string> serviceData = serviceAnnotation.DsonValue.AsObject();
             AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(anno_rpcService)
                 .AddMember("ServiceId", GetServiceId(service, serviceData).ToString());
             typeBuilder.AddAttribute(annoBuilder.Build());
@@ -108,7 +108,7 @@ public class ServiceGenerator
             if (methodAnnotation == null) {
                 continue;
             }
-            DsonObject<string> methodData = methodAnnotation.DsonValue;
+            DsonObject<string> methodData = methodAnnotation.DsonValue.AsObject();
             MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
             // .AddModifiers(Modifiers.Public | Modifiers.Abstract); // C#端的Poet是我自己实现的
             // method注解 

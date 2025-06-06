@@ -38,19 +38,19 @@ public class DSFileParser
 #nullable disable
     private readonly FileInfo file;
     private readonly IEnumerator<string> lineIterator;
-    private readonly DSFile pbFile;
+    private readonly DSFile dsFile;
 
     /** 当前递归深度 */
     private int _recursionDepth;
     /** 当前上下文 */
     private Context _context;
 
-    public DSFileParser(FileInfo file, IEnumerator<string> lineIterator) {
+    private DSFileParser(FileInfo file, bool isVirtual, IEnumerator<string> lineIterator) {
         this.file = file;
         this.lineIterator = lineIterator;
 
-        this.pbFile = new DSFile(file.Name);
-        this._context = new Context(null, DSContextType.File, pbFile);
+        this.dsFile = new DSFile(file.Name, isVirtual);
+        this._context = new Context(null, DSContextType.File, dsFile);
         this._context.started = true;
     }
 
@@ -61,23 +61,26 @@ public class DSFileParser
     /// <returns></returns>
     public static DSFile Parse(FileInfo fileInfo) {
         using (IEnumerator<string> lineIterator = File.ReadLines(fileInfo.FullName).GetEnumerator()) {
-            DSFileParser parser = new DSFileParser(fileInfo, lineIterator);
+            DSFileParser parser = new DSFileParser(fileInfo, false, lineIterator);
             parser.Parse();
-            return parser.pbFile;
+            return parser.dsFile;
         }
     }
 
     /// <summary>
     /// 解析DataScript文件为内存结构
+    /// 
+    /// 该方法允许直接通过字符串构建最终数据。
     /// </summary>
-    /// <param name="fileInfo">文件信息--可以不存在</param>
+    /// <param name="fileInfo">文件信息</param>
     /// <param name="text">文件内容</param>
+    /// <param name="isVirtual">是否是虚拟文件</param>
     /// <returns></returns>
-    public static DSFile Parse(FileInfo fileInfo, string text) {
+    public static DSFile Parse(FileInfo fileInfo, string text, bool isVirtual = false) {
         using (IEnumerator<string> lineIterator = Util.GetLines(text).GetEnumerator()) {
-            DSFileParser parser = new DSFileParser(fileInfo, lineIterator);
+            DSFileParser parser = new DSFileParser(fileInfo, isVirtual, lineIterator);
             parser.Parse();
-            return parser.pbFile;
+            return parser.dsFile;
         }
     }
 
@@ -178,8 +181,6 @@ public class DSFileParser
 
     /// <summary>
     /// 解析实例
-    /// 
-    /// 要想完全根据语法解析的话，有点麻烦；如果我们强制要求内容必须正确缩进，即结束符必须处于行首，就能很快确定实例的结束位置。
     /// </summary>
     /// <param name="lineInfo"></param>
     /// <exception cref="NotImplementedException"></exception>
@@ -210,7 +211,7 @@ public class DSFileParser
             name = content.Substring2(startIdx, spIdx).Trim();
             templates = content.Substring2(spIdx + "from".Length, endIdx).Split(',', StringSplitOptions.TrimEntries);
         }
-        // 扫描文本
+        // 扫描文本 -- 要想完全根据语法解析的话，有点麻烦；暂时要求结束符必须处于行首，就能很快确定实例的结束位置。
         string value;
         StringBuilder sb = ConcurrentObjectPool.SharedStringBuilderPool.Acquire();
         sb.Append(isArray ? '[' : '{');
@@ -482,13 +483,14 @@ public class DSFileParser
     }
 
     private void ReadEndContainer(LineInfo lineInfo) {
-        if (_context.parent == null || !_context.started) {
+        Context context = _context;
+        if (context.parent == null || !context.started) {
             throw new IllegalStateException();
         }
-        _context.container.EndLine = lineInfo.ln;
+        context.container.EndLine = lineInfo.ln;
 
         _recursionDepth--;
-        _context = _context.parent;
+        _context = context.parent;
     }
 
     private void ParseTypeName(string content,
@@ -521,8 +523,10 @@ public class DSFileParser
         // 先拷贝外部类的泛型变量
         List<TypeName> typeParameterNames = new List<TypeName>();
         typeParameters = new List<DSTypeParameter>();
-        if (_context.contextType == DSContextType.Class || _context.contextType == DSContextType.Struct) {
-            foreach (DSTypeParameter typeParameter in _context.AsTypeElement().TypeParameters) {
+        DSNamedType? enclosingType = null;
+        if (_context.container is DSNamedType namedType) {
+            enclosingType = namedType;
+            foreach (DSTypeParameter typeParameter in enclosingType.TypeParameters) {
                 typeParameterNames.Add(typeParameter.TypeName);
                 typeParameters.Add(new DSTypeParameter(typeParameter)); // 拷贝构造函数
             }
@@ -530,7 +534,7 @@ public class DSFileParser
         // 解析新增的的泛型变量
         int tpStart = name.IndexOf('<');
         if (tpStart < 0) {
-            className = ClassName.Get(pbFile.SimpleName, name);
+            className = GetClassName(dsFile, enclosingType, name, typeParameterNames);
             return;
         }
         string[] tpNames = name.Substring2(tpStart + 1, name.Length - 1).Split(',', StringSplitOptions.TrimEntries);
@@ -548,18 +552,25 @@ public class DSFileParser
             typeParameterNames.Add(TypeParameterName.Get(tpName));
             typeParameters.Add(new DSTypeParameter(tpName, tpConstraints));
         }
-        // 注意：这里的命名空间是文件简单名
         name = name.Substring2(0, tpStart);
-        className = ClassName.Get(pbFile.SimpleName, name, typeParameterNames);
+        className = GetClassName(dsFile, enclosingType, name, typeParameterNames);
+    }
+
+    private static ClassName GetClassName(DSFile dsFile, DSNamedType? enclosingType, string name, List<TypeName> typeParameterNames) {
+        if (enclosingType != null) {
+            return enclosingType.TypeName.NestedClass(name, typeParameterNames, false);
+        }
+        // 注意：这里的命名空间是文件简单名
+        return ClassName.Get(dsFile.SimpleName, name, typeParameterNames);
     }
 
     private static TypeParameterConstraints ParseConstraints(string constraintsToken) {
         TypeParameterConstraints constraints = TypeParameterConstraints.None;
         foreach (string s in constraintsToken.Split(',', StringSplitOptions.TrimEntries)) {
-            if (s == DSKeywords.CLASS) {
-                constraints |= TypeParameterConstraints.ReferenceTypeConstraint;
-            } else if (s == DSKeywords.STRUCT) {
+            if (s == DSKeywords.STRUCT) {
                 constraints |= TypeParameterConstraints.ValueTypeConstraint;
+            } else if (s == DSKeywords.CLASS) {
+                constraints |= TypeParameterConstraints.ReferenceTypeConstraint;
             } else if (s == DSKeywords.NEW) {
                 constraints |= TypeParameterConstraints.DefaultConstructorConstraint;
             }

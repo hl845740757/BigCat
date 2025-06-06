@@ -21,7 +21,6 @@ using Wjybxx.BigCatEditor.Core;
 using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
-using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
@@ -42,18 +41,18 @@ public static class ExcelConstants
 
     /// <summary>
     /// Cell文本需要翻译
-    /// 1.支持String类型和List{String}类型，但List{String}类型的元素必须拆分配置。
+    /// 1.支持String类型和List{String}类型。
     /// 2.String会被修正为int类型，但使用时无感。
-    /// 3.List{string}会被修正为List{int}，且使用时需要显式处理。
+    /// 3.List{string}会被修正为List{int}，但最终的代码会提供属性转换。
     /// 
     /// <code>i18n: true</code>
     /// </summary>
     public const string KEY_I18N = "i18n";
     /// <summary>
     /// 字符串值需要池化
-    /// 1.支持String类型和List{String}类型，但List{String}类型的元素必须拆分配置。
+    /// 1.支持String类型和List{String}类型。
     /// 2.String会被修正为int类型，但使用时无感。
-    /// 3.List{string}会被修正为List{int}，且使用时需要显式处理。
+    /// 3.List{string}会被修正为List{int}，但最终的代码会提供属性转换。
     /// 
     /// <code>intern: true</code>
     /// </summary>
@@ -307,6 +306,24 @@ public static class ExcelConstants
     }
 
     /// <summary>
+    /// 是否是object类型
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsObjectType(string type) {
+        return type == DSKeywords.TYPE_OBJECT;
+    }
+
+    /// <summary>
+    /// 是否是可空值类型
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsNullableType(string type) {
+        return type == DSKeywords.TYPE_NULLABLE || type.StartsWith(DSKeywords.TYPE_NULLABLE + "<");
+    }
+
+    /// <summary>
     /// 是否是List类型
     ///
     /// List类型格式<code>[V1, V2]</code>
@@ -464,15 +481,6 @@ public static class ExcelConstants
         }
         return r;
     }
-
-    #endregion
-
-    #region 注解
-
-    /// <summary>
-    /// 表示表格是生成的
-    /// </summary>
-    public const string ANNOTATION_GENERATED = "Generated";
 
     #endregion
 }
