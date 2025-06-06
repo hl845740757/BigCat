@@ -335,10 +335,10 @@ public sealed class DSRepository
         if (r != null) {
             return r;
         }
-        // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
         DSFile enclosingFile;
         if (scopeEntry is DSNamedType namedType) {
             enclosingFile = namedType.GetEnclosingFile();
+            // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
             ImmutableList<DSTypeParameter> typeParameters = namedType.OriginDefine.TypeParameters;
             for (int idx = 0; idx < typeParameters.Count; idx++) {
                 var typeParameter = typeParameters[idx];
@@ -346,6 +346,7 @@ public sealed class DSRepository
                     return namedType.IsGenericTypeDefinition ? typeParameter : namedType.TypeArguments[idx];
                 }
             }
+            // 在当前文件内部查询
             // 当typeName是A.B.C的时候，不确定A是内部类还是父兄类，先根据A定位
             int spIndex = typeName.IndexOf('.');
             string firstName = spIndex < 0 ? typeName : typeName.Substring2(0, spIndex);
@@ -355,7 +356,6 @@ public sealed class DSRepository
             }
         } else {
             enclosingFile = (DSFile)scopeEntry;
-            // 在当前文件内部查询
             r = enclosingFile.GetType(typeName);
             if (r != null) {
                 return r;

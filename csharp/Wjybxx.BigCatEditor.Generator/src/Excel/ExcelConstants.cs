@@ -76,6 +76,12 @@ public static class ExcelConstants
     /// 如果期望A,B,C为下标，那么应该新建一个BitArray类型，然后通过<see cref="DSTypeHandler"/>进行转换。
     /// </summary>
     public const string KEY_IS_FLAGS = "isFlags";
+    /// <summary>
+    /// 标记number和string类型是否是常量值
+    /// 
+    /// 该属性用于Param表标记哪些参数需要导出额外的常量表，普通表直接指定列导出。
+    /// </summary>
+    public const string KEY_IS_CONST = "isConst";
 
     /// <summary>
     /// value禁止重复

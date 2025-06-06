@@ -144,9 +144,8 @@ public class ServiceGenerator
         if (service.Comments.Count > 0) {
             typeBuilder.AddDocument(BuildComment(service.Comments));
         }
-        // 构建csFile
         ClassName serviceTypeName = ClassNameOfType(service.SimpleName);
-        GeneratorUtil.WriteToFile(outDir, serviceTypeName, typeBuilder.Build());
+        GeneratorUtil.WriteToFile(outDir, serviceTypeName.ns, typeBuilder.Build());
     }
 
     private CodeBlock BuildComment(List<string> comments) {

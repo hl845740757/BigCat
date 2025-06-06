@@ -60,5 +60,6 @@
         <None Remove="Generated\**" />
         <Compile Remove="Generated\**" />
         <EmbeddedResource Remove="Generated\**" />
+        <Compile Remove="temp\**" />
     </ItemGroup>
 </Project>

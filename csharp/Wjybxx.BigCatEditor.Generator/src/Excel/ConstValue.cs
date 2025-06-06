@@ -25,13 +25,12 @@ namespace Wjybxx.BigCatEditor.Generator.Excel
 /// </summary>
 public enum ConstKind
 {
-    Unknown = 0,
-    Int32 = 1,
-    Int64 = 2,
-    Float = 3,
-    Double = 4,
-    Bool = 5,
-    String = 6
+    Int32 = 0,
+    Int64 = 1,
+    Float = 2,
+    Double = 3,
+    Bool = 4,
+    String = 5
 }
 
 /// <summary>
@@ -41,60 +40,47 @@ public enum ConstKind
 /// </summary>
 public readonly struct ConstValue
 {
-    public readonly string name;
     public readonly ConstKind kind;
-    public readonly double numValue;
-    public readonly string? strValue;
+    public readonly string name;
+    public readonly string value; // 我们尽可能保留表格中的原始字符串，这可以避免大量的问题
     public readonly string? comment;
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="name">常量名</param>
-    /// <param name="numValue">数字值</param>
-    /// <param name="comment">注释</param>
     /// <param name="kind">常量值的类型</param>
-    public ConstValue(string name, double numValue, string? comment, ConstKind kind = ConstKind.Int32) : this() {
-        this.name = name;
-        this.numValue = numValue;
-        this.comment = comment;
+    /// <param name="name">常量名</param>
+    /// <param name="value">常量值</param>
+    /// <param name="comment">注释</param>
+    public ConstValue(ConstKind kind, string name, string value, string? comment) {
         this.kind = kind;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="name">常量名</param>
-    /// <param name="strValue">字符串值</param>
-    /// <param name="comment">注释</param>
-    public ConstValue(string name, string? strValue, string? comment) : this() {
-        this.name = name;
-        this.strValue = strValue;
+        this.name = name ?? throw new ArgumentNullException(nameof(name));
+        this.value = value;
         this.comment = comment;
-        this.kind = ConstKind.String;
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="name">常量名</param>
-    /// <param name="boolValue">bool值</param>
-    /// <param name="comment">注释</param>
-    public ConstValue(string name, bool boolValue, string? comment) : this() {
-        this.name = name;
-        this.numValue = boolValue ? 1 : 0;
-        this.comment = comment;
-        this.kind = ConstKind.Bool;
-    }
-
-    public int IntVal => (int)numValue;
-    public long LongVal => (long)numValue;
-    public float FloatVal => (float)numValue;
-    public double DoubleVal => numValue;
-    public bool BoolVal => numValue != 0;
 
     public override string ToString() {
-        return $"{nameof(name)}: {name}, {nameof(kind)}: {kind}, {nameof(numValue)}: {numValue}, {nameof(strValue)}: {strValue}, {nameof(comment)}: {comment}";
+        return $"{nameof(kind)}: {kind}, {nameof(name)}: {name}, {nameof(value)}: {value}, {nameof(comment)}: {comment}";
+    }
+}
+
+/// <summary>
+/// 表格中的枚举值
+/// </summary>
+public readonly struct EnumValue
+{
+    public readonly string name;
+    public readonly int value;
+    public readonly string? comment;
+
+    public EnumValue(string name, int value, string? comment) {
+        this.name = name;
+        this.value = value;
+        this.comment = comment;
+    }
+
+    public override string ToString() {
+        return $"{nameof(name)}: {name}, {nameof(value)}: {value}, {nameof(comment)}: {comment}";
     }
 }
 }

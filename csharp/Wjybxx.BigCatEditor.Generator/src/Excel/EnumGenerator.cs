@@ -20,86 +20,112 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Wjybxx.Commons.Poet;
+using Wjybxx.BigCatEditor.Excel;
+using static Wjybxx.BigCatEditor.Generator.Excel.ExcelConstants;
+using Util = Wjybxx.BigCatEditor.Core.Util;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
 /// <summary>
 /// 根据表格数据生成枚举类
 ///
-/// 注意：C#不支持字符串值，因此传入的枚举值必须合法。
+/// 1.在新的表格设计下，我们不直接生成C#类，而是生成ds文件。
+/// 2.所有的枚举生成到同一个ds文件。
+/// 3.枚举生成的顺序由用户的List决定 -- 通常是根据配置来的，比较稳定
 /// </summary>
-public class EnumGenerator
+public class EnumGenerator : ISheetProcessor
 {
-    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(EnumGenerator));
-
-    private readonly string outDir;
-    private readonly ClassName className;
-    private readonly List<ConstValue> enumValues;
-    private readonly bool isFlags;
-    private readonly bool allowAlias;
+    private readonly SheetRepository _repository;
+    private readonly FileInfo _templateFile;
+    private readonly List<ConstCfg> _enumCfgs;
+    private readonly string _outPath;
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="outDir"></param>
-    /// <param name="className"></param>
-    /// <param name="enumValues"></param>
-    /// <param name="isFlags">是否是Flags</param>
-    /// <param name="allowAlias">是否允许枚举数重复</param>
-    public EnumGenerator(string outDir,
-                         ClassName className, List<ConstValue> enumValues,
-                         bool isFlags, bool allowAlias = false) {
-        this.outDir = outDir;
-        this.className = className;
-        this.enumValues = enumValues;
-        this.isFlags = isFlags;
-        this.allowAlias = allowAlias;
+    /// <param name="repository"></param>
+    /// <param name="templateFile">枚举的模板ds文件，主要处理文件头</param>
+    /// <param name="enumCfgs">所有的枚举配置</param>
+    /// <param name="outPath">输出路径</param>
+    public EnumGenerator(SheetRepository repository, FileInfo templateFile, List<ConstCfg> enumCfgs, string outPath) {
+        _repository = repository;
+        _templateFile = templateFile;
+        _enumCfgs = enumCfgs;
+        _outPath = outPath;
     }
 
     public void Execute() {
-        if (enumValues.Any(e => e.kind != ConstKind.Int32)) {
-            throw new InvalidOperationException("the kind of enumValue must be int32");
+        if (!_templateFile.Exists) {
+            throw new IOException("Template file doesn't exist.");
         }
-        if (!allowAlias) {
-            CheckAlias();
-        }
-        TypeSpec.Builder typeBuilder = TypeSpec.NewEnumBuilder(className.simpleName)
-            .AddModifiers(Modifiers.Public)
-            .AddAttribute(processorInfo);
-        if (isFlags) {
-            typeBuilder.AddAttribute(AttributeSpec.NewBuilder(GeneratorUtil.clsName_Flags).Build());
-        }
-        foreach (ConstValue enumValue in enumValues) {
-            EnumValueSpec.Builder valueBuilder = EnumValueSpec.NewBuilder(enumValue.name, enumValue.IntVal);
-            if (!string.IsNullOrWhiteSpace(enumValue.comment)) {
-                valueBuilder.AddDocument(enumValue.comment);
+        string[] fileHeaders = File.ReadAllLines(_templateFile.FullName);
+        List<string> lines = new List<string>(100);
+        lines.AddRange(fileHeaders);
+
+        bool firstSheet = true;
+        foreach (ConstCfg enumCfg in _enumCfgs) {
+            List<Sheet> sheets = _repository.SheetMap.Values
+                .Where(e => GetFirstSheetName(e.sheetName) == enumCfg.sheetName)
+                .ToList();
+            try {
+                if (sheets.Count > 0 && sheets[0].isParamSheet) {
+                    // 参数表不应该生成枚举
+                    throw new InvalidOperationException("param sheet can't generate enum");
+                }
+                // 这里对Sheet排序是不必要的，因为我们需要对枚举值排序
+                List<EnumValue> values = CollectValues(sheets, enumCfg);
+                if (firstSheet) {
+                    firstSheet = false;
+                } else {
+                    lines.Add("");
+                }
+                values.Sort((a, b) => a.value.CompareTo(b.value));
+                Append(lines, enumCfg, values);
             }
-            typeBuilder.AddEnumValue(valueBuilder.Build());
+            catch (Exception ex) {
+                throw new Exception($"sheetName: {enumCfg.sheetName}", ex);
+            }
+        }
+        File.WriteAllLines(_outPath, lines, Util.ENCODING_UTF8);
+    }
+
+    private static List<EnumValue> CollectValues(List<Sheet> sheets, ConstCfg enumCfg) {
+        List<EnumValue> values = new List<EnumValue>();
+        foreach (Sheet sheet in sheets) {
+            foreach (SheetRow sheetRow in sheet.valueRows) {
+                string name = sheetRow.GetValue(enumCfg.nameCol);
+                if (string.IsNullOrWhiteSpace(name)) {
+                    continue;
+                }
+                string value = sheetRow.GetValue(enumCfg.valueCol)
+                               ?? throw new InvalidOperationException("value is null, colName: " + enumCfg.valueCol);
+                string comment = sheetRow.GetValue(enumCfg.commentCol);
+                int number = int.Parse(value);
+                values.Add(new EnumValue(name, number, comment));
+            }
+        }
+        return values;
+    }
+
+    private static void Append(List<string> lines, ConstCfg enumCfg, List<EnumValue> enumValues) {
+        // 标记为生成代码时需要添加Flags注解
+        if (enumCfg.isFlags) {
+            lines.Add("//@Flags{}");
+        }
+        lines.Add($"enum {enumCfg.clsName} {{");
+        foreach (EnumValue enumValue in enumValues) {
+            lines.Add($"    {enumValue.name} = {enumValue.value}; // {enumValue.comment ?? enumValue.name}");
         }
         // 增加最大和最小值
         int min = -1;
         int max = -1;
         if (enumValues.Count > 0) {
-            min = enumValues.Min().IntVal;
-            max = enumValues.Max().IntVal;
+            min = enumValues.Min(e => e.value);
+            max = enumValues.Max(e => e.value);
         }
-        typeBuilder.AddEnumValue(EnumValueSpec.NewBuilder("MIN_VALUE", min)
-            .AddDocument("Generated").Build());
-        typeBuilder.AddEnumValue(EnumValueSpec.NewBuilder("MAX_VALUE", max)
-            .AddDocument("Generated").Build());
-
-        // 生成文件
-        GeneratorUtil.WriteToFile(outDir, className, typeBuilder.Build());
-    }
-
-    private void CheckAlias() {
-        HashSet<int> valueSet = new HashSet<int>(enumValues.Count);
-        foreach (var enumValue in enumValues) {
-            if (!valueSet.Add(enumValue.IntVal)) {
-                throw new InvalidOperationException($"enumValue is duplicate, name: {enumValue.name}, number: {enumValue.IntVal}");
-            }
-        }
+        lines.Add($"    MinValue = {min}; // Generated");
+        lines.Add($"    MaxValue = {max}; // Generated");
+        lines.Add("}");
     }
 }
 }

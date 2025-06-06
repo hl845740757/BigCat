@@ -81,22 +81,5 @@ public sealed class SheetRepository
         _sheetMap.Remove(sheetName, out Sheet sheet);
         return sheet;
     }
-
-    /// <summary>
-    /// 获取所有分表
-    /// </summary>
-    /// <param name="sheetName">逻辑主表名</param>
-    /// <param name="separator">表名分隔符</param>s
-    /// <returns></returns>
-    public List<Sheet> GetSheets(string sheetName, string separator = ".") {
-        List<Sheet> result = new();
-        string prefix = sheetName + separator;
-        foreach (Sheet sheet in _sheetMap.Values) {
-            if (sheet.sheetName.StartsWith(prefix)) {
-                result.Add(sheet);
-            }
-        }
-        return result;
-    }
 }
 }

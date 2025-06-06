@@ -114,14 +114,15 @@ public static class GeneratorUtil
 
     /// <summary>
     /// 将类型写入文件
+    /// 适用简单情况，我们多数情况下一个类型一个文件
     /// </summary>
-    public static void WriteToFile(string outDir, ClassName className, TypeSpec typeSpec) {
-        CsharpFile csharpFile = CsharpFile.NewBuilder(className.simpleName)
-            .AddSpec(NamespaceSpec.Of(className.ns, typeSpec))
+    public static void WriteToFile(string outDir, string ns, TypeSpec typeSpec) {
+        CsharpFile csharpFile = CsharpFile.NewBuilder(typeSpec.name)
+            .AddSpec(NamespaceSpec.Of(ns, typeSpec))
             .Build();
         CodeWriter codeWriter = codeWriterPool.Acquire();
         try {
-            string path = outDir + "/" + className.simpleName + ".cs";
+            string path = outDir + "/" + typeSpec.name + ".cs";
             File.WriteAllText(path, codeWriter.Write(csharpFile), ENCODING_UTF8);
         }
         finally {
@@ -130,18 +131,14 @@ public static class GeneratorUtil
     }
 
     /// <summary>
-    /// 将包含多个类型的
+    /// 适用复杂情况
     /// </summary>
     /// <param name="outDir"></param>
-    /// <param name="fileSimpleName"></param>
-    /// <param name="namespaceSpec"></param>
-    public static void WriteToFile(string outDir, string fileSimpleName, NamespaceSpec namespaceSpec) {
-        CsharpFile csharpFile = CsharpFile.NewBuilder(fileSimpleName)
-            .AddSpec(namespaceSpec)
-            .Build();
+    /// <param name="csharpFile"></param>
+    public static void WriteToFile(string outDir, CsharpFile csharpFile) {
         CodeWriter codeWriter = codeWriterPool.Acquire();
         try {
-            string path = outDir + "/" + fileSimpleName + ".cs";
+            string path = outDir + "/" + csharpFile.name + ".cs";
             File.WriteAllText(path, codeWriter.Write(csharpFile), ENCODING_UTF8);
         }
         finally {

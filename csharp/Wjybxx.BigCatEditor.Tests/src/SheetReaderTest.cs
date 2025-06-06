@@ -52,21 +52,43 @@ public class SheetReaderTest
         foreach (Sheet sheet in ExcelUtil.Read(fileInfo, readerOptions)) {
             repository.AddSheet(sheet);
         }
+        // 生成枚举ds文件
+        string? enumDsFilePath = outDir + "/tableEnums.ds";
+        {
+            FileInfo enumTemplateFile = new FileInfo(resDir + "/SheetEnum.tt");
+            List<ConstCfg> enumCfgs = new List<ConstCfg>()
+            {
+                new ConstCfg("ItemEnum", "Item", "enumName", "itemId", "desc")
+            };
+            new EnumGenerator(repository, enumTemplateFile, enumCfgs, enumDsFilePath).Execute();
+        }
+
         // 生成ds文件
-        var templateFile = new FileInfo(resDir + "/SheetCfg.tt");
-        var dsFilePath = outDir + "/tables.ds";
-        new DataScriptGenerator(repository, templateFile, dsFilePath, RequireMode.All).Execute();
+        string? tableDsFilePath = outDir + "/tables.ds";
+        {
+            FileInfo templateFile = new FileInfo(resDir + "/SheetCfg.tt");
+            new DataScriptGenerator(repository, templateFile, tableDsFilePath, RequireMode.All).Execute();
+        }
 
         // 构建ds仓库
         DSRepository dsRepository = new DSRepository();
         {
-            DSFile dsFile = DSFileParser.Parse(new FileInfo(dsFilePath));
-            dsRepository.AddFile(dsFile);
+            dsRepository.AddFile(DSFileParser.Parse(new FileInfo(enumDsFilePath)));
+            dsRepository.AddFile(DSFileParser.Parse(new FileInfo(tableDsFilePath)));
         }
         dsRepository.Build();
-
         // 导出Dson
         new DsonGenerator(repository, dsRepository, RequireMode.All, outDir, true).Execute();
+
+        // 生成常量类
+        {
+            List<ConstCfg> constCfgs = new List<ConstCfg>()
+            {
+                new ConstCfg("ItemConst", "Item", "enumName", "itemId", "desc"),
+                new ConstCfg("SkillConst", "SkillParam")
+            };
+            new ConstantGenerator(repository, "Wjybxx.BigCat.Demo", constCfgs, outDir).Execute();
+        }
     }
 
     /// <summary>

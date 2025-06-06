@@ -1,0 +1,4 @@
+﻿// 表格生成枚举时的ds文件模板
+// import "common.ds";
+option csharp_namespace="Wjybxx.BigCat.Demo";
+
