@@ -51,8 +51,8 @@
         <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.4.2" />
         <PackageReference Include="Wjybxx.Commons.Core" Version="1.4.3" />
         <PackageReference Include="Wjybxx.Commons.Inject" Version="1.4.2" />
-        <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.2" />
-        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.2" />
+        <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.3" />
+        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.3" />
         <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.4" />
     </ItemGroup>
 

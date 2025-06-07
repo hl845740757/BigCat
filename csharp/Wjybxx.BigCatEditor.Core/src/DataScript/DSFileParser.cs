@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -25,8 +26,13 @@ using Wjybxx.BigCatEditor.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
+using Wjybxx.Dson;
+using Wjybxx.Dson.IO;
+using Wjybxx.Dson.Text;
+using LineInfo = Wjybxx.BigCatEditor.Core.LineInfo;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
 using Util = Wjybxx.BigCatEditor.Core.Util;
+using DsonLineInfo = Wjybxx.Dson.Text.LineInfo;
 
 namespace Wjybxx.BigCatEditor.DataScript
 {
@@ -37,7 +43,7 @@ public class DSFileParser
 {
 #nullable disable
     private readonly FileInfo file;
-    private readonly IEnumerator<string> lineIterator;
+    private readonly LineEnumerator lineIterator;
     private readonly DSFile dsFile;
 
     /** 当前递归深度 */
@@ -47,7 +53,7 @@ public class DSFileParser
 
     private DSFileParser(FileInfo file, bool isVirtual, IEnumerator<string> lineIterator) {
         this.file = file;
-        this.lineIterator = lineIterator;
+        this.lineIterator = new LineEnumerator(lineIterator);
 
         this.dsFile = new DSFile(file.Name, isVirtual);
         this._context = new Context(null, DSContextType.File, dsFile);
@@ -87,11 +93,9 @@ public class DSFileParser
 #nullable enable
 
     private void Parse() {
-        LineInfo curLine = LineInfo.EMPTY;
         try {
-            int ln = 0;
             while (lineIterator.MoveNext()) {
-                curLine = LineInfo.Parse(++ln, lineIterator.Current!);
+                LineInfo curLine = LineInfo.Parse(lineIterator.CurrentLn, lineIterator.Current);
                 if (!_context.started) {
                     CheckStart(curLine);
                     continue;
@@ -117,7 +121,7 @@ public class DSFileParser
             }
         }
         catch (Exception ex) {
-            throw new IOException($"fileName: {file.Name}, ln: {curLine.ln}", ex);
+            throw new IOException($"fileName: {file.Name}, ln: {lineIterator.CurrentLn}", ex);
         }
     }
 
@@ -211,26 +215,51 @@ public class DSFileParser
             name = content.Substring2(startIdx, spIdx).Trim();
             templates = content.Substring2(spIdx + "from".Length, endIdx).Split(',', StringSplitOptions.TrimEntries);
         }
-        // 扫描文本 -- 要想完全根据语法解析的话，有点麻烦；暂时要求结束符必须处于行首，就能很快确定实例的结束位置。
-        string value;
+        string firstLine = content.Substring2(endIdx);
+        string value = ScanDsonValue(firstLine, lineInfo.ln);
+        return new DSInst(name, value, templates);
+    }
+
+    private string ScanDsonValue(string firstLine, int ln) {
         StringBuilder sb = ConcurrentObjectPool.SharedStringBuilderPool.Acquire();
-        sb.Append(isArray ? '[' : '{');
-        char endChar = isArray ? ']' : '}';
         try {
-            while (lineIterator.MoveNext()) {
-                string rawLine = lineIterator.Current ?? "";
-                if (rawLine.Length > 0 && rawLine[0] == endChar) {
-                    break;
+            DsonScanner scanner = Dsons.NewLinesScanner(new DsonLineIterator(lineIterator, firstLine, sb), ln);
+            DsonToken firstToken = scanner.NextToken(skipValue: true);
+            DsonToken token = firstToken;
+            int stack = 1;
+            while (stack > 0) {
+                token = scanner.NextToken(skipValue: true);
+                switch (token.type) {
+                    case DsonTokenType.BeginArray:
+                    case DsonTokenType.BeginObject:
+                    case DsonTokenType.BeginHeader: {
+                        stack++;
+                        break;
+                    }
+                    case DsonTokenType.EndArray:
+                    case DsonTokenType.EndObject: {
+                        if (--stack == 0) {
+                            goto end;
+                        }
+                        break;
+                    }
+                    case DsonTokenType.Eof: {
+                        goto end;
+                    }
                 }
-                sb.Append(rawLine);
             }
-            sb.Append(endChar);
-            value = sb.ToString();
+            end:
+            bool match = firstToken.type == DsonTokenType.BeginArray
+                ? token.type == DsonTokenType.EndArray
+                : token.type == DsonTokenType.EndObject;
+            if (!match) {
+                throw DsonIOException.InvalidTokenType(DsonContextType.TopLevel, token);
+            }
+            return sb.ToString();
         }
         finally {
             ConcurrentObjectPool.SharedStringBuilderPool.Release(sb);
         }
-        return new DSInst(name, value, templates);
     }
 
     #endregion
@@ -675,6 +704,51 @@ public class DSFileParser
         /** 清理注释行 */
         public void ClearCommentLines() {
             commentLines.Clear();
+        }
+    }
+
+    private class DsonLineIterator : IEnumerator<DsonLineInfo>
+    {
+        private readonly LineEnumerator lineEnumerator;
+        private readonly StringBuilder sb;
+
+        private string? firstLine;
+        private string? currentLine;
+        private int startPos; // 新行的开始位置
+
+        public DsonLineIterator(LineEnumerator lineEnumerator, string firstLine, StringBuilder sb) {
+            this.lineEnumerator = lineEnumerator;
+            this.firstLine = firstLine;
+            this.sb = sb;
+        }
+
+        public DsonLineInfo Current => new DsonLineInfo(lineEnumerator.CurrentLn,
+            startPos, startPos + currentLine!.Length, DsonLineInfo.StateLf, currentLine);
+        object IEnumerator.Current => Current;
+
+        public bool MoveNext() {
+            if (currentLine != null) {
+                startPos += currentLine.Length + 2;
+                sb.Append('\n');
+            }
+            if (firstLine != null) {
+                currentLine = firstLine;
+                sb.Append(currentLine);
+                firstLine = null;
+                return true;
+            }
+            if (lineEnumerator.MoveNext()) {
+                currentLine = lineEnumerator.Current;
+                sb.Append(currentLine);
+                return true;
+            }
+            return false;
+        }
+
+        public void Reset() {
+        }
+
+        public void Dispose() {
         }
     }
 }

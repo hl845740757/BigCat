@@ -32,7 +32,7 @@ public sealed class PBFileParser
 {
 #nullable disable
     private readonly FileInfo file;
-    private readonly IEnumerator<string> lineIterator;
+    private readonly LineEnumerator lineIterator;
     private readonly PBFile pbFile;
 
     /** 当前递归深度 */
@@ -42,7 +42,7 @@ public sealed class PBFileParser
 
     public PBFileParser(FileInfo file, IEnumerator<string> lineIterator) {
         this.file = file;
-        this.lineIterator = lineIterator;
+        this.lineIterator = new LineEnumerator(lineIterator);
         this.pbFile = new PBFile(file.Name);
 
         this._context = new Context(null, PBContextType.File, pbFile);
@@ -78,11 +78,9 @@ public sealed class PBFileParser
 #nullable enable
 
     private void Parse() {
-        LineInfo curLine = LineInfo.EMPTY;
         try {
-            int ln = 0;
             while (lineIterator.MoveNext()) {
-                curLine = LineInfo.Parse(++ln, lineIterator.Current!);
+                LineInfo curLine = LineInfo.Parse(lineIterator.CurrentLn, lineIterator.Current);
                 if (!_context.started) {
                     CheckStart(curLine);
                     continue;
@@ -115,7 +113,7 @@ public sealed class PBFileParser
             }
         }
         catch (Exception ex) {
-            throw new IOException($"fileName: {file.Name}, ln: {curLine.ln}", ex);
+            throw new IOException($"fileName: {file.Name}, ln: {lineIterator.CurrentLn}", ex);
         }
     }
 
@@ -334,7 +332,6 @@ public sealed class PBFileParser
     }
 
     #endregion
-
 
     #region service
 
