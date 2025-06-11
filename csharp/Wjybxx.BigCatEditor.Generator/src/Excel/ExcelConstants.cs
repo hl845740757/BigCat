@@ -17,8 +17,10 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Wjybxx.BigCatEditor.Core;
 using Wjybxx.BigCatEditor.DataScript;
+using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
 
@@ -104,10 +106,6 @@ public static class ExcelConstants
     /// 比如期望在List和Map的元数据列配置注释时，可以禁用元数据列检查
     /// </summary>
     public const string KEY_NO_CHECK = "noCheck";
-
-    #endregion
-
-    #region options工具方法
 
     /// <summary>
     /// 是否需要该单元格
@@ -249,6 +247,26 @@ public static class ExcelConstants
     public const string ELEMENT_FIRST = "#1";
 
     /// <summary>
+    /// 获取关联的字段名字
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public static string GetFieldName(string name) {
+        int idx = name.IndexOf('#');
+        return idx < 0 ? name : name.Substring2(0, idx);
+    }
+
+    /// <summary>
+    /// 获取List/Map的元素名字
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="idx"></param>
+    /// <returns></returns>
+    public static string GetElementName(string name, int idx) {
+        return name + "#" + idx;
+    }
+
+    /// <summary>
     /// 是否是List或Map的元素
     /// </summary>
     /// <param name="name"></param>
@@ -257,9 +275,40 @@ public static class ExcelConstants
         return name.IndexOf('#') > 0;
     }
 
+    /// <summary>
+    /// 收集字段的所有元素
+    /// </summary>
+    internal static List<Header> CollectElementHeaders(Sheet sheet, Header fieldHeader, List<Header>? elemHeaders = null) {
+        string fieldName = fieldHeader.name;
+        bool isListType = IsListType(fieldHeader.type);
+        bool isMapType = IsMapType(fieldHeader.type);
+        if (!isListType && !isMapType) {
+            throw new Exception($"the field {fieldName} must be List or Map");
+        }
+        if (elemHeaders == null) {
+            elemHeaders = new List<Header>(5);
+        }
+        // 收集所有列名 -- 配置表中索引1开始
+        for (int index = 1; index <= ELEMENT_LIMIT; index++) {
+            string elementName = GetElementName(fieldHeader.name, index);
+            Header? elemHeader = sheet.GetHeader(elementName);
+            if (elemHeader == null) {
+                break;
+            }
+            if (isMapType && !string.IsNullOrWhiteSpace(elemHeader.type) && !IsPairType(elemHeader.type)) {
+                throw new Exception($"the filed {fieldName} is map type, but the element {elemHeader.name} is not pair type");
+            }
+            elemHeaders.Add(elemHeader);
+        }
+        return elemHeaders;
+    }
+
     #endregion
 
     #region 类型工具方法
+
+    public const string TYPE_LIST_INT32 = "List<" + DSKeywords.TYPE_INT32 + ">";
+    public const string TYPE_LIST_STRING = "List<" + DSKeywords.TYPE_STRING + ">";
 
     /// <summary>
     /// 获取类型的默认值
@@ -337,6 +386,7 @@ public static class ExcelConstants
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsListType(string type) {
+        // 用户可能使用拆分后的符号进行测试
         return type == DSKeywords.TYPE_LIST || type.StartsWith(DSKeywords.TYPE_LIST + "<");
     }
 
@@ -348,6 +398,7 @@ public static class ExcelConstants
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsMapType(string type) {
+        // 用户可能使用拆分后的符号进行测试
         return type == DSKeywords.TYPE_MAP || type.StartsWith(DSKeywords.TYPE_MAP + "<");
     }
 
@@ -363,6 +414,15 @@ public static class ExcelConstants
         return type == DSKeywords.TYPE_PAIR || type.StartsWith(DSKeywords.TYPE_PAIR + "<");
     }
 
+    /// <summary>
+    /// 是否是指定List{string}类型
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsListStringType(string type) {
+        return type == TYPE_LIST_STRING;
+    }
+
     #endregion
 
     #region 分表
@@ -374,7 +434,7 @@ public static class ExcelConstants
     /// <summary>
     /// 分表的基础表表名
     /// </summary>
-    public const string STRING_BASE = "Base";
+    private const string STRING_BASE = "Base";
 
     /// <summary>
     /// 表格对应的Class名字
@@ -397,7 +457,7 @@ public static class ExcelConstants
     /// <param name="sheetName"></param>
     /// <returns></returns>
     public static bool IsPartitionSheet(string sheetName) {
-        int idx = sheetName.LastIndexOf('.'); // Item.Base.0 => Item.Base
+        int idx = sheetName.LastIndexOf('.');
         if (idx <= 0) return false;
 
         string suffix = sheetName.Substring(idx + 1);

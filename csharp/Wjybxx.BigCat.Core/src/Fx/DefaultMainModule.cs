@@ -76,7 +76,7 @@ public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
     public int FrameInterval {
         get => frameInterval;
         set {
-            if (value < 0) throw new ArgumentException("frameInterval: " + frameInterval);
+            if (value < 1) throw new ArgumentException("frameInterval: " + frameInterval);
             frameInterval = value;
         }
     }

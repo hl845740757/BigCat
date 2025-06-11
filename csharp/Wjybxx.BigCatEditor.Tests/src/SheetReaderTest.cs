@@ -16,10 +16,12 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.BigCatEditor.Generator.Excel;
@@ -52,6 +54,9 @@ public class SheetReaderTest
         foreach (Sheet sheet in ExcelUtil.Read(fileInfo, readerOptions)) {
             repository.AddSheet(sheet);
         }
+        // 字符串转换在生成代码和导出文本之前
+        new SstGenerator(repository, outDir).Execute();
+
         // 生成枚举ds文件
         string? enumDsFilePath = outDir + "/tableEnums.ds";
         {
@@ -89,6 +94,15 @@ public class SheetReaderTest
             };
             new ConstantGenerator(repository, "Wjybxx.BigCat.Demo", constCfgs, outDir).Execute();
         }
+
+        // 测试SSTMgr
+        List<string> fileList = new List<string>(11);
+        fileList.Add(outDir + "/" + SstGenerator.FILE_LSST_INDEX);
+        fileList.AddRange(Directory.GetFiles(outDir, SstGenerator.FILE_SST_DB + ".*"));
+        SstMgr.Init(fileList);
+
+        Console.WriteLine(SstMgr.GetString(1)); // 预加载的字符串
+        Console.WriteLine(SstMgr.GetString(40)); // 延迟加载的字符串
     }
 
     /// <summary>

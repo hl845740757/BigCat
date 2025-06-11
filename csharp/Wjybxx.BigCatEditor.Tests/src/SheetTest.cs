@@ -28,7 +28,7 @@ public class SheetTest
     private const int nameRowIndex = 2;
     private const int commentRowIndex = 3;
 
-    
+
     private Sheet sheet;
 
     [SetUp]
@@ -37,20 +37,23 @@ public class SheetTest
         sheet.AddHeader(new Header("cs", "id", "id", "", nameRowIndex, 0));
         sheet.AddHeader(new Header("cs", "string", "name", "", nameRowIndex, 1));
     }
-    
+
     [Test]
     public void TestInsert() {
         int rowIndex = 4;
         sheet.AddRow(new SheetRow(rowIndex));
-        sheet.GetRow(rowIndex).SetValue("id", "1002")
-            .SetValue("name", "物品1002");
+        SheetRow sheetRow = sheet.GetRow(rowIndex);
+        sheetRow.SetValue("id", "1002");
+        sheetRow.SetValue("name", "物品1002");
         // 插入前部
         sheet.AddRow(new SheetRow(rowIndex));
-        sheet.GetRow(rowIndex).SetValue("id", "1001")
-            .SetValue("name", "物品1001");
+        sheetRow = sheet.GetRow(rowIndex);
+        sheetRow.SetValue("id", "1001");
+        sheetRow.SetValue("name", "物品1001");
         // 插到末尾
         sheet.AddRow(new SheetRow(rowIndex + 2));
-        sheet.GetRow(rowIndex).SetValue("id", "1003")
-            .SetValue("name", "物品1003");
+        sheetRow = sheet.GetRow(rowIndex);
+        sheetRow.SetValue("id", "1003");
+        sheetRow.SetValue("name", "物品1003");
     }
 }

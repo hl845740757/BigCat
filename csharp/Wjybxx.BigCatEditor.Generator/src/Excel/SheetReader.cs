@@ -40,8 +40,8 @@ internal class SheetReader
 {
     /** 普通表的表头行数 */
     private const int HEADER_ROW_COUNT = 4;
-    /** 字段名的正则表达式 - 数组和字典支持#index语法 */
-    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_][a-zA-Z0-9_]*(?:[#]\\d+)?$", RegexOptions.Compiled);
+    /** 字段名的正则表达式 - 数组和字典支持#index语法；增加点号主要支持翻译表字段名 */
+    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_][a-zA-Z0-9_\\.]*(?:[#]\\d+)?$", RegexOptions.Compiled);
 
     private readonly string fileName;
     private readonly string sheetName;
@@ -285,7 +285,7 @@ internal class SheetReader
         HashSet<string> primaryKeySet = new HashSet<string>();
         while (reader.Read()) {
             GetRowValues(reader, trim: false, rowValues);
-            if (IsBlankLine(rowValues)
+            if (string.IsNullOrWhiteSpace(rowValues[0]) // id为空表示注释行
                 || rowValues[0].StartsWith(options.commentLinePrefix)) { // 注释行（分隔行）
                 continue;
             }

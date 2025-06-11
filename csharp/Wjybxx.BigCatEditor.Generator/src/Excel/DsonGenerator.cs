@@ -159,7 +159,7 @@ public class DsonGenerator : ISheetProcessor
                 DSTypeElement fieldType = _dsRepository.ResolveTypeSymbol(null, header.type);
                 DsonValue value;
                 if (sheet.GetHeader(header.name + "#1") != null) {
-                    value = MergeParamSheetCell(sheet, header, (DSNamedType)fieldType, CollectElementHeaders(sheet, header));
+                    value = MergeCellValue(sheet, header, (DSNamedType)fieldType, CollectElementHeaders(sheet, header));
                 } else {
                     value = GetValue(fieldType, sheet.GetValue(header.name));
                 }
@@ -186,33 +186,6 @@ public class DsonGenerator : ISheetProcessor
         collection.Add(paramObject);
         return collection;
     }
-
-    private DsonValue MergeParamSheetCell(Sheet sheet, Header fieldHeader, DSNamedType fieldType, List<Header> elemHeaders) {
-        string fieldName = fieldHeader.name;
-        DsonObject<string> options = ParseOptions(fieldHeader.options);
-        CheckOriginalCell(options, fieldName, sheet.GetValue(fieldName));
-
-        DSTypeElement elementType = GetElementType(fieldType);
-        List<DsonValue> values = GetCachedList();
-        if (GetBool(options, KEY_IS_RECORD)) {
-            // 合并所有行的值
-            foreach (Header elemHeader in elemHeaders) {
-                string? rawValue = sheet.GetValue(elemHeader.name);
-                values.Add(GetValue(elementType, rawValue));
-            }
-        } else {
-            // 合并非空白行，遇见空白行中断
-            foreach (Header elemHeader in elemHeaders) {
-                string? rawValue = sheet.GetValue(elemHeader.name);
-                if (IsBreakMerge(rawValue, elementType)) {
-                    break;
-                }
-                values.Add(GetValue(elementType, rawValue));
-            }
-        }
-        return MergeValues(fieldHeader, values);
-    }
-
 
     /// <summary>
     /// 与参数表不同，普通表存在子类型表；所有分块表，以及子类型表都会被合并到同一个Dson文件
@@ -266,7 +239,7 @@ public class DsonGenerator : ISheetProcessor
                     if (!headerCaches.TryGetValue(field.SimpleName, out HeaderCache headerCache)) {
                         value = GetValue(field.Type, ""); // 根据空白字符串计算默认值
                     } else if (headerCache.elemHeaders != null) {
-                        value = MergeNormalSheetCell(sheetRow, headerCache.header, (DSNamedType)headerCache.fieldType, headerCache.elemHeaders);
+                        value = MergeCellValue(sheetRow, headerCache.header, (DSNamedType)headerCache.fieldType, headerCache.elemHeaders);
                     } else {
                         value = GetValue(headerCache.fieldType, sheetRow.GetValue(field.SimpleName));
                     }
@@ -280,34 +253,51 @@ public class DsonGenerator : ISheetProcessor
         return collection;
     }
 
-    /// <summary>
-    /// 普通表需要先缓存List和Map的成员列表头信息
-    /// </summary>
-    /// <returns></returns>
-    private DsonValue MergeNormalSheetCell(SheetRow sheetRow, Header fieldHeader, DSNamedType fieldType, List<Header> elemHeaders) {
+    private DsonValue MergeCellValue(IValueProvider valueProvider, Header fieldHeader, DSNamedType fieldType, List<Header> elemHeaders) {
         string fieldName = fieldHeader.name;
         DsonObject<string> options = ParseOptions(fieldHeader.options);
-        CheckOriginalCell(options, fieldName, sheetRow.GetValue(fieldName));
+        CheckOriginalCell(options, fieldName, valueProvider.GetValue(fieldName));
 
         DSTypeElement elementType = GetElementType(fieldType);
         List<DsonValue> values = GetCachedList();
         if (GetBool(options, KEY_IS_RECORD)) {
             // 合并所有列的值
             foreach (Header elemHeader in elemHeaders) {
-                string? rawValue = sheetRow.GetValue(elemHeader.name);
+                string? rawValue = valueProvider.GetValue(elemHeader.name);
                 values.Add(GetValue(elementType, rawValue));
             }
-            return MergeValues(fieldHeader, values);
         } else {
-            // 合并非空白列，遇见空白列中断
+            // 遇见空白列中断
             foreach (Header elemHeader in elemHeaders) {
-                string? rawValue = sheetRow.GetValue(elemHeader.name);
+                string? rawValue = valueProvider.GetValue(elemHeader.name);
                 if (IsBreakMerge(rawValue, elementType)) {
                     break;
                 }
                 values.Add(GetValue(elementType, rawValue));
             }
-            return MergeValues(fieldHeader, values);
+        }
+        if (IsListType(fieldHeader.type)) {
+            DsonArray<string> dsonArray = new DsonArray<string>(values.Count);
+            dsonArray.AddAll(values);
+            return dsonArray;
+        }
+        // Map
+        DsonObject<string> dsonObject = new DsonObject<string>(values.Count);
+        foreach (DsonValue pair in values) {
+            if (pair.DsonType == DsonType.Object) {
+                DsonObject<string> pairObject = (DsonObject<string>)pair;
+                Debug.Assert(pairObject.Count == 1);
+                dsonObject.AddAll(pairObject);
+                continue;
+            }
+            throw new Exception($"invalid pair value: {pair}");
+        }
+        return dsonObject;
+    }
+
+    private static void CheckOriginalCell(DsonObject<string> options, string fieldName, string? value) {
+        if (!GetBool(options, KEY_NO_CHECK) && !string.IsNullOrWhiteSpace(value)) {
+            throw new Exception($"the original field value must be empty or check disabled, fieldName: {fieldName}");
         }
     }
 
@@ -325,57 +315,10 @@ public class DsonGenerator : ISheetProcessor
         return _dsRepository.MakeGenericType(pairType, new List<DSTypeElement>(fieldType.TypeArguments));
     }
 
-    private static List<Header> CollectElementHeaders(Sheet sheet, Header fieldHeader) {
-        string fieldName = fieldHeader.name;
-        bool isListType = IsListType(fieldHeader.type);
-        bool isMapType = IsMapType(fieldHeader.type);
-        if (!isListType && !isMapType) {
-            throw new Exception($"the field {fieldName} must be List or Map");
-        }
-        // 收集所有列名 -- 注意，配置表中索引1开始
-        List<Header> elemHeaders = new List<Header>();
-        for (int index = 1; index <= ELEMENT_LIMIT; index++) {
-            Header? elemHeader = sheet.GetHeader(fieldName + "#" + index);
-            if (elemHeader == null) {
-                break;
-            }
-            if (isMapType && !string.IsNullOrWhiteSpace(elemHeader.type) && !IsPairType(elemHeader.type)) {
-                throw new Exception($"the filed {fieldName} is map type, but the element {elemHeader.name} is not pair type");
-            }
-            elemHeaders.Add(elemHeader);
-        }
-        return elemHeaders;
-    }
-
-    private static void CheckOriginalCell(DsonObject<string> options, string fieldName, string? value) {
-        if (!GetBool(options, KEY_NO_CHECK) && !string.IsNullOrWhiteSpace(value)) {
-            throw new Exception($"the original field value must be empty or check disabled, fieldName: {fieldName}");
-        }
-    }
-
     private static bool IsBreakMerge([NotNullWhen(false)] string? value, DSTypeElement elementType) {
         return IsStringType(elementType.SimpleName)
             ? string.IsNullOrEmpty(value)
             : string.IsNullOrWhiteSpace(value);
-    }
-
-    private static DsonValue MergeValues(Header fieldHeader, List<DsonValue> values) {
-        if (IsListType(fieldHeader.type)) {
-            DsonArray<string> dsonArray = new DsonArray<string>(values.Count);
-            dsonArray.AddAll(values);
-            return dsonArray;
-        }
-        DsonObject<string> dsonObject = new DsonObject<string>(values.Count);
-        foreach (DsonValue pair in values) {
-            if (pair.DsonType == DsonType.Object) {
-                DsonObject<string> pairObject = (DsonObject<string>)pair;
-                Debug.Assert(pairObject.Count == 1);
-                dsonObject.AddAll(pairObject);
-                continue;
-            }
-            throw new Exception($"invalid pair value: {pair}");
-        }
-        return dsonObject;
     }
 
     /// <summary>
@@ -402,6 +345,7 @@ public class DsonGenerator : ISheetProcessor
     private static readonly DsonInt64 INT64_ZERO = new DsonInt64(0);
     private static readonly DsonFloat FLOAT_ZERO = new DsonFloat(0);
     private static readonly DsonDouble DOUBLE_ZERO = new DsonDouble(0);
+    private static readonly DsonString STRING_EMPTY = new DsonString(string.Empty);
 
     /// <summary>
     /// 获取字符串对应的DsonValue，List和Object会递归处理
@@ -412,7 +356,7 @@ public class DsonGenerator : ISheetProcessor
         DSNamedType namedType = (DSNamedType)type;
         // 字符串需要保留原始值
         if (IsStringType(namedType.SimpleName)) {
-            return new DsonString(rawValue ?? "");
+            return string.IsNullOrEmpty(rawValue) ? STRING_EMPTY : new DsonString(rawValue);
         }
         // 空白字符串返回默认值
         if (string.IsNullOrWhiteSpace(rawValue)) {

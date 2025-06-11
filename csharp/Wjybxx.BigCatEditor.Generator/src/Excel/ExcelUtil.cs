@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using ExcelDataReader;
 using Wjybxx.BigCatEditor.Excel;
 
@@ -30,6 +31,27 @@ namespace Wjybxx.BigCatEditor.Generator.Excel
 /// </summary>
 public static class ExcelUtil
 {
+    /// <summary>
+    /// 并发读取所有的Excel文件
+    /// </summary>
+    /// <param name="fileInfos"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
+    public static List<Sheet> ParallelRead(List<FileInfo> fileInfos, ExcelReaderOptions options) {
+        List<Task<List<Sheet>>> tasks = new(fileInfos.Count);
+        foreach (FileInfo fileInfo in fileInfos) {
+            var task = Task.Run(() => Read(fileInfo, options));
+            tasks.Add(task);
+        }
+        Task.WhenAll(tasks).Wait();
+
+        List<Sheet> results = new List<Sheet>();
+        foreach (Task<List<Sheet>> task in tasks) {
+            results.AddRange(task.Result);
+        }
+        return results;
+    }
+
     /// <summary>
     /// 读取Excel文件中的数据页签
     /// </summary>

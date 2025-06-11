@@ -41,24 +41,18 @@ public static class DSAnnotations
     public const string NAMESPACE = "Namespace";
 
     /// <summary>
-    /// 表示枚举类型是一个Flags类型
-    /// (对应C#的<see cref="FlagsAttribute"/>注解)
-    ///
-    /// 语法：<code>// @Flags{}</code>
-    /// </summary>
-    public const string ENUM_FLAGS = "Flags";
-
-    /// <summary>
     /// 用于定义类型、字段、枚举值的可选项
+    /// (主要服务于代码生成)
     ///
-    /// 语法：<code>// @Options{ K1: V1, K2: V2 }</code>
+    /// 语法：<code>// @Options{isFlags: true, ssti true}</code>
+    /// - isFlags 用于标识枚举类型是否是Flags类型
+    /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
     /// </summary>
     public const string OPTIONS = "Options";
 
     /// <summary>
     /// 类型的序列化配置
     /// - 支持用于类型和字段
-    /// - 建议直接使用类型别名
     ///
     /// 语法如下：
     /// <code>// @Codec{alias: [xxx, xxx, xxx], name: xyz, style: flow, elemStyle: flow} </code>
@@ -75,6 +69,9 @@ public static class DSAnnotations
     public const string KEY_NAME = "name";
     public const string KEY_STYLE = "style";
     public const string KEY_ELEM_STYLE = "elemStyle";
+
+    public const string KEY_IS_FLAGS = "isFlags";
+    public const string KEY_SSTI = "ssti";
 
     #endregion
 }

@@ -33,7 +33,7 @@ namespace Wjybxx.BigCatEditor.Excel
 ///
 /// PS：其实也可以用于表格编辑器，但编辑器里不能修改元数据。
 /// </summary>
-public sealed class Sheet
+public sealed class Sheet : IValueProvider
 {
     /** 文件名字 如: bag.xlsx */
     public readonly string fileName;
@@ -240,9 +240,8 @@ public sealed class Sheet
         if (!isParamSheet) {
             throw new IllegalStateException();
         }
-        Header header = headers[name];
-        if (header == null) {
-            throw new ArgumentException($"col: {name} is absent");
+        if (!headers.TryGetValue(name, out Header header)) {
+            throw new ArgumentException($"param: {name} is absent");
         }
         SheetRow row = GetRow(header.rowIndex);
         return row.GetValue(COL_VALUE);
@@ -259,9 +258,8 @@ public sealed class Sheet
         if (!isParamSheet) {
             throw new IllegalStateException();
         }
-        Header header = headers[name];
-        if (header == null) {
-            throw new ArgumentException($"col: {name} is absent");
+        if (!headers.TryGetValue(name, out Header header)) {
+            throw new ArgumentException($"param: {name} is absent");
         }
         SheetRow row = GetRow(header.rowIndex);
         row.SetValue(COL_VALUE, value);

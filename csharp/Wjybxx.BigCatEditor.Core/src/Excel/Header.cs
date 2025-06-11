@@ -52,6 +52,10 @@ public sealed class Header
         this.colIndex = colIndex;
     }
 
+    public Header WithOptions(string options) => new Header(options, type, name, comment, rowIndex, colIndex);
+
+    public Header WithType(string type) => new Header(options, type, name, comment, rowIndex, colIndex);
+
     public override string ToString() {
         return $"{nameof(options)}: {options}," +
                $" {nameof(name)}: {name}," +

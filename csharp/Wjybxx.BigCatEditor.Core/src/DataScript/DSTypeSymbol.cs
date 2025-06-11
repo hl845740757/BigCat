@@ -25,7 +25,7 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// <summary>
 /// 其实等效ClassName，但开销更小
 /// </summary>
-public readonly struct DSTypeSymbol
+public readonly struct DSTypeSymbol : IEquatable<DSTypeSymbol>
 {
     public readonly string symbol; // List<String>
     public readonly string name; // List 支持A.B.C
@@ -90,6 +90,58 @@ public readonly struct DSTypeSymbol
             string name = typeSymbol.Substring2(0, startIdx);
             return new DSTypeSymbol(typeSymbol, name, typeArguments, isNullable);
         }
+    }
+
+    #region equals
+
+    public bool Equals(DSTypeSymbol other) {
+        return symbol == other.symbol
+               && name == other.name
+               && isNullable == other.isNullable
+               && SequenceEqual(typeArguments, other.typeArguments);
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is DSTypeSymbol other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        unchecked {
+            int hashCode = symbol.GetHashCode();
+            hashCode = (hashCode * 397) ^ name.GetHashCode();
+            hashCode = (hashCode * 397) ^ isNullable.GetHashCode();
+            hashCode = (hashCode * 397) ^ HashCode(typeArguments);
+            return hashCode;
+        }
+    }
+
+    #endregion
+
+    public override string ToString() {
+        return $"{nameof(symbol)}: {symbol},"
+               + $" {nameof(name)}: {name},"
+               + $" {nameof(typeArguments)}: {typeArguments},"
+               + $" {nameof(isNullable)}: {isNullable}";
+    }
+
+    private static int HashCode(List<DSTypeSymbol>? typeArguments) {
+        if (typeArguments == null) return 0;
+        int r = 1;
+        foreach (DSTypeSymbol typeArgument in typeArguments) {
+            r = r * 397 ^ typeArgument.GetHashCode();
+        }
+        return r;
+    }
+
+    private static bool SequenceEqual(List<DSTypeSymbol>? lhs, List<DSTypeSymbol>? rhs) {
+        if (ReferenceEquals(lhs, rhs)) return true;
+        if (lhs == null || rhs == null) return false;
+        int count = lhs.Count;
+        if (count != rhs.Count) return false;
+        for (int idx = 0; idx < count; idx++) {
+            if (!lhs[idx].Equals(rhs[idx])) return false;
+        }
+        return true;
     }
 }
 }

@@ -44,9 +44,9 @@ public class ConstCfg
     public ConstCfg(IDsonObjectReader reader) {
         clsName = reader.ReadString("clsName");
         sheetName = reader.ReadString("sheetName");
-        nameCol = reader.ReadString("nameCol");
-        valueCol = reader.ReadString("valueCol");
-        commentCol = reader.ReadString("commentCol");
+        nameCol = reader.ReadString("nameCol") ?? "";
+        valueCol = reader.ReadString("valueCol") ?? "";
+        commentCol = reader.ReadString("commentCol") ?? "";
         isFlags = reader.ReadBool("isFlags");
     }
 

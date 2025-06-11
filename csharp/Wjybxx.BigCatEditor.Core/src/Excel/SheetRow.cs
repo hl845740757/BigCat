@@ -26,7 +26,7 @@ namespace Wjybxx.BigCatEditor.Excel
 /// <summary>
 /// 表格行
 /// </summary>
-public sealed class SheetRow
+public sealed class SheetRow : IValueProvider
 {
     /// <summary>
     /// 行索引
@@ -68,14 +68,13 @@ public sealed class SheetRow
     /// (如果value为null则表示删除元素)
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SheetRow SetValue(string name, string? value) {
+    public void SetValue(string name, string? value) {
         if (name == null) throw new ArgumentNullException(nameof(name));
         if (value == null) {
             name2ValueMap.Remove(name);
         } else {
             name2ValueMap[name] = value;
         }
-        return this;
     }
 
     /// <summary>

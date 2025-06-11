@@ -23,11 +23,9 @@ using System.Linq;
 using System.Text;
 using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
-using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson;
 using static Wjybxx.BigCatEditor.Generator.Excel.ExcelConstants;
-using Util = Wjybxx.BigCatEditor.Core.Util;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
@@ -66,8 +64,6 @@ public class ConstantGenerator : ISheetProcessor
     }
 
     public void Execute() {
-
-
         foreach (ConstCfg enumCfg in _constCfgs) {
             List<Sheet> sheets = _repository.SheetMap.Values
                 .Where(e => GetFirstSheetName(e.sheetName) == enumCfg.sheetName)
@@ -117,7 +113,7 @@ public class ConstantGenerator : ISheetProcessor
                         }
                         break;
                     case ConstKind.Bool:
-                        bool isTrue = constValue.value.ToLower() == "true" || constValue.value == "1";
+                        bool isTrue = constValue.value == "1" || constValue.value.ToLower() == "true";
                         fieldBuilder.Initializer(isTrue ? "true" : "false");
                         break;
                     case ConstKind.String:
