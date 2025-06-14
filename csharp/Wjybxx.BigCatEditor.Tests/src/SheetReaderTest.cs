@@ -55,7 +55,8 @@ public class SheetReaderTest
             repository.AddSheet(sheet);
         }
         // 字符串转换在生成代码和导出文本之前
-        new SstGenerator(repository, outDir).Execute();
+        string sstDir = outDir + "/sst";
+        new SstGenerator(repository, sstDir).Execute();
 
         // 生成枚举ds文件
         string? enumDsFilePath = outDir + "/tableEnums.ds";
@@ -96,13 +97,16 @@ public class SheetReaderTest
         }
 
         // 测试SSTMgr
+        if (!Directory.Exists(sstDir)) {
+            Directory.CreateDirectory(sstDir);
+        }
         List<string> fileList = new List<string>(11);
-        fileList.Add(outDir + "/" + SstGenerator.FILE_LSST_INDEX);
-        fileList.AddRange(Directory.GetFiles(outDir, SstGenerator.FILE_SST_DB + ".*"));
+        fileList.Add(sstDir + "/" + SstGenerator.FILE_LSST_INDEX);
+        fileList.AddRange(Directory.GetFiles(sstDir, SstGenerator.FILE_SST_DB + ".*"));
         SstMgr.Init(fileList);
 
-        Console.WriteLine(SstMgr.GetString(1)); // 预加载的字符串
-        Console.WriteLine(SstMgr.GetString(40)); // 延迟加载的字符串
+        Console.WriteLine(SstMgr.GetString(11)); // 预加载的字符串
+        Console.WriteLine(SstMgr.GetString(201)); // 延迟加载的字符串
     }
 
     /// <summary>

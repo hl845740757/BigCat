@@ -62,4 +62,7 @@
         <EmbeddedResource Remove="Generated\**" />
         <Compile Remove="temp\**" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="temp\table\sst\" />
+    </ItemGroup>
 </Project>

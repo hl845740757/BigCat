@@ -21,7 +21,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Wjybxx.BigCatEditor.Core;
+using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
+using Wjybxx.Dson;
 using static Wjybxx.BigCatEditor.Generator.Excel.ExcelConstants;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
@@ -157,9 +159,23 @@ public class DataScriptGenerator : ISheetProcessor
             if (IsListOrMapElement(header.name)) {
                 continue;
             }
+            if (IsInternField(header)) { // 标记为内联字符值
+                lines.Add($"    //@{DSAnnotations.OPTIONS}{{{DSAnnotations.KEY_SSTI}: true}}");
+            }
             lines.Add($"    {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
         }
         lines.Add("}");
+    }
+
+    private static bool IsInternField(Header header) {
+        if (header.type != DSKeywords.TYPE_INT32 && header.type != TYPE_LIST_INT32) {
+            return false;
+        }
+        if (!header.options.Contains(KEY_I18N) && !header.options.Contains(KEY_INTERN)) {
+            return false;
+        }
+        DsonObject<string> options = ParseOptions(header.options);
+        return GetBool(options, KEY_I18N) || GetBool(options, KEY_INTERN);
     }
 
     private Sheet GetBaseSheet(string mergedSheetName) {

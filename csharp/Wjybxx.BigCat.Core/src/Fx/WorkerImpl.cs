@@ -31,7 +31,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
 {
     private readonly WorkerAddr workerAddr;
     private readonly IInjector injector;
-    private volatile ISet<int> serviceIdSet = ImmutableLinkedHastSet<int>.Empty;
+    private volatile ISet<int> serviceIdSet = ImmutableSet<int>.Empty;
     private readonly WorkerControlData controlData;
 
     public WorkerImpl(DefaultWorkerBuilder builder) : base(decorate(builder), false) {
@@ -56,7 +56,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
     }
 
     private void SetServiceIdSet(ICollection<int> serviceIdSet) {
-        this.serviceIdSet = ImmutableLinkedHastSet<int>.CreateRange(serviceIdSet);
+        this.serviceIdSet = ImmutableSet<int>.CreateRange(serviceIdSet);
     }
 
     public WorkerAddr WorkerAddr => workerAddr;

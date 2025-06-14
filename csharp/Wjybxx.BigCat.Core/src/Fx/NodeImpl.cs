@@ -40,9 +40,9 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     private readonly WorkerControlData controlData = new WorkerControlData();
 
     /** Node自身的服务信息 */
-    private volatile ISet<int> serviceIdSet = ImmutableLinkedHastSet<int>.Empty;
+    private volatile ISet<int> serviceIdSet = ImmutableSet<int>.Empty;
     /** Node+Worker的服务信息 */
-    private volatile IDictionary<int, ServiceInfo> serviceInfoMap = ImmutableLinkedDictionary<int, ServiceInfo>.Empty;
+    private volatile IDictionary<int, ServiceInfo> serviceInfoMap = ImmutableDictionary<int, ServiceInfo>.Empty;
 
     public NodeImpl(DefaultNodeBuilder builder)
         : base(Decorate(builder), false) {
@@ -93,7 +93,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     }
 
     private void SetServiceIdSet(ICollection<int> serviceIdSet) {
-        this.serviceIdSet = ImmutableLinkedHastSet<int>.CreateRange(serviceIdSet);
+        this.serviceIdSet = ImmutableSet<int>.CreateRange(serviceIdSet);
     }
 
     private void SetServiceInfoMap(Dictionary<int, ServiceInfo> serviceInfoMap) {
@@ -101,7 +101,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
         foreach (ServiceInfo serviceInfo in serviceInfoMap.Values) {
             tempMap[serviceInfo.serviceId] = serviceInfo.ToImmutable(); // 转不可变
         }
-        this.serviceInfoMap = tempMap.ToImmutableLinkedDictionary();
+        this.serviceInfoMap = tempMap.ToImmutableDictionary2();
     }
 
     // -----------------------

@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
@@ -76,6 +77,10 @@ public sealed class DSNamedType : DSTypeElement
     /// 基类的类型引用 -- 类型是延迟解析的
     /// </summary>
     private DSNamedType? _baseType;
+    /// <summary>
+    /// 类型的全民 -- 缓存值
+    /// </summary>
+    private string? _fullName;
 
     /// <summary>
     /// 泛型形参列表，只有泛型定义类有值。
@@ -280,7 +285,10 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     /// <returns></returns>
     public string GetFullName(bool includeFileName = true) {
-        StringBuilder sb = new StringBuilder();
+        if (includeFileName && _fullName != null) {
+            return _fullName;
+        }
+        StringBuilder sb = localCache.Value!.Clear();
         sb.Insert(0, SimpleName);
         sb.Insert(0, '.');
         // 父节点
@@ -290,13 +298,16 @@ public sealed class DSNamedType : DSTypeElement
             sb.Insert(0, '.');
             enclosing = enclosing.EnclosingElement;
         }
-        // 文件名
         if (!includeFileName) {
             return sb.ToString(1, sb.Length - 1);
         }
-        sb.Insert(0, enclosing.SimpleName); // 文件名
-        return sb.ToString();
+        // 文件名
+        sb.Insert(0, enclosing.SimpleName);
+        _fullName = sb.ToString();
+        return _fullName;
     }
+
+    private static readonly ThreadLocal<StringBuilder> localCache = new ThreadLocal<StringBuilder>(() => new StringBuilder(64));
 
     #endregion
 

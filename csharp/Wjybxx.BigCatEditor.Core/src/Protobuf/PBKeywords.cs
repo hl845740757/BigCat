@@ -17,7 +17,6 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCatEditor.Protobuf
@@ -104,12 +103,12 @@ public static class PBKeywords
 
     #endregion
 
-    private static readonly ISet<string> fieldModifiers = new[]
+    private static readonly ImmutableSet<string> fieldModifiers = new[]
     {
         OPTIONAL, REQUIRED, SINGULAR, REPEATED
-    }.ToImmutableLinkedHashSet();
+    }.ToImmutableSet2();
 
-    private static readonly IDictionary<string, bool> stringValueOptions = ImmutableDictionary<string, bool>.Empty;
+    private static readonly ImmutableDictionary<string, bool> stringValueOptions = ImmutableDictionary<string, bool>.Empty;
 
     /** 是否是字段修饰符 */
     public static bool IsFieldModifier(string word) {

@@ -46,6 +46,11 @@ public readonly struct Location : IEquatable<Location>
         this.index = index;
     }
 
+    /// <summary>
+    /// 获取单元格的坐标
+    /// </summary>
+    public Location CellLocation => new Location(sheetName, dataId, fieldName, index: 0);
+
     public bool Equals(Location other) {
         return sheetName == other.sheetName && dataId == other.dataId && fieldName == other.fieldName && index == other.index;
     }

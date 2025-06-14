@@ -148,20 +148,20 @@ public static class GeneratorUtil
 
     #region Dson-Cdoec
 
-    public static readonly ImmutableLinkedDictionary<string, ObjectStyle>
+    public static readonly ImmutableDictionary<string, ObjectStyle>
         name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
             .ToDictionary(e => e.ToString().ToLower(), e => e)
-            .ToImmutableLinkedDictionary();
+            .ToImmutableDictionary2();
 
-    public static readonly ImmutableLinkedDictionary<string, NumberStyle>
+    public static readonly ImmutableDictionary<string, NumberStyle>
         name2NumberStyleDic = EnumUtil.GetValues<NumberStyle>()
             .ToDictionary(e => e.ToString().ToLower(), e => e)
-            .ToImmutableLinkedDictionary();
+            .ToImmutableDictionary2();
 
-    public static readonly ImmutableLinkedDictionary<string, StringStyle>
+    public static readonly ImmutableDictionary<string, StringStyle>
         name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
             .ToDictionary(e => e.ToString().ToLower(), e => e)
-            .ToImmutableLinkedDictionary();
+            .ToImmutableDictionary2();
 
     /// <summary>
     /// 获取类型用于Dson编码时的别名

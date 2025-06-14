@@ -56,8 +56,7 @@ public class SstGenerator : ISheetProcessor
     /// 单元格数据库，存储的是单元格的逻辑id
     ///
     /// 1.二进制，该文件仅编辑器使用，运行时不使用
-    /// 2.string => int, value递增
-    /// 3.数据可能包含冗余，不能基于此认为表格数据需要池化
+    /// 2.数据可能包含冗余，不能基于此认为表格数据需要池化
     /// </summary>
     public const string FILE_LOCATION_DB = "location.db";
     /// <summary>
@@ -288,7 +287,7 @@ public class SstGenerator : ISheetProcessor
         }
     }
 
-    internal static bool IsRecord(Header header) {
+    private static bool IsRecord(Header header) {
         if (!header.options.Contains(KEY_IS_RECORD)) {
             return false;
         }
@@ -296,7 +295,7 @@ public class SstGenerator : ISheetProcessor
         return GetBool(options, KEY_IS_RECORD);
     }
 
-    internal static bool IsInternField(Header header) {
+    private static bool IsInternField(Header header) {
         if (!IsStringType(header.type) && !IsListStringType(header.type)) {
             return false;
         }
@@ -330,13 +329,29 @@ public class SstGenerator : ISheetProcessor
         return partition * PARTITION_FACTOR + value;
     }
 
+    /// <summary>
+    /// 我们调整了算法，DB里保存CellId，这样可以让同一个单元格多条数据的id相邻，可读性更好。
+    /// 游戏配置中需要池化的List{string}单元格很少，且单个单元格元素很少，因此暂为为每个单元格预留10个Id（实际9）。
+    /// (字符串数据长度很大的时候，通常需要额外的表来配置，否则单个单元格很臃肿)
+    /// </summary>
+    /// <param name="cellId"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    private static int MakeLocationId(int cellId, int index) {
+        return cellId * 10 + (index + 1);
+    }
+
     private int AddLocation(Location location) {
-        if (locationMap.TryGetValue(location, out int locationId)) {
-            return locationId;
+        if (location.index > 8) {
+            throw new IndexOutOfRangeException(location.index.ToString());
         }
-        locationId = locationMap.Count + 1; // 避免尾部全0
-        locationMap.Add(location, locationId);
-        return locationId;
+        Location cellLocation = location.CellLocation;
+        if (locationMap.TryGetValue(cellLocation, out int cellId)) {
+            return MakeLocationId(cellId, location.index);
+        }
+        cellId = locationMap.Count + 1;
+        locationMap.Add(cellLocation, cellId);
+        return MakeLocationId(cellId, location.index);
     }
 
     private int AddInternString(string value) {
@@ -372,11 +387,11 @@ public class SstGenerator : ISheetProcessor
                 string sheetName = reader.ReadString();
                 string dataId = reader.ReadString();
                 string colName = reader.ReadString();
-                int index = reader.ReadInt32();
-                int locationId = reader.ReadInt32();
+                // int index = reader.ReadInt32();
+                int cellId = reader.ReadInt32();
 
-                Location location = new Location(sheetName, dataId, colName, index);
-                locationMap.Add(location, locationId);
+                Location location = new Location(sheetName, dataId, colName);
+                locationMap.Add(location, cellId);
             }
         }
     }
@@ -389,7 +404,7 @@ public class SstGenerator : ISheetProcessor
                 writer.Write(location.sheetName);
                 writer.Write(location.dataId);
                 writer.Write(location.fieldName);
-                writer.Write(location.index);
+                // writer.Write(location.index);
                 writer.Write(pair.Value);
             }
         }

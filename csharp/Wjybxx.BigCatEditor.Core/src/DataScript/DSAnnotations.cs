@@ -44,7 +44,7 @@ public static class DSAnnotations
     /// 用于定义类型、字段、枚举值的可选项
     /// (主要服务于代码生成)
     ///
-    /// 语法：<code>// @Options{isFlags: true, ssti true}</code>
+    /// 语法：<code>// @Options{isFlags: true, ssti: true}</code>
     /// - isFlags 用于标识枚举类型是否是Flags类型
     /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
     /// </summary>
@@ -57,7 +57,7 @@ public static class DSAnnotations
     /// 语法如下：
     /// <code>// @Codec{alias: [xxx, xxx, xxx], name: xyz, style: flow, elemStyle: flow} </code>
     /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写
-    /// - name 表示字段序列化的名字
+    /// - name 表示字段序列化的名字，不推荐使用
     /// - style 表示该类型输出为Dson文本时的默认排版，其值可见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>；不区分大小写，不认识的值将被忽略。
     /// - elemStyle 用于指定数组元素或字典的Value的排版。
     /// </summary>

@@ -398,7 +398,10 @@ public class DsonGenerator : ISheetProcessor
 
     /// <summary>
     /// 修正被误解析为String类型的字段
-    /// (容器值需要递归)
+    ///
+    /// 1.容器值需要递归。
+    /// 2.如果是容器类型，字符串类型也可能被误解析为数字，策划配置时需要手动加引号。
+    /// 3.只有字符串单元格才不需要处理特殊字符。
     /// </summary>
     /// <param name="namedType"></param>
     /// <param name="container"></param>

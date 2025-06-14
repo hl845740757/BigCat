@@ -415,12 +415,21 @@ public static class ExcelConstants
     }
 
     /// <summary>
-    /// 是否是指定List{string}类型
+    /// 是否是List{string}类型
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsListStringType(string type) {
         return type == TYPE_LIST_STRING;
+    }
+
+    /// <summary>
+    /// 是否是List{int32}类型
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsListInt32Type(string type) {
+        return type == TYPE_LIST_INT32;
     }
 
     #endregion

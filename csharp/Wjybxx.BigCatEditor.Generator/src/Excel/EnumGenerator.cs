@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
 using static Wjybxx.BigCatEditor.Generator.Excel.ExcelConstants;
 using Util = Wjybxx.BigCatEditor.Core.Util;
@@ -108,9 +109,8 @@ public class EnumGenerator : ISheetProcessor
     }
 
     private static void Append(List<string> lines, ConstCfg enumCfg, List<EnumValue> enumValues) {
-        // 标记为生成代码时需要添加Flags注解
         if (enumCfg.isFlags) {
-            lines.Add("//@Flags{}");
+            lines.Add($"//@{DSAnnotations.OPTIONS}{{{DSAnnotations.KEY_IS_FLAGS}: true}}");
         }
         lines.Add($"enum {enumCfg.clsName} {{");
         foreach (EnumValue enumValue in enumValues) {

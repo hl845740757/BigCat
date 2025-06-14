@@ -44,7 +44,7 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
 {
     private readonly WorkerAddr workerAddr;
     private readonly IInjector injector;
-    private volatile ISet<int> serviceIdSet = ImmutableLinkedHastSet<int>.Empty;
+    private volatile ISet<int> serviceIdSet = ImmutableSet<int>.Empty;
     private readonly WorkerControlData controlData;
 
     public UnityWorker(UnityWorkerBuilder builder)
@@ -70,7 +70,7 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
     }
 
     private void SetServiceIdSet(ICollection<int> serviceIdSet) {
-        this.serviceIdSet = ImmutableLinkedHastSet<int>.CreateRange(serviceIdSet);
+        this.serviceIdSet = ImmutableSet<int>.CreateRange(serviceIdSet);
     }
 
     public WorkerAddr WorkerAddr => workerAddr;

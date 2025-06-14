@@ -193,20 +193,21 @@ public sealed class DSRepository
 
     /// <summary>
     /// 添加类型关联的handler
+    /// 
     /// </summary>
-    /// <param name="typeSymbol"></param>
+    /// <param name="fullName">FileName.A.B</param>
     /// <param name="handler"></param>
-    public void AddTypeHandler(string typeSymbol, DSTypeHandler handler) {
-        handlerMap.Add(typeSymbol, handler);
+    public void AddTypeHandler(string fullName, DSTypeHandler handler) {
+        handlerMap.Add(fullName, handler);
     }
 
     /// <summary>
     /// 获取类型关联的handler
     /// </summary>
-    /// <param name="typeSymbol"></param>
+    /// <param name="fullName">FileName.A.B</param>
     /// <returns></returns>
-    public DSTypeHandler? GetTypeHandler(string typeSymbol) {
-        handlerMap.TryGetValue(typeSymbol, out DSTypeHandler handler);
+    public DSTypeHandler? GetTypeHandler(string fullName) {
+        handlerMap.TryGetValue(fullName, out DSTypeHandler handler);
         return handler;
     }
 
