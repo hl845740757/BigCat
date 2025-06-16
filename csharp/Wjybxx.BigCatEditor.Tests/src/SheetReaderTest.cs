@@ -19,18 +19,51 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.BigCatEditor.Generator.Excel;
+using Wjybxx.Dson;
+using Wjybxx.Dson.Codec;
+using Wjybxx.Dson.Text;
 using Wjybxx.EditorTest;
 
 namespace Wjybxx.BigCat.EditorTest
 {
 public class SheetReaderTest
 {
+    private static IDsonConverter converter;
+
+    [OneTimeSetUp]
+    public static void SetUp() {
+        string interfaceName = typeof(IDsonCodec).FullName;
+        List<Type> codecTypeList = typeof(ConstGeneratorCfg).Assembly.GetTypes()
+            .Where(type => type.Name.EndsWith("Codec") && type.GetInterface(interfaceName!) != null)
+            .ToList();
+
+        DsonConverterBuilder builder = new DsonConverterBuilder();
+        foreach (Type codecType in codecTypeList) {
+            Type encoderType = GetEncoderType(codecType);
+            // 添加Codec
+            if (codecType.IsGenericType) {
+                builder.AddGenericCodec(encoderType, codecType);
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectStyle.Indent, encoderType.GetGenericTypeDefinition().Name));
+            } else {
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectStyle.Indent, encoderType.Name));
+                builder.AddCodec((IDsonCodec)Activator.CreateInstance(codecType)!);
+            }
+        }
+        converter = builder.Build();
+    }
+
+    private static Type GetEncoderType(Type codecType) {
+        Type type = codecType.GetInterface(typeof(IDsonCodec<>).Name);
+        return type!.GetGenericArguments()[0];
+    }
+
     [Test]
     public void Test() {
         // 更改为生成单文件
@@ -58,28 +91,15 @@ public class SheetReaderTest
         string sstDir = outDir + "/sst";
         new SstGenerator(repository, sstDir).Execute();
 
-        // 生成枚举ds文件
-        string? enumDsFilePath = outDir + "/tableEnums.ds";
-        {
-            FileInfo enumTemplateFile = new FileInfo(resDir + "/SheetEnum.tt");
-            List<ConstCfg> enumCfgs = new List<ConstCfg>()
-            {
-                new ConstCfg("ItemEnum", "Item", "enumName", "itemId", "desc")
-            };
-            new EnumGenerator(repository, enumTemplateFile, enumCfgs, enumDsFilePath).Execute();
-        }
-
         // 生成ds文件
         string? tableDsFilePath = outDir + "/tables.ds";
         {
             FileInfo templateFile = new FileInfo(resDir + "/SheetCfg.tt");
             new DataScriptGenerator(repository, templateFile, tableDsFilePath, RequireMode.All).Execute();
         }
-
         // 构建ds仓库
         DSRepository dsRepository = new DSRepository();
         {
-            dsRepository.AddFile(DSFileParser.Parse(new FileInfo(enumDsFilePath)));
             dsRepository.AddFile(DSFileParser.Parse(new FileInfo(tableDsFilePath)));
         }
         dsRepository.Build();
@@ -87,14 +107,15 @@ public class SheetReaderTest
         new DsonGenerator(repository, dsRepository, RequireMode.All, outDir, true).Execute();
 
         // 生成常量类
-        {
-            List<ConstCfg> constCfgs = new List<ConstCfg>()
-            {
-                new ConstCfg("ItemConst", "Item", "enumName", "itemId", "desc"),
-                new ConstCfg("SkillConst", "SkillParam")
-            };
-            new ConstantGenerator(repository, "Wjybxx.BigCat.Demo", constCfgs, outDir).Execute();
-        }
+        DsonObject<string> cfgObject = Dsons.FromDson(File.ReadAllText(resDir + "/SheetGeneratorCfg.dson")).AsObject();
+        ConstGeneratorCfg constGeneratorCfg = converter.ReadFromDsonValue<ConstGeneratorCfg>(cfgObject["constGenerator"]);
+        constGeneratorCfg.outPath = outDir;
+        new ConstGenerator(repository, constGeneratorCfg).Execute();
+
+        // 生成Class
+        ClassGeneratorCfg classGeneratorCfg = converter.ReadFromDsonValue<ClassGeneratorCfg>(cfgObject["classGenerator"]);
+        classGeneratorCfg.outPath = outDir;
+        new ClassGenerator(dsRepository, new List<string>() { "tables.ds" }, classGeneratorCfg).Execute();
 
         // 测试SSTMgr
         if (!Directory.Exists(sstDir)) {

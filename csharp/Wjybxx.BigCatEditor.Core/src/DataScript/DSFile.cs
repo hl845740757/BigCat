@@ -133,9 +133,9 @@ public class DSFile : DSElement
     internal void BuildCache() {
         typeMap.Clear();
         foreach (DSNamedType namedType in DSUtil.GetAllEnclosedTypes(this)) {
-            string fullName = namedType.GetFullName(false);
+            string fullName = namedType.FullName;
             int idx = fullName.IndexOf('.');
-            string accessName = idx < 0 ? fullName : fullName.Substring2(idx);
+            string accessName = fullName.Substring2(idx + 1);
             typeMap.Add(accessName, namedType);
         }
         instMap.Clear();

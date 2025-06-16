@@ -181,6 +181,15 @@ public sealed class DSRepository
     }
 
     /// <summary>
+    /// 添加内建类型
+    /// (需要在build之前执行)
+    /// </summary>
+    /// <param name="builtinType"></param>
+    public void AddBuiltinType(DSNamedType builtinType) {
+        globalFile.AddEnclosedElement(builtinType);
+    }
+
+    /// <summary>
     /// 获取内建类型
     /// </summary>
     public DSNamedType GetBuiltinType(string typeName) {
@@ -227,6 +236,7 @@ public sealed class DSRepository
 
     /// <summary>
     /// 构造泛型类
+    /// 注意：该方法只会初始化该类和超类的字段，不会初始化内部类和外部类。
     ///
     /// Q：为什么定义在这里？
     /// A：因为符号解析需要由repository处理。
@@ -444,7 +454,7 @@ public sealed class DSRepository
         foreach (DSFile dsFile in logicFileMap.Values) {
             dsFile.BuildCache();
             foreach (DSNamedType namedType in dsFile.TypeMap.Values) {
-                indexedElementMap.Add(new IndexKey(isInst: false, namedType.GetFullName()), namedType);
+                indexedElementMap.Add(new IndexKey(isInst: false, namedType.FullName), namedType);
                 resolveCache.Add(namedType.TypeName, namedType);
             }
             foreach (DSInst inst in dsFile.InstMap.Values) {
@@ -512,7 +522,6 @@ public sealed class DSRepository
         foreach (DSNamedType typeElement in DSUtil.GetAllEnclosedTypes(file)) {
             if (typeElement.BaseTypeSymbol != null && typeElement.BaseType == null) {
                 typeElement.BaseType = (DSNamedType)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);
-                continue;
             }
             foreach (DSField field in typeElement.GetFields(false)) {
                 if (field.TypeSymbol != null && field.Type == null) {

@@ -63,24 +63,4 @@ public readonly struct ConstValue
         return $"{nameof(kind)}: {kind}, {nameof(name)}: {name}, {nameof(value)}: {value}, {nameof(comment)}: {comment}";
     }
 }
-
-/// <summary>
-/// 表格中的枚举值
-/// </summary>
-public readonly struct EnumValue
-{
-    public readonly string name;
-    public readonly int value;
-    public readonly string? comment;
-
-    public EnumValue(string name, int value, string? comment) {
-        this.name = name;
-        this.value = value;
-        this.comment = comment;
-    }
-
-    public override string ToString() {
-        return $"{nameof(name)}: {name}, {nameof(value)}: {value}, {nameof(comment)}: {comment}";
-    }
-}
 }

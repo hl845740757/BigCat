@@ -42,12 +42,14 @@ public enum DSElementKind
     Strut = 2,
     /// <summary>
     /// 枚举类--值类型（禁止继承）
+    /// 注意：枚举不应该定义在泛型类中。
     ///
     /// <code>enum _name_ {}</code>
     /// </summary>
     Enum = 3,
     /// <summary>
     /// 实例--class和struct的实例
+    /// 注意：inst必须定义在顶层。
     ///
     /// <code>inst _name_ from t1, t2, t3</code>
     /// </summary>
@@ -55,6 +57,7 @@ public enum DSElementKind
 
     /// <summary>
     /// 字段--class和struct的字段定义
+    /// (TODO 是否支持一下常量?) 
     /// </summary>
     Field = 5,
     /// <summary>

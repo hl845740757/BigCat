@@ -44,6 +44,22 @@ namespace Wjybxx.BigCatEditor.Generator.Excel
 /// 这个问题有多种解决方案，但最佳方案是根据ds文件中的字段顺序导出。
 /// 此外，我们会在每张表格的开头写入一个根据所有字段名计算出的hash值，以和生成的class文件中的hash值进行比较，
 ///
+/// <h3>关于数据修正</h3>
+/// 数据修正其实不属于该生成器的职责，该生成器的主要职责是将表格中的数据导出为Dson，至于数据是否能够Class正确解析，其实不属于该生成器的职责。
+/// 如果单元格数据不涉及多态，那么该生成器可以正确处理单元格数据，如果单元格数据存在多态问题，则需要用户自行修正。
+///
+/// 修正数据有两种方式：
+/// 1.在运行时修正，即通过字段的编解码代理修正。
+/// 2.在导表时修正，按类型或针对Cell处理。
+///
+/// 在导表时纠正也有两种方式：
+/// 1.模拟完整的序列化过程，按照Header中的真实类型信息修正数据 -- 需要再维护一套类型名映射。
+/// 2.针对单元格（列）写数据纠正逻辑 -- 类似字段编解码代理。
+///
+/// 建议使用方案2，有以下原因：
+/// 1.我们通常不会在表格中写复杂的多态数据，如果真存在手写多态数据的情况，不使用特殊语法即可保证数据的正确性。
+/// 2.方案2是不可少的，因为标签类就需要针对单元格(列)写转换器。
+/// 
 /// 注意：
 /// 1.Sheet是不能被直接合并的，因为每个表的元数据可能不同。
 /// 2.追加的元数据不是<see cref="DsonHeader{TK}"/>类型，因为多Header可能造成奇怪的问题。
@@ -62,6 +78,7 @@ public class DsonGenerator : ISheetProcessor
     private readonly byte[] buffer = new byte[8 * 1024 * 1024];
     private readonly StringBuilder _sb = new(8192);
     private readonly DsonTextWriterSettings _textWriterSettings;
+    private Sheet? _curSheet; // 用于打印日志
 
     /// <summary>
     /// 
@@ -102,7 +119,7 @@ public class DsonGenerator : ISheetProcessor
                 }
             }
             catch (Exception ex) {
-                throw new Exception($"sheetGroup: {grouping.Key}", ex);
+                throw new Exception($"curSheet: {_curSheet?.sheetName}", ex);
             }
             if (collection == null) {
                 continue;
@@ -152,6 +169,7 @@ public class DsonGenerator : ISheetProcessor
         // 合并所有的value
         LinkedDictionary<string, DsonValue> valueMap = new();
         foreach (Sheet sheet in sheets) {
+            _curSheet = sheet;
             foreach (Header header in sheet.headers.Values) {
                 if (header.name.Contains('#') || !IsRequired(header.options, _requireMode)) {
                     continue;
@@ -195,6 +213,7 @@ public class DsonGenerator : ISheetProcessor
         int expectedCount = sheets.Sum(e => e.valueRows.Count) + sheets.Count;
         DsonArray<string> collection = new DsonArray<string>(expectedCount);
         foreach (Sheet sheet in sheets) {
+            _curSheet = sheet;
             string mergedSheetName = GetMergedSheetName(sheet.sheetName);
             string className = DataScriptGenerator.GetClassName(mergedSheetName);
             DSNamedType namedType = _dsRepository.GetType(className);
@@ -276,7 +295,7 @@ public class DsonGenerator : ISheetProcessor
                 values.Add(GetValue(elementType, rawValue));
             }
         }
-        if (IsListType(fieldHeader.type)) {
+        if (IsCollectionType(fieldHeader.type)) {
             DsonArray<string> dsonArray = new DsonArray<string>(values.Count);
             dsonArray.AddAll(values);
             return dsonArray;
@@ -307,7 +326,7 @@ public class DsonGenerator : ISheetProcessor
     }
 
     private DSTypeElement GetElementType(DSNamedType fieldType) {
-        if (IsListType(fieldType.SimpleName)) {
+        if (IsCollectionType(fieldType.SimpleName)) {
             return fieldType.TypeArguments[0];
         }
         DSNamedType pairType = _dsRepository.GetBuiltinType(DSKeywords.TYPE_PAIR);
@@ -329,7 +348,7 @@ public class DsonGenerator : ISheetProcessor
     /// <param name="fields"></param>
     /// <returns></returns>
     public static int GetHashCode(List<DSField> fields) {
-        int hash = 0;
+        int hash = 1;
         foreach (DSField field in fields) {
             hash = hash * 31 + field.TypeSymbol.GetHashCode();
             hash = hash * 31 + field.SimpleName.GetHashCode();
@@ -341,14 +360,8 @@ public class DsonGenerator : ISheetProcessor
 
     #region get-value
 
-    private static readonly DsonInt32 INT32_ZERO = new DsonInt32(0);
-    private static readonly DsonInt64 INT64_ZERO = new DsonInt64(0);
-    private static readonly DsonFloat FLOAT_ZERO = new DsonFloat(0);
-    private static readonly DsonDouble DOUBLE_ZERO = new DsonDouble(0);
-    private static readonly DsonString STRING_EMPTY = new DsonString(string.Empty);
-
     /// <summary>
-    /// 获取字符串对应的DsonValue，List和Object会递归处理
+    /// 获取字符串对应的DsonValue，List和Map会递归处理
     /// </summary>
     /// <returns></returns>
     private DsonValue GetValue(DSTypeElement type, string? rawValue) {
@@ -356,19 +369,20 @@ public class DsonGenerator : ISheetProcessor
         DSNamedType namedType = (DSNamedType)type;
         // 字符串需要保留原始值
         if (IsStringType(namedType.SimpleName)) {
-            return string.IsNullOrEmpty(rawValue) ? STRING_EMPTY : new DsonString(rawValue);
+            return string.IsNullOrEmpty(rawValue) ? DsonString.EMPTY : new DsonString(rawValue);
         }
         // 空白字符串返回默认值
         if (string.IsNullOrWhiteSpace(rawValue)) {
             return namedType.SimpleName switch
             {
-                DSKeywords.TYPE_INT32 => INT32_ZERO,
-                DSKeywords.TYPE_INT64 => INT64_ZERO,
-                DSKeywords.TYPE_FLOAT => FLOAT_ZERO,
-                DSKeywords.TYPE_DOUBLE => DOUBLE_ZERO,
+                DSKeywords.TYPE_INT32 => DsonInt32.ZERO,
+                DSKeywords.TYPE_INT64 => DsonInt64.ZERO,
+                DSKeywords.TYPE_FLOAT => DsonFloat.ZERO,
+                DSKeywords.TYPE_DOUBLE => DsonDouble.ZERO,
                 DSKeywords.TYPE_BOOL => DsonBool.FALSE,
 
                 DSKeywords.TYPE_LIST => new DsonArray<string>(0),
+                TYPE_HASH_SET => new DsonArray<string>(0),
                 DSKeywords.TYPE_MAP => new DsonObject<string>(0),
                 _ => DsonNull.NULL
             };
@@ -386,14 +400,21 @@ public class DsonGenerator : ISheetProcessor
             DSKeywords.TYPE_DOUBLE => new DsonDouble(DsonTexts.ParseDouble(rawValue)),
             DSKeywords.TYPE_BOOL => new DsonBool(DsonTexts.ParseBool(rawValue)),
 
-            DSKeywords.TYPE_PTR => new DsonPointer(ParsePointer(rawValue)),
-            DSKeywords.TYPE_LPTR => new DsonLitePointer(ParseLitePointer(rawValue)),
             DSKeywords.TYPE_DATETIME => new DsonDateTime(ParseDateTime(rawValue)),
             DSKeywords.TYPE_TIMESTAMP => new DsonTimestamp(Timestamp.Parse(rawValue)),
             DSKeywords.TYPE_PAIR => ParsePair(rawValue),
-            _ => namedType.IsEnum ? ParseEnum(rawValue) : Dsons.FromDson(rawValue)
+            _ => namedType.IsEnum ? ParseEnum(namedType, rawValue) : ParseDefault(namedType, rawValue)
         };
         return RepairFieldValue(namedType, value);
+    }
+
+    private static DsonValue ParseDefault(DSNamedType namedType, string rawValue) {
+        rawValue = rawValue.Trim();
+        if (rawValue[0] == '[' || rawValue[0] == '{') {
+            return Dsons.FromDson(rawValue);
+        }
+        // 默认解码为String以允许自定义纠正
+        return new DsonString(rawValue);
     }
 
     /// <summary>
@@ -406,13 +427,19 @@ public class DsonGenerator : ISheetProcessor
     /// <param name="namedType"></param>
     /// <param name="container"></param>
     private DsonValue RepairFieldValue(DSNamedType namedType, DsonValue container) {
-        if (IsListType(namedType.SimpleName)) {
+        if (IsCollectionType(namedType.SimpleName)) {
             // 修正List的Value
+            DsonArray<string> dsonArray = (DsonArray<string>)container;
             DSTypeElement elementType = namedType.TypeArguments[0];
             if (IsStringType(elementType.SimpleName)) {
+                for (int i = 0; i < dsonArray.Count; i++) {
+                    DsonValue element = dsonArray[i];
+                    if (element.DsonType != DsonType.String) {
+                        throw new IllegalStateException("element is not string, value: " + element);
+                    }
+                }
                 return container;
             }
-            DsonArray<string> dsonArray = (DsonArray<string>)container;
             for (int i = 0; i < dsonArray.Count; i++) {
                 DsonValue element = dsonArray[i];
                 if (element.DsonType == DsonType.String) {
@@ -428,12 +455,18 @@ public class DsonGenerator : ISheetProcessor
         }
         if (IsMapType(namedType.SimpleName)) {
             // 修正Map的Value
+            DsonObject<string> dsonObject = (DsonObject<string>)container;
             DSTypeElement elementType = namedType.TypeArguments[1];
             if (IsStringType(elementType.SimpleName)) {
+                foreach (var pair in dsonObject) {
+                    DsonValue element = pair.Value;
+                    if (element.DsonType != DsonType.String) {
+                        throw new IllegalStateException("element is not string, value: " + element);
+                    }
+                }
                 return container;
             }
             // 覆盖数据不会导致迭代抛出异常
-            DsonObject<string> dsonObject = (DsonObject<string>)container;
             foreach (var pair in dsonObject) {
                 DsonValue element = pair.Value;
                 if (element.DsonType == DsonType.String) {
@@ -447,9 +480,7 @@ public class DsonGenerator : ISheetProcessor
             }
             return container;
         }
-        // 修正自定义结构中的字段
-        // 理论上，由于支持多态，应当按照Header中的真实类型信息修正数据；
-        // 但不走正常的序列化是很难处理的，因为类型系统不一致，类型信息的处理很麻烦 -- 只能说用户手写Dson的时候按标准写，不要用特殊语法；
+        // 修正自定义结构中的字段；如果是自定义List或Map，这里的字段为空
         if (container.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = (DsonObject<string>)container;
             foreach (DSField field in namedType.GetFields()) {
@@ -457,7 +488,7 @@ public class DsonGenerator : ISheetProcessor
                     continue;
                 }
                 DSTypeElement elementType = field.Type;
-                if (!IsStringType(elementType.SimpleName) && element.DsonType == DsonType.String) {
+                if (element.DsonType == DsonType.String && !IsStringType(elementType.SimpleName)) {
                     element = GetValue(elementType, element.AsString());
                     dsonObject[field.SimpleName] = element;
                 } else if (element.DsonType == DsonType.Array) {
@@ -473,7 +504,7 @@ public class DsonGenerator : ISheetProcessor
             for (int i = 0, count = Math.Min(fields.Count, dsonArray.Count); i < count; i++) {
                 DsonValue element = dsonArray[i];
                 DSTypeElement elementType = fields[i].Type;
-                if (!IsStringType(elementType.SimpleName) && element.DsonType == DsonType.String) {
+                if (element.DsonType == DsonType.String && !IsStringType(elementType.SimpleName)) {
                     element = GetValue(elementType, element.AsString());
                     dsonArray[i] = element;
                 } else if (element.DsonType == DsonType.Array) {
@@ -510,59 +541,34 @@ public class DsonGenerator : ISheetProcessor
         return DsonTexts.ParseInt64(rawValue);
     }
 
-    private static DsonValue ParseEnum(string rawValue) {
+    private static DsonInt32 ParseEnum(DSNamedType namedType, string rawValue) {
         int value = 0;
         if (rawValue.IndexOf('|') > 0) { // A | B | C
             foreach (string e in rawValue.Split('|', StringSplitOptions.TrimEntries)) {
-                value |= int.Parse(e);
+                value |= GetEnumValue(namedType, e);
             }
         } else {
-            value = int.Parse(rawValue);
+            value = GetEnumValue(namedType, rawValue);
         }
         return new DsonInt32(value);
     }
 
-    private static ObjectPtr ParsePointer(string rawValue) {
-        if (rawValue[0] == '{') {
-            rawValue = rawValue.Replace("@ptr", "");
-
-            DsonObject<string> dsonObject = (DsonObject<string>)Dsons.FromDson(rawValue);
-            dsonObject.TryGetValue(ObjectPtr.NamesNamespace, out DsonValue p1);
-            dsonObject.TryGetValue(ObjectPtr.NamesLocalId, out DsonValue p2);
-            dsonObject.TryGetValue(ObjectPtr.NamesType, out DsonValue p3);
-            dsonObject.TryGetValue(ObjectPtr.NamesPolicy, out DsonValue p4);
-            return new ObjectPtr(
-                p1 == null ? "" : p1.AsString(),
-                p2 == null ? "" : p2.AsString(),
-                p3 == null ? (byte)0 : (byte)p3.AsInt32(),
-                p4 == null ? (byte)0 : (byte)p4.AsInt32()
-            );
+    private static int GetEnumValue(DSNamedType namedType, string rawValue) {
+        rawValue = rawValue.Trim();
+        if (int.TryParse(rawValue, out int value)) {
+            return value;
         }
-        return new ObjectPtr(rawValue);
-    }
-
-    private static ObjectLitePtr ParseLitePointer(string rawValue) {
-        if (rawValue[0] == '{') {
-            rawValue = rawValue.Replace("@lptr", "");
-
-            DsonObject<string> dsonObject = (DsonObject<string>)Dsons.FromDson(rawValue);
-            dsonObject.TryGetValue(ObjectPtr.NamesNamespace, out DsonValue p1);
-            dsonObject.TryGetValue(ObjectPtr.NamesLocalId, out DsonValue p2);
-            dsonObject.TryGetValue(ObjectPtr.NamesType, out DsonValue p3);
-            dsonObject.TryGetValue(ObjectPtr.NamesPolicy, out DsonValue p4);
-            return new ObjectLitePtr(
-                p1 == null ? 0 : p1.AsInt64(),
-                p2 == null ? "" : p2.AsString(),
-                p3 == null ? (byte)0 : (byte)p3.AsInt32(),
-                p4 == null ? (byte)0 : (byte)p4.AsInt32()
-            );
+        // 虽然不推荐通过名字表达枚举，但还是兼容一下
+        DSEnumValue enumValue = namedType.GetEnumValue(rawValue, ignoreCase: true);
+        if (enumValue == null) {
+            throw new Exception($"invalid enumValue {rawValue}, type: {namedType.SimpleName}");
         }
-        return new ObjectLitePtr(long.Parse(rawValue));
+        return enumValue.Number;
     }
 
     private static ExtDateTime ParseDateTime(string rawValue) {
-        // 比校准的Dson增加了空格支持
-        string format = rawValue.IndexOf(' ') > 0 ? "yyyy-MM-dd HH:mm:ss" : "yyyy-MM-ddTHH:mm:ss";
+        // 比标准的Dson增加了空格支持
+        string format = rawValue.IndexOf('T') > 0 ? "yyyy-MM-ddTHH:mm:ss" : "yyyy-MM-dd HH:mm:ss";
         DateTime dateTime = DateTime.ParseExact(rawValue, format, CultureInfo.InvariantCulture);
         return ExtDateTime.OfDateTime(dateTime);
     }

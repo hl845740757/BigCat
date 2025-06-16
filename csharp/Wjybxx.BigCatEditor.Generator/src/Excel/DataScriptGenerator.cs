@@ -159,23 +159,29 @@ public class DataScriptGenerator : ISheetProcessor
             if (IsListOrMapElement(header.name)) {
                 continue;
             }
-            if (IsInternField(header)) { // 标记为内联字符值
-                lines.Add($"    //@{DSAnnotations.OPTIONS}{{{DSAnnotations.KEY_SSTI}: true}}");
+            GetOptions(header, out bool isIntern, out bool isReadonly);
+            if (isIntern || isReadonly) {
+                lines.Add($"    //@{DSAnnotations.OPTIONS}"
+                          + $"{{{DSAnnotations.KEY_SSTI}: {ToString(isIntern)},"
+                          + $" {DSAnnotations.KEY_IS_READONLY}: {ToString(isReadonly)}}}");
             }
             lines.Add($"    {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
         }
         lines.Add("}");
     }
 
-    private static bool IsInternField(Header header) {
-        if (header.type != DSKeywords.TYPE_INT32 && header.type != TYPE_LIST_INT32) {
-            return false;
-        }
-        if (!header.options.Contains(KEY_I18N) && !header.options.Contains(KEY_INTERN)) {
-            return false;
+    private static string ToString(bool value) => value ? "true" : "false";
+
+    private static void GetOptions(Header header, out bool isIntern, out bool isReadonly) {
+        if (!header.options.Contains(KEY_I18N) && !header.options.Contains(KEY_INTERN)
+                                               && !header.options.Contains(KEY_IS_READONLY)) {
+            isIntern = false;
+            isReadonly = false;
+            return;
         }
         DsonObject<string> options = ParseOptions(header.options);
-        return GetBool(options, KEY_I18N) || GetBool(options, KEY_INTERN);
+        isIntern = GetBool(options, KEY_I18N) || GetBool(options, KEY_INTERN);
+        isReadonly = GetBool(options, KEY_IS_READONLY);
     }
 
     private Sheet GetBaseSheet(string mergedSheetName) {

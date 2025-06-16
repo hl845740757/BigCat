@@ -31,6 +31,7 @@ using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Text;
+using Wjybxx.Dson.Types;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
 
 namespace Wjybxx.BigCatEditor.Generator
@@ -40,13 +41,13 @@ namespace Wjybxx.BigCatEditor.Generator
 /// </summary>
 public static class GeneratorUtil
 {
-    private static readonly ClassName clsName_GeneratedAttribute = ClassName.Get("Wjybxx.Commons.Attributes", "GeneratedAttribute");
-    private static readonly ClassName clsName_SourceFileRef = ClassName.Get("Wjybxx.Commons.Attributes", "SourceFileRefAttribute");
-    private static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
+    private static readonly ClassName TYPE_NAME_GENERATED = ClassName.Get("Wjybxx.Commons.Attributes", "GeneratedAttribute");
+    private static readonly ClassName TYPE_NAME_SOURCE_FILE_REF = ClassName.Get("Wjybxx.Commons.Attributes", "SourceFileRefAttribute");
+    public static readonly ClassName TYPE_NAME_FLAGS = ClassName.Get(typeof(FlagsAttribute));
 
-    public static readonly ClassName clsName_Flags = ClassName.Get(typeof(FlagsAttribute));
+    private static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
     public static readonly ConcurrentObjectPool<CodeWriter> codeWriterPool = new ConcurrentObjectPool<CodeWriter>(
-        () => new CodeWriter(), e => e.Reset());
+        () => new CodeWriter("    ", 150), e => e.Reset());
 
     /// <summary>
     /// 为生成代码的注解处理器创建一个通用注解
@@ -56,7 +57,7 @@ public static class GeneratorUtil
     /// <param name="dateTime">执行时间</param>
     /// <returns></returns>
     public static AttributeSpec NewProcessorInfoAnnotation(Type type, string? version = null, DateTime? dateTime = null) {
-        var builder = AttributeSpec.NewBuilder(clsName_GeneratedAttribute)
+        var builder = AttributeSpec.NewBuilder(TYPE_NAME_GENERATED)
             .Constructor(CodeBlock.Of("$S", type.ToString()));
         if (version != null) {
             builder.AddMember("Version", "$S", version);
@@ -73,7 +74,7 @@ public static class GeneratorUtil
     /// <param name="sourceFileTypeName"></param>
     /// <returns></returns>
     public static AttributeSpec NewSourceFileRefAnnotation(TypeName sourceFileTypeName) {
-        return AttributeSpec.NewBuilder(clsName_SourceFileRef)
+        return AttributeSpec.NewBuilder(TYPE_NAME_SOURCE_FILE_REF)
             .Constructor(CodeBlock.Of("typeof($T)", sourceFileTypeName))
             .Build();
     }
@@ -121,6 +122,7 @@ public static class GeneratorUtil
             .AddSpec(NamespaceSpec.Of(ns, typeSpec))
             .Build();
         CodeWriter codeWriter = codeWriterPool.Acquire();
+        codeWriter.IndentInsideNamespace = false;
         try {
             string path = outDir + "/" + typeSpec.name + ".cs";
             File.WriteAllText(path, codeWriter.Write(csharpFile), ENCODING_UTF8);
@@ -148,20 +150,100 @@ public static class GeneratorUtil
 
     #region Dson-Cdoec
 
-    public static readonly ImmutableDictionary<string, ObjectStyle>
+    public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
+    public static readonly ArrayTypeName TYPE_NAME_BYTES = ArrayTypeName.BYTE_ARRAY;
+    public static readonly ClassName TYPE_NAME_NULLABLE = ClassName.NULLABLE;
+    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(typeof(KeyValuePair<,>));
+
+    public static readonly ClassName TYPE_NAME_BINARY = ClassName.Get(typeof(Binary));
+    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(typeof(ObjectPtr));
+    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(typeof(ObjectLitePtr));
+    public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(typeof(Timestamp));
+    // 集合接口
+    public static readonly ClassName TYPE_NAME_I_COLLECTION = ClassName.Get(typeof(ICollection<>));
+    public static readonly ClassName TYPE_NAME_I_LIST = ClassName.Get(typeof(IList<>));
+    public static readonly ClassName TYPE_NAME_I_SET = ClassName.Get(typeof(ISet<>));
+    public static readonly ClassName TYPE_NAME_I_DICTIONARY = ClassName.Get(typeof(IDictionary<,>));
+    // 常用集合
+    public static readonly ClassName TYPE_NAME_LIST = ClassName.Get(typeof(List<>));
+    public static readonly ClassName TYPE_NAME_HASHSET = ClassName.Get(typeof(HashSet<>));
+    public static readonly ClassName TYPE_NAME_DICTIONARY = ClassName.Get(typeof(Dictionary<,>));
+
+    public static readonly ClassName TYPE_NAME_LINKED_DICTIONARY = ClassName.Get(typeof(LinkedDictionary<,>));
+    public static readonly ClassName TYPE_NAME_LINKED_HASHSET = ClassName.Get(typeof(LinkedHashSet<>));
+    // 不可变集合
+    public static readonly ClassName TYPE_NAME_IMMUTABLE_LIST = ClassName.Get(typeof(ImmutableList<>));
+    public static readonly ClassName TYPE_NAME_IMMUTABLE_SET = ClassName.Get(typeof(ImmutableSet<>));
+    public static readonly ClassName TYPE_NAME_IMMUTABLE_DICTIONARY = ClassName.Get(typeof(ImmutableDictionary<,>));
+
+    private static readonly ImmutableDictionary<string, ObjectStyle>
         name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
             .ToDictionary(e => e.ToString().ToLower(), e => e)
             .ToImmutableDictionary2();
 
-    public static readonly ImmutableDictionary<string, NumberStyle>
+    private static readonly ImmutableDictionary<string, NumberStyle>
         name2NumberStyleDic = EnumUtil.GetValues<NumberStyle>()
             .ToDictionary(e => e.ToString().ToLower(), e => e)
             .ToImmutableDictionary2();
 
-    public static readonly ImmutableDictionary<string, StringStyle>
+    private static readonly ImmutableDictionary<string, StringStyle>
         name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
             .ToDictionary(e => e.ToString().ToLower(), e => e)
             .ToImmutableDictionary2();
+
+    // 这两个方法名有特殊类逻辑
+    public const string METHOD_NAME_READ_OBJECT = "ReadObject";
+    public const string METHOD_NAME_WRITE_OBJECT = "WriteObject";
+
+    /** 获取read字段的方法名 */
+    public static string GetReadMethodName(TypeName typeName) {
+        if (typeName == TypeName.INT) return "ReadInt";
+        if (typeName == TypeName.LONG) return "ReadLong";
+        if (typeName == TypeName.FLOAT) return "ReadFloat";
+        if (typeName == TypeName.DOUBLE) return "ReadDouble";
+        if (typeName == TypeName.BOOL) return "ReadBool";
+        if (typeName == TypeName.STRING) return "ReadString";
+
+        if (typeName == TypeName.UINT) return "ReadUInt";
+        if (typeName == TypeName.ULONG) return "ReadULong";
+        if (typeName == TypeName.BYTE) return "ReadByte";
+        if (typeName == TypeName.SBYTE) return "ReadSByte";
+        if (typeName == TypeName.SHORT) return "ReadShort";
+        if (typeName == TypeName.USHORT) return "ReadUShort";
+        if (typeName == TypeName.CHAR) return "ReadChar";
+
+        if (typeName == TYPE_NAME_BYTES) return "ReadBytes";
+        if (typeName == TYPE_NAME_PTR) return "ReadPtr";
+        if (typeName == TYPE_NAME_LPTR) return "ReadLitePtr";
+        if (typeName == TYPE_NAME_DATETIME) return "ReadDateTime";
+        if (typeName == TYPE_NAME_TIMESTAMP) return "ReadTimestamp";
+        return "ReadObject";
+    }
+
+    /** 获取write字段的方法名 */
+    public static string GetWriteMethodName(TypeName typeName) {
+        if (typeName == TypeName.INT) return "WriteInt";
+        if (typeName == TypeName.LONG) return "WriteLong";
+        if (typeName == TypeName.FLOAT) return "WriteFloat";
+        if (typeName == TypeName.DOUBLE) return "WriteDouble";
+        if (typeName == TypeName.BOOL) return "WriteBool";
+        if (typeName == TypeName.STRING) return "WriteString";
+
+        if (typeName == TypeName.UINT) return "WriteUInt";
+        if (typeName == TypeName.ULONG) return "WriteULong";
+        if (typeName == TypeName.BYTE) return "WriteByte";
+        if (typeName == TypeName.SBYTE) return "WriteSByte";
+        if (typeName == TypeName.SHORT) return "WriteShort";
+        if (typeName == TypeName.USHORT) return "WriteUShort";
+        if (typeName == TypeName.CHAR) return "WriteChar";
+
+        if (typeName == TYPE_NAME_BYTES) return "WriteBytes";
+        if (typeName == TYPE_NAME_PTR) return "WritePtr";
+        if (typeName == TYPE_NAME_LPTR) return "WriteLitePtr";
+        if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";
+        if (typeName == TYPE_NAME_TIMESTAMP) return "WriteTimestamp";
+        return "WriteObject";
+    }
 
     /// <summary>
     /// 获取类型用于Dson编码时的别名

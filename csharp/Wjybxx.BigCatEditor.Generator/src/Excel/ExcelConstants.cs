@@ -76,6 +76,7 @@ public static class ExcelConstants
     /// 示例：<code>A | B | C</code>
     ///
     /// 如果期望A,B,C为下标，那么应该新建一个BitArray类型，然后通过<see cref="DSTypeHandler"/>进行转换。
+    /// 对于BitArray类型，其实建议配置为数组类型；可以在导表时转换，也可以在解码时转换。
     /// </summary>
     public const string KEY_IS_FLAGS = "isFlags";
     /// <summary>
@@ -84,6 +85,10 @@ public static class ExcelConstants
     /// 该属性用于Param表标记哪些参数需要导出额外的常量表，普通表直接指定列导出。
     /// </summary>
     public const string KEY_IS_CONST = "isConst";
+    /// <summary>
+    /// 用于标注字段是不可以热更新的，通常是指主键和索引键
+    /// </summary>
+    public const string KEY_IS_READONLY = "isReadonly";
 
     /// <summary>
     /// value禁止重复
@@ -280,10 +285,10 @@ public static class ExcelConstants
     /// </summary>
     internal static List<Header> CollectElementHeaders(Sheet sheet, Header fieldHeader, List<Header>? elemHeaders = null) {
         string fieldName = fieldHeader.name;
-        bool isListType = IsListType(fieldHeader.type);
+        bool isCollectionType = IsCollectionType(fieldHeader.type);
         bool isMapType = IsMapType(fieldHeader.type);
-        if (!isListType && !isMapType) {
-            throw new Exception($"the field {fieldName} must be List or Map");
+        if (!isCollectionType && !isMapType) {
+            throw new Exception($"the field {fieldName} must be Collection or Map");
         }
         if (elemHeaders == null) {
             elemHeaders = new List<Header>(5);
@@ -307,6 +312,23 @@ public static class ExcelConstants
 
     #region 类型工具方法
 
+    /// <summary>
+    /// 表格应该不需要指针类型
+    /// </summary>
+    private const string TYPE_PTR = "Ptr";
+    private const string TYPE_LPTR = "LPtr";
+
+    /// <summary>
+    /// 其实配置表（持久化层）并不需要Set类型，但运行时需要
+    /// </summary>
+    public const string TYPE_HASH_SET = "HashSet";
+    /// <summary>
+    /// BitArray在配置表配置为数组[A, B, C]格式，而不是 A | B | C 格式，
+    /// 因为BitArray的数据可能较多，不太适合 A|B|C 格式，适合用Array格式。
+    /// (其实不是很推荐大量使用Flags格式)
+    /// </summary>
+    public const string TYPE_BIT_ARRAY = "BitArray";
+
     public const string TYPE_LIST_INT32 = "List<" + DSKeywords.TYPE_INT32 + ">";
     public const string TYPE_LIST_STRING = "List<" + DSKeywords.TYPE_STRING + ">";
 
@@ -319,7 +341,7 @@ public static class ExcelConstants
         if (IsNumberType(type)) return "0";
         if (IsStringType(type)) return "";
         if (IsBoolType(type)) return "false";
-        if (IsListType(type)) return "[]";
+        if (IsCollectionType(type)) return "[]";
         if (IsMapType(type)) return "{}";
         // 指针、日期和时间戳...
         return "null";
@@ -388,6 +410,26 @@ public static class ExcelConstants
     public static bool IsListType(string type) {
         // 用户可能使用拆分后的符号进行测试
         return type == DSKeywords.TYPE_LIST || type.StartsWith(DSKeywords.TYPE_LIST + "<");
+    }
+
+    /// <summary>
+    /// 是否是HashSet类型
+    ///
+    /// HashSet类型格式<code>[V1, V2]</code>
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsHashSetType(string type) {
+        return type == TYPE_HASH_SET || type.StartsWith(TYPE_HASH_SET + "<");
+    }
+
+    /// <summary>
+    /// 是否是集合类型(不包含字典)
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsCollectionType(string type) {
+        return IsListType(type) || IsHashSetType(type);
     }
 
     /// <summary>

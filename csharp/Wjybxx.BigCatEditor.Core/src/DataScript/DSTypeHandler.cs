@@ -29,6 +29,7 @@ public interface DSTypeHandler
     /// 值转换
     /// 
     /// 转换默认的文本解析结果，当用户为类型提供了特殊的语法时，应该实现该接口。
+    /// (由于没有走完整的序列化过程，因此不能递归处理多态问题，该方案的实际收益不大)
     /// </summary>
     /// <param name="repository">归属的仓库，用于解析字段</param>
     /// <param name="namedType">当前类型，可能是泛型</param>

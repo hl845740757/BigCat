@@ -31,17 +31,17 @@ public abstract class DSTypeElement : DSElement
     /// 类型的全限定名
     /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSFile.SimpleName"/>。
     /// </summary>
-    protected readonly TypeName _typeName;
+    protected readonly TypeName typeName;
 
     protected DSTypeElement(string simpleName, TypeName typeName) : base(simpleName) {
-        _typeName = typeName;
+        this.typeName = typeName;
     }
 
     /// <summary>
     /// 类型名缓存
     /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSFile.SimpleName"/>。
     /// </summary>
-    public TypeName TypeName => _typeName;
+    public TypeName TypeName => typeName;
 
     /// <summary>
     /// 类型的原始定义
@@ -86,7 +86,7 @@ public abstract class DSTypeElement : DSElement
     }
 
     protected override void ToString(StringBuilder sb) {
-        sb.Append(", typeName='").Append(_typeName.ReflectionName()).Append('\'');
+        sb.Append(", typeName='").Append(typeName.ReflectionName()).Append('\'');
     }
 
     #endregion

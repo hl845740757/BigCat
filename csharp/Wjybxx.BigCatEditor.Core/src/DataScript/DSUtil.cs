@@ -18,9 +18,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Commons.Pool;
 
 namespace Wjybxx.BigCatEditor.DataScript
 {
@@ -40,8 +43,6 @@ public static class DSUtil
         DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING),
         DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES),
         // 内建结构
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PTR),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_LPTR),
         DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME),
         DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP),
         DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR),
@@ -187,13 +188,27 @@ public static class DSUtil
     }
 
     /// <summary>
-    /// className的元数据名
+    /// 获取类型Import格式的名字
     /// </summary>
     /// <param name="className"></param>
     /// <returns></returns>
-    public static string MetaName(this ClassName className) {
-        int c = className.declaredTypeArguments.Count;
-        return c == 0 ? className.simpleName : className.simpleName + "`" + c;
+    public static string GetCanonicalName(ClassName className) {
+        StringBuilder sb = ConcurrentObjectPool.SharedStringBuilderPool.Acquire();
+        try {
+            sb.Insert(0, className.simpleName);
+            sb.Insert(0, '.');
+            // 外部类
+            while (className.enclosingClassName != null) {
+                className = className.enclosingClassName;
+                sb.Insert(0, className.simpleName);
+            }
+            // 命名空间(顶层是文件名)
+            sb.Insert(0, className.ns);
+            return sb.ToString();
+        }
+        finally {
+            ConcurrentObjectPool.SharedStringBuilderPool.Release(sb);
+        }
     }
 }
 }

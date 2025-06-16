@@ -55,7 +55,7 @@ public sealed class DSTypeParameter : DSTypeElement
     public override DSTypeKind TypeKind => DSTypeKind.TypeParameter;
     public override bool IsGenericType => false;
     public override DSTypeElement OriginDefine => this;
-    public new TypeParameterName TypeName => (TypeParameterName)_typeName;
+    public new TypeParameterName TypeName => (TypeParameterName)typeName;
 
     /// <summary>
     /// 泛型变量约束
@@ -77,7 +77,7 @@ public sealed class DSTypeParameter : DSTypeElement
     #region equals
 
     private bool Equals(DSTypeParameter other) {
-        return _typeName.Equals(other.TypeName)
+        return typeName.Equals(other.TypeName)
                && constraints == other.constraints;
     }
 
@@ -86,7 +86,7 @@ public sealed class DSTypeParameter : DSTypeElement
     }
 
     public override int GetHashCode() {
-        return (_typeName.GetHashCode() * 397) ^ (int)constraints;
+        return (typeName.GetHashCode() * 397) ^ (int)constraints;
     }
 
     #endregion

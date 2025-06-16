@@ -88,6 +88,7 @@ public static class DSKeywords
     /// 全局命名空间(文件名)
     /// </summary>
     public const string GLOBAL = "global";
+    // 框架只需要支持必要的内置类型即可 -- 可正确记录数据即可
     // 原子类型
     public const string TYPE_INT32 = "int32";
     public const string TYPE_INT64 = "int64";
@@ -97,8 +98,6 @@ public static class DSKeywords
     public const string TYPE_STRING = "string";
     public const string TYPE_BYTES = "bytes";
     // 内建结构
-    public const string TYPE_PTR = "Ptr";
-    public const string TYPE_LPTR = "LPtr";
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
     public const string TYPE_PAIR = "Pair";
@@ -118,8 +117,6 @@ public static class DSKeywords
     public static readonly ClassName TYPE_NAME_STRING = ClassName.Get(GLOBAL, TYPE_STRING);
     public static readonly ClassName TYPE_NAME_BYTES = ClassName.Get(GLOBAL, TYPE_BYTES);
     // 内建结构
-    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(GLOBAL, TYPE_PTR);
-    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(GLOBAL, TYPE_LPTR);
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(GLOBAL, TYPE_DATETIME);
     public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(GLOBAL, TYPE_TIMESTAMP);
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(GLOBAL, TYPE_PAIR, new List<TypeName>()

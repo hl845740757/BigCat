@@ -20,65 +20,72 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Wjybxx.BigCatEditor.DataScript;
 using Wjybxx.BigCatEditor.Excel;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson;
 using static Wjybxx.BigCatEditor.Generator.Excel.ExcelConstants;
+using ConstCfg = Wjybxx.BigCatEditor.Generator.Excel.ConstGeneratorCfg.ConstCfg;
 
 namespace Wjybxx.BigCatEditor.Generator.Excel
 {
 /// <summary>
-/// 根据表格数据生成常量类
+/// 根据表格数据生成简单常量类
 ///
 /// 1.每个表格生成一个常量类。
 /// 2.如果是为参数表生成额外的常量类，需要在对应的单元格启用<see cref="ExcelConstants.KEY_IS_CONST"/>属性。
 /// 3.如果是为参数表生成额外的常量类，只需要配置类型名和表单名。
+/// 4.不支持Value为特殊类型，比如集合等；该生成器主要解决的是代码中的魔数问题。
 /// </summary>
-public class ConstantGenerator : ISheetProcessor
+public class ConstGenerator : ISheetProcessor
 {
-    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ConstantGenerator));
+    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ConstGenerator));
 
     private readonly SheetRepository _repository;
-    private readonly string _namespace;
-    private readonly List<ConstCfg> _constCfgs;
-    private readonly string _outDir;
+    private readonly ConstGeneratorCfg _cfg;
     private readonly CodeBlock? _fileHeader;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="repository"></param>
-    /// <param name="ns">生成代码的命名空间</param>
-    /// <param name="constCfgs">所有的常量配置</param>
-    /// <param name="outDir">输出文件夹</param>
+    /// <param name="cfg">生成代码的命名空间</param>
     /// <param name="fileHeader">文件头</param>
-    public ConstantGenerator(SheetRepository repository, string ns, List<ConstCfg> constCfgs, string outDir,
-                             CodeBlock? fileHeader = null) {
+    public ConstGenerator(SheetRepository repository, ConstGeneratorCfg cfg,
+                          CodeBlock? fileHeader = null) {
         _repository = repository;
-        _namespace = ns;
-        _constCfgs = constCfgs;
-        _outDir = outDir;
+        _cfg = cfg;
         _fileHeader = fileHeader;
     }
 
+    private void CheckCfg() {
+        if (string.IsNullOrEmpty(_cfg.ns) || string.IsNullOrEmpty(_cfg.outPath)) {
+            throw new InvalidOperationException("cfg is invalid");
+        }
+        _cfg.items ??= new List<ConstCfg>();
+    }
+
     public void Execute() {
-        foreach (ConstCfg enumCfg in _constCfgs) {
+        CheckCfg();
+        if (!Directory.Exists(_cfg.outPath)) {
+            Directory.CreateDirectory(_cfg.outPath);
+        }
+        foreach (ConstCfg constCfg in _cfg.items) {
             List<Sheet> sheets = _repository.SheetMap.Values
-                .Where(e => GetFirstSheetName(e.sheetName) == enumCfg.sheetName)
+                .Where(e => GetFirstSheetName(e.sheetName) == constCfg.sheetName)
                 .ToList();
+
             List<ConstValue> values;
             try {
                 values = sheets[0].isParamSheet
-                    ? CollectParamSheetValues(sheets, _constCfgs[0])
-                    : CollectNormalSheetValues(sheets, _constCfgs[0]);
+                    ? CollectParamSheetValues(sheets, constCfg)
+                    : CollectNormalSheetValues(sheets, constCfg);
             }
             catch (Exception ex) {
-                throw new Exception($"sheetName: {enumCfg.sheetName}", ex);
+                throw new Exception($"sheetName: {constCfg.sheetName}", ex);
             }
 
-            TypeSpec.Builder typeBuilder = TypeSpec.NewClassBuilder(enumCfg.clsName)
+            TypeSpec.Builder typeBuilder = TypeSpec.NewClassBuilder(constCfg.clsName)
                 .AddModifiers(Modifiers.Public | Modifiers.Static)
                 .AddAttribute(processorInfo);
             foreach (ConstValue constValue in values) {
@@ -123,35 +130,34 @@ public class ConstantGenerator : ISheetProcessor
                 }
                 typeBuilder.AddField(fieldBuilder.Build());
             }
-
-            CsharpFile.Builder fileBuilder = CsharpFile.NewBuilder(enumCfg.clsName);
+            CsharpFile.Builder fileBuilder = CsharpFile.NewBuilder(constCfg.clsName);
             if (_fileHeader != null) {
                 fileBuilder.AddSpec(new CodeBlockSpec(_fileHeader));
             }
-            fileBuilder.AddSpec(NamespaceSpec.Of(_namespace, typeBuilder.Build()));
-            GeneratorUtil.WriteToFile(_outDir, fileBuilder.Build());
+            fileBuilder.AddSpec(NamespaceSpec.Of(_cfg.ns, typeBuilder.Build()));
+            GeneratorUtil.WriteToFile(_cfg.outPath, fileBuilder.Build());
         }
     }
 
-    private static List<ConstValue> CollectNormalSheetValues(List<Sheet> sheets, ConstCfg enumCfg) {
+    private static List<ConstValue> CollectNormalSheetValues(List<Sheet> sheets, ConstCfg constCfg) {
         List<ConstValue> values = new List<ConstValue>();
-        // 其实对于普通表，类型是确定的，可以提前绑定函数避免大量的Switch-Case，但这个工具的执行频次不高，简单优先
-        Header header = sheets[0].GetHeader(enumCfg.valueCol) ?? throw new InvalidOperationException("valHeader is null");
+        Header header = sheets[0].GetHeader(constCfg.valueCol) ?? throw new InvalidOperationException("valHeader is null");
+        ConstKind kind = GetConstKind(header);
         foreach (Sheet sheet in sheets) {
             foreach (SheetRow sheetRow in sheet.valueRows) {
-                string name = sheetRow.GetValue(enumCfg.nameCol);
+                string name = sheetRow.GetValue(constCfg.nameCol);
                 if (string.IsNullOrWhiteSpace(name)) {
                     continue;
                 }
-                string value = sheetRow.GetValue(enumCfg.valueCol) ?? "";
-                string comment = sheetRow.GetValue(enumCfg.commentCol);
-                values.Add(ParseValue(header, name, value, comment));
+                string value = sheetRow.GetValue(constCfg.valueCol) ?? "";
+                string comment = sheetRow.GetValue(constCfg.commentCol);
+                values.Add(new ConstValue(kind, name, value, comment));
             }
         }
         return values;
     }
 
-    private static List<ConstValue> CollectParamSheetValues(List<Sheet> sheets, ConstCfg enumCfg) {
+    private static List<ConstValue> CollectParamSheetValues(List<Sheet> sheets, ConstCfg constCfg) {
         List<ConstValue> values = new List<ConstValue>();
         foreach (Sheet sheet in sheets) {
             foreach (Header header in sheet.headers.Values) {
@@ -165,44 +171,24 @@ public class ConstantGenerator : ISheetProcessor
                 string name = header.name;
                 string value = sheet.GetValue(name) ?? "";
                 string comment = header.comment;
-                values.Add(ParseValue(header, name, value, comment));
+                ConstKind kind = GetConstKind(header);
+                values.Add(new ConstValue(kind, name, value, comment));
             }
         }
         return values;
     }
 
-    private static ConstValue ParseValue(Header header, string name, string value, string? comment) {
+    private static ConstKind GetConstKind(Header header) {
         return header.type switch
         {
-            DSKeywords.TYPE_INT32 => new ConstValue(ConstKind.Int32, name, value, comment),
-            DSKeywords.TYPE_INT64 => new ConstValue(ConstKind.Int64, name, value, comment),
-            DSKeywords.TYPE_FLOAT => new ConstValue(ConstKind.Float, name, value, comment),
-            DSKeywords.TYPE_DOUBLE => new ConstValue(ConstKind.Double, name, value, comment),
-            DSKeywords.TYPE_BOOL => new ConstValue(ConstKind.Bool, name, value, comment),
-            DSKeywords.TYPE_STRING => new ConstValue(ConstKind.String, name, value, comment),
+            DSKeywords.TYPE_INT32 => ConstKind.Int32,
+            DSKeywords.TYPE_INT64 => ConstKind.Int64,
+            DSKeywords.TYPE_FLOAT => ConstKind.Float,
+            DSKeywords.TYPE_DOUBLE => ConstKind.Double,
+            DSKeywords.TYPE_BOOL => ConstKind.Bool,
+            DSKeywords.TYPE_STRING => ConstKind.String,
             _ => throw new InvalidOperationException($"invalid const type: {header.type}")
         };
     }
-
-    //
-    // int值常量提供额外信息 -- 真的需要时候再说
-    // {
-    //     StringBuilder sb = new StringBuilder();
-    //     sb.Append("new int[] {");
-    //     for (int index = 0; index < intValues.Count; index++) {
-    //         if (index > 0) sb.Append(',');
-    //         if (index > 0 && (index % 5) == 0) { // 每5个值换一次行
-    //             sb.Append('\n');
-    //         }
-    //         sb.Append(intValues[index]);
-    //     }
-    //     sb.Append("}.ToImmutableList2()");
-    //
-    //     typeBuilder.AddField(FieldSpec.NewBuilder(typeof(ImmutableList<int>), "INT_VALUES")
-    //         .AddModifiers(Modifiers.Public | Modifiers.Static | Modifiers.ReadOnly)
-    //         .AddDocument("Generated")
-    //         .Initializer(sb.ToString())
-    //         .Build());
-    // }
 }
 }

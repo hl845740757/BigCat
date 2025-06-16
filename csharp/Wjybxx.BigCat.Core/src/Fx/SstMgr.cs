@@ -24,6 +24,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Attributes;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.IO;
 using Wjybxx.Commons.Pool;
@@ -52,6 +53,7 @@ public static class SstMgr
     /// </summary>
     /// <param name="locationId">数据坐标</param>
     /// <returns></returns>
+    [StableName]
     public static string GetString(int locationId) {
         if (locationId == 0) return string.Empty;
         if (!locationId2ItemMap.TryGetValue(locationId, out Item item)) {
@@ -105,7 +107,8 @@ public static class SstMgr
     /// </summary>
     /// <param name="idList"></param>
     /// <returns></returns>
-    public static ImmutableList<string> GetList(IList<int> idList) {
+    [StableName]
+    public static ImmutableList<string> GetStringList(IList<int> idList) {
         if (idList.Count == 0) return ImmutableList<string>.Empty;
         string[] array = new string[idList.Count];
         for (int i = 0; i < idList.Count; i++) {

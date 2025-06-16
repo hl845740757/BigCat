@@ -72,7 +72,7 @@ public class SstGenerator : ISheetProcessor
     /// 
     /// 文件名规则：<code>sst.db.0 sst.db.1 ...</code>
     /// 1.二进制，运行时需要
-    /// 2.文件内value递增
+    /// 2.文件内字符串id递增
     /// </summary>
     public const string FILE_SST_DB = "sst.db";
 

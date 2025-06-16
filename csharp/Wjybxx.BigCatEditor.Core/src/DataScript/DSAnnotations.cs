@@ -44,8 +44,9 @@ public static class DSAnnotations
     /// 用于定义类型、字段、枚举值的可选项
     /// (主要服务于代码生成)
     ///
-    /// 语法：<code>// @Options{isFlags: true, ssti: true}</code>
+    /// 语法：<code>// @Options{isFlags: true, isReadonly: true, ssti: true}</code>
     /// - isFlags 用于标识枚举类型是否是Flags类型
+    /// - isReadonly 用于标识字段不支持热更新;用于类型时表示所有字段不可变。
     /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
     /// </summary>
     public const string OPTIONS = "Options";
@@ -71,6 +72,7 @@ public static class DSAnnotations
     public const string KEY_ELEM_STYLE = "elemStyle";
 
     public const string KEY_IS_FLAGS = "isFlags";
+    public const string KEY_IS_READONLY = "isReadonly";
     public const string KEY_SSTI = "ssti";
 
     #endregion

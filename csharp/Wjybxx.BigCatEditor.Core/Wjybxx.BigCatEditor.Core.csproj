@@ -53,7 +53,7 @@
         <PackageReference Include="Wjybxx.Commons.Inject" Version="1.5.0-rc1" />
         <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.3" />
         <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.3" />
-        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.4" />
+        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.5" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
