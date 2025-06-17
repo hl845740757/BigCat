@@ -191,7 +191,7 @@ public class DsonGenerator : ISheetProcessor
         collection.Add(new DsonObject<string>(2)
         {
             { STRING_CLS_NAME, new DsonString(namedType.SimpleName) },
-            { STRING_SERIAL_VERSION, new DsonInt32(GetHashCode(fields)) }
+            { STRING_SERIAL_VERSION, new DsonInt32(DataScriptGenerator.GetHashCode(fields)) }
         });
         // 按脚本的字段定义顺序构建DsonObject -- 参数表构建为Object
         DsonObject<string> paramObject = new DsonObject<string>(fields.Count);
@@ -239,7 +239,7 @@ public class DsonGenerator : ISheetProcessor
             DsonObject<string> headerObject = new DsonObject<string>(3)
             {
                 { STRING_CLS_NAME, new DsonString(namedType.SimpleName) },
-                { STRING_SERIAL_VERSION, new DsonInt32(GetHashCode(fields)) },
+                { STRING_SERIAL_VERSION, new DsonInt32(DataScriptGenerator.GetHashCode(fields)) },
             };
             collection.Add(headerObject);
             // 追加一行字段名数据 -- 方便文本查看，解码时可直接SkipValue
@@ -338,22 +338,6 @@ public class DsonGenerator : ISheetProcessor
         return IsStringType(elementType.SimpleName)
             ? string.IsNullOrEmpty(value)
             : string.IsNullOrWhiteSpace(value);
-    }
-
-    /// <summary>
-    /// 字段元数据的Hash
-    /// 
-    /// 我们需要将其添加到生成的Class类型信息中，或是注解-或是静态字段
-    /// </summary>
-    /// <param name="fields"></param>
-    /// <returns></returns>
-    public static int GetHashCode(List<DSField> fields) {
-        int hash = 1;
-        foreach (DSField field in fields) {
-            hash = hash * 31 + field.TypeSymbol.GetHashCode();
-            hash = hash * 31 + field.SimpleName.GetHashCode();
-        }
-        return hash;
     }
 
     #endregion

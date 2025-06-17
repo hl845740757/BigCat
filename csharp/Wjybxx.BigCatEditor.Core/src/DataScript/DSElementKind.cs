@@ -57,7 +57,6 @@ public enum DSElementKind
 
     /// <summary>
     /// 字段--class和struct的字段定义
-    /// (TODO 是否支持一下常量?) 
     /// </summary>
     Field = 5,
     /// <summary>

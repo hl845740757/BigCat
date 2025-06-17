@@ -26,6 +26,9 @@ namespace Wjybxx.BigCatEditor.Protobuf
 /// </summary>
 public class PBEnum : PBTypeElement
 {
+    /** 是否允许字段指向相同的数字 */
+    private bool allowAlias = false;
+
     public override PBElementKind Kind => PBElementKind.Enum;
 
     /// <summary>
@@ -36,6 +39,11 @@ public class PBEnum : PBTypeElement
         return EnclosedElements.Where(e => e.Kind == PBElementKind.EnumValue)
             .Cast<PBEnumValue>()
             .ToList();
+    }
+
+    public bool AllowAlias {
+        get => allowAlias;
+        set => allowAlias = value;
     }
 }
 }

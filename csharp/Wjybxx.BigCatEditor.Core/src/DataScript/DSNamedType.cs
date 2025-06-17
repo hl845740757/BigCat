@@ -54,6 +54,9 @@ namespace Wjybxx.BigCatEditor.DataScript
 ///
 /// <h3>关于语法</h3>
 /// 不要在'{'和'}'所在行声明字段等，内容必须和开始和结束Token字符分离 -- 降低解析难度。
+///
+/// <h3>关于readonly字段</h3>
+/// 工具在生成csharp或其它语言代码时，应当响应字段的readonly诉求，在构造函数中解码字段。
 /// </summary>
 public sealed class DSNamedType : DSTypeElement
 {
@@ -77,7 +80,7 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     private DSNamedType? _baseType;
     /// <summary>
-    /// 类型的全名 -- 缓存值
+    /// 类型的全名 -- 缓存值，不包含泛型参数
     /// </summary>
     private readonly string _fullName;
 
@@ -93,7 +96,7 @@ public sealed class DSNamedType : DSTypeElement
     private readonly ImmutableList<DSTypeElement> _typeArguments;
     /// <summary>
     /// 泛型类的原始定义类
-    /// 当构造泛型时，保留指向的原型，泛型定义类则返回自身；
+    /// 当构造泛型时，保留指向的原型；
     /// </summary>
     private readonly DSNamedType? _originDefine;
 #nullable enable
@@ -195,7 +198,7 @@ public sealed class DSNamedType : DSTypeElement
                 return ImmutableList<DSTypeParameter>.Empty;
             }
             List<DSTypeParameter> r = new List<DSTypeParameter>(TypeParameters);
-            r.RemoveRange(0, TypeName.typeArguments.Count - declaredTypeArguments.Count);;
+            r.RemoveRange(0, TypeName.typeArguments.Count - declaredTypeArguments.Count);
             return r;
         }
     }
@@ -376,8 +379,8 @@ public sealed class DSNamedType : DSTypeElement
     public static DSNamedType NewClassType(ClassName className, IList<DSTypeParameter>? typeParameters = null, string? baseTypeSymbol = null) {
         if (typeParameters == null) {
             typeParameters = CreateTypeParameters(className);
-        } else if (typeParameters.Count != className.typeArguments.Count) {
-            throw new ArgumentException($"Class {className} does not have the same number of type arguments.");
+        } else {
+            CheckTypeParameters(className, typeParameters);
         }
         return new DSNamedType(DSElementKind.Class, DSTypeKind.Class, className, typeParameters, baseTypeSymbol);
     }
@@ -385,14 +388,27 @@ public sealed class DSNamedType : DSTypeElement
     public static DSNamedType NewStructType(ClassName className, IList<DSTypeParameter>? typeParameters = null) {
         if (typeParameters == null) {
             typeParameters = CreateTypeParameters(className);
-        } else if (typeParameters.Count != className.typeArguments.Count) {
-            throw new ArgumentException($"Class {className} does not have the same number of type arguments.");
+        } else {
+            CheckTypeParameters(className, typeParameters);
         }
         return new DSNamedType(DSElementKind.Strut, DSTypeKind.Struct, className, typeParameters, null);
     }
 
     public static DSNamedType NewEnumType(ClassName className) {
         return new DSNamedType(DSElementKind.Enum, DSTypeKind.Enum, className, ImmutableList<DSTypeParameter>.Empty, null);
+    }
+
+    private static void CheckTypeParameters(ClassName className, IList<DSTypeParameter> typeParameters) {
+        if (typeParameters.Count != className.typeArguments.Count) {
+            throw new ArgumentException($"Class {className} does not have the same number of type arguments.");
+        }
+        for (int i = 0; i < typeParameters.Count; i++) {
+            DSTypeParameter typeParameter = typeParameters[i];
+            TypeParameterName typeArgumentName = (TypeParameterName)className.typeArguments[i];
+            if (typeParameter.SimpleName != typeArgumentName.name) {
+                throw new ArgumentException($"TypeParameter name mismatch, expected {typeParameter.SimpleName}, but found: {typeArgumentName.name}");
+            }
+        }
     }
 
     /** 根据name中的泛型变量构建类型参数 -- 不包含特殊约束时可使用 */

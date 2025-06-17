@@ -108,14 +108,9 @@ public class ClassGenerator : ISheetProcessor
                 }
                 DSNamedType namedType = (DSNamedType)element;
                 typeName = ClassName.Get(_cfg.ns, namedType.SimpleName);
-                typeBuilder = namedType.TypeKind switch
-                {
-                    DSTypeKind.Class => TypeSpec.NewClassBuilder(namedType.SimpleName),
-                    DSTypeKind.Struct => TypeSpec.NewStructBuilder(namedType.SimpleName),
-                    DSTypeKind.Enum => TypeSpec.NewEnumBuilder(namedType.SimpleName),
-                    _ => throw new InvalidOperationException("unsupported type: " + namedType.FullName)
-                };
-                typeBuilder.AddModifiers(Modifiers.Public);
+                typeBuilder = TypeSpec.NewClassBuilder(namedType.SimpleName)
+                    .AddModifiers(Modifiers.Public)
+                    .AddAttribute(processorInfo);
                 try {
                     Generate(namedType);
                     GeneratorUtil.WriteToFile(_cfg.outPath, _cfg.ns, typeBuilder.Build());
@@ -128,15 +123,8 @@ public class ClassGenerator : ISheetProcessor
     }
 
     private void Generate(DSNamedType namedType) {
-        if (namedType.Kind == DSElementKind.Enum) {
-            foreach (DSEnumValue enumValue in namedType.GetEnumValues()) {
-                typeBuilder.AddEnumValue(new EnumValueSpec(enumValue.SimpleName, enumValue.Number, ToDocument(enumValue.Comments)));
-            }
-            return;
-        }
         // 增加序列化版本注解
-        // TYPE_NAME_SERIAL_VERSION
-        int serialVersion = DsonGenerator.GetHashCode(namedType.GetFields());
+        int serialVersion = DataScriptGenerator.GetHashCode(namedType.GetFields());
         typeBuilder.AddAttribute(AttributeSpec.NewBuilder(TYPE_NAME_SERIAL_VERSION)
             .Constructor(CodeBlock.Of(serialVersion.ToString())).Build());
 
@@ -208,13 +196,12 @@ public class ClassGenerator : ISheetProcessor
                 }
             } else {
                 typeBuilder.AddProperty(PropertySpec.NewBuilder(fieldTypeName, field.SimpleName, Modifiers.Public)
-                    .AddSetterModifiers(Modifiers.Internal) // 读表可能有特殊逻辑
+                    .AddSetterModifiers(field.IsReadonly ? Modifiers.Private : Modifiers.Internal) // 读表可能有特殊逻辑
                     .AddDocument(ToDocument(field.Comments))
                     .Build());
-                if (!IsReadOnly(field)) {
+                if (!field.IsReadonly) {
                     copyMethodBuilder.codeBuilder.AddStatement("this.$L = src.$L", field.SimpleName, field.SimpleName);
                 }
-
                 string? fieldDecodeProxy = GetFieldDecodeProxy(classCfg, field);
                 if (fieldDecodeProxy != null) {
                     // 这里我们按照标准的DsonCodec代理格式来(inst, reader, name)
@@ -244,8 +231,8 @@ public class ClassGenerator : ISheetProcessor
                 copyMethodBuilder.codeBuilder.AddStatement("this.$L = src.$L", fieldCfg.name, fieldCfg.name);
             }
         }
-        typeBuilder.AddSpec(constructorBuilder.Build());
-        typeBuilder.AddSpec(copyMethodBuilder.Build());
+        typeBuilder.AddSpec(constructorBuilder.Build(true));
+        typeBuilder.AddSpec(copyMethodBuilder.Build(true));
         // TODO 增加ToString
     }
 
@@ -271,15 +258,6 @@ public class ClassGenerator : ISheetProcessor
         }
         DsonObject<string> options = annotation.DsonValue.AsObject();
         return GetBool(options, DSAnnotations.KEY_SSTI);
-    }
-
-    private static bool IsReadOnly(DSField field) {
-        Annotation? annotation = field.GetAnnotation(DSAnnotations.OPTIONS);
-        if (annotation == null) {
-            return false;
-        }
-        DsonObject<string> options = annotation.DsonValue.AsObject();
-        return GetBool(options, DSAnnotations.KEY_IS_READONLY);
     }
 
     private static CodeBlock ToDocument(List<string> comments) {
@@ -343,9 +321,13 @@ public class ClassGenerator : ISheetProcessor
             //
             DSKeywords.TYPE_DATETIME => GeneratorUtil.TYPE_NAME_DATETIME,
             DSKeywords.TYPE_TIMESTAMP => GeneratorUtil.TYPE_NAME_TIMESTAMP,
+            DSKeywords.TYPE_PAIR => GeneratorUtil.TYPE_NAME_PAIR,
+            //
             DSKeywords.TYPE_LIST => GeneratorUtil.TYPE_NAME_IMMUTABLE_LIST,
             DSKeywords.TYPE_MAP => GeneratorUtil.TYPE_NAME_IMMUTABLE_DICTIONARY,
-            DSKeywords.TYPE_PAIR => GeneratorUtil.TYPE_NAME_PAIR,
+            //
+            DSKeywords.TYPE_NULLABLE => ClassName.NULLABLE,
+            DSKeywords.TYPE_OBJECT => TypeName.OBJECT,
             // HashSet是表格模块内置类型
             TYPE_HASH_SET => GeneratorUtil.TYPE_NAME_IMMUTABLE_SET,
             _ => null
@@ -353,16 +335,28 @@ public class ClassGenerator : ISheetProcessor
         if (r != null) {
             return r;
         }
+        string csharpNamespace = GetCsharpNamespace(originDefine);
+        r = ClassName.Get(csharpNamespace, originDefine.SimpleName, originDefine.TypeName.typeArguments);
+        _metaTypeNameCache.Add(originDefine.FullName, r);
+        return r;
+    }
 
-        // namedType的ns是文件名，我们生成代码时需要使用指定的namespace
+    private static string GetCsharpNamespace(DSNamedType originDefine) {
+        // 先查看type是否指定了命名空间
+        Annotation? annotation = originDefine.GetAnnotation(DSAnnotations.NAMESPACE);
+        if (annotation != null) {
+            DsonObject<string> dsonObject = annotation.DsonValue.AsObject();
+            if (dsonObject.TryGetValue(DSAnnotations.KEY_CS, out DsonValue value)) {
+                return value.AsString();
+            }
+        }
+        // 再根据文件options查询
         DSFile enclosingFile = originDefine.GetEnclosingFile();
         string? csharpNamespace = enclosingFile.GetOption(DSKeywords.CSHARP_NAMESPACE);
         if (string.IsNullOrEmpty(csharpNamespace)) {
             throw new InvalidOperationException("csharpNamespace is absent" + enclosingFile.FileName);
         }
-        r = ClassName.Get(csharpNamespace, originDefine.SimpleName, originDefine.TypeName.typeArguments);
-        _metaTypeNameCache.Add(originDefine.FullName, r);
-        return r;
+        return csharpNamespace;
     }
 
     #endregion

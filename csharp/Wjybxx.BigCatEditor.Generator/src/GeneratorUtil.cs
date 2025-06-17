@@ -139,6 +139,7 @@ public static class GeneratorUtil
     /// <param name="csharpFile"></param>
     public static void WriteToFile(string outDir, CsharpFile csharpFile) {
         CodeWriter codeWriter = codeWriterPool.Acquire();
+        codeWriter.IndentInsideNamespace = false;
         try {
             string path = outDir + "/" + csharpFile.name + ".cs";
             File.WriteAllText(path, codeWriter.Write(csharpFile), ENCODING_UTF8);
@@ -152,7 +153,6 @@ public static class GeneratorUtil
 
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
     public static readonly ArrayTypeName TYPE_NAME_BYTES = ArrayTypeName.BYTE_ARRAY;
-    public static readonly ClassName TYPE_NAME_NULLABLE = ClassName.NULLABLE;
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(typeof(KeyValuePair<,>));
 
     public static readonly ClassName TYPE_NAME_BINARY = ClassName.Get(typeof(Binary));

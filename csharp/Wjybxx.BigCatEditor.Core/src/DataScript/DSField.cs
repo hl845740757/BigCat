@@ -24,17 +24,19 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// <summary>
 /// Class和Struct的字段
 ///
-/// 最麻烦的就是解析字段中的泛型参数，可能类型定义的泛型变量
-/// 1.需要考虑`T?`中的T是值类型的情况，需要转换为<see cref="Nullable{T}"/>
-/// 2.需要考虑
+/// 1.字段可以使用类型的泛型参数。
+/// 2.字段如果是值类型，且加了'?'修饰，会被转换为<see cref="Nullable{T}"/> -- 与C#语法一致。
+/// 3.访问内部类时，如果不是直接内部类，需要使用A.B.C相对路径格式 -- 确保精确解析。
 /// </summary>
 public class DSField : DSElement
 {
 #nullable disable
-    /** 字段类型符号 -- 可能是 T? 类型 */
+    /** 字段类型符号 -- 可能是'T?'类型 */
     private readonly string typeSymbol;
     /** 数字id */
     private readonly int number;
+    /** 字段是否是只读的 -- 对应字段来说，还是修饰符好用 */
+    private readonly bool isReadonly;
     /** 类型 -- 延迟解析 */
     private DSTypeElement type;
 
@@ -42,10 +44,11 @@ public class DSField : DSElement
     private readonly DSField _originDefine;
 #nullable enable
 
-    public DSField(string simpleName, string typeSymbol, int number)
+    public DSField(string simpleName, string typeSymbol, int number, bool isReadonly)
         : base(simpleName) {
         this.typeSymbol = typeSymbol;
         this.number = number;
+        this.isReadonly = isReadonly;
         this._originDefine = null;
     }
 
@@ -53,6 +56,7 @@ public class DSField : DSElement
         : base(originDefine.SimpleName) {
         _originDefine = originDefine;
         this.number = originDefine.number;
+        this.isReadonly = originDefine.isReadonly;
         this.type = type;
     }
 
@@ -72,6 +76,11 @@ public class DSField : DSElement
     /// 字段的数字
     /// </summary>
     public int Number => number;
+
+    /// <summary>
+    /// 字段是否是只读的
+    /// </summary>
+    public bool IsReadonly => isReadonly;
 
     /// <summary>
     /// 字段类型缓存，延迟解析

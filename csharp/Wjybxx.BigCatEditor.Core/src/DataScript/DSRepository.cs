@@ -389,17 +389,11 @@ public sealed class DSRepository
         if (scopeEntry.SimpleName == firstName) {
             return scopeEntry;
         }
-        // 先查询内部类--递归向下，广度优先遍历
-        Queue<DSNamedType> queue = new Queue<DSNamedType>(4);
-        queue.Enqueue(scopeEntry);
-        while (queue.Count > 0) {
-            DSNamedType namedType = queue.Dequeue().OriginDefine;
-            foreach (DSElement enclosedElement in namedType.EnclosedElements) {
-                if (!enclosedElement.Kind.IsNamedType()) continue;
-                if (enclosedElement.SimpleName == firstName) {
-                    return namedType;
-                }
-                queue.Enqueue((DSNamedType)enclosedElement);
+        // 先查询内部类--禁止直接访问内部类的内部类，必须是A.B.C相对路径格式访问
+        foreach (DSElement enclosedElement in scopeEntry.EnclosedElements) {
+            if (!enclosedElement.Kind.IsNamedType()) continue;
+            if (enclosedElement.SimpleName == firstName) {
+                return (DSNamedType)enclosedElement;
             }
         }
         // 平级节点、父节点、叔父节点--递归向上，广度优先遍历

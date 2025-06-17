@@ -26,7 +26,7 @@ namespace Wjybxx.BigCat.Util
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum, Inherited = false)]
 public class SerialVersionAttribute : Attribute
 {
-    /// <summary>-
+    /// <summary>
     /// 序列化版本号
     /// </summary>
     public readonly int version;

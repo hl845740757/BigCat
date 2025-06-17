@@ -29,7 +29,8 @@ public static class DSAnnotations
     /// <summary>
     /// 命名空间
     /// - 用于覆盖文件中指定的命名空间，用于配置特殊类型(第三方程序集）
-    ///
+    /// - 建议为每个第三方程序集定义一个ds文件
+    /// 
     /// 语法如下：
     /// <code>// @Namespace{java : "xxx", cs: "xxx"} </code>
     /// - java 为java端的命名空间
@@ -44,10 +45,12 @@ public static class DSAnnotations
     /// 用于定义类型、字段、枚举值的可选项
     /// (主要服务于代码生成)
     ///
-    /// 语法：<code>// @Options{isFlags: true, isReadonly: true, ssti: true}</code>
+    /// 语法：<code>// @Options{isFlags: true, nonSerialized: true, ssti: true}</code>
     /// - isFlags 用于标识枚举类型是否是Flags类型
-    /// - isReadonly 用于标识字段不支持热更新;用于类型时表示所有字段不可变。
+    /// - nonSerialized 用于类型时表示目标类型不需要支持序列化；用于字段时表示单个字段无需支持序列化；
     /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
+    ///
+    /// 注：DS脚本中的类型默认都是可序列化的。
     /// </summary>
     public const string OPTIONS = "Options";
 
@@ -60,11 +63,23 @@ public static class DSAnnotations
     /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写
     /// - name 表示字段序列化的名字，不推荐使用
     /// - style 表示该类型输出为Dson文本时的默认排版，其值可见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>；不区分大小写，不认识的值将被忽略。
-    /// - elemStyle 用于指定数组元素或字典的Value的排版。
+    /// - elemStyle 用于指定数组元素或字典的Value的排版，可能不会生效。
+    ///
     /// </summary>
     public const string CODEC = "Codec";
 
+    /// <summary>
+    /// 类型的Editor配置
+    ///
+    /// Editor相关的配置较复杂，所以可能不是很适合直接配置在类型数据上，而更适合通过额外的数据进行配置 -- 避免对类型元数据造成过多污染。
+    /// (Editor需要对字段进行大量的配置，直接配置在类型元数据上，污染太严重)
+    /// </summary>
+    private const string Editor = "Editor";
+
     #region 注解属性的键
+
+    public const string KEY_CS = "cs";
+    public const string KEY_JAVA = "java";
 
     public const string KEY_ALIAS = "alias";
     public const string KEY_NAME = "name";
@@ -72,7 +87,7 @@ public static class DSAnnotations
     public const string KEY_ELEM_STYLE = "elemStyle";
 
     public const string KEY_IS_FLAGS = "isFlags";
-    public const string KEY_IS_READONLY = "isReadonly";
+    public const string KEY_NON_SERIALIZED = "nonSerialized";
     public const string KEY_SSTI = "ssti";
 
     #endregion

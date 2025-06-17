@@ -160,12 +160,14 @@ public class DataScriptGenerator : ISheetProcessor
                 continue;
             }
             GetOptions(header, out bool isIntern, out bool isReadonly);
-            if (isIntern || isReadonly) {
-                lines.Add($"    //@{DSAnnotations.OPTIONS}"
-                          + $"{{{DSAnnotations.KEY_SSTI}: {ToString(isIntern)},"
-                          + $" {DSAnnotations.KEY_IS_READONLY}: {ToString(isReadonly)}}}");
+            if (isIntern) {
+                lines.Add($"    //@{DSAnnotations.OPTIONS}{{{DSAnnotations.KEY_SSTI}: true}}");
             }
-            lines.Add($"    {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
+            if (isReadonly) {
+                lines.Add($"    readonly {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
+            } else {
+                lines.Add($"    {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
+            }
         }
         lines.Add("}");
     }
@@ -193,6 +195,11 @@ public class DataScriptGenerator : ISheetProcessor
         return sheet;
     }
 
+    /// <summary>
+    /// 获取表格对应的Class名字
+    /// </summary>
+    /// <param name="mergedSheetName"></param>
+    /// <returns></returns>
     public static string GetClassName(string mergedSheetName) {
         if (IsBaseTypeSheet(mergedSheetName)) {
             return GetFirstSheetName(mergedSheetName) + "Cfg";
@@ -201,6 +208,22 @@ public class DataScriptGenerator : ISheetProcessor
             return GetSecondSheetName(mergedSheetName) + "Cfg";
         }
         return mergedSheetName + "Cfg";
+    }
+
+    /// <summary>
+    /// 字段元数据的Hash
+    /// 
+    /// 我们需要将其添加到生成的Class类型信息中，或是注解-或是静态字段
+    /// </summary>
+    /// <param name="fields"></param>
+    /// <returns></returns>
+    public static int GetHashCode(List<DSField> fields) {
+        int hash = 1;
+        foreach (DSField field in fields) {
+            hash = hash * 31 + field.TypeSymbol.GetHashCode();
+            hash = hash * 31 + field.SimpleName.GetHashCode();
+        }
+        return hash;
     }
 }
 }

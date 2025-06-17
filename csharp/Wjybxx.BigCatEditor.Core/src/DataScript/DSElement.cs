@@ -69,6 +69,11 @@ public abstract class DSElement
     public virtual DSElement OriginDefine => this;
 
     /// <summary>
+    /// 当前对象是否是原始定义
+    /// </summary>
+    public bool IsOriginDefine => ReferenceEquals(this, OriginDefine);
+
+    /// <summary>
     /// 添加嵌套元素
     /// </summary>
     public void AddEnclosedElement(DSElement enclosed) {

@@ -322,8 +322,18 @@ public class DSFileParser
     private static DSField ParseField(List<string> commentLines, LineInfo lineInfo) {
         string content = lineInfo.content;
         EnsureEndWithSemicolon(content);
-        // type name = number;
+        // readonly type name = number;
         // List<int32> itemIds = 1;
+        bool isReadonly = FirstWord(content) switch
+        {
+            DSKeywords.READONLY => true,
+            DSKeywords.PUBLIC => throw new Exception("public is not supported"),
+            DSKeywords.PRIVATE => throw new Exception("private is not supported"),
+            _ => false
+        };
+        if (isReadonly) {
+            content = content.Substring(DSKeywords.READONLY.Length + 1).TrimStart();
+        }
         int genericEndIdx = content.IndexOf('>'); // map泛型结束符
         int typeEndIdx = genericEndIdx > 0 ? genericEndIdx + 1 : content.IndexOf(' ');
         int eqIdx = content.IndexOf('=');
@@ -339,7 +349,7 @@ public class DSFileParser
             number = int.Parse(numberString.Trim());
         }
         //
-        DSField field = new DSField(name, type, number);
+        DSField field = new DSField(name, type, number, isReadonly);
         field.StartLine = lineInfo.ln;
         field.EndLine = lineInfo.ln;
         // 追加注释
@@ -393,6 +403,14 @@ public class DSFileParser
                 var pair = ParseOption(content);
                 _context.container.AddOption(pair.Key, pair.Value);
                 return;
+            }
+            case DSKeywords.ALLOW_ALIAS: {
+                // allow_alias = true;
+                // int eqIdx = content.IndexOf('=');
+                // int lastIdx = content.LastIndexOf(';');
+                // string value = content.Substring2(eqIdx + 1, lastIdx).Trim();
+                // _context.AsEnum().AllowAlias = (value == "true");
+                break;
             }
             case DSKeywords.RESERVED: {
                 _context.ClearCommentLines();

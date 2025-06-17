@@ -83,12 +83,18 @@ public static class ExcelConstants
     /// 标记number和string类型是否是常量值
     /// 
     /// 该属性用于Param表标记哪些参数需要导出额外的常量表，普通表直接指定列导出。
+    /// (其实不建议为Param表生成常量类)
     /// </summary>
     public const string KEY_IS_CONST = "isConst";
     /// <summary>
     /// 用于标注字段是不可以热更新的，通常是指主键和索引键
     /// </summary>
     public const string KEY_IS_READONLY = "isReadonly";
+    /// <summary>
+    /// 用于标注字段不需要编解码
+    /// (还是更建议通过生成器增加缓存字段，不建议在表格中增加冗余字段)
+    /// </summary>
+    public const string KEY_NON_SERIALIZED = "nonSerialized";
 
     /// <summary>
     /// value禁止重复
@@ -200,20 +206,6 @@ public static class ExcelConstants
     }
 
     /// <summary>
-    /// 获取number类型属性值
-    /// </summary>
-    /// <param name="options">表头options</param>
-    /// <param name="key">Key</param>
-    /// <param name="defValue">key不存在时的默认值</param>
-    /// <returns></returns>
-    public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
-        if (!options.TryGetValue(key, out DsonValue value)) {
-            return defValue;
-        }
-        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
-    }
-
-    /// <summary>
     /// 获取bool类型属性值
     /// </summary>
     /// <param name="options">表头options</param>
@@ -232,6 +224,34 @@ public static class ExcelConstants
             throw new Exception("invalid number: " + number);
         }
         return defValue;
+    }
+
+    /// <summary>
+    /// 获取number类型属性值
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
+    }
+
+    /// <summary>
+    /// 获取int类型属性值
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="key"></param>
+    /// <param name="defValue"></param>
+    /// <returns></returns>
+    public static int GetInt(DsonObject<string> options, string key, int defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().IntValue : defValue;
     }
 
     #endregion

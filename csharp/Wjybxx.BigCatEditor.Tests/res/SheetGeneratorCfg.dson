@@ -4,7 +4,7 @@
     classGenerator: {
         // outPath: "", 
         ns: "Wjybxx.BigCat.Table",
-        codecProxyNs: "Wjybxx.BigCat.TableCodec",
+        codecProxyNs: "Wjybxx.BigCat.Demo",
         items: [
             {
                 name: ItemCfg,
@@ -23,7 +23,7 @@
     // 常量类生成配置 -- ConstGeneratorCfg
     constGenerator: {
         // outPath: "",
-        ns: "Wjybxx.BigCat.Table",
+        ns: "Wjybxx.BigCat.Demo",
         items: [
             {clsName: SkillConst, sheetName: SkillParam}, 
             {clsName: ItemConst, sheetName: Item, nameCol: enumName, valueCol: itemId, commentCol: desc}

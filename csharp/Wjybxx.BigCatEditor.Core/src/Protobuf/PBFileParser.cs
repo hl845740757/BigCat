@@ -450,6 +450,15 @@ public sealed class PBFileParser
                 _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
+            case PBKeywords.ALLOW_ALIAS: {
+                _context.ClearCommentLines();
+                // allow_alias = true;
+                int eqIdx = content.IndexOf('=');
+                int lastIdx = content.LastIndexOf(';');
+                string value = content.Substring2(eqIdx + 1, lastIdx).Trim();
+                _context.AsEnum().AllowAlias = (value == "true");
+                break;
+            }
             case PBKeywords.RESERVED: {
                 _context.ClearCommentLines();
                 ParseRevered(_context.AsEnum(), content);

@@ -43,7 +43,7 @@ public class DSInst : DSElement
 #nullable disable
     /** dson文本 -- 不一定完整，部分数据可能在模板中 */
     private readonly string value;
-    /** 解析后的dsonValue -- 由解析器初始化 */
+    /** 解析后的dsonValue -- 由解析器初始化，包含从模板中拷贝的数据 */
     private DsonValue dsonValue;
 #nullable enable
 

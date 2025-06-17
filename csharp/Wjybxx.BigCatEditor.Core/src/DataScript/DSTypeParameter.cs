@@ -30,9 +30,7 @@ namespace Wjybxx.BigCatEditor.DataScript
 /// <see cref="GenericParameterAttributes.NotNullableValueTypeConstraint"/>、
 /// <see cref="GenericParameterAttributes.ReferenceTypeConstraint"/>
 ///
-/// TODO:
-/// 1.虽然从文本解析边界很复杂，但是否允许用户手动指定边界？
-/// 2.相等性测试未测试定义该类型的类 -- 可能需要记录定义该泛型变量的类型符号（类型or函数）
+/// TODO: 相等性测试未测试定义该类型的类 -- 可能需要记录定义该泛型变量的类型符号（类型or函数）
 /// </summary>
 public sealed class DSTypeParameter : DSTypeElement
 {

@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using Wjybxx.Commons.Poet;
-using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCatEditor.DataScript
 {
@@ -51,10 +50,13 @@ public static class DSKeywords
     /** 实例 -- 暂时要求严格的输入格式，以降低解析难度， */
     public const string INST = "inst";
 
+    /** 用于修饰字段，表示字段是只读的 */
+    public const string READONLY = "readonly";
+
     #region options-file
 
     /** 默认的包名 */
-    public const string PACKAGE = "package";
+    private const string PACKAGE = "package";
     /** 生成的java文件的包名 */
     public const string JAVA_PACKAGE = "java_package";
     /** csharp命名空间 */
