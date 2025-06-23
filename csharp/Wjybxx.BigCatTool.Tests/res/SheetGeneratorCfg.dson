@@ -1,0 +1,33 @@
+﻿// excel工具配置
+{
+    // class生成配置 -- ClassGeneratorCfg
+    classGenerator: {
+        // outPath: "", 
+        ns: "Wjybxx.BigCat.Table",
+        codecProxyNs: "Wjybxx.BigCat.Demo",
+        items: [
+            {
+                name: ItemCfg,
+                codecProxy: ItemCodecProxy,
+                fieldProxies: {
+                    level: ReadLevel,
+                    AfterDecode: AfterDecode
+                },
+                // 扩展字段
+                extensionFields: [
+                    {name: list1, type: "List<int32>", comment: "扩展字段测试"}
+                ]
+            }
+        ]
+    },
+    
+    // 常量类生成配置 -- ConstGeneratorCfg
+    constGenerator: {
+        // outPath: "",
+        ns: "Wjybxx.BigCat.Demo",
+        items: [
+            {clsName: SkillConst, sheetName: SkillParam}, 
+            {clsName: ItemConst, sheetName: Item, nameCol: enumName, valueCol: itemId, commentCol: desc}
+        ],
+    }
+}

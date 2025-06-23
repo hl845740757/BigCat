@@ -4,11 +4,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Core", "Wjybx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Tests", "Wjybxx.BigCat.Tests\Wjybxx.BigCat.Tests.csproj", "{5AA84DF5-40D3-4B15-91F1-E3D14FC892CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatEditor.Generator", "Wjybxx.BigCatEditor.Generator\Wjybxx.BigCatEditor.Generator.csproj", "{A4DCC292-C499-4E98-866E-E16B1CA7AC7C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatTool.Generator", "Wjybxx.BigCatTool.Generator\Wjybxx.BigCatTool.Generator.csproj", "{A4DCC292-C499-4E98-866E-E16B1CA7AC7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatEditor.Core", "Wjybxx.BigCatEditor.Core\Wjybxx.BigCatEditor.Core.csproj", "{0B362E38-EF59-4406-94C5-2A8C4C297FCA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatTool.Core", "Wjybxx.BigCatTool.Core\Wjybxx.BigCatTool.Core.csproj", "{0B362E38-EF59-4406-94C5-2A8C4C297FCA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatEditor.Tests", "Wjybxx.BigCatEditor.Tests\Wjybxx.BigCatEditor.Tests.csproj", "{6C637C0C-0062-40F6-8407-24692641946E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCatTool.Tests", "Wjybxx.BigCatTool.Tests\Wjybxx.BigCatTool.Tests.csproj", "{6C637C0C-0062-40F6-8407-24692641946E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Apt", "Wjybxx.BigCat.Apt\Wjybxx.BigCat.Apt.csproj", "{456126AA-8587-4A60-8A17-707CB8A99FA8}"
 EndProject

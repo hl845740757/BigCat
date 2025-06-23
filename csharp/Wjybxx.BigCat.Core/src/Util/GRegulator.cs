@@ -26,6 +26,7 @@ namespace Wjybxx.BigCat.Util
 /// 它使用Timer的调度算法，但Timer是回调式的，Regulator是轮询式的。
 ///
 /// 该实现是<see cref="Regulator"/>的特化实现，时间是double类型，用于游戏开发。
+/// (TODO 可以修改为结构体)
 /// </summary>
 public sealed class GRegulator
 {

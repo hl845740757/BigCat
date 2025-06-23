@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+
+    <PropertyGroup>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>annotations</Nullable>
+        <LangVersion>9</LangVersion> <!-- 为兼容unity我们使用c#9 -->
+        <RootNamespace>Wjybxx.BigCatTool</RootNamespace>
+        <PackageId>Wjybxx.BigCatTool.Core</PackageId>
+        <PackageVersion>1.0.0</PackageVersion>
+
+        <Title>Wjybxx.BigCatTool.Core</Title>
+        <Description>Editor工具公共包</Description>
+        <PackageTags>wjybxx;bigcat;</PackageTags>
+
+        <Authors>wjybxx(845740757@qq.com)</Authors>
+        <Owners>wjybxx(845740757@qq.com)</Owners>
+        <Copyright>Copyright 2023-2024 wjybxx(845740757@qq.com)</Copyright>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/hl845740757/BigCat</PackageProjectUrl>
+        <PackageReleaseNotes>https://github.com/hl845740757/BigCat/releases</PackageReleaseNotes>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <NeutralLanguage>zh-Hans</NeutralLanguage>
+
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <EmbedAllSources>true</EmbedAllSources> <!-- 嵌入源代码 -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TargetFrameworks>net6.0;net8.0;</TargetFrameworks>
+        
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <NoWarn>1701;1702;1591;8632;0419</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <NoWarn>1701;1702;1591;8632;0419</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.31.0" />
+        <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.5.0-rc1" />
+        <PackageReference Include="Wjybxx.Commons.Core" Version="1.5.0-rc1" />
+        <PackageReference Include="Wjybxx.Commons.Inject" Version="1.5.0-rc1" />
+        <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.3" />
+        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.3" />
+        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.5" />
+    </ItemGroup>
+
+    <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
+    <ItemGroup>
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Poet.dll" />
+        <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll" />
+        <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll" />
+    </ItemGroup>
+    <!-- 排除生成文件目录 -->
+    <ItemGroup>
+        <None Remove="Generated\**" />
+        <Compile Remove="Generated\**" />
+        <EmbeddedResource Remove="Generated\**" />
+    </ItemGroup>
+</Project>

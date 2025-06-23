@@ -1,0 +1,51 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System.IO;
+
+namespace Wjybxx.BigCatTool.Tests;
+
+internal static class TestUtil
+{
+    /// <summary>
+    /// 获取Res文件目录
+    /// </summary>
+    /// <returns></returns>
+    public static string GetResDirectory() {
+        string binPath = ToolUtil.GetDirectory("bin");
+        return new DirectoryInfo(binPath).Parent!.FullName + "/res";
+    }
+
+    /// <summary>
+    /// 获取Temp文件目录
+    /// </summary>
+    /// <returns></returns>
+    public static string GetTempDirectory() {
+        string binPath = ToolUtil.GetDirectory("bin");
+        return new DirectoryInfo(binPath).Parent!.FullName + "/temp";
+    }
+
+    /// <summary>
+    /// 获取生成文件目录
+    /// </summary>
+    /// <returns></returns>
+    public static string GetGeneratedDirectory() {
+        string binPath = ToolUtil.GetDirectory("bin");
+        return new DirectoryInfo(binPath).Parent!.FullName + "/src/Generated";
+    }
+}
