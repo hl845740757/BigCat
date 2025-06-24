@@ -52,7 +52,7 @@ public static class DSAnnotations
     ///
     /// 语法：<code>// @Options{isFlags: true, nonSerialized: true, immutable: true, ssti: true}</code>
     /// - isFlags 用于标识枚举类型是否是Flags类型
-    /// - nonSerialized 用于类型时表示目标类型不需要支持序列化；用于字段时表示单个字段无需支持序列化；
+    /// - nonSerialized 用于字段时表示单个字段无需支持序列化；
     /// - immutable 用于标识集合字段需要转不可变集合
     /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
     ///

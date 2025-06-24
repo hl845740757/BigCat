@@ -1,7 +1,7 @@
-using Wjybxx.BigCat.Fx;
+
 using Wjybxx.Commons.Attributes;
+using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
-using Wjybxx.EditorTest.Generated;
 
 namespace Wjybxx.BigCatTool.Tests.Generated
 {

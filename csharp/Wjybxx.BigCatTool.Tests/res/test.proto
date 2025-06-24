@@ -2,7 +2,7 @@ syntax = "proto3";
 option optimize_for = SPEED;
 
 import "common.proto";
-option csharp_namespace = "Wjybxx.EditorTest.Generated";
+option csharp_namespace = "Wjybxx.BigCatTool.Tests.Generated";
 
 
 //@RpcService{id: 1}

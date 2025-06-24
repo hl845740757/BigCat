@@ -3,7 +3,6 @@
     // class生成配置 -- ClassGeneratorCfg
     classGenerator: {
         // outPath: "", 
-        ns: "Wjybxx.BigCat.Table",
         codecProxyNs: "Wjybxx.BigCat.Demo",
         items: [
             {

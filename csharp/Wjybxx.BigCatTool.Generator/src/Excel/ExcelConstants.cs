@@ -164,8 +164,6 @@ public static class ExcelConstants
             : options.IndexOf('S', 0, spIndex) >= 0;
     }
 
-    private static readonly DsonString EMPTY = new DsonString(string.Empty);
-
     /// <summary>
     /// 解析表格选项
     /// 
@@ -183,7 +181,7 @@ public static class ExcelConstants
         if (string.IsNullOrWhiteSpace(options)) {
             DsonObject<string> result = new DsonObject<string>(1);
             if (appendMode) {
-                result.Add(KEY_MODE, EMPTY);
+                result.Add(KEY_MODE, DsonString.EMPTY);
             }
             return result;
         }
@@ -213,17 +211,7 @@ public static class ExcelConstants
     /// <param name="defValue">key不存在时的默认值</param>
     /// <returns></returns>
     public static bool GetBool(DsonObject<string> options, string key, bool defValue = false) {
-        if (!options.TryGetValue(key, out DsonValue value)) {
-            return defValue;
-        }
-        if (value.DsonType == DsonType.Bool) return value.AsBool();
-        if (value.IsNumber) {
-            int number = value.AsDsonNumber().IntValue;
-            if (number == 0) return false;
-            if (number == 1) return true;
-            throw new Exception("invalid number: " + number);
-        }
-        return defValue;
+        return ToolUtil.GetBool(options, key, defValue);
     }
 
     /// <summary>
@@ -234,10 +222,7 @@ public static class ExcelConstants
     /// <param name="defValue">key不存在时的默认值</param>
     /// <returns></returns>
     public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
-        if (!options.TryGetValue(key, out DsonValue value)) {
-            return defValue;
-        }
-        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
+        return ToolUtil.GetNumber(options, key, defValue);
     }
 
     /// <summary>
@@ -248,10 +233,7 @@ public static class ExcelConstants
     /// <param name="defValue"></param>
     /// <returns></returns>
     public static int GetInt(DsonObject<string> options, string key, int defValue = 0) {
-        if (!options.TryGetValue(key, out DsonValue value)) {
-            return defValue;
-        }
-        return value.IsNumber ? value.AsDsonNumber().IntValue : defValue;
+        return ToolUtil.GetInt(options, key, defValue);
     }
 
     #endregion

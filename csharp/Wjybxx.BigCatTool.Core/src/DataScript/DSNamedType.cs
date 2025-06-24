@@ -231,12 +231,15 @@ public sealed class DSNamedType : DSTypeElement
     /// <param name="flatInherit">是否拉取继承的字段，默认true</param>
     /// <returns></returns>
     public List<DSField> GetFields(bool flatInherit = true) {
-        if (!flatInherit) {
-            return EnclosedElements.Where(e => e.Kind == DSElementKind.Field)
-                .Cast<DSField>()
-                .ToList();
+        List<DSField> result = new List<DSField>(EnclosedElements.Count);
+        if (!flatInherit || BaseType == null) {
+            foreach (var element in EnclosedElements) {
+                if (element.Kind == DSElementKind.Field) {
+                    result.Add((DSField)element);
+                }
+            }
+            return result;
         }
-        List<DSField> result = new List<DSField>();
         foreach (DSNamedType typeElement in DSUtil.FlatInherit(this)) {
             foreach (DSElement element in typeElement.EnclosedElements) {
                 if (element.Kind == DSElementKind.Field) {

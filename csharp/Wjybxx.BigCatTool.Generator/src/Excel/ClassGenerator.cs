@@ -131,6 +131,8 @@ public class ClassGenerator : ISheetProcessor
         int serialVersion = DataScriptGenerator.GetHashCode(namedType.GetFields());
         typeBuilder.AddAttribute(AttributeSpec.NewBuilder(TYPE_NAME_SERIAL_VERSION)
             .Constructor(CodeBlock.Of(serialVersion.ToString())).Build());
+        // 还是需要标记可序列化，生成Codec
+        typeBuilder.AddAttribute(ToolUtil.ATTRIBUTE_SERIALIZABLE);
 
         typeBuilder.AddSpec(MacroSpec.Get("nullable", "disable"));
         typeBuilder.AddSpec(new CodeBlockSpec(CodeBlock.Of("ReSharper disable InconsistentNaming"), CodeBlockSpec.Kind.Comment));
@@ -145,7 +147,7 @@ public class ClassGenerator : ISheetProcessor
 
         // 处理继承问题
         if (namedType.BaseType != null) {
-            ClassName baseTypeName = ClassName.Get(GetNamespace(namedType.BaseType), namedType.BaseType.SimpleName);
+            TypeName baseTypeName = GetTypeName(namedType.BaseType);
             typeBuilder.AddBaseClass(baseTypeName);
             constructorBuilder.ConstructorInvoker(CodeBlock.Of("base(reader)"));
             // 方法修饰符需要调整
@@ -217,11 +219,6 @@ public class ClassGenerator : ISheetProcessor
                 }
             }
         }
-        // 处理afterDecode钩子方法 -- 如果超类也定义了AfterDecode，这里可能有点问题，我们暂不处理
-        if (classCfg != null && classCfg.fieldProxies.TryGetValue("AfterDecode", out string? methodName)) {
-            constructorBuilder.codeBuilder.AddStatement("$T.$L(this, reader.Options)", codecProxy, methodName);
-        }
-
         // 处理扩展字段，扩展字段不包含
         if (classCfg != null && classCfg.extensionFields.Count > 0) {
             foreach (FieldCfg fieldCfg in classCfg.extensionFields) {
@@ -235,6 +232,14 @@ public class ClassGenerator : ISheetProcessor
             }
         }
         typeBuilder.AddSpec(constructorBuilder.Build(true));
+        // 处理afterDecode钩子方法 -- 由Codec在反序列化完成之后调用
+        if (classCfg != null && classCfg.fieldProxies.TryGetValue("AfterDecode", out string? methodName)) {
+            typeBuilder.AddSpec(MethodSpec.NewMethodBuilder("AfterDecode")
+                .AddModifiers(Modifiers.Public | Modifiers.Virtual)
+                .AddParameter(ClassName.Get(typeof(ConverterOptions)), "options")
+                .Code(CodeBlock.Of("$T.$L(this, options)", codecProxy, methodName).WithExpressionStyle())
+                .Build());
+        }
         typeBuilder.AddSpec(copyMethodBuilder.Build(true));
         // TODO 增加ToString -- 需要知道是否是普通表
     }
@@ -318,7 +323,7 @@ public class ClassGenerator : ISheetProcessor
             DSKeywords.TYPE_DATETIME => ToolUtil.TYPE_NAME_DATETIME,
             DSKeywords.TYPE_TIMESTAMP => ToolUtil.TYPE_NAME_TIMESTAMP,
             DSKeywords.TYPE_PAIR => ToolUtil.TYPE_NAME_PAIR,
-            //
+            // 集合全部转不可变
             DSKeywords.TYPE_LIST => ToolUtil.TYPE_NAME_IMMUTABLE_LIST,
             DSKeywords.TYPE_HASH_SET => ToolUtil.TYPE_NAME_IMMUTABLE_SET,
             DSKeywords.TYPE_MAP => ToolUtil.TYPE_NAME_IMMUTABLE_DICTIONARY,

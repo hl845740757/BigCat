@@ -25,6 +25,8 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
+using Wjybxx.Dson;
+using Wjybxx.Dson.Codec.Attributes;
 using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCatTool
@@ -34,9 +36,15 @@ namespace Wjybxx.BigCatTool
 /// </summary>
 public class ToolUtil
 {
-    public static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
-
     #region 字符串
+
+    public static string FirstCharToUpperCase(string str) {
+        return ObjectUtil.FirstCharToUpperCase(str);
+    }
+
+    public static string FirstCharToLowerCase(string str) {
+        return ObjectUtil.FirstCharToLowerCase(str);
+    }
 
     /// <summary>
     /// 索引首个空白字符
@@ -255,10 +263,10 @@ public class ToolUtil
 
     #region 代码生成
 
+    public static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
     private static readonly ClassName TYPE_NAME_GENERATED = ClassName.Get("Wjybxx.Commons.Attributes", "GeneratedAttribute");
     private static readonly ClassName TYPE_NAME_SOURCE_FILE_REF = ClassName.Get("Wjybxx.Commons.Attributes", "SourceFileRefAttribute");
 
-    public static readonly ClassName TYPE_NAME_FLAGS = ClassName.Get(typeof(FlagsAttribute));
     /// <summary>
     /// CodeWriter池
     /// </summary>
@@ -371,7 +379,67 @@ public class ToolUtil
 
     #endregion
 
+    #region 注解处理
+
+    /// <summary>
+    /// 获取bool类型属性
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static bool GetBool(DsonObject<string> options, string key, bool defValue = false) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        if (value.DsonType == DsonType.Bool) return value.AsBool();
+        if (value.IsNumber) {
+            int number = value.AsDsonNumber().IntValue;
+            if (number == 0) return false;
+            if (number == 1) return true;
+            throw new Exception("invalid number: " + number);
+        }
+        return defValue;
+    }
+
+    /// <summary>
+    /// 获取number类型属性值
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
+    }
+
+    /// <summary>
+    /// 获取int类型属性值
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="key"></param>
+    /// <param name="defValue"></param>
+    /// <returns></returns>
+    public static int GetInt(DsonObject<string> options, string key, int defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().IntValue : defValue;
+    }
+
+    #endregion
+
     #region Dson-Cdoec
+
+    /** 注解：Flags枚举 */
+    public static readonly AttributeSpec ATTRIBUTE_FLAGS = AttributeSpec.NewBuilder(typeof(FlagsAttribute)).Build();
+    /** 注解：可序列化 */
+    public static readonly AttributeSpec ATTRIBUTE_SERIALIZABLE = AttributeSpec.NewBuilder(typeof(DsonSerializableAttribute)).Build();
+    /** 注解：字段不需要序列化 */
+    public static readonly AttributeSpec ATTRIBUTE_NON_SERIALIZED = AttributeSpec.NewBuilder(typeof(NonSerializedAttribute)).Build();
 
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
     public static readonly ArrayTypeName TYPE_NAME_BYTES = ArrayTypeName.BYTE_ARRAY;
@@ -390,9 +458,8 @@ public class ToolUtil
     public static readonly ClassName TYPE_NAME_LIST = ClassName.Get(typeof(List<>));
     public static readonly ClassName TYPE_NAME_HASHSET = ClassName.Get(typeof(HashSet<>));
     public static readonly ClassName TYPE_NAME_DICTIONARY = ClassName.Get(typeof(Dictionary<,>));
-
-    public static readonly ClassName TYPE_NAME_LINKED_DICTIONARY = ClassName.Get(typeof(LinkedDictionary<,>));
     public static readonly ClassName TYPE_NAME_LINKED_HASHSET = ClassName.Get(typeof(LinkedHashSet<>));
+    public static readonly ClassName TYPE_NAME_LINKED_DICTIONARY = ClassName.Get(typeof(LinkedDictionary<,>));
     // 不可变集合
     public static readonly ClassName TYPE_NAME_IMMUTABLE_LIST = ClassName.Get(typeof(ImmutableList<>));
     public static readonly ClassName TYPE_NAME_IMMUTABLE_SET = ClassName.Get(typeof(ImmutableSet<>));

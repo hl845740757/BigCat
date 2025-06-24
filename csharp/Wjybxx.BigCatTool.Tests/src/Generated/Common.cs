@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Wjybxx.EditorTest.Generated {
+namespace Wjybxx.BigCatTool.Tests.Generated {
 
   /// <summary>Holder for reflection information generated from common.proto</summary>
   public static partial class CommonReflection {
@@ -26,14 +26,14 @@ namespace Wjybxx.EditorTest.Generated {
           string.Concat(
             "Cgxjb21tb24ucHJvdG8iGQoIQm94SW50MzISDQoFdmFsdWUYASABKAUiGQoI",
             "Qm94SW50NjQSDQoFdmFsdWUYASABKAMiGgoJQm94U3RyaW5nEg0KBXZhbHVl",
-            "GAEgASgJQiBIAaoCG1dqeWJ4eC5FZGl0b3JUZXN0LkdlbmVyYXRlZGIGcHJv",
-            "dG8z"));
+            "GAEgASgJQiZIAaoCIVdqeWJ4eC5CaWdDYXRUb29sLlRlc3RzLkdlbmVyYXRl",
+            "ZGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.BoxInt32), global::Wjybxx.EditorTest.Generated.BoxInt32.Parser, new[]{ "Value" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.BoxInt64), global::Wjybxx.EditorTest.Generated.BoxInt64.Parser, new[]{ "Value" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.BoxString), global::Wjybxx.EditorTest.Generated.BoxString.Parser, new[]{ "Value" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32), global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32.Parser, new[]{ "Value" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.BoxInt64), global::Wjybxx.BigCatTool.Tests.Generated.BoxInt64.Parser, new[]{ "Value" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.BoxString), global::Wjybxx.BigCatTool.Tests.Generated.BoxString.Parser, new[]{ "Value" }, null, null, null, null)
           }));
     }
     #endregion
@@ -54,7 +54,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.CommonReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.CommonReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -243,7 +243,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.CommonReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.CommonReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -432,7 +432,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.CommonReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.CommonReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

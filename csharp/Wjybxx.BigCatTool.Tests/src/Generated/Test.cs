@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Wjybxx.EditorTest.Generated {
+namespace Wjybxx.BigCatTool.Tests.Generated {
 
   /// <summary>Holder for reflection information generated from test.proto</summary>
   public static partial class TestReflection {
@@ -51,19 +51,19 @@ namespace Wjybxx.EditorTest.Generated {
             "SUZJRUQQABIQCgxFTkFBX1NUQVJURUQQARIRCg1FTkFBX0ZJTklTSEVEEAIq",
             "cwoQRW51bVdpdGhSZXNlcnZlZBIUChBFQUFSX1VOU1BFQ0lGSUVEEAASEAoM",
             "RUFBUl9TVEFSVEVEEAESEAoMRUFBUl9SVU5OSU5HEAISEQoNRUFBUl9GSU5J",
-            "U0hFRBADIgQICRAJIgQICxAUKgJWQSoCVkJCIEgBqgIbV2p5Ynh4LkVkaXRv",
-            "clRlc3QuR2VuZXJhdGVkYgZwcm90bzM="));
+            "U0hFRBADIgQICRAJIgQICxAUKgJWQSoCVkJCJkgBqgIhV2p5Ynh4LkJpZ0Nh",
+            "dFRvb2wuVGVzdHMuR2VuZXJhdGVkYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Wjybxx.EditorTest.Generated.CommonReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Wjybxx.EditorTest.Generated.Corpus), typeof(global::Wjybxx.EditorTest.Generated.EnumAllowingAlias), typeof(global::Wjybxx.EditorTest.Generated.EnumNotAllowingAlias), typeof(global::Wjybxx.EditorTest.Generated.EnumWithReserved), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.SearchRequest), global::Wjybxx.EditorTest.Generated.SearchRequest.Parser, new[]{ "Query", "PageNumber", "ResultsPerPage", "Corpus", "Tag", "Dic" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.SearchResponse), global::Wjybxx.EditorTest.Generated.SearchResponse.Parser, new[]{ "Results" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.Result), global::Wjybxx.EditorTest.Generated.Result.Parser, new[]{ "Url", "Title", "Snippets" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.Outer), global::Wjybxx.EditorTest.Generated.Outer.Parser, new[]{ "Aa", "Bb", "Pairs", "Data" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA), global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA.Parser, null, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA.Types.Inner), global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA.Types.Inner.Parser, new[]{ "Ival", "Booly" }, null, null, null, null)}),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB), global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB.Parser, null, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB.Types.Inner), global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB.Types.Inner.Parser, new[]{ "Ival", "Booly" }, null, null, null, null)}),
+          new pbr::FileDescriptor[] { global::Wjybxx.BigCatTool.Tests.Generated.CommonReflection.Descriptor, },
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Wjybxx.BigCatTool.Tests.Generated.Corpus), typeof(global::Wjybxx.BigCatTool.Tests.Generated.EnumAllowingAlias), typeof(global::Wjybxx.BigCatTool.Tests.Generated.EnumNotAllowingAlias), typeof(global::Wjybxx.BigCatTool.Tests.Generated.EnumWithReserved), }, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.SearchRequest), global::Wjybxx.BigCatTool.Tests.Generated.SearchRequest.Parser, new[]{ "Query", "PageNumber", "ResultsPerPage", "Corpus", "Tag", "Dic" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.SearchResponse), global::Wjybxx.BigCatTool.Tests.Generated.SearchResponse.Parser, new[]{ "Results" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.Result), global::Wjybxx.BigCatTool.Tests.Generated.Result.Parser, new[]{ "Url", "Title", "Snippets" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.Outer), global::Wjybxx.BigCatTool.Tests.Generated.Outer.Parser, new[]{ "Aa", "Bb", "Pairs", "Data" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA), global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA.Parser, null, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA.Types.Inner), global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA.Types.Inner.Parser, new[]{ "Ival", "Booly" }, null, null, null, null)}),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB), global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB.Parser, null, null, null, null, new pbr::GeneratedClrTypeInfo[] { new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB.Types.Inner), global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB.Types.Inner.Parser, new[]{ "Ival", "Booly" }, null, null, null, null)}),
             null, }),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.MessageWithReserved), global::Wjybxx.EditorTest.Generated.MessageWithReserved.Parser, new[]{ "Query", "PageNumber" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.EditorTest.Generated.MessageWithOneof), global::Wjybxx.EditorTest.Generated.MessageWithOneof.Parser, new[]{ "Query", "PageNumber" }, new[]{ "Data" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.MessageWithReserved), global::Wjybxx.BigCatTool.Tests.Generated.MessageWithReserved.Parser, new[]{ "Query", "PageNumber" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Wjybxx.BigCatTool.Tests.Generated.MessageWithOneof), global::Wjybxx.BigCatTool.Tests.Generated.MessageWithOneof.Parser, new[]{ "Query", "PageNumber" }, new[]{ "Data" }, null, null, null)
           }));
     }
     #endregion
@@ -128,7 +128,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.TestReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.TestReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -201,10 +201,10 @@ namespace Wjybxx.EditorTest.Generated {
 
     /// <summary>Field number for the "corpus" field.</summary>
     public const int CorpusFieldNumber = 4;
-    private global::Wjybxx.EditorTest.Generated.Corpus corpus_ = global::Wjybxx.EditorTest.Generated.Corpus.Unspecified;
+    private global::Wjybxx.BigCatTool.Tests.Generated.Corpus corpus_ = global::Wjybxx.BigCatTool.Tests.Generated.Corpus.Unspecified;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Wjybxx.EditorTest.Generated.Corpus Corpus {
+    public global::Wjybxx.BigCatTool.Tests.Generated.Corpus Corpus {
       get { return corpus_; }
       set {
         corpus_ = value;
@@ -213,10 +213,10 @@ namespace Wjybxx.EditorTest.Generated {
 
     /// <summary>Field number for the "tag" field.</summary>
     public const int TagFieldNumber = 5;
-    private global::Wjybxx.EditorTest.Generated.BoxInt32 tag_;
+    private global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32 tag_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Wjybxx.EditorTest.Generated.BoxInt32 Tag {
+    public global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32 Tag {
       get { return tag_; }
       set {
         tag_ = value;
@@ -225,12 +225,12 @@ namespace Wjybxx.EditorTest.Generated {
 
     /// <summary>Field number for the "dic" field.</summary>
     public const int DicFieldNumber = 6;
-    private static readonly pbc::MapField<int, global::Wjybxx.EditorTest.Generated.BoxInt32>.Codec _map_dic_codec
-        = new pbc::MapField<int, global::Wjybxx.EditorTest.Generated.BoxInt32>.Codec(pb::FieldCodec.ForInt32(8, 0), pb::FieldCodec.ForMessage(18, global::Wjybxx.EditorTest.Generated.BoxInt32.Parser), 50);
-    private readonly pbc::MapField<int, global::Wjybxx.EditorTest.Generated.BoxInt32> dic_ = new pbc::MapField<int, global::Wjybxx.EditorTest.Generated.BoxInt32>();
+    private static readonly pbc::MapField<int, global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32>.Codec _map_dic_codec
+        = new pbc::MapField<int, global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32>.Codec(pb::FieldCodec.ForInt32(8, 0), pb::FieldCodec.ForMessage(18, global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32.Parser), 50);
+    private readonly pbc::MapField<int, global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32> dic_ = new pbc::MapField<int, global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::MapField<int, global::Wjybxx.EditorTest.Generated.BoxInt32> Dic {
+    public pbc::MapField<int, global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32> Dic {
       get { return dic_; }
     }
 
@@ -265,7 +265,7 @@ namespace Wjybxx.EditorTest.Generated {
       if (Query.Length != 0) hash ^= Query.GetHashCode();
       if (PageNumber != 0) hash ^= PageNumber.GetHashCode();
       if (ResultsPerPage != 0) hash ^= ResultsPerPage.GetHashCode();
-      if (Corpus != global::Wjybxx.EditorTest.Generated.Corpus.Unspecified) hash ^= Corpus.GetHashCode();
+      if (Corpus != global::Wjybxx.BigCatTool.Tests.Generated.Corpus.Unspecified) hash ^= Corpus.GetHashCode();
       if (tag_ != null) hash ^= Tag.GetHashCode();
       hash ^= Dic.GetHashCode();
       if (_unknownFields != null) {
@@ -298,7 +298,7 @@ namespace Wjybxx.EditorTest.Generated {
         output.WriteRawTag(24);
         output.WriteInt32(ResultsPerPage);
       }
-      if (Corpus != global::Wjybxx.EditorTest.Generated.Corpus.Unspecified) {
+      if (Corpus != global::Wjybxx.BigCatTool.Tests.Generated.Corpus.Unspecified) {
         output.WriteRawTag(32);
         output.WriteEnum((int) Corpus);
       }
@@ -329,7 +329,7 @@ namespace Wjybxx.EditorTest.Generated {
         output.WriteRawTag(24);
         output.WriteInt32(ResultsPerPage);
       }
-      if (Corpus != global::Wjybxx.EditorTest.Generated.Corpus.Unspecified) {
+      if (Corpus != global::Wjybxx.BigCatTool.Tests.Generated.Corpus.Unspecified) {
         output.WriteRawTag(32);
         output.WriteEnum((int) Corpus);
       }
@@ -357,7 +357,7 @@ namespace Wjybxx.EditorTest.Generated {
       if (ResultsPerPage != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(ResultsPerPage);
       }
-      if (Corpus != global::Wjybxx.EditorTest.Generated.Corpus.Unspecified) {
+      if (Corpus != global::Wjybxx.BigCatTool.Tests.Generated.Corpus.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Corpus);
       }
       if (tag_ != null) {
@@ -385,12 +385,12 @@ namespace Wjybxx.EditorTest.Generated {
       if (other.ResultsPerPage != 0) {
         ResultsPerPage = other.ResultsPerPage;
       }
-      if (other.Corpus != global::Wjybxx.EditorTest.Generated.Corpus.Unspecified) {
+      if (other.Corpus != global::Wjybxx.BigCatTool.Tests.Generated.Corpus.Unspecified) {
         Corpus = other.Corpus;
       }
       if (other.tag_ != null) {
         if (tag_ == null) {
-          Tag = new global::Wjybxx.EditorTest.Generated.BoxInt32();
+          Tag = new global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32();
         }
         Tag.MergeFrom(other.Tag);
       }
@@ -423,12 +423,12 @@ namespace Wjybxx.EditorTest.Generated {
             break;
           }
           case 32: {
-            Corpus = (global::Wjybxx.EditorTest.Generated.Corpus) input.ReadEnum();
+            Corpus = (global::Wjybxx.BigCatTool.Tests.Generated.Corpus) input.ReadEnum();
             break;
           }
           case 42: {
             if (tag_ == null) {
-              Tag = new global::Wjybxx.EditorTest.Generated.BoxInt32();
+              Tag = new global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32();
             }
             input.ReadMessage(Tag);
             break;
@@ -465,12 +465,12 @@ namespace Wjybxx.EditorTest.Generated {
             break;
           }
           case 32: {
-            Corpus = (global::Wjybxx.EditorTest.Generated.Corpus) input.ReadEnum();
+            Corpus = (global::Wjybxx.BigCatTool.Tests.Generated.Corpus) input.ReadEnum();
             break;
           }
           case 42: {
             if (tag_ == null) {
-              Tag = new global::Wjybxx.EditorTest.Generated.BoxInt32();
+              Tag = new global::Wjybxx.BigCatTool.Tests.Generated.BoxInt32();
             }
             input.ReadMessage(Tag);
             break;
@@ -500,7 +500,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.TestReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.TestReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -532,12 +532,12 @@ namespace Wjybxx.EditorTest.Generated {
 
     /// <summary>Field number for the "results" field.</summary>
     public const int ResultsFieldNumber = 1;
-    private static readonly pb::FieldCodec<global::Wjybxx.EditorTest.Generated.Result> _repeated_results_codec
-        = pb::FieldCodec.ForMessage(10, global::Wjybxx.EditorTest.Generated.Result.Parser);
-    private readonly pbc::RepeatedField<global::Wjybxx.EditorTest.Generated.Result> results_ = new pbc::RepeatedField<global::Wjybxx.EditorTest.Generated.Result>();
+    private static readonly pb::FieldCodec<global::Wjybxx.BigCatTool.Tests.Generated.Result> _repeated_results_codec
+        = pb::FieldCodec.ForMessage(10, global::Wjybxx.BigCatTool.Tests.Generated.Result.Parser);
+    private readonly pbc::RepeatedField<global::Wjybxx.BigCatTool.Tests.Generated.Result> results_ = new pbc::RepeatedField<global::Wjybxx.BigCatTool.Tests.Generated.Result>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<global::Wjybxx.EditorTest.Generated.Result> Results {
+    public pbc::RepeatedField<global::Wjybxx.BigCatTool.Tests.Generated.Result> Results {
       get { return results_; }
     }
 
@@ -678,7 +678,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.TestReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.TestReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -933,7 +933,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.TestReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.TestReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -968,10 +968,10 @@ namespace Wjybxx.EditorTest.Generated {
 
     /// <summary>Field number for the "aa" field.</summary>
     public const int AaFieldNumber = 1;
-    private global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA aa_;
+    private global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA aa_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA Aa {
+    public global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA Aa {
       get { return aa_; }
       set {
         aa_ = value;
@@ -980,10 +980,10 @@ namespace Wjybxx.EditorTest.Generated {
 
     /// <summary>Field number for the "bb" field.</summary>
     public const int BbFieldNumber = 2;
-    private global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB bb_;
+    private global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB bb_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB Bb {
+    public global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB Bb {
       get { return bb_; }
       set {
         bb_ = value;
@@ -1131,13 +1131,13 @@ namespace Wjybxx.EditorTest.Generated {
       }
       if (other.aa_ != null) {
         if (aa_ == null) {
-          Aa = new global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA();
+          Aa = new global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA();
         }
         Aa.MergeFrom(other.Aa);
       }
       if (other.bb_ != null) {
         if (bb_ == null) {
-          Bb = new global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB();
+          Bb = new global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB();
         }
         Bb.MergeFrom(other.Bb);
       }
@@ -1162,14 +1162,14 @@ namespace Wjybxx.EditorTest.Generated {
             break;
           case 10: {
             if (aa_ == null) {
-              Aa = new global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA();
+              Aa = new global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA();
             }
             input.ReadMessage(Aa);
             break;
           }
           case 18: {
             if (bb_ == null) {
-              Bb = new global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB();
+              Bb = new global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB();
             }
             input.ReadMessage(Bb);
             break;
@@ -1199,14 +1199,14 @@ namespace Wjybxx.EditorTest.Generated {
             break;
           case 10: {
             if (aa_ == null) {
-              Aa = new global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA();
+              Aa = new global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA();
             }
             input.ReadMessage(Aa);
             break;
           }
           case 18: {
             if (bb_ == null) {
-              Bb = new global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB();
+              Bb = new global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB();
             }
             input.ReadMessage(Bb);
             break;
@@ -1246,7 +1246,7 @@ namespace Wjybxx.EditorTest.Generated {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Wjybxx.EditorTest.Generated.Outer.Descriptor.NestedTypes[0]; }
+          get { return global::Wjybxx.BigCatTool.Tests.Generated.Outer.Descriptor.NestedTypes[0]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1404,7 +1404,7 @@ namespace Wjybxx.EditorTest.Generated {
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
             [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
             public static pbr::MessageDescriptor Descriptor {
-              get { return global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleAA.Descriptor.NestedTypes[0]; }
+              get { return global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleAA.Descriptor.NestedTypes[0]; }
             }
 
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1638,7 +1638,7 @@ namespace Wjybxx.EditorTest.Generated {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
         [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
         public static pbr::MessageDescriptor Descriptor {
-          get { return global::Wjybxx.EditorTest.Generated.Outer.Descriptor.NestedTypes[1]; }
+          get { return global::Wjybxx.BigCatTool.Tests.Generated.Outer.Descriptor.NestedTypes[1]; }
         }
 
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1796,7 +1796,7 @@ namespace Wjybxx.EditorTest.Generated {
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
             [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
             public static pbr::MessageDescriptor Descriptor {
-              get { return global::Wjybxx.EditorTest.Generated.Outer.Types.MiddleBB.Descriptor.NestedTypes[0]; }
+              get { return global::Wjybxx.BigCatTool.Tests.Generated.Outer.Types.MiddleBB.Descriptor.NestedTypes[0]; }
             }
 
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2032,7 +2032,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.TestReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.TestReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2258,7 +2258,7 @@ namespace Wjybxx.EditorTest.Generated {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Wjybxx.EditorTest.Generated.TestReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Wjybxx.BigCatTool.Tests.Generated.TestReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

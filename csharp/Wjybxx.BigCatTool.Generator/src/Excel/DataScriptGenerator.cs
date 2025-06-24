@@ -175,8 +175,6 @@ public class DataScriptGenerator : ISheetProcessor
         lines.Add("}");
     }
 
-    private static string ToString(bool value) => value ? "true" : "false";
-
     private static void GetOptions(Header header, out bool isIntern, out bool isReadonly) {
         if (!header.options.Contains(KEY_I18N) && !header.options.Contains(KEY_INTERN)
                                                && !header.options.Contains(KEY_IS_READONLY)) {
