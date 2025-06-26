@@ -23,7 +23,7 @@ namespace Wjybxx.BigCat.Util
 /// <summary>
 /// 该注解用于标注类型的序列化版本信息
 /// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
 public class SerialVersionAttribute : Attribute
 {
     /// <summary>

@@ -17,16 +17,15 @@
 #endregion
 
 using System.Collections.Generic;
-using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.BigCatTool.Generator.Excel
+namespace Wjybxx.BigCatTool.DataScript
 {
 /// <summary>
-///
+/// 代码生成器配置
 /// </summary>
 [DsonSerializable]
-public class ClassGeneratorCfg
+public class CodeGeneratorCfg
 {
 #nullable disable
     /// <summary>
@@ -39,60 +38,61 @@ public class ClassGeneratorCfg
     public string codecProxyNs;
     /// <summary>
     /// 所有的配置
+    /// (这个数据类通常很小，暂不建立缓存)
     /// </summary>
-    public List<ClassCfg> items = new List<ClassCfg>();
+    public List<ClassCodecCfg> codecCfgs = new List<ClassCodecCfg>();
 
     /// <summary>
     /// 单个类型的配置
     /// </summary>
     [DsonSerializable]
-    public class ClassCfg
+    public class ClassCodecCfg
     {
         /// <summary>
         /// 类型名
+        ///
+        /// 如果是内部类，需要使用A.B.C格式声明
         /// </summary>
         public string name;
         /// <summary>
-        /// 该类型关联的编解码代理类的全限定名
+        /// 该类型关联的编解码代理类
         /// 
+        /// 注意：如果原始类型是泛型类，代理类也需要是泛型类。
         /// 示例：<code>ItemCodecProxy</code>
         /// </summary>
-        public string codecProxy;
+        public string proxy;
         /// <summary>
-        /// 解码代理
-        /// key为字段名，value为Proxy类中的方法名；AfterDecode为解码后的钩子
-        /// 
-        /// <code>type: ReadType</code>
-        /// <code>AfterDecode: AfterDecode</code>
-        /// </summary>
-        public Dictionary<string, string> fieldProxies = new Dictionary<string, string>();
-        /// <summary>
-        /// 扩展字段
+        /// 字段读写代理
         ///
-        /// 扩展字段都是缓存字段，用户需要在<code>AfterDecode</code>钩子方法中维护它们。
-        /// (因此这些字段都是包含pubic-setter的)
+        /// (这里数据量也很少，暂不建立缓存)
+        /// <code></code>
         /// </summary>
-        public List<FieldCfg> extensionFields = new List<FieldCfg>();
+        public List<FieldCodecCfg> fieldProxies = new();
+        /// <summary>
+        /// 对象解码钩子 -- 详细可阅读<see cref="DsonSerializableAttribute"/>
+        ///
+        /// 目前支持：
+        /// 1. BeforeEncode 解码前的钩子
+        /// 2. AfterDecode 解码后的钩子
+        /// </summary>
+        public Dictionary<string, string> hooks = new();
     }
 
-    /// <summary>
-    /// 扩展字段
-    /// </summary>
     [DsonSerializable]
-    public class FieldCfg
+    public class FieldCodecCfg
     {
         /// <summary>
         /// 字段名
         /// </summary>
         public string name;
         /// <summary>
-        /// 字段类型 -- 必须是Class可以访问到的类型符号
+        /// 读代理
         /// </summary>
-        public string type;
+        public string? readProxy;
         /// <summary>
-        /// 字段注释
+        /// 写代理
         /// </summary>
-        public string comment;
+        public string? writeProxy;
     }
 }
 }

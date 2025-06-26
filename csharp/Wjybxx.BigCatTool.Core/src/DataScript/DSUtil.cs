@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
@@ -71,7 +70,19 @@ public static class DSUtil
     }
 
     /// <summary>
-    /// 将继承打平
+    /// 获取类型的根类型
+    /// </summary>
+    /// <param name="namedType"></param>
+    /// <returns></returns>
+    public static DSNamedType GetRootType(DSNamedType namedType) {
+        while (namedType.BaseType != null) {
+            namedType = namedType.BaseType;
+        }
+        return namedType;
+    }
+
+    /// <summary>
+    /// 将继承打平(不会访问到object -- 这不是编程语言)
     /// </summary>
     /// <param name="namedType">当前类型</param>
     /// <param name="reverse">超类是否在前</param>
@@ -159,32 +170,13 @@ public static class DSUtil
     }
 
     /// <summary>
-    /// 获取第一级名字
-    ///
-    /// <code>A.B => A</code>
-    /// <code>A.B.C => A</code>>
+    /// 删除fullname中的文件名
     /// </summary>
-    public static string GetFirstName(string fullName) {
+    /// <param name="fullName"></param>
+    /// <returns></returns>
+    public static string RemoveFileName(string fullName) {
         int idx = fullName.IndexOf('.');
-        return idx < 0 ? fullName : fullName.Substring2(0, idx);
-    }
-
-    /// <summary>
-    /// 获取第二级名字
-    ///
-    /// <code>A.B => B</code>
-    /// <code>A.B.C => B</code>
-    /// </summary>
-    public static string GetSecondName(string fullName) {
-        int start = fullName.IndexOf('.');
-        int end = fullName.LastIndexOf('.');
-        if (start < 0) {
-            throw new ArgumentException("name is invalid: " + fullName);
-        }
-        if (start < end) { // A.B.C
-            return fullName.Substring2(start + 1, end);
-        }
-        return fullName.Substring2(start + 1); // A.B
+        return fullName.Substring(idx + 1);
     }
 
     /// <summary>
@@ -209,6 +201,50 @@ public static class DSUtil
         finally {
             ConcurrentObjectPool.SharedStringBuilderPool.Release(sb);
         }
+    }
+
+    /// <summary>
+    /// 是否是数字类型
+    ///
+    /// 数字类型支持Dson文本支持的所有格式，此外还支持Flags格式<code>A|B|C</code>；
+    /// 如果其它类型也期望使用支持Flags类型，需要自定义<see cref="DSTypeHandler"/>。
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsNumberType(string type) {
+        return type == DSKeywords.TYPE_INT32
+               || type == DSKeywords.TYPE_INT64
+               || type == DSKeywords.TYPE_FLOAT
+               || type == DSKeywords.TYPE_DOUBLE;
+    }
+
+    /// <summary>
+    /// 是否是bool类型
+    ///
+    /// bool类型支持4个值<code>true, false, 0, 1</code>
+    /// </summary>
+    /// <param name="typed"></param>
+    /// <returns></returns>
+    public static bool IsBoolType(string typed) {
+        return typed == DSKeywords.TYPE_BOOL;
+    }
+
+    /// <summary>
+    /// 是否是string类型
+    /// </summary>
+    /// <param name="typed"></param>
+    /// <returns></returns>
+    public static bool IsStringType(string typed) {
+        return typed == DSKeywords.TYPE_STRING;
+    }
+
+    /// <summary>
+    /// 是否是可空值类型
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public static bool IsNullableType(string type) {
+        return type == DSKeywords.TYPE_NULLABLE || type.StartsWith(DSKeywords.TYPE_NULLABLE + "<");
     }
 }
 }

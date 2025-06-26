@@ -60,9 +60,9 @@ public sealed class DSRepository
     /// </summary>
     private readonly LinkedDictionary<IndexKey, DSElement> indexedElementMap = new();
     /// <summary>
-    /// 类型解析缓存，用于避免泛型类重复构造
+    /// 泛型解析缓存，用于避免泛型类重复构造
     /// </summary>
-    private readonly Dictionary<ClassName, DSNamedType> resolveCache = new();
+    private readonly Dictionary<ClassName, DSNamedType> genericTypeCache = new();
 
     public DSRepository() {
         // 用户可在build前修改内建类型数据
@@ -251,11 +251,12 @@ public sealed class DSRepository
         }
         // 避免每个符号都创建一个Type
         ClassName className = MakeGenericClassName(namedType.TypeName, typeArguments);
-        if (resolveCache.TryGetValue(className, out DSNamedType result)) {
+        if (genericTypeCache.TryGetValue(className, out DSNamedType result)) {
+            Debug.Assert(!result.IsGenericTypeDefinition, "result is genericTypeDefinition");
             return result;
         }
         result = new DSNamedType(namedType, className, typeArguments);
-        resolveCache.Add(className, result);
+        genericTypeCache.Add(className, result);
 
         // 克隆字段
         foreach (DSField field in namedType.GetFields(false)) {
@@ -449,7 +450,6 @@ public sealed class DSRepository
             dsFile.BuildCache();
             foreach (DSNamedType namedType in dsFile.TypeMap.Values) {
                 indexedElementMap.Add(new IndexKey(isInst: false, namedType.FullName), namedType);
-                resolveCache.Add(namedType.TypeName, namedType);
             }
             foreach (DSInst inst in dsFile.InstMap.Values) {
                 string fullName = dsFile.SimpleName + "." + inst.SimpleName;

@@ -55,12 +55,12 @@ public static class DSKeywords
 
     #region options-file
 
-    /** 默认的包名 */
-    private const string PACKAGE = "package";
-    /** 生成的java文件的包名 */
+    /** 生成的java文件的包名 -- value为字符串，需要加双引号 */
     public const string JAVA_PACKAGE = "java_package";
-    /** csharp命名空间 */
+    /** csharp命名空间 -- value为字符串，需要加双引号 */
     public const string CSHARP_NAMESPACE = "csharp_namespace";
+    /** 用于指示文件内的数据结构都是数据类 -- value为bool类型，true或false */
+    public const string DATA_CLASS = "data_class";
 
     #endregion
 
@@ -99,7 +99,7 @@ public static class DSKeywords
     public const string TYPE_BOOL = "bool";
     public const string TYPE_STRING = "string";
     public const string TYPE_BYTES = "bytes";
-    // 内建结构
+    // 内建结构 -- 除了拆分配置Map时，其它时候避免使用Pair
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
     public const string TYPE_PAIR = "Pair";

@@ -19,14 +19,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Attributes;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec.Attributes;
+using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCatTool
@@ -264,14 +267,11 @@ public class ToolUtil
     #region 代码生成
 
     public static readonly Encoding ENCODING_UTF8 = new UTF8Encoding(false);
-    private static readonly ClassName TYPE_NAME_GENERATED = ClassName.Get("Wjybxx.Commons.Attributes", "GeneratedAttribute");
-    private static readonly ClassName TYPE_NAME_SOURCE_FILE_REF = ClassName.Get("Wjybxx.Commons.Attributes", "SourceFileRefAttribute");
-
-    /// <summary>
-    /// CodeWriter池
-    /// </summary>
-    public static readonly ConcurrentObjectPool<CodeWriter> codeWriterPool = new ConcurrentObjectPool<CodeWriter>(
-        () => new CodeWriter("    ", 150), e => e.Reset(), 8);
+    private static readonly ClassName TYPE_NAME_GENERATED = ClassName.Get(typeof(GeneratedAttribute));
+    private static readonly ClassName TYPE_NAME_SOURCE_FILE_REF = ClassName.Get(typeof(SourceFileRefAttribute));
+    //
+    private static readonly ConcurrentObjectPool<CodeWriter> codeWriterPool = new ConcurrentObjectPool<CodeWriter>(
+        () => new CodeWriter("    ", 150), writer => writer.Reset(), 8);
 
     /// <summary>
     /// 为生成代码的注解处理器创建一个通用注解
@@ -297,7 +297,7 @@ public class ToolUtil
     /// </summary>
     /// <param name="sourceFileTypeName"></param>
     /// <returns></returns>
-    public static AttributeSpec NewSourceFileRefAnnotation(TypeName sourceFileTypeName) {
+    private static AttributeSpec NewSourceFileRefAnnotation(TypeName sourceFileTypeName) {
         return AttributeSpec.NewBuilder(TYPE_NAME_SOURCE_FILE_REF)
             .Constructor(CodeBlock.Of("typeof($T)", sourceFileTypeName))
             .Build();
@@ -312,33 +312,6 @@ public class ToolUtil
     public static ClassName ClassNameOfCanonicalName(string cname) {
         int index = cname.LastIndexOf('.');
         return ClassName.Get(cname.Substring2(0, index), cname.Substring2(index + 1));
-    }
-
-    /// <summary>
-    /// 将继承体系展开，不包含实现的接口。
-    /// （超类在后，包含object）
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public static List<Type> FlatInherit(Type type) {
-        List<Type> result = new List<Type>(4);
-        result.Add(type);
-        while ((type = type.BaseType) != null) {
-            result.Add(type);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// 将继承体系展开，并逆序返回，不包含实现的接口。
-    /// （超类在前，包含object）
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public static List<Type> FlatInheritAndReverse(Type type) {
-        List<Type> result = FlatInherit(type);
-        result.Reverse();
-        return result;
     }
 
     /// <summary>
@@ -403,20 +376,6 @@ public class ToolUtil
     }
 
     /// <summary>
-    /// 获取number类型属性值
-    /// </summary>
-    /// <param name="options">表头options</param>
-    /// <param name="key">Key</param>
-    /// <param name="defValue">key不存在时的默认值</param>
-    /// <returns></returns>
-    public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
-        if (!options.TryGetValue(key, out DsonValue value)) {
-            return defValue;
-        }
-        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
-    }
-
-    /// <summary>
     /// 获取int类型属性值
     /// </summary>
     /// <param name="options"></param>
@@ -430,93 +389,18 @@ public class ToolUtil
         return value.IsNumber ? value.AsDsonNumber().IntValue : defValue;
     }
 
-    #endregion
-
-    #region Dson-Cdoec
-
-    /** 注解：Flags枚举 */
-    public static readonly AttributeSpec ATTRIBUTE_FLAGS = AttributeSpec.NewBuilder(typeof(FlagsAttribute)).Build();
-    /** 注解：可序列化 */
-    public static readonly AttributeSpec ATTRIBUTE_SERIALIZABLE = AttributeSpec.NewBuilder(typeof(DsonSerializableAttribute)).Build();
-    /** 注解：字段不需要序列化 */
-    public static readonly AttributeSpec ATTRIBUTE_NON_SERIALIZED = AttributeSpec.NewBuilder(typeof(NonSerializedAttribute)).Build();
-
-    public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
-    public static readonly ArrayTypeName TYPE_NAME_BYTES = ArrayTypeName.BYTE_ARRAY;
-    public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(typeof(KeyValuePair<,>));
-
-    public static readonly ClassName TYPE_NAME_BINARY = ClassName.Get(typeof(Binary));
-    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(typeof(ObjectPtr));
-    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(typeof(ObjectLitePtr));
-    public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(typeof(Timestamp));
-    // 集合接口
-    public static readonly ClassName TYPE_NAME_I_COLLECTION = ClassName.Get(typeof(ICollection<>));
-    public static readonly ClassName TYPE_NAME_I_LIST = ClassName.Get(typeof(IList<>));
-    public static readonly ClassName TYPE_NAME_I_SET = ClassName.Get(typeof(ISet<>));
-    public static readonly ClassName TYPE_NAME_I_DICTIONARY = ClassName.Get(typeof(IDictionary<,>));
-    // 常用集合
-    public static readonly ClassName TYPE_NAME_LIST = ClassName.Get(typeof(List<>));
-    public static readonly ClassName TYPE_NAME_HASHSET = ClassName.Get(typeof(HashSet<>));
-    public static readonly ClassName TYPE_NAME_DICTIONARY = ClassName.Get(typeof(Dictionary<,>));
-    public static readonly ClassName TYPE_NAME_LINKED_HASHSET = ClassName.Get(typeof(LinkedHashSet<>));
-    public static readonly ClassName TYPE_NAME_LINKED_DICTIONARY = ClassName.Get(typeof(LinkedDictionary<,>));
-    // 不可变集合
-    public static readonly ClassName TYPE_NAME_IMMUTABLE_LIST = ClassName.Get(typeof(ImmutableList<>));
-    public static readonly ClassName TYPE_NAME_IMMUTABLE_SET = ClassName.Get(typeof(ImmutableSet<>));
-    public static readonly ClassName TYPE_NAME_IMMUTABLE_DICTIONARY = ClassName.Get(typeof(ImmutableDictionary<,>));
-
-    // 这两个方法名有特殊类逻辑 -- 外部需要测试
-    public const string METHOD_NAME_READ_OBJECT = "ReadObject";
-    public const string METHOD_NAME_WRITE_OBJECT = "WriteObject";
-
-    /** 获取read字段的方法名 */
-    public static string GetReadMethodName(TypeName typeName) {
-        if (typeName == TypeName.INT) return "ReadInt";
-        if (typeName == TypeName.LONG) return "ReadLong";
-        if (typeName == TypeName.FLOAT) return "ReadFloat";
-        if (typeName == TypeName.DOUBLE) return "ReadDouble";
-        if (typeName == TypeName.BOOL) return "ReadBool";
-        if (typeName == TypeName.STRING) return "ReadString";
-
-        if (typeName == TypeName.UINT) return "ReadUInt";
-        if (typeName == TypeName.ULONG) return "ReadULong";
-        if (typeName == TypeName.BYTE) return "ReadByte";
-        if (typeName == TypeName.SBYTE) return "ReadSByte";
-        if (typeName == TypeName.SHORT) return "ReadShort";
-        if (typeName == TypeName.USHORT) return "ReadUShort";
-        if (typeName == TypeName.CHAR) return "ReadChar";
-
-        if (typeName == TYPE_NAME_BYTES) return "ReadBytes";
-        if (typeName == TYPE_NAME_PTR) return "ReadPtr";
-        if (typeName == TYPE_NAME_LPTR) return "ReadLitePtr";
-        if (typeName == TYPE_NAME_DATETIME) return "ReadDateTime";
-        if (typeName == TYPE_NAME_TIMESTAMP) return "ReadTimestamp";
-        return "ReadObject";
-    }
-
-    /** 获取write字段的方法名 */
-    public static string GetWriteMethodName(TypeName typeName) {
-        if (typeName == TypeName.INT) return "WriteInt";
-        if (typeName == TypeName.LONG) return "WriteLong";
-        if (typeName == TypeName.FLOAT) return "WriteFloat";
-        if (typeName == TypeName.DOUBLE) return "WriteDouble";
-        if (typeName == TypeName.BOOL) return "WriteBool";
-        if (typeName == TypeName.STRING) return "WriteString";
-
-        if (typeName == TypeName.UINT) return "WriteUInt";
-        if (typeName == TypeName.ULONG) return "WriteULong";
-        if (typeName == TypeName.BYTE) return "WriteByte";
-        if (typeName == TypeName.SBYTE) return "WriteSByte";
-        if (typeName == TypeName.SHORT) return "WriteShort";
-        if (typeName == TypeName.USHORT) return "WriteUShort";
-        if (typeName == TypeName.CHAR) return "WriteChar";
-
-        if (typeName == TYPE_NAME_BYTES) return "WriteBytes";
-        if (typeName == TYPE_NAME_PTR) return "WritePtr";
-        if (typeName == TYPE_NAME_LPTR) return "WriteLitePtr";
-        if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";
-        if (typeName == TYPE_NAME_TIMESTAMP) return "WriteTimestamp";
-        return "WriteObject";
+    /// <summary>
+    /// 获取number类型属性值
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
     }
 
     #endregion

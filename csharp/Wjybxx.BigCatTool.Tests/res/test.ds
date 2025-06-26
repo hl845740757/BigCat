@@ -1,7 +1,13 @@
+// 生成代码的命名空间
+option csharp_namespace = "Wjybxx.BigCatTool.Tests.Generated";
+// 将所有类型默认声明为数据类 -- 生成equals和hashcode
+option data_class = true;
+
 // 测试普通类
 class SimpleBean {
-    int32 age = 1;
-    string name = 2;
+    readonly int32 age = 1;
+    readonly string name = 2;
+    int32? opt = 3; // 测试nullable
 }
 
 // 测试普通类继承
@@ -9,11 +15,12 @@ class SimpleChildBean : SimpleBean {
     List<string> addresses = 1;
 }
 
-// 测试结构体
+// 测试结构体，顺便测试codec注解解析
+// @Codec{alias: [Vector3, V3], style: flow}
 struct Vector3 {
-    float x = 1;
-    float y = 2;
-    float z = 3;
+    readonly float x = 1;
+    readonly float y = 2;
+    readonly float z = 3;
 }
 
 // 测试枚举
@@ -39,8 +46,8 @@ class GenericChildBean<T, U> : GenericBean<T, U>
 }
 
 // 测试泛型继承2
-class GenericChildBean2<T, U> : GenericBean<List<string>, U>
-    where T: struct 
+class GenericChildBean2<T, U> : GenericBean<T, List<string>>
+    where T: struct
     where U: class {
     List<string> addresses = 1;
 }

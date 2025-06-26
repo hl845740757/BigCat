@@ -111,6 +111,9 @@ public class SstGenerator : ISheetProcessor
                 File.Delete(filePath);
             }
         }
+        if (!Directory.Exists(_workDir)) {
+            Directory.CreateDirectory(_workDir);
+        }
         LoadLocation();
         LoadPartitions();
         LoadIndex();

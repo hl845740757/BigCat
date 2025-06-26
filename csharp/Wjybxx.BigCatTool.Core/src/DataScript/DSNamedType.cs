@@ -229,9 +229,10 @@ public sealed class DSNamedType : DSTypeElement
     /// 获取所有的字段，默认超类字段在前
     /// </summary>
     /// <param name="flatInherit">是否拉取继承的字段，默认true</param>
+    /// <param name="result">接收结果的out参数，允许外部池化</param>
     /// <returns></returns>
-    public List<DSField> GetFields(bool flatInherit = true) {
-        List<DSField> result = new List<DSField>(EnclosedElements.Count);
+    public List<DSField> GetFields(bool flatInherit = true, List<DSField>? result = null) {
+        result ??= new List<DSField>(EnclosedElements.Count);
         if (!flatInherit || BaseType == null) {
             foreach (var element in EnclosedElements) {
                 if (element.Kind == DSElementKind.Field) {

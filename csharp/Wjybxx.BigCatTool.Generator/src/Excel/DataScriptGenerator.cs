@@ -23,6 +23,7 @@ using System.Linq;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BigCatTool.Excel;
+using Wjybxx.Commons;
 using Wjybxx.Dson;
 using static Wjybxx.BigCatTool.Generator.Excel.ExcelConstants;
 
@@ -30,8 +31,17 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 {
 /// <summary>
 /// 根据Excel生成对应的DataScript文件
+/// (将表格数据追加到文本模板尾部即可)
 ///
-/// 将表格数据追加到文本模板尾部即可
+/// 表格要扩展字段有以下方式：
+/// 1.在原表中增加额外的缓存字段
+/// 2.在内存表中增加额外的缓存列(Header)
+/// 3.改进该工具，增加配置以支持在生成ds文件时追加字段(不影响原表)
+/// 4.在生成代码的过程中插入字段
+/// 5.生成代码时将class声明为partial，直接通过代码的方式扩展字段
+///
+/// 最佳方案其实是3，即通过该工具扩展字段；最差方案是4，即在生成代码的过程中动态插入字段；
+/// 实操最简单的还是方案1，即在原表中增加缓存字段，这样可以统一处理。
 /// </summary>
 public class DataScriptGenerator : ISheetProcessor
 {
@@ -159,12 +169,16 @@ public class DataScriptGenerator : ISheetProcessor
             if (IsListOrMapElement(header.name)) {
                 continue;
             }
-            GetOptions(header, out bool isIntern, out bool isReadonly);
+            GetOptions(header, out bool isIntern, out bool isReadonly, out bool nonSerialized);
             if (number == 1 && baseTypeName == null && !isParamSheet) {
                 isReadonly = true; // 普通表的第一列强制readonly
             }
-            if (isIntern) {
-                lines.Add($"    //@{DSAnnotations.OPTIONS}{{{DSAnnotations.KEY_SSTI}: true}}");
+            if (isIntern || nonSerialized) {
+                lines.Add($"    //@{DSAnnotations.OPTIONS}"
+                          + "{"
+                          + $"{DSAnnotations.KEY_SSTI}: {isIntern.ToString2()},"
+                          + $" {DSAnnotations.KEY_NON_SERIALIZED}: {nonSerialized.ToString2()}"
+                          + "}");
             }
             if (isReadonly) {
                 lines.Add($"    readonly {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
@@ -175,16 +189,18 @@ public class DataScriptGenerator : ISheetProcessor
         lines.Add("}");
     }
 
-    private static void GetOptions(Header header, out bool isIntern, out bool isReadonly) {
+    private static void GetOptions(Header header, out bool isIntern, out bool isReadonly, out bool nonSerialized) {
         if (!header.options.Contains(KEY_I18N) && !header.options.Contains(KEY_INTERN)
                                                && !header.options.Contains(KEY_IS_READONLY)) {
             isIntern = false;
             isReadonly = false;
+            nonSerialized = false;
             return;
         }
         DsonObject<string> options = ParseOptions(header.options);
         isIntern = GetBool(options, KEY_I18N) || GetBool(options, KEY_INTERN);
         isReadonly = GetBool(options, KEY_IS_READONLY);
+        nonSerialized = GetBool(options, KEY_NON_SERIALIZED);
     }
 
     private Sheet GetBaseSheet(string mergedSheetName) {

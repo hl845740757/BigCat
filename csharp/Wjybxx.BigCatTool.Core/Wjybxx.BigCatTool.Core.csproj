@@ -47,11 +47,11 @@
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.31.0" />
         <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.5.0-rc1" />
-        <PackageReference Include="Wjybxx.Commons.Core" Version="1.5.0-rc1" />
+        <PackageReference Include="Wjybxx.Commons.Core" Version="1.5.0-rc2" />
         <PackageReference Include="Wjybxx.Commons.Inject" Version="1.5.0-rc1" />
-        <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.3" />
-        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.3" />
-        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.4.5" />
+        <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.4" />
+        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.4" />
+        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.5.0-rc1" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->

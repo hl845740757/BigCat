@@ -29,7 +29,6 @@ using Wjybxx.BigCatTool.Generator.Excel;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Text;
-using Wjybxx.EditorTest;
 
 namespace Wjybxx.BigCatTool.Tests
 {
@@ -43,6 +42,9 @@ public class SheetReaderTest
         List<Type> codecTypeList = typeof(ConstGeneratorCfg).Assembly.GetTypes()
             .Where(type => type.Name.EndsWith("Codec") && type.GetInterface(interfaceName!) != null)
             .ToList();
+        // core包的codec
+        codecTypeList.AddRange(typeof(CodeGeneratorCfg).Assembly.GetTypes()
+            .Where(type => type.Name.EndsWith("Codec") && type.GetInterface(interfaceName!) != null));
 
         DsonConverterBuilder builder = new DsonConverterBuilder();
         foreach (Type codecType in codecTypeList) {
@@ -113,9 +115,9 @@ public class SheetReaderTest
         new ConstGenerator(repository, constGeneratorCfg).Execute();
 
         // 生成Class
-        ClassGeneratorCfg classGeneratorCfg = converter.ReadFromDsonValue<ClassGeneratorCfg>(cfgObject["classGenerator"]);
+        CodeGeneratorCfg classGeneratorCfg = converter.ReadFromDsonValue<CodeGeneratorCfg>(cfgObject["classGenerator"]);
         classGeneratorCfg.outPath = outDir;
-        new ClassGenerator(dsRepository, new List<string>() { "tables.ds" }, classGeneratorCfg).Execute();
+        new ClassGenerator(dsRepository, classGeneratorCfg, new List<string>() { "tables.ds" }).Execute();
 
         // 测试SSTMgr
         if (!Directory.Exists(sstDir)) {

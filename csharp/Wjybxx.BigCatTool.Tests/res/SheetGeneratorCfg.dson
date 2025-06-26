@@ -4,18 +4,16 @@
     classGenerator: {
         // outPath: "", 
         codecProxyNs: "Wjybxx.BigCat.Demo",
-        items: [
+        codecCfgs: [
             {
                 name: ItemCfg,
-                codecProxy: ItemCodecProxy,
-                fieldProxies: {
-                    level: ReadLevel,
+                proxy: ItemCodecProxy,
+                fieldProxies: [
+                    {name: level, readProxy: ReadLevel, writeProxy: WriteLevel}   
+                ],
+                hooks: {
                     AfterDecode: AfterDecode
-                },
-                // 扩展字段
-                extensionFields: [
-                    {name: list1, type: "List<int32>", comment: "扩展字段测试"}
-                ]
+                }
             }
         ]
     },

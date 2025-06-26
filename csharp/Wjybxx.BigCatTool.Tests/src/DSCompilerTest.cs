@@ -17,11 +17,11 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Dson;
-using Wjybxx.EditorTest;
 
 namespace Wjybxx.BigCatTool.Tests;
 
@@ -54,5 +54,15 @@ public class DSCompilerTest
         DSInst inst = repository.GetInst("vector3_array");
         Assert.NotNull(inst);
         Console.WriteLine(inst.DsonValue.ToDson());
+
+        // 生成csharp代码
+        string tempDir = TestUtil.GetTempDirectory() + "/ds";
+        if (!Directory.Exists(tempDir)) {
+            Directory.CreateDirectory(tempDir);
+        }
+        new DSCodeGenerator(repository, new CodeGeneratorCfg()
+        {
+            outPath = tempDir
+        }, repository.FileMap.Keys).Execute();
     }
 }

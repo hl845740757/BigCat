@@ -91,8 +91,8 @@ public static class ExcelConstants
     /// </summary>
     public const string KEY_IS_READONLY = "isReadonly";
     /// <summary>
-    /// 用于标注字段不需要编解码
-    /// (还是更建议通过生成器增加缓存字段，不建议在表格中增加冗余字段)
+    /// 用于标注字段不需要编解码(增加程序用的字段)
+    /// 虽然在表格增加程序用的缓存字段不算优雅，但却是最简单的方式。
     /// </summary>
     public const string KEY_NON_SERIALIZED = "nonSerialized";
 

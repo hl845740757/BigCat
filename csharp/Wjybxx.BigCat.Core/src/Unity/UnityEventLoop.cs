@@ -538,8 +538,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         }
     }
 
-    /** 迭代所有模块 */
-    protected void UpdateModules() {
+    /** 迭代所有模块 -- 重新该方法可实现协程调度 */
+    protected virtual void UpdateModules() {
         long tickTime = this.TickTime;
         while (agent.CheckMainLoop(tickTime)) {
             agent.BeforeMainLoop(tickTime);
@@ -574,6 +574,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void OnInternalEvent(long curSequence, ref T evt) {
         int type = evt.Type;
         if (type == TYPE_REMOVE_SCHEDULE) {

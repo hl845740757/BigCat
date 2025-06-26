@@ -59,6 +59,10 @@ public sealed class Annotation
         set => dsonValue = value; // 用于运行时替换数据
     }
 
+    public DsonObject<string> AsObject() => DsonValue.AsObject();
+
+    public DsonArray<string> AsArray() => DsonValue.AsArray();
+
     public override string ToString() {
         return $"{nameof(type)}: {type}, {nameof(value)}: {value}";
     }

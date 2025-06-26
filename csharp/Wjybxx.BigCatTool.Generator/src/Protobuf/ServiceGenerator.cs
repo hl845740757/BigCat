@@ -34,14 +34,14 @@ namespace Wjybxx.BigCatTool.Generator.Protobuf
 /// </summary>
 public class ServiceGenerator
 {
-    private static readonly ClassName anno_rpcService = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
-    private static readonly ClassName anno_rpcMethod = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
+    private static readonly ClassName TYPE_NAME_RPC_SERVICE = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
+    private static readonly ClassName TYPE_NAME_RPC_METHOD = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
     //
-    private static readonly ClassName clsName_rpcContext_t = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
+    private static readonly ClassName TYPE_NAME_RPC_CONTEXT_T = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
         new List<TypeName> { TypeParameterName.Get("T") });
     //
-    private static readonly ClassName clsName_valueFuture = ClassName.Get(typeof(ValueFuture));
-    private static readonly ClassName clsName_valueFuture_t = ClassName.Get(typeof(ValueFuture<>));
+    private static readonly ClassName TYPE_NAME_VALUE_FUTURE = ClassName.Get(typeof(ValueFuture));
+    private static readonly ClassName TYPE_NAME_VALUE_FUTURE_T = ClassName.Get(typeof(ValueFuture<>));
 
     private readonly PBRepository repository;
     private readonly string outDir;
@@ -97,7 +97,7 @@ public class ServiceGenerator
         // service注解
         {
             DsonObject<string> serviceData = serviceAnnotation.DsonValue.AsObject();
-            AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(anno_rpcService)
+            AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
                 .AddMember("ServiceId", GetServiceId(service, serviceData).ToString());
             typeBuilder.AddAttribute(annoBuilder.Build());
         }
@@ -112,7 +112,7 @@ public class ServiceGenerator
             // .AddModifiers(Modifiers.Public | Modifiers.Abstract); // C#端的Poet是我自己实现的
             // method注解 
             {
-                AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(anno_rpcMethod)
+                AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
                     .AddMember("MethodId", GetMethodId(method, methodData).ToString());
                 // .addMember("ArgSharable", "true") // C#端的pb对象不是builder模式，不是不可变对象
                 // .addMember("ResultSharable", "true"); 
@@ -190,9 +190,9 @@ public class ServiceGenerator
         TypeName returnType;
         if (method.ResultType != null) {
             ClassName resultType = ClassNameOfType(method.ResultType);
-            returnType = clsName_valueFuture_t.WithTypeArguments(resultType);
+            returnType = TYPE_NAME_VALUE_FUTURE_T.WithTypeArguments(resultType);
         } else {
-            returnType = clsName_valueFuture;
+            returnType = TYPE_NAME_VALUE_FUTURE;
         }
         methodBuilder.Returns(returnType);
 
@@ -212,10 +212,10 @@ public class ServiceGenerator
         TypeName contextType;
         if (method.ResultType != null) {
             ClassName resultType = ClassNameOfType(method.ResultType);
-            contextType = clsName_rpcContext_t.WithTypeArguments(resultType);
+            contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(resultType);
         } else {
             // void时使用object代替 -- 可临时返回结果
-            contextType = clsName_rpcContext_t.WithTypeArguments(TypeName.OBJECT);
+            contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(TypeName.OBJECT);
         }
         // c#需要传引用
         return contextType.MakeByRefType();

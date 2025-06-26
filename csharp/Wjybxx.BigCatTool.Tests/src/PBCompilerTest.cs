@@ -20,7 +20,6 @@ using System.IO;
 using NUnit.Framework;
 using Wjybxx.BigCatTool.Generator.Protobuf;
 using Wjybxx.BigCatTool.Protobuf;
-using Wjybxx.EditorTest;
 
 namespace Wjybxx.BigCatTool.Tests;
 
