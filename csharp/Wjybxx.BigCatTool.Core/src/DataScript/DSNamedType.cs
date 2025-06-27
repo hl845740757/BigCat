@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Dson.Types;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
 using Range = Wjybxx.BigCatTool.Core.Range;
 
@@ -52,6 +53,9 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 0.尽量避免使用内部类，因为为内部类生成c#类型是比较麻烦的；如果内部类仅用于为C#类型提供编辑器支持，那么是可以的。
 /// 1.避免嵌套超过2层。
 ///
+/// <h3>关于数组</h3>
+/// 默认不支持数组类型，可以通过封装提供一些常用的数组类型，可参考<see cref="Binary"/>。
+/// 
 /// <h3>关于语法</h3>
 /// 不要在'{'和'}'所在行声明字段等，内容必须和开始和结束Token字符分离 -- 降低解析难度。
 ///

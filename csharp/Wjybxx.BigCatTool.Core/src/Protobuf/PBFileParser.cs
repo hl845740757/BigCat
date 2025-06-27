@@ -252,9 +252,9 @@ public sealed class PBFileParser
             content = content.Substring(modifierEnd).TrimStart();
         }
 
-        int genericEndIdx = content.IndexOf('>'); // map泛型结束符
-        int typeEndIdx = genericEndIdx > 0 ? genericEndIdx + 1 : content.IndexOf(' ');
         int eqIdx = content.IndexOf('=');
+        int genericEndIdx = content.IndexOf('>', eqIdx); // map泛型结束符--兼容多层泛型
+        int typeEndIdx = genericEndIdx > 0 ? genericEndIdx + 1 : content.IndexOf(' ');
         int opIdx = content.IndexOf('['); // 可选项开始符
 
         string type = ToolUtil.DeleteWhitespace(content.Substring2(0, typeEndIdx)); // 删除空白字符

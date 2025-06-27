@@ -62,6 +62,7 @@ public class DSCompilerTest
         }
         new DSCodeGenerator(repository, new CodeGeneratorCfg()
         {
+            combine = true,
             outPath = tempDir
         }, repository.FileMap.Keys).Execute();
     }

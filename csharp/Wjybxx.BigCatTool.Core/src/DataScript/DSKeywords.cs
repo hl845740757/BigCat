@@ -99,10 +99,10 @@ public static class DSKeywords
     public const string TYPE_BOOL = "bool";
     public const string TYPE_STRING = "string";
     public const string TYPE_BYTES = "bytes";
-    // 内建结构 -- 除了拆分配置Map时，其它时候避免使用Pair
+    // 内建结构
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
-    public const string TYPE_PAIR = "Pair";
+    public const string TYPE_PAIR = "Pair"; // 除了拆分配置Map时，其它时候避免使用Pair
     // 容器类型
     public const string TYPE_LIST = "List";
     public const string TYPE_HASH_SET = "HashSet";

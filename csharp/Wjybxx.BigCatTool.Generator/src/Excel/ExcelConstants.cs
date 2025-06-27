@@ -362,21 +362,21 @@ public static class ExcelConstants
     /// <summary>
     /// 是否是bool类型
     ///
-    /// bool类型支持4个值<code>true, false, 0, 1</code>
+    /// bool类型在表格支持4个值<code>true, false, 0, 1</code>
     /// </summary>
-    /// <param name="typed"></param>
+    /// <param name="type"></param>
     /// <returns></returns>
-    public static bool IsBoolType(string typed) {
-        return typed == DSKeywords.TYPE_BOOL;
+    public static bool IsBoolType(string type) {
+        return type == DSKeywords.TYPE_BOOL;
     }
 
     /// <summary>
     /// 是否是string类型
     /// </summary>
-    /// <param name="typed"></param>
+    /// <param name="type"></param>
     /// <returns></returns>
-    public static bool IsStringType(string typed) {
-        return typed == DSKeywords.TYPE_STRING;
+    public static bool IsStringType(string type) {
+        return type == DSKeywords.TYPE_STRING;
     }
 
     /// <summary>

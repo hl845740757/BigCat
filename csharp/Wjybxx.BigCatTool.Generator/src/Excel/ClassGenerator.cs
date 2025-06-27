@@ -22,6 +22,7 @@ using System.IO;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 
 namespace Wjybxx.BigCatTool.Generator.Excel
@@ -105,6 +106,8 @@ public class ClassGenerator : ISheetProcessor
 
     private class Helper : CodeGeneratorHelper
     {
+        private readonly List<DSField> _fieldListCache = new(20);
+
         public Helper(DSRepository repository, CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo)
             : base(repository, generatorCfg, processorInfo) {
         }
@@ -112,9 +115,17 @@ public class ClassGenerator : ISheetProcessor
         protected override void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
             base.InitAttributes(namedType, options, typeBuilder);
             // 增加序列化版本注解
-            int serialVersion = DataScriptGenerator.GetHashCode(namedType.GetFields());
+            int serialVersion = DataScriptGenerator.GetHashCode(namedType.GetFields(true, _fieldListCache.ClearAndReturn()));
             typeBuilder.AddAttribute(AttributeSpec.NewBuilder(TYPE_NAME_SERIAL_VERSION)
                 .Constructor(CodeBlock.Of(serialVersion.ToString())).Build());
+        }
+
+        protected override Modifiers GetSetterModifiers(DSField field, DsonObject<string> fieldOptions) {
+            return Modifiers.Internal; // 允许表格模块读表时赋值和增加缓存字段
+        }
+
+        protected override bool IsDataClass(DSNamedType namedType, DsonObject<string> options) {
+            return false;
         }
 
         protected override bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
@@ -129,7 +140,8 @@ public class ClassGenerator : ISheetProcessor
                 DSKeywords.TYPE_HASH_SET => TYPE_NAME_IMMUTABLE_SET,
                 DSKeywords.TYPE_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 TYPE_LINKED_DICTIONARY => TYPE_NAME_IMMUTABLE_DICTIONARY,
-
+                TYPE_LINKED_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
+                //
                 TYPE_IMMUTABLE_LIST => TYPE_NAME_IMMUTABLE_LIST,
                 TYPE_IMMUTABLE_SET => TYPE_NAME_IMMUTABLE_SET,
                 TYPE_IMMUTABLE_DICTIONARY => TYPE_NAME_IMMUTABLE_DICTIONARY,

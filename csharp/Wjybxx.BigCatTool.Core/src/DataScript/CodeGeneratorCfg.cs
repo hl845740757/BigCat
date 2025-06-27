@@ -33,6 +33,11 @@ public class CodeGeneratorCfg
     /// </summary>
     public string outPath;
     /// <summary>
+    /// 是否将同一个ds文件中的类型生成到同一个cs文件
+    /// (如果文件内全是数据类，大量的equals和hashcode方法可能导致文件过大)
+    /// </summary>
+    public bool combine;
+    /// <summary>
     /// 所有的解码代理类的命名空间
     /// </summary>
     public string codecProxyNs;

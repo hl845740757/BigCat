@@ -308,6 +308,9 @@ public class DSFileParser
                 // 判断是否字段 type name = number;
                 if (content.IndexOf('=') > 0) {
                     DSField field = ParseField(_context.PopCommentLines(), lineInfo);
+                    if (!_context.numbers.Add(field.Number)) {
+                        throw new IOException("duplicate field number: " + field.Number);
+                    }
                     _context.container.AddEnclosedElement(field);
                 } else {
                     throw new IOException("unrecognized content: " + content);
@@ -333,9 +336,9 @@ public class DSFileParser
         if (isReadonly) {
             content = content.Substring(DSKeywords.READONLY.Length + 1).TrimStart();
         }
-        int genericEndIdx = content.IndexOf('>'); // map泛型结束符
-        int typeEndIdx = genericEndIdx > 0 ? genericEndIdx + 1 : content.IndexOf(' ');
         int eqIdx = content.IndexOf('=');
+        int genericEndIdx = content.LastIndexOf('>', eqIdx); // map泛型结束符--兼容多层泛型
+        int typeEndIdx = genericEndIdx > 0 ? genericEndIdx + 1 : content.IndexOf(' ');
         int opIdx = content.IndexOf('['); // 可选项开始符
 
         string type = ToolUtil.DeleteWhitespace(content.Substring2(0, typeEndIdx)); // 删除空白字符
@@ -347,7 +350,7 @@ public class DSFileParser
                 : content.Substring2(eqIdx + 1, content.Length - 1); // -1去掉 ';'
             number = int.Parse(numberString.Trim());
         }
-        //
+        // 
         DSField field = new DSField(name, type, number, isReadonly);
         field.StartLine = lineInfo.ln;
         field.EndLine = lineInfo.ln;
@@ -688,6 +691,8 @@ public class DSFileParser
         public bool started;
         /** 下一个元素的注释缓存 -- 内容执行了trim */
         public readonly List<string> commentLines = new();
+        /** 校验字段number */
+        public readonly HashSet<int> numbers = new();
 
         public Context(Context parent, DSContextType contextType, DSElement container) {
             this.parent = parent;

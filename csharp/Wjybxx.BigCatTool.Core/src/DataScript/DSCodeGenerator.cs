@@ -74,15 +74,33 @@ public class DSCodeGenerator
             if (string.IsNullOrEmpty(csharpNamespace)) {
                 throw new InvalidOperationException("csharpNamespace is absent" + dsFile.FileName);
             }
-            foreach (var element in dsFile.EnclosedElements) {
-                if (!element.Kind.IsNamedType()) continue; // inst
-                DSNamedType namedType = (DSNamedType)element;
-                try {
-                    TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
-                    ToolUtil.WriteToFile(_cfg.outPath, csharpNamespace, typeBuilder.Build());
+            if (_cfg.combine) {
+                NamespaceSpec.Builder nsBuilder = NamespaceSpec.NewBuilder(csharpNamespace);
+                foreach (var element in dsFile.EnclosedElements) {
+                    if (!element.Kind.IsNamedType()) continue; // inst
+                    DSNamedType namedType = (DSNamedType)element;
+                    try {
+                        TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
+                        nsBuilder.AddSpec(typeBuilder.Build());
+                    }
+                    catch (Exception ex) {
+                        throw new Exception($"file: {fileName}, type: {namedType.FullName}", ex);
+                    }
                 }
-                catch (Exception ex) {
-                    throw new Exception($"file: {fileName}, type: {namedType.FullName}", ex);
+                ToolUtil.WriteToFile(_cfg.outPath, CsharpFile.NewBuilder(ToolUtil.ToUpperCamel(fileSimpleName))
+                    .AddSpec(nsBuilder.Build())
+                    .Build());
+            } else {
+                foreach (var element in dsFile.EnclosedElements) {
+                    if (!element.Kind.IsNamedType()) continue; // inst
+                    DSNamedType namedType = (DSNamedType)element;
+                    try {
+                        TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
+                        ToolUtil.WriteToFile(_cfg.outPath, csharpNamespace, typeBuilder.Build());
+                    }
+                    catch (Exception ex) {
+                        throw new Exception($"file: {fileName}, type: {namedType.FullName}", ex);
+                    }
                 }
             }
         }

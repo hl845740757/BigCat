@@ -209,42 +209,46 @@ public static class DSUtil
     /// 数字类型支持Dson文本支持的所有格式，此外还支持Flags格式<code>A|B|C</code>；
     /// 如果其它类型也期望使用支持Flags类型，需要自定义<see cref="DSTypeHandler"/>。
     /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public static bool IsNumberType(string type) {
-        return type == DSKeywords.TYPE_INT32
-               || type == DSKeywords.TYPE_INT64
-               || type == DSKeywords.TYPE_FLOAT
-               || type == DSKeywords.TYPE_DOUBLE;
+    public static bool IsNumberType(DSTypeElement typeElement) {
+        if (typeElement.Kind.IsNamedType()) {
+            return typeElement.SimpleName switch
+            {
+                DSKeywords.TYPE_INT32 => true,
+                DSKeywords.TYPE_INT64 => true,
+                DSKeywords.TYPE_FLOAT => true,
+                DSKeywords.TYPE_DOUBLE => true,
+                _ => false
+            };
+        }
+        return false;
     }
 
     /// <summary>
     /// 是否是bool类型
-    ///
-    /// bool类型支持4个值<code>true, false, 0, 1</code>
     /// </summary>
-    /// <param name="typed"></param>
-    /// <returns></returns>
-    public static bool IsBoolType(string typed) {
-        return typed == DSKeywords.TYPE_BOOL;
+    public static bool IsBoolType(DSTypeElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_BOOL;
     }
 
     /// <summary>
     /// 是否是string类型
     /// </summary>
-    /// <param name="typed"></param>
-    /// <returns></returns>
-    public static bool IsStringType(string typed) {
-        return typed == DSKeywords.TYPE_STRING;
+    public static bool IsStringType(DSTypeElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_STRING;
+    }
+
+    /// <summary>
+    /// 是否是日期时间类型
+    /// </summary>
+    public static bool IsDateTimeType(DSTypeElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_DATETIME;
     }
 
     /// <summary>
     /// 是否是可空值类型
     /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public static bool IsNullableType(string type) {
-        return type == DSKeywords.TYPE_NULLABLE || type.StartsWith(DSKeywords.TYPE_NULLABLE + "<");
+    public static bool IsNullableType(DSTypeElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_NULLABLE;
     }
 }
 }

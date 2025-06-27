@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -30,6 +31,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// </summary>
 public abstract class DSElement
 {
+    private static readonly IDictionary<string, string> EMPTY_OPTIONS = ImmutableDictionary<string, string>.Empty;
 #nullable disable
     /** 简单名 */
     private readonly string simpleName;
@@ -42,8 +44,8 @@ public abstract class DSElement
     private readonly List<string> comments = new();
     /** 注解数据 -- 同一类型允许重复；可能有解析器动态附加的数据 */
     private readonly List<Annotation> annotations = new();
-    /** 可选项 -- 数据脚本中通常不使用该机制，而是使用注解 */
-    private readonly Dictionary<string, string> options = new();
+    /** 可选项 -- 数据脚本中通常不使用该机制，而是使用注解；只建议文件使用options；延迟初始化以减少开销 */
+    private IDictionary<string, string> options = EMPTY_OPTIONS;
 
     /** 定义元素的开始行号 -- -1表示非源码文件定义 */
     private int startLine = -1;
@@ -102,6 +104,9 @@ public abstract class DSElement
     /// 添加选项
     /// </summary>
     public void AddOption(string name, string value) {
+        if (ReferenceEquals(options, EMPTY_OPTIONS)) {
+            options = new Dictionary<string, string>(4);
+        }
         options[name] = value;
     }
 
@@ -138,7 +143,7 @@ public abstract class DSElement
     public List<DSElement> EnclosedElements => enclosedElements;
     public List<string> Comments => comments;
     public List<Annotation> Annotations => annotations;
-    public Dictionary<string, string> Options => options;
+    public IDictionary<string, string> Options => options;
 
     public int StartLine {
         get => startLine;

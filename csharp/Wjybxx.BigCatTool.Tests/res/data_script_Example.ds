@@ -8,6 +8,17 @@ class SimpleBean {
     readonly int32 age = 1;
     readonly string name = 2;
     int32? opt = 3; // 测试nullable
+    DateTime dt = 4; // 测试时间类型
+    bytes data1 = 5; // 测试字节数组    
+    List<int32> list = 6; // 测试List
+    HashSet<int32> hashset = 7; // 测试HashSet
+    Map<int32, string> dic = 8; // 测试Map
+    List<List<int32>> listX = 9; // 测试二维List    
+    
+    // @Options {ssti: true}
+    int32 strLink = 10; // 测试ssti
+    // @Options {ssti: true}    
+    List<int32> strLinkList = 11; // 测试sstiList
 }
 
 // 测试普通类继承

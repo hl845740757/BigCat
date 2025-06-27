@@ -48,11 +48,12 @@ public class CodeGeneratorHelper
 
     public const string TYPE_LINKED_HASHSET = "LinkedHashset";
     public const string TYPE_LINKED_DICTIONARY = "LinkedDictionary";
-
+    public const string TYPE_LINKED_MAP = "LinkedMap"; // 别名
+    // 不可变
     public const string TYPE_IMMUTABLE_LIST = "ImmutableList";
     public const string TYPE_IMMUTABLE_SET = "ImmutableSet";
-    public const string TYPE_IMMUTABLE_DICTIONARY = "ImmutableDictionary";
     public const string TYPE_IMMUTABLE_MAP = "ImmutableMap"; // 别名
+    public const string TYPE_IMMUTABLE_DICTIONARY = "ImmutableDictionary";
 
     #endregion
 
@@ -136,7 +137,7 @@ public class CodeGeneratorHelper
         InitAttributes(namedType, options, typeBuilder);
         // 禁用nullable提示
         typeBuilder.AddSpec(MacroSpec.Get("nullable", "disable"));
-        typeBuilder.AddSpec(new CodeBlockSpec(CodeBlock.Of("ReSharper disable InconsistentNaming"), CodeBlockSpec.Kind.Comment));
+        typeBuilder.AddSpec(new CodeBlockSpec(CodeBlock.Of("ReSharper disable All"), CodeBlockSpec.Kind.Comment));
 
         List<FieldSpec> fieldSpecs = _fieldListCache;
         List<PropertySpec> propertySpecs = _propertyListCache;
@@ -150,7 +151,8 @@ public class CodeGeneratorHelper
             // 如果是指向共享字符串表的索引，则增加缓存字段 + 属性
             // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
             if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_SSTI)) {
-                BuildSstiFieldAndProperty(field, fieldSpec.name, out FieldSpec sstiFiledSpec, out PropertySpec sstiPropertySpec);
+                BuildSstiFieldAndProperty(field, fieldSpec.name, propertySpec.name,
+                    out FieldSpec sstiFiledSpec, out PropertySpec sstiPropertySpec);
                 if (sstiPropertySpec.name == propertySpec.name) {
                     propertySpecs.TryRemoveLast(out _);
                 }
@@ -175,23 +177,33 @@ public class CodeGeneratorHelper
             BuildCodecHookMethods(namedType, classCfg, typeBuilder);
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
-
-        bool isDataClass = IsDataClass(namedType, options);
+        
+        // 允许在Copy方法前插入代码
+        BeforeGenerateCopyMethod(namedType, typeBuilder, options);
         // 生成CopyFrom
-        if (isDataClass || NeedCopyMethod(namedType, options)) {
+        if (NeedCopyMethod(namedType, options)) {
             typeBuilder.AddSpec(MacroSpec.Get("region", "copy"));
             typeBuilder.AddSpec(BuildCopyMethod(namedType, typeBuilder));
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
         // 生成equals和hashcode
+        bool isDataClass = IsDataClass(namedType, options);
         if (isDataClass) {
             typeBuilder.AddSpec(MacroSpec.Get("region", "equals"));
             BuildEqualsMethod(namedType, typeBuilder);
             BuildHashCodeMethod(namedType, typeBuilder);
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
+        // 生成ToString
+        if (isDataClass || NeedToStringMethod(namedType, options)) {
+            typeBuilder.AddSpec(MacroSpec.Get("region", "ToString"));
+            BuildToStringMethod(namedType, typeBuilder);
+            typeBuilder.AddSpec(MacroSpec.Get("endregion"));
+        }
         _fieldListCache.Clear();
         _propertyListCache.Clear();
+        // 允许用户在此之前插入方法
+        BeforeGenerateNestedTypes(namedType, typeBuilder, options);
 
         // 处理内部类
         foreach (DSElement enclosedElement in namedType.EnclosedElements) {
@@ -200,6 +212,21 @@ public class CodeGeneratorHelper
             typeBuilder.AddSpec(Generate(nestedType).Build());
         }
     }
+
+    public static CodeBlock BuildDocument(List<string> comments) {
+        if (comments.Count == 0) return CodeBlock.Empty;
+        CodeBlock.Builder builder = CodeBlock.NewBuilder();
+        foreach (string comment in comments) {
+            if (!builder.IsEmpty) {
+                builder.AddNewLine();
+            }
+            int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
+            builder.Add(comment.Substring(idx));
+        }
+        return builder.Build();
+    }
+
+    #region 扩展钩子
 
     protected virtual void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
         if (NeedCodecMethod(namedType, options)) {
@@ -219,7 +246,7 @@ public class CodeGeneratorHelper
     }
 
     /// <summary>
-    /// 是否生成CopyFrom方法 -- 数据类一定会生成，这里处理非数据类的情况
+    /// 是否生成CopyFrom方法
     /// </summary>
     /// <returns></returns>
     protected virtual bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
@@ -233,46 +260,31 @@ public class CodeGeneratorHelper
         return true;
     }
 
-    public static CodeBlock BuildDocument(List<string> comments) {
-        if (comments.Count == 0) return CodeBlock.Empty;
-        CodeBlock.Builder builder = CodeBlock.NewBuilder();
-        foreach (string comment in comments) {
-            if (!builder.IsEmpty) {
-                builder.AddNewLine();
-            }
-            int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
-            builder.Add(comment.Substring(idx));
-        }
-        return builder.Build();
+    /// <summary>
+    /// 是否需要生成ToString方法 -- DataClass一定会生成ToString
+    /// </summary>
+    /// <returns></returns>
+    protected virtual bool NeedToStringMethod(DSNamedType namedType, DsonObject<string> options) {
+        return false;
     }
-
-    #region 字段和属性
 
     /// <summary>
-    /// 构建sst字符串字段和属性
-    /// (如果返回的属性名和原字段的属性名相同，则删除原字段的属性 -- 默认覆盖)
+    /// 生成Copy和Equals方法前调用，用户可以在这之前插入方法
+    /// （走到这不代表一定会生成Copy或Equals方法，只是代码位置到了）
     /// </summary>
-    protected virtual void BuildSstiFieldAndProperty(DSField field, string fieldName,
-                                                     out FieldSpec sstiFieldSpec, out PropertySpec sstiPropertySpec) {
-        TypeName sstiFieldTypeName;
-        string sstMethodName;
-        if (IsList(field.Type)) {
-            sstiFieldTypeName = TYPE_NAME_IMMUTABLE_LIST_STRING;
-            sstMethodName = "GetStringList";
-        } else {
-            sstiFieldTypeName = TypeName.STRING;
-            sstMethodName = "GetString";
-        }
-        string sstiFieldName = fieldName + "Cache"; // descCache
-        sstiFieldSpec = FieldSpec.NewBuilder(sstiFieldTypeName, sstiFieldName, Modifiers.Private)
-            .AddAttribute(ATTRIBUTE_NON_SERIALIZED) // 避免被其它框架序列化
-            .Build();
-        // 覆盖原字段的属性
-        sstiPropertySpec = PropertySpec.NewBuilder(sstiFieldTypeName, GetPropertyName(field.SimpleName), Modifiers.Public)
-            .Getter(CodeBlock.Of("$L ??= $T.$L($L)", sstiFieldName, TYPE_NAME_SST_MGR, sstMethodName, fieldName).WithExpressionStyle())
-            .RemoveSetter()
-            .Build();
+    protected virtual void BeforeGenerateCopyMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder, DsonObject<string> options) {
+
     }
+
+    /// <summary>
+    /// 生成子类型前的钩子方法，用户可以在这之前插入方法
+    /// </summary>
+    protected virtual void BeforeGenerateNestedTypes(DSNamedType namedType, TypeSpec.Builder typeBuilder, DsonObject<string> options) {
+    }
+
+    #endregion
+
+    #region 字段和属性
 
     /// <summary>
     /// 构建普通字段和对应属性
@@ -304,6 +316,31 @@ public class CodeGeneratorHelper
     }
 
     /// <summary>
+    /// 构建sst字符串字段和属性
+    /// </summary>
+    private void BuildSstiFieldAndProperty(DSField field, string fieldName, string propertyName,
+                                           out FieldSpec sstiFieldSpec, out PropertySpec sstiPropertySpec) {
+        TypeName sstiFieldTypeName;
+        string sstMethodName;
+        if (IsList(field.Type)) {
+            sstiFieldTypeName = TYPE_NAME_IMMUTABLE_LIST_STRING;
+            sstMethodName = "GetStringList";
+        } else {
+            sstiFieldTypeName = TypeName.STRING;
+            sstMethodName = "GetString";
+        }
+        GetSstiFieldAndPropertyName(fieldName, propertyName, out string sstiFieldName, out string sstiPropertyName);
+        sstiFieldSpec = FieldSpec.NewBuilder(sstiFieldTypeName, sstiFieldName, Modifiers.Private)
+            .AddAttribute(ATTRIBUTE_NON_SERIALIZED) // 避免被其它框架序列化
+            .Build();
+        // 覆盖原字段的属性
+        sstiPropertySpec = PropertySpec.NewBuilder(sstiFieldTypeName, sstiPropertyName, Modifiers.Public)
+            .Getter(CodeBlock.Of("$L ??= $T.$L($L)", sstiFieldName, TYPE_NAME_SST_MGR, sstMethodName, fieldName).WithExpressionStyle())
+            .RemoveSetter()
+            .Build();
+    }
+
+    /// <summary>
     /// 获取生成字段的名字
     /// </summary>
     /// <returns></returns>
@@ -329,11 +366,19 @@ public class CodeGeneratorHelper
     /// <summary>
     /// 获取setter属性的修饰符
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="fieldOptions"></param>
-    /// <returns></returns>
     protected virtual Modifiers GetSetterModifiers(DSField field, DsonObject<string> fieldOptions) {
         return Modifiers.Public;
+    }
+
+    /// <summary>
+    /// 获取ssti字段的名字和关联的属性名
+    ///
+    /// 如果返回的属性名和原字段的属性名相同，则删除原字段的属性 -- 默认相同
+    /// </summary>
+    protected virtual void GetSstiFieldAndPropertyName(string fieldName, string propertyName,
+                                                       out string sstiFieldName, out string sstiPropertyName) {
+        sstiFieldName = fieldName + "Cache";
+        sstiPropertyName = propertyName;
     }
 
     #endregion
@@ -447,29 +492,40 @@ public class CodeGeneratorHelper
         if (namedType.BaseType != null) {
             constructorBuilder.ConstructorInvoker(CodeBlock.Of("base(reader)"));
         }
+        CodeBlock.Builder codeBuilder = constructorBuilder.codeBuilder;
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = GetOptions(field);
             if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
                 continue;
             }
-            // readonly字段必须在输入流中存在，非readonly则可选读
-            if (!field.IsReadonly) {
-                constructorBuilder.codeBuilder.Add("if (reader.ReadName($S))", field.SimpleName);
-            }
-            CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
-            if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
-                constructorBuilder.codeBuilder.AddStatement("$T.$L(this, reader, $S)", codecProxy, fieldCodecCfg.readProxy, field.SimpleName);
-                continue;
-            }
             string fieldName = GetFieldName(field.SimpleName);
             TypeName fieldTypeName = GetTypeName(field.Type);
             string readMethodName = GetReadMethodName(fieldTypeName);
+            if (field.IsReadonly) {
+                // readonly字段必须在输入流中存在 -- 不能条件赋值
+                if (readMethodName == METHOD_NAME_READ_OBJECT) {
+                    // ReadObject需要传声明类型
+                    codeBuilder.AddStatement("this.$L = reader.$L<$T>($S)", fieldName, readMethodName, fieldTypeName, field.SimpleName);
+                } else {
+                    codeBuilder.AddStatement("this.$L = reader.$L($S)", fieldName, readMethodName, field.SimpleName);
+                }
+                continue;
+            }
+            // 非readonly字段可以不存在于输入流 -- 支持用户代理
+            codeBuilder.Add("if (reader.ReadName($S))", field.SimpleName);
+            //
+            CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
+            if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
+                codeBuilder.AddStatement("$T.$L(this, reader, $S)", codecProxy, fieldCodecCfg.readProxy, field.SimpleName);
+                continue;
+            }
+            // 由于name已读取，不再传name可减少开销
             if (readMethodName == METHOD_NAME_READ_OBJECT) {
                 // ReadObject需要传声明类型
-                constructorBuilder.codeBuilder.AddStatement("this.$L = reader.$L<$T>($S)", fieldName, readMethodName, fieldTypeName, field.SimpleName);
+                codeBuilder.AddStatement("this.$L = reader.$L<$T>(null)", fieldName, readMethodName, fieldTypeName);
             } else {
-                constructorBuilder.codeBuilder.AddStatement("this.$L = reader.$L($S)", fieldName, readMethodName, field.SimpleName);
+                codeBuilder.AddStatement("this.$L = reader.$L(null)", fieldName, readMethodName);
             }
         }
         return constructorBuilder.Build();
@@ -511,7 +567,10 @@ public class CodeGeneratorHelper
 
     #region copy
 
-    private MethodSpec BuildCopyMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+    /// <summary>
+    /// 默认实现为浅拷贝，子类可以重写该方法以实现深度拷贝
+    /// </summary>
+    protected virtual MethodSpec BuildCopyMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         TypeName typeName = GetTypeName(namedType);
         MethodSpec.Builder copyMethodBuilder;
         if (namedType.BaseType != null) {
@@ -593,26 +652,27 @@ public class CodeGeneratorHelper
             }
         }
         // 逐字段比较
+        CodeBlock.Builder codeBuilder = equalsBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             string fieldName = GetFieldName(field.SimpleName);
             if (UsingEqualsOperator(field.Type)) {
                 // 基础类型 -- 直接使用 '==' 比较
-                equalsBuilder.codeBuilder.AddStatement("if (this.$L != other.$L) return false", fieldName, fieldName);
+                codeBuilder.AddStatement("if (this.$L != other.$L) return false", fieldName, fieldName);
             } else if (field.Type.IsValueType) {
                 // 值类型 -- 值类型不为null，避免装箱；其实我们的值类型也重写了==操作符
-                equalsBuilder.codeBuilder.AddStatement("if (!this.$L.Equals(other.$L)) return false", fieldName, fieldName);
+                codeBuilder.AddStatement("if (!this.$L.Equals(other.$L)) return false", fieldName, fieldName);
             } else if (IsList(field.Type)) {
                 // List默认使用SequenceEqual -- Util类处理了null
-                equalsBuilder.codeBuilder.AddStatement("if (!$T.SequenceEqual(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
+                codeBuilder.AddStatement("if (!$T.SequenceEqual(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
             } else if (IsSetOrDictionary(field.Type)) {
                 // 集合和字典使用DataEquals
-                equalsBuilder.codeBuilder.AddStatement("if (!$T.DataEquals(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
+                codeBuilder.AddStatement("if (!$T.DataEquals(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
             } else {
                 // 其它引用类型 -- 使用object下的equals，泛型参数会走到这
-                equalsBuilder.codeBuilder.AddStatement("if (!Equals(this.$L, other.$L)) return false", fieldName, fieldName);
+                codeBuilder.AddStatement("if (!Equals(this.$L, other.$L)) return false", fieldName, fieldName);
             }
         }
-        equalsBuilder.codeBuilder.AddStatement("return true");
+        codeBuilder.AddStatement("return true");
         typeBuilder.AddSpec(equalsBuilder.Build());
 
         // 如果是值类型，重写==操作符，这里用CodeBlock构建更简单些 -- 需要额外的缩进
@@ -637,37 +697,42 @@ public class CodeGeneratorHelper
 
     private void BuildHashCodeMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         // 重写object的GetHashCode
-        MethodSpec.Builder builder = MethodSpec.NewMethodBuilder("GetHashCode")
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("GetHashCode")
             .AddModifiers(Modifiers.Public | Modifiers.Override)
             .Returns(TypeName.INT);
         // 变量名需要特殊一点，避免和正常字段冲突
         if (namedType.BaseType != null) {
-            builder.codeBuilder.AddStatement("int hashCode = base.GetHashCode()");
-        } else {
-            builder.codeBuilder.AddStatement("int hashCode = 1");
+            methodBuilder.codeBuilder.AddStatement("int hashCode = base.GetHashCode()");
         }
         // 逐字段计算
+        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             string fieldName = GetFieldName(field.SimpleName);
+            // 在首个字段处声明变量
+            codeBuilder.Add(codeBuilder.IsEmpty ? "int hashCode = " : "hashCode =(hashCode * 397) ^ ");
             if (field.Type.IsValueType) {
                 // 值类型直接调用HashCode
-                builder.codeBuilder.AddStatement("hashCode =(hashCode * 397) ^ this.$L.GetHashCode()", fieldName);
+                codeBuilder.AddStatement("this.$L.GetHashCode()", fieldName);
             } else if (IsList(field.Type) || IsSetOrDictionary(field.Type)) {
                 // 集合类型调用Util的HashCode
-                builder.codeBuilder.AddStatement("hashCode =(hashCode * 397) ^ $T.HashCode(this.$L)", TYPE_NAME_COLLECTION_UTIL, fieldName);
+                codeBuilder.AddStatement("$T.HashCode(this.$L)", TYPE_NAME_COLLECTION_UTIL, fieldName);
             } else {
                 // 手动测试null
-                builder.codeBuilder.AddStatement("hashCode =(hashCode * 397) ^ (this.$L != null ? this.$L.GetHashCode() :  0)", fieldName, fieldName);
+                codeBuilder.AddStatement("(this.$L != null ? this.$L.GetHashCode() :  0)", fieldName, fieldName);
             }
         }
-        builder.codeBuilder.AddStatement("return hashCode");
-        typeBuilder.AddSpec(builder.Build());
+        if (codeBuilder.IsEmpty) {
+            codeBuilder.AddStatement("return 1");
+        } else {
+            codeBuilder.AddStatement("return hashCode");
+        }
+        typeBuilder.AddSpec(methodBuilder.Build());
     }
 
     /** 是否使用 '==' 操作符测试相等性，<see cref="Nullable{T}"/> */
     protected virtual bool UsingEqualsOperator(DSTypeElement typeElement) {
-        if (typeElement is DSNamedType namedType) {
-            return namedType.SimpleName switch
+        if (typeElement.Kind.IsNamedType()) {
+            return typeElement.SimpleName switch
             {
                 DSKeywords.TYPE_INT32 => true,
                 DSKeywords.TYPE_INT64 => true,
@@ -676,20 +741,32 @@ public class CodeGeneratorHelper
                 DSKeywords.TYPE_BOOL => true,
                 DSKeywords.TYPE_STRING => true,
                 DSKeywords.TYPE_DATETIME => true,
-                DSKeywords.TYPE_NULLABLE => UsingEqualsOperator(namedType.TypeArguments[0]), // Nullable需要检测Value
+                DSKeywords.TYPE_NULLABLE => UsingEqualsOperator(((DSNamedType)typeElement).TypeArguments[0]), // Nullable需要检测Value
                 _ => false
             };
         }
         return false;
     }
 
-    public static bool IsNullableType(DSTypeElement typeElement) {
-        return typeElement is DSNamedType namedType && namedType.IsNullableType;
+    /** 是否是csharp基本类型 */
+    public static bool IsPrimitiveType(DSTypeElement typeElement) {
+        if (typeElement.Kind.IsNamedType()) {
+            return typeElement.SimpleName switch
+            {
+                DSKeywords.TYPE_INT32 => true,
+                DSKeywords.TYPE_INT64 => true,
+                DSKeywords.TYPE_FLOAT => true,
+                DSKeywords.TYPE_DOUBLE => true,
+                DSKeywords.TYPE_BOOL => true,
+                _ => false
+            };
+        }
+        return false;
     }
 
     public static bool IsList(DSTypeElement typeElement) {
-        if (typeElement is DSNamedType namedType) {
-            return namedType.SimpleName switch
+        if (typeElement.Kind.IsNamedType()) {
+            return typeElement.SimpleName switch
             {
                 DSKeywords.TYPE_LIST => true,
                 TYPE_IMMUTABLE_LIST => true,
@@ -700,8 +777,8 @@ public class CodeGeneratorHelper
     }
 
     public static bool IsSetOrDictionary(DSTypeElement typeElement) {
-        if (typeElement is DSNamedType namedType) {
-            return namedType.SimpleName switch
+        if (typeElement.Kind.IsNamedType()) {
+            return typeElement.SimpleName switch
             {
                 DSKeywords.TYPE_HASH_SET => true,
                 TYPE_LINKED_HASHSET => true,
@@ -709,6 +786,7 @@ public class CodeGeneratorHelper
 
                 DSKeywords.TYPE_MAP => true,
                 TYPE_LINKED_DICTIONARY => true,
+                TYPE_LINKED_MAP => true,
                 TYPE_IMMUTABLE_DICTIONARY => true,
                 TYPE_IMMUTABLE_MAP => true,
                 _ => false
@@ -719,9 +797,65 @@ public class CodeGeneratorHelper
 
     #endregion
 
-    #region TypeName
+    #region ToString
 
-    public static readonly ArrayTypeName TYPE_NAME_BYTES = ArrayTypeName.BYTE_ARRAY;
+    /// <summary>
+    /// 默认格式<code>K1: V1, K2: V2 ...</code>
+    /// </summary>
+    /// <param name="namedType"></param>
+    /// <param name="typeBuilder"></param>
+    protected virtual void BuildToStringMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("ToString")
+            .AddModifiers(Modifiers.Public | Modifiers.Override)
+            .Returns(TypeName.STRING);
+
+        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
+        codeBuilder.AddStatement("var sb = new $T()", TYPE_NAME_STRING_BUILDER);
+        int count = 0;
+        if (namedType.BaseType != null) {
+            count = 1;
+            codeBuilder.AddStatement("sb.Append(base.ToString())");
+        }
+        // 逐字段追加
+        foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
+            if (count++ > 0) {
+                codeBuilder.AddStatement("sb.Append(\", \")");
+            }
+            string fieldName = GetFieldName(field.SimpleName);
+            // 集合类型调用Util类的ToString，避免创建额外的StringBuilder
+            if (IsList(field.Type) || IsSetOrDictionary(field.Type)) {
+                codeBuilder.AddStatement("sb.Append($S).Append(':')", field.SimpleName);
+                codeBuilder.AddStatement("$T.ToStringHelper(this.$L, sb)", TYPE_NAME_COLLECTION_UTIL, fieldName);
+                continue;
+            }
+            codeBuilder.Add("sb.Append($S).Append(':').Append(", field.SimpleName);
+            if (IsPrimitiveType(field.Type)) {
+                // 基本类型直接调用StringBuilder的Append，避免额外的ToString调用
+                codeBuilder.Add("this.$L", fieldName);
+            } else if (DSUtil.IsDateTimeType(field.Type)) {
+                // DateTime指定ISO8601格式
+                codeBuilder.Add("this.$L.ToString(\"s\")", fieldName);
+            } else if (DSUtil.IsNullableType(field.Type)) {
+                // Nullable我们追加Null -- 默认的ToString返回的是空字符串
+                codeBuilder.Add("this.$L != null ? this.$L.ToString() :  \"null\"", fieldName, fieldName);
+            } else if (field.Type.IsValueType) {
+                // 普通值类型直接调用ToString
+                codeBuilder.Add("this.$L.ToString()", fieldName);
+            } else {
+                // 手动测试null
+                codeBuilder.Add("this.$L != null ? this.$L.ToString() :  \"null\"", fieldName, fieldName);
+            }
+            codeBuilder.Add(");\n");
+        }
+        codeBuilder.AddStatement("return sb.ToString()");
+        typeBuilder.AddSpec(methodBuilder.Build());
+    }
+
+    #endregion
+
+    #region 类型名解析
+
+    private static readonly ArrayTypeName TYPE_NAME_BYTE_ARRAY = ArrayTypeName.BYTE_ARRAY;
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(typeof(KeyValuePair<,>));
 
@@ -811,6 +945,7 @@ public class CodeGeneratorHelper
             DSKeywords.TYPE_DOUBLE => TypeName.DOUBLE,
             DSKeywords.TYPE_BOOL => TypeName.BOOL,
             DSKeywords.TYPE_STRING => TypeName.STRING,
+            DSKeywords.TYPE_BYTES => TYPE_NAME_BINARY,
             //
             DSKeywords.TYPE_DATETIME => TYPE_NAME_DATETIME,
             DSKeywords.TYPE_TIMESTAMP => TYPE_NAME_TIMESTAMP,
@@ -825,6 +960,8 @@ public class CodeGeneratorHelper
             // 扩展支持
             TYPE_LINKED_HASHSET => TYPE_NAME_LINKED_HASHSET,
             TYPE_LINKED_DICTIONARY => TYPE_NAME_LINKED_DICTIONARY,
+            TYPE_LINKED_MAP => TYPE_NAME_LINKED_DICTIONARY,
+
             TYPE_IMMUTABLE_LIST => TYPE_NAME_IMMUTABLE_LIST,
             TYPE_IMMUTABLE_SET => TYPE_NAME_IMMUTABLE_SET,
             TYPE_IMMUTABLE_DICTIONARY => TYPE_NAME_IMMUTABLE_DICTIONARY,
@@ -858,6 +995,7 @@ public class CodeGeneratorHelper
 
     public static readonly ClassName TYPE_NAME_SERIALIZABLE = ClassName.Get(typeof(DsonSerializableAttribute));
     public static readonly ClassName TYPE_NAME_OBJECT_STYLE = ClassName.Get(typeof(ObjectStyle));
+    public static readonly ClassName TYPE_NAME_STRING_BUILDER = ClassName.Get(typeof(StringBuilder));
 
     public static readonly ClassName TYPE_NAME_IEQUATABLE = ClassName.Get(typeof(IEquatable<>));
     public static readonly ClassName TYPE_NAME_COLLECTION_UTIL = ClassName.Get(typeof(CollectionUtil));
@@ -990,7 +1128,8 @@ public class CodeGeneratorHelper
         if (typeName == TypeName.USHORT) return "ReadUShort";
         if (typeName == TypeName.CHAR) return "ReadChar";
 
-        if (typeName == TYPE_NAME_BYTES) return "ReadBytes";
+        if (typeName == TYPE_NAME_BYTE_ARRAY) return "ReadBytes";
+        if (typeName == TYPE_NAME_BINARY) return "ReadBinary";
         if (typeName == TYPE_NAME_PTR) return "ReadPtr";
         if (typeName == TYPE_NAME_LPTR) return "ReadLitePtr";
         if (typeName == TYPE_NAME_DATETIME) return "ReadDateTime";
@@ -1015,7 +1154,8 @@ public class CodeGeneratorHelper
         if (typeName == TypeName.USHORT) return "WriteUShort";
         if (typeName == TypeName.CHAR) return "WriteChar";
 
-        if (typeName == TYPE_NAME_BYTES) return "WriteBytes";
+        if (typeName == TYPE_NAME_BYTE_ARRAY) return "WriteBytes";
+        if (typeName == TYPE_NAME_BINARY) return "WriteBinary";
         if (typeName == TYPE_NAME_PTR) return "WritePtr";
         if (typeName == TYPE_NAME_LPTR) return "WriteLitePtr";
         if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";

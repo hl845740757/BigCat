@@ -156,6 +156,28 @@ public class ToolUtil
     }
 
     /// <summary>
+    /// 蛇形字符串转大驼峰
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static string ToUpperCamel(string str) {
+        if (str.IndexOf('_') < 0) {
+            return ObjectUtil.FirstCharToUpperCase(str);
+        }
+        StringBuilder sb = new StringBuilder(str.Length);
+        bool nextUpperCase = true;
+        foreach (char c in str) {
+            if (c == '_') {
+                nextUpperCase = true;
+                continue;
+            }
+            sb.Append(nextUpperCase ? char.ToUpper(c) : c);
+            nextUpperCase = false;
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>
     /// 删除特定字符
     /// </summary>
     /// <param name="str"></param>
