@@ -46,7 +46,7 @@
 
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.31.0" />
-        <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.5.0-rc1" />
+        <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.5.0-rc2" />
         <PackageReference Include="Wjybxx.Commons.Core" Version="1.5.0-rc2" />
         <PackageReference Include="Wjybxx.Commons.Inject" Version="1.5.0-rc1" />
         <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.4" />

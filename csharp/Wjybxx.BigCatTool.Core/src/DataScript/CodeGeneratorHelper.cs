@@ -39,8 +39,9 @@ namespace Wjybxx.BigCatTool.DataScript
 ///
 /// 1.如果配置了字段的解码代理，则会调度到对应的代码上。
 /// 2.如果是ssti字段，则会生成辅助属性，将字符串缓存到辅助字段。
-/// 3.如果是数据类，则会生成Equals、GetHashCode、CopyFrom三个方法。
-/// 4.默认会生成DsonCodec相关的解码方案
+/// 3.如果是数据类，则会生成Equals、GetHashCode、ToString三个方法。
+/// 4.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
+/// 5.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
 /// </summary>
 public class CodeGeneratorHelper
 {
@@ -120,7 +121,7 @@ public class CodeGeneratorHelper
     private void GenerateClass(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         DsonObject<string> options = GetOptions(namedType);
         // 声明为partial
-        if (ToolUtil.GetBool(options, DSAnnotations.KEY_PARTIAL)) {
+        if (IsPartialClass(namedType, options)) {
             typeBuilder.AddModifiers(Modifiers.Partial);
         }
         // 继承
@@ -177,7 +178,7 @@ public class CodeGeneratorHelper
             BuildCodecHookMethods(namedType, classCfg, typeBuilder);
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
-        
+
         // 允许在Copy方法前插入代码
         BeforeGenerateCopyMethod(namedType, typeBuilder, options);
         // 生成CopyFrom
@@ -234,6 +235,15 @@ public class CodeGeneratorHelper
             DsonObject<string> codecOptions = GetCodecOptions(namedType);
             typeBuilder.AddAttribute(BuildCodecAttribute(codecOptions));
         }
+    }
+    
+    /// <summary>
+    /// 是否是partial类型
+    /// </summary>
+    protected virtual bool IsPartialClass(DSNamedType namedType, DsonObject<string> options) {
+        return options.ContainsKey(DSAnnotations.KEY_PARTIAL)
+            ? ToolUtil.GetBool(options, DSAnnotations.KEY_PARTIAL)
+            : namedType.GetEnclosingFile().GetOption(DSKeywords.PARTIAL_CLASS) == "true";
     }
 
     /// <summary>
@@ -295,9 +305,15 @@ public class CodeGeneratorHelper
         if (field.IsReadonly) {
             fieldModifiers |= Modifiers.ReadOnly;
         }
-        FieldSpec.Builder fieldBuilder = FieldSpec.NewBuilder(GetTypeName(field.Type), GetFieldName(field.SimpleName), fieldModifiers);
+        TypeName fieldTypeName = GetTypeName(field.Type);
+        FieldSpec.Builder fieldBuilder = FieldSpec.NewBuilder(GetTypeName(field.Type), GetFieldName(field.SimpleName), fieldModifiers)
+            .AddDocument(BuildDocument(field.Comments));
         if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
             fieldBuilder.AddAttribute(ATTRIBUTE_NON_SERIALIZED);
+        }
+        CodeBlock initializer = GetFieldInitializer(field, fieldOptions, fieldTypeName);
+        if (initializer != null) {
+            fieldBuilder.Initializer(initializer);
         }
         fieldSpec = fieldBuilder.Build();
         //
@@ -322,7 +338,7 @@ public class CodeGeneratorHelper
                                            out FieldSpec sstiFieldSpec, out PropertySpec sstiPropertySpec) {
         TypeName sstiFieldTypeName;
         string sstMethodName;
-        if (IsList(field.Type)) {
+        if (IsListType(field.Type)) {
             sstiFieldTypeName = TYPE_NAME_IMMUTABLE_LIST_STRING;
             sstMethodName = "GetStringList";
         } else {
@@ -338,6 +354,13 @@ public class CodeGeneratorHelper
             .Getter(CodeBlock.Of("$L ??= $T.$L($L)", sstiFieldName, TYPE_NAME_SST_MGR, sstMethodName, fieldName).WithExpressionStyle())
             .RemoveSetter()
             .Build();
+    }
+
+    /// <summary>
+    /// 获取字段的初始值
+    /// </summary>
+    protected virtual CodeBlock? GetFieldInitializer(DSField field, DsonObject<string> fieldOptions, TypeName fieldTypeName) {
+        return null;
     }
 
     /// <summary>
@@ -654,6 +677,10 @@ public class CodeGeneratorHelper
         // 逐字段比较
         CodeBlock.Builder codeBuilder = equalsBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
+            DsonObject<string> fieldOptions = GetOptions(field);
+            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
+                continue;
+            }
             string fieldName = GetFieldName(field.SimpleName);
             if (UsingEqualsOperator(field.Type)) {
                 // 基础类型 -- 直接使用 '==' 比较
@@ -661,10 +688,10 @@ public class CodeGeneratorHelper
             } else if (field.Type.IsValueType) {
                 // 值类型 -- 值类型不为null，避免装箱；其实我们的值类型也重写了==操作符
                 codeBuilder.AddStatement("if (!this.$L.Equals(other.$L)) return false", fieldName, fieldName);
-            } else if (IsList(field.Type)) {
+            } else if (IsListType(field.Type)) {
                 // List默认使用SequenceEqual -- Util类处理了null
                 codeBuilder.AddStatement("if (!$T.SequenceEqual(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
-            } else if (IsSetOrDictionary(field.Type)) {
+            } else if (IsSetOrDictionaryType(field.Type)) {
                 // 集合和字典使用DataEquals
                 codeBuilder.AddStatement("if (!$T.DataEquals(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
             } else {
@@ -707,13 +734,17 @@ public class CodeGeneratorHelper
         // 逐字段计算
         CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
+            DsonObject<string> fieldOptions = GetOptions(field);
+            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
+                continue;
+            }
             string fieldName = GetFieldName(field.SimpleName);
             // 在首个字段处声明变量
             codeBuilder.Add(codeBuilder.IsEmpty ? "int hashCode = " : "hashCode =(hashCode * 397) ^ ");
             if (field.Type.IsValueType) {
                 // 值类型直接调用HashCode
                 codeBuilder.AddStatement("this.$L.GetHashCode()", fieldName);
-            } else if (IsList(field.Type) || IsSetOrDictionary(field.Type)) {
+            } else if (IsListType(field.Type) || IsSetOrDictionaryType(field.Type)) {
                 // 集合类型调用Util的HashCode
                 codeBuilder.AddStatement("$T.HashCode(this.$L)", TYPE_NAME_COLLECTION_UTIL, fieldName);
             } else {
@@ -764,7 +795,7 @@ public class CodeGeneratorHelper
         return false;
     }
 
-    public static bool IsList(DSTypeElement typeElement) {
+    public static bool IsListType(DSTypeElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
             return typeElement.SimpleName switch
             {
@@ -776,14 +807,23 @@ public class CodeGeneratorHelper
         return false;
     }
 
-    public static bool IsSetOrDictionary(DSTypeElement typeElement) {
+    public static bool IsSetType(DSTypeElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
             return typeElement.SimpleName switch
             {
                 DSKeywords.TYPE_HASH_SET => true,
                 TYPE_LINKED_HASHSET => true,
                 TYPE_IMMUTABLE_SET => true,
+                _ => false
+            };
+        }
+        return false;
+    }
 
+    public static bool IsDictionaryType(DSTypeElement typeElement) {
+        if (typeElement.Kind.IsNamedType()) {
+            return typeElement.SimpleName switch
+            {
                 DSKeywords.TYPE_MAP => true,
                 TYPE_LINKED_DICTIONARY => true,
                 TYPE_LINKED_MAP => true,
@@ -793,6 +833,10 @@ public class CodeGeneratorHelper
             };
         }
         return false;
+    }
+
+    public static bool IsSetOrDictionaryType(DSTypeElement typeElement) {
+        return IsSetType(typeElement) || IsDictionaryType(typeElement);
     }
 
     #endregion
@@ -823,7 +867,7 @@ public class CodeGeneratorHelper
             }
             string fieldName = GetFieldName(field.SimpleName);
             // 集合类型调用Util类的ToString，避免创建额外的StringBuilder
-            if (IsList(field.Type) || IsSetOrDictionary(field.Type)) {
+            if (IsListType(field.Type) || IsSetOrDictionaryType(field.Type)) {
                 codeBuilder.AddStatement("sb.Append($S).Append(':')", field.SimpleName);
                 codeBuilder.AddStatement("$T.ToStringHelper(this.$L, sb)", TYPE_NAME_COLLECTION_UTIL, fieldName);
                 continue;

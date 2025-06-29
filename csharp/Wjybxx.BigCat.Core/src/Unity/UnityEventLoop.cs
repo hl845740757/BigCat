@@ -64,18 +64,12 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /** 删除延时任务，参数列表为：taskId */
     internal const int TYPE_REMOVE_SCHEDULE = -1;
 
-#pragma warning disable CS0169
-    // 填充开始 - 字段定义顺序不要随意调整
-    private long p1, p2, p3, p4, p5, p6, p7;
     /** 线程本地时间 -- 时间的更新频率极高，进行缓存行填充隔离；使用volatile读写 */
-    private long _tickTime;
-    private long p11, p12, p13, p14, p15, p16, p17;
-    /** 可消费的最大序号 -- 非死循环情况下，需要存储在外部 */
+    private PaddedInt64 _tickTime;
+    /** 可消费的最大序号 -- 非死循环情况下，需要存储在外部；线程本地变量不填充 */
     private long availableSequence = -1;
-    private long p21, p22, p23, p24, p25, p26, p27, p28;
-    /** 线程状态 -- 下面的final字段充当缓存行填充 */
+    /** 线程状态 -- 变化频率低，不填充 */
     private volatile int state = ST_UNSTARTED;
-#pragma warning restore CS0169
 
     /** 事件队列 */
     private readonly EventSequencer<T> eventSequencer;
@@ -112,7 +106,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
     public UnityEventLoop(UnityEventLoopBuilder<T> builder, bool bindAgent = true)
         : base(builder.Parent, builder.ModuleList) {
-        this._tickTime = ObjectUtil.SystemTicks();
+        this._tickTime.SetVolatile(ObjectUtil.SystemTicks());
         this.eventSequencer = builder.EventSequencer ?? throw new ArgumentException("builder.EventSequencer");
         this.dataProvider = eventSequencer.DataProvider;
         this.schedulerHelper = new DisruptorSchedulerHelper<T>(this);
@@ -151,13 +145,13 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
     public override long TickTime {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => Volatile.Read(ref _tickTime);
+        get => _tickTime.GetVolatile();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private long UpdateTickTime() {
         long tickTime = ObjectUtil.SystemTicks();
-        Volatile.Write(ref _tickTime, tickTime);
+        _tickTime.SetVolatile(tickTime);
         return tickTime;
     }
 
@@ -186,10 +180,18 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
     public override void Execute(ITask task) {
         if (task == null) throw new ArgumentNullException(nameof(task));
+        // 在申请序号之前注入Helper（初始化任务的调度时间，避免被阻塞导致延迟）
+        IScheduledFutureTask? promiseTask = task as IScheduledFutureTask;
+        if (promiseTask != null) {
+            promiseTask.Inject(schedulerHelper);
+        }
         long sequence = NextSequence(1);
         if (sequence < 0) {
             rejectedExecutionHandler.Rejected(task, this);
             return;
+        }
+        if (promiseTask != null) {
+            promiseTask.Id = sequence; // nice
         }
         PublishTask(task, sequence, task.Options);
     }
@@ -230,9 +232,6 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                 eventObj!.Type = 0;
                 eventObj.Obj1 = task;
                 eventObj.Options = options;
-                if (task is IScheduledFutureTask futureTask) {
-                    futureTask.Inject(schedulerHelper, sequence); // nice
-                }
             }
             finally {
                 eventSequencer.Publish(sequence, in eventObj);
@@ -243,9 +242,6 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                 eventObj.Type = 0;
                 eventObj.Obj1 = task;
                 eventObj.Options = options;
-                if (task is IScheduledFutureTask futureTask) {
-                    futureTask.Inject(schedulerHelper, sequence); // nice
-                }
             }
             finally {
                 eventSequencer.Publish(sequence);

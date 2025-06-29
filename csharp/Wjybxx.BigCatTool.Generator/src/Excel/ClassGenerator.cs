@@ -120,6 +120,16 @@ public class ClassGenerator : ISheetProcessor
                 .Constructor(CodeBlock.Of(serialVersion.ToString())).Build());
         }
 
+        protected override CodeBlock? GetFieldInitializer(DSField field, DsonObject<string> fieldOptions, TypeName fieldTypeName) {
+            if (field.IsReadonly) {
+                return null;
+            }
+            if (IsListType(field.Type) || IsSetType(field.Type) || IsDictionaryType(field.Type)) {
+                return CodeBlock.Of("$T.Empty", fieldTypeName);
+            }
+            return null;
+        }
+
         protected override Modifiers GetSetterModifiers(DSField field, DsonObject<string> fieldOptions) {
             return Modifiers.Internal; // 允许表格模块读表时赋值和增加缓存字段
         }

@@ -59,8 +59,9 @@ public static class DSAnnotations
     /// - partial 用于表示生成的class和struct需要是partial类
     ///
     /// <h3>用于字段时</h3>
-    /// <code>// @Options{nonSerialized: true, ssti: true}</code>
+    /// <code>// @Options{nonSerialized: true, nonEqual: true, ssti: true}</code>
     /// - nonSerialized 用于标识字段无需支持序列化
+    /// - nonEqual 是否不执行equals测试(不参与equals测试也就不会参与hash计算)
     /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
     ///
     /// 注：DS脚本中的类型默认都是可序列化的。
@@ -101,7 +102,9 @@ public static class DSAnnotations
     public const string KEY_IS_FLAGS = "isFlags";
     public const string KEY_DATA_CLASS = "dataClass";
     public const string KEY_PARTIAL = "partial";
+    
     public const string KEY_NON_SERIALIZED = "nonSerialized";
+    public const string KEY_NON_EQUAL = "nonEqual";
     public const string KEY_SSTI = "ssti";
 
     public const string KEY_ALIAS = "alias";

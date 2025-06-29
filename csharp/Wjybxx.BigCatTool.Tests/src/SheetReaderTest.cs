@@ -93,28 +93,28 @@ public class SheetReaderTest
         string sstDir = outDir + "/sst";
         new SstGenerator(repository, sstDir).Execute();
 
-        // 生成ds文件
-        string? tableDsFilePath = outDir + "/tables.ds";
-        {
-            FileInfo templateFile = new FileInfo(resDir + "/SheetCfg.tt");
-            new DataScriptGenerator(repository, templateFile, tableDsFilePath, RequireMode.All).Execute();
-        }
+        DsonObject<string> cfgObject = Dsons.FromDson(File.ReadAllText(resDir + "/SheetGeneratorCfg.dson")).AsObject();
+        // 生成ds文件 -- 先由Dson初始化，再覆盖部分数据
+        DataScriptGeneratorCfg dsGeneratorCfg = converter.ReadFromDsonValue<DataScriptGeneratorCfg>(cfgObject["dsGenerator"]);
+        dsGeneratorCfg.outPath = "/tables.ds";
+        dsGeneratorCfg.templateFile = resDir + "/SheetCfg.tt";
+        new DataScriptGenerator(repository, dsGeneratorCfg, RequireMode.All).Execute();
+
         // 构建ds仓库
         DSRepository dsRepository = new DSRepository();
         {
-            dsRepository.AddFile(DSFileParser.Parse(new FileInfo(tableDsFilePath)));
+            dsRepository.AddFile(DSFileParser.Parse(new FileInfo(dsGeneratorCfg.outPath)));
         }
         dsRepository.Build();
         // 导出Dson
         new DsonGenerator(repository, dsRepository, RequireMode.All, outDir, true).Execute();
 
-        // 生成常量类
-        DsonObject<string> cfgObject = Dsons.FromDson(File.ReadAllText(resDir + "/SheetGeneratorCfg.dson")).AsObject();
+        // 生成常量类 -- 先由Dson初始化，再覆盖部分数据
         ConstGeneratorCfg constGeneratorCfg = converter.ReadFromDsonValue<ConstGeneratorCfg>(cfgObject["constGenerator"]);
         constGeneratorCfg.outPath = outDir;
         new ConstGenerator(repository, constGeneratorCfg).Execute();
 
-        // 生成Class
+        // 生成Class -- 先由Dson初始化，再覆盖部分数据
         CodeGeneratorCfg classGeneratorCfg = converter.ReadFromDsonValue<CodeGeneratorCfg>(cfgObject["classGenerator"]);
         classGeneratorCfg.outPath = outDir;
         new ClassGenerator(dsRepository, classGeneratorCfg, new List<string>() { "tables.ds" }).Execute();

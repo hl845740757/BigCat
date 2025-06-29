@@ -61,6 +61,8 @@ public static class DSKeywords
     public const string CSHARP_NAMESPACE = "csharp_namespace";
     /** 用于指示文件内的数据结构都是数据类 -- value为bool类型，true或false */
     public const string DATA_CLASS = "data_class";
+    /** 用于指示生成代码时是否声明为partial类型 -- value为bool类型，true或false */
+    public const string PARTIAL_CLASS = "partial_class";
 
     #endregion
 

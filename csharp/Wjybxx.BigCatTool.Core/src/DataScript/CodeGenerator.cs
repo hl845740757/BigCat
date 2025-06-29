@@ -35,13 +35,13 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 4.如果默认的逻辑不满足要求，可将类型标注为<code>partial</code>，自行扩展equals和hashcode。
 /// 5.如果反复增删set和字典的数据，hashcode无法保证一致 —— 只增不减的情况下才能保证hashcode和equals一致。
 /// </summary>
-public class DSCodeGenerator
+public class CodeGenerator
 {
-    private static readonly AttributeSpec processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(DSCodeGenerator));
+    private static readonly AttributeSpec processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(CodeGenerator));
 
     private readonly DSRepository _repository;
-    private readonly LinkedHashSet<string> _fileNames;
     private readonly CodeGeneratorCfg _cfg;
+    private readonly LinkedHashSet<string> _fileNames;
     private readonly CodeGeneratorHelper _helper;
 
     /// <summary>
@@ -50,7 +50,7 @@ public class DSCodeGenerator
     /// <param name="repository">脚本仓库</param>
     /// <param name="cfg">生成器配置</param>
     /// <param name="fileNames">需要生成代码的文件</param>
-    public DSCodeGenerator(DSRepository repository, CodeGeneratorCfg cfg, ICollection<string> fileNames) {
+    public CodeGenerator(DSRepository repository, CodeGeneratorCfg cfg, ICollection<string> fileNames) {
         _repository = repository;
         _cfg = cfg;
         _helper = new CodeGeneratorHelper(repository, cfg, processorInfo);

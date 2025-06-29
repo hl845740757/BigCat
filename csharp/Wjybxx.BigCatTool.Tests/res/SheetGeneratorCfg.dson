@@ -1,6 +1,20 @@
 ﻿// excel工具配置
 {
-    // class生成配置 -- ClassGeneratorCfg
+    // ds文件生成配置 -- DataScriptGeneratorCfg
+    dsGenerator: {
+        // outPath: "", 
+        // templateFile = "",
+        items: [
+            {
+                 name: ItemCfg,
+                 extraFields: [
+                    {name: cacheLv, type: int32, comment: "额外缓存字段"}
+                 ]
+            }
+        ]
+    },
+    
+    // class生成配置 -- CodeGeneratorCfg
     classGenerator: {
         // outPath: "", 
         codecProxyNs: "Wjybxx.BigCat.Demo",

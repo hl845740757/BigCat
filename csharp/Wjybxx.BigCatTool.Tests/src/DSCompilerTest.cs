@@ -60,7 +60,7 @@ public class DSCompilerTest
         if (!Directory.Exists(tempDir)) {
             Directory.CreateDirectory(tempDir);
         }
-        new DSCodeGenerator(repository, new CodeGeneratorCfg()
+        new CodeGenerator(repository, new CodeGeneratorCfg()
         {
             combine = true,
             outPath = tempDir

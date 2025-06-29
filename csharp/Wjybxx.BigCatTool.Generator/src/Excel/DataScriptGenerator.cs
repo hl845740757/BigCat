@@ -32,47 +32,31 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// <summary>
 /// 根据Excel生成对应的DataScript文件
 /// (将表格数据追加到文本模板尾部即可)
-///
-/// 表格要扩展字段有以下方式：
-/// 1.在原表中增加额外的缓存字段
-/// 2.在内存表中增加额外的缓存列(Header)
-/// 3.改进该工具，增加配置以支持在生成ds文件时追加字段(不影响原表)
-/// 4.在生成代码的过程中插入字段
-/// 5.生成代码时将class声明为partial，直接通过代码的方式扩展字段
-///
-/// 最佳方案其实是3，即通过该工具扩展字段；最差方案是4，即在生成代码的过程中动态插入字段；
-/// 实操最简单的还是方案1，即在原表中增加缓存字段，这样可以统一处理。
 /// </summary>
 public class DataScriptGenerator : ISheetProcessor
 {
     private readonly SheetRepository _repository;
-    private readonly FileInfo _templateFile;
-    private readonly string _outPath;
+    private readonly DataScriptGeneratorCfg _cfg;
     private readonly RequireMode _requireMode;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="repository">文件仓库</param>
-    /// <param name="templateFile">模板文件</param>
-    /// <param name="outPath">输出路径；如果'.ds'结尾，表示输出为单个文件；单文件有利于import</param>
+    /// <param name="cfg">生成器配置文件</param>
     /// <param name="requireMode">导出模式</param>
-    public DataScriptGenerator(SheetRepository repository, FileInfo templateFile, string outPath, RequireMode requireMode) {
-        _templateFile = templateFile;
+    public DataScriptGenerator(SheetRepository repository, DataScriptGeneratorCfg cfg, RequireMode requireMode) {
         _repository = repository;
-        _outPath = outPath;
+        _cfg = cfg;
         _requireMode = requireMode;
     }
 
     public void Execute() {
-        if (!_templateFile.Exists) {
-            throw new IOException("Template file doesn't exist.");
-        }
-        string[] fileHeaders = File.ReadAllLines(_templateFile.FullName);
+        string[] fileHeaders = File.ReadAllLines(_cfg.templateFile);
         List<string> lines = new List<string>(100);
         HashSet<string> generatedSheets = new HashSet<string>();
         // 初始化文件头
-        bool singleFileMode = _outPath.EndsWith(".ds");
+        bool singleFileMode = _cfg.outPath.EndsWith(".ds");
         if (singleFileMode) {
             lines.AddRange(fileHeaders);
         }
@@ -128,12 +112,12 @@ public class DataScriptGenerator : ISheetProcessor
                 }
             }
             if (!singleFileMode) {
-                string path = Path.Combine(_outPath, grouping.Key + ".ds");
+                string path = Path.Combine(_cfg.outPath, grouping.Key + ".ds");
                 File.WriteAllLines(path, lines.ToArray(), ToolUtil.ENCODING_UTF8);
             }
         }
         if (singleFileMode) {
-            File.WriteAllLines(_outPath, lines.ToArray(), ToolUtil.ENCODING_UTF8);
+            File.WriteAllLines(_cfg.outPath, lines.ToArray(), ToolUtil.ENCODING_UTF8);
         }
     }
 
@@ -184,6 +168,18 @@ public class DataScriptGenerator : ISheetProcessor
                 lines.Add($"    readonly {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
             } else {
                 lines.Add($"    {header.type} {header.name} = {number++}; // {header.comment ?? header.name}");
+            }
+        }
+        // 扩展字段 -- 扩展字段都是缓存字段，不参与equals和hashcode测试
+        DataScriptGeneratorCfg.ClassCfg classCfg = _cfg.items.FirstOrDefault(e => e.name == clsName);
+        if (classCfg != null && classCfg.extraFields.Count > 0) {
+            foreach (DataScriptGeneratorCfg.FieldCfg fieldCfg in classCfg.extraFields) {
+                lines.Add($"    //@{DSAnnotations.OPTIONS}"
+                          + "{"
+                          + $"{DSAnnotations.KEY_NON_EQUAL}: true,"
+                          + $" {DSAnnotations.KEY_NON_SERIALIZED}: true"
+                          + "}");
+                lines.Add($"    {fieldCfg.type} {fieldCfg.name} = {number++}; // {fieldCfg.comment ?? fieldCfg.name}");
             }
         }
         lines.Add("}");
