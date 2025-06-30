@@ -17,11 +17,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using Wjybxx.BigCatTool.Core;
-using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
-using Wjybxx.Dson;
 using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCatTool.DataScript
@@ -76,13 +71,12 @@ public static class DSAnnotations
     /// <code>// @Codec{alias: [xxx, xxx, xxx], style: flow, elemStyle: flow} </code>
     /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写
     /// - style 表示该类型输出为Dson文本时的默认排版，其值可见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>；不区分大小写，不认识的值将被忽略。
-    /// - elemStyle 用于指定数组元素或字典的Value的排版，可能不会生效。
+    /// - elemStyle 用于指定数组元素或字典的Value的排版；非必需功能，可能不会生效。
     ///
     /// <h3>用于字段时</h3>
     /// <code>// @Codec{name: xyz, style: flow} </code>
     /// - name 表示字段序列化的名字，不推荐使用
-    /// - style 表示该类型输出为Dson文本时的默认排版
-    ///
+    /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
     /// </summary>
     public const string CODEC = "Codec";
 
@@ -102,7 +96,7 @@ public static class DSAnnotations
     public const string KEY_IS_FLAGS = "isFlags";
     public const string KEY_DATA_CLASS = "dataClass";
     public const string KEY_PARTIAL = "partial";
-    
+
     public const string KEY_NON_SERIALIZED = "nonSerialized";
     public const string KEY_NON_EQUAL = "nonEqual";
     public const string KEY_SSTI = "ssti";

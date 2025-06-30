@@ -1,5 +1,6 @@
 using Wjybxx.Commons.Attributes;
 using Wjybxx.Dson.Codec.Attributes;
+using Wjybxx.Dson.Text;
 using System;
 using Wjybxx.Dson.Types;
 using System.Collections.Generic;
@@ -7,28 +8,56 @@ using Wjybxx.Commons.Collections;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.Dson.Codec;
 using System.Text;
-using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCatTool.Tests.Generated
 {
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "SimpleBean" })]
 public class SimpleBean
 {
     #nullable disable
     // ReSharper disable All
     private readonly int _age;
     private readonly string _name;
+    /// <summary>
+    /// 测试nullable
+    /// </summary>
     private int? _opt;
+    /// <summary>
+    /// 测试时间类型
+    /// </summary>
     private DateTime _dt;
+    /// <summary>
+    /// 测试字节数组    
+    /// </summary>
     private Binary _data1;
+    /// <summary>
+    /// 测试List
+    /// </summary>
     private List<int> _list;
+    /// <summary>
+    /// 测试HashSet
+    /// </summary>
     private HashSet<int> _hashset;
+    /// <summary>
+    /// 测试Map
+    /// </summary>
     private Dictionary<int, string> _dic;
+    /// <summary>
+    /// 测试二维List    
+    /// </summary>
     private List<List<int>> _listX;
+    /// <summary>
+    /// @Options {ssti: true}
+    /// 测试ssti
+    /// </summary>
     private int _strLink;
     [NonSerialized]
     private string _strLinkCache;
+    /// <summary>
+    /// @Options {ssti: true}    
+    /// 测试sstiList
+    /// </summary>
     private List<int> _strLinkList;
     [NonSerialized]
     private ImmutableList<string> _strLinkListCache;
@@ -82,15 +111,15 @@ public class SimpleBean
     public SimpleBean(IDsonObjectReader reader) {
         this._age = reader.ReadInt("age");
         this._name = reader.ReadString("name");
-        if (reader.ReadName("opt"))this._opt = reader.ReadObject<int?>(null);
-        if (reader.ReadName("dt"))this._dt = reader.ReadDateTime(null);
-        if (reader.ReadName("data1"))this._data1 = reader.ReadBinary(null);
-        if (reader.ReadName("list"))this._list = reader.ReadObject<List<int>>(null);
-        if (reader.ReadName("hashset"))this._hashset = reader.ReadObject<HashSet<int>>(null);
-        if (reader.ReadName("dic"))this._dic = reader.ReadObject<Dictionary<int, string>>(null);
-        if (reader.ReadName("listX"))this._listX = reader.ReadObject<List<List<int>>>(null);
-        if (reader.ReadName("strLink"))this._strLink = reader.ReadInt(null);
-        if (reader.ReadName("strLinkList"))this._strLinkList = reader.ReadObject<List<int>>(null);
+        if (reader.ReadName("opt")) this._opt = reader.ReadObject<int?>(null);
+        if (reader.ReadName("dt")) this._dt = reader.ReadDateTime(null);
+        if (reader.ReadName("data1")) this._data1 = reader.ReadBinary(null);
+        if (reader.ReadName("list")) this._list = reader.ReadObject<List<int>>(null);
+        if (reader.ReadName("hashset")) this._hashset = reader.ReadObject<HashSet<int>>(null);
+        if (reader.ReadName("dic")) this._dic = reader.ReadObject<Dictionary<int, string>>(null);
+        if (reader.ReadName("listX")) this._listX = reader.ReadObject<List<List<int>>>(null);
+        if (reader.ReadName("strLink")) this._strLink = reader.ReadInt(null);
+        if (reader.ReadName("strLinkList")) this._strLinkList = reader.ReadObject<List<int>>(null);
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -141,16 +170,16 @@ public class SimpleBean
 
     public override int GetHashCode() {
         int hashCode = this._age.GetHashCode();
-        hashCode =(hashCode * 397) ^ (this._name != null ? this._name.GetHashCode() :  0);
-        hashCode =(hashCode * 397) ^ this._opt.GetHashCode();
-        hashCode =(hashCode * 397) ^ this._dt.GetHashCode();
-        hashCode =(hashCode * 397) ^ (this._data1 != null ? this._data1.GetHashCode() :  0);
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._list);
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._hashset);
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._dic);
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._listX);
-        hashCode =(hashCode * 397) ^ this._strLink.GetHashCode();
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._strLinkList);
+        hashCode = (hashCode * 397) ^ (this._name != null ? this._name.GetHashCode() :  0);
+        hashCode = (hashCode * 397) ^ this._opt.GetHashCode();
+        hashCode = (hashCode * 397) ^ this._dt.GetHashCode();
+        hashCode = (hashCode * 397) ^ (this._data1 != null ? this._data1.GetHashCode() :  0);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._list);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._hashset);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._dic);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._listX);
+        hashCode = (hashCode * 397) ^ this._strLink.GetHashCode();
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._strLinkList);
         return hashCode;
     }
 
@@ -191,8 +220,8 @@ public class SimpleBean
 
     #endregion
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "SimpleChildBean" })]
 public class SimpleChildBean : SimpleBean
 {
     #nullable disable
@@ -212,7 +241,7 @@ public class SimpleChildBean : SimpleBean
 
     public SimpleChildBean(IDsonObjectReader reader)
         : base(reader) {
-        if (reader.ReadName("addresses"))this._addresses = reader.ReadObject<List<string>>(null);
+        if (reader.ReadName("addresses")) this._addresses = reader.ReadObject<List<string>>(null);
     }
 
     public override void WriteObject(IDsonObjectWriter writer) {
@@ -221,9 +250,11 @@ public class SimpleChildBean : SimpleBean
     }
 
     public override void BeforeEncode(ConverterOptions options) {
+        base.BeforeEncode(options);
     }
 
     public override void AfterDecode(ConverterOptions options) {
+        base.AfterDecode(options);
     }
 
     #endregion
@@ -246,7 +277,7 @@ public class SimpleChildBean : SimpleBean
 
     public override int GetHashCode() {
         int hashCode = base.GetHashCode();
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._addresses);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._addresses);
         return hashCode;
     }
 
@@ -265,8 +296,8 @@ public class SimpleChildBean : SimpleBean
 
     #endregion
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, ClassNames = new[] {"Vector3", "V3" }, Style = ObjectStyle.Flow)]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Flow, ClassNames = new[] { "Vector3", "V3" })]
 public struct Vector3 : IEquatable<Vector3>
 {
     #nullable disable
@@ -329,8 +360,8 @@ public struct Vector3 : IEquatable<Vector3>
 
     public override int GetHashCode() {
         int hashCode = this._x.GetHashCode();
-        hashCode =(hashCode * 397) ^ this._y.GetHashCode();
-        hashCode =(hashCode * 397) ^ this._z.GetHashCode();
+        hashCode = (hashCode * 397) ^ this._y.GetHashCode();
+        hashCode = (hashCode * 397) ^ this._z.GetHashCode();
         return hashCode;
     }
 
@@ -350,15 +381,15 @@ public struct Vector3 : IEquatable<Vector3>
 
     #endregion
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 public enum Color
 {
     White = 0,
     Red = 1,
     Green = 2,
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "GenericBean" })]
 public class GenericBean<T, U> 
         where T : struct
         where U : class 
@@ -384,8 +415,8 @@ public class GenericBean<T, U>
     #region codec
 
     public GenericBean(IDsonObjectReader reader) {
-        if (reader.ReadName("key"))this._key = reader.ReadObject<T?>(null);
-        if (reader.ReadName("value"))this._value = reader.ReadObject<U>(null);
+        if (reader.ReadName("key")) this._key = reader.ReadObject<T?>(null);
+        if (reader.ReadName("value")) this._value = reader.ReadObject<U>(null);
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -418,7 +449,7 @@ public class GenericBean<T, U>
 
     public override int GetHashCode() {
         int hashCode = this._key.GetHashCode();
-        hashCode =(hashCode * 397) ^ (this._value != null ? this._value.GetHashCode() :  0);
+        hashCode = (hashCode * 397) ^ (this._value != null ? this._value.GetHashCode() :  0);
         return hashCode;
     }
 
@@ -436,8 +467,8 @@ public class GenericBean<T, U>
 
     #endregion
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "GenericChildBean" })]
 public class GenericChildBean<T, U> : GenericBean<T, U> 
         where T : struct
         where U : class 
@@ -458,7 +489,7 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     public GenericChildBean(IDsonObjectReader reader)
         : base(reader) {
-        if (reader.ReadName("addresses"))this._addresses = reader.ReadObject<List<string>>(null);
+        if (reader.ReadName("addresses")) this._addresses = reader.ReadObject<List<string>>(null);
     }
 
     public override void WriteObject(IDsonObjectWriter writer) {
@@ -467,9 +498,11 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
     }
 
     public override void BeforeEncode(ConverterOptions options) {
+        base.BeforeEncode(options);
     }
 
     public override void AfterDecode(ConverterOptions options) {
+        base.AfterDecode(options);
     }
 
     #endregion
@@ -492,7 +525,7 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     public override int GetHashCode() {
         int hashCode = base.GetHashCode();
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._addresses);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._addresses);
         return hashCode;
     }
 
@@ -511,8 +544,8 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     #endregion
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "GenericChildBean2" })]
 public class GenericChildBean2<T, U> : GenericBean<T, List<string>> 
         where T : struct
         where U : class 
@@ -533,7 +566,7 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     public GenericChildBean2(IDsonObjectReader reader)
         : base(reader) {
-        if (reader.ReadName("addresses"))this._addresses = reader.ReadObject<List<string>>(null);
+        if (reader.ReadName("addresses")) this._addresses = reader.ReadObject<List<string>>(null);
     }
 
     public override void WriteObject(IDsonObjectWriter writer) {
@@ -542,9 +575,11 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
     }
 
     public override void BeforeEncode(ConverterOptions options) {
+        base.BeforeEncode(options);
     }
 
     public override void AfterDecode(ConverterOptions options) {
+        base.AfterDecode(options);
     }
 
     #endregion
@@ -567,7 +602,7 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     public override int GetHashCode() {
         int hashCode = base.GetHashCode();
-        hashCode =(hashCode * 397) ^ CollectionUtil.HashCode(this._addresses);
+        hashCode = (hashCode * 397) ^ CollectionUtil.HashCode(this._addresses);
         return hashCode;
     }
 
@@ -586,8 +621,8 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     #endregion
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "OuterClass" })]
 public class OuterClass
 {
     #nullable disable
@@ -623,10 +658,10 @@ public class OuterClass
     #region codec
 
     public OuterClass(IDsonObjectReader reader) {
-        if (reader.ReadName("x"))this._x = reader.ReadFloat(null);
-        if (reader.ReadName("y"))this._y = reader.ReadFloat(null);
-        if (reader.ReadName("request"))this._request = reader.ReadObject<OuterClass.Request>(null);
-        if (reader.ReadName("result"))this._result = reader.ReadObject<OuterClass.Result>(null);
+        if (reader.ReadName("x")) this._x = reader.ReadFloat(null);
+        if (reader.ReadName("y")) this._y = reader.ReadFloat(null);
+        if (reader.ReadName("request")) this._request = reader.ReadObject<OuterClass.Request>(null);
+        if (reader.ReadName("result")) this._result = reader.ReadObject<OuterClass.Result>(null);
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -663,9 +698,9 @@ public class OuterClass
 
     public override int GetHashCode() {
         int hashCode = this._x.GetHashCode();
-        hashCode =(hashCode * 397) ^ this._y.GetHashCode();
-        hashCode =(hashCode * 397) ^ (this._request != null ? this._request.GetHashCode() :  0);
-        hashCode =(hashCode * 397) ^ (this._result != null ? this._result.GetHashCode() :  0);
+        hashCode = (hashCode * 397) ^ this._y.GetHashCode();
+        hashCode = (hashCode * 397) ^ (this._request != null ? this._request.GetHashCode() :  0);
+        hashCode = (hashCode * 397) ^ (this._result != null ? this._result.GetHashCode() :  0);
         return hashCode;
     }
 
@@ -687,7 +722,7 @@ public class OuterClass
 
     #endregion
 
-    [DsonSerializable(SkipFields = new[] { "*" })]
+    [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "Request" })]
     public class Request
     {
         #nullable disable
@@ -705,7 +740,7 @@ public class OuterClass
         #region codec
 
         public Request(IDsonObjectReader reader) {
-            if (reader.ReadName("value"))this._value = reader.ReadString(null);
+            if (reader.ReadName("value")) this._value = reader.ReadString(null);
         }
 
         public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -752,7 +787,7 @@ public class OuterClass
         #endregion
     }
 
-    [DsonSerializable(SkipFields = new[] { "*" })]
+    [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "Result" })]
     public class Result
     {
         #nullable disable
@@ -770,7 +805,7 @@ public class OuterClass
         #region codec
 
         public Result(IDsonObjectReader reader) {
-            if (reader.ReadName("value"))this._value = reader.ReadString(null);
+            if (reader.ReadName("value")) this._value = reader.ReadString(null);
         }
 
         public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -817,8 +852,8 @@ public class OuterClass
         #endregion
     }
 }
-[Generated("Wjybxx.BigCatTool.DataScript.DSCodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" })]
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "PeerClass" })]
 public class PeerClass
 {
     #nullable disable
@@ -842,8 +877,8 @@ public class PeerClass
     #region codec
 
     public PeerClass(IDsonObjectReader reader) {
-        if (reader.ReadName("request"))this._request = reader.ReadObject<OuterClass.Request>(null);
-        if (reader.ReadName("result"))this._result = reader.ReadObject<OuterClass.Result>(null);
+        if (reader.ReadName("request")) this._request = reader.ReadObject<OuterClass.Request>(null);
+        if (reader.ReadName("result")) this._result = reader.ReadObject<OuterClass.Result>(null);
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -876,7 +911,7 @@ public class PeerClass
 
     public override int GetHashCode() {
         int hashCode = (this._request != null ? this._request.GetHashCode() :  0);
-        hashCode =(hashCode * 397) ^ (this._result != null ? this._result.GetHashCode() :  0);
+        hashCode = (hashCode * 397) ^ (this._result != null ? this._result.GetHashCode() :  0);
         return hashCode;
     }
 

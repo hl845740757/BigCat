@@ -22,9 +22,11 @@ using System.Linq;
 using System.Text;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
-using TypeName = Wjybxx.Commons.Poet.TypeName;
 using Range = Wjybxx.BigCatTool.Core.Range;
+using TypeName = Wjybxx.Commons.Poet.TypeName;
+using SerialTypeName = Wjybxx.Dson.Codec.TypeName;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -32,8 +34,9 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 类型元素：class、struct、enum
 ///
 /// <h3>命名空间</h3>
-/// 注意，命名空间是编程语言的概念，而数据脚本是没有命名空间概念的。
-/// 在脚本解析过程中，<see cref="TypeName"/>上的ns是文件简单名，而不是编程语言概念的命名空间。
+/// 0.命名空间是编程语言的概念，而数据脚本是没有命名空间概念的，只有文件概念。
+/// 1.在脚本解析过程中，<see cref="TypeName"/>上的ns是文件简单名，而不是编程语言概念的命名空间。
+/// 2.不推荐顶层元素重名，不论最终生成的代码是否属于同一个命名空间 -- 尽量让每个类型由唯一名。
 /// 
 /// <h3>关于继承</h3>
 /// 1.我们只记录显式声明的超类，未显式声明的情况下，基类为null。
@@ -74,7 +77,7 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     private readonly DSTypeKind _typeKind;
     /// <summary>
-    /// 基类的名字 -- 类型名是解析文本时解析的
+    /// 基类的类型符号 -- 类型名是解析文本时解析的
     /// (这里的基类名字可能尚不包含命名空间，延迟解析时需要根据Type查询命名空间)
     /// (已去除空白字符)
     /// </summary>
@@ -94,8 +97,8 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     private readonly ImmutableList<DSTypeParameter> _typeParameters;
     /// <summary>
-    /// 泛型实参列表，子类传递给超类的参数在这里。
-    /// （包含从外部类拷贝来的）
+    /// 泛型实参列表，已构造泛型类有值。
+    /// （包含从外部类拷贝来的）（子类传递给超类的参数也在这里）
     /// </summary>
     private readonly ImmutableList<DSTypeElement> _typeArguments;
     /// <summary>
@@ -103,6 +106,26 @@ public sealed class DSNamedType : DSTypeElement
     /// 当构造泛型时，保留指向的原型；
     /// </summary>
     private readonly DSNamedType? _originDefine;
+
+    /// <summary>
+    /// 类型的编解码名字
+    ///
+    /// 1.该数据很重要，因为编辑器在导出Dson文本时必须知道类型关联的序列化Name。
+    /// 2.如果当前类型是泛型定义类，该值不可以用于生成数据。
+    /// </summary>
+    private SerialTypeName serialTypeName;
+    /// <summary>
+    /// 类型的编解码别名
+    /// 1.<see cref="DSAnnotations.CODEC"/>注解的缓存数据，避免频繁创建List。
+    /// 2.如果未显式指定，将被初始化为文件内的相对路径，<code>FileName.A.B.C => A.B.C</code>
+    /// 3.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
+    /// </summary>
+    private readonly List<string> serialAliases = new();
+    /// <summary>
+    /// 类型的编解码样式
+    /// (注解的缓存数据)
+    /// </summary>
+    private ObjectStyle serialStyle = ObjectStyle.Indent;
 #nullable enable
 
     /// <summary>
@@ -147,6 +170,8 @@ public sealed class DSNamedType : DSTypeElement
         _typeKind = originDefine._typeKind;
         _typeParameters = ImmutableList<DSTypeParameter>.Empty;
         _typeArguments = typeArguments.ToImmutableList2();
+
+        serialStyle = originDefine.SerialStyle;
     }
 
     #region core
@@ -329,6 +354,26 @@ public sealed class DSNamedType : DSTypeElement
         reservedNames.Add(name);
     }
 
+    /// <summary>
+    /// 添加序列化别名
+    /// </summary>
+    /// <returns>this</returns>
+    public DSNamedType AddSerialAlias(string alias) {
+        this.serialAliases.Add(alias);
+        return this;
+    }
+
+    /// <summary>
+    /// 添加序列化别名
+    /// </summary>
+    /// <returns>this</returns>
+    public DSNamedType AddSerialAliases(params string[] aliases) {
+        foreach (string alias in aliases) {
+            this.serialAliases.Add(alias);
+        }
+        return this;
+    }
+
     #endregion
 
 #nullable disable
@@ -353,6 +398,15 @@ public sealed class DSNamedType : DSTypeElement
 
     public ImmutableList<DSTypeParameter> TypeParameters => _typeParameters;
     public ImmutableList<DSTypeElement> TypeArguments => _typeArguments;
+    public SerialTypeName SerialTypeName {
+        get => serialTypeName;
+        set => serialTypeName = value ?? throw new ArgumentNullException(nameof(value));
+    }
+    public List<string> SerialAliases => serialAliases;
+    public ObjectStyle SerialStyle {
+        get => serialStyle;
+        set => serialStyle = value;
+    }
     public List<Range> ReservedNumbers => reservedNumbers;
     public List<string> ReservedNames => reservedNames;
 

@@ -19,43 +19,18 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Wjybxx.BigCatTool.Core;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
+using Wjybxx.Dson;
+using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
 public static class DSUtil
 {
-    /// <summary>
-    /// 默认的内建类型
-    /// </summary>
-    public static readonly ImmutableList<DSNamedType> builtinTypes = new[]
-    {
-        // 原子类型
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL),
-        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING),
-        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES),
-        // 内建结构
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR),
-        // 基础容器
-        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST),
-        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_HASH_SET),
-        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP),
-        // 装箱类型
-        DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT),
-        DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE, new List<DSTypeParameter>(1)
-        {
-            new DSTypeParameter("T", TypeParameterConstraints.ValueTypeConstraint)
-        })
-    }.ToImmutableList2();
-
     public static bool IsType(this DSElementKind kind) {
         return kind == DSElementKind.Class
                || kind == DSElementKind.Strut
@@ -170,40 +145,6 @@ public static class DSUtil
     }
 
     /// <summary>
-    /// 删除fullname中的文件名
-    /// </summary>
-    /// <param name="fullName"></param>
-    /// <returns></returns>
-    public static string RemoveFileName(string fullName) {
-        int idx = fullName.IndexOf('.');
-        return fullName.Substring(idx + 1);
-    }
-
-    /// <summary>
-    /// 获取类型Import格式的名字
-    /// </summary>
-    /// <param name="className"></param>
-    /// <returns></returns>
-    public static string GetCanonicalName(ClassName className) {
-        StringBuilder sb = ConcurrentObjectPool.SharedStringBuilderPool.Acquire();
-        try {
-            sb.Insert(0, className.simpleName);
-            sb.Insert(0, '.');
-            // 外部类
-            while (className.enclosingClassName != null) {
-                className = className.enclosingClassName;
-                sb.Insert(0, className.simpleName);
-            }
-            // 命名空间(顶层是文件名)
-            sb.Insert(0, className.ns);
-            return sb.ToString();
-        }
-        finally {
-            ConcurrentObjectPool.SharedStringBuilderPool.Release(sb);
-        }
-    }
-
-    /// <summary>
     /// 是否是数字类型
     ///
     /// 数字类型支持Dson文本支持的所有格式，此外还支持Flags格式<code>A|B|C</code>；
@@ -250,5 +191,125 @@ public static class DSUtil
     public static bool IsNullableType(DSTypeElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_NULLABLE;
     }
+
+    #region Name工具方法
+
+    /// <summary>
+    /// 删除fullname中的文件名
+    /// </summary>
+    /// <param name="fullName"></param>
+    /// <returns></returns>
+    public static string RemoveFileName(string fullName) {
+        int idx = fullName.IndexOf('.');
+        return fullName.Substring(idx + 1);
+    }
+
+    /// <summary>
+    /// 获取类型Import格式的名字
+    /// </summary>
+    /// <param name="className"></param>
+    /// <returns></returns>
+    public static string GetCanonicalName(ClassName className) {
+        StringBuilder sb = ConcurrentObjectPool.SharedStringBuilderPool.Acquire();
+        try {
+            sb.Insert(0, className.simpleName);
+            sb.Insert(0, '.');
+            // 外部类
+            while (className.enclosingClassName != null) {
+                className = className.enclosingClassName;
+                sb.Insert(0, className.simpleName);
+            }
+            // 命名空间(顶层是文件名)
+            sb.Insert(0, className.ns);
+            return sb.ToString();
+        }
+        finally {
+            ConcurrentObjectPool.SharedStringBuilderPool.Release(sb);
+        }
+    }
+
+    #endregion
+
+    #region 注解处理
+
+    private static readonly ImmutableDictionary<string, ObjectStyle>
+        name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
+            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
+
+    private static readonly ImmutableDictionary<string, NumberStyle>
+        name2NumberStyleDic = EnumUtil.GetValues<NumberStyle>()
+            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
+
+    private static readonly ImmutableDictionary<string, StringStyle>
+        name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
+            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
+
+    /** 在只的情况下返回空对象可以避免Null处理 */
+    private static readonly DsonObject<string> EMPTY_DSON_OBJECT = new();
+
+    public static DsonObject<string> GetOptions(DSElement element, bool isReadonly = true) {
+        Annotation? annotation = element.GetAnnotation(DSAnnotations.OPTIONS);
+        if (annotation == null) {
+            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
+        }
+        return annotation.AsObject();
+    }
+
+    public static DsonObject<string> GetCodecOptions(DSElement element, bool isReadonly = true) {
+        Annotation? annotation = element.GetAnnotation(DSAnnotations.CODEC);
+        if (annotation == null) {
+            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
+        }
+        return annotation.AsObject();
+    }
+
+    public static List<string> GetCodecAliases(DsonObject<string> options) {
+        if (options.Count == 0 || !options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue value)) {
+            return new List<string>();
+        }
+        DsonArray<string> dsonArray = value.AsArray();
+        if (dsonArray.Count == 0) return new List<string>();
+        //
+        List<string> result = new List<string>(options.Count);
+        foreach (DsonValue dsonValue in dsonArray) {
+            result.Add(dsonValue.AsString().Trim());
+        }
+        return result;
+    }
+
+    public static ObjectStyle GetObjectStyle(DsonObject<string> options, ObjectStyle defaultStyle = ObjectStyle.Indent) {
+        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
+            return defaultStyle;
+        }
+        if (value.IsNumber) {
+            return (ObjectStyle)value.AsDsonNumber().IntValue;
+        }
+        string style = value.AsString().ToLower();
+        return name2ObjectStyleDic.TryGetValue(style, out ObjectStyle result) ? result : defaultStyle;
+    }
+
+    public static NumberStyle GetNumberStyle(DsonObject<string> options, NumberStyle defaultStyle = NumberStyle.Simple) {
+        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
+            return defaultStyle;
+        }
+        if (value.IsNumber) {
+            return (NumberStyle)value.AsDsonNumber().IntValue;
+        }
+        string style = value.AsString().ToLower();
+        return name2NumberStyleDic.TryGetValue(style, out NumberStyle result) ? result : defaultStyle;
+    }
+
+    public static StringStyle GetStringStyle(DsonObject<string> options, StringStyle defaultStyle = StringStyle.Auto) {
+        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
+            return defaultStyle;
+        }
+        if (value.IsNumber) {
+            return (StringStyle)value.AsDsonNumber().IntValue;
+        }
+        string style = value.AsString().ToLower();
+        return name2StringStyleDic.TryGetValue(style, out StringStyle result) ? result : defaultStyle;
+    }
+
+    #endregion
 }
 }

@@ -67,6 +67,7 @@ public class CodeGeneratorHelper
     private readonly List<FieldSpec> _fieldListCache = new(20);
     private readonly List<PropertySpec> _propertyListCache = new(20);
     private readonly List<DSField> _dsFieldListCache = new(20);
+    private readonly StringBuilder _sb = new StringBuilder(30);
 
     /// <summary>
     /// 
@@ -104,7 +105,7 @@ public class CodeGeneratorHelper
     }
 
     private void GenerateEnum(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
-        DsonObject<string> options = GetOptions(namedType);
+        DsonObject<string> options = DSUtil.GetOptions(namedType);
         // 增加Flags注解
         if (ToolUtil.GetBool(options, DSAnnotations.KEY_IS_FLAGS)) {
             typeBuilder.AddAttribute(ATTRIBUTE_FLAGS);
@@ -119,7 +120,7 @@ public class CodeGeneratorHelper
     }
 
     private void GenerateClass(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
-        DsonObject<string> options = GetOptions(namedType);
+        DsonObject<string> options = DSUtil.GetOptions(namedType);
         // 声明为partial
         if (IsPartialClass(namedType, options)) {
             typeBuilder.AddModifiers(Modifiers.Partial);
@@ -144,7 +145,7 @@ public class CodeGeneratorHelper
         List<PropertySpec> propertySpecs = _propertyListCache;
         // 原生字段
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
             BuildFieldAndProperty(field, fieldOptions, out FieldSpec fieldSpec, out PropertySpec propertySpec);
             fieldSpecs.Add(fieldSpec);
             propertySpecs.Add(propertySpec);
@@ -231,12 +232,10 @@ public class CodeGeneratorHelper
 
     protected virtual void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
         if (NeedCodecMethod(namedType, options)) {
-            // 声明为可序列化
-            DsonObject<string> codecOptions = GetCodecOptions(namedType);
-            typeBuilder.AddAttribute(BuildCodecAttribute(codecOptions));
+            typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
         }
     }
-    
+
     /// <summary>
     /// 是否是partial类型
     /// </summary>
@@ -440,6 +439,7 @@ public class CodeGeneratorHelper
                 .AddParameter(TYPE_NAME_CONVERTER_OPTIONS, "options");
             if (namedType.BaseType != null) {
                 methodBuilder.AddModifiers(Modifiers.Override);
+                methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_BEFORE_ENCODE);
             } else if (!namedType.IsValueType) {
                 methodBuilder.AddModifiers(Modifiers.Virtual);
             }
@@ -454,6 +454,7 @@ public class CodeGeneratorHelper
                 .AddParameter(TYPE_NAME_CONVERTER_OPTIONS, "options");
             if (namedType.BaseType != null) {
                 methodBuilder.AddModifiers(Modifiers.Override);
+                methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_AFTER_DECODE);
             } else if (!namedType.IsValueType) {
                 methodBuilder.AddModifiers(Modifiers.Virtual);
             }
@@ -482,7 +483,7 @@ public class CodeGeneratorHelper
         //
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
             if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
                 continue;
             }
@@ -518,7 +519,7 @@ public class CodeGeneratorHelper
         CodeBlock.Builder codeBuilder = constructorBuilder.codeBuilder;
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
             if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
                 continue;
             }
@@ -536,7 +537,7 @@ public class CodeGeneratorHelper
                 continue;
             }
             // 非readonly字段可以不存在于输入流 -- 支持用户代理
-            codeBuilder.Add("if (reader.ReadName($S))", field.SimpleName);
+            codeBuilder.Add("if (reader.ReadName($S)) ", field.SimpleName);
             //
             CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
             if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
@@ -677,7 +678,7 @@ public class CodeGeneratorHelper
         // 逐字段比较
         CodeBlock.Builder codeBuilder = equalsBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
             if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
                 continue;
             }
@@ -734,13 +735,13 @@ public class CodeGeneratorHelper
         // 逐字段计算
         CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
             if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);
             // 在首个字段处声明变量
-            codeBuilder.Add(codeBuilder.IsEmpty ? "int hashCode = " : "hashCode =(hashCode * 397) ^ ");
+            codeBuilder.Add(codeBuilder.IsEmpty ? "int hashCode = " : "hashCode = (hashCode * 397) ^ ");
             if (field.Type.IsValueType) {
                 // 值类型直接调用HashCode
                 codeBuilder.AddStatement("this.$L.GetHashCode()", fieldName);
@@ -958,7 +959,7 @@ public class CodeGeneratorHelper
     }
 
     private ClassName GetMetaTypeName(DSNamedType originDefine) {
-        if (_metaTypeNameCache.TryGetValue(originDefine.FullName, out ClassName? r)) {
+        if (_metaTypeNameCache.TryGetValue(originDefine.FullName, out ClassName r)) {
             return r;
         }
         // 处理内建类型转换
@@ -1057,92 +1058,24 @@ public class CodeGeneratorHelper
     public static readonly AttributeSpec ATTRIBUTE_SERIALIZABLE = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE).Build();
     /** 注解：字段不需要序列化 */
     public static readonly AttributeSpec ATTRIBUTE_NON_SERIALIZED = AttributeSpec.NewBuilder(ClassName.NON_SERIALIZED).Build();
-
-    /** 注解：可序列化，但所有字段不自动序列化 */
-    private static readonly AttributeSpec ATTRIBUTE_SERIALIZABLE_SKIP_ALL = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE)
-        .AddMember("SkipFields", "new[] { $S }", "*")
-        .Build();
+    /** 用于在文件中插入换行符 */
     private static readonly CodeBlockSpec CODE_NEW_LINE = new CodeBlockSpec(CodeBlock.Of("\n"));
 
-    private static readonly ImmutableDictionary<string, ObjectStyle>
-        name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
-            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
-
-    private static readonly ImmutableDictionary<string, NumberStyle>
-        name2NumberStyleDic = EnumUtil.GetValues<NumberStyle>()
-            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
-
-    private static readonly ImmutableDictionary<string, StringStyle>
-        name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
-            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
-
-    /** 在只的情况下返回空对象可以避免Null处理 */
-    private static readonly DsonObject<string> EMPTY_DSON_OBJECT = new();
-
-    public static DsonObject<string> GetOptions(DSElement element, bool isReadonly = true) {
-        Annotation? annotation = element.GetAnnotation(DSAnnotations.OPTIONS);
-        if (annotation == null) {
-            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
-        }
-        return annotation.AsObject();
-    }
-
-    public static DsonObject<string> GetCodecOptions(DSElement element, bool isReadonly = true) {
-        Annotation? annotation = element.GetAnnotation(DSAnnotations.CODEC);
-        if (annotation == null) {
-            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
-        }
-        return annotation.AsObject();
-    }
-
-    public static List<string> GetCodecAliases(DsonObject<string> options) {
-        if (options.Count == 0 || !options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue value)) {
-            return new List<string>();
-        }
-        DsonArray<string> dsonArray = value.AsArray();
-        if (dsonArray.Count == 0) return new List<string>();
-        //
-        List<string> result = new List<string>(options.Count);
-        foreach (DsonValue dsonValue in dsonArray) {
-            result.Add(dsonValue.AsString().Trim());
-        }
-        return result;
-    }
-
-    public static ObjectStyle GetCodecStyle(DsonObject<string> options, ObjectStyle defaultStyle = ObjectStyle.Indent) {
-        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
-            return defaultStyle;
-        }
-        if (value.IsNumber) {
-            return (ObjectStyle)value.AsDsonNumber().IntValue;
-        }
-        string style = value.AsString().ToLower();
-        return name2ObjectStyleDic.TryGetValue(style, out ObjectStyle result) ? result : defaultStyle;
-    }
-
-    public static AttributeSpec BuildCodecAttribute(DsonObject<string> codecOptions) {
-        if (codecOptions.Count == 0) {
-            return ATTRIBUTE_SERIALIZABLE_SKIP_ALL;
-        }
+    public static AttributeSpec BuildCodecAttribute(DSNamedType namedType, StringBuilder sb) {
         var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE)
-            .AddMember("SkipFields", "new[] { $S }", "*");
-
-        if (codecOptions.ContainsKey(DSAnnotations.KEY_ALIAS)) {
-            StringBuilder sb = new StringBuilder(32).Append("new[] {");
-            DsonArray<string> dsonArray = codecOptions[DSAnnotations.KEY_ALIAS].AsArray();
-            for (int index = 0; index < dsonArray.Count; index++) {
-                DsonValue dsonValue = dsonArray[index];
+            .AddMember("SkipFields", "new[] { $S }", "*") // 跳过所有字段，由生成的代码编解码
+            .AddMember("Style", "$T.$L", TYPE_NAME_OBJECT_STYLE, namedType.SerialStyle.ToString());
+        if (namedType.SerialAliases.Count > 0) {
+            sb.Append("new[] { ");
+            for (int index = 0; index < namedType.SerialAliases.Count; index++) {
+                string alias = namedType.SerialAliases[index];
                 if (index > 0) sb.Append(", ");
                 sb.Append('"');
-                sb.Append(dsonValue.AsString().Trim());
+                sb.Append(alias);
                 sb.Append('"');
             }
             sb.Append(" }");
             attributeBuilder.AddMember("ClassNames", sb.ToString());
-        }
-        if (codecOptions.ContainsKey(DSAnnotations.KEY_STYLE)) {
-            ObjectStyle style = GetCodecStyle(codecOptions);
-            attributeBuilder.AddMember("Style", "$T.$L", TYPE_NAME_OBJECT_STYLE, style.ToString());
         }
         return attributeBuilder.Build();
     }

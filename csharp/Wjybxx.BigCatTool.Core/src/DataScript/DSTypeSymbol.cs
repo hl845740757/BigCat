@@ -25,7 +25,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// <summary>
 /// 其实等效ClassName，但开销更小
 /// </summary>
-public readonly struct DSTypeSymbol : IEquatable<DSTypeSymbol>
+internal readonly struct DSTypeSymbol : IEquatable<DSTypeSymbol>
 {
     public readonly string symbol; // List<String>
     public readonly string name; // List 支持A.B.C

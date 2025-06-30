@@ -24,8 +24,11 @@ using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
+using Wjybxx.Dson.Codec;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
+using SerialTypeName = Wjybxx.Dson.Codec.TypeName;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -64,12 +67,47 @@ public sealed class DSRepository
     /// </summary>
     private readonly Dictionary<ClassName, DSNamedType> genericTypeCache = new();
 
+    /// <summary>
+    /// 序列化类型别名到类型的映射（配置）
+    /// </summary>
+    private readonly Dictionary<string, DSNamedType> serialAlias2TypeDic = new();
+    /// <summary>
+    /// 类型名到类型的解析缓存（多对1）
+    /// </summary>
+    private readonly Dictionary<string, DSNamedType> serialName2TypeDic = new Dictionary<string, DSNamedType>();
+
     public DSRepository() {
-        // 用户可在build前修改内建类型数据
-        foreach (DSNamedType namedType in DSUtil.builtinTypes) {
-            globalFile.AddEnclosedElement(namedType);
-        }
+        InitBuiltinTypes();
         AddFile(globalFile);
+    }
+
+    /// <summary>
+    /// 用户可在build前修改内建类型数据
+    /// </summary>
+    private void InitBuiltinTypes() {
+        // 原子类型
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32).AddSerialAliases("i", "int32"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64).AddSerialAliases("L", "int64"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT).AddSerialAliases("f", "float"));
+        ;
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE).AddSerialAliases("d", "double"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL).AddSerialAliases("b", "bool"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING).AddSerialAliases("s", "string"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES).AddSerialAliases("bin", "binary"));
+        // 内建结构
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME).AddSerialAliases("DateTime")); // 不是Dson内建结构
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP).AddSerialAliases("ts", "Timestamp")); // ts是Dson内建结构
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR).AddSerialAliases("Pair", "KeyValuePair"));
+        // 基础容器
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST).AddSerialAliases("List"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_HASH_SET).AddSerialAliases("HashSet", "Set"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP).AddSerialAliases("Map", "Dictionary"));
+        // 装箱类型
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT).AddSerialAliases("Object", "object"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE, new List<DSTypeParameter>(1)
+        {
+            new DSTypeParameter("T", TypeParameterConstraints.ValueTypeConstraint)
+        }).AddSerialAliases("Nullable"));
     }
 
     #region props
@@ -193,6 +231,15 @@ public sealed class DSRepository
     /// 获取内建类型
     /// </summary>
     public DSNamedType GetBuiltinType(string typeName) {
+        // 该方法可能在Build之前调用以修正内建结构数据
+        if (globalFile.TypeMap.IsEmpty) {
+            foreach (DSElement enclosedElement in globalFile.EnclosedElements) {
+                if (enclosedElement.Kind.IsNamedType() && enclosedElement.SimpleName == typeName) {
+                    return (DSNamedType)enclosedElement;
+                }
+            }
+            throw new ArgumentException("invalid typeName: " + typeName);
+        }
         DSNamedType result = globalFile.GetType(typeName);
         if (result == null) {
             throw new ArgumentException("invalid typeName: " + typeName);
@@ -267,6 +314,8 @@ public sealed class DSRepository
         if (namedType.BaseTypeSymbol != null) {
             result.BaseType = (DSNamedType)ResolveTypeSymbol(result, namedType.BaseTypeSymbol);
         }
+        // 缓存CodecName
+        result.SerialTypeName = SerialNameOfType(result);
         return result;
     }
 
@@ -296,7 +345,7 @@ public sealed class DSRepository
     /// <param name="scopeEntry">作用域入口，即从哪里访问目标类型；可以是文件或类型；如果为null，则表示使用全局作用域</param>
     /// <param name="typeSymbol">引用的类型符号</param>
     /// <returns></returns>
-    public DSTypeElement ResolveTypeSymbol(DSElement? scopeEntry, DSTypeSymbol typeSymbol) {
+    private DSTypeElement ResolveTypeSymbol(DSElement? scopeEntry, DSTypeSymbol typeSymbol) {
         // 这里不能建立查询缓存，因为scopeEntry不同，结果可能不同...
         DSTypeElement typeElement = FindType(scopeEntry, typeSymbol.name);
         if (typeElement == null) {
@@ -435,6 +484,86 @@ public sealed class DSRepository
 
     #endregion
 
+    #region Resolve-SerialName
+
+    /// <summary>
+    /// 根据类型的序列化名字计算其真实类型
+    ///
+    /// 1.这里我们不验证作用域，因为Name通常来源于最终数据文件，而非DS文件。
+    /// 2.这部分实现可参考<see cref="DynamicTypeMetaRegistry"/>
+    /// </summary>
+    /// <param name="serialName">对象的序列化名字</param>
+    /// <returns></returns>
+    public DSNamedType? ResolveSerialName(string serialName) {
+        if (serialAlias2TypeDic.TryGetValue(serialName, out DSNamedType result)
+            || serialName2TypeDic.TryGetValue(serialName, out result)) {
+            return result;
+        }
+        SerialTypeName typeName = SerialTypeName.Parse(serialName);
+        DSNamedType namedType = TypeOfSerialName(typeName);
+        // 这里不测试是否包含空白字符，因为这里不是运行时，额外的缓存没有太大的影响
+        serialName2TypeDic.Add(serialName, namedType);
+        return namedType;
+    }
+
+    /// <summary>
+    /// 类型的编解码名字 -- 实时构造，外部缓存
+    /// </summary>
+    private static SerialTypeName SerialNameOfType(DSTypeElement type) {
+        // 泛型参数
+        if (type is DSTypeParameter typeParameter) {
+            return new SerialTypeName(typeParameter.SimpleName);
+        }
+        DSNamedType namedType = (DSNamedType)type;
+        if (namedType.IsGenericTypeDefinition) {
+            // 泛型原型
+            string mainClsName = namedType.SerialAliases[0];
+            ImmutableList<DSTypeParameter> genericTypeArgs = namedType.TypeParameters;
+            List<SerialTypeName> typeArgClassNames = new List<SerialTypeName>(genericTypeArgs.Count);
+            foreach (var genericTypeArg in genericTypeArgs) {
+                typeArgClassNames.Add(new SerialTypeName(genericTypeArg.SimpleName));
+            }
+            return new SerialTypeName(mainClsName, typeArgClassNames);
+        }
+        if (namedType.IsGenericType) {
+            // 已构造泛型
+            string mainClsName = namedType.OriginDefine.SerialAliases[0];
+            ImmutableList<DSTypeElement> genericTypeArgs = namedType.TypeArguments; // 真实泛型参数
+            List<SerialTypeName> typeArgClassNames = new List<SerialTypeName>(genericTypeArgs.Count);
+            foreach (var genericTypeArg in genericTypeArgs) {
+                typeArgClassNames.Add(SerialNameOfType(genericTypeArg));
+            }
+            return new SerialTypeName(mainClsName, typeArgClassNames);
+        }
+        // 非泛型类
+        return new SerialTypeName(namedType.SerialAliases[0]);
+    }
+
+    /// <summary>
+    /// 根据编解码名字计算其真实类型
+    /// </summary>
+    private DSNamedType TypeOfSerialName(SerialTypeName typeName) {
+        if (!serialAlias2TypeDic.TryGetValue(typeName.name, out DSNamedType originDefine)) {
+            throw new InvalidOperationException("invalid typeName: " + typeName);
+        }
+        if (!originDefine.IsGenericType) {
+            return originDefine;
+        }
+        int typeArgsCount = typeName.typeArgs.Count;
+        List<DSTypeElement> typeArgs = new List<DSTypeElement>(typeArgsCount);
+        for (int index = 0; index < typeArgsCount; index++) {
+            SerialTypeName typeNameArg = typeName.typeArgs[index]; // 可能是泛型变量
+            if (typeNameArg.name == originDefine.TypeParameters[index].SimpleName) {
+                typeArgs[index] = originDefine.TypeParameters[index];
+            } else {
+                typeArgs[index] = TypeOfSerialName(typeNameArg);
+            }
+        }
+        return MakeGenericType(originDefine, typeArgs);
+    }
+
+    #endregion
+
     #region build
 
     /// <summary>
@@ -450,6 +579,7 @@ public sealed class DSRepository
             dsFile.BuildCache();
             foreach (DSNamedType namedType in dsFile.TypeMap.Values) {
                 indexedElementMap.Add(new IndexKey(isInst: false, namedType.FullName), namedType);
+                InitCodecInfo(namedType);
             }
             foreach (DSInst inst in dsFile.InstMap.Values) {
                 string fullName = dsFile.SimpleName + "." + inst.SimpleName;
@@ -485,6 +615,28 @@ public sealed class DSRepository
         }
     }
 
+    private void InitCodecInfo(DSNamedType namedType) {
+        DsonObject<string> options = DSUtil.GetCodecOptions(namedType);
+        namedType.SerialStyle = DSUtil.GetObjectStyle(options, namedType.SerialStyle);
+        // 用户可能手动指定了别名
+        if (namedType.SerialAliases.Count == 0) {
+            if (options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue dsonValue) && dsonValue.AsArray().Count > 0) {
+                foreach (DsonValue alias in dsonValue.AsArray()) {
+                    namedType.SerialAliases.Add(alias.AsString());
+                }
+            } else {
+                string alias = DSUtil.RemoveFileName(namedType.FullName);
+                namedType.SerialAliases.Add(alias);
+            }
+        }
+        // 加入缓存 -- 冲突时抛异常
+        foreach (string alias in namedType.SerialAliases) {
+            serialAlias2TypeDic.Add(alias, namedType);
+        }
+        // 此时都是泛型原型，无需延迟处理
+        namedType.SerialTypeName = SerialNameOfType(namedType);
+    }
+
     /// <summary>
     /// 解析文件的继承得到的公有依赖
     /// </summary>
@@ -513,11 +665,12 @@ public sealed class DSRepository
     /// </summary>
     /// <param name="file"></param>
     private void ResolveTypeSymbols(DSFile file) {
+        List<DSField> fieldList = new List<DSField>(20);
         foreach (DSNamedType typeElement in DSUtil.GetAllEnclosedTypes(file)) {
             if (typeElement.BaseTypeSymbol != null && typeElement.BaseType == null) {
                 typeElement.BaseType = (DSNamedType)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);
             }
-            foreach (DSField field in typeElement.GetFields(false)) {
+            foreach (DSField field in typeElement.GetFields(false, fieldList.ClearAndReturn())) {
                 if (field.TypeSymbol != null && field.Type == null) {
                     field.Type = ResolveTypeSymbol(typeElement, field.TypeSymbol);
                 }
@@ -548,7 +701,6 @@ public sealed class DSRepository
             if (instTemplate.DsonValue == null) {
                 BuildInst(instTemplate, deep + 1);
             }
-
             // 需要避免内存共享
             DsonObject<string> copiedObject = Dsons.MutableDeepCopy<string>(instTemplate.DsonValue!).AsObject();
             foreach (var pair in copiedObject) {
@@ -562,12 +714,6 @@ public sealed class DSRepository
         inst.DsonValue = dsonObject;
     }
 
-    /// <summary>
-    /// 查找
-    /// </summary>
-    /// <param name="scopeEntry"></param>
-    /// <param name="instName"></param>
-    /// <returns></returns>
     private DSInst? FindInst(DSFile? scopeEntry, string instName) {
         // 未指定作用域，从所有文件查询
         DSInst inst;

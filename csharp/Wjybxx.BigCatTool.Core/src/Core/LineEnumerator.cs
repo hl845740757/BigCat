@@ -26,11 +26,14 @@ public class LineEnumerator : IEnumerator<string>
 {
 #nullable disable
     private readonly IEnumerator<string> _backing;
+    private readonly int _initLn;
+    
     private int _currentLn;
     private string _current;
 #nullable enable
     public LineEnumerator(IEnumerator<string> backing, int nextLn = 1) {
         _backing = backing ?? throw new ArgumentNullException(nameof(backing));
+        _initLn = nextLn;
         _currentLn = nextLn - 1;
     }
 
@@ -68,6 +71,8 @@ public class LineEnumerator : IEnumerator<string>
 
     public void Reset() {
         _backing.Reset();
+        _currentLn = _initLn - 1;
+        _current = null;
     }
 
     public void Dispose() {
