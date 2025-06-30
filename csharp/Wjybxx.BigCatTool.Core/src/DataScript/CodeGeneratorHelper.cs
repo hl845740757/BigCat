@@ -50,6 +50,7 @@ public class CodeGeneratorHelper
     public const string TYPE_LINKED_HASHSET = "LinkedHashset";
     public const string TYPE_LINKED_DICTIONARY = "LinkedDictionary";
     public const string TYPE_LINKED_MAP = "LinkedMap"; // 别名
+
     // 不可变
     public const string TYPE_IMMUTABLE_LIST = "ImmutableList";
     public const string TYPE_IMMUTABLE_SET = "ImmutableSet";
@@ -135,8 +136,12 @@ public class CodeGeneratorHelper
                 typeBuilder.AddTypeParameter(TypeParameterSpec.Get(typeParameter.SimpleName, typeParameter.Constraints));
             }
         }
-        // 追加注解
+        // 注解
         InitAttributes(namedType, options, typeBuilder);
+        if (NeedCodecMethod(namedType, options)) {
+            typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
+        }
+
         // 禁用nullable提示
         typeBuilder.AddSpec(MacroSpec.Get("nullable", "disable"));
         typeBuilder.AddSpec(new CodeBlockSpec(CodeBlock.Of("ReSharper disable All"), CodeBlockSpec.Kind.Comment));
@@ -163,7 +168,7 @@ public class CodeGeneratorHelper
             }
         }
         typeBuilder.AddSpecs(fieldSpecs);
-        // 构造函数在字段后 -- 没有readonly字段时生空构造函数，因为存在reader构造器
+        // 构造函数在字段后 -- 没有readonly字段时生成空构造函数，因为存在reader构造器
         typeBuilder.AddSpec(BuildExplicitConstructor(namedType));
         // 属性在构造函数后面
         typeBuilder.AddSpecs(propertySpecs);
@@ -219,11 +224,18 @@ public class CodeGeneratorHelper
         if (comments.Count == 0) return CodeBlock.Empty;
         CodeBlock.Builder builder = CodeBlock.NewBuilder();
         foreach (string comment in comments) {
+            if (string.IsNullOrWhiteSpace(comment)) {
+                continue;
+            }
             if (!builder.IsEmpty) {
                 builder.AddNewLine();
             }
-            int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
-            builder.Add(comment.Substring(idx));
+            if (comment.StartsWith("//")) {
+                int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
+                builder.Add(comment.Substring(idx));
+            } else {
+                builder.Add(comment.TrimStart());
+            }
         }
         return builder.Build();
     }
@@ -231,9 +243,7 @@ public class CodeGeneratorHelper
     #region 扩展钩子
 
     protected virtual void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
-        if (NeedCodecMethod(namedType, options)) {
-            typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
-        }
+
     }
 
     /// <summary>
@@ -834,6 +844,10 @@ public class CodeGeneratorHelper
             };
         }
         return false;
+    }
+
+    public static bool IsCollectionType(DSTypeElement typeElement) {
+        return IsListType(typeElement) || IsSetType(typeElement);
     }
 
     public static bool IsSetOrDictionaryType(DSTypeElement typeElement) {

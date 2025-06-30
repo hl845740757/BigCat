@@ -244,7 +244,7 @@ public static class DSUtil
         name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
             .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
 
-    /** 在只的情况下返回空对象可以避免Null处理 */
+    /** 在只读的情况下返回空对象可以避免Null处理 */
     private static readonly DsonObject<string> EMPTY_DSON_OBJECT = new();
 
     public static DsonObject<string> GetOptions(DSElement element, bool isReadonly = true) {

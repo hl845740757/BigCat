@@ -13,6 +13,12 @@
             }
         ]
     },
+    // dson文本生成器配置 -- DsonGeneratorCfg
+    dsonGenerator: {
+        // outPath: "", 
+        enableText: true,
+        enableBinary: true,
+    },
     
     // class生成配置 -- CodeGeneratorCfg
     classGenerator: {
@@ -31,7 +37,6 @@
             }
         ]
     },
-    
     // 常量类生成配置 -- ConstGeneratorCfg
     constGenerator: {
         // outPath: "",

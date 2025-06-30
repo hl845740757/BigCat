@@ -1,8 +1,17 @@
 ﻿// import "common.ds";
 option csharp_namespace="Wjybxx.BigCat.Demo";
 
+//@Codec{alias:[DV3, DVector3], style: flow}
 struct DVector3 {
     readonly float x = 1;
     readonly float y = 2;
     readonly float z = 3;
+}
+
+//@Codec{alias:[DV4, DVector4], style: flow}
+struct DVector4 {
+    readonly float x = 1;
+    readonly float y = 2;
+    readonly float z = 3;
+    readonly float w = 4;
 }

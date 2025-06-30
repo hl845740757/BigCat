@@ -107,7 +107,9 @@ public class SheetReaderTest
         }
         dsRepository.Build();
         // 导出Dson
-        new DsonGenerator(repository, dsRepository, RequireMode.All, outDir, true).Execute();
+        DsonGeneratorCfg dsonGeneratorCfg = converter.ReadFromDsonValue<DsonGeneratorCfg>(cfgObject["dsonGenerator"]);
+        dsonGeneratorCfg.outPath = outDir;
+        new DsonGenerator(repository, dsRepository, dsonGeneratorCfg, RequireMode.All).Execute();
 
         // 生成常量类 -- 先由Dson初始化，再覆盖部分数据
         ConstGeneratorCfg constGeneratorCfg = converter.ReadFromDsonValue<ConstGeneratorCfg>(cfgObject["constGenerator"]);

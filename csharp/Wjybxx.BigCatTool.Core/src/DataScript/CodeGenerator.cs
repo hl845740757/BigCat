@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
+using Wjybxx.Dson;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -77,6 +78,10 @@ public class CodeGenerator
                 foreach (var element in dsFile.EnclosedElements) {
                     if (!element.Kind.IsNamedType()) continue; // inst
                     DSNamedType namedType = (DSNamedType)element;
+                    DsonObject<string> options = DSUtil.GetOptions(namedType);
+                    if (ToolUtil.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
+                        continue;
+                    }
                     try {
                         TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
                         nsBuilder.AddSpec(typeBuilder.Build());
@@ -92,6 +97,10 @@ public class CodeGenerator
                 foreach (var element in dsFile.EnclosedElements) {
                     if (!element.Kind.IsNamedType()) continue; // inst
                     DSNamedType namedType = (DSNamedType)element;
+                    DsonObject<string> options = DSUtil.GetOptions(namedType);
+                    if (ToolUtil.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
+                        continue;
+                    }
                     try {
                         TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
                         ToolUtil.WriteToFile(_cfg.outPath, csharpNamespace, typeBuilder.Build());

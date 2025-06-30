@@ -217,7 +217,7 @@ public sealed class DSNamedType : DSTypeElement
     public bool IsNullableType => IsValueType && SimpleName == DSKeywords.TYPE_NULLABLE;
 
     /// <summary>
-    /// 当前类型声明的泛型变量
+    /// 当前类型显式声明的泛型变量
     /// (只有原始定义类可访问)
     /// </summary>
     public IList<DSTypeParameter> DeclaredTypeParameters {

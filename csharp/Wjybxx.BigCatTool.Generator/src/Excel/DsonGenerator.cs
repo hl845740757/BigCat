@@ -43,7 +43,7 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// <h3>数据脚本的作用</h3>
 /// 为了减少开销，生成的表格对象是顺序读取二进制内容的，调整表格字段顺序会导致错误；
 /// 这个问题有多种解决方案，但最佳方案是根据ds文件中的字段顺序导出。
-/// 此外，我们会在每张表格的开头写入一个根据所有字段名计算出的hash值，以和生成的class文件中的hash值进行比较，
+/// 此外，我们会在每张表格的开头写入一个根据所有字段的类型和名字计算出的hash值，以和生成的class文件中的hash值进行比较，
 /// 
 /// 注意：
 /// 1.Sheet是不能被直接合并的，因为每个表的元数据可能不同。
@@ -54,14 +54,12 @@ public class DsonGenerator : ISheetProcessor
 {
     private readonly SheetRepository _repository;
     private readonly DSRepository _dsRepository;
+    private readonly DsonGeneratorCfg _cfg;
     private readonly RequireMode _requireMode;
-    private readonly string _outDir;
-    private readonly bool _enableText;
-    private readonly string _extension;
 
-    private readonly List<DsonValue> _cacheList = new(10);
-    private readonly byte[] buffer = new byte[8 * 1024 * 1024];
+    private readonly byte[] _buffer;
     private readonly StringBuilder _sb = new(8192);
+    private readonly List<DsonValue> _valueListCache = new(10);
     private readonly ObjectPool<List<DSField>> fieldListPool = PoolUtil.NewListPool<DSField>(8);
     private readonly ObjectPool<LinkedDictionary<string, DsonValue>> dictionaryPool = PoolUtil.NewLinkedDictionaryPool<string, DsonValue>(8);
     private readonly DsonTextWriterSettings _textWriterSettings;
@@ -72,19 +70,15 @@ public class DsonGenerator : ISheetProcessor
     /// </summary>
     /// <param name="repository">要处理的文件</param>
     /// <param name="dsRepository">数据脚本仓库</param>
+    /// <param name="cfg">生成器配置</param>
     /// <param name="requireMode">要导出的内容</param>
-    /// <param name="outDir">输出目录</param>
-    /// <param name="enableText">是否生成文本文件</param>
-    /// <param name="extension">二进制文件的扩展名</param>
-    public DsonGenerator(SheetRepository repository, DSRepository dsRepository, RequireMode requireMode,
-                         string outDir, bool enableText = false, string extension = ".dson2") {
+    public DsonGenerator(SheetRepository repository, DSRepository dsRepository, DsonGeneratorCfg cfg, RequireMode requireMode) {
         _repository = repository;
-        _requireMode = requireMode;
         _dsRepository = dsRepository;
-        _outDir = outDir;
-        _enableText = enableText;
-        _extension = extension;
+        _cfg = cfg;
+        _requireMode = requireMode;
 
+        _buffer = new byte[cfg.bufferLen];
         // 尽量一行
         _textWriterSettings = new DsonTextWriterSettings.Builder
             {
@@ -111,11 +105,13 @@ public class DsonGenerator : ISheetProcessor
             if (collection == null) {
                 continue;
             }
-            if (_enableText) {
+            if (_cfg.enableText) {
                 string dsonText = ToDsonText(collection, isParamSheet);
-                File.WriteAllText(_outDir + "/" + grouping.Key + ".dson", dsonText);
+                File.WriteAllText(_cfg.outPath + "/" + grouping.Key + ".dson", dsonText);
             }
-            File.WriteAllBytes(_outDir + "/" + grouping.Key + _extension, ToDsonBytes(collection));
+            if (_cfg.enableBinary) {
+                File.WriteAllBytes(_cfg.outPath + "/" + grouping.Key + _cfg.fileExtension, ToDsonBytes(collection));
+            }
         }
     }
 
@@ -138,10 +134,10 @@ public class DsonGenerator : ISheetProcessor
     }
 
     private byte[] ToDsonBytes(DsonArray<string> collection) {
-        using var output = DsonOutputs.NewInstance(buffer);
+        using var output = DsonOutputs.NewInstance(_buffer);
         using DsonBinaryWriter<string> writer = new DsonBinaryWriter<string>(DsonWriterSettings.Default, output);
         Dsons.WriteCollection(writer, collection);
-        return ArrayUtil.CopyOf(buffer, 0, output.Position);
+        return ArrayUtil.CopyOf(_buffer, 0, output.Position);
     }
 
     #region build
@@ -265,7 +261,7 @@ public class DsonGenerator : ISheetProcessor
         CheckOriginalCell(options, fieldName, valueProvider.GetValue(fieldName));
 
         DSTypeElement elementType = GetElementType(fieldType);
-        List<DsonValue> values = _cacheList.ClearAndReturn();
+        List<DsonValue> values = _valueListCache.ClearAndReturn();
         if (GetBool(options, KEY_IS_RECORD)) {
             // 合并所有列的值
             foreach (Header elemHeader in elemHeaders) {
@@ -327,14 +323,14 @@ public class DsonGenerator : ISheetProcessor
     #region get-value
 
     /// <summary>
-    /// 获取字符串对应的DsonValue，List和Map会递归处理
+    /// 获取字符串对应的DsonValue
     /// </summary>
     /// <returns></returns>
     private DsonValue GetValue(DSTypeElement type, string? rawValue, bool root = false) {
         // 由于我们并未支持数组，因此这里应该都是NamedType
         DSNamedType namedType = (DSNamedType)type;
         // 字符串需要保留原始值
-        if (IsStringType(namedType.SimpleName)) {
+        if (DSUtil.IsStringType(namedType)) {
             return string.IsNullOrEmpty(rawValue) ? DsonString.EMPTY : new DsonString(rawValue);
         }
         // 空白字符串返回默认值
@@ -347,14 +343,14 @@ public class DsonGenerator : ISheetProcessor
                 DSKeywords.TYPE_DOUBLE => DsonDouble.ZERO,
                 DSKeywords.TYPE_BOOL => DsonBool.FALSE,
                 // 集合类型默认返回空集合，而不是null
-                DSKeywords.TYPE_LIST => root ? new DsonArray<string>(0) : DsonNull.NULL,
-                DSKeywords.TYPE_HASH_SET => root ? new DsonArray<string>(0) : DsonNull.NULL,
-                DSKeywords.TYPE_MAP => root ? new DsonObject<string>(0) : DsonNull.NULL,
+                DSKeywords.TYPE_LIST => root ? new DsonArray<string>() : DsonNull.NULL,
+                DSKeywords.TYPE_HASH_SET => root ? new DsonArray<string>() : DsonNull.NULL,
+                DSKeywords.TYPE_MAP => root ? new DsonObject<string>() : DsonNull.NULL,
                 _ => DsonNull.NULL
             };
         }
         // Nullable类型，需要按照真实类型获取Value
-        if (IsNullableType(namedType.SimpleName)) {
+        if (DSUtil.IsNullableType(namedType)) {
             namedType = (DSNamedType)namedType.TypeArguments[0];
         }
         rawValue = rawValue.Trim();
@@ -384,16 +380,17 @@ public class DsonGenerator : ISheetProcessor
     }
 
     /// <summary>
-    /// 修正被误解析为String类型的字段
+    /// 修正字段的值（还包括字段顺序纠正）
     ///
-    /// 1.容器值需要递归。
+    /// 1.容器(List/HashSet/Map)值需要递归。
     /// 2.如果是容器类型，字符串类型也可能被误解析为数字，策划配置时需要手动加引号。
     /// 3.只有字符串单元格才不需要处理特殊字符。
+    /// 4.不能使用<see cref="ExcelConstants"/>中的类型测试方法，因为存在第三方数据结构。
     /// </summary>
     /// <param name="namedType"></param>
     /// <param name="container"></param>
     private DsonValue RepairFieldValue(DSNamedType namedType, DsonValue container) {
-        if (IsCollectionType(namedType.SimpleName)) {
+        if (CodeGeneratorHelper.IsCollectionType(namedType)) {
             // 修正List的Value
             DsonArray<string> dsonArray = (DsonArray<string>)container;
             DSTypeElement elementType = namedType.TypeArguments[0];
@@ -407,7 +404,7 @@ public class DsonGenerator : ISheetProcessor
             }
             return container;
         }
-        if (IsMapType(namedType.SimpleName)) {
+        if (CodeGeneratorHelper.IsDictionaryType(namedType)) {
             // 修正Map的Value - 覆盖数据不会导致迭代抛出异常
             DsonObject<string> dsonObject = (DsonObject<string>)container;
             DSTypeElement elementType = namedType.TypeArguments[1];
@@ -421,16 +418,24 @@ public class DsonGenerator : ISheetProcessor
             }
             return container;
         }
-        // 修正自定义结构中的字段；如果是自定义List或Map，这里的字段为空
+        // 修正自定义结构（或内置结构）中的字段
+        // 如果是多态数据，需要从Container中拿到真实的类型名，再拿到真实的类型，再根据真实类型修正数据
+        string serialName = GetSerialName(container);
+        if (serialName != null) {
+            namedType = _dsRepository.ResolveSerialName(serialName) ?? throw new Exception($"invalid serial name: {serialName}");
+        }
+        List<DSField> fields = namedType.GetFields(true, fieldListPool.Acquire());
+        if (fields.Count == 0) {
+            goto release;
+        }
         if (container.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = (DsonObject<string>)container;
-            List<DSField> fields = namedType.GetFields(true, fieldListPool.Acquire());
             foreach (DSField field in fields) {
                 if (!dsonObject.TryGetValue(field.SimpleName, out DsonValue element)) {
                     continue;
                 }
                 DSTypeElement elementType = field.Type;
-                if (element.DsonType == DsonType.String && !IsStringType(elementType.SimpleName)) {
+                if (element.DsonType == DsonType.String && !DSUtil.IsStringType(elementType)) {
                     element = GetValue(elementType, element.AsString());
                     dsonObject[field.SimpleName] = element;
                 } else if (element.DsonType == DsonType.Array || element.DsonType == DsonType.Object) {
@@ -443,15 +448,13 @@ public class DsonGenerator : ISheetProcessor
             if (fields.Count > 1) {
                 ResortField(dsonObject, fields);
             }
-            fieldListPool.Release(fields);
         } else if (container.DsonType == DsonType.Array) {
             DsonArray<string> dsonArray = (DsonArray<string>)container;
-            List<DSField> fields = namedType.GetFields(true, fieldListPool.Acquire());
             // 自定义结构被解析为数组是可以正常解码的 -- 数据长度可能小于字段长度
             for (int i = 0, count = Math.Min(fields.Count, dsonArray.Count); i < count; i++) {
                 DsonValue element = dsonArray[i];
                 DSTypeElement elementType = fields[i].Type;
-                if (element.DsonType == DsonType.String && !IsStringType(elementType.SimpleName)) {
+                if (element.DsonType == DsonType.String && !DSUtil.IsStringType(elementType)) {
                     element = GetValue(elementType, element.AsString());
                     dsonArray[i] = element;
                 } else if (element.DsonType == DsonType.Array || element.DsonType == DsonType.Object) {
@@ -460,28 +463,43 @@ public class DsonGenerator : ISheetProcessor
                     CheckValue(elementType, element);
                 }
             }
-            fieldListPool.Release(fields);
         }
+        release:
+        fieldListPool.Release(fields);
+
         // 自定义结构和内建结构都支持修正
-        DSTypeHandler handler = _dsRepository.GetTypeHandler(namedType.OriginDefine.SimpleName);
+        DSTypeHandler handler = _dsRepository.GetTypeHandler(namedType.OriginDefine.FullName);
         return handler != null ? handler.ConvertValue(_dsRepository, namedType, container) : container;
+    }
+
+    private static string? GetSerialName(DsonValue container) {
+        DsonHeader<string> header = null;
+        if (container is DsonObject<string> dsonObject) {
+            header = dsonObject.Header;
+        } else if (container is DsonArray<string> dsonArray) {
+            header = dsonArray.Header;
+        }
+        if (header == null || !header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue value)) {
+            return null;
+        }
+        return value.AsString();
     }
 
     /** 检查数据兼容性 */
     private static void CheckValue(DSTypeElement elementType, DsonValue dsonValue) {
-        if (IsNumberType(elementType.SimpleName)) {
+        if (DSUtil.IsNumberType(elementType)) {
             if (!dsonValue.DsonType.IsNumber()) {
                 throw new Exception($"invalid value: {dsonValue}");
             }
             return;
         }
-        if (IsStringType(elementType.SimpleName)) {
+        if (DSUtil.IsStringType(elementType)) {
             if (dsonValue.DsonType != DsonType.String) {
                 throw new Exception($"invalid value: {dsonValue}");
             }
             return;
         }
-        if (IsBoolType(elementType.SimpleName)) {
+        if (DSUtil.IsBoolType(elementType)) {
             if (dsonValue.DsonType != DsonType.Bool && !dsonValue.DsonType.IsNumber()) {
                 throw new Exception($"invalid value: {dsonValue}");
             }
@@ -490,7 +508,7 @@ public class DsonGenerator : ISheetProcessor
         // Nullable要检查？
     }
 
-    /** 根据Class的字段顺序重拍表格中的数据，且字段不存在时补全 */
+    /** 根据Class的字段顺序重拍表格中的数据，且字段不存在时补全 -- 依赖于正确处理了多态，否则可能导致子类数据丢失 */
     private void ResortField(DsonObject<string> dsonObject, List<DSField> fields) {
         LinkedDictionary<string, DsonValue> dictionary = dictionaryPool.Acquire();
         foreach (DSField field in fields) {
