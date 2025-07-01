@@ -162,7 +162,8 @@ public class DsonGenerator : ISheetProcessor
                 if (sheet.GetHeader(header.name + "#1") != null) {
                     value = MergeCellValue(sheet, header, (DSNamedType)fieldType, CollectElementHeaders(sheet, header));
                 } else {
-                    value = GetValue(fieldType, sheet.GetValue(header.name), true);
+                    string rawValue = GetRawValue(sheet, header);
+                    value = GetValue(fieldType, rawValue, true);
                 }
                 valueMap.Add(header.name, value);
             }
@@ -243,7 +244,8 @@ public class DsonGenerator : ISheetProcessor
                     } else if (headerCache.elemHeaders != null) {
                         value = MergeCellValue(sheetRow, headerCache.header, (DSNamedType)headerCache.fieldType, headerCache.elemHeaders);
                     } else {
-                        value = GetValue(headerCache.fieldType, sheetRow.GetValue(field.SimpleName), true);
+                        string rawValue = GetRawValue(sheetRow, headerCache.header);
+                        value = GetValue(headerCache.fieldType, rawValue, true);
                     }
                     dsonArray.Add(value);
                 }
@@ -253,6 +255,18 @@ public class DsonGenerator : ISheetProcessor
             headerObject.Add(STRING_ROW_COUNT, new DsonInt32(collection.Count - count1));
         }
         return collection;
+    }
+
+    private static string? GetRawValue(IValueProvider valueProvider, Header fieldHeader) {
+        string rawValue = valueProvider.GetValue(fieldHeader.name);
+        if (!fieldHeader.options.Contains(KEY_TRIM)) {
+            return rawValue;
+        }
+        DsonObject<string> options = ParseOptions(fieldHeader.options);
+        if (!string.IsNullOrEmpty(rawValue) && GetBool(options, KEY_TRIM)) {
+            return rawValue.Trim();
+        }
+        return rawValue;
     }
 
     private DsonValue MergeCellValue(IValueProvider valueProvider, Header fieldHeader, DSNamedType fieldType, List<Header> elemHeaders) {
@@ -266,6 +280,9 @@ public class DsonGenerator : ISheetProcessor
             // 合并所有列的值
             foreach (Header elemHeader in elemHeaders) {
                 string? rawValue = valueProvider.GetValue(elemHeader.name);
+                if (!string.IsNullOrEmpty(rawValue) && GetBool(options, KEY_TRIM)) {
+                    rawValue = rawValue.Trim();
+                }
                 values.Add(GetValue(elementType, rawValue));
             }
         } else {
@@ -274,6 +291,9 @@ public class DsonGenerator : ISheetProcessor
                 string? rawValue = valueProvider.GetValue(elemHeader.name);
                 if (IsBreakMerge(rawValue, elementType)) {
                     break;
+                }
+                if (!string.IsNullOrEmpty(rawValue) && GetBool(options, KEY_TRIM)) {
+                    rawValue = rawValue.Trim();
                 }
                 values.Add(GetValue(elementType, rawValue));
             }

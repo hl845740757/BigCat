@@ -1076,7 +1076,7 @@ public class CodeGeneratorHelper
                 sb.Append('"');
             }
             sb.Append(" }");
-            attributeBuilder.AddMember("ClassNames", sb.ToString());
+            attributeBuilder.AddMember("Names", sb.ToString());
         }
         return attributeBuilder.Build();
     }

@@ -12,7 +12,7 @@ using System.Text;
 namespace Wjybxx.BigCatTool.Tests.Generated
 {
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "SimpleBean" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "SimpleBean" })]
 public class SimpleBean
 {
     #nullable disable
@@ -221,7 +221,7 @@ public class SimpleBean
     #endregion
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "SimpleChildBean" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "SimpleChildBean" })]
 public class SimpleChildBean : SimpleBean
 {
     #nullable disable
@@ -297,7 +297,7 @@ public class SimpleChildBean : SimpleBean
     #endregion
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Flow, ClassNames = new[] { "Vector3", "V3" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Flow, Names = new[] { "Vector3", "V3" })]
 public struct Vector3 : IEquatable<Vector3>
 {
     #nullable disable
@@ -389,7 +389,7 @@ public enum Color
     Green = 2,
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "GenericBean" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "GenericBean" })]
 public class GenericBean<T, U> 
         where T : struct
         where U : class 
@@ -468,7 +468,7 @@ public class GenericBean<T, U>
     #endregion
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "GenericChildBean" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "GenericChildBean" })]
 public class GenericChildBean<T, U> : GenericBean<T, U> 
         where T : struct
         where U : class 
@@ -545,7 +545,7 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
     #endregion
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "GenericChildBean2" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "GenericChildBean2" })]
 public class GenericChildBean2<T, U> : GenericBean<T, List<string>> 
         where T : struct
         where U : class 
@@ -622,7 +622,7 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
     #endregion
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "OuterClass" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "OuterClass" })]
 public class OuterClass
 {
     #nullable disable
@@ -722,7 +722,7 @@ public class OuterClass
 
     #endregion
 
-    [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "Request" })]
+    [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "Request" })]
     public class Request
     {
         #nullable disable
@@ -787,7 +787,7 @@ public class OuterClass
         #endregion
     }
 
-    [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "Result" })]
+    [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "Result" })]
     public class Result
     {
         #nullable disable
@@ -853,7 +853,7 @@ public class OuterClass
     }
 }
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, ClassNames = new[] { "PeerClass" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "PeerClass" })]
 public class PeerClass
 {
     #nullable disable

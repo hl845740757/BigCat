@@ -95,6 +95,10 @@ public static class ExcelConstants
     /// 虽然在表格增加程序用的缓存字段不算优雅，但却是最简单的方式。
     /// </summary>
     public const string KEY_NON_SERIALIZED = "nonSerialized";
+    /// <summary>
+    /// 字符串数据在导出时执行Trim
+    /// </summary>
+    public const string KEY_TRIM = "trim";
 
     /// <summary>
     /// value禁止重复
