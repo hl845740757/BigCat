@@ -48,28 +48,33 @@ public enum DSElementKind
     /// </summary>
     Enum = 3,
     /// <summary>
+    /// 服务
+    /// </summary>
+    Service = 4,
+    /// <summary>
     /// 实例--class和struct的实例
     /// 注意：inst必须定义在顶层。
     ///
     /// <code>inst _name_ from t1, t2, t3</code>
     /// </summary>
-    Inst = 4,
+    Inst = 5,
 
     /// <summary>
     /// 字段--class和struct的字段定义
     /// </summary>
-    Field = 5,
+    Field = 6,
     /// <summary>
     /// 枚举值
     /// </summary>
-    EnumValue = 6,
+    EnumValue = 7,
+    /// <summary>
+    /// 方法
+    /// </summary>
+    Method = 8,
 
     /// <summary>
     /// 泛型参数
     /// </summary>
-    TypeParameter = 7,
-
-    // Service
-    // Function
+    TypeParameter = 9,
 }
 }

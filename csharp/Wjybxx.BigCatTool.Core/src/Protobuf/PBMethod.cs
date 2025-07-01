@@ -32,12 +32,13 @@ public class PBMethod : PBElement
     private string? parameterName;
     /** 方法返回值的类型 -- 可能null */
     private string? resultType;
+    /** 方法的数字编号 */
+    private int? number;
 #nullable enable
 
     public override PBElementKind Kind => PBElementKind.Method;
 
     public bool HasParameter => !string.IsNullOrWhiteSpace(parameterType);
-
     public bool HasResult => !string.IsNullOrWhiteSpace(resultType);
 
     #region Props
@@ -55,12 +56,18 @@ public class PBMethod : PBElement
         set => resultType = value;
     }
 
+    public int? Number {
+        get => number;
+        set => number = value;
+    }
+
     #endregion
 
     protected override void ToString(StringBuilder sb) {
         sb.Append(", parameterType='").Append(parameterType).Append('\'')
             .Append(", parameterName='").Append(parameterName).Append('\'')
-            .Append(", resultType='").Append(resultType).Append('\'');
+            .Append(", resultType='").Append(resultType).Append('\'')
+            .Append(", number=").Append(number);
     }
 }
 }

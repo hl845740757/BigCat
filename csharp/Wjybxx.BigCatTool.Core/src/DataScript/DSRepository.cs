@@ -666,6 +666,7 @@ public sealed class DSRepository
     /// <param name="file"></param>
     private void ResolveTypeSymbols(DSFile file) {
         List<DSField> fieldList = new List<DSField>(20);
+        List<DSMethod> methodList = new List<DSMethod>(10);
         foreach (DSNamedType typeElement in DSUtil.GetAllEnclosedTypes(file)) {
             if (typeElement.BaseTypeSymbol != null && typeElement.BaseType == null) {
                 typeElement.BaseType = (DSNamedType)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);
@@ -673,6 +674,14 @@ public sealed class DSRepository
             foreach (DSField field in typeElement.GetFields(false, fieldList.ClearAndReturn())) {
                 if (field.TypeSymbol != null && field.Type == null) {
                     field.Type = ResolveTypeSymbol(typeElement, field.TypeSymbol);
+                }
+            }
+            foreach (DSMethod method in typeElement.GetMethods(false, methodList.ClearAndReturn())) {
+                if (method.ParameterTypeSymbol != null && method.ParameterType == null) {
+                    method.ParameterType = ResolveTypeSymbol(typeElement, method.ParameterTypeSymbol);
+                }
+                if (method.ResultTypeSymbol != null && method.ResultType == null) {
+                    method.ResultType = ResolveTypeSymbol(typeElement, method.ResultTypeSymbol);
                 }
             }
         }

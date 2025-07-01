@@ -105,3 +105,9 @@ inst vector3_array [
 // 测试不换行缩进
 inst v1 { x: 0, y: 0, z: 0}
 inst v2 [0, 0, 0]
+
+// 测试rpc服务
+service FirstService {
+    func Echo(Vector3 v3) returns (Vector3) = 1;
+    func Echo(List<Vector3> list) returns (List<Vector3>) = 2;
+}

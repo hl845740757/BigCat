@@ -113,6 +113,16 @@ public class DSFile : DSElement
     }
 
     /// <summary>
+    /// 获取所有的顶层服务
+    /// </summary>
+    /// <returns></returns>
+    public List<DSNamedType> GetServices() {
+        return EnclosedElements.Where(e => e.Kind == DSElementKind.Service)
+            .Cast<DSNamedType>()
+            .ToList();
+    }
+
+    /// <summary>
     /// 获取所有的顶层实例
     /// </summary>
     /// <returns></returns>

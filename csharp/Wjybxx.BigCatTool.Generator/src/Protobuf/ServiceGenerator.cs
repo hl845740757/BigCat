@@ -232,6 +232,9 @@ public class ServiceGenerator
     //@RpcMethod {id: 1, async: true, ctx: true, manual: true}
     private int GetMethodId(PBMethod method, DsonObject<string> methodData) {
         // 默认是double类型
+        if (method.Number != null) {
+            return method.Number.Value;
+        }
         return methodData["id"].AsDsonNumber().IntValue;
     }
 

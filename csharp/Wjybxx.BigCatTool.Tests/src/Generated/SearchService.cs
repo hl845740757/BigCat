@@ -22,5 +22,11 @@ public interface SearchService
 
     [RpcMethod(MethodId = 4)]
     void Search4();
+
+    /// <summary>
+    /// 最新语法，支持直接在方法后面指定方法id
+    /// </summary>
+    [RpcMethod(MethodId = 5)]
+    void Search5();
 }
 }

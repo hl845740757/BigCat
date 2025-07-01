@@ -36,5 +36,10 @@ internal enum DSContextType
     /// 枚举
     /// </summary>
     Enum = 3,
+    
+    /// <summary>
+    /// 服务
+    /// </summary>
+    Service = 4,
 }
 }

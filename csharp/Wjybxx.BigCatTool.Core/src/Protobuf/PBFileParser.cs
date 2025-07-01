@@ -344,7 +344,7 @@ public sealed class PBFileParser
         string firstWord = FirstWord(content);
         switch (firstWord) {
             // 内嵌结构
-            case PBKeywords.SERVICE: { // 服务内禁止嵌套服务
+            case PBKeywords.SERVICE: {
                 throw new IOException("Services should not be nested within service");
             }
             case PBKeywords.MESSAGE: {
@@ -361,7 +361,7 @@ public sealed class PBFileParser
                 _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
-            // Rpc
+            // 函数
             case PBKeywords.RPC: {
                 PBMethod method = ParseMethod(_context.PopCommentLines(), lineInfo);
                 _context.container.AddEnclosedElement(method);
@@ -389,7 +389,7 @@ public sealed class PBFileParser
         int argEnd;
         {
             int argStart = content.IndexOf('(');
-            name = content.Substring2(4, argStart).Trim(); // 跳过'rpc '
+            name = content.Substring2(PBKeywords.RPC.Length, argStart).Trim(); // 跳过'rpc '
 
             argEnd = content.IndexOf(')');
             string args = content.Substring2(argStart + 1, argEnd).Trim(); // 去掉两端空格
@@ -397,7 +397,7 @@ public sealed class PBFileParser
                 argType = null;
                 argName = null;
             } else {
-                int splitIdx = args.IndexOf(' ');
+                int splitIdx = args.LastIndexOf(' '); // 可避免泛型参数<>中的空白
                 if (splitIdx < 0) {
                     argType = args;
                     argName = null;
@@ -407,15 +407,22 @@ public sealed class PBFileParser
                 }
             }
         }
-        string? resultType;
+        string? resultType = null;
+        int rEnd;
         {
             int rStart = content.IndexOf('(', argEnd);
-            int rEnd = content.IndexOf(')', rStart);
+            rEnd = content.IndexOf(')', rStart);
             string results = content.Substring2(rStart + 1, rEnd).Trim();
-            if (string.IsNullOrWhiteSpace(results)) {
-                resultType = null;
-            } else {
+            if (!string.IsNullOrWhiteSpace(results)) {
                 resultType = results;
+            }
+        }
+        int? number = null;
+        {
+            int splitIdx = content.IndexOf('=', rEnd);
+            if (splitIdx > 0) {
+                string str = content.Substring2(splitIdx + 1, content.Length - 1); // -1去掉 ';'
+                number = int.Parse(str.Trim());
             }
         }
         PBMethod method = new PBMethod()
@@ -424,6 +431,7 @@ public sealed class PBFileParser
             ParameterName = argName,
             ResultType = resultType,
             SimpleName = name,
+            Number = number,
             StartLine = lineInfo.ln,
             EndLine = lineInfo.ln
         };

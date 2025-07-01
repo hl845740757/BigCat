@@ -35,13 +35,15 @@ public static class DSUtil
         return kind == DSElementKind.Class
                || kind == DSElementKind.Strut
                || kind == DSElementKind.Enum
+               || kind == DSElementKind.Service
                || kind == DSElementKind.TypeParameter;
     }
 
     public static bool IsNamedType(this DSElementKind kind) {
         return kind == DSElementKind.Class
                || kind == DSElementKind.Strut
-               || kind == DSElementKind.Enum;
+               || kind == DSElementKind.Enum
+               || kind == DSElementKind.Service;
     }
 
     /// <summary>

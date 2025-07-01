@@ -109,6 +109,10 @@ public class DSFileParser
                         ClassOrStructReadLine(curLine);
                         break;
                     }
+                    case DSContextType.Service: {
+                        ServiceReadLine(curLine);
+                        break;
+                    }
                     case DSContextType.Enum: {
                         EnumReadLine(curLine);
                         break;
@@ -145,6 +149,10 @@ public class DSFileParser
             }
             case DSKeywords.ENUM: {
                 ReadStartContainer(DSContextType.Enum, lineInfo);
+                return;
+            }
+            case DSKeywords.SERVICE: {
+                ReadStartContainer(DSContextType.Service, lineInfo);
                 return;
             }
             case DSKeywords.INST: {
@@ -304,6 +312,11 @@ public class DSFileParser
                 ReadEndContainer(lineInfo);
                 return;
             }
+            case DSKeywords.SERVICE:
+            case DSKeywords.FUNC: {
+                // 服务必须位于顶层，函数只能出现在服务下
+                throw new IOException("not supported: " + content);
+            }
             default: {
                 // 判断是否字段 type name = number;
                 if (content.IndexOf('=') > 0) {
@@ -389,6 +402,117 @@ public class DSFileParser
 
     #endregion
 
+    #region service
+
+    private void ServiceReadLine(LineInfo lineInfo) {
+        if (!lineInfo.HasContent) {
+            TryAddComment(lineInfo);
+            return;
+        }
+        string content = lineInfo.content;
+        string firstWord = FirstWord(content);
+        switch (firstWord) {
+            // 内嵌结构
+            case DSKeywords.SERVICE: {
+                throw new IOException("Services should not be nested within service");
+            }
+            case DSKeywords.CLASS: {
+                ReadStartContainer(DSContextType.Class, lineInfo);
+                return;
+            }
+            case DSKeywords.STRUCT: {
+                ReadStartContainer(DSContextType.Struct, lineInfo);
+                return;
+            }
+            case DSKeywords.ENUM: {
+                ReadStartContainer(DSContextType.Enum, lineInfo);
+                return;
+            }
+            case DSKeywords.OPTION: {
+                _context.ClearCommentLines();
+                var pair = ParseOption(content);
+                _context.container.AddOption(pair.Key, pair.Value);
+                return;
+            }
+            // 函数
+            case DSKeywords.FUNC: {
+                DSMethod method = ParseMethod(_context.PopCommentLines(), lineInfo);
+                if (!_context.numbers.Add(method.Number)) {
+                    throw new IOException("duplicate method number: " + method.Number);
+                }
+                _context.container.AddEnclosedElement(method);
+                return;
+            }
+            default: {
+                // 可能是结束行
+                _context.ClearCommentLines();
+                if (firstWord == "}") {
+                    ReadEndContainer(lineInfo);
+                }
+                return;
+            }
+        }
+    }
+
+    private static DSMethod ParseMethod(List<string> commentLines, LineInfo lineInfo) {
+        string content = lineInfo.content;
+        EnsureEndWithSemicolon(content);
+        // 我们的语法支持为参数命名，还支持无参和无返回结果
+        // func Search(SearchRequest request) returns (SearchResponse) = 1;
+        string name;
+        string? argType;
+        string? argName;
+        int argEnd;
+        {
+            int argStart = content.IndexOf('(');
+            name = content.Substring2(DSKeywords.FUNC.Length, argStart).Trim(); // 跳过'func '
+
+            argEnd = content.IndexOf(')');
+            string args = content.Substring2(argStart + 1, argEnd).Trim(); // 去掉两端空格
+            if (string.IsNullOrWhiteSpace(args)) {
+                argType = null;
+                argName = null;
+            } else {
+                int splitIdx = args.LastIndexOf(' '); // 可避免泛型参数<>中的空白
+                if (splitIdx < 0) {
+                    argType = args;
+                    argName = null;
+                } else {
+                    argType = args.Substring2(0, splitIdx).Trim();
+                    argName = args.Substring(splitIdx + 1).Trim();
+                }
+            }
+        }
+        string? resultType = null;
+        int rEnd;
+        {
+            int rStart = content.IndexOf('(', argEnd);
+            rEnd = content.IndexOf(')', rStart);
+            string results = content.Substring2(rStart + 1, rEnd).Trim();
+            if (!string.IsNullOrWhiteSpace(results)) {
+                resultType = results;
+            }
+        }
+        int number;
+        {
+            int splitIdx = content.IndexOf('=', rEnd);
+            if (splitIdx < 0) {
+                throw new IOException("number is absent");
+            }
+            string str = content.Substring2(splitIdx + 1, content.Length - 1); // -1去掉 ';'
+            number = int.Parse(str.Trim());
+        }
+        DSMethod method = new DSMethod(name, argType, argName, resultType, number)
+        {
+            StartLine = lineInfo.ln,
+            EndLine = lineInfo.ln
+        };
+        // 追加注释
+        DrainCommentLine(method, commentLines, lineInfo.comment);
+        return method;
+    }
+
+    #endregion
 
     #region enum
 
@@ -512,6 +636,11 @@ public class DSFileParser
             case DSContextType.Struct: {
                 Debug.Assert(baseTypeSymbol == null);
                 context = new Context(parent, DSContextType.Struct, DSNamedType.NewStructType(className, typeParameters));
+                break;
+            }
+            case DSContextType.Service: {
+                Debug.Assert(typeParameters.Count == 0);
+                context = new Context(parent, DSContextType.Service, DSNamedType.NewServiceType(className));
                 break;
             }
             case DSContextType.Enum: {

@@ -37,7 +37,7 @@ public class DSField : DSElement
     private readonly int number;
     /** 字段是否是只读的 -- 对应字段来说，还是修饰符好用 */
     private readonly bool isReadonly;
-    /** 类型 -- 延迟解析 */
+    /** 类型 -- build时解析 */
     private DSTypeElement type;
 
     /** 泛型字段的原始定义 */

@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Dson;
 
@@ -67,5 +68,10 @@ public class DSInst : DSElement
     }
 
     #endregion
+
+    protected override void ToString(StringBuilder sb) {
+        sb.Append(", templates=");
+        CollectionUtil.ToStringHelper(templates, sb);
+    }
 }
 }

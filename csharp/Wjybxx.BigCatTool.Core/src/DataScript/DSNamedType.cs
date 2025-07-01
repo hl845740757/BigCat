@@ -281,6 +281,48 @@ public sealed class DSNamedType : DSTypeElement
     }
 
     /// <summary>
+    /// 查找函数
+    /// </summary>
+    /// <param name="name">函数名</param>
+    /// <param name="flatInherit">是否拉取继承的字段，默认true</param>
+    public DSMethod? GetMethod(string name, bool flatInherit = true) {
+        foreach (var element in EnclosedElements) {
+            if (element.Kind == DSElementKind.Method && element.SimpleName == name) {
+                return (DSMethod?)element;
+            }
+        }
+        if (flatInherit && _baseType != null) {
+            return _baseType.GetMethod(name);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 获取所有的函数
+    /// </summary>
+    /// <param name="flatInherit">是否拉取继承的字段，默认true</param>
+    /// <param name="result">接收结果的out参数，允许外部池化</param>
+    public List<DSMethod> GetMethods(bool flatInherit = true, List<DSMethod>? result = null) {
+        result ??= new List<DSMethod>(EnclosedElements.Count);
+        if (!flatInherit || BaseType == null) {
+            foreach (var element in EnclosedElements) {
+                if (element.Kind == DSElementKind.Method) {
+                    result.Add((DSMethod)element);
+                }
+            }
+            return result;
+        }
+        foreach (DSNamedType typeElement in DSUtil.FlatInherit(this)) {
+            foreach (DSElement element in typeElement.EnclosedElements) {
+                if (element.Kind == DSElementKind.Method) {
+                    result.Add((DSMethod)element);
+                }
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
     /// 获取所有的枚举值
     /// </summary>
     /// <returns></returns>
@@ -458,6 +500,10 @@ public sealed class DSNamedType : DSTypeElement
 
     public static DSNamedType NewEnumType(ClassName className) {
         return new DSNamedType(DSElementKind.Enum, DSTypeKind.Enum, className, ImmutableList<DSTypeParameter>.Empty, null);
+    }
+
+    public static DSNamedType NewServiceType(ClassName className) {
+        return new DSNamedType(DSElementKind.Service, DSTypeKind.Service, className, ImmutableList<DSTypeParameter>.Empty, null);
     }
 
     private static void CheckTypeParameters(ClassName className, IList<DSTypeParameter> typeParameters) {

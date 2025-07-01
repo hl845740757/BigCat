@@ -929,4 +929,11 @@ public class PeerClass
 
     #endregion
 }
+[Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+public interface FirstService
+{
+    Vector3 Echo(Vector3 v3);
+
+    List<Vector3> Echo(List<Vector3> list);
+}
 }

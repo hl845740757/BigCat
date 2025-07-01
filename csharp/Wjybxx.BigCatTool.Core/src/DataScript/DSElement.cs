@@ -169,7 +169,6 @@ public abstract class DSElement
             .Append('}').ToString();
     }
 
-    protected virtual void ToString(StringBuilder sb) {
-    }
+    protected abstract void ToString(StringBuilder sb);
 }
 }

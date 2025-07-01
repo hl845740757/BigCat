@@ -42,6 +42,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 3.如果是数据类，则会生成Equals、GetHashCode、ToString三个方法。
 /// 4.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
 /// 5.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
+/// 6.该实现并不特殊处理Rpc生成，需要由子类扩展。
 /// </summary>
 public class CodeGeneratorHelper
 {
@@ -91,6 +92,7 @@ public class CodeGeneratorHelper
             DSTypeKind.Class => TypeSpec.NewClassBuilder(namedType.SimpleName),
             DSTypeKind.Struct => TypeSpec.NewStructBuilder(namedType.SimpleName),
             DSTypeKind.Enum => TypeSpec.NewEnumBuilder(namedType.SimpleName),
+            DSTypeKind.Service => TypeSpec.NewInterfaceBuilder(namedType.SimpleName),
             _ => throw new InvalidOperationException("unknown type kind: " + namedType.TypeKind)
         };
         typeBuilder.AddModifiers(Modifiers.Public);
@@ -99,6 +101,8 @@ public class CodeGeneratorHelper
         }
         if (namedType.IsEnum) {
             GenerateEnum(namedType, typeBuilder);
+        } else if (namedType.Kind == DSElementKind.Service) {
+            GenerateService(namedType, typeBuilder);
         } else {
             GenerateClass(namedType, typeBuilder);
         }
@@ -117,6 +121,21 @@ public class CodeGeneratorHelper
             }
             DSEnumValue enumValue = (DSEnumValue)enclosedElement;
             typeBuilder.AddEnumValue(new EnumValueSpec(enumValue.SimpleName, enumValue.Number, BuildDocument(enumValue.Comments)));
+        }
+    }
+
+    /** 默认的实现只是简单生成方法 */
+    protected virtual void GenerateService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+        foreach (DSMethod method in namedType.GetMethods(false)) {
+            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
+            if (method.ParameterType != null) {
+                methodBuilder.AddParameter(GetTypeName(method.ParameterType), method.ParameterName!);
+            }
+            if (method.ResultType != null) {
+                methodBuilder.Returns(GetTypeName(method.ResultType));
+            }
+            methodBuilder.AddDocument(BuildDocument(method.Comments));
+            typeBuilder.AddMethod(methodBuilder.Build());
         }
     }
 

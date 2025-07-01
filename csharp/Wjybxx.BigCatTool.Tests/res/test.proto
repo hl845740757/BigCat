@@ -19,6 +19,10 @@ service SearchService {
   rpc Search3(SearchRequest request) returns (SearchResponse);
   //@RpcMethod {id: 4, async: false}
   rpc Search4() returns ();
+
+  // 最新语法，支持直接在方法后面指定方法id
+  //@RpcMethod {async: false}
+  rpc Search5() returns () = 5;
 }
 
 enum Corpus {

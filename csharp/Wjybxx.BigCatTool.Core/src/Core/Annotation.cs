@@ -43,10 +43,10 @@ public sealed class Annotation
         this.value = value;
     }
 
-    public Annotation(string type, DsonValue dsonValue) {
+    public Annotation(string type, DsonValue dsonValue, string? rawValue = null) {
         this.type = type;
         this.dsonValue = dsonValue ?? throw new ArgumentNullException(nameof(dsonValue));
-        this.value = dsonValue.ToDson(ObjectStyle.Flow);
+        this.value = rawValue ?? dsonValue.ToDson(ObjectStyle.Flow);
     }
 
     public DsonValue DsonValue {
@@ -92,13 +92,15 @@ public sealed class Annotation
             return null; // 类型信息为空
         }
         DsonValue dsonValue;
+        string rawValue;
         if (startIndex > 0) {
-            string rawValue = comment.Substring2(startIndex, endIndex + 1);
+            rawValue = comment.Substring2(startIndex, endIndex + 1);
             dsonValue = Dsons.FromDson(rawValue);
         } else {
             dsonValue = DsonNull.NULL;
+            rawValue = "";
         }
-        return new Annotation(type, dsonValue);
+        return new Annotation(type, dsonValue, rawValue);
     }
 
     /** 是否是注解类型注释 */

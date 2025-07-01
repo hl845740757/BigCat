@@ -77,7 +77,9 @@ public static class DSAnnotations
     /// - name 表示字段序列化的名字，不推荐使用
     /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
     ///
-    /// 注：style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
+    /// 注：
+    /// 1.style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
+    /// 2.用于服务和方法时，由用户自行约定。
     /// </summary>
     public const string CODEC = "Codec";
 

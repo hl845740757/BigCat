@@ -40,11 +40,12 @@ public enum DSTypeKind
     /// </summary>
     Enum = 3,
     /// <summary>
+    /// 服务
+    /// </summary>
+    Service = 4,
+    /// <summary>
     /// 类型参数 
     /// </summary>
-    TypeParameter = 4,
-
-    //
-    // Service = 5,
+    TypeParameter = 5,
 }
 }

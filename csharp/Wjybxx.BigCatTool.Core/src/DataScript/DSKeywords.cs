@@ -50,6 +50,11 @@ public static class DSKeywords
     /** 实例 -- 暂时要求严格的输入格式，以降低解析难度， */
     public const string INST = "inst";
 
+    /** 服务 */
+    public const string SERVICE = "service";
+    /** 函数 */
+    public const string FUNC = "func";
+
     /** 用于修饰字段，表示字段是只读的 */
     public const string READONLY = "readonly";
 
