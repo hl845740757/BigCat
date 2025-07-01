@@ -195,11 +195,11 @@ public static class DSUtil
     #region Name工具方法
 
     /// <summary>
-    /// 删除fullname中的文件名
+    /// 删除Name中的第一部分
     /// </summary>
     /// <param name="fullName"></param>
     /// <returns></returns>
-    public static string RemoveFileName(string fullName) {
+    public static string RemoveFirstName(string fullName) {
         int idx = fullName.IndexOf('.');
         return fullName.Substring(idx + 1);
     }

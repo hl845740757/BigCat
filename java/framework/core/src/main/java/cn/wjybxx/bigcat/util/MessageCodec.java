@@ -66,7 +66,7 @@ public class MessageCodec<T extends MessageLite> implements DsonCodec<T> {
     }
 
     @Override
-    public T readObject(DsonObjectReader reader, Supplier<? extends T> factory) {
+    public T readObject(DsonObjectReader reader, TypeInfo declaredType, Supplier<? extends T> factory) {
         byte[] bytes = reader.readBytes(reader.getCurrentName());
         if (bytes == null) {
             return null;

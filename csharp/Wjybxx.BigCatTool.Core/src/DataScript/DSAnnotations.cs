@@ -48,10 +48,9 @@ public static class DSAnnotations
     /// (主要服务于代码生成)
     ///
     /// <h3>用于类型时</h3>
-    /// <code>// @Options{isFlags: true, dataClass: true, partial: true, nonGenerate: true}</code>
+    /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true}</code>
     /// - isFlags 用于标识枚举类型是否是Flags类型
     /// - dataClass 用于标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
-    /// - partial 用于表示生成的class和struct需要是partial类
     /// - nonGenerate 非生成类，表示生成代码时跳过
     ///
     /// <h3>用于字段时</h3>
@@ -97,7 +96,6 @@ public static class DSAnnotations
 
     public const string KEY_IS_FLAGS = "isFlags";
     public const string KEY_DATA_CLASS = "dataClass";
-    public const string KEY_PARTIAL = "partial";
     public const string KEY_NON_GENERATE = "nonGenerate";
 
     public const string KEY_NON_SERIALIZED = "nonSerialized";

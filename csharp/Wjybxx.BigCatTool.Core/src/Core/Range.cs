@@ -22,7 +22,7 @@ namespace Wjybxx.BigCatTool.Core
 {
 /// <summary>
 /// 范围
-/// (不限制start和end之间的大小关系)
+/// (不限制start和end之间的大小关系，所以不是min-max，而是start-end)
 /// </summary>
 public readonly struct Range : IEquatable<Range>
 {

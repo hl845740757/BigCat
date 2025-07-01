@@ -18,7 +18,6 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.base.collection.DefaultIndexedPriorityQueue;
 import cn.wjybxx.base.collection.IndexedPriorityQueue;
-import cn.wjybxx.base.concurrent.TaskOptions;
 import cn.wjybxx.base.ex.ErrorCodeException;
 import cn.wjybxx.base.ex.NoLogRequiredException;
 import cn.wjybxx.base.pool.DefaultObjectPool;

@@ -211,7 +211,7 @@ public static class ExcelConstants
     /// <param name="defValue">key不存在时的默认值</param>
     /// <returns></returns>
     public static bool GetBool(DsonObject<string> options, string key, bool defValue = false) {
-        return ToolUtil.GetBool(options, key, defValue);
+        return Annotation.GetBool(options, key, defValue);
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ public static class ExcelConstants
     /// <param name="defValue">key不存在时的默认值</param>
     /// <returns></returns>
     public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
-        return ToolUtil.GetNumber(options, key, defValue);
+        return Annotation.GetNumber(options, key, defValue);
     }
 
     /// <summary>
@@ -233,7 +233,7 @@ public static class ExcelConstants
     /// <param name="defValue"></param>
     /// <returns></returns>
     public static int GetInt(DsonObject<string> options, string key, int defValue = 0) {
-        return ToolUtil.GetInt(options, key, defValue);
+        return Annotation.GetInt(options, key, defValue);
     }
 
     #endregion

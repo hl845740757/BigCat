@@ -124,5 +124,58 @@ public sealed class Annotation
     }
 
     #endregion
+
+    #region util
+
+    /// <summary>
+    /// 获取bool类型属性
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static bool GetBool(DsonObject<string> options, string key, bool defValue = false) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        if (value.DsonType == DsonType.Bool) return value.AsBool();
+        if (value.IsNumber) {
+            int number = value.AsDsonNumber().IntValue;
+            if (number == 0) return false;
+            if (number == 1) return true;
+            throw new Exception("invalid number: " + number);
+        }
+        return defValue;
+    }
+
+    /// <summary>
+    /// 获取int类型属性值
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="key"></param>
+    /// <param name="defValue"></param>
+    /// <returns></returns>
+    public static int GetInt(DsonObject<string> options, string key, int defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().IntValue : defValue;
+    }
+
+    /// <summary>
+    /// 获取number类型属性值
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static double GetNumber(DsonObject<string> options, string key, double defValue = 0) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
+    }
+
+    #endregion
 }
 }

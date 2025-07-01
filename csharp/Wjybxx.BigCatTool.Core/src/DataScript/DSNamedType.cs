@@ -26,7 +26,7 @@ using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using Range = Wjybxx.BigCatTool.Core.Range;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
-using SerialTypeName = Wjybxx.Dson.Codec.TypeName;
+using DsonTypeName = Wjybxx.Dson.Codec.TypeName;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -108,24 +108,24 @@ public sealed class DSNamedType : DSTypeElement
     private readonly DSNamedType? _originDefine;
 
     /// <summary>
-    /// 类型的编解码名字
+    /// Dson序列化时的完整类型名
     ///
     /// 1.该数据很重要，因为编辑器在导出Dson文本时必须知道类型关联的序列化Name。
     /// 2.如果当前类型是泛型定义类，该值不可以用于生成数据。
     /// </summary>
-    private SerialTypeName serialTypeName;
+    private DsonTypeName _dsonTypeName;
     /// <summary>
-    /// 类型的编解码别名
+    /// Dson序列化时的类型别名
+    /// 
     /// 1.<see cref="DSAnnotations.CODEC"/>注解的缓存数据，避免频繁创建List。
     /// 2.如果未显式指定，将被初始化为文件内的相对路径，<code>FileName.A.B.C => A.B.C</code>
     /// 3.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
     /// </summary>
-    private readonly List<string> serialAliases = new();
+    private readonly List<string> _dsonAliases = new();
     /// <summary>
-    /// 类型的编解码样式
-    /// (注解的缓存数据)
+    /// Dson序列化时的文本样式
     /// </summary>
-    private ObjectStyle serialStyle = ObjectStyle.Indent;
+    private ObjectStyle _dsonStyle = ObjectStyle.Indent;
 #nullable enable
 
     /// <summary>
@@ -171,7 +171,7 @@ public sealed class DSNamedType : DSTypeElement
         _typeParameters = ImmutableList<DSTypeParameter>.Empty;
         _typeArguments = typeArguments.ToImmutableList2();
 
-        serialStyle = originDefine.SerialStyle;
+        _dsonStyle = originDefine.DsonStyle;
     }
 
     #region core
@@ -358,8 +358,8 @@ public sealed class DSNamedType : DSTypeElement
     /// 添加序列化别名
     /// </summary>
     /// <returns>this</returns>
-    public DSNamedType AddSerialAlias(string alias) {
-        this.serialAliases.Add(alias);
+    public DSNamedType AddDsonAlias(string alias) {
+        this._dsonAliases.Add(alias);
         return this;
     }
 
@@ -367,9 +367,9 @@ public sealed class DSNamedType : DSTypeElement
     /// 添加序列化别名
     /// </summary>
     /// <returns>this</returns>
-    public DSNamedType AddSerialAliases(params string[] aliases) {
+    public DSNamedType AddDsonAliases(params string[] aliases) {
         foreach (string alias in aliases) {
-            this.serialAliases.Add(alias);
+            this._dsonAliases.Add(alias);
         }
         return this;
     }
@@ -398,14 +398,14 @@ public sealed class DSNamedType : DSTypeElement
 
     public ImmutableList<DSTypeParameter> TypeParameters => _typeParameters;
     public ImmutableList<DSTypeElement> TypeArguments => _typeArguments;
-    public SerialTypeName SerialTypeName {
-        get => serialTypeName;
-        set => serialTypeName = value ?? throw new ArgumentNullException(nameof(value));
+    public DsonTypeName DsonTypeName {
+        get => _dsonTypeName;
+        set => _dsonTypeName = value ?? throw new ArgumentNullException(nameof(value));
     }
-    public List<string> SerialAliases => serialAliases;
-    public ObjectStyle SerialStyle {
-        get => serialStyle;
-        set => serialStyle = value;
+    public List<string> DsonAliases => _dsonAliases;
+    public ObjectStyle DsonStyle {
+        get => _dsonStyle;
+        set => _dsonStyle = value;
     }
     public List<Range> ReservedNumbers => reservedNumbers;
     public List<string> ReservedNames => reservedNames;

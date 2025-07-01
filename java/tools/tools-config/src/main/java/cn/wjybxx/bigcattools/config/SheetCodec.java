@@ -17,13 +17,13 @@
 package cn.wjybxx.bigcattools.config;
 
 
+import cn.wjybxx.base.TypeInfo;
 import cn.wjybxx.dson.DsonType;
 import cn.wjybxx.dson.text.ObjectStyle;
 import cn.wjybxx.dson.text.StringStyle;
 import cn.wjybxx.dsoncodec.DsonCodec;
 import cn.wjybxx.dsoncodec.DsonObjectReader;
 import cn.wjybxx.dsoncodec.DsonObjectWriter;
-import cn.wjybxx.base.TypeInfo;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class SheetCodec implements DsonCodec<Sheet> {
     }
 
     @Override
-    public Sheet readObject(DsonObjectReader reader, Supplier<? extends Sheet> factory) {
+    public Sheet readObject(DsonObjectReader reader, TypeInfo declaredType, Supplier<? extends Sheet> factory) {
         String fileName = reader.readString("fileName");
         String sheetName = reader.readString("sheetName");
         int sheetIndex = reader.readInt("sheetIndex");

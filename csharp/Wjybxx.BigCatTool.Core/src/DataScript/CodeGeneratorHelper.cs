@@ -108,7 +108,7 @@ public class CodeGeneratorHelper
     private void GenerateEnum(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         DsonObject<string> options = DSUtil.GetOptions(namedType);
         // 增加Flags注解
-        if (ToolUtil.GetBool(options, DSAnnotations.KEY_IS_FLAGS)) {
+        if (Annotation.GetBool(options, DSAnnotations.KEY_IS_FLAGS)) {
             typeBuilder.AddAttribute(ATTRIBUTE_FLAGS);
         }
         foreach (DSElement enclosedElement in namedType.EnclosedElements) {
@@ -122,10 +122,6 @@ public class CodeGeneratorHelper
 
     private void GenerateClass(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         DsonObject<string> options = DSUtil.GetOptions(namedType);
-        // 声明为partial
-        if (IsPartialClass(namedType, options)) {
-            typeBuilder.AddModifiers(Modifiers.Partial);
-        }
         // 继承
         if (namedType.BaseType != null) {
             typeBuilder.AddBaseClass(GetTypeName(namedType.BaseType));
@@ -157,7 +153,7 @@ public class CodeGeneratorHelper
 
             // 如果是指向共享字符串表的索引，则增加缓存字段 + 属性
             // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
-            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_SSTI)) {
+            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_SSTI)) {
                 BuildSstiFieldAndProperty(field, fieldSpec.name, propertySpec.name,
                     out FieldSpec sstiFiledSpec, out PropertySpec sstiPropertySpec);
                 if (sstiPropertySpec.name == propertySpec.name) {
@@ -247,20 +243,11 @@ public class CodeGeneratorHelper
     }
 
     /// <summary>
-    /// 是否是partial类型
-    /// </summary>
-    protected virtual bool IsPartialClass(DSNamedType namedType, DsonObject<string> options) {
-        return options.ContainsKey(DSAnnotations.KEY_PARTIAL)
-            ? ToolUtil.GetBool(options, DSAnnotations.KEY_PARTIAL)
-            : namedType.GetEnclosingFile().GetOption(DSKeywords.PARTIAL_CLASS) == "true";
-    }
-
-    /// <summary>
     /// 是否是数据类 -- 是否生成equals和hashcode
     /// </summary>
     protected virtual bool IsDataClass(DSNamedType namedType, DsonObject<string> options) {
         return options.ContainsKey(DSAnnotations.KEY_DATA_CLASS)
-            ? ToolUtil.GetBool(options, DSAnnotations.KEY_DATA_CLASS)
+            ? Annotation.GetBool(options, DSAnnotations.KEY_DATA_CLASS)
             : namedType.GetEnclosingFile().GetOption(DSKeywords.DATA_CLASS) == "true";
     }
 
@@ -317,7 +304,7 @@ public class CodeGeneratorHelper
         TypeName fieldTypeName = GetTypeName(field.Type);
         FieldSpec.Builder fieldBuilder = FieldSpec.NewBuilder(GetTypeName(field.Type), GetFieldName(field.SimpleName), fieldModifiers)
             .AddDocument(BuildDocument(field.Comments));
-        if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+        if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
             fieldBuilder.AddAttribute(ATTRIBUTE_NON_SERIALIZED);
         }
         CodeBlock initializer = GetFieldInitializer(field, fieldOptions, fieldTypeName);
@@ -418,7 +405,7 @@ public class CodeGeneratorHelper
     #region 编解码方法
 
     private CodeGeneratorCfg.ClassCodecCfg? GetClassCfg(DSNamedType namedType) {
-        string fullName = DSUtil.RemoveFileName(namedType.FullName);
+        string fullName = DSUtil.RemoveFirstName(namedType.FullName);
         foreach (CodeGeneratorCfg.ClassCodecCfg codecCfg in generatorCfg.codecCfgs) {
             if (codecCfg.name == fullName) return codecCfg;
         }
@@ -494,7 +481,7 @@ public class CodeGeneratorHelper
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
                 continue;
             }
             CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
@@ -530,7 +517,7 @@ public class CodeGeneratorHelper
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);
@@ -689,7 +676,7 @@ public class CodeGeneratorHelper
         CodeBlock.Builder codeBuilder = equalsBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
+            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);
@@ -746,7 +733,7 @@ public class CodeGeneratorHelper
         CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (ToolUtil.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
+            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);
@@ -1078,11 +1065,11 @@ public class CodeGeneratorHelper
     public static AttributeSpec BuildCodecAttribute(DSNamedType namedType, StringBuilder sb) {
         var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE)
             .AddMember("SkipFields", "new[] { $S }", "*") // 跳过所有字段，由生成的代码编解码
-            .AddMember("Style", "$T.$L", TYPE_NAME_OBJECT_STYLE, namedType.SerialStyle.ToString());
-        if (namedType.SerialAliases.Count > 0) {
+            .AddMember("Style", "$T.$L", TYPE_NAME_OBJECT_STYLE, namedType.DsonStyle.ToString());
+        if (namedType.DsonAliases.Count > 0) {
             sb.Append("new[] { ");
-            for (int index = 0; index < namedType.SerialAliases.Count; index++) {
-                string alias = namedType.SerialAliases[index];
+            for (int index = 0; index < namedType.DsonAliases.Count; index++) {
+                string alias = namedType.DsonAliases[index];
                 if (index > 0) sb.Append(", ");
                 sb.Append('"');
                 sb.Append(alias);

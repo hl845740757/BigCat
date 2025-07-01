@@ -74,6 +74,8 @@ public sealed class LineInfo
 
     /// <summary>
     /// 解析行信息（默认方案）
+    ///
+    /// 不支持'/'为正常内容，如果'/'可能为正常内容，请自定义解析。
     /// </summary>
     /// <param name="ln">行号--不约束</param>
     /// <param name="rawLine">原始行数据</param>
@@ -88,7 +90,7 @@ public sealed class LineInfo
             content = rawLine.Trim();
             comment = null;
         } else {
-            if (rawLine[slashIdx + 1] != '/') {
+            if (slashIdx + 1 >= rawLine.Length || rawLine[slashIdx + 1] != '/') {
                 throw new IOException("incorrect comment format, ln: " + ln);
             }
             if (slashIdx == 0) {

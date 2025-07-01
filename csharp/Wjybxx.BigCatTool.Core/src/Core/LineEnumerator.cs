@@ -27,7 +27,7 @@ public class LineEnumerator : IEnumerator<string>
 #nullable disable
     private readonly IEnumerator<string> _backing;
     private readonly int _initLn;
-    
+
     private int _currentLn;
     private string _current;
 #nullable enable

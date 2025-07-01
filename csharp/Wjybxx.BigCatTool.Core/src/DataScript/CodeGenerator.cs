@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson;
@@ -79,7 +80,7 @@ public class CodeGenerator
                     if (!element.Kind.IsNamedType()) continue; // inst
                     DSNamedType namedType = (DSNamedType)element;
                     DsonObject<string> options = DSUtil.GetOptions(namedType);
-                    if (ToolUtil.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
+                    if (Annotation.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
                         continue;
                     }
                     try {
@@ -98,7 +99,7 @@ public class CodeGenerator
                     if (!element.Kind.IsNamedType()) continue; // inst
                     DSNamedType namedType = (DSNamedType)element;
                     DsonObject<string> options = DSUtil.GetOptions(namedType);
-                    if (ToolUtil.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
+                    if (Annotation.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
                         continue;
                     }
                     try {

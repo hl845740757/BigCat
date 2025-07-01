@@ -420,9 +420,9 @@ public class DsonGenerator : ISheetProcessor
         }
         // 修正自定义结构（或内置结构）中的字段
         // 如果是多态数据，需要从Container中拿到真实的类型名，再拿到真实的类型，再根据真实类型修正数据
-        string serialName = GetSerialName(container);
-        if (serialName != null) {
-            namedType = _dsRepository.ResolveSerialName(serialName) ?? throw new Exception($"invalid serial name: {serialName}");
+        string clsName = GetClsName(container);
+        if (clsName != null) {
+            namedType = _dsRepository.ResolveDsonTypeName(clsName) ?? throw new Exception($"invalid serial name: {clsName}");
         }
         List<DSField> fields = namedType.GetFields(true, fieldListPool.Acquire());
         if (fields.Count == 0) {
@@ -446,7 +446,7 @@ public class DsonGenerator : ISheetProcessor
             }
             // 如果是内置类型，可能没有字段声明 -- 重排序字段可能导致数据丢失，如Pair
             if (fields.Count > 1) {
-                ResortField(dsonObject, fields);
+                ResortField(dsonObject, namedType, fields);
             }
         } else if (container.DsonType == DsonType.Array) {
             DsonArray<string> dsonArray = (DsonArray<string>)container;
@@ -472,13 +472,13 @@ public class DsonGenerator : ISheetProcessor
         return handler != null ? handler.ConvertValue(_dsRepository, namedType, container) : container;
     }
 
-    private static string? GetSerialName(DsonValue container) {
-        DsonHeader<string> header = null;
-        if (container is DsonObject<string> dsonObject) {
-            header = dsonObject.Header;
-        } else if (container is DsonArray<string> dsonArray) {
-            header = dsonArray.Header;
-        }
+    private static string? GetClsName(DsonValue container) {
+        DsonHeader<string> header = container switch
+        {
+            DsonObject<string> dsonObject => dsonObject.Header,
+            DsonArray<string> dsonArray => dsonArray.Header,
+            _ => null
+        };
         if (header == null || !header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue value)) {
             return null;
         }
@@ -508,8 +508,16 @@ public class DsonGenerator : ISheetProcessor
         // Nullable要检查？
     }
 
-    /** 根据Class的字段顺序重拍表格中的数据，且字段不存在时补全 -- 依赖于正确处理了多态，否则可能导致子类数据丢失 */
-    private void ResortField(DsonObject<string> dsonObject, List<DSField> fields) {
+    /// <summary>
+    /// 根据Class的字段顺序重排序Dson数据 -- 使得解码时能顺序解码以避免内存碎片
+    ///
+    /// 1.该逻辑依赖于正确处理了多态，否则可能导致子类数据丢失。
+    /// 2.理论上还可以加载类型的默认实例，初始化为对应的默认值，但表格模块应该不太需要。
+    /// </summary>
+    /// <param name="dsonObject"></param>
+    /// <param name="namedType"></param>
+    /// <param name="fields"></param>
+    private void ResortField(DsonObject<string> dsonObject, DSNamedType namedType, List<DSField> fields) {
         LinkedDictionary<string, DsonValue> dictionary = dictionaryPool.Acquire();
         foreach (DSField field in fields) {
             if (dsonObject.TryGetValue(field.SimpleName, out DsonValue element)) {
