@@ -20,15 +20,15 @@ ps：
 ## 示例
 
 ```
-    //@RpcService {id: 1}
+    //@Rpc {id: 1}
     service HelloServer { // '{'可换行可不换行
     
       //服务端同步返回结果
-      //@RpcMethod {id: 1}
+      //@Rpc {id: 1}
       rpc Hello(HelloRequest request) returns (HelloResponse); // 分号是必须的
       
       // 服务端需要异步完成
-      // @RpcMethod {id: 2, async: true}
+      // @Rpc {id: 2, async: true}
       rpc HelloAsync(HelloRequest request) returns (HelloResponse);
       
     } // '}'必须换行
@@ -53,14 +53,17 @@ ps：
 服务的元注有三个，分别为：
 
 ```
-    //@RpcService {id: 1, exporter: true, proxy: true}
+    //@Rpc {id: 1, async: true, ctx: true, manual: true}
     //@RpcCustom {}
 ```
 
 * id表示为服务分配的id
-* `exporter`表示是否生成服务器的导出代码
-* `proxy`表示是否生成客户端使用的封装代码
-* `RpcCustom` 为服务端用参数，dson格式；单独成行，利于解析和书写
+* async 表示服务端接口是否为异步模式；默认值为false
+* ctx 表示是否需要RpcContext参数；默认值为false
+* manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
+* `RpcCustom` 为服务端用切面参数，dson格式；单独成行，利于解析和书写
+
+注：服务上的async等属性用于配置方法的默认值。
 
 ### 限制
 
@@ -78,15 +81,17 @@ ps：
 方法的元注解有三个，分别为：
 
 ```
-    //@RpcMethod {id: 1, async: true, ctx: true, manual: true}
+    //@Rpc {id: 1, async: true, ctx: true, manual: true}
     //@RpcCustom {}
 ```
 
 * id 表示方法在服务内的id
 * async 表示服务端接口是否为异步模式；默认值为false
 * ctx 表示是否需要RpcContext参数；默认值为false
-* manual 表示是否手动管理返回时机，如果为true，应当声明tx。
-* `RpcCustom` 为服务端用参数，dson格式；单独成行，利于解析和书写
+* manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
+* `RpcCustom` 为服务端用切面参数，dson格式；单独成行，利于解析和书写。
+
+注：方法上的async等属性用于覆盖service上的默认值。
 
 ### 限制
 

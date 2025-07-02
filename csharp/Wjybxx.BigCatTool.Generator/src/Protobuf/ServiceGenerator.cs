@@ -20,10 +20,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Wjybxx.BigCatTool.Core;
+using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BigCatTool.Protobuf;
-using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson;
+using static Wjybxx.BigCatTool.DataScript.CodeGeneratorHelper;
 
 namespace Wjybxx.BigCatTool.Generator.Protobuf
 {
@@ -34,20 +35,11 @@ namespace Wjybxx.BigCatTool.Generator.Protobuf
 /// </summary>
 public class ServiceGenerator
 {
-    private static readonly ClassName TYPE_NAME_RPC_SERVICE = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
-    private static readonly ClassName TYPE_NAME_RPC_METHOD = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
-    //
-    private static readonly ClassName TYPE_NAME_RPC_CONTEXT_T = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
-        new List<TypeName> { TypeParameterName.Get("T") });
-    //
-    private static readonly ClassName TYPE_NAME_VALUE_FUTURE = ClassName.Get(typeof(ValueFuture));
-    private static readonly ClassName TYPE_NAME_VALUE_FUTURE_T = ClassName.Get(typeof(ValueFuture<>));
-
     private readonly PBRepository repository;
     private readonly string outDir;
-    private readonly ServiceGeneratorHandler? handler;
-    private readonly AttributeSpec processorInfo;
+    private readonly List<string> superInterfaces;
 
+    private readonly AttributeSpec processorInfo;
 #nullable disable
     /** 当前处理的文件缓存 -- 用于查询依赖 */
     private PBFile _curFile;
@@ -57,16 +49,18 @@ public class ServiceGenerator
     /// </summary>
     /// <param name="repository">要处理的pb文件</param>
     /// <param name="outDir">文件输出目录</param>
-    /// <param name="handler">钩子函数</param>
-    public ServiceGenerator(PBRepository repository, string outDir, ServiceGeneratorHandler? handler) {
+    /// <param name="superInterfaces">服务需要实现的接口</param>
+    public ServiceGenerator(PBRepository repository, string outDir, List<string> superInterfaces = null) {
         this.repository = repository;
         this.outDir = outDir;
-        this.handler = handler;
-
-        processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(ServiceGenerator));
+        this.superInterfaces = superInterfaces ?? new List<string>();
+        this.processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(ServiceGenerator));
     }
 
     public void Execute() {
+        if (!Directory.Exists(outDir)) {
+            Directory.CreateDirectory(outDir);
+        }
         foreach (PBFile pbFile in repository.GetFiles()) {
             _curFile = pbFile;
             foreach (PBService service in pbFile.GetServices()) {
@@ -82,88 +76,67 @@ public class ServiceGenerator
     }
 
     private void BuildService(PBService service) {
-        Annotation serviceAnnotation = service.GetAnnotation("RpcService");
+        Annotation serviceAnnotation = service.GetAnnotation(DSAnnotations.RPC);
         if (serviceAnnotation == null) {
             return;
         }
         TypeSpec.Builder typeBuilder = TypeSpec.NewInterfaceBuilder(service.SimpleName)
             .AddModifiers(Modifiers.Public)
-            .AddAttribute(processorInfo);
+            .AddAttribute(processorInfo)
+            .AddDocument(BuildDocument(service.Comments));
         // 继承的接口
-        foreach (string superinterface in service.Superinterfaces) {
+        foreach (string superinterface in superInterfaces) {
             ClassName className = ToolUtil.ClassNameOfCanonicalName(superinterface);
             typeBuilder.AddBaseClass(className);
         }
-        // service注解
+        // service注解 -- 方法也可能访问
+        DsonObject<string> serviceData = serviceAnnotation.DsonValue.AsObject();
         {
-            DsonObject<string> serviceData = serviceAnnotation.DsonValue.AsObject();
             AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
-                .AddMember("ServiceId", GetServiceId(service, serviceData).ToString());
+                .AddMember(PNAME_SERVICE_ID, GetServiceId(serviceData).ToString());
             typeBuilder.AddAttribute(annoBuilder.Build());
         }
         // 方法列表
         foreach (PBMethod method in service.GetMethods()) {
-            Annotation methodAnnotation = method.GetAnnotation("RpcMethod");
+            Annotation methodAnnotation = method.GetAnnotation(DSAnnotations.RPC);
             if (methodAnnotation == null) {
                 continue;
             }
             DsonObject<string> methodData = methodAnnotation.DsonValue.AsObject();
             MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
-            // .AddModifiers(Modifiers.Public | Modifiers.Abstract); // C#端的Poet是我自己实现的
-            // method注解 
+            // method注解
             {
                 AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
-                    .AddMember("MethodId", GetMethodId(method, methodData).ToString());
+                    .AddMember(PNAME_METHOD_ID, GetMethodId(method.Number, methodData).ToString());
                 // .addMember("ArgSharable", "true") // C#端的pb对象不是builder模式，不是不可变对象
                 // .addMember("ResultSharable", "true"); 
                 // 是否手动返回结果
-                if (IsManualReturn(method, methodData)) {
-                    annoBuilder.AddMember("ManualReturn", "true");
+                if (IsManualReturn(methodData, serviceData)) {
+                    annoBuilder.AddMember(PNAME_MANUAL_RETURN, "true");
                 }
                 // 自定义数据-字符串
-                Annotation custom = method.GetAnnotation("RpcCustom");
+                Annotation custom = method.GetAnnotation(DSAnnotations.RPC_CUSTOM);
                 if (custom != null) {
-                    annoBuilder.AddMember("CustomData", "$S", custom.value);
+                    annoBuilder.AddMember(PNAME_CUSTOM_DATA, "$S", custom.value);
                 }
                 methodBuilder.AddAttribute(annoBuilder.Build());
             }
             // 处理方法的模式
-            if (IsAsyncMethod(method, methodData)) {
-                BuildWithAsyncMode(method, methodData, methodBuilder);
+            if (IsAsyncMethod(methodData, serviceData)) {
+                BuildWithAsyncMode(method, methodData, serviceData, methodBuilder);
             } else {
-                BuildWithSyncMode(method, methodData, methodBuilder);
+                BuildWithSyncMode(method, methodData, serviceData, methodBuilder);
             }
             // 方法注释
-            if (method.Comments.Count > 0) {
-                methodBuilder.AddDocument(BuildComment(method.Comments));
-            }
+            methodBuilder.AddDocument(BuildDocument(method.Comments));
             typeBuilder.AddMethod(methodBuilder.Build());
-        }
-        // 接口注释
-        if (service.Comments.Count > 0) {
-            typeBuilder.AddDocument(BuildComment(service.Comments));
         }
         ClassName serviceTypeName = ClassNameOfType(service.SimpleName);
         ToolUtil.WriteToFile(outDir, serviceTypeName.ns, typeBuilder.Build());
     }
 
-    private CodeBlock BuildComment(List<string> comments) {
-        CodeBlock.Builder codeBuilder = CodeBlock.NewBuilder();
-        foreach (string comment in comments) {
-            if (Annotation.IsAnnotationComment(comment)) {
-                continue;
-            }
-            if (!codeBuilder.IsEmpty) {
-                codeBuilder.Add("\n");
-            }
-            // 跳过双斜杠
-            int start = ToolUtil.IndexOfNonWhitespace(comment, 2);
-            codeBuilder.Add(comment.Substring(start).TrimEnd());
-        }
-        return codeBuilder.Build();
-    }
-
-    private void BuildWithSyncMode(PBMethod method, DsonObject<string> methodData, MethodSpec.Builder methodBuilder) {
+    private void BuildWithSyncMode(PBMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
+                                   MethodSpec.Builder methodBuilder) {
         // 仅处理void
         TypeName returnType;
         if (method.ResultType != null) {
@@ -174,36 +147,37 @@ public class ServiceGenerator
         methodBuilder.Returns(returnType);
 
         // 是否需要context参数
-        if (IsRequireContext(method, methodData)) {
+        if (IsRequireContext(methodData, serviceData)) {
             methodBuilder.AddParameter(ParseRpcContextType(method), "rpcContext");
         }
         // 正常参数
         if (method.ParameterType != null) {
-            ClassName argType = ClassNameOfType(method.ParameterType);
-            string argName = method.ParameterName ?? handler?.ParameterName(method.ParameterType) ?? "request";
+            TypeName argType = ClassNameOfType(method.ParameterType);
+            string argName = method.ParameterName ?? "request";
             methodBuilder.AddParameter(argType, argName);
         }
     }
 
-    private void BuildWithAsyncMode(PBMethod method, DsonObject<string> methodData, MethodSpec.Builder methodBuilder) {
+    private void BuildWithAsyncMode(PBMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
+                                    MethodSpec.Builder methodBuilder) {
         // 返回值类型封装为future
         TypeName returnType;
         if (method.ResultType != null) {
-            ClassName resultType = ClassNameOfType(method.ResultType);
+            TypeName resultType = ClassNameOfType(method.ResultType);
             returnType = TYPE_NAME_VALUE_FUTURE_T.WithTypeArguments(resultType);
         } else {
             returnType = TYPE_NAME_VALUE_FUTURE;
         }
         methodBuilder.Returns(returnType);
 
-        // 是否需要context参数--重复
-        if (IsRequireContext(method, methodData)) {
+        // 是否需要context参数--插在首位
+        if (IsRequireContext(methodData, serviceData)) {
             methodBuilder.AddParameter(ParseRpcContextType(method), "rpcCtx");
         }
         // 正常参数
         if (method.ParameterType != null) {
-            ClassName argType = ClassNameOfType(method.ParameterType);
-            string argName = method.ParameterName ?? handler?.ParameterName(method.ParameterType) ?? "request";
+            TypeName argType = ClassNameOfType(method.ParameterType);
+            string argName = method.ParameterName ?? "request";
             methodBuilder.AddParameter(argType, argName);
         }
     }
@@ -211,7 +185,7 @@ public class ServiceGenerator
     private TypeName ParseRpcContextType(PBMethod method) {
         TypeName contextType;
         if (method.ResultType != null) {
-            ClassName resultType = ClassNameOfType(method.ResultType);
+            TypeName resultType = ClassNameOfType(method.ResultType);
             contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(resultType);
         } else {
             // void时使用object代替 -- 可临时返回结果
@@ -221,51 +195,7 @@ public class ServiceGenerator
         return contextType.MakeByRefType();
     }
 
-    #region 注解解析
-
-    //@RpcService {id: 1, exporter: true, proxy: true}
-    private int GetServiceId(PBService service, DsonObject<string> serviceData) {
-        // 默认是double类型
-        return serviceData["id"].AsDsonNumber().IntValue;
-    }
-
-    //@RpcMethod {id: 1, async: true, ctx: true, manual: true}
-    private int GetMethodId(PBMethod method, DsonObject<string> methodData) {
-        // 默认是double类型
-        if (method.Number != null) {
-            return method.Number.Value;
-        }
-        return methodData["id"].AsDsonNumber().IntValue;
-    }
-
-    private bool IsAsyncMethod(PBMethod method, DsonObject<string> methodData) {
-        if (!methodData.TryGetValue("async", out DsonValue value)) {
-            return handler != null && handler.IsAsyncMethod(method); // 默认false
-        }
-        return GetBool(value);
-    }
-
-    private bool IsManualReturn(PBMethod method, DsonObject<string> methodData) {
-        if (!methodData.TryGetValue("manual", out DsonValue value)) {
-            return handler != null && handler.IsManualReturn(method); // 默认false
-        }
-        return GetBool(value);
-    }
-
-    private bool IsRequireContext(PBMethod method, DsonObject<string> methodData) {
-        if (!methodData.TryGetValue("ctx", out DsonValue value)) {
-            return handler != null && handler.IsRequireContext(method); // 默认false
-        }
-        return GetBool(value);
-    }
-
-    private static bool GetBool(DsonValue value) {
-        if (value.DsonType == DsonType.Bool) return value.AsBool();
-        if (value.IsNumber) return value.AsDsonNumber().IntValue == 1;
-        return false;
-    }
-
-    #endregion
+    #region 类名解析
 
     /// <summary>
     /// 根据引用的类型名字获得关联的ClassName -- 进行类型引用
@@ -304,5 +234,7 @@ public class ServiceGenerator
         }
         return package;
     }
+
+    #endregion
 }
 }

@@ -31,7 +31,7 @@ using DsonTypeName = Wjybxx.Dson.Codec.TypeName;
 namespace Wjybxx.BigCatTool.DataScript
 {
 /// <summary>
-/// 类型元素：class、struct、enum
+/// 类型元素：class、struct、enum、service
 ///
 /// <h3>命名空间</h3>
 /// 0.命名空间是编程语言的概念，而数据脚本是没有命名空间概念的，只有文件概念。
@@ -53,7 +53,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 6.避免泛型类和非泛型类使用相同的简单名 -- 做此支持会导致较大的复杂度，也会影响脚本的跨语言性。
 ///
 /// <h3>关于内部类</h3>
-/// 0.尽量避免使用内部类，因为为内部类生成c#类型是比较麻烦的；如果内部类仅用于为C#类型提供编辑器支持，那么是可以的。
+/// 0.尽量避免使用内部类。
 /// 1.避免嵌套超过2层。
 ///
 /// <h3>关于数组</h3>
@@ -61,9 +61,6 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 
 /// <h3>关于语法</h3>
 /// 不要在'{'和'}'所在行声明字段等，内容必须和开始和结束Token字符分离 -- 降低解析难度。
-///
-/// <h3>关于readonly字段</h3>
-/// 工具在生成csharp或其它语言代码时，应当响应字段的readonly诉求，在构造函数中解码字段。
 /// </summary>
 public sealed class DSNamedType : DSTypeElement
 {
@@ -198,8 +195,10 @@ public sealed class DSNamedType : DSTypeElement
     /// <summary>
     /// 获取类型的原始定义：
     /// 如果当前是泛型类，则返回泛型类定义；否则返回自身；用于获取类型的原始注解等数据。
+    /// (采用两个函数定义是为了兼容Unity)
     /// </summary>
-    public override DSNamedType OriginDefine => _originDefine != null ? _originDefine : this;
+    public override DSElement OriginDefine => _originDefine ?? this;
+    public DSNamedType OriginNamedType => _originDefine ?? this;
 
     /// <summary>
     /// 是否是泛型定义类
@@ -209,12 +208,6 @@ public sealed class DSNamedType : DSTypeElement
     /// 是否是已构造泛型(可能仍包含泛型变量，来自持有类型字段的类，或是子类)
     /// </summary>
     public bool IsConstructedGenericType => _typeArguments.Count > 0;
-
-    /// <summary>
-    /// 是否是可空值类型
-    /// (有大量特殊逻辑)
-    /// </summary>
-    public bool IsNullableType => IsValueType && SimpleName == DSKeywords.TYPE_NULLABLE;
 
     /// <summary>
     /// 当前类型显式声明的泛型变量
@@ -502,8 +495,13 @@ public sealed class DSNamedType : DSTypeElement
         return new DSNamedType(DSElementKind.Enum, DSTypeKind.Enum, className, ImmutableList<DSTypeParameter>.Empty, null);
     }
 
-    public static DSNamedType NewServiceType(ClassName className) {
-        return new DSNamedType(DSElementKind.Service, DSTypeKind.Service, className, ImmutableList<DSTypeParameter>.Empty, null);
+    public static DSNamedType NewServiceType(ClassName className, IList<DSTypeParameter>? typeParameters = null) {
+        if (typeParameters == null) {
+            typeParameters = CreateTypeParameters(className);
+        } else {
+            CheckTypeParameters(className, typeParameters);
+        }
+        return new DSNamedType(DSElementKind.Service, DSTypeKind.Service, className, typeParameters, null);
     }
 
     private static void CheckTypeParameters(ClassName className, IList<DSTypeParameter> typeParameters) {

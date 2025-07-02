@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCatTool.Protobuf
 {
@@ -28,14 +27,6 @@ namespace Wjybxx.BigCatTool.Protobuf
 /// </summary>
 public class PBService : PBElement
 {
-    /// <summary>
-    /// 生成的Service接口需要继承的接口
-    ///
-    /// 1.Protobuf的原生语法是不支持继承的，但我们的业务可能需要Rpc服务实现一些公共的接口。
-    /// 2.建议由parser根据service的名字计算。
-    /// </summary>
-    private readonly LinkedHashSet<string> superinterfaces = new();
-
     public override PBElementKind Kind => PBElementKind.Service;
 
     /// <summary>
@@ -47,16 +38,5 @@ public class PBService : PBElement
             .Cast<PBMethod>()
             .ToList();
     }
-
-    /// <summary>
-    /// 添加一个要实现的接口
-    /// </summary>
-    public PBService AddInterface(string interfaceName) {
-        if (interfaceName == null) throw new ArgumentNullException(nameof(interfaceName));
-        superinterfaces.Add(interfaceName);
-        return this;
-    }
-
-    public LinkedHashSet<string> Superinterfaces => superinterfaces;
 }
 }

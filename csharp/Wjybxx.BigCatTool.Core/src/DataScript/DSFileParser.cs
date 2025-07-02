@@ -283,6 +283,9 @@ public class DSFileParser
         string content = lineInfo.content;
         string firstWord = FirstWord(content);
         switch (firstWord) {
+            case DSKeywords.SERVICE: {
+                throw new IOException("Services should not be nested within class");
+            }
             case DSKeywords.CLASS: {
                 ReadStartContainer(DSContextType.Class, lineInfo);
                 return;
@@ -306,22 +309,26 @@ public class DSFileParser
                 ParseRevered(_context.AsTypeElement(), content);
                 return;
             }
+            // 函数
+            case DSKeywords.FUNC: {
+                DSMethod method = ParseMethod(_context.PopCommentLines(), lineInfo);
+                if (!_context.methodNumbers.Add(method.Number)) {
+                    throw new IOException("duplicate method number: " + method.Number);
+                }
+                _context.container.AddEnclosedElement(method);
+                return;
+            }
             case "}": {
                 // 结束行
                 _context.ClearCommentLines();
                 ReadEndContainer(lineInfo);
                 return;
             }
-            case DSKeywords.SERVICE:
-            case DSKeywords.FUNC: {
-                // 服务必须位于顶层，函数只能出现在服务下
-                throw new IOException("not supported: " + content);
-            }
             default: {
                 // 判断是否字段 type name = number;
                 if (content.IndexOf('=') > 0) {
                     DSField field = ParseField(_context.PopCommentLines(), lineInfo);
-                    if (!_context.numbers.Add(field.Number)) {
+                    if (!_context.fieldNumbers.Add(field.Number)) {
                         throw new IOException("duplicate field number: " + field.Number);
                     }
                     _context.container.AddEnclosedElement(field);
@@ -437,7 +444,7 @@ public class DSFileParser
             // 函数
             case DSKeywords.FUNC: {
                 DSMethod method = ParseMethod(_context.PopCommentLines(), lineInfo);
-                if (!_context.numbers.Add(method.Number)) {
+                if (!_context.methodNumbers.Add(method.Number)) {
                     throw new IOException("duplicate method number: " + method.Number);
                 }
                 _context.container.AddEnclosedElement(method);
@@ -821,7 +828,9 @@ public class DSFileParser
         /** 下一个元素的注释缓存 -- 内容执行了trim */
         public readonly List<string> commentLines = new();
         /** 校验字段number */
-        public readonly HashSet<int> numbers = new();
+        public readonly HashSet<int> fieldNumbers = new();
+        /** 校验方法number */
+        public readonly HashSet<int> methodNumbers = new();
 
         public Context(Context parent, DSContextType contextType, DSElement container) {
             this.parent = parent;

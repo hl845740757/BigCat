@@ -23,6 +23,7 @@ using System.Text;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
@@ -103,10 +104,40 @@ public class CodeGeneratorHelper
             GenerateEnum(namedType, typeBuilder);
         } else if (namedType.Kind == DSElementKind.Service) {
             GenerateService(namedType, typeBuilder);
+            GenerateNestedTypes(namedType, typeBuilder);
         } else {
             GenerateClass(namedType, typeBuilder);
         }
+        typeBuilder.AddDocument(BuildDocument(namedType.Comments));
         return typeBuilder;
+    }
+
+    private void GenerateNestedTypes(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+        foreach (DSElement enclosedElement in namedType.EnclosedElements) {
+            if (!enclosedElement.Kind.IsNamedType()) continue;
+            DSNamedType nestedType = (DSNamedType)enclosedElement;
+            typeBuilder.AddSpec(Generate(nestedType).Build());
+        }
+    }
+
+    public static CodeBlock BuildDocument(List<string> comments) {
+        if (comments.Count == 0) return CodeBlock.Empty;
+        CodeBlock.Builder builder = CodeBlock.NewBuilder();
+        foreach (string comment in comments) {
+            if (string.IsNullOrWhiteSpace(comment)) {
+                continue;
+            }
+            if (!builder.IsEmpty) {
+                builder.AddNewLine();
+            }
+            if (comment.StartsWith("//")) {
+                int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
+                builder.Add(comment.Substring(idx));
+            } else {
+                builder.Add(comment.TrimStart());
+            }
+        }
+        return builder.Build();
     }
 
     private void GenerateEnum(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
@@ -124,20 +155,138 @@ public class CodeGeneratorHelper
         }
     }
 
-    /** 默认的实现只是简单生成方法 */
+    #region service
+
     protected virtual void GenerateService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+        Annotation annotation = namedType.GetAnnotation(DSAnnotations.RPC);
+        if (annotation == null) {
+            // 普通接口
+            if (namedType.IsGenericType) {
+                foreach (DSTypeParameter typeParameter in namedType.DeclaredTypeParameters) {
+                    typeBuilder.AddTypeParameter(TypeParameterSpec.Get(typeParameter.SimpleName, typeParameter.Constraints));
+                }
+            }
+            foreach (DSMethod method in namedType.GetMethods(false)) {
+                MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
+                if (method.ParameterType != null) {
+                    methodBuilder.AddParameter(GetTypeName(method.ParameterType), method.ParameterName!);
+                }
+                if (method.ResultType != null) {
+                    methodBuilder.Returns(GetTypeName(method.ResultType));
+                }
+                methodBuilder.AddDocument(BuildDocument(method.Comments));
+                typeBuilder.AddMethod(methodBuilder.Build());
+            }
+            return;
+        }
+        // RPC接口
+        foreach (string superinterface in generatorCfg.serviceBaseTypes) {
+            ClassName className = ToolUtil.ClassNameOfCanonicalName(superinterface);
+            typeBuilder.AddBaseClass(className);
+        }
+        // service注解 -- 方法也可能访问
+        DsonObject<string> serviceData = annotation.AsObject();
+        {
+            AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
+                .AddMember(PNAME_SERVICE_ID, GetServiceId(serviceData).ToString());
+            typeBuilder.AddAttribute(annoBuilder.Build());
+        }
+        //
         foreach (DSMethod method in namedType.GetMethods(false)) {
+            DsonObject<string> methodData = DSUtil.GetRpcOptions(method);
             MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
-            if (method.ParameterType != null) {
-                methodBuilder.AddParameter(GetTypeName(method.ParameterType), method.ParameterName!);
+            // method注解 
+            {
+                AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
+                    .AddMember(PNAME_METHOD_ID, method.Number.ToString());
+                // .addMember("ArgSharable", "true") // ds类型默认也不是不可变的
+                // .addMember("ResultSharable", "true"); 
+                // 是否手动返回结果
+                if (IsManualReturn(methodData, serviceData)) {
+                    annoBuilder.AddMember(PNAME_MANUAL_RETURN, "true");
+                }
+                // 自定义数据-字符串
+                Annotation custom = method.GetAnnotation(DSAnnotations.RPC_CUSTOM);
+                if (custom != null) {
+                    annoBuilder.AddMember(PNAME_CUSTOM_DATA, "$S", custom.value);
+                }
+                methodBuilder.AddAttribute(annoBuilder.Build());
             }
-            if (method.ResultType != null) {
-                methodBuilder.Returns(GetTypeName(method.ResultType));
+            // 处理方法的模式
+            if (IsAsyncMethod(methodData, serviceData)) {
+                BuildWithAsyncMode(method, methodData, serviceData, methodBuilder);
+            } else {
+                BuildWithSyncMode(method, methodData, serviceData, methodBuilder);
             }
+            // 方法注释
             methodBuilder.AddDocument(BuildDocument(method.Comments));
             typeBuilder.AddMethod(methodBuilder.Build());
         }
     }
+
+    private void BuildWithSyncMode(DSMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
+                                   MethodSpec.Builder methodBuilder) {
+        // 仅处理void
+        TypeName returnType;
+        if (method.ResultType != null) {
+            returnType = GetTypeName(method.ResultType);
+        } else {
+            returnType = TypeName.VOID;
+        }
+        methodBuilder.Returns(returnType);
+
+        // 是否需要context参数
+        if (IsRequireContext(methodData, serviceData)) {
+            methodBuilder.AddParameter(ParseRpcContextType(method), "rpcContext");
+        }
+        // 正常参数
+        if (method.ParameterType != null) {
+            TypeName argType = GetTypeName(method.ParameterType);
+            string argName = method.ParameterName ?? "request";
+            methodBuilder.AddParameter(argType, argName);
+        }
+    }
+
+    private void BuildWithAsyncMode(DSMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
+                                    MethodSpec.Builder methodBuilder) {
+        // 返回值类型封装为future
+        TypeName returnType;
+        if (method.ResultType != null) {
+            TypeName resultType = GetTypeName(method.ResultType);
+            returnType = TYPE_NAME_VALUE_FUTURE_T.WithTypeArguments(resultType);
+        } else {
+            returnType = TYPE_NAME_VALUE_FUTURE;
+        }
+        methodBuilder.Returns(returnType);
+
+        // 是否需要context参数--插在首位
+        if (IsRequireContext(methodData, serviceData)) {
+            methodBuilder.AddParameter(ParseRpcContextType(method), "rpcCtx");
+        }
+        // 正常参数
+        if (method.ParameterType != null) {
+            TypeName argType = GetTypeName(method.ParameterType);
+            string argName = method.ParameterName ?? "request";
+            methodBuilder.AddParameter(argType, argName);
+        }
+    }
+
+    private TypeName ParseRpcContextType(DSMethod method) {
+        TypeName contextType;
+        if (method.ResultType != null) {
+            TypeName resultType = GetTypeName(method.ResultType);
+            contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(resultType);
+        } else {
+            // void时使用object代替 -- 可临时返回结果
+            contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(TypeName.OBJECT);
+        }
+        // c#需要传引用
+        return contextType.MakeByRefType();
+    }
+
+    #endregion
+
+    #region class-struct
 
     private void GenerateClass(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         DsonObject<string> options = DSUtil.GetOptions(namedType);
@@ -156,7 +305,6 @@ public class CodeGeneratorHelper
         if (NeedCodecMethod(namedType, options)) {
             typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
         }
-
         // 禁用nullable提示
         typeBuilder.AddSpec(MacroSpec.Get("nullable", "disable"));
         typeBuilder.AddSpec(new CodeBlockSpec(CodeBlock.Of("ReSharper disable All"), CodeBlockSpec.Kind.Comment));
@@ -224,36 +372,12 @@ public class CodeGeneratorHelper
         }
         _fieldListCache.Clear();
         _propertyListCache.Clear();
-        // 允许用户在此之前插入方法
+        // 允许用户在生成内部类之前插入方法
         BeforeGenerateNestedTypes(namedType, typeBuilder, options);
-
-        // 处理内部类
-        foreach (DSElement enclosedElement in namedType.EnclosedElements) {
-            if (!enclosedElement.Kind.IsNamedType()) continue;
-            DSNamedType nestedType = (DSNamedType)enclosedElement;
-            typeBuilder.AddSpec(Generate(nestedType).Build());
-        }
+        GenerateNestedTypes(namedType, typeBuilder);
     }
 
-    public static CodeBlock BuildDocument(List<string> comments) {
-        if (comments.Count == 0) return CodeBlock.Empty;
-        CodeBlock.Builder builder = CodeBlock.NewBuilder();
-        foreach (string comment in comments) {
-            if (string.IsNullOrWhiteSpace(comment)) {
-                continue;
-            }
-            if (!builder.IsEmpty) {
-                builder.AddNewLine();
-            }
-            if (comment.StartsWith("//")) {
-                int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
-                builder.Add(comment.Substring(idx));
-            } else {
-                builder.Add(comment.TrimStart());
-            }
-        }
-        return builder.Build();
-    }
+    #endregion
 
     #region 扩展钩子
 
@@ -275,7 +399,7 @@ public class CodeGeneratorHelper
     /// </summary>
     /// <returns></returns>
     protected virtual bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
-        return false;
+        return namedType.GetMethod("CopyFrom") != null;
     }
 
     /// <summary>
@@ -949,12 +1073,12 @@ public class CodeGeneratorHelper
     /// 这里不是最终数据，因此需要处理泛型变量
     /// </summary>
     /// <returns></returns>
-    private TypeName GetTypeName(DSTypeElement typeElement) {
+    protected TypeName GetTypeName(DSTypeElement typeElement) {
         if (typeElement is DSTypeParameter typeParameter) {
             return typeParameter.TypeName;
         }
         DSNamedType namedType = (DSNamedType)typeElement;
-        ClassName metaTypeName = GetMetaTypeName(namedType.OriginDefine);
+        ClassName metaTypeName = GetMetaTypeName(namedType.OriginNamedType);
         if (!metaTypeName.IsGenericType) {
             return metaTypeName;
         }
@@ -1158,6 +1282,74 @@ public class CodeGeneratorHelper
         if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";
         if (typeName == TYPE_NAME_TIMESTAMP) return "WriteTimestamp";
         return "WriteObject";
+    }
+
+    #endregion
+
+    #region RPC
+
+    public static readonly ClassName TYPE_NAME_RPC_SERVICE = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
+    public static readonly ClassName TYPE_NAME_RPC_METHOD = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
+    //
+    public static readonly ClassName TYPE_NAME_RPC_CONTEXT_T = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
+        new List<TypeName> { TypeParameterName.Get("T") });
+    //
+    public static readonly ClassName TYPE_NAME_VALUE_FUTURE = ClassName.Get(typeof(ValueFuture));
+    public static readonly ClassName TYPE_NAME_VALUE_FUTURE_T = ClassName.Get(typeof(ValueFuture<>));
+
+    public const string PNAME_SERVICE_ID = "ServiceId";
+    public const string PNAME_METHOD_ID = "MethodId";
+    public const string PNAME_MANUAL_RETURN = "ManualReturn";
+    public const string PNAME_ARG_SHARABLE = "ArgSharable";
+    public const string PNAME_RESULT_SHARABLE = "ResultSharable";
+    public const string PNAME_CUSTOM_DATA = "CustomData";
+
+    // 服务上的async等用于配置默认值
+    // @Rpc {id: 1, async: true, ctx: true, manual: true}
+    public static int GetServiceId(DsonObject<string> methodData) {
+        // 默认是double类型
+        return methodData["id"].AsDsonNumber().IntValue;
+    }
+
+    // @Rpc {id: 1, async: true, ctx: true, manual: true}
+    public static int GetMethodId(int? number, DsonObject<string> methodData) {
+        // 默认是double类型
+        return number ?? methodData["id"].AsDsonNumber().IntValue;
+    }
+
+    public static bool IsAsyncMethod(DsonObject<string> methodData, DsonObject<string> serviceData) {
+        if (methodData.TryGetValue("async", out DsonValue value)
+            || serviceData.TryGetValue("async", out value)) {
+            return GetBool(value);
+        }
+        return false;
+    }
+
+    public static bool IsManualReturn(DsonObject<string> methodData, DsonObject<string> serviceData) {
+        if (methodData.TryGetValue("manual", out DsonValue value)
+            || serviceData.TryGetValue("manual", out value)) {
+            return GetBool(value);
+        }
+        return false;
+    }
+
+    public static bool IsRequireContext(DsonObject<string> methodData, DsonObject<string> serviceData) {
+        // 手动返回结果时也需要ctx -- 且方法注解的优先级高于服务的默认配置
+        if (methodData.TryGetValue("ctx", out DsonValue value)
+            || methodData.TryGetValue("manual", out value)) {
+            return GetBool(value);
+        }
+        if (serviceData.TryGetValue("ctx", out value)
+            || serviceData.TryGetValue("manual", out value)) {
+            return GetBool(value);
+        }
+        return false;
+    }
+
+    private static bool GetBool(DsonValue value) {
+        if (value.DsonType == DsonType.Bool) return value.AsBool();
+        if (value.IsNumber) return value.AsDsonNumber().IntValue == 1;
+        return false;
     }
 
     #endregion

@@ -257,6 +257,14 @@ public static class DSUtil
         return annotation.AsObject();
     }
 
+    public static DsonObject<string> GetRpcOptions(DSElement element, bool isReadonly = true) {
+        Annotation? annotation = element.GetAnnotation(DSAnnotations.RPC);
+        if (annotation == null) {
+            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
+        }
+        return annotation.AsObject();
+    }
+
     public static DsonObject<string> GetCodecOptions(DSElement element, bool isReadonly = true) {
         Annotation? annotation = element.GetAnnotation(DSAnnotations.CODEC);
         if (annotation == null) {

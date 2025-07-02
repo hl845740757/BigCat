@@ -59,7 +59,9 @@ public static class DSAnnotations
     /// - nonEqual 是否不执行equals测试(不参与equals测试也就不会参与hash计算)
     /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
     ///
-    /// 注：DS脚本中的类型默认都是可序列化的。
+    /// 注：
+    /// 1.DS脚本中的类型默认都是可序列化的。
+    /// 2.用于服务和方法时，由用户自行约定。
     /// </summary>
     public const string OPTIONS = "Options";
 
@@ -77,11 +79,36 @@ public static class DSAnnotations
     /// - name 表示字段序列化的名字，不推荐使用
     /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
     ///
-    /// 注：
-    /// 1.style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
-    /// 2.用于服务和方法时，由用户自行约定。
+    /// 注：style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
     /// </summary>
     public const string CODEC = "Codec";
+
+    /// <summary>
+    /// 服务和方法的Rpc选项
+    ///
+    /// <h3>用于类型时</h3>
+    /// <code>//@Rpc {id: 1, async: true, ctx: true, manual: true}</code>
+    /// - id表示为服务分配的id
+    /// - async 表示服务端接口是否为异步模式；默认值为false
+    /// - ctx 表示是否需要RpcContext参数；默认值为false
+    /// - manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
+    ///
+    /// 注：服务上的async等参数为参数的模式值，避免每个方法重复配置。
+    /// 
+    ///
+    /// <h3>用于方法时</h3>
+    /// <code>//@Rpc {async: true, ctx: true, manual: true}</code>
+    /// - async 表示服务端接口是否为异步模式；默认值为false
+    /// - ctx 表示是否需要RpcContext参数；默认值为false
+    /// - manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
+    ///
+    /// 注：方法上的async等属性用于覆盖service上的默认值。
+    /// </summary>
+    public const string RPC = "Rpc";
+    /// <summary>
+    /// RPC切面数据，与具体的应用相关
+    /// </summary>
+    public const string RPC_CUSTOM = "RpcCustom";
 
     /// <summary>
     /// 类型的Editor配置
@@ -95,19 +122,24 @@ public static class DSAnnotations
 
     public const string KEY_CS = "cs";
     public const string KEY_JAVA = "java";
-
+    // 类型
     public const string KEY_IS_FLAGS = "isFlags";
     public const string KEY_DATA_CLASS = "dataClass";
     public const string KEY_NON_GENERATE = "nonGenerate";
-
+    // 字段
     public const string KEY_NON_SERIALIZED = "nonSerialized";
     public const string KEY_NON_EQUAL = "nonEqual";
     public const string KEY_SSTI = "ssti";
-
+    // Codec
     public const string KEY_ALIAS = "alias";
     public const string KEY_STYLE = "style";
     public const string KEY_ELEM_STYLE = "elemStyle";
     public const string KEY_NAME = "name";
+    // Rpc
+    private const string KEY_ID = "id";
+    private const string KEY_ASYNC = "async";
+    private const string KEY_MANUAL = "manual";
+    private const string KEY_CTX = "ctx";
 
     #endregion
 }

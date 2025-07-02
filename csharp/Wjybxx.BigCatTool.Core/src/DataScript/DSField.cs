@@ -27,6 +27,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 1.字段可以使用类型的泛型参数。
 /// 2.字段如果是值类型，且加了'?'修饰，会被转换为<see cref="Nullable{T}"/> -- 与C#语法一致。
 /// 3.访问内部类时，如果不是直接内部类，需要使用A.B.C相对路径格式 -- 确保精确解析。
+/// 4.字段可以使用readonly修饰，工具在生成csharp或其它语言代码时，应当响应字段的readonly诉求，在构造函数中解码字段。
 /// </summary>
 public class DSField : DSElement
 {
@@ -61,8 +62,8 @@ public class DSField : DSElement
     }
 
     public override DSElementKind Kind => DSElementKind.Field;
-    public override DSField OriginDefine => _originDefine != null ? _originDefine : this;
-
+    public override DSElement OriginDefine => _originDefine ?? this;
+    public DSField OriginFiled => _originDefine ?? this;
 #nullable disable
 
     #region props

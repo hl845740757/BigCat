@@ -305,10 +305,21 @@ public sealed class DSRepository
         result = new DSNamedType(namedType, className, typeArguments);
         genericTypeCache.Add(className, result);
 
-        // 克隆字段
-        foreach (DSField field in namedType.GetFields(false)) {
-            DSTypeElement fieldType = ResolveTypeSymbol(result, field.TypeSymbol);
-            result.AddEnclosedElement(new DSField(field, fieldType));
+        // 克隆字段和方法
+        foreach (DSElement element in namedType.EnclosedElements) {
+            if (element.Kind == DSElementKind.Field) {
+                DSField field = (DSField)element;
+                DSTypeElement fieldType = ResolveTypeSymbol(result, field.TypeSymbol);
+                result.AddEnclosedElement(new DSField(field, fieldType));
+                continue;
+            }
+            if (element.Kind == DSElementKind.Method) {
+                DSMethod method = (DSMethod)element;
+                DSTypeElement pType = method.ParameterTypeSymbol != null ? ResolveTypeSymbol(result, method.ParameterTypeSymbol) : null;
+                DSTypeElement rType = method.ResultTypeSymbol != null ? ResolveTypeSymbol(result, method.ResultTypeSymbol) : null;
+                result.AddEnclosedElement(new DSMethod(method, pType, rType));
+                continue;
+            }
         }
         // 递归构造超类
         if (namedType.BaseTypeSymbol != null) {
@@ -400,7 +411,7 @@ public sealed class DSRepository
         if (scopeEntry is DSNamedType namedType) {
             enclosingFile = namedType.GetEnclosingFile();
             // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
-            ImmutableList<DSTypeParameter> typeParameters = namedType.OriginDefine.TypeParameters;
+            ImmutableList<DSTypeParameter> typeParameters = namedType.OriginNamedType.TypeParameters;
             for (int idx = 0; idx < typeParameters.Count; idx++) {
                 var typeParameter = typeParameters[idx];
                 if (typeParameter.SimpleName == typeName) {
@@ -435,7 +446,7 @@ public sealed class DSRepository
     }
 
     private static DSNamedType? FindFirstType(DSNamedType scopeEntry, string firstName) {
-        scopeEntry = scopeEntry.OriginDefine;
+        scopeEntry = scopeEntry.OriginNamedType;
         if (scopeEntry.SimpleName == firstName) {
             return scopeEntry;
         }
@@ -527,7 +538,7 @@ public sealed class DSRepository
         }
         if (namedType.IsGenericType) {
             // 已构造泛型
-            string mainClsName = namedType.OriginDefine.DsonAliases[0];
+            string mainClsName = namedType.OriginNamedType.DsonAliases[0];
             ImmutableList<DSTypeElement> genericTypeArgs = namedType.TypeArguments; // 真实泛型参数
             List<DsonTypeName> typeArgClassNames = new List<DsonTypeName>(genericTypeArgs.Count);
             foreach (var genericTypeArg in genericTypeArgs) {
@@ -666,7 +677,7 @@ public sealed class DSRepository
     /// <param name="file"></param>
     private void ResolveTypeSymbols(DSFile file) {
         List<DSField> fieldList = new List<DSField>(20);
-        List<DSMethod> methodList = new List<DSMethod>(10);
+        List<DSMethod> methodList = new List<DSMethod>();
         foreach (DSNamedType typeElement in DSUtil.GetAllEnclosedTypes(file)) {
             if (typeElement.BaseTypeSymbol != null && typeElement.BaseType == null) {
                 typeElement.BaseType = (DSNamedType)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);

@@ -38,6 +38,12 @@ public class CodeGeneratorCfg
     /// </summary>
     public bool combine;
     /// <summary>
+    /// 服务需要实现的接口，我们的业务可能需要Rpc服务实现一些公共接口
+    /// (类型的全限定名)
+    /// </summary>
+    public List<string> serviceBaseTypes = new List<string>();
+
+    /// <summary>
     /// 所有的解码代理类的命名空间
     /// </summary>
     public string codecProxyNs;

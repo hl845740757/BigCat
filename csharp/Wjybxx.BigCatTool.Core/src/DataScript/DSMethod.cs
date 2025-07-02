@@ -23,18 +23,20 @@ namespace Wjybxx.BigCatTool.DataScript
 /// <summary>
 ///
 /// <h3>语法</h3>
-/// <code>func Main(Request req) returns (Response) = 1;</code>
+/// <code>func Main(Request req) : (Response) = 1;</code>
 ///
 /// 语法类似于protobuf的rpc方法，但有两点差异：
 /// 1.方法包含参数时需要声明变量名 -- pb是没有参数名的。
 /// 2.需要为方法支持一个数字编号 -- 以支持重载。
+/// 3.方法至多自己出一个参数和一个结果
 ///
 /// <h3>泛型</h3>
-/// 1.服务和方法本身都不支持泛型，但可以使用泛型数据。
+/// 1.方法本身都不支持泛型，但可以使用类型的泛型参数。
 /// 2.应当避免在服务以外的上下文使用函数。
 ///
 /// <h3>函数的目的</h3>
-/// 最初是不打算支持函数的，但由于想在Rpc中使用这ds脚本中的数据，因此最终还是支持在脚本中定义rpc接口和函数。
+/// 由于ds文件中定义了大量的数据结构，我期望能在Rpc接口中复用这些数据结构；
+/// 而之前的工具仅支持pb文件生成rpc接口，而ds和pb文件并不互通，因此才在ds文件中支持定义rpc接口和函数。
 /// </summary>
 public class DSMethod : DSElement
 {
@@ -52,6 +54,9 @@ public class DSMethod : DSElement
     private DSTypeElement? parameterType;
     /** 返回值类型 -- build时解析 */
     private DSTypeElement? resultType;
+
+    /** 泛型方法的原始定义 -- 可能引用了泛型参数 */
+    private readonly DSMethod _originDefine;
 #nullable enable
 
     public DSMethod(string simpleName,
@@ -61,9 +66,21 @@ public class DSMethod : DSElement
         this.parameterName = parameterName;
         this.resultTypeSymbol = resultTypeSymbol;
         this.number = number;
+        _originDefine = null;
+    }
+
+    public DSMethod(DSMethod originDefine, DSTypeElement? parameterType, DSTypeElement? resultType)
+        : base(originDefine.SimpleName) {
+        _originDefine = originDefine;
+        this.parameterType = parameterType;
+        this.resultType = resultType;
+        this.parameterName = originDefine.parameterName;
+        this.number = originDefine.number;
     }
 
     public override DSElementKind Kind => DSElementKind.Method;
+    public override DSElement OriginDefine => _originDefine ?? this;
+    public DSMethod OriginMethod => _originDefine ?? this;
 
     public bool HasParameter => parameterType != null;
     public bool HasResult => resultType != null;

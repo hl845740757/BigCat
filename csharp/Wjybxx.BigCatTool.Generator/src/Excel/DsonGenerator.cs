@@ -488,7 +488,7 @@ public class DsonGenerator : ISheetProcessor
         fieldListPool.Release(fields);
 
         // 自定义结构和内建结构都支持修正
-        DSTypeHandler handler = _dsRepository.GetTypeHandler(namedType.OriginDefine.FullName);
+        DSTypeHandler handler = _dsRepository.GetTypeHandler(namedType.OriginNamedType.FullName);
         return handler != null ? handler.ConvertValue(_dsRepository, namedType, container) : container;
     }
 

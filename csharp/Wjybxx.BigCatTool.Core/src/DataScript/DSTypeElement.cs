@@ -44,11 +44,6 @@ public abstract class DSTypeElement : DSElement
     public TypeName TypeName => typeName;
 
     /// <summary>
-    /// 类型的原始定义
-    /// </summary>
-    public override abstract DSTypeElement OriginDefine { get; }
-
-    /// <summary>
     /// 类型
     /// </summary>
     public abstract DSTypeKind TypeKind { get; }
@@ -59,10 +54,12 @@ public abstract class DSTypeElement : DSElement
 
     /// <summary>
     /// 是否是引用类型
+    /// 泛型参数既不是引用类型，也不是值类型。
     /// </summary>
-    public bool IsReferenceType => TypeKind == DSTypeKind.Class;
+    public bool IsReferenceType => TypeKind == DSTypeKind.Class || TypeKind == DSTypeKind.Service;
     /// <summary>
     /// 是否是值类型
+    /// 泛型参数既不是引用类型，也不是值类型。
     /// </summary>
     public bool IsValueType => TypeKind == DSTypeKind.Struct || TypeKind == DSTypeKind.Enum;
 
@@ -70,6 +67,11 @@ public abstract class DSTypeElement : DSElement
     /// 是否是枚举类型
     /// </summary>
     public bool IsEnum => TypeKind == DSTypeKind.Enum;
+
+    /// <summary>
+    /// 是否是服务类型
+    /// </summary>
+    public bool IsService => TypeKind == DSTypeKind.Service;
 
     #region equals
 

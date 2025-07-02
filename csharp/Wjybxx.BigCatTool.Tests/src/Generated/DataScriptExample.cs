@@ -10,7 +10,9 @@ using Wjybxx.Dson.Codec;
 using System.Text;
 
 namespace Wjybxx.BigCatTool.Tests.Generated
-{
+{/// <summary>
+/// 测试普通类
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "SimpleBean" })]
 public class SimpleBean
@@ -220,6 +222,9 @@ public class SimpleBean
 
     #endregion
 }
+/// <summary>
+/// 测试普通类继承
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "SimpleChildBean" })]
 public class SimpleChildBean : SimpleBean
@@ -296,6 +301,10 @@ public class SimpleChildBean : SimpleBean
 
     #endregion
 }
+/// <summary>
+/// 测试结构体，顺便测试codec注解解析
+/// @Codec{alias: [Vector3, V3], style: flow}
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Flow, Names = new[] { "Vector3", "V3" })]
 public struct Vector3 : IEquatable<Vector3>
@@ -381,6 +390,9 @@ public struct Vector3 : IEquatable<Vector3>
 
     #endregion
 }
+/// <summary>
+/// 测试枚举
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 public enum Color
 {
@@ -388,6 +400,9 @@ public enum Color
     Red = 1,
     Green = 2,
 }
+/// <summary>
+/// 测试泛型类
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "GenericBean" })]
 public class GenericBean<T, U> 
@@ -467,6 +482,9 @@ public class GenericBean<T, U>
 
     #endregion
 }
+/// <summary>
+/// 测试泛型继承
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "GenericChildBean" })]
 public class GenericChildBean<T, U> : GenericBean<T, U> 
@@ -544,6 +562,9 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     #endregion
 }
+/// <summary>
+/// 测试泛型继承2
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "GenericChildBean2" })]
 public class GenericChildBean2<T, U> : GenericBean<T, List<string>> 
@@ -621,6 +642,10 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     #endregion
 }
+/// <summary>
+/// 测试内部类 
+/// 测试内部类定义
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "OuterClass" })]
 public class OuterClass
@@ -852,6 +877,9 @@ public class OuterClass
         #endregion
     }
 }
+/// <summary>
+/// 测试访问其它类型的内部类
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "PeerClass" })]
 public class PeerClass
@@ -929,11 +957,18 @@ public class PeerClass
 
     #endregion
 }
+/// <summary>
+/// 测试rpc服务
+/// @Rpc{ id: 1 }
+/// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
+[RpcService(ServiceId = 1)]
 public interface FirstService
 {
+    [RpcMethod(MethodId = 1)]
     Vector3 Echo(Vector3 v3);
 
+    [RpcMethod(MethodId = 2)]
     List<Vector3> Echo(List<Vector3> list);
 }
 }

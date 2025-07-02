@@ -5,24 +5,24 @@ import "common.proto";
 option csharp_namespace = "Wjybxx.BigCatTool.Tests.Generated";
 
 
-//@RpcService{id: 1}
+//@Rpc{id: 1}
 service SearchService {
-  //@RpcMethod {id: 1}
+  //@Rpc {id: 1}
   rpc Search(SearchRequest) returns (SearchResponse);
 
-  //@RpcMethod {id: 2, async: true, ctx: true}
-  //@Sparam {interval: 500}
+  //@Rpc{id: 2, async: true, ctx: true}
+  //@RpcCustom{interval: 500}
   rpc SearchAsync(SearchRequest) returns (SearchResponse);
 
   // 以下两种形式不符合proto的rpc语法，但符合我们的约定
-  //@RpcMethod {id: 3, async: false}
+  //@Rpc{id: 3, async: false}
   rpc Search3(SearchRequest request) returns (SearchResponse);
-  //@RpcMethod {id: 4, async: false}
+  //@Rpc{id: 4, async: false}
   rpc Search4() returns ();
 
-  // 最新语法，支持直接在方法后面指定方法id
-  //@RpcMethod {async: false}
-  rpc Search5() returns () = 5;
+  // 最新特殊支持，支持直接在方法后面指定方法id，支持用冒号':'代替returns
+  //@Rpc{async: false}
+  rpc Search5() : () = 5;
 }
 
 enum Corpus {

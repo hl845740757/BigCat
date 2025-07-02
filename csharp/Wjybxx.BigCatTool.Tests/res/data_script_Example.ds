@@ -107,7 +107,8 @@ inst v1 { x: 0, y: 0, z: 0}
 inst v2 [0, 0, 0]
 
 // 测试rpc服务
+//@Rpc{ id: 1 }
 service FirstService {
-    func Echo(Vector3 v3) returns (Vector3) = 1;
-    func Echo(List<Vector3> list) returns (List<Vector3>) = 2;
+    func Echo(Vector3 v3) : (Vector3) = 1;
+    func Echo(List<Vector3> list) : (List<Vector3>) = 2;
 }

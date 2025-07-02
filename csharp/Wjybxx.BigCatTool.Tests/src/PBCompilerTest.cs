@@ -51,6 +51,6 @@ public class PBCompilerTest
         string generatedDir = TestUtil.GetGeneratedDirectory();
         new PBFileCompiler(null, tempDir, generatedDir).Execute();
         // 生成rpc代码
-        new ServiceGenerator(repository, generatedDir, null).Execute();
+        new ServiceGenerator(repository, generatedDir).Execute();
     }
 }
