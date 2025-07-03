@@ -109,7 +109,7 @@ public class ClassGenerator : ISheetProcessor
         private readonly List<DSField> _fieldListCache = new(20);
 
         public Helper(DSRepository repository, CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo)
-            : base(repository, generatorCfg, processorInfo) {
+            : base(generatorCfg, processorInfo) {
         }
 
         protected override void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {

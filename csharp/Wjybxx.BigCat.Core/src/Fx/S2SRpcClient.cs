@@ -50,7 +50,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     /** 超时信息 -- 所有Session的集中处理 */
     private readonly IndexedPriorityQueue<RpcRequestStub> stubQueue = new(RpcRequestStub.Comparer);
     /** Stub池 -- 不共享，没必要 */
-    private readonly DefaultObjectPool<RpcRequestStub> stubPool = new DefaultObjectPool<RpcRequestStub>(
+    private readonly ObjectPool<RpcRequestStub> stubPool = new ObjectPool<RpcRequestStub>(
         () => new RpcRequestStub(), stub => stub.Reset(), 100);
 
     public override void OnReady() {

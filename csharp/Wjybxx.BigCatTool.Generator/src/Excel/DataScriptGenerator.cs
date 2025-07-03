@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Wjybxx.BigCatTool.Core;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BigCatTool.Excel;
 using Wjybxx.Commons;

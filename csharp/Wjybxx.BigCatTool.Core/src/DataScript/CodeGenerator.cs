@@ -28,12 +28,6 @@ namespace Wjybxx.BigCatTool.DataScript
 {
 /// <summary>
 /// csharp代码生成器
-///
-/// 1.这是默认的生成器，用户有特殊需求时，可参考该生成器代码。
-/// 2.用户如果需要使用不可变集合，请将不可变集合注册到<see cref="DSRepository"/>，默认为Commons库中的不可变集合。
-/// 3.默认情况下List使用<code>CollectionUtil.SequenceEqual</code>方法，而Set和字典使用<code>CollectionUtil.DataEquals</code>方法。
-/// 4.如果默认的逻辑不满足要求，可将类型标注为<code>partial</code>，自行扩展equals和hashcode。
-/// 5.如果反复增删set和字典的数据，hashcode无法保证一致 —— 只增不减的情况下才能保证hashcode和equals一致。
 /// </summary>
 public class CodeGenerator
 {
@@ -50,10 +44,11 @@ public class CodeGenerator
     /// <param name="repository">脚本仓库</param>
     /// <param name="cfg">生成器配置</param>
     /// <param name="fileNames">需要生成代码的文件</param>
-    public CodeGenerator(DSRepository repository, CodeGeneratorCfg cfg, ICollection<string> fileNames) {
+    /// <param name="helper">生成器辅助类</param>
+    public CodeGenerator(DSRepository repository, CodeGeneratorCfg cfg, ICollection<string> fileNames, CodeGeneratorHelper? helper = null) {
         _repository = repository;
         _cfg = cfg;
-        _helper = new CodeGeneratorHelper(repository, cfg, processorInfo);
+        _helper = helper ?? new CodeGeneratorHelper(cfg, processorInfo);
         _fileNames = new LinkedHashSet<string>(fileNames);
     }
 

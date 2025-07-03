@@ -89,7 +89,7 @@ public class ServiceGenerator
             ClassName className = ToolUtil.ClassNameOfCanonicalName(superinterface);
             typeBuilder.AddBaseClass(className);
         }
-        // service注解 -- 方法也可能访问
+        // service注解
         DsonObject<string> serviceData = serviceAnnotation.DsonValue.AsObject();
         {
             AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
@@ -108,8 +108,8 @@ public class ServiceGenerator
             {
                 AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
                     .AddMember(PNAME_METHOD_ID, GetMethodId(method.Number, methodData).ToString());
-                // .addMember("ArgSharable", "true") // C#端的pb对象不是builder模式，不是不可变对象
-                // .addMember("ResultSharable", "true"); 
+                // .addMember("ArgSharable", "false") // C#端的pb对象不是builder模式，不是不可变对象
+                // .addMember("ResultSharable", "false"); 
                 // 是否手动返回结果
                 if (IsManualReturn(methodData, serviceData)) {
                     annoBuilder.AddMember(PNAME_MANUAL_RETURN, "true");

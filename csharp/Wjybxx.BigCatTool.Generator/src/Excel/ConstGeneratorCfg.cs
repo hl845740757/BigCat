@@ -48,47 +48,26 @@ public class ConstGeneratorCfg
     [DsonSerializable]
     public class ConstCfg
     {
+        /// <summary>
+        /// 生成的class类名
+        /// </summary>
         public string clsName;
+        /// <summary>
+        /// 表单名
+        /// </summary>
         public string sheetName;
+        /// <summary>
+        /// 常量名所在的列
+        /// </summary>
         public string nameCol;
+        /// <summary>
+        /// 常量值所在的列
+        /// </summary>
         public string valueCol;
+        /// <summary>
+        /// 注释所在的列
+        /// </summary>
         public string commentCol;
-
-        /// <summary>
-        /// 生成的代码调用
-        /// </summary>
-        public ConstCfg() {
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="clsName">生成的枚举名</param>
-        /// <param name="sheetName">表单名-顶级表单名</param>
-        /// <param name="nameCol">枚举名列</param>
-        /// <param name="valueCol">枚举值列</param>
-        /// <param name="commentCol">注释列</param>
-        public ConstCfg(string clsName,
-                        string sheetName, string nameCol, string valueCol, string commentCol) {
-            this.clsName = clsName;
-            this.sheetName = sheetName;
-            this.nameCol = nameCol;
-            this.valueCol = valueCol;
-            this.commentCol = commentCol;
-        }
-
-        /// <summary>
-        /// 用于为参数表生成常量
-        /// </summary>
-        /// <param name="clsName">生成的枚举名</param>
-        /// <param name="sheetName">表单名-顶级表单名</param>
-        public ConstCfg(string clsName, string sheetName) {
-            this.clsName = clsName;
-            this.sheetName = sheetName;
-            this.nameCol = "";
-            this.valueCol = "";
-            this.commentCol = "";
-        }
     }
 }
 }

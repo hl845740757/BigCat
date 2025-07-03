@@ -54,8 +54,6 @@
         <PackageReference Include="Wjybxx.Disruptor" Version="1.2.1" />
         <PackageReference Include="Wjybxx.Dson.Core" Version="2.5.4" />
         <PackageReference Include="Wjybxx.Dson.Codec" Version="2.5.4" />
-
-        <ProjectReference Include="..\Wjybxx.BigCat.Apt\Wjybxx.BigCat.Apt.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->
@@ -63,6 +61,7 @@
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Poet.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Commons.Apt.dll" />
         <Analyzer Include="../Analyzers/Wjybxx.Dson.Apt.dll" />
+        <Analyzer Include="../Analyzers/Wjybxx.BigCat.Apt.dll" />
     </ItemGroup>
     <!-- 排除生成文件目录 -->
     <ItemGroup>

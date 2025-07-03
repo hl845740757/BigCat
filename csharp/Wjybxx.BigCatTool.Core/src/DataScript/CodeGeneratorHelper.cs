@@ -43,7 +43,11 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 3.如果是数据类，则会生成Equals、GetHashCode、ToString三个方法。
 /// 4.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
 /// 5.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
-/// 6.该实现并不特殊处理Rpc生成，需要由子类扩展。
+///
+/// <h3>关于集合</h3>
+/// 1.用户果需要使用不可变集合，请将不可变集合注册到<see cref="DSRepository"/>，默认为Commons库中的不可变集合。
+/// 2.默认情况下List使用<code>CollectionUtil.SequenceEqual</code>方法，而Set和字典使用<code>CollectionUtil.DataEquals</code>方法。
+/// 3.系统库的HashSet和Dictionary，如果反复增删数据，hashcode无法保证一致 -- 只增不减的情况下才能保证hashcode和equals一致。
 /// </summary>
 public class CodeGeneratorHelper
 {
@@ -61,27 +65,25 @@ public class CodeGeneratorHelper
 
     #endregion
 
-    protected readonly DSRepository repository;
     protected readonly CodeGeneratorCfg generatorCfg;
-    private readonly AttributeSpec _processorInfo;
+    private readonly AttributeSpec processorInfo;
     // 缓存
-    private readonly Dictionary<string, ClassName> _metaTypeNameCache = new();
+    private readonly Dictionary<string, ClassName> _metaTypeNameCache = new(200);
     private readonly Dictionary<ClassName, ClassName> _genericTypeNameCache = new(200);
     private readonly List<FieldSpec> _fieldListCache = new(20);
     private readonly List<PropertySpec> _propertyListCache = new(20);
     private readonly List<DSField> _dsFieldListCache = new(20);
-    private readonly StringBuilder _sb = new StringBuilder(30);
+    private readonly List<DSMethod> _dsMethodListCache = new(20);
+    private readonly StringBuilder _sb = new StringBuilder(64);
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="repository"></param>
     /// <param name="generatorCfg">生成器相关配置</param>
     /// <param name="processorInfo"></param>
-    public CodeGeneratorHelper(DSRepository repository, CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo) {
-        _processorInfo = processorInfo;
+    public CodeGeneratorHelper(CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo) {
         this.generatorCfg = generatorCfg;
-        this.repository = repository;
+        this.processorInfo = processorInfo;
     }
 
     /// <summary>
@@ -98,9 +100,9 @@ public class CodeGeneratorHelper
         };
         typeBuilder.AddModifiers(Modifiers.Public);
         if (namedType.EnclosingElement.Kind == DSElementKind.File) {
-            typeBuilder.AddAttribute(_processorInfo); // 顶层类追加生成器信息
+            typeBuilder.AddAttribute(processorInfo); // 顶层类追加生成器信息
         }
-        if (namedType.IsEnum) {
+        if (namedType.Kind == DSElementKind.Enum) {
             GenerateEnum(namedType, typeBuilder);
         } else if (namedType.Kind == DSElementKind.Service) {
             GenerateService(namedType, typeBuilder);
@@ -157,34 +159,37 @@ public class CodeGeneratorHelper
 
     #region service
 
+    private void GenerateNormalService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+        if (namedType.IsGenericType) {
+            foreach (DSTypeParameter typeParameter in namedType.DeclaredTypeParameters) {
+                typeBuilder.AddTypeParameter(TypeParameterSpec.Get(typeParameter.SimpleName, typeParameter.Constraints));
+            }
+        }
+        foreach (DSMethod method in namedType.GetMethods(false, _dsMethodListCache.ClearAndReturn())) {
+            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
+            if (method.ParameterType != null) {
+                methodBuilder.AddParameter(GetTypeName(method.ParameterType), method.ParameterName!);
+            }
+            if (method.ResultType != null) {
+                methodBuilder.Returns(GetTypeName(method.ResultType));
+            }
+            methodBuilder.AddDocument(BuildDocument(method.Comments));
+            typeBuilder.AddMethod(methodBuilder.Build());
+        }
+    }
+
     protected virtual void GenerateService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         Annotation annotation = namedType.GetAnnotation(DSAnnotations.RPC);
         if (annotation == null) {
-            // 普通接口
-            if (namedType.IsGenericType) {
-                foreach (DSTypeParameter typeParameter in namedType.DeclaredTypeParameters) {
-                    typeBuilder.AddTypeParameter(TypeParameterSpec.Get(typeParameter.SimpleName, typeParameter.Constraints));
-                }
-            }
-            foreach (DSMethod method in namedType.GetMethods(false)) {
-                MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
-                if (method.ParameterType != null) {
-                    methodBuilder.AddParameter(GetTypeName(method.ParameterType), method.ParameterName!);
-                }
-                if (method.ResultType != null) {
-                    methodBuilder.Returns(GetTypeName(method.ResultType));
-                }
-                methodBuilder.AddDocument(BuildDocument(method.Comments));
-                typeBuilder.AddMethod(methodBuilder.Build());
-            }
+            GenerateNormalService(namedType, typeBuilder);
             return;
         }
-        // RPC接口
+        // RPC服务
         foreach (string superinterface in generatorCfg.serviceBaseTypes) {
             ClassName className = ToolUtil.ClassNameOfCanonicalName(superinterface);
             typeBuilder.AddBaseClass(className);
         }
-        // service注解 -- 方法也可能访问
+        // service注解
         DsonObject<string> serviceData = annotation.AsObject();
         {
             AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
@@ -192,15 +197,15 @@ public class CodeGeneratorHelper
             typeBuilder.AddAttribute(annoBuilder.Build());
         }
         //
-        foreach (DSMethod method in namedType.GetMethods(false)) {
+        foreach (DSMethod method in namedType.GetMethods(false, _dsMethodListCache.ClearAndReturn())) {
             DsonObject<string> methodData = DSUtil.GetRpcOptions(method);
             MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
             // method注解 
             {
                 AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
                     .AddMember(PNAME_METHOD_ID, method.Number.ToString());
-                // .addMember("ArgSharable", "true") // ds类型默认也不是不可变的
-                // .addMember("ResultSharable", "true"); 
+                // .addMember("ArgSharable", "false") // ds类型默认也不是不可变的
+                // .addMember("ResultSharable", "false"); 
                 // 是否手动返回结果
                 if (IsManualReturn(methodData, serviceData)) {
                     annoBuilder.AddMember(PNAME_MANUAL_RETURN, "true");

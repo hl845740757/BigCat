@@ -570,6 +570,14 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         }
     }
 
+    /// <summary>
+    /// 调度协程
+    /// </summary>
+    /// <param name="phase"></param>
+    public void ScheduleCoroutine(int phase) {
+        agent.ScheduleCoroutine(phase);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void OnInternalEvent(long curSequence, ref T evt) {
         int type = evt.Type;
@@ -725,7 +733,10 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             int type = eventObj.Type;
             try {
                 if (type == 0) {
-                    if (eventObj.Obj1 is Action action) {
+                    if (eventObj.Obj1 == null) {
+                        // 由于c#支持值类型，用户设置错工厂容易导致该问题
+                        logger.Warn("bad event factory");
+                    } else if (eventObj.Obj1 is Action action) {
                         action();
                     } else {
                         ITask task = (ITask)eventObj.Obj1;
@@ -809,7 +820,10 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                     continue;
                 }
                 if (type == 0) {
-                    if (eventObj.Obj1 is Action action) {
+                    if (eventObj.Obj1 == null) {
+                        // 由于c#支持值类型，用户设置错工厂容易导致该问题
+                        logger.Warn("bad event factory");
+                    } else if (eventObj.Obj1 is Action action) {
                         action();
                     } else {
                         ITask task = (ITask)eventObj.Obj1;

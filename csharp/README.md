@@ -1,5 +1,10 @@
 ﻿# C# BigCat实现
 
+## 编译问题
+
+BigCat项目默认通过Nuget依赖Commons项目中的模块，但作者不可能Commons稍有改动就上传到Nuget，因此开发期间多使用本地Nuget仓库。
+如果大家编译项目出现错误，可以下载Commons仓库，本地打包后添加到Nuget路径。
+
 ## 核心架构介绍
 
 ### 线程进程架构

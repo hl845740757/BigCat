@@ -115,9 +115,9 @@ public class ToolUtil
     public static List<string> GetLines(string str) {
         List<string> stringList = new List<string>();
         using (StringReader stringReader = new StringReader(str)) {
-            string str1;
-            while ((str1 = stringReader.ReadLine()) != null)
-                stringList.Add(str1);
+            string line;
+            while ((line = stringReader.ReadLine()) != null)
+                stringList.Add(line);
         }
         return stringList;
     }
@@ -275,6 +275,16 @@ public class ToolUtil
         DirectoryInfo directoryInfo = new DirectoryInfo(dirName);
         if (directoryInfo.Exists) {
             directoryInfo.Delete(true);
+        }
+    }
+
+    /// <summary>
+    /// 创建文件夹
+    /// </summary>
+    /// <param name="dirName"></param>
+    public static void CreateDirectory(string dirName) {
+        if (!Directory.Exists(dirName)) {
+            Directory.CreateDirectory(dirName);
         }
     }
 
