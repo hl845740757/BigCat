@@ -41,103 +41,50 @@
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
   </PropertyGroup>
   <ItemGroup>
-     <Folder Include="Assets" />
-     <None Include="Library\PackageCache\com.unity.modules.subsystems@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.jsonserialize@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.screencapture@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.cloth@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.imgui@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.unitywebrequesttexture@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.ai@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.animation@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.ugui@1.0.0\package.json" />
-     <Folder Include="Assets\Gizmos" />
-     <Folder Include="Library\PackageCache\com.unity.modules.xr@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.assetbundle@1.0.0\package.json" />
-     <Folder Include="Assets\Resources\Models" />
-     <Folder Include="Assets\Scripts" />
-     <None Include="Library\PackageCache\com.unity.modules.imgui@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.tilemap@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.assetbundle@1.0.0" />
-     <None Include="Assets\csc.rsp" />
-     <Folder Include="Assets\Resources\Sprites" />
-     <Folder Include="Assets\Resources" />
-     <None Include="Library\PackageCache\com.unity.modules.terrainphysics@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.screencapture@1.0.0" />
-     <Folder Include="Assets\Analyzers" />
-     <Folder Include="Library\PackageCache\com.unity.modules.cloth@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.unitywebrequestassetbundle@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.imageconversion@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.terrainphysics@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.imageconversion@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.unitywebrequest@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.unitywebrequestassetbundle@1.0.0" />
-     <Folder Include="Assets\Resources\Animations" />
-     <None Include="Library\PackageCache\com.unity.modules.unityanalytics@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.subsystems@1.0.0" />
-     <Folder Include="Assets\ThirdParty" />
-     <None Include="Library\PackageCache\com.unity.modules.video@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.unityanalytics@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.physics@1.0.0" />
-     <Folder Include="Assets\Resources\Videos" />
-     <Folder Include="Library\PackageCache\com.unity.modules.vr@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.physics2d@1.0.0" />
-     <Folder Include="Assets\Resources\Audios" />
-     <Folder Include="Assets\StreamingAssets" />
-     <None Include="Library\PackageCache\com.unity.modules.particlesystem@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.wind@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.physics2d@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.vr@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.uielements@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.unitywebrequestaudio@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.particlesystem@1.0.0" />
-     <Folder Include="Assets\Resources\Config" />
-     <None Include="Library\PackageCache\com.unity.modules.wind@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.ugui@1.0.0\Tests" />
-     <None Include="Library\PackageCache\com.unity.modules.umbra@1.0.0\package.json" />
-     <Folder Include="Assets\Scenes" />
-     <Folder Include="Library\PackageCache\com.unity.modules.tilemap@1.0.0" />
-     <Folder Include="Assets\Resources\Fonts" />
-     <Folder Include="Assets\Resources\Materials" />
-     <Folder Include="Library\PackageCache\com.unity.modules.ui@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.androidjni@1.0.0" />
-     <Folder Include="Assets\Tests" />
-     <None Include="Library\PackageCache\com.unity.modules.audio@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.physics@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.vehicles@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.uielementsnative@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.unitywebrequestwww@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.unitywebrequestaudio@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.vehicles@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.xr@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.umbra@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.unitywebrequestwww@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.director@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.jsonserialize@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.director@1.0.0" />
-     <Folder Include="Assets\Resources\Prefabs" />
-     <Folder Include="Library\PackageCache\com.unity.modules.audio@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.terrain@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.androidjni@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.video@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.ai@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.modules.terrain@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.animation@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.uielementsnative@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.unitywebrequest@1.0.0\package.json" />
-     <None Include="Library\PackageCache\com.unity.modules.uielements@1.0.0\package.json" />
-     <Folder Include="Library\PackageCache\com.unity.modules.unitywebrequesttexture@1.0.0" />
-     <Folder Include="Library\PackageCache\com.unity.ugui@1.0.0" />
-     <None Include="Library\PackageCache\com.unity.modules.ui@1.0.0\package.json" />
-     <Reference Include="UnityEngine">
-     <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
-     </Reference>
-     <Reference Include="UnityEngine.CoreModule">
-     <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
-     </Reference>
-     <Reference Include="UnityEditor">
-     <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
-     </Reference>
+    <None Include="Library\PackageCache\com.unity.modules.subsystems@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.jsonserialize@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.screencapture@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.cloth@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.unitywebrequesttexture@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.ai@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.ugui@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.assetbundle@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.imgui@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.tilemap@1.0.0\package.json" />
+    <None Include="Assets\csc.rsp" />
+    <None Include="Library\PackageCache\com.unity.modules.terrainphysics@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.unitywebrequestassetbundle@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.imageconversion@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.unityanalytics@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.video@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.particlesystem@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.physics2d@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.vr@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.wind@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.umbra@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.audio@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.physics@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.vehicles@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.uielementsnative@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.unitywebrequestwww@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.unitywebrequestaudio@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.xr@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.director@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.terrain@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.androidjni@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.animation@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.unitywebrequest@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.uielements@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.modules.ui@1.0.0\package.json" />
+    <Reference Include="UnityEngine">
+      <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEditor">
+      <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
