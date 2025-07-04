@@ -538,7 +538,8 @@ public static class ExcelConstants
     /// <param name="sheetName"></param>
     /// <returns></returns>
     public static bool IsSubTypeSheet(string sheetName) {
-        return GetMergedSheetName(sheetName).Contains('.');
+        string mergedSheetName = GetMergedSheetName(sheetName);
+        return mergedSheetName.Contains('.') && !sheetName.EndsWith(".Base");
     }
 
     /// <summary>

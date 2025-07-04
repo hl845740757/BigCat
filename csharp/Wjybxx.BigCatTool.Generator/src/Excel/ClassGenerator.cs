@@ -19,7 +19,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Wjybxx.BigCatTool.Core;
 using Wjybxx.BigCatTool.DataScript;
+using Wjybxx.BigCatTool.Excel;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
@@ -67,7 +69,7 @@ public class ClassGenerator : ISheetProcessor
     public ClassGenerator(DSRepository dsRepository, CodeGeneratorCfg cfg, ICollection<string> fileNames) {
         _dsRepository = dsRepository;
         _cfg = cfg;
-        _helper = new Helper(dsRepository, cfg, processorInfo);
+        _helper = new Helper(cfg, processorInfo);
         _fileNames = new LinkedHashSet<string>(fileNames);
     }
 
@@ -108,7 +110,7 @@ public class ClassGenerator : ISheetProcessor
     {
         private readonly List<DSField> _fieldListCache = new(20);
 
-        public Helper(DSRepository repository, CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo)
+        public Helper(CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo)
             : base(generatorCfg, processorInfo) {
         }
 
@@ -140,6 +142,26 @@ public class ClassGenerator : ISheetProcessor
 
         protected override bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
             return true;
+        }
+
+        protected override bool NeedToStringMethod(DSNamedType namedType, DsonObject<string> options) {
+            Annotation annotation = namedType.GetAnnotation(ExcelAnnotations.SHEET_INFO);
+            if (annotation == null) return false;
+            if (!annotation.AsObject().TryGetValue(ExcelAnnotations.KEY_TYPE, out DsonValue value)) return false;
+            return value.AsDsonNumber().IntValue == (int)SheetType.Normal;
+        }
+
+        protected override void BuildToStringMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("ToString")
+                .AddModifiers(Modifiers.Public | Modifiers.Override)
+                .Returns(TypeName.STRING);
+
+            namedType.GetFields(true, _fieldListCache.ClearAndReturn());
+            DSField primaryKeyField = _fieldListCache[0];
+            // 打印主键id即可 -- 主键是数字或字符串 -- ItemCfg{id: 1001}
+            methodBuilder.codeBuilder.AddStatement("return \"$L{$L: \" + $L + \"}\"",
+                namedType.SimpleName, primaryKeyField.SimpleName, primaryKeyField.SimpleName);
+            typeBuilder.AddMethod(methodBuilder.Build());
         }
 
         protected override ClassName? GetBuiltinMetaTypeName(DSNamedType originDefine) {

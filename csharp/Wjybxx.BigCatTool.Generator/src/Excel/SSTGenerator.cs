@@ -130,7 +130,7 @@ public class SstGenerator : ISheetProcessor
                 }
                 headers.Add(header);
             }
-            if (sheet.isParamSheet) {
+            if (sheet.IsParamSheet) {
                 ProcessParamSheet(sheet, headers);
             } else {
                 ProcessNormalSheet(sheet, headers);

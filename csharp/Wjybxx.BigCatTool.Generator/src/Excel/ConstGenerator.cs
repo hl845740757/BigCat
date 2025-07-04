@@ -78,7 +78,7 @@ public class ConstGenerator : ISheetProcessor
 
             List<ConstValue> values;
             try {
-                values = sheets[0].isParamSheet
+                values = sheets[0].IsParamSheet
                     ? CollectParamSheetValues(sheets, constCfg)
                     : CollectNormalSheetValues(sheets, constCfg);
             }

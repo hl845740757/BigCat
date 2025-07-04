@@ -96,7 +96,7 @@ public class SheetReaderTest
         DsonObject<string> cfgObject = Dsons.FromDson(File.ReadAllText(resDir + "/SheetGeneratorCfg.dson")).AsObject();
         // 生成ds文件 -- 先由Dson初始化，再覆盖部分数据
         DataScriptGeneratorCfg dsGeneratorCfg = converter.ReadFromDsonValue<DataScriptGeneratorCfg>(cfgObject["dsGenerator"]);
-        dsGeneratorCfg.outPath = "/tables.ds";
+        dsGeneratorCfg.outPath = outDir + "/tables.ds";
         dsGeneratorCfg.templateFile = resDir + "/SheetCfg.tt";
         new DataScriptGenerator(repository, dsGeneratorCfg, RequireMode.All).Execute();
 

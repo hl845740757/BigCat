@@ -681,6 +681,9 @@ public sealed class DSRepository
         foreach (DSNamedType typeElement in DSUtil.GetAllEnclosedTypes(file)) {
             if (typeElement.BaseTypeSymbol != null && typeElement.BaseType == null) {
                 typeElement.BaseType = (DSNamedType)ResolveTypeSymbol(typeElement, typeElement.BaseTypeSymbol);
+                if (typeElement.BaseType.FullName == typeElement.FullName) {
+                    throw new Exception(typeElement.FullName); // 递归检测
+                }
             }
             foreach (DSField field in typeElement.GetFields(false, fieldList.ClearAndReturn())) {
                 if (field.TypeSymbol != null && field.Type == null) {

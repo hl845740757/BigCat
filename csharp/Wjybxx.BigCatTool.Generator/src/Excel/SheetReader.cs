@@ -92,7 +92,8 @@ internal class SheetReader
             }
             sheetContent = ReadNormalSheet(firstRowValues, typeRow, nameRow, commentRow);
         }
-        return new Sheet(fileName, sheetName, sheetIndex, isParamSheet,
+        SheetType sheetType = isParamSheet ? SheetType.Param : SheetType.Normal;
+        return new Sheet(fileName, sheetName, sheetIndex, sheetType,
             sheetContent.headers, sheetContent.valueRowList);
     }
 

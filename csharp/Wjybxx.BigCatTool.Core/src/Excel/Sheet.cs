@@ -41,8 +41,8 @@ public sealed class Sheet : IValueProvider
     public readonly string sheetName;
     /** 页索引，默认应该为0 */
     public readonly int sheetIndex;
-    /** 是否是参数表(纵表) */
-    public readonly bool isParamSheet;
+    /** 表单类型 */
+    public readonly SheetType type;
 
     /** 所有的表头信息 -- 参数表由内容行构建，属于缓存数据 */
     public readonly LinkedDictionary<string, Header> headers = new();
@@ -52,24 +52,24 @@ public sealed class Sheet : IValueProvider
     /// <summary>
     /// 建立一张空表
     /// </summary>
-    public Sheet(string fileName, string sheetName, int sheetIndex, bool isParamSheet) {
+    public Sheet(string fileName, string sheetName, int sheetIndex, SheetType type) {
         this.fileName = fileName;
         this.sheetName = sheetName;
         this.sheetIndex = sheetIndex;
-        this.isParamSheet = isParamSheet;
+        this.type = type;
     }
 
     /// <summary>
     /// 根据Excel等文件初始化Sheet
     /// </summary>
-    public Sheet(string fileName, string sheetName, int sheetIndex, bool isParamSheet,
+    public Sheet(string fileName, string sheetName, int sheetIndex, SheetType type,
                  IList<Header> headers, IList<SheetRow> valueRows) {
         this.fileName = fileName;
         this.sheetName = sheetName;
         this.sheetIndex = sheetIndex;
-        this.isParamSheet = isParamSheet;
+        this.type = type;
         //
-        if (isParamSheet && headers.Count == 0) {
+        if (type == SheetType.Param && headers.Count == 0) {
             this.headers.AdjustCapacity(valueRows.Count);
             RefreshHeaders();
         } else {
@@ -82,6 +82,9 @@ public sealed class Sheet : IValueProvider
         this.valueRows.AddRange(valueRows);
         this.valueRows.Sort((a, b) => a.RowIndex.CompareTo(b.RowIndex));
     }
+
+    public bool IsNormalSheet => type == SheetType.Normal;
+    public bool IsParamSheet => type == SheetType.Param;
 
     #region header-row
 
@@ -160,7 +163,7 @@ public sealed class Sheet : IValueProvider
             valueRows[nextIdx].RowIndex++;
         }
         valueRows.Insert(idx, row);
-        if (isParamSheet) {
+        if (IsParamSheet) {
             RefreshHeaders();
         }
     }
@@ -178,7 +181,7 @@ public sealed class Sheet : IValueProvider
             valueRows[nextIdx].RowIndex--;
         }
         valueRows.RemoveAt(idx);
-        if (isParamSheet) {
+        if (IsParamSheet) {
             RefreshHeaders();
         }
     }
@@ -190,7 +193,7 @@ public sealed class Sheet : IValueProvider
     public void ClearRow(int rowIndex) {
         SheetRow row = GetRow(rowIndex);
         row.Clear();
-        if (isParamSheet) {
+        if (IsParamSheet) {
             RefreshHeaders();
         }
     }
@@ -200,7 +203,7 @@ public sealed class Sheet : IValueProvider
     /// 刷新参数表的表头
     /// </summary>
     public void RefreshHeaders() {
-        if (!isParamSheet) {
+        if (!IsParamSheet) {
             return;
         }
         headers.Clear();
@@ -217,7 +220,7 @@ public sealed class Sheet : IValueProvider
     /// </summary>
     /// <param name="rowIndex"></param>
     public void RefreshHeader(int rowIndex) {
-        if (!isParamSheet) {
+        if (!IsParamSheet) {
             return;
         }
         SheetRow valueRow = GetRow(rowIndex);
@@ -237,7 +240,7 @@ public sealed class Sheet : IValueProvider
     /// <param name="name"></param>
     /// <returns></returns>
     public string? GetValue(string name) {
-        if (!isParamSheet) {
+        if (!IsParamSheet) {
             throw new IllegalStateException();
         }
         if (!headers.TryGetValue(name, out Header header)) {
@@ -255,7 +258,7 @@ public sealed class Sheet : IValueProvider
     /// <returns></returns>
     /// <exception cref="IllegalStateException"></exception>
     public void SetValue(string name, string? value) {
-        if (!isParamSheet) {
+        if (!IsParamSheet) {
             throw new IllegalStateException();
         }
         if (!headers.TryGetValue(name, out Header header)) {

@@ -34,6 +34,7 @@ using Wjybxx.Dson.IO;
 using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using static Wjybxx.BigCatTool.Generator.Excel.ExcelConstants;
+using NumberStyles = Wjybxx.Dson.Text.NumberStyles;
 
 namespace Wjybxx.BigCatTool.Generator.Excel
 {
@@ -79,10 +80,10 @@ public class DsonGenerator : ISheetProcessor
         _requireMode = requireMode;
 
         _buffer = new byte[cfg.bufferLen];
-        // 尽量一行
         _textWriterSettings = new DsonTextWriterSettings.Builder
             {
-                SoftLineLength = 500
+                SoftLineLength = 500, // 尽量一行
+                NumberStyle = NumberStyles.Simple // 不打印数字类型以方便阅读 -- 会导致反序列化后的DsonObject不再相等
             }
             .Build();
     }
@@ -91,7 +92,7 @@ public class DsonGenerator : ISheetProcessor
         foreach (IGrouping<string, Sheet> grouping in _repository.GetSortedSheets().GroupBy(e => GetFirstSheetName(e.sheetName))) {
             List<Sheet> sheets = grouping.ToList();
             DsonArray<string> collection;
-            bool isParamSheet = sheets[0].isParamSheet;
+            bool isParamSheet = sheets[0].IsParamSheet;
             try {
                 if (isParamSheet) {
                     collection = ProcessParamSheet(grouping, sheets);
@@ -140,6 +141,24 @@ public class DsonGenerator : ISheetProcessor
         return ArrayUtil.CopyOf(_buffer, 0, output.Position);
     }
 
+    /// <summary>
+    /// 由于用户可能在DS脚本中插入缓存字段，因此我们需要过滤一下
+    /// </summary>
+    /// <param name="namedType"></param>
+    /// <returns></returns>
+    private List<DSField> GetSerializedFields(DSNamedType namedType) {
+        List<DSField> fields = namedType.GetFields(true, fieldListPool.Acquire());
+        for (int index = 0; index < fields.Count; index++) {
+            DSField field = fields[index];
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
+            if (GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+                fields.RemoveAt(index);
+                index--;
+            }
+        }
+        return fields;
+    }
+
     #region build
 
     private DsonArray<string>? ProcessParamSheet(IGrouping<string, Sheet> grouping, List<Sheet> sheets) {
@@ -169,7 +188,7 @@ public class DsonGenerator : ISheetProcessor
             }
         }
 
-        List<DSField> fields = namedType.GetFields();
+        List<DSField> fields = GetSerializedFields(namedType);
         // 2 = header + object
         DsonArray<string> collection = new DsonArray<string>(2);
         collection.Add(new DsonObject<string>(2)
@@ -218,7 +237,7 @@ public class DsonGenerator : ISheetProcessor
                 headerCaches.Add(header.name, new HeaderCache(header, fieldType, elemHeaders));
             }
 
-            List<DSField> fields = namedType.GetFields();
+            List<DSField> fields = GetSerializedFields(namedType);
             // 追加header -- 由于可能存在空白行，我们不能直接记录Sheet的行数
             DsonObject<string> headerObject = new DsonObject<string>(3)
             {
@@ -444,7 +463,7 @@ public class DsonGenerator : ISheetProcessor
         if (clsName != null) {
             namedType = _dsRepository.ResolveDsonTypeName(clsName) ?? throw new Exception($"invalid serial name: {clsName}");
         }
-        List<DSField> fields = namedType.GetFields(true, fieldListPool.Acquire());
+        List<DSField> fields = GetSerializedFields(namedType);
         if (fields.Count == 0) {
             goto release;
         }

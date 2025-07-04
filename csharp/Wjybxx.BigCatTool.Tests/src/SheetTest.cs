@@ -33,7 +33,7 @@ public class SheetTest
 
     [SetUp]
     public void SetUp() {
-        sheet = new Sheet("Test.xlsx", "Test", 0, false);
+        sheet = new Sheet("Test.xlsx", "Test", 0, SheetType.Normal);
         sheet.AddHeader(new Header("cs", "id", "id", "", nameRowIndex, 0));
         sheet.AddHeader(new Header("cs", "string", "name", "", nameRowIndex, 1));
     }

@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BigCatTool.Excel;
 using Wjybxx.Commons;
@@ -68,7 +69,7 @@ public class DataScriptGenerator : ISheetProcessor
                 firstSheet = true;
             }
             List<Sheet> sheets = grouping.ToList();
-            if (sheets[0].isParamSheet) {
+            if (sheets[0].IsParamSheet) {
                 // 参数表需要拼接到一起...
                 string mergedSheetName = grouping.Key;
                 if (!firstSheet) {
@@ -121,19 +122,20 @@ public class DataScriptGenerator : ISheetProcessor
     }
 
     private void Append(string mergedSheetName, ICollection<Header> headers, List<string> lines, bool isParamSheet = false) {
-        string clsName;
+        // 追加表单信息 -- 以生成ToString
+        SheetType sheetType = isParamSheet ? SheetType.Param : SheetType.Normal;
+        lines.Add($"//@{ExcelAnnotations.SHEET_INFO} "
+                  + "{"
+                  + $"{ExcelAnnotations.KEY_NAME}: \"{mergedSheetName}\","
+                  + $" {ExcelAnnotations.KEY_TYPE}: {(int)sheetType}"
+                  + "}");
+        // 类型声明
+        string clsName = GetClassName(mergedSheetName);
         string baseTypeName = null;
         Sheet? baseSheet = null;
-        if (IsBaseTypeSheet(mergedSheetName)) {
-            // Item.Base => Item
-            clsName = GetFirstSheetName(mergedSheetName) + "Cfg";
-        } else if (IsSubTypeSheet(mergedSheetName)) {
-            // Item.Equip => Equip -- 这允许用户自定义命名
-            clsName = GetSecondSheetName(mergedSheetName) + "Cfg";
-            baseTypeName = GetFirstSheetName(mergedSheetName) + "Cfg";
+        if (IsSubTypeSheet(mergedSheetName)) {
             baseSheet = GetBaseSheet(mergedSheetName);
-        } else {
-            clsName = mergedSheetName + "Cfg";
+            baseTypeName = GetClassName(baseSheet.sheetName);
         }
         if (baseTypeName != null) {
             lines.Add($"class {clsName} : {baseTypeName} {{");
@@ -213,13 +215,17 @@ public class DataScriptGenerator : ISheetProcessor
     /// <param name="mergedSheetName"></param>
     /// <returns></returns>
     public static string GetClassName(string mergedSheetName) {
+        int spIndex = mergedSheetName.IndexOf('.');
+        if (spIndex < 0) {
+            return mergedSheetName + "Cfg";
+        }
         if (IsBaseTypeSheet(mergedSheetName)) {
             return GetFirstSheetName(mergedSheetName) + "Cfg";
         }
-        if (IsSubTypeSheet(mergedSheetName)) {
-            return GetSecondSheetName(mergedSheetName) + "Cfg";
-        }
-        return mergedSheetName + "Cfg";
+        // ItemEquipCfg 拼接以避免命名冲突
+        return new StringBuilder(mergedSheetName.Length + 3)
+            .Append(mergedSheetName).Remove(spIndex, 1).Append("Cfg")
+            .ToString();
     }
 
     /// <summary>

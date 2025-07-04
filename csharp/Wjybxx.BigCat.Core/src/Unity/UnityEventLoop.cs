@@ -481,8 +481,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         }
         // 解决模块之间的依赖
         foreach (EventLoopModule module in _moduleList) {
-            if (!module.Cid.IsPrivateScript) {
-                continue;
+            if (module.Cid.Shared) {
+                continue; // 共享组件
             }
             module.ResolveDependence();
         }
@@ -534,8 +534,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         }
     }
 
-    /** 迭代所有模块 -- 重新该方法可实现协程调度 */
-    protected virtual void UpdateModules() {
+    /** 迭代所有模块 */
+    protected void UpdateModules() {
         long tickTime = this.TickTime;
         while (agent.CheckMainLoop(tickTime)) {
             agent.BeforeMainLoop(tickTime);
@@ -568,12 +568,14 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             }
             agent.AfterMainLoop(tickTime);
         }
+        agent.CustomUpdate(tickTime);
     }
 
     /// <summary>
     /// 调度协程
     /// </summary>
     /// <param name="phase"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ScheduleCoroutine(int phase) {
         agent.ScheduleCoroutine(phase);
     }
