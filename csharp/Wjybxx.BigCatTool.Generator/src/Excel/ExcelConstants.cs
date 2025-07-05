@@ -66,10 +66,10 @@ public static class ExcelConstants
     public const string KEY_SECRET = "secret";
 
     /// <summary>
-    /// Cell为record类型（定长数组）
+    /// Cell为元组类型（定长数组）
     /// <code>isRecord: true</code>
     /// </summary>
-    public const string KEY_IS_RECORD = "isRecord";
+    public const string KEY_IS_TUPLE = "isTuple";
     /// <summary>
     /// 标记int32和int64类型为Flags类型，允许采用‘|’表示进行或操作。
     /// 格式：<code>isFlags: true</code>

@@ -50,6 +50,8 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// 1.Sheet是不能被直接合并的，因为每个表的元数据可能不同。
 /// 2.追加的元数据不是<see cref="DsonHeader{TK}"/>类型，因为多Header可能造成奇怪的问题。
 /// 3.程序使用的是二进制文件，文本文件更多是用于Diff。
+///
+/// TODO 检测所有分表的Tuple类型的长度 -- 必须全部相同。
 /// </summary>
 public class DsonGenerator : ISheetProcessor
 {
@@ -295,7 +297,7 @@ public class DsonGenerator : ISheetProcessor
 
         DSTypeElement elementType = GetElementType(fieldType);
         List<DsonValue> values = _valueListCache.ClearAndReturn();
-        if (GetBool(options, KEY_IS_RECORD)) {
+        if (GetBool(options, KEY_IS_TUPLE)) {
             // 合并所有列的值
             foreach (Header elemHeader in elemHeaders) {
                 string? rawValue = valueProvider.GetValue(elemHeader.name);

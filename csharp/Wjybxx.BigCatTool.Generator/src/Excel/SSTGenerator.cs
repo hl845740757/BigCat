@@ -272,7 +272,7 @@ public class SstGenerator : ISheetProcessor
             }
             return;
         }
-        if (IsRecord(header)) {
+        if (IsTuple(header)) {
             // 合并所有列
             foreach (Header elemHeader in elementHeaders) {
                 string rawValue = valueProvider.GetValue(elemHeader.name) ?? "";
@@ -290,12 +290,12 @@ public class SstGenerator : ISheetProcessor
         }
     }
 
-    private static bool IsRecord(Header header) {
-        if (!header.options.Contains(KEY_IS_RECORD)) {
+    private static bool IsTuple(Header header) {
+        if (!header.options.Contains(KEY_IS_TUPLE)) {
             return false;
         }
         DsonObject<string> options = ParseOptions(header.options);
-        return GetBool(options, KEY_IS_RECORD);
+        return GetBool(options, KEY_IS_TUPLE);
     }
 
     private static bool IsInternField(Header header) {
