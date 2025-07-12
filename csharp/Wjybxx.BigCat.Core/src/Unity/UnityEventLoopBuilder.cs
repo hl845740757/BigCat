@@ -31,7 +31,7 @@ public class UnityEventLoopBuilder<T> : EventLoopBuilder<T> where T : IAgentEven
     private EventSequencer<T> eventSequencer;
     private WaitStrategy waitStrategy = UnityWaitStrategy.Inst;
     private bool publishValueEventWithCopy;
-#nullable enable
+#nullable restore
 
     /// <summary>
     /// 

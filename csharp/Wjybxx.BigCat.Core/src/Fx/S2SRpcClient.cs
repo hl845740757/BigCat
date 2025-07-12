@@ -65,7 +65,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         // 创建虚拟Session
         this.localSession = new S2SSession(0, selfAddr.nodeId);
     }
-#nullable enable
+#nullable restore
 
     public long TimeoutMs {
         get => timeoutMs;

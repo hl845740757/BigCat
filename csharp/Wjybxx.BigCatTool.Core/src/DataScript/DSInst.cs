@@ -46,7 +46,7 @@ public class DSInst : DSElement
     private readonly string value;
     /** 解析后的dsonValue -- 由解析器初始化，包含从模板中拷贝的数据 */
     private DsonValue dsonValue;
-#nullable enable
+#nullable restore
 
     public DSInst(string simpleName, string value, IEnumerable<string> templates)
         : base(simpleName) {

@@ -33,7 +33,7 @@ public class PBField : PBElement
     private int number;
     /** 修饰符 */
     private readonly List<string> modifiers = new();
-#nullable enable
+#nullable restore
 
     public override PBElementKind Kind => PBElementKind.Field;
 

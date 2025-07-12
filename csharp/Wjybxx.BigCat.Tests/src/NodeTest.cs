@@ -31,7 +31,7 @@ public class NodeTest
 {
 #nullable disable
     private static Node node;
-#nullable enable
+#nullable restore
 
     [OneTimeSetUp]
     public void SetUp() {

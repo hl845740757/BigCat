@@ -94,7 +94,7 @@ public sealed class ExcelReaderOptions
         public ExcelReaderOptions Build() {
             return new ExcelReaderOptions(this);
         }
-#nullable enable
+#nullable restore
     }
 
     #region Parse

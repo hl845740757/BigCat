@@ -75,7 +75,7 @@ public sealed class PBFileParser
             return parser.pbFile;
         }
     }
-#nullable enable
+#nullable restore
 
     private void Parse() {
         try {

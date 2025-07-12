@@ -43,7 +43,7 @@ public sealed class RpcMethodInfo : IEquatable<RpcMethodInfo>
     public readonly Type parameterType;
     /** 方法结果类型 -- 无结果时为null */
     public readonly Type resultType;
-#nullable enable
+#nullable restore
     // pb特殊支持
     /** 不为null则表示参数为pb类型，不参与equals比较 */
     public readonly MessageParser? parameterParser;

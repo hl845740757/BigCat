@@ -47,7 +47,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     private readonly Dictionary<string, object> extBlackboard = new();
     // 目标地址 -- 本地
     private WorkerAddr serverAddr;
-#nullable enable
+#nullable restore
 
     /// <summary>
     /// 接收服务端发来的通知

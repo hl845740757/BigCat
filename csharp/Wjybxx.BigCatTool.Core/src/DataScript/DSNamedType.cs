@@ -123,7 +123,7 @@ public sealed class DSNamedType : DSTypeElement
     /// Dson序列化时的文本样式
     /// </summary>
     private ObjectStyle _dsonStyle = ObjectStyle.Indent;
-#nullable enable
+#nullable restore
 
     /// <summary>
     /// 保留字段编号

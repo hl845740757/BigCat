@@ -57,7 +57,7 @@ public class DSMethod : DSElement
 
     /** 泛型方法的原始定义 -- 可能引用了泛型参数 */
     private readonly DSMethod _originDefine;
-#nullable enable
+#nullable restore
 
     public DSMethod(string simpleName,
                     string? parameterTypeSymbol, string? parameterName, string? resultTypeSymbol,

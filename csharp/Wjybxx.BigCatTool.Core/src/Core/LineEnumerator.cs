@@ -30,7 +30,7 @@ public class LineEnumerator : IEnumerator<string>
 
     private int _currentLn;
     private string _current;
-#nullable enable
+#nullable restore
     public LineEnumerator(IEnumerator<string> backing, int nextLn = 1) {
         _backing = backing ?? throw new ArgumentNullException(nameof(backing));
         _initLn = nextLn;

@@ -34,7 +34,7 @@ public class PBMethod : PBElement
     private string? resultType;
     /** 方法的数字编号 */
     private int? number;
-#nullable enable
+#nullable restore
 
     public override PBElementKind Kind => PBElementKind.Method;
 

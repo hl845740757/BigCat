@@ -43,7 +43,7 @@ public class DSField : DSElement
 
     /** 泛型字段的原始定义 */
     private readonly DSField _originDefine;
-#nullable enable
+#nullable restore
 
     public DSField(string simpleName, string typeSymbol, int number, bool isReadonly)
         : base(simpleName) {

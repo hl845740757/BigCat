@@ -16,7 +16,7 @@
 
 #endregion
 
-#nullable enable
+#nullable restore
 using System.Collections.Generic;
 using Wjybxx.Commons.Attributes;
 using Wjybxx.Commons.Collections;

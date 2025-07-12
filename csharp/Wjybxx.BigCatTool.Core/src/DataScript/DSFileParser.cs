@@ -89,7 +89,7 @@ public class DSFileParser
         }
     }
 
-#nullable enable
+#nullable restore
 
     private void Parse() {
         try {

@@ -51,7 +51,7 @@ public abstract class DSElement
     private int startLine = -1;
     /** 定义元素的结束行号 -- -1表示非源码文件定义 */
     private int endLine = -1;
-#nullable enable
+#nullable restore
 
     protected DSElement(string simpleName) {
         this.simpleName = simpleName ?? throw new ArgumentNullException(nameof(simpleName));

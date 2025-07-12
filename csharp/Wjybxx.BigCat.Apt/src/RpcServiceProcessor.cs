@@ -84,7 +84,7 @@ public class RpcServiceProcessor : ISourceGenerator
     private Compilation compilation;
     internal AttributeSpec processorInfoAnnotation;
     private readonly CodeWriter _codeWriter = new CodeWriter();
-#nullable enable
+#nullable restore
 
     #region Init
 

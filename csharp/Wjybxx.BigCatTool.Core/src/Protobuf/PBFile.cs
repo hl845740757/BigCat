@@ -39,7 +39,7 @@ public class PBFile : PBElement
     private readonly LinkedDictionary<string, string?> imports = new(4);
     /** 解析后的所有依赖 -- 包括传递而来的依赖，无法保证解析顺序 */
     private readonly HashSet<string> resolvedImports = new(4);
-#nullable enable
+#nullable restore
 
     public PBFile(string fileName) {
         this.fileName = fileName;

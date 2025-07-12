@@ -29,7 +29,7 @@ public class RpcServiceExample : EventLoopModule, ExtensibleService
 #nullable disable
     [Inject] private RpcClient rpcClient;
     private readonly Dictionary<string, object> extBlackboard = new();
-#nullable enable
+#nullable restore
 
     #region rpc
 
