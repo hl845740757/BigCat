@@ -87,7 +87,7 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
 
     @Override
     public void stop() {
-        System.out.println("triggerCount: " + regulator.getCount());
+        System.out.println("triggerCount: " + regulator.getTriggerCount());
     }
 
     @Override
@@ -147,7 +147,7 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
     }
 
     private String createMessage(String msg) {
-        String timeString = TimeHelper.SYSTEM.formatTime(regulator.getLastUpdateTime());
+        String timeString = TimeHelper.SYSTEM.formatTime(regulator.getTriggerTime());
         return "time: " + timeString + " # " + msg;
     }
 }

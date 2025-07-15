@@ -469,20 +469,19 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
     /** 启动所有模块 */
     protected void StartModules() {
-        // 模块的部分数据初始化 - OnReady
+        // 模块的部分数据初始化
         foreach (EventLoopModule module in _moduleList) {
-            if (module.Cid.Shared) {
-                continue; // 共享组件
+            if (module.Cid.shared) {
+                continue;
             }
-            if (module.Entity != null) {
-                continue; // 通常是主模块提前完成了绑定
+            if (module.Status == ComponentStatus.New) {
+                module.SetEventLoop(this);
             }
-            module.SetEventLoop(this);
         }
         // 解决模块之间的依赖
         foreach (EventLoopModule module in _moduleList) {
-            if (module.Cid.Shared) {
-                continue; // 共享组件
+            if (!module.Cid.IsPrivateScript) {
+                continue;
             }
             module.ResolveDependence();
         }
@@ -506,8 +505,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (!module.Cid.IsPrivateScript) {
                 continue;
             }
-            if (module.Status != ComponentStatus.Starting
-                && module.Status != ComponentStatus.Running) {
+            if (module.Status != ComponentStatus.Running) {
                 continue; // 未启动
             }
             Exception? ex = module.InvokeStop();
@@ -521,7 +519,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     protected void DestroyModules() {
         // 顺序销毁 -- 组件之间不能有时序依赖
         foreach (EventLoopModule module in _moduleList) {
-            if (module.Cid.Shared) {
+            if (module.Cid.shared) {
                 continue;
             }
             if (module.Status == ComponentStatus.New) {

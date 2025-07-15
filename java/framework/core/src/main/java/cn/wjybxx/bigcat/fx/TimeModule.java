@@ -36,17 +36,19 @@ import javax.annotation.concurrent.NotThreadSafe;
 public class TimeModule implements TimeProvider {
 
     private int frameCount;
+    private long startTime;
     private long time;
     private long deltaTime;
 
     public TimeModule() {
-        time = System.currentTimeMillis();
+        startTime = time = System.currentTimeMillis();
     }
 
     public void start(long curTime) {
         this.frameCount = 0;
-        this.deltaTime = 0;
+        this.startTime = curTime;
         this.time = curTime;
+        this.deltaTime = 0;
     }
 
     public void update(long curTime) {
@@ -59,6 +61,10 @@ public class TimeModule implements TimeProvider {
         return frameCount;
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
     @Override
     public long getTime() {
         return time;
@@ -66,6 +72,10 @@ public class TimeModule implements TimeProvider {
 
     public long getDeltaTime() {
         return deltaTime;
+    }
+
+    public long getTimeSinceStarted() {
+        return startTime - time;
     }
 
     // setter

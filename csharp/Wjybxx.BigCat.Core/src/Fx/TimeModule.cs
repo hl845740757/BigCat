@@ -33,17 +33,19 @@ namespace Wjybxx.BigCat.Fx
 public class TimeModule : ITimeProvider
 {
     private int frameCount;
+    private long startTime;
     private long time;
     private long deltaTime;
 
     public TimeModule() {
-        time = ObjectUtil.SystemTickMillis();
+        startTime = time = ObjectUtil.SystemTickMillis();
     }
 
     public void Start(long curTime) {
         this.frameCount = 0;
-        this.deltaTime = 0;
+        this.startTime = curTime;
         this.time = curTime;
+        this.deltaTime = 0;
     }
 
     public void Update(long curTime) {
@@ -58,6 +60,11 @@ public class TimeModule : ITimeProvider
     public int FrameCount => frameCount;
 
     /// <summary>
+    /// 程序的启动时间
+    /// </summary>
+    public long StartTime => startTime;
+
+    /// <summary>
     /// 当前时间
     /// </summary>
     public long Time => time;
@@ -67,6 +74,11 @@ public class TimeModule : ITimeProvider
     /// </summary>
     public long DeltaTime => deltaTime;
 
+    /// <summary>
+    /// 启动到当前的时间
+    /// </summary>
+    public long TimeSinceStarted => time - startTime;
+    
     #region unsafe
 
     [VisibleForTesting]

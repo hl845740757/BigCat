@@ -26,6 +26,7 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
+using Wjybxx.Commons.Time;
 using static Wjybxx.BigCat.Fx.ExtensibleService;
 
 namespace Wjybxx.BigCat.Tests
@@ -38,7 +39,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     /** worker */
     private Worker worker;
     /** 定时器 */
-    private readonly GRegulator regulator = GRegulator.NewFixedDelay(1, 50);
+    private readonly Regulator regulator = Regulator.NewFixedDelay(1, 50);
 
     [Inject] private RpcClient rpcClient;
     [Inject] private TimeModule timeModule;
@@ -77,7 +78,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
 
 
     public override void Stop() {
-        Console.WriteLine("triggerCount: " + regulator.Count);
+        Console.WriteLine("triggerCount: " + regulator.TriggerCount);
     }
 
     public override void Update() {
@@ -144,7 +145,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
 
     private string CreateMessage(string msg) {
         // Kind会影响ToString
-        DateTime dateTime = DatetimeUtil.ToDateTime((long)regulator.LastUpdateTime);
+        DateTime dateTime = DatetimeUtil.ToDateTime(regulator.TriggerTime);
         dateTime = new DateTime(dateTime.AddSeconds(offsetSeconds).Ticks, DateTimeKind.Unspecified);
         return "time: " + dateTime.ToString("s") + " # " + msg;
     }

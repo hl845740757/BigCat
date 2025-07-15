@@ -65,7 +65,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
     private final ObjectPool<RpcRequestStub> stubPool = new DefaultObjectPool<>(RpcRequestStub::new, RpcRequestStub::reset, 100);
 
     @Override
-    public void onReady() {
+    public void onAwake() {
         this.worker = (Worker) getEntity();
         this.selfAddr = worker.workerAddr();
         this.timeModule = worker.injector().getInstance(TimeModule.class);

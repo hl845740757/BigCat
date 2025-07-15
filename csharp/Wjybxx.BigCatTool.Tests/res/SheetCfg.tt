@@ -1,6 +1,13 @@
 ﻿// import "common.ds";
 option csharp_namespace="Wjybxx.BigCat.Demo";
 
+// 物品类型枚举
+enum ItemType {
+    Normal = 1;
+    Equip = 2;
+    Quest = 3;
+}
+
 //@Codec{alias:[DV3, DVector3], style: flow}
 struct DVector3 {
     readonly float x = 1;
