@@ -324,14 +324,15 @@ public class CodeGeneratorHelper
             propertySpecs.Add(propertySpec);
 
             // 如果是指向共享字符串表的索引，则增加缓存字段 + 属性
-            // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
             if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_SSTI)) {
-                BuildSstiFieldAndProperty(field, fieldSpec.name, propertySpec.name,
-                    out FieldSpec sstiFiledSpec, out PropertySpec sstiPropertySpec);
+                BuildSstiFieldAndProperty(field, fieldSpec.name, propertySpec.name, out FieldSpec? sstiFiledSpec, out PropertySpec sstiPropertySpec);
+                if (sstiFiledSpec != null) {
+                    fieldSpecs.Add(sstiFiledSpec);
+                }
+                // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
                 if (sstiPropertySpec.name == propertySpec.name) {
                     propertySpecs.TryRemoveLast(out _);
                 }
-                fieldSpecs.Add(sstiFiledSpec);
                 propertySpecs.Add(sstiPropertySpec);
             }
         }
@@ -477,27 +478,29 @@ public class CodeGeneratorHelper
 
     /// <summary>
     /// 构建sst字符串字段和属性
+    /// TODO ClearCache方法
     /// </summary>
     private void BuildSstiFieldAndProperty(DSField field, string fieldName, string propertyName,
-                                           out FieldSpec sstiFieldSpec, out PropertySpec sstiPropertySpec) {
-        TypeName sstiFieldTypeName;
-        string sstMethodName;
-        if (IsListType(field.Type)) {
-            sstiFieldTypeName = TYPE_NAME_IMMUTABLE_LIST_STRING;
-            sstMethodName = "GetStringList";
-        } else {
-            sstiFieldTypeName = TypeName.STRING;
-            sstMethodName = "GetString";
-        }
+                                           out FieldSpec? sstiFieldSpec, out PropertySpec sstiPropertySpec) {
         GetSstiFieldAndPropertyName(fieldName, propertyName, out string sstiFieldName, out string sstiPropertyName);
-        sstiFieldSpec = FieldSpec.NewBuilder(sstiFieldTypeName, sstiFieldName, Modifiers.Private)
-            .AddAttribute(ATTRIBUTE_NON_SERIALIZED) // 避免被其它框架序列化
-            .Build();
-        // 覆盖原字段的属性
-        sstiPropertySpec = PropertySpec.NewBuilder(sstiFieldTypeName, sstiPropertyName, Modifiers.Public)
-            .Getter(CodeBlock.Of("$L ??= $T.$L($L)", sstiFieldName, TYPE_NAME_SST_MGR, sstMethodName, fieldName).WithExpressionStyle())
-            .RemoveSetter()
-            .Build();
+        if (IsListType(field.Type)) {
+            // List类型增加缓存字段
+            TypeName sstiFieldTypeName = TYPE_NAME_IMMUTABLE_LIST_STRING;
+            sstiFieldSpec = FieldSpec.NewBuilder(sstiFieldTypeName, sstiFieldName, Modifiers.Private)
+                .AddAttribute(ATTRIBUTE_NON_SERIALIZED) // 避免被其它框架序列化
+                .Build();
+
+            sstiPropertySpec = PropertySpec.NewBuilder(sstiFieldTypeName, sstiPropertyName, Modifiers.Public)
+                .Getter(CodeBlock.Of("$L ??= $T.GetStringList($L)", sstiFieldName, TYPE_NAME_SST_MGR, fieldName).WithExpressionStyle())
+                .RemoveSetter()
+                .Build();
+        } else {
+            sstiFieldSpec = null;
+            sstiPropertySpec = PropertySpec.NewBuilder(TypeName.STRING, sstiPropertyName, Modifiers.Public)
+                .Getter(CodeBlock.Of("$T.GetString($L)", TYPE_NAME_SST_MGR, fieldName).WithExpressionStyle())
+                .RemoveSetter()
+                .Build();
+        }
     }
 
     /// <summary>
@@ -635,7 +638,7 @@ public class CodeGeneratorHelper
             CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
             if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.writeProxy)) {
                 // 由用户编码 ItemCodecProxy.WriteType(inst, writer)
-                methodBuilder.codeBuilder.AddStatement("$T.$L(this, writer)", codecProxy, fieldCodecCfg.writeProxy);
+                methodBuilder.codeBuilder.AddStatement("$T.$L(this, writer, $S)", codecProxy, fieldCodecCfg.writeProxy, field.SimpleName);
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);

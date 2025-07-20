@@ -40,8 +40,8 @@ internal class SheetReader
 {
     /** 普通表的表头行数 */
     private const int HEADER_ROW_COUNT = 4;
-    /** 字段名的正则表达式 - 数组和字典支持#index语法；增加点号主要支持翻译表字段名 */
-    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_][a-zA-Z0-9_\\.]*(?:[#]\\d+)?$", RegexOptions.Compiled);
+    /** 字段名的正则表达式 - 数组和字典支持#index语法；不需要那么严格的匹配 */
+    private static readonly Regex fieldNameRegex = new("^[a-zA-Z_][a-zA-Z0-9_#]*$", RegexOptions.Compiled);
 
     private readonly string fileName;
     private readonly string sheetName;

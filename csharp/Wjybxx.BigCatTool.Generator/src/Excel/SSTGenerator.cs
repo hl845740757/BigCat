@@ -68,7 +68,6 @@ public class SstGenerator : ISheetProcessor
     public const string FILE_LSST_INDEX = "lsst.index";
     /// <summary>
     /// 共享字符串数据库，按分区存储
-    ///
     /// 
     /// 文件名规则：<code>sst.db.0 sst.db.1 ...</code>
     /// 1.二进制，运行时需要
@@ -318,7 +317,7 @@ public class SstGenerator : ISheetProcessor
     /// <summary>
     /// 字符串小于多少个字节时预加载
     /// </summary>
-    private const int PRELOAD_THRESHOLD = 32;
+    private const int PRELOAD_THRESHOLD = 16;
     /// <summary>
     /// 每个分区的最大文本数量
     /// 每张表应该不至于超过10W个文本...
@@ -363,7 +362,13 @@ public class SstGenerator : ISheetProcessor
         if (partition.itemMap.TryGetValue(value, out Item item)) {
             return item.ssti;
         }
-        int ssti = MakeGuid(partition.id, partition.itemMap.Count + 1); // 避免尾部全0
+        int ssti;
+        if (partition.itemMap.Count == 0) {
+            ssti = MakeGuid(partition.id, partition.itemMap.Count + 1); // 1开始，避免尾部全0
+        } else {
+            Item last = partition.itemMap.PeekLast().Value;
+            ssti = last.ssti + 1;
+        }
         bool preload = string.IsNullOrEmpty(value) || Encoding.UTF8.GetByteCount(value) <= PRELOAD_THRESHOLD;
         item = new Item(ssti, preload, value);
         partition.itemMap.Add(value, item);

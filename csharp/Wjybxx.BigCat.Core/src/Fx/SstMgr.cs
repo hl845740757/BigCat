@@ -67,12 +67,12 @@ public static class SstMgr
         string value;
         Stream stream = item.Stream;
         lock (stream) {
-            stream.Seek(item.offset, SeekOrigin.Begin);
             byte[] buffer = IArrayPool<byte>.Shared.Acquire(BUFFER_LENGTH);
             try {
+                stream.Seek(item.offset, SeekOrigin.Begin);
                 _ = stream.Read(buffer, 0, 4 + 1 + 2);
                 int len = ByteBufferUtil.GetInt16LE(buffer, 4 + 1);
-                int __ = stream.Read(buffer, 0, len);
+                _ = stream.Read(buffer, 0, len);
                 value = Encoding.UTF8.GetString(buffer, 0, len);
             }
             finally {
