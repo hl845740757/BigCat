@@ -1,0 +1,390 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System;
+using System.Collections.Generic;
+using Wjybxx.BigCat.Fx;
+using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Fx;
+using Wjybxx.Commons.Inject;
+using Wjybxx.Commons.Inject.Attributes;
+using Wjybxx.Commons.Logger;
+
+namespace Wjybxx.BigCat.Gameplay
+{
+/// <summary>
+/// Scene管理器
+/// </summary>
+public sealed class SceneMgr
+{
+    private static readonly ILogger logger = LoggerFactory.GetLogger<SceneMgr>();
+#if UNITY_2021_3_OR_NEWER || CLIENT_PROJECT
+    /// <summary>
+    /// 
+    /// 1.Unity下提供静态访问方法，方便客户端编码；
+    /// 2.SceneMgr由容器管理，设置到这里。
+    /// </summary>
+    public static SceneMgr Inst { get; set; }
+
+    /// <summary>
+    /// List的初始空间
+    /// </summary>
+    private const int INIT_CAPACITY = 4;
+#else
+    private const int INIT_CAPACITY = 100;
+#endif
+
+#nullable disable
+    /// <summary>
+    /// Scene可能用到的外部依赖
+    /// </summary>
+    private IInjector _injector;
+    /// <summary>
+    /// 所有的游戏场景 -- 仅用于查询，不用于Update
+    /// </summary>
+    private readonly Dictionary<long, Scene> _sceneDic = new Dictionary<long, Scene>(INIT_CAPACITY);
+    /// <summary>
+    /// 按照场景配置id排序的列表 -- 用于查询指定cid的场景。
+    /// 即使是服务器，场景的数量也不算很多，增删的频率也不高，因此使用简单的插入排序是足够的。
+    /// </summary>
+    private readonly SortedList<SceneSortKey, Scene> _sortedSceneList = new(INIT_CAPACITY, SceneSortKey.Comparer);
+
+    /// <summary>
+    /// 所有的游戏场景
+    /// </summary>
+    private readonly IndexedDynamicArray<Scene> _sceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(0), INIT_CAPACITY);
+    /// <summary>
+    /// 所有活动中的Scene列表
+    /// (包括处于暂停状态的Scene)
+    /// </summary>
+    private readonly IndexedDynamicArray<Scene> _activeSceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(1), 10);
+    /// <summary>
+    /// 待延迟销毁的Scene
+    /// </summary>
+    private readonly IndexedDynamicArray<Scene> _closedSceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(2), 10);
+#nullable restore
+
+    public IInjector Injector {
+        get => _injector;
+        set => _injector = value;
+    }
+
+    #region 容器管理
+
+    /// <summary>
+    /// 场景List
+    /// 注：应当避免修改返回的List
+    /// </summary>
+    public IndexedDynamicArray<Scene> SceneList => _sceneList;
+    /// <summary>
+    /// 场景字典
+    /// 注：应当避免修改返回的字典
+    /// </summary>
+    public Dictionary<long, Scene> SceneDic => _sceneDic;
+
+    /// <summary>
+    /// 根据实例id查找场景
+    /// </summary>
+    /// <param name="instId"></param>
+    /// <returns></returns>
+    public Scene? GetScene(long instId) {
+        _sceneDic.TryGetValue(instId, out Scene scene);
+        return scene;
+    }
+
+    /// <summary>
+    /// 根据配置id查找场景
+    /// </summary>
+    /// <param name="configId"></param>
+    /// <returns></returns>
+    public Scene? FindFirst(int configId) {
+        IList<SceneSortKey> keys = _sortedSceneList.Keys;
+        int index = CollectionUtil.BinarySearch(keys, new SceneSortKey(configId, 0), SceneSortKey.Comparer);
+        if (index >= 0) { // 不应该存在instId为0的对象
+            throw new AssertionError();
+        }
+        index = (index + 1) * -1; // insert point
+        if (index < keys.Count && keys[index].configId == configId) {
+            return _sortedSceneList.Values[index];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 查找指定cid的所有场景
+    /// </summary>
+    /// <param name="configId"></param>
+    /// <returns></returns>
+    public List<Scene> Find(int configId) {
+        IList<SceneSortKey> keys = _sortedSceneList.Keys;
+        int index = CollectionUtil.BinarySearch(keys, new SceneSortKey(configId, 0), SceneSortKey.Comparer);
+        if (index >= 0) { // 不应该存在instId为0的对象
+            throw new AssertionError();
+        }
+        index = (index + 1) * -1; // insert point
+        List<Scene> result = new List<Scene>();
+        while (index < keys.Count && keys[index].configId == configId) {
+            result.Add(_sortedSceneList.Values[index]);
+            index++;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 添加场景
+    ///
+    /// 注：场景在添加后会立即启动，必须在构造完成的情况下调用
+    /// </summary>
+    /// <param name="scene"></param>
+    public void Add(Scene scene) {
+        if (scene == null) throw new ArgumentNullException(nameof(scene));
+        if (scene.InstId <= 0) throw new ArgumentException("scene.InstId <= 0");
+        _sceneDic.Add(scene.InstId, scene);
+        _sceneList.Add(scene);
+        _sortedSceneList.Add(new SceneSortKey(scene.ConfigId, scene.InstId), scene);
+        _activeSceneList.Add(scene);
+        try {
+            scene.SceneMgr = this;
+            scene.Injector ??= _injector;
+            scene.SetInitialized();
+            scene.Start();
+        }
+        catch (Exception ex) {
+            logger.Error(ex, "scene.Start failed, configId: " + scene.ConfigId);
+        }
+    }
+
+    /// <summary>
+    /// 销毁Scene
+    /// </summary>
+    public void Destroy(Scene scene) {
+        try {
+            scene.Stop();
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "scene.Stop caught exception, configId: " + scene.ConfigId);
+        }
+        if (!_closedSceneList.Contains(scene)) {
+            _activeSceneList.Remove(scene);
+            _closedSceneList.Add(scene);
+        }
+    }
+
+    /// <summary>
+    /// 立即销毁Scene
+    /// </summary>
+    /// <param name="scene"></param>
+    public void DestroyImmediately(Scene scene) {
+        if (scene.Status == ComponentStatus.Destroyed) {
+            return;
+        }
+        try {
+            scene.Stop();
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "scene.Stop caught exception, configId: " + scene.ConfigId);
+        }
+
+        _sceneDic.Remove(scene.InstId);
+        _sceneList.Remove(scene);
+        _sortedSceneList.Remove(new SceneSortKey(scene.ConfigId, scene.InstId));
+        _activeSceneList.Remove(scene);
+        _closedSceneList.Remove(scene);
+
+        try {
+            scene.Destroy();
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "scene.Destroy caught exception, configId: " + scene.ConfigId);
+        }
+    }
+
+    #endregion
+
+    #region 生命流程
+
+    /// <summary>
+    /// 启动管理器
+    /// </summary>
+    public void Start() {
+    }
+
+    /// <summary>
+    /// 停止管理器
+    /// </summary>
+    public void Stop() {
+        // 停止并销毁所有场景
+        _sceneList.BeginItr();
+        for (int index = 0, len = _sceneList.Length; index < len; index++) {
+            Scene scene = _sceneList[index];
+            if (scene == null) {
+                continue;
+            }
+
+
+            try {
+                scene.Stop();
+                scene.Destroy();
+            }
+            catch (Exception e) {
+                logger.Warn(e, "scene.Stop caught exception, configId: " + scene.ConfigId);
+            }
+        }
+        _sceneList.EndItr();
+
+        _sceneDic.Clear();
+        _sortedSceneList.Clear();
+        _sceneList.Clear();
+        _activeSceneList.Clear();
+        _closedSceneList.Clear();
+    }
+
+    #endregion
+
+    #region 场景Update管理
+
+    /// <summary>
+    /// 执行场景的FixedUpdate方法
+    /// </summary>
+    public void FixedUpdate(double unscaledDeltaTime) {
+        IndexedDynamicArray<Scene> sceneList = _activeSceneList;
+        sceneList.BeginItr();
+        for (int index = 0, len = sceneList.Length; index < len; index++) {
+            Scene scene = sceneList[index];
+            if (scene == null || scene.Status != ComponentStatus.Running) {
+                continue;
+            }
+            try {
+                scene.FixedUpdate(unscaledDeltaTime);
+            }
+            catch (Exception e) {
+                logger.Warn(e, "scene.FixedUpdate caught exception, configId: " + scene.ConfigId);
+            }
+        }
+        sceneList.EndItr();
+    }
+
+    /// <summary>
+    /// 执行场景的EarlyUpdate方法
+    /// 注：该方法其实主要是为协程服务的
+    /// </summary>
+    public void EarlyUpdate(double unscaledDeltaTime) {
+        IndexedDynamicArray<Scene> sceneList = _activeSceneList;
+        sceneList.BeginItr();
+        for (int index = 0, len = sceneList.Length; index < len; index++) {
+            Scene scene = sceneList[index];
+            if (scene == null || scene.Status != ComponentStatus.Running) {
+                continue;
+            }
+            try {
+                scene.EarlyUpdate(unscaledDeltaTime);
+            }
+            catch (Exception e) {
+                logger.Warn(e, "scene.EarlyUpdate caught exception, configId: " + scene.ConfigId);
+            }
+        }
+        sceneList.EndItr();
+    }
+
+    /// <summary>
+    /// 执行场景的Update方法
+    /// </summary>
+    public void Update() {
+        IndexedDynamicArray<Scene> sceneList = _activeSceneList;
+        sceneList.BeginItr();
+        for (int index = 0, len = sceneList.Length; index < len; index++) {
+            Scene scene = sceneList[index];
+            if (scene == null || scene.Status != ComponentStatus.Running) {
+                continue;
+            }
+            try {
+                scene.Update();
+            }
+            catch (Exception e) {
+                logger.Warn(e, "scene.Update caught exception, configId: " + scene.ConfigId);
+            }
+        }
+        sceneList.EndItr();
+    }
+
+    /// <summary>
+    /// 执行场景的LateUpdate方法
+    /// </summary>
+    public void LateUpdate() {
+        IndexedDynamicArray<Scene> sceneList = _activeSceneList;
+        sceneList.BeginItr();
+        for (int index = 0, len = sceneList.Length; index < len; index++) {
+            Scene scene = sceneList[index];
+            if (scene == null || scene.Status != ComponentStatus.Running) {
+                continue;
+            }
+            try {
+                scene.LateUpdate();
+            }
+            catch (Exception e) {
+                logger.Warn(e, "scene.LateUpdate caught exception, configId: " + scene.ConfigId);
+            }
+        }
+        sceneList.EndItr();
+
+        // 处理延迟销毁
+        IndexedDynamicArray<Scene> closedSceneList = _closedSceneList;
+        closedSceneList.BeginItr();
+        for (int index = 0, len = closedSceneList.Length; index < len; index++) {
+            Scene scene = closedSceneList.Set(index, null);
+            if (scene == null || scene.Status == ComponentStatus.Destroyed) {
+                continue;
+            }
+            DestroyImmediately(scene);
+        }
+        closedSceneList.EndItr();
+    }
+
+    #endregion
+
+    #region internal
+
+    /// <summary>
+    /// Scene被暂停时调用
+    /// </summary>
+    /// <param name="scene"></param>
+    internal void OnPause(Scene scene) {
+        _activeSceneList.Remove(scene);
+    }
+
+    /// <summary>
+    /// Scene恢复运行时调用
+    /// </summary>
+    /// <param name="scene"></param>
+    internal void OnResume(Scene scene) {
+        _activeSceneList.Add(scene);
+    }
+
+    /// <summary>
+    /// 场景执行结束时调用
+    /// </summary>
+    internal void OnTerminated(Scene scene) {
+        _activeSceneList.Remove(scene);
+        _closedSceneList.Add(scene);
+    }
+
+    #endregion
+}
+}

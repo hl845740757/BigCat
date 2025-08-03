@@ -1,0 +1,546 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System;
+using Wjybxx.Commons;
+
+#if UNITY_2021_3_OR_NEWER
+using UnityEngine;
+#endif
+
+// ReSharper disable UnusedMember.Global
+namespace Wjybxx.BigCat.Util
+{
+/// <summary>
+/// 这里提供了默认的<see cref="DataKey{T}"/>实现
+///
+/// <h3>非常量</h3>
+/// 我们没有实现为<see cref="AbstractConstant"/>，是因为多数情况下对灵活性和易用性的要求高于性能；
+/// 只有极致追求性能的场景，我们才需要使用<see cref="AbstractConstant"/>通过引用相等代替equals，以及严格校验Key的相等性。
+///
+/// <h3>泛型</h3>
+/// 理论上，多数场景下我们只需要name相等即镶嵌，但默认的Equals还是校验了类型，即泛型参数不仅仅用于避免拆装箱，也用于测试Key的相等性。
+/// 也就是说，不同地方的类型声明必须是相同的，否则将无法读写黑板。 
+/// </summary>
+public static class DataKeys
+{
+    public const int TYPE_INT32 = 1;
+    public const int TYPE_INT64 = 2;
+    public const int TYPE_FLOAT = 3;
+    public const int TYPE_DOUBLE = 4;
+    public const int TYPE_BOOL = 5;
+    public const int TYPE_STRING = 6;
+    public const int TYPE_OBJECT = 7;
+    private const int TYPE_NULLABLE = 8;
+
+    public const int TYPE_UINT32 = 9;
+    public const int TYPE_UINT64 = 10;
+
+    public const int TYPE_VECTOR3 = 11;
+    public const int TYPE_VECTOR4 = 12;
+    public const int TYPE_QUATERNION = 13;
+
+    public const int TYPE_VECTOR2 = 14;
+    public const int TYPE_VECTOR2_INT = 15;
+    public const int TYPE_VECTOR3_INT = 16;
+
+    public const int TYPE_COLOR = 17;
+    public const int TYPE_COLOR32 = 18;
+    public const int TYPE_RECT = 19;
+    public const int TYPE_KEY_CODE = 20;
+
+    public static DataKey<int> NewIntKey(string name) {
+        return new IntKey(name);
+    }
+
+    public static DataKey<long> NewLongKey(string name) {
+        return new LongKey(name);
+    }
+
+    public static DataKey<float> NewFloatKey(string name) {
+        return new FloatKey(name);
+    }
+
+    public static DataKey<double> NewDoubleKey(string name) {
+        return new DoubleKey(name);
+    }
+
+    public static DataKey<bool> NewBoolKey(string name) {
+        return new BoolKey(name);
+    }
+
+    public static DataKey<string> NewStringKey(string name) {
+        return new StringKey(name);
+    }
+
+    public static DataKey<object> NewObjectKey(string name) {
+        return new ObjectKey<object>(name);
+    }
+
+    public static DataKey<T> NewObjectKey<T>(string name) {
+        return new ObjectKey<T>(name);
+    }
+
+    public static DataKey<uint> NewUIntKey(string name) {
+        return new UIntKey(name);
+    }
+
+    public static DataKey<ulong> NewULongKey(string name) {
+        return new ULongKey(name);
+    }
+
+#if UNITY_2021_3_OR_NEWER
+    public static DataKey<Vector3> NewVector3Key(string name) {
+        return new Vector3Key(name);
+    }
+
+    public static DataKey<Vector4> NewVector4Key(string name) {
+        return new Vector4Key(name);
+    }
+
+    public static DataKey<Quaternion> NewQuaternionKey(string name) {
+        return new QuaternionKey(name);
+    }
+
+    public static DataKey<Vector2> NewVector2Key(string name) {
+        return new Vector2Key(name);
+    }
+
+    public static DataKey<Vector2Int> NewVector2IntKey(string name) {
+        return new Vector2IntKey(name);
+    }
+
+    public static DataKey<Vector3Int> NewVector3IntKey(string name) {
+        return new Vector3IntKey(name);
+    }
+
+    public static DataKey<Color> NewColorKey(string name) {
+        return new ColorKey(name);
+    }
+
+    public static DataKey<Color32> NewColor32Key(string name) {
+        return new Color32Key(name);
+    }
+
+    public static DataKey<Rect> NewRectKey(string name) {
+        return new RectKey(name);
+    }
+
+    public static DataKey<KeyCode> NewKeyCodeKey(string name) {
+        return new KeyCodeKey(name);
+    }
+#endif
+
+    public abstract class AbstractDataKey<T> : DataKey<T>
+    {
+        private readonly string _name;
+        private readonly int _hash;
+
+        protected AbstractDataKey(string name) {
+            _name = name;
+            _hash = name.GetHashCode(); // C#字符串的hash是实时计算的
+        }
+
+        public string Name => _name;
+
+        public abstract T Unbox(in UnionValue boxedValue);
+
+        public abstract UnionValue Box(T value);
+
+        public override bool Equals(object obj) {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            // string的equals默认没有先测试引用，而我们的Key多数情况下是常量对象，因此先测试引用
+            AbstractDataKey<T> other = (AbstractDataKey<T>)obj;
+            return ReferenceEquals(_name, other._name) || _name == other._name;
+        }
+
+        public override int GetHashCode() {
+            return _hash;
+        }
+
+        public override string ToString() {
+            return $"{nameof(Name)}: {_name}";
+        }
+    }
+
+    public class ObjectKey<T> : AbstractDataKey<T>
+    {
+        public ObjectKey(string name) : base(name) {
+        }
+
+        public override T Unbox(in UnionValue boxedValue) {
+            return (T)boxedValue.obj1;
+        }
+
+        public override UnionValue Box(T value) {
+            return new UnionValue(TYPE_OBJECT) { obj1 = value };
+        }
+    }
+
+    public class IntKey : AbstractDataKey<int>
+    {
+        public IntKey(string name) : base(name) {
+        }
+
+        public override int Unbox(in UnionValue boxedValue) {
+            return boxedValue.val;
+        }
+
+        public override UnionValue Box(int value) {
+            return new UnionValue(TYPE_INT32) { val = value };
+        }
+    }
+
+    public class LongKey : AbstractDataKey<long>
+    {
+        public LongKey(string name) : base(name) {
+        }
+
+        public override long Unbox(in UnionValue boxedValue) {
+            return boxedValue.lv1;
+        }
+
+        public override UnionValue Box(long value) {
+            return new UnionValue(TYPE_INT64) { lv1 = value };
+        }
+    }
+
+    public class FloatKey : AbstractDataKey<float>
+    {
+        public FloatKey(string name) : base(name) {
+        }
+
+        public override float Unbox(in UnionValue boxedValue) {
+            return (float)boxedValue.d1;
+        }
+
+        public override UnionValue Box(float value) {
+            return new UnionValue(TYPE_FLOAT) { d1 = value };
+        }
+    }
+
+    public class DoubleKey : AbstractDataKey<double>
+    {
+        public DoubleKey(string name) : base(name) {
+        }
+
+        public override double Unbox(in UnionValue boxedValue) {
+            return boxedValue.d1;
+        }
+
+        public override UnionValue Box(double value) {
+            return new UnionValue(TYPE_DOUBLE) { d1 = value };
+        }
+    }
+
+    public class BoolKey : AbstractDataKey<bool>
+    {
+        public BoolKey(string name) : base(name) {
+        }
+
+        public override bool Unbox(in UnionValue boxedValue) {
+            return boxedValue.val > 0;
+        }
+
+        public override UnionValue Box(bool value) {
+            return new UnionValue(TYPE_BOOL) { val = value ? 1 : 0 };
+        }
+    }
+
+    public class StringKey : AbstractDataKey<string>
+    {
+        public StringKey(string name) : base(name) {
+        }
+
+        public override string Unbox(in UnionValue boxedValue) {
+            return (string)boxedValue.obj1;
+        }
+
+        public override UnionValue Box(string value) {
+            return new UnionValue(TYPE_STRING) { obj1 = value };
+        }
+    }
+
+    public class UIntKey : AbstractDataKey<uint>
+    {
+        public UIntKey(string name) : base(name) {
+        }
+
+        public override uint Unbox(in UnionValue boxedValue) {
+            return (uint)boxedValue.val;
+        }
+
+        public override UnionValue Box(uint value) {
+            return new UnionValue(TYPE_UINT32) { val = (int)value };
+        }
+    }
+
+    public class ULongKey : AbstractDataKey<ulong>
+    {
+        public ULongKey(string name) : base(name) {
+        }
+
+        public override ulong Unbox(in UnionValue boxedValue) {
+            return (ulong)boxedValue.lv1;
+        }
+
+        public override UnionValue Box(ulong value) {
+            return new UnionValue(TYPE_UINT64) { lv1 = (long)value };
+        }
+    }
+
+#if UNITY_2021_3_OR_NEWER
+
+    public class Vector3Key : AbstractDataKey<Vector3>
+    {
+        public Vector3Key(string name) : base(name) {
+        }
+
+        public override Vector3 Unbox(in UnionValue boxedValue) {
+            return new Vector3(
+                (float)boxedValue.d1,
+                (float)boxedValue.d2,
+                (float)boxedValue.d3);
+        }
+
+        public override UnionValue Box(Vector3 value) {
+            return new UnionValue(TYPE_VECTOR3)
+            {
+                d1 = value.x,
+                d2 = value.y,
+                d3 = value.z
+            };
+        }
+    }
+
+    public class Vector4Key : AbstractDataKey<Vector4>
+    {
+        public Vector4Key(string name) : base(name) {
+        }
+
+        public override Vector4 Unbox(in UnionValue boxedValue) {
+            return new Vector4()
+            {
+                x = (float)boxedValue.d1,
+                y = (float)boxedValue.d2,
+                z = (float)boxedValue.d3,
+                w = BitConverter.Int32BitsToSingle(boxedValue.val)
+            };
+        }
+
+        public override UnionValue Box(Vector4 value) {
+            return new UnionValue(TYPE_VECTOR4)
+            {
+                d1 = value.x,
+                d2 = value.y,
+                d3 = value.z,
+                val = BitConverter.SingleToInt32Bits(value.w)
+            };
+        }
+    }
+
+    public class QuaternionKey : AbstractDataKey<Quaternion>
+    {
+        public QuaternionKey(string name) : base(name) {
+        }
+
+        public override Quaternion Unbox(in UnionValue boxedValue) {
+            return new Quaternion()
+            {
+                x = (float)boxedValue.d1,
+                y = (float)boxedValue.d2,
+                z = (float)boxedValue.d3,
+                w = BitConverter.Int32BitsToSingle(boxedValue.val)
+            };
+        }
+
+        public override UnionValue Box(Quaternion value) {
+            return new UnionValue(TYPE_QUATERNION)
+            {
+                d1 = value.x,
+                d2 = value.y,
+                d3 = value.z,
+                val = BitConverter.SingleToInt32Bits(value.w)
+            };
+        }
+    }
+
+    public class Vector2Key : AbstractDataKey<Vector2>
+    {
+        public Vector2Key(string name) : base(name) {
+        }
+
+        public override Vector2 Unbox(in UnionValue boxedValue) {
+            return new Vector2()
+            {
+                x = (float)boxedValue.d1,
+                y = (float)boxedValue.d2,
+            };
+        }
+
+        public override UnionValue Box(Vector2 value) {
+            return new UnionValue(TYPE_VECTOR2)
+            {
+                d1 = value.x,
+                d2 = value.y,
+            };
+        }
+    }
+
+    public class Vector2IntKey : AbstractDataKey<Vector2Int>
+    {
+        public Vector2IntKey(string name) : base(name) {
+        }
+
+        public override Vector2Int Unbox(in UnionValue boxedValue) {
+            return new Vector2Int()
+            {
+                x = (int)boxedValue.lv1,
+                y = (int)boxedValue.lv2,
+            };
+        }
+
+        public override UnionValue Box(Vector2Int value) {
+            return new UnionValue(TYPE_VECTOR2_INT)
+            {
+                lv1 = value.x,
+                lv2 = value.y,
+            };
+        }
+    }
+
+    public class Vector3IntKey : AbstractDataKey<Vector3Int>
+    {
+        public Vector3IntKey(string name) : base(name) {
+        }
+
+        public override Vector3Int Unbox(in UnionValue boxedValue) {
+            return new Vector3Int()
+            {
+                x = (int)boxedValue.lv1,
+                y = (int)boxedValue.lv2,
+                z = (int)boxedValue.lv3
+            };
+        }
+
+        public override UnionValue Box(Vector3Int value) {
+            return new UnionValue(TYPE_VECTOR3_INT)
+            {
+                lv1 = value.x,
+                lv2 = value.y,
+                lv3 = value.z,
+            };
+        }
+    }
+
+    public class ColorKey : AbstractDataKey<Color>
+    {
+        public ColorKey(string name) : base(name) {
+        }
+
+        public override Color Unbox(in UnionValue boxedValue) {
+            return new Color()
+            {
+                r = (float)boxedValue.d1,
+                g = (float)boxedValue.d2,
+                b = (float)boxedValue.d3,
+                a = BitConverter.Int32BitsToSingle(boxedValue.val)
+            };
+        }
+
+        public override UnionValue Box(Color value) {
+            return new UnionValue(TYPE_COLOR)
+            {
+                d1 = value.r,
+                d2 = value.g,
+                d3 = value.b,
+                val = BitConverter.SingleToInt32Bits(value.a)
+            };
+        }
+    }
+
+    public class Color32Key : AbstractDataKey<Color32>
+    {
+        public Color32Key(string name) : base(name) {
+        }
+
+        public override Color32 Unbox(in UnionValue boxedValue) {
+            return new Color32()
+            {
+                r = boxedValue.b1,
+                g = boxedValue.b2,
+                b = boxedValue.b3,
+                a = (byte)boxedValue.val
+            };
+        }
+
+        public override UnionValue Box(Color32 value) {
+            return new UnionValue(TYPE_COLOR32)
+            {
+                b1 = value.r,
+                b2 = value.g,
+                b3 = value.b,
+                val = value.a
+            };
+        }
+    }
+
+    public class RectKey : AbstractDataKey<Rect>
+    {
+        public RectKey(string name) : base(name) {
+        }
+
+        public override Rect Unbox(in UnionValue boxedValue) {
+            return new Rect()
+            {
+                x = (float)boxedValue.d1,
+                y = (float)boxedValue.d2,
+                width = (float)boxedValue.d3,
+                height = BitConverter.Int32BitsToSingle(boxedValue.val)
+            };
+        }
+
+        public override UnionValue Box(Rect value) {
+            return new UnionValue(TYPE_RECT)
+            {
+                d1 = value.x,
+                d2 = value.y,
+                d3 = value.width,
+                val = BitConverter.SingleToInt32Bits(value.height)
+            };
+        }
+    }
+
+    public class KeyCodeKey : AbstractDataKey<KeyCode>
+    {
+        public KeyCodeKey(string name) : base(name) {
+        }
+
+        public override KeyCode Unbox(in UnionValue boxedValue) {
+            return (KeyCode)boxedValue.val;
+        }
+
+        public override UnionValue Box(KeyCode value) {
+            return new UnionValue(TYPE_KEY_CODE) { val = (int)value };
+        }
+    }
+#endif
+}
+}

@@ -78,7 +78,7 @@ public class TimeModule : ITimeProvider
     /// 启动到当前的时间
     /// </summary>
     public long TimeSinceStarted => time - startTime;
-    
+
     #region unsafe
 
     [VisibleForTesting]

@@ -34,7 +34,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
     private volatile ISet<int> serviceIdSet = ImmutableSet<int>.Empty;
     private readonly WorkerControlData controlData;
 
-    public WorkerImpl(DefaultWorkerBuilder builder) : base(decorate(builder), false) {
+    public WorkerImpl(DefaultWorkerBuilder builder) : base(Decorate(builder), false) {
         int nodeId = builder.Parent.NodeAddr.nodeId;
         string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
         this.workerAddr = new WorkerAddr(nodeId, workerId);
@@ -47,7 +47,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
         agent.Inject(this, ConsumerId);
     }
 
-    private static DisruptorEventLoopBuilder<WorkerEvent> decorate(DefaultWorkerBuilder builder) {
+    private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(DefaultWorkerBuilder builder) {
         FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
             builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();

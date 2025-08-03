@@ -41,10 +41,11 @@ public struct WorkerEvent : IAgentEvent
     /// <summary>
     /// 构造函数将type声明为可选值，会导致不被调用构造函数
     /// </summary>
-    public static readonly Func<WorkerEvent> FACTORY = () => {
-        WorkerEvent r = default;
-        r.type = IAgentEvent.TYPE_INVALID;
-        return r;
+    public static readonly Func<WorkerEvent> FACTORY = Create;
+
+    public static WorkerEvent Create() => new WorkerEvent()
+    {
+        type = IAgentEvent.TYPE_INVALID
     };
 
     public WorkerEvent(int type) : this() {

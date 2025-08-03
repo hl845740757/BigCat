@@ -1,6 +1,6 @@
 {
     "name": "Wjybxx.BigCat.Core",
-    "rootNamespace": "Wjybxx.BigCat.Core",
+    "rootNamespace": "Wjybxx.BigCat",
     "references": [
         "Wjybxx.Commons.Core",
         "Wjybxx.Commons.Inject",
@@ -19,5 +19,5 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": true
+    "noEngineReferences": false
 }

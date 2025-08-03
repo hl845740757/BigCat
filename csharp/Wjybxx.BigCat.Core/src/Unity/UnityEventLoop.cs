@@ -490,10 +490,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (!module.Cid.IsPrivateScript) {
                 continue;
             }
-            Exception? ex = module.InvokeStart();
-            if (ex != null) {
-                ExceptionDispatchInfo.Throw(ex);
-            }
+            module.InvokeStart();
         }
     }
 
@@ -508,8 +505,10 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (module.Status != ComponentStatus.Running) {
                 continue; // 未启动
             }
-            Exception? ex = module.InvokeStop();
-            if (ex != null) { // stop异常记录下来，继续停止其它模块
+            try {
+                module.InvokeStop();
+            }
+            catch (Exception ex) {
                 logger.Warn(ex, "stop module caught exception");
             }
         }
@@ -525,8 +524,10 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (module.Status == ComponentStatus.New) {
                 continue; // 未执行OnReady
             }
-            Exception? ex = module.InvokeDestroy();
-            if (ex != null) { // destroy异常记录下来，继续销毁其它模块
+            try {
+                module.InvokeDestroy();
+            }
+            catch (Exception ex) {
                 logger.Warn(ex, "module.destroy caught exception");
             }
         }
