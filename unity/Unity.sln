@@ -5,7 +5,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityEngine.UI", "UnityEngi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Core", "Wjybxx.BigCat.Core.csproj", "{9be371b1-2c4e-8363-9645-67270e169afa}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.GamePlay", "Wjybxx.BigCat.GamePlay.csproj", "{2091e686-164b-cb1c-9484-8216e5c13078}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.Launcher", "Wjybxx.BigCat.Launcher.csproj", "{fde3c8a7-4e2d-691e-3da3-8fa2e8023b2e}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.UI", "Wjybxx.BigCat.UI.csproj", "{6808e82e-ba76-da77-5e49-d00fac67d4e5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wjybxx.BigCat.EditorTests", "Wjybxx.BigCat.EditorTests.csproj", "{a7d06e35-a95f-ede6-56ce-70d210a77692}"
 EndProject
@@ -32,8 +34,10 @@ Global
 		{ff8527d1-008a-d49a-39ff-8369ade6a345}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9be371b1-2c4e-8363-9645-67270e169afa}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9be371b1-2c4e-8363-9645-67270e169afa}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2091e686-164b-cb1c-9484-8216e5c13078}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2091e686-164b-cb1c-9484-8216e5c13078}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{fde3c8a7-4e2d-691e-3da3-8fa2e8023b2e}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{fde3c8a7-4e2d-691e-3da3-8fa2e8023b2e}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6808e82e-ba76-da77-5e49-d00fac67d4e5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6808e82e-ba76-da77-5e49-d00fac67d4e5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{a7d06e35-a95f-ede6-56ce-70d210a77692}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{a7d06e35-a95f-ede6-56ce-70d210a77692}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{c69cdfb4-e234-2892-09e0-f3bd60e5c932}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

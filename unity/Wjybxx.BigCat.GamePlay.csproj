@@ -47,14 +47,15 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\GamePlay\Request.cs" />
-    <Compile Include="Assets\Scripts\GamePlay\RpcClientExample.cs" />
-    <Compile Include="Assets\Scripts\GamePlay\TestRpcRouter.cs" />
-    <Compile Include="Assets\Scripts\GamePlay\TestRpcSerializer.cs" />
-    <Compile Include="Assets\Scripts\GamePlay\RpcServiceExample.cs" />
-    <Compile Include="Assets\Scripts\GamePlay\GameLauncher.cs" />
-    <Compile Include="Assets\Scripts\GamePlay\Response.cs" />
-    <None Include="Assets\Scripts\GamePlay\Wjybxx.BigCat.GamePlay.asmdef" />
+    <Compile Include="Assets\Scripts\Launcher\AppContext.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\Request.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\TestRpcRouter.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\TestRpcSerializer.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\RpcServiceExample.cs" />
+    <Compile Include="Assets\Scripts\Launcher\GameLauncher.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\Response.cs" />
+    <None Include="Assets\Scripts\Launcher\Wjybxx.BigCat.GamePlay.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>

@@ -30,10 +30,10 @@ public class FileSyncMgr
 {
      /// <summary>
     /// 需要拷贝的普通程序集
+    /// (直接local包)
     /// </summary>
     private static readonly List<string> _projectNames = new()
     {
-        "Wjybxx.BigCat.Core",
     };
 
     /// <summary>

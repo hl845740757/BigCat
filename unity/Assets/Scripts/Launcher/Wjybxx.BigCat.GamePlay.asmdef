@@ -1,6 +1,6 @@
 {
-    "name": "Wjybxx.BigCat.GamePlay",
-    "rootNamespace": "Wjybxx.BigCat.GamePlay",
+    "name": "Wjybxx.BigCat.Launcher",
+    "rootNamespace": "Wjybxx.BigCat.Launcher",
     "references": [
         "Wjybxx.Disruptor",
         "Wjybxx.Commons.Core",
@@ -10,7 +10,8 @@
         "Wjybxx.Dson.Codec",
         "Wjybxx.BTree.Core",
         "Wjybxx.BTree.Codec",
-        "Wjybxx.BigCat.Core"
+        "Wjybxx.BigCat.Core",
+        "Wjybxx.BigCat.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

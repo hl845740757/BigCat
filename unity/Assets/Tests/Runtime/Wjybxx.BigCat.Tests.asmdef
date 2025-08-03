@@ -10,7 +10,8 @@
 		"Wjybxx.Disruptor",
 		"Wjybxx.Dson.Codec",
 		"Wjybxx.Dson.Core",
-		"Wjybxx.BigCat.Core"
+		"Wjybxx.BigCat.Core",
+		"Wjybxx.Logger.Unity"
 	],
 	"optionalUnityReferences": [
 		"TestAssemblies"

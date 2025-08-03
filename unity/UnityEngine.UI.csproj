@@ -391,9 +391,6 @@
     <Reference Include="unityplastic">
       <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.0.5\Lib\Editor\PlasticSCM\unityplastic.dll</HintPath>
     </Reference>
-    <Reference Include="Wjybxx.Dson.Apt2">
-      <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Dson.Apt2.dll</HintPath>
-    </Reference>
     <Reference Include="ExcelDataReader">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
     </Reference>

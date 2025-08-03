@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using Wjybxx.BigCat.Fx;
+using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.Tests;
 using Wjybxx.BigCat.Unity;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
 
-namespace Wjybxx.BigCat.GamePlay
+namespace Wjybxx.BigCat.Launcher
 {
 /// <summary>
 /// 
@@ -23,6 +24,7 @@ public class GameLauncher : MonoBehaviour
 
     [NonSerialized] private Node node;
     [NonSerialized] private UnityWorker worker;
+    [NonSerialized] private SceneMgr sceneMgr;
 
     private void Awake() {
         var nodeBuilder = new DefaultNodeBuilder()
@@ -87,10 +89,23 @@ public class GameLauncher : MonoBehaviour
         // 需要先启动Worker否则Join会死锁
         worker.Internal_Start();
         node.Start().Join();
+        
+        sceneMgr = worker.Injector.GetInstance<SceneMgr>();
+        SceneMgr.Inst = sceneMgr;
+    }
+
+    private void FixedUpdate() {
+        sceneMgr.FixedUpdate(Time.fixedDeltaTime);
     }
 
     private void Update() {
         worker.Internal_Update();
+        sceneMgr.EarlyUpdate(Time.unscaledDeltaTime);
+        sceneMgr.Update();
+    }
+
+    private void LateUpdate() {
+        sceneMgr.LateUpdate();
     }
 
     private void OnDestroy() {
@@ -125,6 +140,8 @@ public class GameLauncher : MonoBehaviour
 
             binder.Bind<RpcClientExample>(); // worker1
             binder.Bind<RpcServiceExample>(); // worker2
+            
+            binder.Bind<SceneMgr>(); // 场景管理器
         }
     }
 }

@@ -26,6 +26,7 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
+using Wjybxx.Commons.Time;
 using static Wjybxx.BigCat.Fx.ExtensibleService;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
 
@@ -39,7 +40,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     /** worker */
     private Worker worker;
     /** 定时器 */
-    private readonly GRegulator regulator = GRegulator.NewFixedDelay(1, 100);
+    private readonly Regulator regulator = Regulator.NewFixedDelay(1, 100);
 
     [Inject] private RpcClient rpcClient;
     [Inject] private TimeModule timeModule;
@@ -56,7 +57,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     /// <param name="request"></param>
     [RpcMethod(MethodId = 1)]
     public void OnMessage(Request request) {
-        Debug.Log(request.String1);
+        logger.Info(request.String1);
     }
 
     public Dictionary<string, object> ExtBlackboard => extBlackboard;
@@ -78,7 +79,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
 
 
     public override void Stop() {
-        Debug.Log("triggerCount: " + regulator.Count);
+        logger.Info("triggerCount: " + regulator.TriggerCount);
     }
 
     public override void Update() {
@@ -114,14 +115,14 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
         // 启用本地共享的情况下应当是同一个字符串
         // Assert.AreEqual(msg, result.StringVal);
         // Assert.IsTrue(worker.InEventLoop(), "worker.inEventLoop");
-        Debug.Log("callResult: " + result.StringVal + "\n"); // 避免冗余堆栈
+        logger.Info("callResult: " + result.StringVal + "\n"); // 避免冗余堆栈
     }
 
     private void TestSyncCall() {
         try {
             string msg = CreateMessage("这是一个同步调用，远程异步执行");
             Response result = rpcClient.SyncCall(serverAddr, RpcServiceExampleProxy.HelloAsync(Request.OfString(msg)));
-            Debug.Log("syncResult: " + result.StringVal + "\n");
+            logger.Info("syncResult: " + result.StringVal + "\n");
         }
         catch (ThreadInterruptedException) {
             logger.Info("syncCall interrupted");
@@ -135,14 +136,14 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
         string msg = CreateMessage("这是一个异步调用，目标函数有Context");
         var methodSpec = RpcServiceExampleProxy.ContextHello(Request.OfString(msg));
         Response response = await rpcClient.Call(serverAddr, methodSpec);
-        Debug.Log(response.ToString());
+        logger.Info(response.ToString());
     }
 
     private readonly int offsetSeconds = (int)TimeZoneInfo.Local.BaseUtcOffset.TotalSeconds;
 
     private string CreateMessage(string msg) {
         // Kind会影响ToString
-        DateTime dateTime = DatetimeUtil.ToDateTime((long)regulator.LastUpdateTime);
+        DateTime dateTime = DatetimeUtil.ToDateTime(regulator.TriggerTime);
         dateTime = new DateTime(dateTime.AddSeconds(offsetSeconds).Ticks, DateTimeKind.Unspecified);
         return "time: " + dateTime.ToString("s") + " # " + msg;
     }
