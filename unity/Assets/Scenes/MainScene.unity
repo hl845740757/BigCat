@@ -280,7 +280,7 @@ MonoBehaviour:
     nodes: []
     location: 0
     offset: {x: 0, y: 0, z: 0}
-  isStatic: 0
+  unclosable: 0
   isCrossDesktop: 0
   isMask: 0
   maxIdleTime: 30
@@ -383,7 +383,7 @@ MonoBehaviour:
     nodes: []
     location: 0
     offset: {x: 0, y: 0, z: 0}
-  isStatic: 0
+  unclosable: 0
   isCrossDesktop: 0
   isMask: 0
   maxIdleTime: 30
@@ -565,7 +565,7 @@ MonoBehaviour:
     nodes: []
     location: 0
     offset: {x: 0, y: 0, z: 0}
-  isStatic: 0
+  unclosable: 0
   isCrossDesktop: 0
   isMask: 0
   maxIdleTime: 30
@@ -790,7 +790,7 @@ MonoBehaviour:
     nodes: []
     location: 0
     offset: {x: 0, y: 0, z: 0}
-  isStatic: 0
+  unclosable: 0
   isCrossDesktop: 0
   isMask: 0
   maxIdleTime: 30
@@ -996,7 +996,7 @@ MonoBehaviour:
     nodes: []
     location: 0
     offset: {x: 0, y: 0, z: 0}
-  isStatic: 0
+  unclosable: 0
   isCrossDesktop: 0
   isMask: 0
   maxIdleTime: 30

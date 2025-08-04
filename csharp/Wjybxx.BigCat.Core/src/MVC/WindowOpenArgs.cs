@@ -1,0 +1,52 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+namespace Wjybxx.BigCat.MVC
+{
+/// <summary>
+/// 打开窗口参数
+/// </summary>
+public sealed class WindowOpenArgs
+{
+    /// <summary>
+    /// 窗口的数据模型
+    ///
+    /// 注：如果未指定数据，则表示根据Window的配置从默认的视图数据查找。
+    /// </summary>
+    public object dataModel;
+    /// <summary>
+    /// 如果目标窗口已打开，是否执行重新打开流程
+    ///
+    /// 注：默认值为true，即顶掉旧窗口。
+    /// </summary>
+    public bool reopen = true;
+    /// <summary>
+    /// 异步加载
+    /// </summary>
+    public bool asyncLoad = true;
+    /// <summary>
+    /// 加载的超时时间
+    /// </summary>
+    public double timeout = 0;
+    /// <summary>
+    /// 是否忽略父窗口关闭信号
+    /// (是否不跟随父窗口一起关闭)
+    /// </summary>
+    public bool nohup;
+}
+}

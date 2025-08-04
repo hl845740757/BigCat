@@ -163,7 +163,9 @@ public sealed class SceneMgr
         try {
             scene.SceneMgr = this;
             scene.Injector ??= _injector;
-            scene.SetInitialized();
+            if (scene.Status == ComponentStatus.New) {
+                scene.SetInitialized();
+            }
             scene.Start();
         }
         catch (Exception ex) {
@@ -175,6 +177,7 @@ public sealed class SceneMgr
     /// 销毁Scene
     /// </summary>
     public void Destroy(Scene scene) {
+        if (scene.Status == ComponentStatus.Destroyed) return;
         try {
             scene.Stop();
         }
@@ -192,9 +195,7 @@ public sealed class SceneMgr
     /// </summary>
     /// <param name="scene"></param>
     public void DestroyImmediately(Scene scene) {
-        if (scene.Status == ComponentStatus.Destroyed) {
-            return;
-        }
+        if (scene.Status == ComponentStatus.Destroyed) return;
         try {
             scene.Stop();
         }

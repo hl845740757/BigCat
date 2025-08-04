@@ -1,0 +1,18 @@
+{
+    "name": "Wjybxx.BigCat.UI",
+    "rootNamespace": "Wjybxx.BigCat.UI",
+    "references": [
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Commons.Concurrent",
+        "Wjybxx.BigCat.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
