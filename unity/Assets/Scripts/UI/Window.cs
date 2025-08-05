@@ -86,13 +86,6 @@ public sealed class Window
     /// </summary>
     private WindowAgent _agent;
     /// <summary>
-    /// 绑定的数据
-    /// 
-    /// 注：特殊UI可能不需要数据。
-    /// </summary>
-    private object _dataModel;
-
-    /// <summary>
     /// 窗口自身的画布
     /// </summary>
     private Canvas _canvas;
@@ -112,24 +105,31 @@ public sealed class Window
     /// </summary>
     public EditorWindow editorWindow;
 #endif
+
     /// <summary>
     /// 窗口打开参数
     /// </summary>
     [NonSerialized] private WindowOpenArgs _openArgs;
     /// <summary>
     /// 窗口的展示模式
-    /// 
-    /// 注：模式切换需要<see cref="WindowAgent"/>支持。
+    /// 注：由<see cref="WindowAgent"/>实现。
     /// </summary>
-    [NonSerialized] private WindowDisplayCfg _curDisplayCfg;
+    [NonSerialized] private WindowDisplayMode _displayMode = WindowDisplayMode.Normal;
+
     /// <summary>
-    /// 当前使用的根节点
+    /// 绑定的数据
+    /// 
+    /// 注：特殊UI可能不需要数据。
     /// </summary>
-    [NonSerialized] private readonly List<UINode> _rootNodes = new List<UINode>();
+    [NonSerialized] private object _dataModel;
+    /// <summary>
+    /// UI根节点
+    /// </summary>
+    [NonSerialized] private UINode _rootNode;
     /// <summary>
     /// 需要Update的Node
     /// </summary>
-    [NonSerialized] private readonly IndexedDynamicArray<UINode> _updateNodes = new(NodeIndexHelper.Inst, 10, 0);
+    [NonSerialized] private readonly IndexedDynamicArray<UINode> _updateNodes = new(NodeIndexHelper.Inst);
 
     /// <summary>
     /// 绑定的组件
@@ -203,13 +203,18 @@ public sealed class Window
     /// 启动窗口
     /// </summary>
     internal void Start() {
+        if (_openArgs == null) {
+            throw new InvalidOperationException("openArgs is null");
+        }
         _status = ComponentStatus.Running;
         _reentryId++;
         _time.Restart();
         Nohup = _openArgs.nohup;
 
         _dataModel = _openArgs.dataModel ?? windowMgr.ResolveDataModel(null, windowCfg.dataAddress);
-        ResetDisplayElements(windowCfg.displayCfgs[0]);
+        _rootNode = windowCfg.rootNode;
+        _rootNode.enabled = true;
+        _rootNode.uiIndex = 0;
 
         // Component是为Node服务的，因此先启动
         StartComponents();
@@ -226,6 +231,7 @@ public sealed class Window
         }
         _status = ComponentStatus.Shutdown;
         _reentryId++;
+        _updateNodes.Clear();
         try {
             Hide();
         }
@@ -283,7 +289,7 @@ public sealed class Window
             _agent.OnStop();
         }
         catch (Exception ex) {
-            logger.Warn(ex);
+            logger.Warn(ex, "agent stop caught exception");
         }
     }
 
@@ -309,9 +315,9 @@ public sealed class Window
         _ctl = 0;
         _agent.Reset();
         // 这些数据启动时重新赋值
+        _displayMode = WindowDisplayMode.Normal;
         _dataModel = null;
-        _curDisplayCfg = null;
-        _rootNodes.Clear();
+        _rootNode = null;
         _updateNodes.Clear();
 
         _time.Restart();
@@ -325,12 +331,12 @@ public sealed class Window
         if (_status == ComponentStatus.Destroyed) return;
         Stop();
         _status = ComponentStatus.Destroyed;
-        desktop = null;
         _agent = null;
-        _dataModel = null;
-
         _canvas = null;
-        _rootNodes.Clear();
+        desktop = null;
+
+        _dataModel = null;
+        _rootNode = null;
         UnityEngine.Object.Destroy(gameObject);
         if (editorWindow) {
             UnityEngine.Object.Destroy(editorWindow);
@@ -446,8 +452,15 @@ public sealed class Window
         updateNodes.BeginItr();
         for (int i = 0, len = updateNodes.Length; i < len; i++) {
             UINode node = updateNodes[i];
-            if (node) {
+            if (!node) continue;
+            if (!node.NeedUpdate) { // 不需要持续Update的节点
+                updateNodes[i] = null;
+            }
+            try {
                 node.OnUpdate();
+            }
+            catch (Exception ex) {
+                logger.Warn(ex, "node.OnUpdate caught exception");
             }
         }
         updateNodes.EndItr();
@@ -491,22 +504,14 @@ public sealed class Window
 
     #region 窗口管理
 
-    private void ResetDisplayElements(WindowDisplayCfg displayCfg) {
-        _curDisplayCfg = displayCfg;
-        _rootNodes.Clear();
-        _rootNodes.AddRange(displayCfg.nodes);
-    }
-
     /// <summary>
     /// 显示root节点
     /// </summary>
-    public void Show() {
+    private void Show() {
         gameObject.SetActive(true);
-        foreach (UINode rootNode in _rootNodes) {
-            if (!rootNode.IsShowing && rootNode.enabled) {
-                object dataModel = windowMgr.ResolveDataModel(_dataModel, rootNode.nodeCfg.dataAddress);
-                rootNode.Show(this, null, dataModel);
-            }
+        if (_rootNode.enabled) {
+            object dataModel = windowMgr.ResolveDataModel(_dataModel, _rootNode.nodeCfg.dataAddress);
+            _rootNode.Show(this, null, dataModel);
         }
     }
 
@@ -518,11 +523,18 @@ public sealed class Window
             return;
         }
         _ctl &= ~UIInternal.MASK_DIRTY_REPAINT;
-        foreach (UINode rootNode in _rootNodes) {
-            if (rootNode.IsShowing) {
-                rootNode.Repaint();
-            }
+        if (_rootNode.IsShowing) {
+            _rootNode.Repaint();
         }
+    }
+
+    /// <summary>
+    /// 隐藏显示内容
+    /// (正常情况下不应该直接隐藏窗口)
+    /// </summary>
+    private void Hide() {
+        gameObject.SetActive(false);
+        _rootNode.Hide();
     }
 
     /// <summary>
@@ -533,45 +545,21 @@ public sealed class Window
     }
 
     /// <summary>
-    /// 隐藏显示内容
-    /// (正常情况下不应该直接隐藏窗口)
-    /// </summary>
-    private void Hide() {
-        foreach (UINode rootNode in _rootNodes) {
-            if (rootNode.IsShowing) {
-                rootNode.Hide();
-            }
-        }
-        gameObject.SetActive(false);
-    }
-
-    /// <summary>
     /// 切换窗口的展示模式
     /// (该方法由Agent或Window里的Controller)
     /// </summary>
     /// <param name="mode"></param>
     public void ChangeDisplayMode(WindowDisplayMode mode) {
-        WindowDisplayCfg displayCfg = windowCfg.FindDisplayCfg(mode);
-        if (displayCfg == null) {
+        WindowDisplayMode currentMode = _displayMode;
+        if (mode == currentMode) {
             return;
         }
-        if (_curDisplayCfg != null && _curDisplayCfg.mode == mode) {
-            return;
-        }
-        // 关闭
-        foreach (UINode rootNode in _rootNodes) {
-            rootNode.Hide();
-        }
-        WindowDisplayCfg prevDisplayCfg = _curDisplayCfg;
-        ResetDisplayElements(displayCfg);
-        // 刷新
-        if (_status == ComponentStatus.Running) {
-            _agent.OnDisplayModeChanged(prevDisplayCfg);
-        }
+        _displayMode = mode;
+        _agent.OnDisplayModeChanged(currentMode);
     }
 
     /// <summary>
-    /// 窗口拒绝
+    /// 窗口焦点事件
     /// </summary>
     /// <param name="hasFocus"></param>
     public void OnFocus(bool hasFocus) {
@@ -602,7 +590,8 @@ public sealed class Window
     /// <param name="node"></param>
     public void AddUpdateNode(UINode node) {
         if (node.qIndex >= 0) {
-            throw new InvalidOperationException("node already exist");
+            return;
+            // throw new InvalidOperationException("node already exist");
         }
         _updateNodes.Add(node);
     }
@@ -726,7 +715,12 @@ public sealed class Window
     /// <summary>
     /// Window的根节点 -- 不可修改
     /// </summary>
-    public List<UINode> RootNodes => _rootNodes;
+    public UINode RootNode => _rootNode;
+
+    /// <summary>
+    /// 是否是子窗口
+    /// </summary>
+    public bool IsSubWindow => _parentInstId != 0;
 
     /// <summary>
     /// 是否忽略父窗口关闭信号
@@ -740,11 +734,6 @@ public sealed class Window
     /// 是否被焦点选中
     /// </summary>
     public bool HasFocus => (_ctl & UIInternal.MASK_FOCUS_ON) != 0;
-
-    /// <summary>
-    /// 是否是子窗口
-    /// </summary>
-    public bool IsSubWindow => _parentInstId != 0;
 
     /// <summary>
     /// 窗口绑定的GameObject
@@ -764,8 +753,7 @@ public sealed class Window
     public object DataModel => _dataModel;
     public GTime Time => _time;
     public Blackboard Blackboard => _blackboard;
-    public WindowDisplayCfg CurrentDisplayCfg => _curDisplayCfg;
-    public WindowDisplayMode CurrentDisplayMode => _curDisplayCfg.mode;
+    public WindowDisplayMode DisplayMode => _displayMode;
 
     #endregion
 }

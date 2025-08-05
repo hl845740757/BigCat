@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.UI
 public sealed class Desktop
 {
     /// <summary>
-    /// 桌面id(根据名字计算)
+    /// 桌面id
     /// </summary>
     private readonly int _desktopId;
     /// <summary>
@@ -119,6 +119,7 @@ public sealed class Desktop
     internal void Remove(Window window, bool refresh = true) {
         if (window.desktop != this) throw new ArgumentException("window.desktop != this");
         _stack.Remove(window);
+        window.desktop = null;
         if (refresh) {
             SortWindows();
         }
@@ -128,7 +129,9 @@ public sealed class Desktop
     /// 删除窗口
     /// </summary>
     internal void RemoveAt(int index, bool refresh = true) {
+        Window window = _stack[index];
         _stack.RemoveAt(index);
+        window.desktop = null;
         if (refresh) {
             SortWindows();
         }
@@ -189,7 +192,7 @@ public sealed class Desktop
         // 完整测试的话会比较复杂，开销也比较大，先只做简单测试，即要求必须某个单一界面完整覆盖 -- 理论上可能被多个界面组合覆盖
         Rect winTransRect = window.transform.rect;
         for (int i = index + 1; i < _stack.Count; i++) {
-            if (_stack[i].CurrentDisplayMode == WindowDisplayMode.Fullscreen) {
+            if (_stack[i].DisplayMode == WindowDisplayMode.Fullscreen) {
                 return true;
             }
             Rect upperRect = _stack[i].transform.rect;

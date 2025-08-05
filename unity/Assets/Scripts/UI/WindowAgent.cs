@@ -77,9 +77,8 @@ public interface WindowAgent
     /// <summary>
     /// 窗体展示模式变更
     /// </summary>
-    /// <param name="prevDisplayCfg"></param>
-    void OnDisplayModeChanged(WindowDisplayCfg prevDisplayCfg) {
-        Window.Show();
+    /// <param name="prevMode"></param>
+    void OnDisplayModeChanged(WindowDisplayMode prevMode) {
     }
 
     /// <summary>

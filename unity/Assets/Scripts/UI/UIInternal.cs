@@ -56,10 +56,14 @@ internal static class UIInternal
     /// </summary>
     public const int MASK_DIRTY_REPAINT = 1 << 4;
     /// <summary>
+    /// 是否需要Update
+    /// </summary>
+    public const int MASK_NEED_UPDATE = 1 << 5;
+    /// <summary>
     /// Node是否处于Showing状态
     /// (理论上其实等价于ActiveInHierarchy)
     /// </summary>
-    public const int MASK_SHOWING = 1 << 5;
+    public const int MASK_SHOWING = 1 << 6;
 
     /// <summary>
     /// 组件的重写信息
@@ -108,6 +112,62 @@ internal static class UIInternal
         }
         return false;
     }
+
+    #region children
+
+    private static int IndexOf(List<UINode> list, UINode node) {
+        // 考虑node上的索引存在差错的情况
+        if (list[node.uiIndex] == node) {
+            return node.uiIndex;
+        }
+        for (int i = 0; i < list.Count; i++) {
+            if (list[i] == node) {
+                return i;
+            }
+        }
+        throw new ArgumentException($"Node {node} not found");
+    }
+
+    /// <summary>
+    /// 设置子节点的索引
+    /// </summary>
+    public static bool SetSiblingIndex(List<UINode> children, UINode node, int newIndex,
+                                       out int min, out int max) {
+        if (newIndex < 0 || newIndex >= children.Count) {
+            throw new ArgumentOutOfRangeException(nameof(newIndex), newIndex, null);
+        }
+        int prevIndex = IndexOf(children, node);
+        if (newIndex == prevIndex) {
+            min = max = -1;
+            return false;
+        }
+        children.RemoveAt(prevIndex);
+        children.Insert(newIndex, node);
+        // 区间刷新
+        if (newIndex < prevIndex) {
+            min = newIndex;
+            max = prevIndex;
+        } else {
+            min = prevIndex;
+            max = newIndex;
+        }
+        RefreshChildrenIndex(children, min, max);
+        return true;
+    }
+
+    public static void RefreshChildrenIndex(List<UINode> children) {
+        for (int idx = 0; idx < children.Count; idx++) {
+            children[idx].uiIndex = idx;
+        }
+    }
+
+    public static void RefreshChildrenIndex(List<UINode> children, int start, int end) {
+        for (int idx = start; idx <= end; idx++) {
+            children[idx].uiIndex = idx;
+        }
+    }
+
+    #endregion
 
     public static IComparer<WComponent> UpdateOrderComparer => CUpdateOrderComparer.Inst;
 
@@ -165,20 +225,6 @@ internal static class UIInternal
         return null;
     }
 
-    public static WindowDisplayCfg FindDisplayCfg(List<WindowDisplayCfg> displayCfgs, WindowDisplayMode mode) {
-        foreach (WindowDisplayCfg displayCfg in displayCfgs) {
-            if (displayCfg.mode == mode) return displayCfg;
-        }
-        return null;
-    }
-
-    public static UINodeDisplayCfg FindDisplayCfg(List<UINodeDisplayCfg> displayCfgs, int mode) {
-        foreach (UINodeDisplayCfg displayCfg in displayCfgs) {
-            if (displayCfg.mode == mode) return displayCfg;
-        }
-        return null;
-    }
-
     public static GameObject FindElement(List<GameObject> elements, string name) {
         foreach (GameObject gameObject in elements) {
             if (gameObject.name == name) return gameObject;
@@ -186,19 +232,17 @@ internal static class UIInternal
         return null;
     }
 
-    public static UINodeCfg FindNode(List<UINodeCfg> nodes, string name) {
-        foreach (UINodeCfg node in nodes) {
-            if (node.name == name) return node;
-        }
-        return null;
-    }
-
-
     public static UINode FindNode(List<UINode> nodes, string name) {
         foreach (UINode node in nodes) {
             if (node.nodeCfg.name == name) return node;
         }
         return null;
+    }
+
+    public static void FindNodes(List<UINode> nodes, string name, List<UINode> outList) {
+        foreach (UINode node in nodes) {
+            if (node.nodeCfg.name == name) outList.Add(node);
+        }
     }
 
     #endregion

@@ -447,7 +447,7 @@ public sealed class WindowMgr
     public bool HasLoadingTask(string windowUri) {
         return _loadingTaskMap.ContainsKey(windowUri);
     }
-    
+
     private void CheckLoadTimeout() {
         var enumerator = _loadingTaskMap.GetEnumerator();
         while (enumerator.MoveNext()) {
@@ -590,14 +590,14 @@ public sealed class WindowMgr
     /// <summary>
     /// 结束数据模型
     /// </summary>
-    public object ResolveDataModel(object parentDataModel, string dataAddress) {
+    public object ResolveDataModel(object parentDataModel, string dataAddress, int uiIndex = -1) {
         if (string.IsNullOrWhiteSpace(dataAddress)) {
             return parentDataModel;
         }
         if (_dataModelResolver == null) {
             throw new InvalidOperationException("dataModelResolver is null");
         }
-        return _dataModelResolver.Resolve(_aggerateModel, parentDataModel, dataAddress);
+        return _dataModelResolver.Resolve(_aggerateModel, parentDataModel, dataAddress, uiIndex);
     }
 
     #region PROPS

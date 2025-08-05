@@ -34,10 +34,9 @@ namespace Wjybxx.BigCat.UI
 /// 1.UINode并不由Unity引擎调度，而是由我们的<see cref="WindowMgr"/>调度。
 /// 2.为减少开销，UINode和ViewScript是合并抽象的，由子类负责绘制 -- 子类应当命名为View。
 /// 3.子类可以将Node绑定的数据模型向下类型转换，缓存到本地。
-/// 4.Controller和Node通过名字匹配，如果<see cref="nodeCfg"/>有名字，则Controller也必须具有相同的名字。
-/// 5.可以通过<see cref="Behaviour.enabled"/>属性控制Node是否启用。
-/// 6.Node并不独占GameObject，因此Show和Hide的时候不可以调用<see cref="GameObject.SetActive"/>，只操作关联的<see cref="elements"/>即可。
-/// 7.Node每次<see cref="OnHide"/>的时候都应该清理临时数据。
+/// 4.可以通过<see cref="Behaviour.enabled"/>属性控制Node是否启用。
+/// 5.Node并不独占GameObject，因此Show和Hide的时候不可以调用<see cref="GameObject.SetActive"/>，只操作关联的<see cref="elements"/>即可。
+/// 6.Node每次<see cref="OnHide"/>的时候都应该清理临时数据。
 /// </summary>
 public class UINode : MonoBehaviour
 {
@@ -46,10 +45,16 @@ public class UINode : MonoBehaviour
     /// </summary>
     public UINodeCfg nodeCfg;
     /// <summary>
+    /// 默认配置
+    /// 注：由于大多数情况下只有一个配置，因此我们将默认配置提到外层，便于配置
     /// </summary>
     [SerializeField]
-    [Tooltip("至少需要一个配置，第一个配置为默认展示模式")]
-    private List<UINodeDisplayCfg> displayCfgs = new List<UINodeDisplayCfg>();
+    private UINodeDisplayCfg defaultDisplayCfg;
+    /// <summary>
+    /// 更多展示模式配置
+    /// </summary>
+    [SerializeField]
+    private List<UINodeDisplayCfg> moreDisplayCfgs = new List<UINodeDisplayCfg>();
 
     /// <summary>
     /// Node所属的窗口
@@ -81,7 +86,11 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 在Update队列中的索引
     /// </summary>
-    [NonReorderable] internal int qIndex;
+    [NonSerialized] internal int qIndex;
+    /// <summary>
+    /// 在父节点中的索引(hook始终是-1)
+    /// </summary>
+    [NonSerialized] internal int uiIndex = -1;
 
     /// <summary>
     /// Node绑定的黑板
@@ -108,6 +117,10 @@ public class UINode : MonoBehaviour
     /// </summary>
     [NonSerialized] protected readonly List<GameObject> elements = new List<GameObject>();
     /// <summary>
+    /// Node要操作的钩子节点
+    /// </summary>
+    [NonSerialized] protected readonly List<UINode> hooks = new List<UINode>();
+    /// <summary>
     /// Node的子节点
     /// </summary>
     [NonSerialized] protected readonly List<UINode> children = new List<UINode>();
@@ -116,7 +129,8 @@ public class UINode : MonoBehaviour
 
     protected void Awake() {
         nodeCfg ??= new UINodeCfg();
-        nodeCfg.displayCfgs = displayCfgs; // 发布到cfg对象，方便外部访问
+        nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
+        nodeCfg.moreDisplayCfgs = moreDisplayCfgs; // 发布到cfg对象，方便外部访问
     }
 
     public void Show(Window window, UINode parent, object dataModel, int displayMode = -1) {
@@ -134,13 +148,13 @@ public class UINode : MonoBehaviour
         }
         // 重置UI元素
         if (displayMode >= 0) {
-            UINodeDisplayCfg displayCfg = FindDisplayCfg(displayMode);
+            UINodeDisplayCfg displayCfg = nodeCfg.FindDisplayCfg(displayMode);
             if (displayCfg == null) {
                 throw new ArgumentException("invalid display mode: " + displayMode);
             }
             ResetDisplayElements(displayCfg);
         } else {
-            ResetDisplayElements(nodeCfg.displayCfgs[0]);
+            ResetDisplayElements(nodeCfg.defaultDisplayCfg);
         }
         // 先添加到Update队列 -- 这样用户Show过程中触发Hide仍然安全
         if (NeedUpdate) {
@@ -152,15 +166,19 @@ public class UINode : MonoBehaviour
     private void ResetDisplayElements(UINodeDisplayCfg displayCfg) {
         curDisplayCfg = displayCfg;
         elements.Clear();
+        hooks.Clear();
         children.Clear();
-        elements.AddRange(displayCfg.elements);
-        children.AddRange(displayCfg.children);
+        if (displayCfg.elements.Count > 0) elements.AddRange(displayCfg.elements);
+        if (displayCfg.hooks.Count > 0) hooks.AddRange(displayCfg.hooks);
+        if (displayCfg.children.Count > 0) {
+            children.AddRange(displayCfg.children);
+            RefreshChildrenIndex();
+        }
     }
 
     private void InitController() {
-        // 黑板是服务controller的
         if (nodeCfg.newBlackboard) {
-            blackboard = new Blackboard();
+            blackboard ??= new Blackboard();
         } else {
             blackboard = _parent ? _parent.Blackboard : _window.Blackboard;
         }
@@ -175,9 +193,12 @@ public class UINode : MonoBehaviour
         }
         _reentryId++;
         _ctl &= ~UIInternal.MASK_SHOWING;
-        // 关闭
+        // 隐藏所有元素
         foreach (GameObject element in elements) {
             element.SetActive(false);
+        }
+        foreach (UINode hook in hooks) {
+            hook.Hide();
         }
         foreach (UINode child in children) {
             child.Hide();
@@ -189,7 +210,12 @@ public class UINode : MonoBehaviour
         controller?.OnHide();
         OnHide();
         _ctl = 0;
-        blackboard = null;
+        // 私有黑板只需清理
+        if (nodeCfg.newBlackboard) {
+            blackboard?.Clear();
+        } else {
+            blackboard = null;
+        }
     }
 
     /// <summary>
@@ -197,11 +223,17 @@ public class UINode : MonoBehaviour
     ///
     /// 1.通常的逻辑为：初始化事件监听，为子节点绑定数据，刷新一次UI。
     /// 2.也可以根据Node自身的状态判断是否是首次展示。
+    /// 3.如果有直接操控的<see cref="elements"/>，需要重写该方法
     /// </summary>
     /// <param name="firstShow"></param>
     protected virtual void OnShow(bool firstShow) {
+        foreach (UINode hook in hooks) {
+            if (hook.enabled) {
+                ShowChild(hook, hook.name);
+            }
+        }
         foreach (UINode child in children) {
-            if (!child.IsShowing && child.enabled) {
+            if (child.enabled) {
                 ShowChild(child);
             }
         }
@@ -211,10 +243,15 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 重新绘制UI
     ///
-    /// 注：如果有需要展示的Element，应当重写该方法。
+    /// 注：如果有直接操控的<see cref="elements"/>，需要重写该方法。
     /// </summary>
     public virtual void Repaint() {
-        ClearDirtyRepaint();
+        _ctl &= ~UIInternal.MASK_DIRTY_REPAINT;
+        foreach (UINode hook in hooks) {
+            if (hook.IsShowing) {
+                hook.Repaint();
+            }
+        }
         foreach (UINode child in children) {
             if (child.IsShowing) {
                 child.Repaint();
@@ -230,57 +267,20 @@ public class UINode : MonoBehaviour
     }
 
     /// <summary>
-    /// 是否需要Update
-    /// </summary>
-    protected virtual bool NeedUpdate => false;
-
-    /// <summary>
     /// UI心跳方法
+    ///
+    /// 关注<see cref="NeedUpdate"/>属性和<see cref="ClearDirtyRepaint"/>方法。
     /// </summary>
     public virtual void OnUpdate() {
-
     }
 
     /// <summary>
-    /// 切换展示模式
+    /// 是否需要Update
+    /// 注：该属性为false的节点也可以加入到调度队列，但执行一次<see cref="OnUpdate"/>后就会被删除。
     /// </summary>
-    /// <param name="mode"></param>
-    public bool ChangeDisplayMode(int mode) {
-        UINodeDisplayCfg displayCfg = FindDisplayCfg(mode);
-        if (displayCfg == null) {
-            return false;
-        }
-        if (curDisplayCfg != null && curDisplayCfg.mode == mode) {
-            return false;
-        }
-        // 关闭
-        foreach (GameObject element in elements) {
-            element.SetActive(false);
-        }
-        foreach (UINode child in children) {
-            child.Hide();
-        }
-        // 切换Elements
-        UINodeDisplayCfg prevDisplayCfg = curDisplayCfg;
-        ResetDisplayElements(displayCfg);
-        // 刷新
-        if (IsShowing) {
-            OnDisplayModeChanged(prevDisplayCfg);
-        }
-        return true;
-    }
-
-    /// <summary>
-    /// Node的显式模式改变
-    /// </summary>
-    /// <param name="prevDisplayCfg"></param>
-    protected virtual void OnDisplayModeChanged(UINodeDisplayCfg prevDisplayCfg) {
-        foreach (UINode child in children) {
-            if (!child.IsShowing && child.enabled) {
-                ShowChild(child);
-            }
-        }
-        controller?.OnDisplayModeChanged(prevDisplayCfg);
+    public bool NeedUpdate {
+        get => (_ctl & UIInternal.MASK_NEED_UPDATE) != 0;
+        set => _ctl = BitFlags.Set(_ctl, UIInternal.MASK_NEED_UPDATE, value);
     }
 
     /// <summary>
@@ -295,8 +295,159 @@ public class UINode : MonoBehaviour
     /// 清理重新绘制标记
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ClearDirtyRepaint() {
-        _ctl &= ~UIInternal.MASK_DIRTY_REPAINT;
+    public bool ClearDirtyRepaint() {
+        if ((_ctl & UIInternal.MASK_DIRTY_REPAINT) != 0) {
+            _ctl &= ~UIInternal.MASK_DIRTY_REPAINT;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 切换展示模式
+    ///
+    /// 注：默认的切换可能会显得生硬，因此子类可重写实现。
+    /// </summary>
+    /// <param name="mode"></param>
+    public virtual bool ChangeDisplayMode(int mode) {
+        UINodeDisplayCfg displayCfg = nodeCfg.FindDisplayCfg(mode);
+        if (displayCfg == null) {
+            return false;
+        }
+        if (curDisplayCfg != null && curDisplayCfg.mode == mode) {
+            return false;
+        }
+        // 隐藏Elements - 可能不同模式存在交集，由子类自行优化
+        foreach (GameObject element in elements) {
+            element.SetActive(false);
+        }
+        foreach (UINode hook in hooks) {
+            hook.Hide();
+        }
+        foreach (UINode child in children) {
+            child.Hide();
+        }
+        // 切换Elements
+        UINodeDisplayCfg prevDisplayCfg = curDisplayCfg;
+        ResetDisplayElements(displayCfg);
+        if (IsShowing) {
+            OnDisplayModeChanged(prevDisplayCfg);
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// 模式切换
+    /// 
+    /// 注：如果有直接操控的<see cref="elements"/>，需要重写该方法
+    /// </summary>
+    /// <param name="prevDisplayCfg"></param>
+    protected virtual void OnDisplayModeChanged(UINodeDisplayCfg prevDisplayCfg) {
+        // 可能存在在不同模式下都展示的Node，因此需要检测IsShowing
+        foreach (UINode hook in hooks) {
+            if (!hook.IsShowing && hook.enabled) {
+                ShowChild(hook);
+            }
+        }
+        foreach (UINode child in children) {
+            if (!child.IsShowing && child.enabled) {
+                ShowChild(child);
+            }
+        }
+        controller?.OnDisplayModeChanged(prevDisplayCfg);
+    }
+
+    #endregion
+
+    #region child排序
+
+    /// <summary>
+    /// 在兄弟节点中的排序
+    /// </summary>
+    /// <returns></returns>
+    public int GetSiblingIndex() => uiIndex;
+
+    /// <summary>
+    /// 设置在兄弟节点中的排序
+    /// </summary>
+    /// <param name="index"></param>
+    public void SetSiblingIndex(int index) {
+        if (_parent) {
+            _parent.SetChildIndex(this, index);
+        }
+    }
+
+    /// <summary>
+    /// 设置为兄弟节点中的第一个
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetAsFirstSibling() {
+        if (_parent) {
+            _parent.SetChildIndex(this, 0);
+        }
+    }
+
+    /// <summary>
+    /// 设置为兄弟节点中的最后一个
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetAsLastSibling() {
+        if (_parent) {
+            _parent.SetChildIndex(this, children.Count - 1);
+        }
+    }
+
+    /// <summary>
+    /// 设置子节点的索引
+    ///
+    /// 1.是否支持-1删除子节点取决于子类
+    /// 2.可能需要重新绑定子节点的数据
+    /// </summary>
+    protected virtual void SetChildIndex(UINode child, int index) {
+        int prevIndex = child.uiIndex;
+        if (prevIndex == index) {
+            return;
+        }
+        children.RemoveAt(prevIndex);
+        children.Insert(index, child);
+        RefreshChildrenIndex(prevIndex, index);
+    }
+
+    /// <summary>
+    /// 设置在父节点中的索引。
+    /// 
+    /// 注：该方法用于辅助<see cref="SetChildIndex"/>实现。
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Internal_SetIndex(int index) {
+        uiIndex = index;
+    }
+
+    /// <summary>
+    /// 刷新子节点的索引
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void RefreshChildrenIndex() {
+        UIInternal.RefreshChildrenIndex(children);
+    }
+
+    /// <summary>
+    /// 刷新子节点的索引
+    ///
+    /// 注：为方便使用，允许start大于end，会自动纠正。
+    /// </summary>
+    /// <param name="start">开始索引-包含</param>
+    /// <param name="end">结束索引-包含</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void RefreshChildrenIndex(int start, int end = -1) {
+        if (end == -1) {
+            end = children.Count - 1;
+            UIInternal.RefreshChildrenIndex(children, start, end);
+        } else if (start <= end) { // 等于也需要刷新
+            UIInternal.RefreshChildrenIndex(children, start, end);
+        } else {
+            UIInternal.RefreshChildrenIndex(children, end, start);
+        }
     }
 
     #endregion
@@ -306,21 +457,19 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 用户显式指定child的数据
     /// </summary>
-    public void ShowChild(UINode child, object dataModel) {
-        child.Show(_window, this, dataModel);
+    public void ShowChild(UINode child, object dataModel, int displayMode = -1) {
+        child.Show(_window, this, dataModel, displayMode);
     }
 
     /// <summary>
     /// 根据child的数据地址自动解析展示数据
+    ///
+    /// 注：hook节点的地址是精确地址，不会使用index解析其数据。
     /// </summary>
     /// <param name="child"></param>
     public void ShowChild(UINode child) {
-        object dataModel = _window.windowMgr.ResolveDataModel(_dataModel, child.nodeCfg.dataAddress);
+        object dataModel = _window.windowMgr.ResolveDataModel(_dataModel, child.nodeCfg.dataAddress, uiIndex);
         child.Show(_window, this, dataModel);
-    }
-
-    public UINodeDisplayCfg FindDisplayCfg(int mode) {
-        return UIInternal.FindDisplayCfg(nodeCfg.displayCfgs, mode);
     }
 
     public GameObject FindElement(string name) {
@@ -331,20 +480,23 @@ public class UINode : MonoBehaviour
         return UIInternal.FindNode(children, name);
     }
 
+    public UINode FindHook(string name) {
+        return UIInternal.FindNode(hooks, name);
+    }
+
+    public void FindHooks(string name, List<UINode> outList) {
+        UIInternal.FindNodes(hooks, name, outList);
+    }
+
     #endregion
 
 #if UNITY_EDITOR
     protected virtual void Reset() {
         nodeCfg ??= new UINodeCfg();
-        if (displayCfgs.Count == 0) {
-            displayCfgs.Add(new UINodeDisplayCfg());
-        }
+        defaultDisplayCfg ??= new UINodeDisplayCfg();
     }
 
     protected virtual void OnValidate() {
-        if (displayCfgs.Count == 0) {
-            displayCfgs.Add(new UINodeDisplayCfg());
-        }
     }
 #endif
 

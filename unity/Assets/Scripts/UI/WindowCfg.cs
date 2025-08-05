@@ -56,7 +56,7 @@ public class WindowCfg : MonoBehaviour
     /// 允许在哪些桌面打开
     /// </summary>
     [Range(1, 5)]
-    [Tooltip("如果未指定，则可以在任意界面打开")]
+    [Tooltip("如果未指定，则可以在任意界面打开；暂未支持")]
     public List<int> allowDesktopIds = new List<int>();
 
     /// <summary>
@@ -79,13 +79,9 @@ public class WindowCfg : MonoBehaviour
     /// </summary>
     public string dataAddress;
     /// <summary>
-    /// 窗口展示模式配置
-    /// 注：
-    /// 1.第一个为默认模式。
-    /// 2.为方便编辑，真实数据存储Window对象上，这里是缓存。
+    /// UI根节点
     /// </summary>
-    [Tooltip("窗口模式配置 -- 至少需要一个配置，第一个配置为默认展示模式")]
-    public List<WindowDisplayCfg> displayCfgs = new List<WindowDisplayCfg>();
+    public UINode rootNode;
 
     /// <summary>
     /// 是否禁止关闭
@@ -110,13 +106,24 @@ public class WindowCfg : MonoBehaviour
     public HashSet<int> tags = new HashSet<int>();
 
     /// <summary>
+    /// 窗口的打开位置
+    /// (Unity下好像可以通过锚点解决？)
+    /// </summary>
+    [Tooltip("窗口打开的位置")]
+    public WindowLocation location = WindowLocation.Custom;
+    /// <summary>
+    /// 窗口的位置偏移
+    /// </summary>
+    [Tooltip("窗口打开的位置偏移")]
+    public Vector3 offset = Vector3.zero;
+
+    /// <summary>
     /// 窗口的最大空闲时间
     ///
     /// 注：窗口关闭X秒以后自动销毁以释放内存
     /// </summary>
     [Tooltip("单位秒，'-1'表示不销毁")]
     public float maxIdleTime = 30;
-
     /// <summary>
     /// 窗口的互斥方式
     ///
@@ -143,21 +150,6 @@ public class WindowCfg : MonoBehaviour
 
     #endregion
 
-    #region 工具方法
-
-    /// <summary>
-    /// 查找目标模式的展示配置
-    /// </summary>
-    /// <param name="displayMode"></param>
-    /// <returns></returns>
-    public WindowDisplayCfg FindDisplayCfg(WindowDisplayMode displayMode) {
-        foreach (WindowDisplayCfg displayCfg in displayCfgs) {
-            if (displayCfg.mode == displayMode) return displayCfg;
-        }
-        return null;
-    }
-
-    #endregion
 
 #if UNITY_EDITOR
     private void OnEnable() {
@@ -167,9 +159,7 @@ public class WindowCfg : MonoBehaviour
     }
 
     private void Reset() {
-        if (displayCfgs.Count == 0) {
-            displayCfgs.Add(new WindowDisplayCfg());
-        }
+        //
     }
 
     private void OnValidate() {
@@ -177,37 +167,20 @@ public class WindowCfg : MonoBehaviour
             sortLayer = MAX_LAYER;
             sortOrder = MAX_SORT_ORDER;
         }
-        if (displayCfgs.Count == 0) {
-            displayCfgs.Add(new WindowDisplayCfg());
-        }
+
     }
 #endif
 }
 
 /// <summary>
-/// 顶层视图配置
+/// 窗口的展示样式
 /// </summary>
-[Serializable]
-public class WindowDisplayCfg
+public enum WindowDisplayMode
 {
-    /// <summary>
-    /// 窗口展示模式
-    /// </summary>
-    public WindowDisplayMode mode = WindowDisplayMode.Normal;
-    /// <summary>
-    /// 关联的根视图
-    /// </summary>
-    public List<UINode> nodes = new List<UINode>();
-
-    /// <summary>
-    /// 窗口的打开位置
-    /// (Unity下好像可以通过锚点解决？)
-    /// </summary>
-    public WindowLocation location = WindowLocation.Custom;
-    /// <summary>
-    /// 窗口的位置偏移
-    /// </summary>
-    public Vector3 offset = Vector3.zero;
+    Normal = 0, // 正常模式
+    Fullscreen = 1, // 全屏模式 - 需要获取屏幕大小
+    Floating = 2, // 浮动窗口 - 小窗模式
+    Minimized = 3, // 最小化 - 即隐藏模式
 }
 
 /// <summary>
@@ -236,16 +209,5 @@ public enum WindowLocation
 public enum WindowMutexMode
 {
     None = 0,
-}
-
-/// <summary>
-/// 窗口的展示样式
-/// </summary>
-public enum WindowDisplayMode
-{
-    Normal = 0, // 正常模式
-    Fullscreen = 1, // 全屏模式
-    Floating = 2, // 浮动窗口 - 小窗模式
-    Minimized = 3, // 最小化 - 即隐藏模式
 }
 }

@@ -31,8 +31,10 @@ namespace Wjybxx.BigCat.UI
 public abstract class Controller : MonoBehaviour
 {
     /// <summary>
-    /// 关联的Node对象的名字
-    /// (配置项，运行时不可修改)
+    /// 关联的Node的名字
+    ///
+    /// 1.配置项，运行时不可修改
+    /// 2.如果指定了名字，则只会匹配指定name的Node
     /// </summary>
     public string nodeName;
     /// <summary>
@@ -68,7 +70,6 @@ public abstract class Controller : MonoBehaviour
 
     /// <summary>
     /// Node的展示模式变化
-    /// 
     /// </summary>
     /// <param name="prevDisplayCfg">前一个展示模式</param>
     public virtual void OnDisplayModeChanged(UINodeDisplayCfg prevDisplayCfg) {

@@ -31,6 +31,7 @@ public interface IDataModelResolver
     /// <param name="aggerateModel">总聚合模型</param>
     /// <param name="parentModel">父节点数据</param>
     /// <param name="dataAddress">当前节点的数据地址</param>
-    public object Resolve(IAggerateModel aggerateModel, object parentModel, string dataAddress);
+    /// <param name="uiIndex">ui元素的索引</param>
+    public object Resolve(IAggerateModel aggerateModel, object parentModel, string dataAddress, int uiIndex);
 }
 }
