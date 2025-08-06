@@ -47,8 +47,9 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Launcher\UI\LoginView.cs" />
     <Compile Include="Assets\Scripts\Launcher\AppContext.cs" />
-    <Compile Include="Assets\Scripts\Launcher\WindowDriverExample.cs" />
+    <Compile Include="Assets\Scripts\Launcher\WindowDriver.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\Request.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\TestRpcRouter.cs" />
@@ -56,7 +57,7 @@
     <Compile Include="Assets\Scripts\Launcher\Test\RpcServiceExample.cs" />
     <Compile Include="Assets\Scripts\Launcher\GameLauncher.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\Response.cs" />
-    <None Include="Assets\Scripts\Launcher\Wjybxx.BigCat.GamePlay.asmdef" />
+    <None Include="Assets\Scripts\Launcher\Wjybxx.BigCat.Launcher.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
@@ -708,6 +709,9 @@
     <Reference Include="Wjybxx.BTree.Codec">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Codec.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
@@ -726,6 +730,9 @@
       <Project>{ff8527d1-008a-d49a-39ff-8369ade6a345}</Project>
       <Name>UnityEngine.UI</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\Scripts\Launcher\README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

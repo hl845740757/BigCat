@@ -157,7 +157,7 @@ public abstract class SComponent
     /// <summary>
     /// 自定义事件支持
     /// </summary>
-    public virtual void OnEvent(object evt) {
+    public virtual void OnEvent(object eventData) {
 
     }
 

@@ -42,7 +42,7 @@ public sealed class WindowOpenArgs
     /// <summary>
     /// 加载的超时时间
     /// </summary>
-    public double timeout = 0;
+    public double timeout = -1;
     /// <summary>
     /// 是否忽略父窗口关闭信号
     /// (是否不跟随父窗口一起关闭)

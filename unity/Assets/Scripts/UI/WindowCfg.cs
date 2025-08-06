@@ -61,17 +61,15 @@ public class WindowCfg : MonoBehaviour
 
     /// <summary>
     /// 窗口的层级，值越大越靠近上方
-    ///
-    /// 注：mask窗口的layer需要为最大值 -- 程序会修正。 
     /// </summary>
     [Range(0, 9)] // 4Bit
+    [Tooltip("窗口画布的层级")]
     public int sortLayer = 5;
     /// <summary>
     /// 窗口在层级内的排序
-    ///
-    /// 注：mask窗口的sortOrder需要为最大值 -- 程序会修正。
     /// </summary>
     [Range(0, 63)] // 6Bit
+    [Tooltip("同层级窗口的排序")]
     public int sortOrder = 32;
 
     /// <summary>
@@ -122,7 +120,7 @@ public class WindowCfg : MonoBehaviour
     ///
     /// 注：窗口关闭X秒以后自动销毁以释放内存
     /// </summary>
-    [Tooltip("单位秒，'-1'表示不销毁")]
+    [Tooltip("窗口关闭后的保留时间；单位秒，'-1'表示不销毁")]
     public float maxIdleTime = 30;
     /// <summary>
     /// 窗口的互斥方式

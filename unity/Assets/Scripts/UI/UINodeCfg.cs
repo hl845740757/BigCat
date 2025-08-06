@@ -37,7 +37,7 @@ public class UINodeCfg
     /// <summary>
     /// 创建新黑板(切割上下文)
     /// </summary>
-    [Tooltip("当前Controller是否和父节点无关")]
+    [Tooltip("是否需要切割黑板，当Controller数据和父节点存在冲突时勾选")]
     public bool newBlackboard;
 
     /// <summary>
@@ -91,7 +91,7 @@ public class UINodeCfg
 /// <summary>
 /// 视图展示模式配置
 ///
-/// TODO 数据模型绑定配置？其实对于游戏开发而言，数据绑定不那么必要。
+/// TODO 数据模型绑定配置？其实对于游戏开发而言，自动数据绑定不那么必要。
 /// </summary>
 [Serializable]
 public class UINodeDisplayCfg
@@ -99,6 +99,7 @@ public class UINodeDisplayCfg
     /// <summary>
     /// 展示模式，0是合法值
     /// </summary>
+    [Tooltip("展示模式，0表示默认模式")]
     public int mode = 0;
     /// <summary>
     /// 当前Node操作的GameObject
@@ -119,6 +120,14 @@ public class UINodeDisplayCfg
     /// </summary>
     [Tooltip("子节点之间通常应当等价，父节点不需要区分它们；如果你需要为子节点分配特殊的名字，通常应该实现为钩子节点")]
     public List<UINode> children = new List<UINode>();
+
+    /// <summary>
+    /// child模板
+    /// </summary>
+    [Tooltip("子节点模板，用于父节点动态创建子节点的情况，如ListView")]
+    public UINode templateChild;
+
+    #region util
 
     /// <summary>
     /// 查找要操作的GameObject
@@ -155,5 +164,7 @@ public class UINodeDisplayCfg
     public void FindHooks(string name, List<UINode> outList) {
         UIInternal.FindNodes(hooks, name, outList);
     }
+
+    #endregion
 }
 }

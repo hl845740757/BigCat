@@ -79,7 +79,6 @@ public sealed class WindowMgr
     private readonly IndexedDynamicArray<Window> _windowList = new IndexedDynamicArray<Window>(WIndexHelper.GetInst(0), 10);
     /// <summary>
     /// 所有活动中的窗口列表
-    /// (包括处于暂停状态的窗口)
     /// </summary>
     private readonly IndexedDynamicArray<Window> _activeWindowList = new IndexedDynamicArray<Window>(WIndexHelper.GetInst(1), 10, 0);
     /// <summary>

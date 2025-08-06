@@ -86,7 +86,7 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 在Update队列中的索引
     /// </summary>
-    [NonSerialized] internal int qIndex;
+    [NonSerialized] internal int qIndex = -1;
     /// <summary>
     /// 在父节点中的索引(hook始终是-1)
     /// </summary>
@@ -127,12 +127,6 @@ public class UINode : MonoBehaviour
 
     #region 生命周期
 
-    protected void Awake() {
-        nodeCfg ??= new UINodeCfg();
-        nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
-        nodeCfg.moreDisplayCfgs = moreDisplayCfgs; // 发布到cfg对象，方便外部访问
-    }
-
     public void Show(Window window, UINode parent, object dataModel, int displayMode = -1) {
         if (IsShowing) {
             throw new InvalidOperationException("node is already showing");
@@ -156,11 +150,12 @@ public class UINode : MonoBehaviour
         } else {
             ResetDisplayElements(nodeCfg.defaultDisplayCfg);
         }
-        // 先添加到Update队列 -- 这样用户Show过程中触发Hide仍然安全
-        if (NeedUpdate) {
+        int rid = _reentryId;
+        OnShow(firstShow);
+        // 确保未退出
+        if (rid == _reentryId && NeedUpdate) {
             window.AddUpdateNode(this);
         }
-        OnShow(firstShow);
     }
 
     private void ResetDisplayElements(UINodeDisplayCfg displayCfg) {
@@ -193,6 +188,7 @@ public class UINode : MonoBehaviour
         }
         _reentryId++;
         _ctl &= ~UIInternal.MASK_SHOWING;
+        _window.RemoveUpdateNode(this);
         // 隐藏所有元素
         foreach (GameObject element in elements) {
             element.SetActive(false);
@@ -202,10 +198,6 @@ public class UINode : MonoBehaviour
         }
         foreach (UINode child in children) {
             child.Hide();
-        }
-        // 从Update队列删除
-        if (qIndex >= 0) {
-            _window.RemoveUpdateNode(this);
         }
         controller?.OnHide();
         OnHide();
@@ -222,7 +214,7 @@ public class UINode : MonoBehaviour
     /// UI节点启动的时候调用
     ///
     /// 1.通常的逻辑为：初始化事件监听，为子节点绑定数据，刷新一次UI。
-    /// 2.也可以根据Node自身的状态判断是否是首次展示。
+    /// 2.如果需要心跳，可在此方法中设置<see cref="NeedUpdate"/>。
     /// 3.如果有直接操控的<see cref="elements"/>，需要重写该方法
     /// </summary>
     /// <param name="firstShow"></param>
@@ -490,6 +482,32 @@ public class UINode : MonoBehaviour
 
     #endregion
 
+    #region unity脚本生命周期
+
+    protected void Awake() {
+        nodeCfg ??= new UINodeCfg();
+        nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
+        nodeCfg.moreDisplayCfgs = moreDisplayCfgs; // 发布到cfg对象，方便外部访问
+    }
+
+    protected virtual void OnEnable() {
+        if (IsShowing) Repaint();
+    }
+
+    protected virtual void OnDisable() {
+    }
+
+    protected virtual void OnDestroy() {
+        _window = null;
+        _parent = null;
+        _dataModel = null;
+
+        curDisplayCfg = null;
+        elements.Clear();
+        hooks.Clear();
+        children.Clear();
+    }
+
 #if UNITY_EDITOR
     protected virtual void Reset() {
         nodeCfg ??= new UINodeCfg();
@@ -499,6 +517,8 @@ public class UINode : MonoBehaviour
     protected virtual void OnValidate() {
     }
 #endif
+
+    #endregion
 
     #region props
 

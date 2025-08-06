@@ -50,7 +50,7 @@ public class FileSyncMgr
     /// <summary>
     /// 同步本地包
     /// </summary>
-    [MenuItem("Editor/SyncLocalPackages")]
+    // [MenuItem("Editor/SyncLocalPackages")]
     public static void CreateUpkg() {
         foreach (string projectName in _projectNames) {
             CopyProject(projectName);

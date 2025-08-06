@@ -461,3 +461,5 @@ temp-*
 # C#生成文件
 csharp/*/Generated
 unity/UserSettings/
+unity/Assets/TextMesh Pro.meta
+unity/Assets/TextMesh Pro/
