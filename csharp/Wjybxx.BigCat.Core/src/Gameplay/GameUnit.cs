@@ -372,11 +372,11 @@ public sealed class GameUnit
     }
 
     public override int GetHashCode() {
-        return _instId.GetHashCode();
+        return (_configId.GetHashCode() * 397) ^ _instId.GetHashCode();
     }
 
     public override string ToString() {
-        return $"GameUnit{{instId: {_instId}}}";
+        return $"GameUnit-{_configId}-{_instId}";
     }
 
     #endregion

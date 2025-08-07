@@ -474,7 +474,7 @@ public sealed class Scene
         if (_status == ComponentStatus.Running) {
             _status = ComponentStatus.Suspended;
             _sceneMgr.OnPause(this);
-            _agent?.OnPausing(extraInfo);
+            _agent?.OnPaused(extraInfo);
         }
     }
 
@@ -595,6 +595,22 @@ public sealed class Scene
         _earlyUpdateList.Clear();
         _updateList.Clear();
         _lateUpdateList.Clear();
+    }
+
+    #endregion
+
+    #region equals
+
+    public override bool Equals(object obj) {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode() {
+        return (_configId.GetHashCode() * 397) ^ _instId.GetHashCode();
+    }
+
+    public override string ToString() {
+        return $"Scene-{_configId}-{_instId}";
     }
 
     #endregion

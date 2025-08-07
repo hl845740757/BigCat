@@ -26,7 +26,6 @@ namespace Wjybxx.BigCat.Util
 ///
 /// 1.内存消耗：40个字节。
 /// 2.double和long值的内存是重叠的，使用时需小心。
-/// 3.value为null
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
 public struct UnionValue : IEquatable<UnionValue>

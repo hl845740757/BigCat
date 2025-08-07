@@ -104,7 +104,7 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 外部控制器（事件处理器）
     ///
-    /// 注：可能为null，要么没有事件逻辑，要么被自己或父节点处理了。
+    /// 注：可能为null，要么没有事件逻辑，要么被自己处理了。
     /// </summary>
     [NonSerialized] protected Controller controller;
 
@@ -351,7 +351,7 @@ public class UINode : MonoBehaviour
 
     #endregion
 
-    #region child排序
+    #region child管理
 
     /// <summary>
     /// 在兄弟节点中的排序
@@ -385,7 +385,8 @@ public class UINode : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetAsLastSibling() {
         if (_parent) {
-            _parent.SetChildIndex(this, children.Count - 1);
+            int siblingCount = _parent.children.Count;
+            _parent.SetChildIndex(this, siblingCount - 1);
         }
     }
 
@@ -413,6 +414,30 @@ public class UINode : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Internal_SetIndex(int index) {
         uiIndex = index;
+    }
+
+    /// <summary>
+    /// 添加child
+    /// </summary>
+    /// <param name="child"></param>
+    public virtual void AddChild(UINode child) {
+        child.uiIndex = children.Count;
+        children.Add(child);
+    }
+
+    /// <summary>
+    /// 删除子节点
+    /// </summary>
+    /// <param name="child"></param>
+    public virtual bool RemoveChild(UINode child) {
+        int childIndex = child.uiIndex;
+        if (children[childIndex] == child) {
+            child.uiIndex = -1;
+            children.RemoveAt(childIndex);
+            RefreshChildrenIndex(childIndex);
+            return true;
+        }
+        return false;
     }
 
     /// <summary>

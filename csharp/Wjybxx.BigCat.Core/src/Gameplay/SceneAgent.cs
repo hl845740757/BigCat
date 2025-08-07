@@ -46,7 +46,7 @@ public interface SceneAgent
     /// 场景进入暂停状态
     /// </summary>
     /// <param name="extraInfo">附加信息</param>
-    void OnPausing(object? extraInfo) {
+    void OnPaused(object? extraInfo) {
     }
 
     /// <summary>

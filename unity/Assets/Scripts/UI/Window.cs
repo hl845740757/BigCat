@@ -39,12 +39,11 @@ namespace Wjybxx.BigCat.UI
 /// Window是UI的入口（是Root节点的持有者）
 ///
 /// 1.Window只提供一些基础的控制交互逻辑，其它的逻辑由Node承担 —— 即Window不负责绘制用户数据。
-/// 2.Window理论上可以不继承UINode，但继承Node可以简化编程模型。
-/// 3.Window由框架创建，而非用户创建；通常创建的Window为同一类型。
-/// 4.资源管理的单位是Window，当Window关闭时，会释放所有动态加载的资源。
-/// 5.不建议在Window上设计复杂的程序化动画，建议使用<see cref="Animator"/>制作固定的动画。
-/// 6.为避免和<see cref="MonoBehaviour"/>的方法签名冲突，我们的方法都使用<code>Win</code>开头。
-/// 7.全屏遮罩建议也实现为窗口，但位于最高层级；窗口内的遮罩建议使用<see cref="UINode"/>实现，有更强的灵活性。
+/// 2.Window由框架创建，而非用户创建；通常创建的Window为同一类型。
+/// 3.资源管理的单位是Window，当Window关闭时，会释放所有动态加载的资源。
+/// 4.不建议在Window上设计复杂的程序化动画，建议使用<see cref="Animator"/>制作固定的动画。
+/// 5.为避免和<see cref="MonoBehaviour"/>的方法签名冲突，我们的方法都使用<code>Win</code>开头。
+/// 6.全屏遮罩建议也实现为窗口，但位于最高层级；窗口内的遮罩建议使用<see cref="UINode"/>实现，有更强的灵活性。
 /// 
 /// TODO
 /// 1.Close、Pause公共按钮支持 -- 可以提一个公共组件
@@ -754,6 +753,22 @@ public sealed class Window
     public GTime Time => _time;
     public Blackboard Blackboard => _blackboard;
     public WindowDisplayMode DisplayMode => _displayMode;
+
+    #endregion
+
+    #region equals
+
+    public override bool Equals(object obj) {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode() {
+        return (windowUri.GetHashCode() * 397) ^ _instId;
+    }
+
+    public override string ToString() {
+        return $"Window-{windowUri}-{_instId}";
+    }
 
     #endregion
 }
