@@ -64,6 +64,8 @@ public static class DataKeys
     public const int TYPE_RECT = 19;
     public const int TYPE_KEY_CODE = 20;
 
+    public const int TYPE_BITSET = 21;
+
     public static DataKey<int> NewIntKey(string name) {
         return new IntKey(name);
     }
@@ -145,6 +147,10 @@ public static class DataKeys
         return new KeyCodeKey(name);
     }
 #endif
+
+    public static DataKey<GBitSet> NewGBitSetKey(string name) {
+        return new BitSetKey(name);
+    }
 
     public abstract class AbstractDataKey<T> : DataKey<T>
     {
@@ -306,8 +312,29 @@ public static class DataKeys
         }
     }
 
-#if UNITY_2021_3_OR_NEWER
+    public class BitSetKey : AbstractDataKey<GBitSet>
+    {
+        public BitSetKey(string name) : base(name) {
+        }
 
+        public override GBitSet Unbox(in UnionValue boxedValue) {
+            return new GBitSet()
+            {
+                LowBits = boxedValue.lv1,
+                HighBits = boxedValue.lv2,
+            };
+        }
+
+        public override UnionValue Box(GBitSet value) {
+            return new UnionValue(TYPE_BITSET)
+            {
+                lv1 = value.LowBits,
+                lv2 = value.HighBits,
+            };
+        }
+    }
+
+#if UNITY_2021_3_OR_NEWER
     public class Vector3Key : AbstractDataKey<Vector3>
     {
         public Vector3Key(string name) : base(name) {

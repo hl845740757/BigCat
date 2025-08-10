@@ -146,6 +146,9 @@ public class DataScriptGenerator : ISheetProcessor
         int number = 1;
         foreach (Header header in headers) {
             if (baseSheet != null && baseSheet.GetHeader(header.name) != null) {
+                if (number != 1) {
+                    throw new Exception("Base class fields must be declared before subclass fields, field: " + header.name);
+                }
                 continue;
             }
             if (!IsRequired(header.options, _requireMode)) {

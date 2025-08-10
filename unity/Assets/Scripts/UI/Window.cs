@@ -363,7 +363,7 @@ public sealed class Window
         if (_status == ComponentStatus.Running) {
             _status = ComponentStatus.Suspended;
             windowMgr.OnPause(this);
-            _agent.OnPause(extraInfo);
+            _agent.OnPaused(extraInfo);
             // 从Mgr调度队列中删除？影响不大
         }
     }

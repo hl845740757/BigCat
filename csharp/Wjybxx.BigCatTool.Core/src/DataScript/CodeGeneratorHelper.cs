@@ -70,8 +70,11 @@ public class CodeGeneratorHelper
     // 缓存
     private readonly Dictionary<string, ClassName> _metaTypeNameCache = new(200);
     private readonly Dictionary<ClassName, ClassName> _genericTypeNameCache = new(200);
+
     private readonly List<FieldSpec> _fieldListCache = new(20);
     private readonly List<PropertySpec> _propertyListCache = new(20);
+    private readonly List<FieldSpec> _copyFieldListCache = new(20);
+
     private readonly List<DSField> _dsFieldListCache = new(20);
     private readonly List<DSMethod> _dsMethodListCache = new(20);
     private readonly StringBuilder _sb = new StringBuilder(64);
@@ -316,18 +319,23 @@ public class CodeGeneratorHelper
 
         List<FieldSpec> fieldSpecs = _fieldListCache;
         List<PropertySpec> propertySpecs = _propertyListCache;
+        List<FieldSpec> copyFieldList = _copyFieldListCache;
         // 原生字段
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
             BuildFieldAndProperty(field, fieldOptions, out FieldSpec fieldSpec, out PropertySpec propertySpec);
             fieldSpecs.Add(fieldSpec);
             propertySpecs.Add(propertySpec);
-
+            // readonly字段不拷贝
+            if (!field.IsReadonly) {
+                copyFieldList.Add(fieldSpec);
+            }
             // 如果是指向共享字符串表的索引，则增加缓存字段 + 属性
             if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_SSTI)) {
                 BuildSstiFieldAndProperty(field, fieldSpec.name, propertySpec.name, out FieldSpec? sstiFiledSpec, out PropertySpec sstiPropertySpec);
                 if (sstiFiledSpec != null) {
                     fieldSpecs.Add(sstiFiledSpec);
+                    copyFieldList.Add(sstiFiledSpec);
                 }
                 // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
                 if (sstiPropertySpec.name == propertySpec.name) {
@@ -349,6 +357,7 @@ public class CodeGeneratorHelper
             typeBuilder.AddSpec(MacroSpec.Get("region", "codec"));
             CodeGeneratorCfg.ClassCodecCfg? classCfg = GetClassCfg(namedType);
             typeBuilder.AddSpec(BuildReaderConstructor(namedType, classCfg));
+            typeBuilder.AddSpec(BuildReadFieldMethod(namedType, classCfg));
             typeBuilder.AddSpec(BuildWriteObjectMethod(namedType, classCfg));
             BuildCodecHookMethods(namedType, classCfg, typeBuilder);
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
@@ -359,7 +368,7 @@ public class CodeGeneratorHelper
         // 生成CopyFrom
         if (NeedCopyMethod(namedType, options)) {
             typeBuilder.AddSpec(MacroSpec.Get("region", "copy"));
-            typeBuilder.AddSpec(BuildCopyMethod(namedType, typeBuilder));
+            typeBuilder.AddSpec(BuildCopyMethod(namedType, copyFieldList));
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
         // 生成equals和hashcode
@@ -378,6 +387,7 @@ public class CodeGeneratorHelper
         }
         _fieldListCache.Clear();
         _propertyListCache.Clear();
+        _copyFieldListCache.Clear();
         // 允许用户在生成内部类之前插入方法
         BeforeGenerateNestedTypes(namedType, typeBuilder, options);
         GenerateNestedTypes(namedType, typeBuilder);
@@ -405,7 +415,7 @@ public class CodeGeneratorHelper
     /// </summary>
     /// <returns></returns>
     protected virtual bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
-        return namedType.GetMethod("CopyFrom") != null;
+        return !namedType.IsValueType && namedType.GetMethod("CopyFrom") != null;
     }
 
     /// <summary>
@@ -448,7 +458,7 @@ public class CodeGeneratorHelper
                                                  out FieldSpec fieldSpec, out PropertySpec propertySpec) {
         Modifiers fieldModifiers = GetFieldModifiers(field, fieldOptions);
         if (field.IsReadonly) {
-            fieldModifiers |= Modifiers.ReadOnly;
+            // fieldModifiers |= Modifiers.ReadOnly; // 改为private set模拟
         }
         TypeName fieldTypeName = GetTypeName(field.Type);
         FieldSpec.Builder fieldBuilder = FieldSpec.NewBuilder(GetTypeName(field.Type), GetFieldName(field.SimpleName), fieldModifiers)
@@ -579,7 +589,14 @@ public class CodeGeneratorHelper
             : null;
     }
 
+    /// <summary>
+    /// 1.为保证代码的正确性，所有的类都生成BeforeEncode和AfterDecode方法 -- 子类无法确定超类是否包含该方法
+    /// 2.不调用基类的钩子方法，因为钩子方法是委托给外部静态类的；若有需要，可手动调用基类静态代理的代码；这可以减少大量的空方法调用
+    /// </summary>
     private void BuildCodecHookMethods(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCodecCfg, TypeSpec.Builder typeBuilder) {
+        if (namedType.IsValueType && (classCodecCfg == null || classCodecCfg.hooks.Count == 0)) {
+            return;
+        }
         ClassName codecProxy = GetCodecProxyTypeName(namedType, classCodecCfg);
         {
             MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_BEFORE_ENCODE)
@@ -587,7 +604,7 @@ public class CodeGeneratorHelper
                 .AddParameter(TYPE_NAME_CONVERTER_OPTIONS, "options");
             if (namedType.BaseType != null) {
                 methodBuilder.AddModifiers(Modifiers.Override);
-                methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_BEFORE_ENCODE);
+                // methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_BEFORE_ENCODE);
             } else if (!namedType.IsValueType) {
                 methodBuilder.AddModifiers(Modifiers.Virtual);
             }
@@ -602,7 +619,7 @@ public class CodeGeneratorHelper
                 .AddParameter(TYPE_NAME_CONVERTER_OPTIONS, "options");
             if (namedType.BaseType != null) {
                 methodBuilder.AddModifiers(Modifiers.Override);
-                methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_AFTER_DECODE);
+                // methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_AFTER_DECODE);
             } else if (!namedType.IsValueType) {
                 methodBuilder.AddModifiers(Modifiers.Virtual);
             }
@@ -663,8 +680,13 @@ public class CodeGeneratorHelper
             .AddParameter(TYPE_NAME_READER, "reader");
         if (namedType.BaseType != null) {
             constructorBuilder.ConstructorInvoker(CodeBlock.Of("base(reader)"));
+        } else if (namedType.IsValueType) {
+            constructorBuilder.ConstructorInvoker(CodeBlock.Of("this()")); // 结构体在使用前必须完成基础的初始化
         }
+
         CodeBlock.Builder codeBuilder = constructorBuilder.codeBuilder;
+        // Array格式顺序解码 - 读取所有字段
+        codeBuilder.BeginControlFlow("if (reader.ContextType == $T.Array)", TYPE_NAME_CONTEXT_TYPE);
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
@@ -674,25 +696,12 @@ public class CodeGeneratorHelper
             string fieldName = GetFieldName(field.SimpleName);
             TypeName fieldTypeName = GetTypeName(field.Type);
             string readMethodName = GetReadMethodName(fieldTypeName);
-            if (field.IsReadonly) {
-                // readonly字段必须在输入流中存在 -- 不能条件赋值
-                if (readMethodName == METHOD_NAME_READ_OBJECT) {
-                    // ReadObject需要传声明类型
-                    codeBuilder.AddStatement("this.$L = reader.$L<$T>($S)", fieldName, readMethodName, fieldTypeName, field.SimpleName);
-                } else {
-                    codeBuilder.AddStatement("this.$L = reader.$L($S)", fieldName, readMethodName, field.SimpleName);
-                }
-                continue;
-            }
-            // 非readonly字段可以不存在于输入流 -- 支持用户代理
-            codeBuilder.Add("if (reader.ReadName($S)) ", field.SimpleName);
-            //
+
             CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
             if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
                 codeBuilder.AddStatement("$T.$L(this, reader, $S)", codecProxy, fieldCodecCfg.readProxy, field.SimpleName);
                 continue;
             }
-            // 由于name已读取，不再传name可减少开销
             if (readMethodName == METHOD_NAME_READ_OBJECT) {
                 // ReadObject需要传声明类型
                 codeBuilder.AddStatement("this.$L = reader.$L<$T>(null)", fieldName, readMethodName, fieldTypeName);
@@ -700,7 +709,64 @@ public class CodeGeneratorHelper
                 codeBuilder.AddStatement("this.$L = reader.$L(null)", fieldName, readMethodName);
             }
         }
+        if (namedType.BaseType == null) {
+            codeBuilder.AddStatement("return"); // 减少缩进
+        }
+        codeBuilder.EndControlFlow();
+
+        // Object格式 - 由基类读取整个输入流；构造函数调用虚方法虽然不好，但目前最合适
+        if (namedType.BaseType == null) {
+            codeBuilder.BeginControlFlow("while (reader.ReadDsonType() != DsonType.EndOfObject)");
+            codeBuilder.AddStatement("ReadField(reader, reader.ReadName())");
+            codeBuilder.EndControlFlow();
+        }
         return constructorBuilder.Build();
+    }
+
+    private MethodSpec BuildReadFieldMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("ReadField")
+            .Returns(TypeName.BOOL)
+            .AddParameter(TYPE_NAME_READER, "reader")
+            .AddParameter(TypeName.STRING, "name");
+
+        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
+        if (namedType.BaseType != null) {
+            methodBuilder.AddModifiers(Modifiers.Protected | Modifiers.Override);
+            codeBuilder.AddStatement("if (base.ReadField(reader, name)) return true");
+        } else if (!namedType.IsValueType) {
+            methodBuilder.AddModifiers(Modifiers.Protected | Modifiers.Virtual);
+        } else {
+            methodBuilder.AddModifiers(Modifiers.Private);
+        }
+        codeBuilder.BeginControlFlow("switch (name)");
+
+        ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
+        foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
+            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
+            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+                continue;
+            }
+            string fieldName = GetFieldName(field.SimpleName);
+            TypeName fieldTypeName = GetTypeName(field.Type);
+            string readMethodName = GetReadMethodName(fieldTypeName);
+
+            codeBuilder.Add("case $S: ", field.SimpleName);
+            // 外部读写代理 -- 不能操作private字段（伪readonly字段）
+            CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
+            if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
+                codeBuilder.AddStatement("$T.$L(this, reader, $S); return true", codecProxy, fieldCodecCfg.readProxy, field.SimpleName);
+                continue;
+            }
+            if (readMethodName == METHOD_NAME_READ_OBJECT) {
+                // ReadObject需要传声明类型
+                codeBuilder.AddStatement("this.$L = reader.$L<$T>(null); return true", fieldName, readMethodName, fieldTypeName);
+            } else {
+                codeBuilder.AddStatement("this.$L = reader.$L(null); return true", fieldName, readMethodName);
+            }
+        }
+        codeBuilder.AddStatement("default: return false");
+        codeBuilder.EndControlFlow();
+        return methodBuilder.Build();
     }
 
     #endregion
@@ -742,7 +808,7 @@ public class CodeGeneratorHelper
     /// <summary>
     /// 默认实现为浅拷贝，子类可以重写该方法以实现深度拷贝
     /// </summary>
-    protected virtual MethodSpec BuildCopyMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+    protected virtual MethodSpec BuildCopyMethod(DSNamedType namedType, List<FieldSpec> copyFieldList) {
         TypeName typeName = GetTypeName(namedType);
         MethodSpec.Builder copyMethodBuilder;
         if (namedType.BaseType != null) {
@@ -762,11 +828,9 @@ public class CodeGeneratorHelper
                 copyMethodBuilder.AddModifiers(Modifiers.Virtual);
             }
         }
-        // 逐字段拷贝
-        foreach (ISpecification nestedSpec in typeBuilder.nestedSpecs) {
-            if (nestedSpec is FieldSpec fieldSpec && !fieldSpec.modifiers.HasFlag(Modifiers.ReadOnly)) {
-                copyMethodBuilder.codeBuilder.AddStatement("this.$L = src.$L", fieldSpec.name, fieldSpec.name);
-            }
+        // 逐字段拷贝 - ssti字段不在namedType定义中
+        foreach (FieldSpec fieldSpec in copyFieldList) {
+            copyMethodBuilder.codeBuilder.AddStatement("this.$L = src.$L", fieldSpec.name, fieldSpec.name);
         }
         return copyMethodBuilder.Build(true);
     }
@@ -1200,6 +1264,7 @@ public class CodeGeneratorHelper
     public static readonly ClassName TYPE_NAME_WRITER = ClassName.Get(typeof(IDsonObjectWriter));
     public static readonly ClassName TYPE_NAME_READER = ClassName.Get(typeof(IDsonObjectReader));
     public static readonly ClassName TYPE_NAME_CONVERTER_OPTIONS = ClassName.Get(typeof(ConverterOptions));
+    public static readonly ClassName TYPE_NAME_CONTEXT_TYPE = ClassName.Get(typeof(DsonContextType));
     // ssti
     private static readonly ClassName TYPE_NAME_SST_MGR = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.SstMgr");
     private static readonly ClassName TYPE_NAME_IMMUTABLE_LIST_STRING = ClassName.Get(typeof(ImmutableList<string>));

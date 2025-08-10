@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Wjybxx.Commons.Collections;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.Dson.Codec;
+using Wjybxx.Dson;
 using System.Text;
 
 namespace Wjybxx.BigCatTool.Tests.Generated
@@ -19,8 +20,8 @@ public class SimpleBean
 {
     #nullable disable
     // ReSharper disable All
-    private readonly int _age;
-    private readonly string _name;
+    private int _age;
+    private string _name;
     /// <summary>
     /// 测试nullable
     /// </summary>
@@ -54,8 +55,6 @@ public class SimpleBean
     /// 测试ssti
     /// </summary>
     private int _strLink;
-    [NonSerialized]
-    private string _strLinkCache;
     /// <summary>
     /// @Options {ssti: true}    
     /// 测试sstiList
@@ -106,22 +105,45 @@ public class SimpleBean
         set => this._listX = value;
     }
 
-    public string strLink => _strLinkCache ??= SstMgr.GetString(_strLink);
+    public string strLink => SstMgr.GetString(_strLink);
     public ImmutableList<string> strLinkList => _strLinkListCache ??= SstMgr.GetStringList(_strLinkList);
     #region codec
 
     public SimpleBean(IDsonObjectReader reader) {
-        this._age = reader.ReadInt("age");
-        this._name = reader.ReadString("name");
-        if (reader.ReadName("opt")) this._opt = reader.ReadObject<int?>(null);
-        if (reader.ReadName("dt")) this._dt = reader.ReadDateTime(null);
-        if (reader.ReadName("data1")) this._data1 = reader.ReadBinary(null);
-        if (reader.ReadName("list")) this._list = reader.ReadObject<List<int>>(null);
-        if (reader.ReadName("hashset")) this._hashset = reader.ReadObject<HashSet<int>>(null);
-        if (reader.ReadName("dic")) this._dic = reader.ReadObject<Dictionary<int, string>>(null);
-        if (reader.ReadName("listX")) this._listX = reader.ReadObject<List<List<int>>>(null);
-        if (reader.ReadName("strLink")) this._strLink = reader.ReadInt(null);
-        if (reader.ReadName("strLinkList")) this._strLinkList = reader.ReadObject<List<int>>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._age = reader.ReadInt(null);
+            this._name = reader.ReadString(null);
+            this._opt = reader.ReadObject<int?>(null);
+            this._dt = reader.ReadDateTime(null);
+            this._data1 = reader.ReadBinary(null);
+            this._list = reader.ReadObject<List<int>>(null);
+            this._hashset = reader.ReadObject<HashSet<int>>(null);
+            this._dic = reader.ReadObject<Dictionary<int, string>>(null);
+            this._listX = reader.ReadObject<List<List<int>>>(null);
+            this._strLink = reader.ReadInt(null);
+            this._strLinkList = reader.ReadObject<List<int>>(null);
+            return;
+        }
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            ReadField(reader, reader.ReadName());
+        }
+    }
+
+    protected virtual bool ReadField(IDsonObjectReader reader, string name) {
+        switch (name) {
+            case "age": this._age = reader.ReadInt(null); return true;
+            case "name": this._name = reader.ReadString(null); return true;
+            case "opt": this._opt = reader.ReadObject<int?>(null); return true;
+            case "dt": this._dt = reader.ReadDateTime(null); return true;
+            case "data1": this._data1 = reader.ReadBinary(null); return true;
+            case "list": this._list = reader.ReadObject<List<int>>(null); return true;
+            case "hashset": this._hashset = reader.ReadObject<HashSet<int>>(null); return true;
+            case "dic": this._dic = reader.ReadObject<Dictionary<int, string>>(null); return true;
+            case "listX": this._listX = reader.ReadObject<List<List<int>>>(null); return true;
+            case "strLink": this._strLink = reader.ReadInt(null); return true;
+            case "strLinkList": this._strLinkList = reader.ReadObject<List<int>>(null); return true;
+            default: return false;
+        }
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -246,7 +268,17 @@ public class SimpleChildBean : SimpleBean
 
     public SimpleChildBean(IDsonObjectReader reader)
         : base(reader) {
-        if (reader.ReadName("addresses")) this._addresses = reader.ReadObject<List<string>>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._addresses = reader.ReadObject<List<string>>(null);
+        }
+    }
+
+    protected override bool ReadField(IDsonObjectReader reader, string name) {
+        if (base.ReadField(reader, name)) return true;
+        switch (name) {
+            case "addresses": this._addresses = reader.ReadObject<List<string>>(null); return true;
+            default: return false;
+        }
     }
 
     public override void WriteObject(IDsonObjectWriter writer) {
@@ -255,11 +287,9 @@ public class SimpleChildBean : SimpleBean
     }
 
     public override void BeforeEncode(ConverterOptions options) {
-        base.BeforeEncode(options);
     }
 
     public override void AfterDecode(ConverterOptions options) {
-        base.AfterDecode(options);
     }
 
     #endregion
@@ -311,9 +341,9 @@ public struct Vector3 : IEquatable<Vector3>
 {
     #nullable disable
     // ReSharper disable All
-    private readonly float _x;
-    private readonly float _y;
-    private readonly float _z;
+    private float _x;
+    private float _y;
+    private float _z;
 
     public Vector3(float x, float y, float z) {
         this._x = x;
@@ -326,22 +356,32 @@ public struct Vector3 : IEquatable<Vector3>
     public float z => _z;
     #region codec
 
-    public Vector3(IDsonObjectReader reader) {
-        this._x = reader.ReadFloat("x");
-        this._y = reader.ReadFloat("y");
-        this._z = reader.ReadFloat("z");
+    public Vector3(IDsonObjectReader reader)
+        : this() {
+        if (reader.ContextType == DsonContextType.Array) {
+            this._x = reader.ReadFloat(null);
+            this._y = reader.ReadFloat(null);
+            this._z = reader.ReadFloat(null);
+            return;
+        }
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            ReadField(reader, reader.ReadName());
+        }
+    }
+
+    private bool ReadField(IDsonObjectReader reader, string name) {
+        switch (name) {
+            case "x": this._x = reader.ReadFloat(null); return true;
+            case "y": this._y = reader.ReadFloat(null); return true;
+            case "z": this._z = reader.ReadFloat(null); return true;
+            default: return false;
+        }
     }
 
     public void WriteObject(IDsonObjectWriter writer) {
         writer.WriteFloat("x", this._x);
         writer.WriteFloat("y", this._y);
         writer.WriteFloat("z", this._z);
-    }
-
-    public void BeforeEncode(ConverterOptions options) {
-    }
-
-    public void AfterDecode(ConverterOptions options) {
     }
 
     #endregion
@@ -430,8 +470,22 @@ public class GenericBean<T, U>
     #region codec
 
     public GenericBean(IDsonObjectReader reader) {
-        if (reader.ReadName("key")) this._key = reader.ReadObject<T?>(null);
-        if (reader.ReadName("value")) this._value = reader.ReadObject<U>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._key = reader.ReadObject<T?>(null);
+            this._value = reader.ReadObject<U>(null);
+            return;
+        }
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            ReadField(reader, reader.ReadName());
+        }
+    }
+
+    protected virtual bool ReadField(IDsonObjectReader reader, string name) {
+        switch (name) {
+            case "key": this._key = reader.ReadObject<T?>(null); return true;
+            case "value": this._value = reader.ReadObject<U>(null); return true;
+            default: return false;
+        }
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -507,7 +561,17 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     public GenericChildBean(IDsonObjectReader reader)
         : base(reader) {
-        if (reader.ReadName("addresses")) this._addresses = reader.ReadObject<List<string>>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._addresses = reader.ReadObject<List<string>>(null);
+        }
+    }
+
+    protected override bool ReadField(IDsonObjectReader reader, string name) {
+        if (base.ReadField(reader, name)) return true;
+        switch (name) {
+            case "addresses": this._addresses = reader.ReadObject<List<string>>(null); return true;
+            default: return false;
+        }
     }
 
     public override void WriteObject(IDsonObjectWriter writer) {
@@ -516,11 +580,9 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
     }
 
     public override void BeforeEncode(ConverterOptions options) {
-        base.BeforeEncode(options);
     }
 
     public override void AfterDecode(ConverterOptions options) {
-        base.AfterDecode(options);
     }
 
     #endregion
@@ -587,7 +649,17 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     public GenericChildBean2(IDsonObjectReader reader)
         : base(reader) {
-        if (reader.ReadName("addresses")) this._addresses = reader.ReadObject<List<string>>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._addresses = reader.ReadObject<List<string>>(null);
+        }
+    }
+
+    protected override bool ReadField(IDsonObjectReader reader, string name) {
+        if (base.ReadField(reader, name)) return true;
+        switch (name) {
+            case "addresses": this._addresses = reader.ReadObject<List<string>>(null); return true;
+            default: return false;
+        }
     }
 
     public override void WriteObject(IDsonObjectWriter writer) {
@@ -596,11 +668,9 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
     }
 
     public override void BeforeEncode(ConverterOptions options) {
-        base.BeforeEncode(options);
     }
 
     public override void AfterDecode(ConverterOptions options) {
-        base.AfterDecode(options);
     }
 
     #endregion
@@ -683,10 +753,26 @@ public class OuterClass
     #region codec
 
     public OuterClass(IDsonObjectReader reader) {
-        if (reader.ReadName("x")) this._x = reader.ReadFloat(null);
-        if (reader.ReadName("y")) this._y = reader.ReadFloat(null);
-        if (reader.ReadName("request")) this._request = reader.ReadObject<OuterClass.Request>(null);
-        if (reader.ReadName("result")) this._result = reader.ReadObject<OuterClass.Result>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._x = reader.ReadFloat(null);
+            this._y = reader.ReadFloat(null);
+            this._request = reader.ReadObject<OuterClass.Request>(null);
+            this._result = reader.ReadObject<OuterClass.Result>(null);
+            return;
+        }
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            ReadField(reader, reader.ReadName());
+        }
+    }
+
+    protected virtual bool ReadField(IDsonObjectReader reader, string name) {
+        switch (name) {
+            case "x": this._x = reader.ReadFloat(null); return true;
+            case "y": this._y = reader.ReadFloat(null); return true;
+            case "request": this._request = reader.ReadObject<OuterClass.Request>(null); return true;
+            case "result": this._result = reader.ReadObject<OuterClass.Result>(null); return true;
+            default: return false;
+        }
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -765,7 +851,20 @@ public class OuterClass
         #region codec
 
         public Request(IDsonObjectReader reader) {
-            if (reader.ReadName("value")) this._value = reader.ReadString(null);
+            if (reader.ContextType == DsonContextType.Array) {
+                this._value = reader.ReadString(null);
+                return;
+            }
+            while (reader.ReadDsonType() != DsonType.EndOfObject) {
+                ReadField(reader, reader.ReadName());
+            }
+        }
+
+        protected virtual bool ReadField(IDsonObjectReader reader, string name) {
+            switch (name) {
+                case "value": this._value = reader.ReadString(null); return true;
+                default: return false;
+            }
         }
 
         public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -830,7 +929,20 @@ public class OuterClass
         #region codec
 
         public Result(IDsonObjectReader reader) {
-            if (reader.ReadName("value")) this._value = reader.ReadString(null);
+            if (reader.ContextType == DsonContextType.Array) {
+                this._value = reader.ReadString(null);
+                return;
+            }
+            while (reader.ReadDsonType() != DsonType.EndOfObject) {
+                ReadField(reader, reader.ReadName());
+            }
+        }
+
+        protected virtual bool ReadField(IDsonObjectReader reader, string name) {
+            switch (name) {
+                case "value": this._value = reader.ReadString(null); return true;
+                default: return false;
+            }
         }
 
         public virtual void WriteObject(IDsonObjectWriter writer) {
@@ -905,8 +1017,22 @@ public class PeerClass
     #region codec
 
     public PeerClass(IDsonObjectReader reader) {
-        if (reader.ReadName("request")) this._request = reader.ReadObject<OuterClass.Request>(null);
-        if (reader.ReadName("result")) this._result = reader.ReadObject<OuterClass.Result>(null);
+        if (reader.ContextType == DsonContextType.Array) {
+            this._request = reader.ReadObject<OuterClass.Request>(null);
+            this._result = reader.ReadObject<OuterClass.Result>(null);
+            return;
+        }
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            ReadField(reader, reader.ReadName());
+        }
+    }
+
+    protected virtual bool ReadField(IDsonObjectReader reader, string name) {
+        switch (name) {
+            case "request": this._request = reader.ReadObject<OuterClass.Request>(null); return true;
+            case "result": this._result = reader.ReadObject<OuterClass.Result>(null); return true;
+            default: return false;
+        }
     }
 
     public virtual void WriteObject(IDsonObjectWriter writer) {

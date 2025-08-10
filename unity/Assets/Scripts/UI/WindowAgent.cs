@@ -47,7 +47,7 @@ public interface WindowAgent
     /// 窗口被暂停Update
     /// </summary>
     /// <param name="extraInfo"></param>
-    void OnPause(object extraInfo) {
+    void OnPaused(object extraInfo) {
     }
 
     /// <summary>

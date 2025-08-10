@@ -73,7 +73,10 @@ public sealed class BitSet64
     /// <summary>
     /// 所有的bit信息
     /// </summary>
-    public long Bits => _bits;
+    public long Bits {
+        get => _bits;
+        set => _bits = value;
+    }
     /// <summary>
     /// 比特集中的1数量
     /// </summary>

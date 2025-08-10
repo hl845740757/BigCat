@@ -88,11 +88,17 @@ public sealed class BitSet128
     /// <summary>
     /// 低位Bit信息
     /// </summary>
-    public long LowBits => _lowBits;
+    public long LowBits {
+        get => _lowBits;
+        set => _lowBits = value;
+    }
     /// <summary>
     /// 高位Bit信息
     /// </summary>
-    public long HighBits => _highBits;
+    public long HighBits {
+        get => _highBits;
+        set => _highBits = value;
+    }
     /// <summary>
     /// 比特集中的1数量
     /// </summary>

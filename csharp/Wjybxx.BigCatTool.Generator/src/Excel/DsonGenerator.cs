@@ -63,8 +63,8 @@ public class DsonGenerator : ISheetProcessor
     private readonly byte[] _buffer;
     private readonly StringBuilder _sb = new(8192);
     private readonly List<DsonValue> _valueListCache = new(10);
-    private readonly ObjectPool<List<DSField>> fieldListPool = PoolUtil.NewListPool<DSField>(8);
-    private readonly ObjectPool<LinkedDictionary<string, DsonValue>> dictionaryPool = PoolUtil.NewLinkedDictionaryPool<string, DsonValue>(8);
+    private readonly ObjectPool<List<DSField>> fieldListPool = ObjectPoolUtil.NewListPool<DSField>(8);
+    private readonly ObjectPool<LinkedDictionary<string, DsonValue>> dictionaryPool = ObjectPoolUtil.NewLinkedDictionaryPool<string, DsonValue>(8);
     private readonly DsonTextWriterSettings _textWriterSettings;
     private Sheet? _curSheet; // 用于打印日志
 
