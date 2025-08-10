@@ -34,17 +34,17 @@ public interface WindowLoader
     /// <summary>
     /// 同步加载窗口
     /// </summary>
-    /// <param name="windowUri">窗口地址</param>
+    /// <param name="windowAddr">窗口地址</param>
     /// <param name="timeout">超时时间</param>
     /// <returns></returns>
-    GameObject Load(string windowUri, double timeout = 0);
+    GameObject Load(string windowAddr, double timeout = 0);
 
     /// <summary>
     /// 异步加载窗口
     /// </summary>
-    /// <param name="windowUri">窗口地址</param>
+    /// <param name="windowAddr">窗口地址</param>
     /// <param name="timeout">超时时间</param>
     /// <returns></returns>
-    ValueFuture<GameObject> LoadAsync(string windowUri, double timeout = 0);
+    ValueFuture<GameObject> LoadAsync(string windowAddr, double timeout = 0);
 }
 }

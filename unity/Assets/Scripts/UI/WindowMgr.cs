@@ -72,7 +72,7 @@ public sealed class WindowMgr
     /// 所有的窗口
     /// key: 窗口的路径
     /// </summary>
-    private readonly Dictionary<string, Window> _uri2WindowMap = new();
+    private readonly Dictionary<string, Window> _addr2WindowMap = new();
     /// <summary>
     /// 所有的窗口(添加序)
     /// </summary>
@@ -153,10 +153,10 @@ public sealed class WindowMgr
     /// <summary>
     /// 根据窗口路径查找窗口
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口路径</param>
     /// <returns></returns>
-    public Window GetWindow(string windowUri) {
-        return _uri2WindowMap.TryGetValue(windowUri, out var window) ? window : null;
+    public Window GetWindow(string windowAddr) {
+        return _addr2WindowMap.TryGetValue(windowAddr, out var window) ? window : null;
     }
 
     /// <summary>
@@ -164,11 +164,11 @@ public sealed class WindowMgr
     /// </summary>
     /// <param name="window">要添加的窗口</param>
     public void Add(Window window) {
-        if (string.IsNullOrEmpty(window.windowUri)) {
-            throw new Exception("window.WindowUri is empty");
+        if (string.IsNullOrEmpty(window.windowAddr)) {
+            throw new Exception("window.WindowAddr is empty");
         }
         _windowMap.Add(window.InstId, window); // 检测重复
-        _uri2WindowMap.Add(window.windowUri, window);
+        _addr2WindowMap.Add(window.windowAddr, window);
         _windowList.Add(window);
         _activeWindowList.Add(window);
         // 如果指定了桌面，则添加到指定桌面，否则添加到当前桌面
@@ -221,7 +221,7 @@ public sealed class WindowMgr
         }
 
         _windowMap.Remove(window.InstId);
-        _uri2WindowMap.Remove(window.windowUri);
+        _addr2WindowMap.Remove(window.windowAddr);
         _windowList.Remove(window);
         _activeWindowList.Remove(window);
         _closedWindowList.Remove(window);
@@ -244,12 +244,12 @@ public sealed class WindowMgr
     /// 
     /// 注：适用用户自己加载Window的场景。
     /// </summary>
-    public void Open(string windowUri, GameObject gameObject, WindowOpenArgs openArgs, int pInstId = 0) {
+    public void Open(string windowAddr, GameObject gameObject, WindowOpenArgs openArgs, int pInstId = 0) {
         WindowCfg windowCfg = gameObject.GetComponent<WindowCfg>();
         if (!windowCfg) {
             throw new Exception("invalid gameObject");
         }
-        Window window = new Window(windowCfg, windowUri, this);
+        Window window = new Window(windowCfg, windowAddr, this);
         windowCfg.SetWindow(window); // 双向绑定
         window.ParentInstId = pInstId;
         window.OpenArgs = openArgs ?? new WindowOpenArgs();
@@ -259,12 +259,12 @@ public sealed class WindowMgr
     /// <summary>
     /// 打开窗口
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口路径</param>
     /// <param name="openArgs">打开参数</param>
     /// <param name="pInstId">父窗口ID</param>
-    public void Open(string windowUri, WindowOpenArgs openArgs, int pInstId = 0) {
+    public void Open(string windowAddr, WindowOpenArgs openArgs, int pInstId = 0) {
         openArgs ??= new WindowOpenArgs();
-        if (_uri2WindowMap.TryGetValue(windowUri, out Window window)) {
+        if (_addr2WindowMap.TryGetValue(windowAddr, out Window window)) {
             if (window.Status != ComponentStatus.Terminated && !openArgs.reopen) {
                 return; // 拒绝请求
             }
@@ -272,22 +272,22 @@ public sealed class WindowMgr
             return;
         }
         // 取消既有加载请求 - 新的加载重新计时，旧加载可能存在异常
-        _loadingTaskMap.Remove(windowUri);
+        _loadingTaskMap.Remove(windowAddr);
 
         double timeout = openArgs.timeout > 0 ? openArgs.timeout : LoadingTimeout;
         if (openArgs.asyncLoad) {
-            ValueFuture<GameObject> future = _windowLoader.LoadAsync(windowUri, timeout);
-            LoadingTask loadingTask = new LoadingTask(windowUri, openArgs, pInstId, time.UnscaledTime + timeout);
-            _loadingTaskMap[windowUri] = loadingTask;
+            ValueFuture<GameObject> future = _windowLoader.LoadAsync(windowAddr, timeout);
+            LoadingTask loadingTask = new LoadingTask(windowAddr, openArgs, pInstId, time.UnscaledTime + timeout);
+            _loadingTaskMap[windowAddr] = loadingTask;
             // 必须添加await回调，过时返回的对象需要被销毁
             AwaitTask(future, loadingTask).Forget();
         } else {
             try {
-                GameObject gameObject = _windowLoader.Load(windowUri, timeout);
-                Open(windowUri, gameObject, openArgs, pInstId);
+                GameObject gameObject = _windowLoader.Load(windowAddr, timeout);
+                Open(windowAddr, gameObject, openArgs, pInstId);
             }
             catch (Exception ex) {
-                logger.Warn(ex, "load window failed, windowUri: " + windowUri);
+                logger.Warn(ex, "load window failed, windowAddr: " + windowAddr);
             }
         }
     }
@@ -295,22 +295,22 @@ public sealed class WindowMgr
     private async ValueFuture AwaitTask(ValueFuture<GameObject> future, LoadingTask loadingTask) {
         TaskResult<GameObject> taskResult = await future.GetAwaitable(SuppressedTypes.All);
 
-        string windowUri = loadingTask.windowUri;
-        if (_loadingTaskMap.TryGetValue(windowUri, out LoadingTask exist)
+        string windowAddr = loadingTask.windowAddr;
+        if (_loadingTaskMap.TryGetValue(windowAddr, out LoadingTask exist)
             && ReferenceEquals(exist, loadingTask)) {
             // 任务未被取消
-            _loadingTaskMap.Remove(windowUri);
+            _loadingTaskMap.Remove(windowAddr);
             if (taskResult.IsSucceeded) {
-                Open(windowUri, taskResult.Result, loadingTask.openArgs, loadingTask.pInstId);
+                Open(windowAddr, taskResult.Result, loadingTask.openArgs, loadingTask.pInstId);
             } else {
-                logger.Warn(taskResult.Exception, "load window failed, windowUri: " + windowUri);
+                logger.Warn(taskResult.Exception, "load window failed, windowAddr: " + windowAddr);
             }
         } else {
             // 任务被取消 - 需要销毁被加载的对象
             if (taskResult.IsSucceeded) {
                 UnityEngine.Object.Destroy(taskResult.Result);
             } else {
-                logger.Warn(taskResult.Exception, "load window failed, windowUri: " + windowUri);
+                logger.Warn(taskResult.Exception, "load window failed, windowAddr: " + windowAddr);
             }
         }
     }
@@ -340,13 +340,13 @@ public sealed class WindowMgr
     /// <summary>
     /// 关闭窗口
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口路径</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
-    public void Close(string windowUri, bool force = false) {
-        if (_loadingTaskMap.Remove(windowUri)) { // 取消加载
+    public void Close(string windowAddr, bool force = false) {
+        if (_loadingTaskMap.Remove(windowAddr)) { // 取消加载
             return;
         }
-        if (!_uri2WindowMap.TryGetValue(windowUri, out Window window)) {
+        if (!_addr2WindowMap.TryGetValue(windowAddr, out Window window)) {
             return;
         }
         if (window.windowCfg.unclosable && !force) { // 常驻UI需要显式强制关闭
@@ -358,11 +358,11 @@ public sealed class WindowMgr
     /// <summary>
     /// 关闭多个窗口
     /// </summary>
-    /// <param name="windowUris">窗口路径</param>
+    /// <param name="windowAddrList">窗口路径</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
-    public void Close(List<string> windowUris, bool force = false) {
-        foreach (string windowUri in windowUris) {
-            Close(windowUri, force);
+    public void Close(List<string> windowAddrList, bool force = false) {
+        foreach (string windowAddr in windowAddrList) {
+            Close(windowAddr, force);
         }
     }
 
@@ -374,7 +374,7 @@ public sealed class WindowMgr
     public void CloseTagged(HashSet<int> tags, bool force = false) {
         foreach (Window window in new List<Window>(_curDesktop.Stack)) {
             if (UIInternal.IsIntersect(window.windowCfg.tags, tags)) {
-                Close(window.windowUri, force);
+                Close(window.windowAddr, force);
             }
         }
     }
@@ -385,7 +385,7 @@ public sealed class WindowMgr
     /// <param name="force">是否强制关闭常驻窗口</param>
     public void CloseAll(bool force = false) {
         foreach (Window window in new List<Window>(_curDesktop.Stack)) {
-            Close(window.windowUri, force);
+            Close(window.windowAddr, force);
         }
     }
 
@@ -421,10 +421,10 @@ public sealed class WindowMgr
     /// <summary>
     /// 将指定窗口移动到目标桌面
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口路径</param>
     /// <param name="desktopId">桌面id</param>
-    public void MoveToDesktop(string windowUri, int desktopId) {
-        if (!_uri2WindowMap.TryGetValue(windowUri, out Window window)) {
+    public void MoveToDesktop(string windowAddr, int desktopId) {
+        if (!_addr2WindowMap.TryGetValue(windowAddr, out Window window)) {
             return;
         }
         if (window.desktop.DesktopId == desktopId) {
@@ -441,10 +441,10 @@ public sealed class WindowMgr
     /// <summary>
     /// 是否包含正在加载的窗口
     /// </summary>
-    /// <param name="windowUri"></param>
+    /// <param name="windowAddr"></param>
     /// <returns></returns>
-    public bool HasLoadingTask(string windowUri) {
-        return _loadingTaskMap.ContainsKey(windowUri);
+    public bool HasLoadingTask(string windowAddr) {
+        return _loadingTaskMap.ContainsKey(windowAddr);
     }
 
     private void CheckLoadTimeout() {
@@ -614,7 +614,7 @@ public sealed class WindowMgr
 
     // 不可修改
     public Dictionary<int, Window> WindowMap => _windowMap;
-    public Dictionary<string, Window> Uri2WindowMap => _uri2WindowMap;
+    public Dictionary<string, Window> Addr2WindowMap => _addr2WindowMap;
     public IndexedDynamicArray<Window> WindowList => _windowList;
 
     #endregion
@@ -634,13 +634,13 @@ public sealed class WindowMgr
     /// </summary>
     private sealed class LoadingTask
     {
-        public readonly string windowUri;
+        public readonly string windowAddr;
         public readonly WindowOpenArgs openArgs;
         public readonly int pInstId;
         public readonly double expireTime;
 
-        public LoadingTask(string windowUri, WindowOpenArgs openArgs, int pInstId, double expireTime) {
-            this.windowUri = windowUri;
+        public LoadingTask(string windowAddr, WindowOpenArgs openArgs, int pInstId, double expireTime) {
+            this.windowAddr = windowAddr;
             this.openArgs = openArgs;
             this.pInstId = pInstId;
             this.expireTime = expireTime;

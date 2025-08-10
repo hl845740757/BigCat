@@ -55,7 +55,7 @@ public sealed class Window
     private static readonly ILogger logger = LoggerFactory.GetLogger<Window>();
 
     public readonly WindowCfg windowCfg;
-    public readonly string windowUri;
+    public readonly string windowAddr;
     public readonly WindowMgr windowMgr;
     private readonly int _instId;
     private int _parentInstId; // 非0表示有父窗口，重用时会变更
@@ -155,9 +155,9 @@ public sealed class Window
     /// </summary>
     [NonSerialized] private readonly Blackboard _blackboard = new Blackboard();
 
-    internal Window(WindowCfg windowCfg, string windowUri, WindowMgr windowMgr) {
+    internal Window(WindowCfg windowCfg, string windowAddr, WindowMgr windowMgr) {
         this.windowCfg = windowCfg;
-        this.windowUri = windowUri;
+        this.windowAddr = windowAddr;
         this.windowMgr = windowMgr;
         this._instId = windowCfg.GetInstanceID();
 
@@ -763,11 +763,11 @@ public sealed class Window
     }
 
     public override int GetHashCode() {
-        return (windowUri.GetHashCode() * 397) ^ _instId;
+        return (windowAddr.GetHashCode() * 397) ^ _instId;
     }
 
     public override string ToString() {
-        return $"Window-{windowUri}-{_instId}";
+        return $"Window-{windowAddr}-{_instId}";
     }
 
     #endregion

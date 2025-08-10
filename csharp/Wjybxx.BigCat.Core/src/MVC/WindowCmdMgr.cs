@@ -33,23 +33,23 @@ public interface WindowCmdMgr
     /// 
     /// 注：不绑定回调，因为窗口关联的行为库是确定的，因此通过数据确定处理函数即可。
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口地址</param>
     /// <param name="openArgs">打开参数</param>
-    void Open(string windowUri, WindowOpenArgs openArgs);
+    void Open(string windowAddr, WindowOpenArgs openArgs);
 
     /// <summary>
     /// 关闭窗口
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口地址</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
-    void Close(string windowUri, bool force = false);
+    void Close(string windowAddr, bool force = false);
 
     /// <summary>
     /// 关闭多个窗口
     /// </summary>
-    /// <param name="windowUris">窗口路径</param>
+    /// <param name="windowAddrList">窗口地址</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
-    void Close(List<string> windowUris, bool force = false);
+    void Close(List<string> windowAddrList, bool force = false);
 
     /// <summary>
     /// 关闭当前桌面的具有任一指定Tag的窗口
@@ -75,8 +75,8 @@ public interface WindowCmdMgr
     /// <summary>
     /// 将指定窗口移动到目标桌面
     /// </summary>
-    /// <param name="windowUri">窗口路径</param>
+    /// <param name="windowAddr">窗口地址</param>
     /// <param name="desktopId">桌面id</param>
-    void MoveToDesktop(string windowUri, int desktopId);
+    void MoveToDesktop(string windowAddr, int desktopId);
 }
 }
