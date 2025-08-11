@@ -20,18 +20,20 @@ namespace Wjybxx.BigCat.MVC
 {
 /// <summary>
 /// 数据模型解析器
-///
+/// 
 /// 注：定义为接口，以支持用户实现为<see cref="UnityEngine.MonoBehaviour"/>。
 /// </summary>
 public interface IDataModelResolver
 {
     /// <summary>
     /// 数据模型解析器
+    ///
+    /// 注：如果父数据模型为null，则访问聚合数据模型。
     /// </summary>
-    /// <param name="aggerateModel">总聚合模型</param>
+    /// <param name="aggregationModel">总聚合模型</param>
     /// <param name="parentModel">父节点数据</param>
     /// <param name="dataAddress">当前节点的数据地址</param>
     /// <param name="uiIndex">ui元素的索引</param>
-    public object Resolve(IAggerateModel aggerateModel, object parentModel, string dataAddress, int uiIndex);
+    public object Resolve(IAggregationModel aggregationModel, object? parentModel, string dataAddress, int uiIndex);
 }
 }

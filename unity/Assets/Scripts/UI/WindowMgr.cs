@@ -57,7 +57,7 @@ public sealed class WindowMgr
     /// <summary>
     /// 聚合模型（所有Window的依赖）
     /// </summary>
-    private readonly IAggerateModel _aggerateModel;
+    private readonly IAggregationModel _aggregationModel;
     /// <summary>
     /// 数据模型解析器
     /// </summary>
@@ -116,13 +116,13 @@ public sealed class WindowMgr
     /// </summary>
     /// <param name="canvas">根画布</param>
     /// <param name="windowLoader">窗口加载器</param>
-    /// <param name="aggerateModel">聚合数据模型</param>
+    /// <param name="aggregationModel">聚合数据模型</param>
     /// <param name="dataModelResolver">数据模型解析器</param>
-    public WindowMgr(Canvas canvas, WindowLoader windowLoader, IAggerateModel aggerateModel, IDataModelResolver dataModelResolver = null) {
+    public WindowMgr(Canvas canvas, WindowLoader windowLoader, IAggregationModel aggregationModel, IDataModelResolver dataModelResolver = null) {
         this.canvas = canvas ?? throw new ArgumentNullException(nameof(canvas));
         this._windowLoader = windowLoader;
-        this._aggerateModel = aggerateModel;
-        this._dataModelResolver = dataModelResolver;
+        this._aggregationModel = aggregationModel;
+        this._dataModelResolver = dataModelResolver ?? new DataModelResolver();
         // 初始化Desktop
         for (int desktopId = 1; desktopId <= WindowCfg.MAX_DESKTOP; desktopId++) {
             _desktops[desktopId - 1] = new Desktop(desktopId, canvas);
@@ -596,13 +596,13 @@ public sealed class WindowMgr
         if (_dataModelResolver == null) {
             throw new InvalidOperationException("dataModelResolver is null");
         }
-        return _dataModelResolver.Resolve(_aggerateModel, parentDataModel, dataAddress, uiIndex);
+        return _dataModelResolver.Resolve(_aggregationModel, parentDataModel, dataAddress, uiIndex);
     }
 
     #region PROPS
 
     public Canvas Canvas => canvas;
-    public IAggerateModel AggerateModel => _aggerateModel;
+    public IAggregationModel AggregationModel => _aggregationModel;
     public WindowLoader WindowLoader => _windowLoader;
     public IDataModelResolver DataModelResolver => _dataModelResolver;
     public Desktop CurrentDesktop => _curDesktop;

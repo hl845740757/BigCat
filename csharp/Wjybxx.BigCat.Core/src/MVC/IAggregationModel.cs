@@ -27,7 +27,7 @@ namespace Wjybxx.BigCat.MVC
 /// 2.绝大部分Node都可以直接基于逻辑层数据绘制UI，少部分可能需要额外的数据支持。
 /// 3.不那么追求效率的情况下，Managers可以是Injector类型。
 /// </summary>
-public interface IAggerateModel
+public interface IAggregationModel
 {
     /// <summary>
     /// 视图层数据模型（总入口）
