@@ -18,6 +18,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Fx
@@ -51,6 +52,11 @@ public readonly struct WorkerAddr : IEquatable<WorkerAddr>
     public WorkerAddr(int nodeId, string? workerId) {
         this.nodeId = nodeId;
         this.workerId = workerId;
+    }
+
+    public WorkerAddr(IDsonObjectReader reader) {
+        nodeId = reader.ReadInt("nid");
+        workerId = reader.ReadString("wid");
     }
 
     #region equals

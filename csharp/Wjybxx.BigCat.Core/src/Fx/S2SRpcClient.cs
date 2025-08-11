@@ -345,7 +345,9 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
             return;
         }
         try {
-            invoker.Invoke(this, request);
+            invoker.Invoke(this, request.SessionId, request.SrcAddr,
+                request.RequestId, request.ServiceId, request.MethodId, request.InvokeType,
+                request.Data);
         }
         catch (Exception ex) {
             LogInvokeException(request, ex);

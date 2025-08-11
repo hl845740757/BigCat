@@ -273,13 +273,13 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
             return;
         }
         // 判断是否对外提供服务
-        if (!node.ServiceInfoMap.TryGetValue(request.ServiceId, out ServiceInfo? serviceInfo)
+        if (!node.ServiceInfoMap.TryGetValue(request.ServiceId, out ServiceInfo serviceInfo)
             || serviceInfo.workerList.Count == 0) {
             Reject(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE);
             return;
         }
         // 优先按照SessionId查找，其次按workerId查找，最后随机分配
-        if (session2WorkerMap.TryGetValue(request.SessionId, out Worker? worker)) {
+        if (session2WorkerMap.TryGetValue(request.SessionId, out Worker worker)) {
             OnRcvRequestStep2(worker, request);
             return;
         }
@@ -315,7 +315,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         }
     }
 
-    private Worker? FindWorker(IList<Worker> workerList, string workerId) {
+    private static Worker? FindWorker(IList<Worker> workerList, string workerId) {
         for (int idx = 0; idx < workerList.Count; idx++) {
             Worker worker = workerList[idx];
             if (workerId == worker.WorkerAddr.workerId) {
@@ -378,13 +378,12 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
      */
     public void OnRcvResponse(RpcResponse response) {
         if (response == null) throw new ArgumentNullException(nameof(response));
-        // 不重复打印旧进程的Rpc响应
         if (enableLog) {
             logger.Info("rcv rpc response {0}", response);
         }
         // watcher需要在IO线程测试
         Key key = new Key(response.SessionId, response.RequestId);
-        if (watcherMap.TryRemove(key, out IPromise<RpcResult>? watcher)) {
+        if (watcherMap.TryRemove(key, out IPromise<RpcResult> watcher)) {
             // 同步调用在IO线程反序列化
             if (response.IsBytes && !DecodeResult(response)) {
                 response.SetFailed(RpcErrorCodes.LOCAL_DESERIALIZE_FAILED, "data error");
@@ -574,14 +573,6 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
 
         public override int GetHashCode() {
             return (sessionId.GetHashCode() * 397) ^ requestId.GetHashCode();
-        }
-
-        public static bool operator ==(Key left, Key right) {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Key left, Key right) {
-            return !left.Equals(right);
         }
 
         public override string ToString() {
