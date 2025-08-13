@@ -28,7 +28,7 @@ public sealed class WindowOpenArgs
     ///
     /// 注：如果未指定数据，则表示根据Window的配置从默认的视图数据查找。
     /// </summary>
-    public object dataModel;
+    public object? dataModel;
     /// <summary>
     /// 如果目标窗口已打开，是否执行重新打开流程
     ///

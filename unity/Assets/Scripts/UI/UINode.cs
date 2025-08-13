@@ -199,7 +199,6 @@ public class UINode : MonoBehaviour
         foreach (UINode child in children) {
             child.Hide();
         }
-        controller?.OnHide();
         OnHide();
         _ctl = 0;
         // 私有黑板只需清理
@@ -255,7 +254,7 @@ public class UINode : MonoBehaviour
     /// UI节点退出的时候调用
     /// </summary>
     protected virtual void OnHide() {
-
+        controller?.OnHide();
     }
 
     /// <summary>

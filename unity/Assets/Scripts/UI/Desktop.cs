@@ -50,6 +50,10 @@ public sealed class Desktop
     /// (会动态修正，避免无限膨胀)
     /// </summary>
     private int openOrder = 0;
+    /// <summary>
+    /// 桌面是否处于显示状态
+    /// </summary>
+    private bool showing = false;
 
     internal Desktop(int desktopId, Canvas canvas) {
         _desktopId = desktopId;
@@ -61,10 +65,13 @@ public sealed class Desktop
     /// </summary>
     public int DesktopId => _desktopId;
     /// <summary>
+    /// 当前是否处于显示状态
+    /// </summary>
+    public bool IsShowing => showing;
+    /// <summary>
     /// 当前栈信息
     /// </summary>
     public List<Window> Stack => _stack;
-
     /// <summary>
     /// 顶部Window
     /// </summary>
@@ -80,21 +87,20 @@ public sealed class Desktop
     /// 展示桌面
     /// </summary>
     internal void Show() {
-        SortWindows();
+        showing = true;
+        SortWindows(); // 会setActive
         foreach (Window window in _stack) {
-            if (window.Status < ComponentStatus.Running
-                || window.Status > ComponentStatus.Shutdown) {
-                continue;
-            }
-            window.gameObject.SetActive(true);
-            window.Repaint(); // 激活后执行一次绘制
+            window.Repaint();
         }
     }
 
     /// <summary>
     /// 隐藏桌面
+    ///
+    /// 注意：桌面被隐藏，不意味着窗口逻辑被暂停。
     /// </summary>
     internal void Hide() {
+        showing = false;
         foreach (Window window in _stack) {
             window.gameObject.SetActive(false);
         }
@@ -167,8 +173,14 @@ public sealed class Desktop
 
     /// <summary>
     /// 重排序Window层级
+    /// 
+    /// TODO PC游戏的话，窗口是可以挪动的，需要动态处理Window的Active状态；暂改为public，允许用户随时调用。
     /// </summary>
-    private void SortWindows() {
+    public void SortWindows() {
+        // 非显示状态下不纠正窗口层级，Show的时候会修正
+        if (!showing) {
+            return;
+        }
         openOrder = 0;
         foreach (Window window in _stack) {
             window.openOrder = ++openOrder;
@@ -180,8 +192,8 @@ public sealed class Desktop
             window.transform.SetSiblingIndex(index);
             window.gameObject.SetActive(!IsOverlapped(window, index));
         }
-        // 修正Window的画布层级 -- 需要为每个画布预留一段层级，才能确保上面界面的Node一定显示在最上面
-        const int sortOrderPerWindow = WindowCfg.MAX_SORT_ORDER;
+        // 修正Window的画布层级 -- 需要为每个Window画布预留一段层级，才能确保上面界面的Node一定显示在最上面
+        const int sortOrderPerWindow = WindowCfg.MAX_SORT_ORDER + 1;
         for (int index = 0; index < _stack.Count; index++) {
             Window window = _stack[index];
             window.SetCanvasLayer(_canvas.sortingLayerID, _canvas.sortingOrder + (index * sortOrderPerWindow));

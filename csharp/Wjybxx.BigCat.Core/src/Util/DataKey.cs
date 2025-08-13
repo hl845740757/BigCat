@@ -21,10 +21,15 @@ using System;
 namespace Wjybxx.BigCat.Util
 {
 /// <summary>
-/// 非泛型接口用于装箱，避免用户传入奇怪的对象。
+///
+/// 1.非泛型接口用于装箱，避免用户传入奇怪的对象。
+/// 2.也用于提供装箱的拆装箱接口
 /// </summary>
 public interface DataKey
 {
+    object Unbox(in UnionValue boxedValue);
+
+    UnionValue Box(object value);
 }
 
 /// <summary>
@@ -33,8 +38,16 @@ public interface DataKey
 /// <typeparam name="T"></typeparam>
 public interface DataKey<T> : DataKey
 {
-    T Unbox(in UnionValue boxedValue);
+    new T Unbox(in UnionValue boxedValue);
 
     UnionValue Box(T value);
+
+    object DataKey.Unbox(in UnionValue boxedValue) {
+        return Unbox(in boxedValue);
+    }
+
+    UnionValue DataKey.Box(object value) {
+        return Box((T)value);
+    }
 }
 }

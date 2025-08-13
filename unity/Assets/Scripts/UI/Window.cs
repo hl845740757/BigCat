@@ -39,10 +39,10 @@ namespace Wjybxx.BigCat.UI
 /// Window是UI的入口（是Root节点的持有者）
 ///
 /// 1.Window只提供一些基础的控制交互逻辑，其它的逻辑由Node承担 —— 即Window不负责绘制用户数据。
-/// 2.Window由框架创建，而非用户创建；通常创建的Window为同一类型。
+/// 2.Window由框架创建，而非用户创建。
 /// 3.资源管理的单位是Window，当Window关闭时，会释放所有动态加载的资源。
 /// 4.不建议在Window上设计复杂的程序化动画，建议使用<see cref="Animator"/>制作固定的动画。
-/// 5.为避免和<see cref="MonoBehaviour"/>的方法签名冲突，我们的方法都使用<code>Win</code>开头。
+/// 5.为避免和<see cref="MonoBehaviour"/>的方法签名冲突，我们不实现<see cref="MonoBehaviour"/>。
 /// 6.全屏遮罩建议也实现为窗口，但位于最高层级；窗口内的遮罩建议使用<see cref="UINode"/>实现，有更强的灵活性。
 /// 
 /// TODO
@@ -58,6 +58,7 @@ public sealed class Window
     public readonly string windowAddr;
     public readonly WindowMgr windowMgr;
     private readonly int _instId;
+    private readonly RectTransform _transform;
     private int _parentInstId; // 非0表示有父窗口，重用时会变更
 
     private ComponentStatus _status = ComponentStatus.New;
@@ -160,6 +161,7 @@ public sealed class Window
         this.windowAddr = windowAddr;
         this.windowMgr = windowMgr;
         this._instId = windowCfg.GetInstanceID();
+        this._transform = (RectTransform)windowCfg.transform;
 
         this._agent = windowCfg.GetComponent<WindowAgent>() ?? new UIInternal.SimpleWindowAgent();
         this._canvas = windowCfg.GetComponent<Canvas>();
@@ -588,9 +590,9 @@ public sealed class Window
     /// </summary>
     /// <param name="node"></param>
     public void AddUpdateNode(UINode node) {
-        if (node.qIndex >= 0) {
-            return;
+        if (_updateNodes.Contains(node)) {
             // throw new InvalidOperationException("node already exist");
+            return;
         }
         _updateNodes.Add(node);
     }
@@ -735,12 +737,10 @@ public sealed class Window
     public bool HasFocus => (_ctl & UIInternal.MASK_FOCUS_ON) != 0;
 
     /// <summary>
-    /// 窗口绑定的GameObject
-    ///
-    /// 注：窗口应当独占该GameObject。
+    /// GameObject的激活状态，就是show状态
     /// </summary>
     public GameObject gameObject => windowCfg.gameObject;
-    public RectTransform transform => (RectTransform)windowCfg.transform;
+    public RectTransform transform => _transform;
     public string name => windowCfg.gameObject.name;
 
     // ----------------------------

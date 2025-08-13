@@ -162,6 +162,7 @@ internal static class UIInternal
     }
 
     public static void RefreshChildrenIndex(List<UINode> children, int start, int end) {
+        if (end >= children.Count) end = children.Count - 1;
         for (int idx = start; idx <= end; idx++) {
             children[idx].uiIndex = idx;
         }

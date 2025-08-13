@@ -29,6 +29,6 @@ public interface IDataModelListener
     /// 数据发生变更
     /// </summary>
     /// <param name="eventData">事件数据（额外数据）</param>
-    void OnDataChanged(object eventData = null);
+    void OnDataChanged(object? eventData = null);
 }
 }

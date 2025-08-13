@@ -128,6 +128,7 @@ public sealed class WindowMgr
             _desktops[desktopId - 1] = new Desktop(desktopId, canvas);
         }
         _curDesktop = _desktops[0];
+        _curDesktop.Show();
     }
 
     #region 容器管理

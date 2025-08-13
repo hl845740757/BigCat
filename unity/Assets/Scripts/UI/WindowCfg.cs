@@ -39,8 +39,8 @@ namespace Wjybxx.BigCat.UI
 public class WindowCfg : MonoBehaviour
 {
     public const int MAX_DESKTOP = 5; // 最大桌面数
-    public const int MAX_LAYER = 9; // 单个窗口内的最大层级，其实是10层(0~9)
-    public const int MAX_SORT_ORDER = 63; // 单个层级内支持的用户排序区间
+    public const int MAX_LAYER = 9; // 桌面画布的最大层级，其实是10层(0~9) - 4Bit
+    public const int MAX_SORT_ORDER = 49; // 窗口画布的最大排序（子层级） - 6Bit
 
     public const string ANI_STATE_OPEN = "open"; // 窗口打开动画状态名
     public const string ANI_STATE_CLOSE = "close"; // 窗口关闭动画状态名
@@ -60,17 +60,17 @@ public class WindowCfg : MonoBehaviour
     public List<int> allowDesktopIds = new List<int>();
 
     /// <summary>
-    /// 窗口的层级，值越大越靠近上方
+    /// 窗口在桌面的层级，值越大越靠近上方
     /// </summary>
-    [Range(0, 9)] // 4Bit
+    [Range(0, MAX_LAYER)]
     [Tooltip("窗口画布的层级")]
-    public int sortLayer = 5;
+    public int sortLayer = (MAX_LAYER + 1) / 2;
     /// <summary>
-    /// 窗口在层级内的排序
+    /// 窗口在同层级内的排序
     /// </summary>
-    [Range(0, 63)] // 6Bit
+    [Range(0, MAX_SORT_ORDER)]
     [Tooltip("同层级窗口的排序")]
-    public int sortOrder = 32;
+    public int sortOrder = (MAX_SORT_ORDER + 1) / 2;
 
     /// <summary>
     /// 数据地址

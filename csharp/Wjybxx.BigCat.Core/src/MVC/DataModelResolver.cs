@@ -30,7 +30,7 @@ namespace Wjybxx.BigCat.MVC
 ///
 /// <h3>规则</h3>
 /// 1.斜杠'/'开头表示绝对路径，从聚合数模开始访问；非斜杠开头表示相对路径，从父节点数据开始访问。<br></br>
-/// 2.<code></code>表示访问逻辑层数据模型；<code>/view/xxx</code>表示访问视图层数据模型。<br></br>
+/// 2.<code>/logic/xxx</code>表示访问逻辑层数据模型；<code>/view/xxx</code>表示访问视图层数据模型。<br></br>
 /// 3.<code>{name}</code>大括号表示变量，括号内为变量名；变量名是约定的，有限的。<br></br>
 /// 4.<code>{uiIndex}</code>表示取ui节点的下标；一个dataAddress中只能出现一次{uiIndex}。<br></br>
 /// 3.字典类型仅支持Int32、Int64、string三种键。
@@ -181,7 +181,6 @@ public class DataModelResolver : IDataModelResolver
             throw new Exception("empty, addr: " + addr);
         }
         string name = itemStr;
-        bool _ = long.TryParse(itemStr, out long number);
         int flags = 0;
         if (itemStr[0] == '{') {
             if (itemStr[itemStr.Length - 1] != '}') {
@@ -193,6 +192,9 @@ public class DataModelResolver : IDataModelResolver
             if (name == NAME_UI_INDEX) {
                 flags |= MASK_UI_INDEX;
             }
+        }
+        if (!long.TryParse(itemStr, out long number)) {
+            number = -1; // 尽量保持无意义
         }
         return new Item(name, number, flags);
     }

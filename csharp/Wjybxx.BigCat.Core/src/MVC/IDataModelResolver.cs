@@ -34,6 +34,6 @@ public interface IDataModelResolver
     /// <param name="parentModel">父节点数据</param>
     /// <param name="dataAddress">当前节点的数据地址</param>
     /// <param name="uiIndex">ui元素的索引</param>
-    public object Resolve(IAggregationModel aggregationModel, object? parentModel, string dataAddress, int uiIndex);
+    public object Resolve(IAggregationModel aggregationModel, object? parentModel, string dataAddress, int uiIndex = -1);
 }
 }

@@ -34,7 +34,7 @@ public sealed class Blackboard
         dataMap = new Dictionary<DataKey, UnionValue>();
     }
 
-    public Blackboard(int capacity, IEqualityComparer<DataKey> comparer = null) {
+    public Blackboard(int capacity, IEqualityComparer<DataKey>? comparer = null) {
         dataMap = new Dictionary<DataKey, UnionValue>(capacity, comparer);
     }
 
@@ -46,14 +46,9 @@ public sealed class Blackboard
 
     #region 泛型key
 
-    private static bool IsNullableType(Type type) {
-        if (!type.IsValueType) return true;
-        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
-    }
-
     public void Set<T>(DataKey<T> key, T value) {
         // 避免值类型测试null产生装箱
-        UnionValue unionValue = (IsNullableType(typeof(T)) && value == null) ? UnionValue.Null : key.Box(value);
+        UnionValue unionValue = (ObjectUtil.IsNullableType<T>() && value == null) ? UnionValue.Null : key.Box(value);
         dataMap[key] = unionValue;
     }
 
