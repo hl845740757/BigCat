@@ -45,7 +45,7 @@ public sealed class GameUnitMgr
     /// 所有的游戏单位
     /// 注意：外部不可直接修改。
     /// </summary>
-    private readonly IndexedDynamicArray<GameUnit> gameUnitList = new(GIndexHelper.MAIN_HELPER, INIT_CAPACITY, 0);
+    private readonly IndexedDynamicArray<GameUnit> gameUnitList = new(GIndexHelper.MAIN_HELPER, INIT_CAPACITY, 0.1f);
     /// <summary>
     /// 游戏单位的字典映射
     /// 注意：不能用于迭代。

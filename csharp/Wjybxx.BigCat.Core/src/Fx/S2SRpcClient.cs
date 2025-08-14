@@ -394,7 +394,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
             RpcResponse.Release(response);
             return;
         }
-        if (!session.stubMap.Remove(response.RequestId, out RpcRequestStub? stub)) {
+        if (!session.stubMap.Remove(response.RequestId, out RpcRequestStub stub)) {
             LogResponseTimeout(response);
             RpcResponse.Release(response);
             return;

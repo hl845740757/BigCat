@@ -238,8 +238,6 @@ public sealed class SceneMgr
             if (scene == null) {
                 continue;
             }
-
-
             try {
                 scene.Stop();
                 scene.Destroy();
@@ -262,27 +260,6 @@ public sealed class SceneMgr
     #region 场景Update管理
 
     /// <summary>
-    /// 执行场景的FixedUpdate方法
-    /// </summary>
-    public void FixedUpdate(double unscaledDeltaTime) {
-        IndexedDynamicArray<Scene> sceneList = _activeSceneList;
-        sceneList.BeginItr();
-        for (int index = 0, len = sceneList.Length; index < len; index++) {
-            Scene scene = sceneList[index];
-            if (scene == null || scene.Status != ComponentStatus.Running) {
-                continue;
-            }
-            try {
-                scene.FixedUpdate(unscaledDeltaTime);
-            }
-            catch (Exception e) {
-                logger.Warn(e, "scene.FixedUpdate caught exception, configId: " + scene.ConfigId);
-            }
-        }
-        sceneList.EndItr();
-    }
-
-    /// <summary>
     /// 执行场景的EarlyUpdate方法
     /// 注：该方法其实主要是为协程服务的
     /// </summary>
@@ -299,6 +276,27 @@ public sealed class SceneMgr
             }
             catch (Exception e) {
                 logger.Warn(e, "scene.EarlyUpdate caught exception, configId: " + scene.ConfigId);
+            }
+        }
+        sceneList.EndItr();
+    }
+
+    /// <summary>
+    /// 执行场景的FixedUpdate方法
+    /// </summary>
+    public void FixedUpdate(double unscaledDeltaTime) {
+        IndexedDynamicArray<Scene> sceneList = _activeSceneList;
+        sceneList.BeginItr();
+        for (int index = 0, len = sceneList.Length; index < len; index++) {
+            Scene scene = sceneList[index];
+            if (scene == null || scene.Status != ComponentStatus.Running) {
+                continue;
+            }
+            try {
+                scene.FixedUpdate(unscaledDeltaTime);
+            }
+            catch (Exception e) {
+                logger.Warn(e, "scene.FixedUpdate caught exception, configId: " + scene.ConfigId);
             }
         }
         sceneList.EndItr();

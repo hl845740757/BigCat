@@ -29,21 +29,21 @@ public enum ScriptMethods
     None = 0,
 
     /// <summary>
-    /// <see cref="SComponent.FixedUpdate"/>
-    /// </summary>
-    FixedUpdate = 1,
-    /// <summary>
     /// <see cref="SComponent.EarlyUpdate"/>
     /// </summary>
-    EarlyUpdate = 1 << 1,
+    EarlyUpdate = 0x01,
+    /// <summary>
+    /// <see cref="SComponent.FixedUpdate"/>
+    /// </summary>
+    FixedUpdate = 0x02,
     /// <summary>
     /// <see cref="SComponent.Update"/>
     /// </summary>
-    Update = 1 << 2,
+    Update = 0x04,
     /// <summary>
     /// <see cref="SComponent.LateUpdate"/>
     /// </summary>
-    LateUpdate = 1 << 3,
+    LateUpdate = 0x08,
 
     All = -1
 }

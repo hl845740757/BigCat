@@ -79,8 +79,7 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 重入Id，只增不减
     ///
-    /// 1.enter和exit都增加；
-    /// 2.事件处理脚本可以捕获该id，以判断UI是否进入到了新的生命周期；
+    /// 注：事件处理脚本可以捕获该id，以判断UI是否进入到了新的生命周期；
     /// </summary>
     [NonSerialized] private int _reentryId;
     /// <summary>
@@ -219,12 +218,12 @@ public class UINode : MonoBehaviour
     /// <param name="firstShow"></param>
     protected virtual void OnShow(bool firstShow) {
         foreach (UINode hook in hooks) {
-            if (hook.enabled) {
-                ShowChild(hook, hook.name);
+            if (!hook.IsShowing && hook.enabled) {
+                ShowChild(hook);
             }
         }
         foreach (UINode child in children) {
-            if (child.enabled) {
+            if (!child.IsShowing && child.enabled) {
                 ShowChild(child);
             }
         }

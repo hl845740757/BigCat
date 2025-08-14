@@ -44,6 +44,7 @@ namespace Wjybxx.BigCat.UI
 /// 4.不建议在Window上设计复杂的程序化动画，建议使用<see cref="Animator"/>制作固定的动画。
 /// 5.为避免和<see cref="MonoBehaviour"/>的方法签名冲突，我们不实现<see cref="MonoBehaviour"/>。
 /// 6.全屏遮罩建议也实现为窗口，但位于最高层级；窗口内的遮罩建议使用<see cref="UINode"/>实现，有更强的灵活性。
+/// 7.避免操作窗口关联的<see cref="gameObject"/>。
 /// 
 /// TODO
 /// 1.Close、Pause公共按钮支持 -- 可以提一个公共组件
@@ -69,8 +70,7 @@ public sealed class Window
     /// <summary>
     /// 重入Id，只增不减
     ///
-    /// 1.enter和exit都增加；
-    /// 2.事件处理脚本可以捕获该id，以判断UI是否进入到了新的生命周期；
+    /// 事件处理脚本可以捕获该id，以判断UI是否进入到了新的生命周期；
     /// </summary>
     [NonSerialized] private int _reentryId;
     /// <summary>
@@ -510,7 +510,7 @@ public sealed class Window
     /// </summary>
     private void Show() {
         gameObject.SetActive(true);
-        if (_rootNode.enabled) {
+        if (!_rootNode.IsShowing && _rootNode.enabled) {
             object dataModel = windowMgr.ResolveDataModel(_dataModel, _rootNode.nodeCfg.dataAddress);
             _rootNode.Show(this, null, dataModel);
         }
@@ -531,7 +531,7 @@ public sealed class Window
 
     /// <summary>
     /// 隐藏显示内容
-    /// (正常情况下不应该直接隐藏窗口)
+    /// (正常情况下不应该直接隐藏窗口，隐藏根节点即可)
     /// </summary>
     private void Hide() {
         gameObject.SetActive(false);
@@ -714,14 +714,16 @@ public sealed class Window
     }
 
     /// <summary>
-    /// Window的根节点 -- 不可修改
+    /// Window的根节点
+    ///
+    /// 注：root节点的show和hide状态，就是Window的show和hide状态
     /// </summary>
     public UINode RootNode => _rootNode;
 
     /// <summary>
-    /// 是否是子窗口
+    /// 是否有父窗口
     /// </summary>
-    public bool IsSubWindow => _parentInstId != 0;
+    public bool HasParent => _parentInstId != 0;
 
     /// <summary>
     /// 是否忽略父窗口关闭信号
@@ -737,7 +739,7 @@ public sealed class Window
     public bool HasFocus => (_ctl & UIInternal.MASK_FOCUS_ON) != 0;
 
     /// <summary>
-    /// GameObject的激活状态，就是show状态
+    /// 窗口关联的GameObject
     /// </summary>
     public GameObject gameObject => windowCfg.gameObject;
     public RectTransform transform => _transform;

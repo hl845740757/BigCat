@@ -114,6 +114,9 @@ public sealed class Desktop
         window.desktop = this;
         window.openOrder = ++openOrder;
         _stack.Add(window);
+        if (!showing) {
+            window.gameObject.SetActive(false);
+        }
         if (refresh) {
             SortWindows();
         }

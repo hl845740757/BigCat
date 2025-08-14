@@ -463,3 +463,5 @@ csharp/*/Generated
 unity/UserSettings/
 unity/Assets/TextMesh Pro.meta
 unity/Assets/TextMesh Pro/
+unity/Assets/Resources/Fonts/ChineseLevel1SDF.asset
+unity/Assets/Resources/Fonts/ChineseLevel1SDF.asset.meta

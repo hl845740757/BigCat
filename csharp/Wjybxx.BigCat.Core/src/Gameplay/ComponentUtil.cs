@@ -49,8 +49,8 @@ internal static class ComponentUtil
             return methods;
         }
         methods = ScriptMethods.All;
-        if (!IsOverride(abstractType, type, "FixedUpdate")) methods &= ~ScriptMethods.FixedUpdate;
         if (!IsOverride(abstractType, type, "EarlyUpdate")) methods &= ~ScriptMethods.EarlyUpdate;
+        if (!IsOverride(abstractType, type, "FixedUpdate")) methods &= ~ScriptMethods.FixedUpdate;
         if (!IsOverride(abstractType, type, "Update")) methods &= ~ScriptMethods.Update;
         if (!IsOverride(abstractType, type, "LateUpdate")) methods &= ~ScriptMethods.LateUpdate;
         overridesCache.TryAdd(type, methods);

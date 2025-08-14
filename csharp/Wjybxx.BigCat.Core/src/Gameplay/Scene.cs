@@ -105,10 +105,10 @@ public sealed class Scene
     /// 我们调度的单位是Scene
     /// (scene作为一个完全独立的环境进行调度)
     /// </summary>
-    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _fixedUpdateList = new(SComponentIndexHelper.GetInst(1), 10);
-    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _earlyUpdateList = new(SComponentIndexHelper.GetInst(2), 10);
-    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _updateList = new(SComponentIndexHelper.GetInst(3), 10);
-    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _lateUpdateList = new(SComponentIndexHelper.GetInst(4), 10);
+    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _earlyUpdateList = new(SComponentIndexHelper.GetInst(1), 4);
+    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _fixedUpdateList = new(SComponentIndexHelper.GetInst(2), 4);
+    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _updateList = new(SComponentIndexHelper.GetInst(3));
+    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _lateUpdateList = new(SComponentIndexHelper.GetInst(4), 4);
 
     /// <summary>
     /// 在队列中的索引缓存
@@ -495,28 +495,6 @@ public sealed class Scene
 
     #region update
 
-    public void FixedUpdate(double unscaledDeltaTime) {
-        _time.FixedUpdate(unscaledDeltaTime);
-        IndexedDynamicArray<SComponent> list = _fixedUpdateList;
-        if (list.Length == 0) {
-            return; // 逻辑层也少有FixedUpdate
-        }
-        list.BeginItr();
-        for (int index = 0, len = list.Length; index < len; index++) {
-            SComponent component = list[index];
-            if (component == null) {
-                continue;
-            }
-            try {
-                component.FixedUpdate();
-            }
-            catch (Exception e) {
-                logger.Warn(e, "component.FixedUpdate caught exception, cid: " + component.Cid);
-            }
-        }
-        list.EndItr();
-    }
-
     /// <summary>
     /// 该方法主要是为协程服务的
     /// </summary>
@@ -538,6 +516,28 @@ public sealed class Scene
             }
             catch (Exception e) {
                 logger.Warn(e, "component.EarlyUpdate caught exception, cid: " + component.Cid);
+            }
+        }
+        list.EndItr();
+    }
+
+    public void FixedUpdate(double unscaledDeltaTime) {
+        _time.FixedUpdate(unscaledDeltaTime);
+        IndexedDynamicArray<SComponent> list = _fixedUpdateList;
+        if (list.Length == 0) {
+            return; // 逻辑层也少有FixedUpdate
+        }
+        list.BeginItr();
+        for (int index = 0, len = list.Length; index < len; index++) {
+            SComponent component = list[index];
+            if (component == null) {
+                continue;
+            }
+            try {
+                component.FixedUpdate();
+            }
+            catch (Exception e) {
+                logger.Warn(e, "component.FixedUpdate caught exception, cid: " + component.Cid);
             }
         }
         list.EndItr();

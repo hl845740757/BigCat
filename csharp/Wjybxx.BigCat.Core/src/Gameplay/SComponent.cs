@@ -129,10 +129,10 @@ public abstract class SComponent
     protected virtual void Start() {
     }
 
-    public virtual void FixedUpdate() {
+    public virtual void EarlyUpdate() {
     }
 
-    public virtual void EarlyUpdate() {
+    public virtual void FixedUpdate() {
     }
 
     public virtual void Update() {
