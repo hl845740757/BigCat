@@ -60,7 +60,8 @@ public class WindowDriver : MonoBehaviour
 
     private void Update() {
         if (windowMgr != null) {
-            windowMgr.EarlyUpdate(Time.unscaledTime);
+            windowMgr.BeginOfFrame(Time.unscaledTime);
+            windowMgr.EarlyUpdate();
             windowMgr.Update();
         }
     }
@@ -68,6 +69,7 @@ public class WindowDriver : MonoBehaviour
     private void LateUpdate() {
         if (windowMgr != null) {
             windowMgr.LateUpdate();
+            windowMgr.EndOfFrame();
         }
     }
 }

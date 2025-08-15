@@ -133,6 +133,10 @@ public sealed class WindowMgr
 
     #region 容器管理
 
+    public Dictionary<int, Window> WindowMap => _windowMap;
+    public Dictionary<string, Window> Addr2WindowMap => _addr2WindowMap;
+    public IndexedDynamicArray<Window> WindowList => _windowList;
+
     /// <summary>
     /// 获取桌面
     /// </summary>
@@ -464,13 +468,23 @@ public sealed class WindowMgr
     #region update管理
 
     /// <summary>
+    /// 帧循环开始
+    ///
+    /// 注：该方法主要用于调度协程。
+    /// </summary>
+    /// <param name="unscaledDeltaTime"></param>
+    public void BeginOfFrame(double unscaledDeltaTime) {
+        time.Update(unscaledDeltaTime);
+        CheckLoadTimeout();
+        // TODO 协程调度
+    }
+
+    /// <summary>
     /// 执行窗口的EarlyUpdate方法
     /// 注：该方法其实主要是为协程服务的
     /// </summary>
-    public void EarlyUpdate(double unscaledDeltaTime) {
-        time.Update(unscaledDeltaTime);
-        CheckLoadTimeout();
-
+    public void EarlyUpdate() {
+        double unscaledDeltaTime = time.UnscaledDeltaTime;
         IndexedDynamicArray<Window> windowList = _activeWindowList;
         windowList.BeginItr();
         for (int index = 0, len = windowList.Length; index < len; index++) {
@@ -528,7 +542,15 @@ public sealed class WindowMgr
             }
         }
         windowList.EndItr();
+    }
 
+    /// <summary>
+    /// 帧循环结束
+    /// 
+    ///  注：该方法主要用于调度协程。
+    /// </summary>
+    public void EndOfFrame() {
+        // TODO 协程调度
         // 处理延迟销毁
         BetterIndexedPriorityQueue<Window> closedWindowList = _closedWindowList;
         while (closedWindowList.TryDequeue(out Window window)) {
@@ -608,15 +630,18 @@ public sealed class WindowMgr
     public IDataModelResolver DataModelResolver => _dataModelResolver;
     public Desktop CurrentDesktop => _curDesktop;
 
+    /// <summary>
+    /// 窗口加载的超时时间
+    /// </summary>
     public double LoadingTimeout {
         get => loadingTimeout;
-        set => loadingTimeout = value;
+        set => loadingTimeout = Math.Max(0, value);
     }
 
-    // 不可修改
-    public Dictionary<int, Window> WindowMap => _windowMap;
-    public Dictionary<string, Window> Addr2WindowMap => _addr2WindowMap;
-    public IndexedDynamicArray<Window> WindowList => _windowList;
+    /// <summary>
+    /// UI循环的时间轴
+    /// </summary>
+    public GTime Time => time;
 
     #endregion
 

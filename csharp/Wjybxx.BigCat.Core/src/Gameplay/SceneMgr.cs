@@ -79,12 +79,25 @@ public sealed class SceneMgr
     /// 待延迟销毁的Scene
     /// </summary>
     private readonly IndexedDynamicArray<Scene> _closedSceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(2), 10);
+
+    /// <summary>
+    /// 时间系统
+    /// </summary>
+    private readonly GTime time = new GTime();
 #nullable restore
 
+    /// <summary>
+    /// 所有场景的依赖
+    /// </summary>
     public IInjector Injector {
         get => _injector;
         set => _injector = value;
     }
+
+    /// <summary>
+    /// 场景循环的时间轴
+    /// </summary>
+    public GTime Time => time;
 
     #region 容器管理
 
@@ -260,10 +273,21 @@ public sealed class SceneMgr
     #region 场景Update管理
 
     /// <summary>
-    /// 执行场景的EarlyUpdate方法
-    /// 注：该方法其实主要是为协程服务的
+    /// 帧循环开始
+    ///
+    /// 注：该方法主要用于调度协程。
     /// </summary>
-    public void EarlyUpdate(double unscaledDeltaTime) {
+    /// <param name="unscaledDeltaTime"></param>
+    public void BeginOfFrame(double unscaledDeltaTime) {
+        time.Update(unscaledDeltaTime);
+        // TODO 协程调度
+    }
+
+    /// <summary>
+    /// 执行场景的EarlyUpdate方法
+    /// </summary>
+    public void EarlyUpdate() {
+        double unscaledDeltaTime = time.UnscaledDeltaTime;
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
         for (int index = 0, len = sceneList.Length; index < len; index++) {
@@ -285,6 +309,9 @@ public sealed class SceneMgr
     /// 执行场景的FixedUpdate方法
     /// </summary>
     public void FixedUpdate(double unscaledDeltaTime) {
+        time.FixedUpdate(unscaledDeltaTime);
+        // TODO 协程调度
+
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
         for (int index = 0, len = sceneList.Length; index < len; index++) {
@@ -342,7 +369,15 @@ public sealed class SceneMgr
             }
         }
         sceneList.EndItr();
+    }
 
+    /// <summary>
+    /// 帧循环结束
+    /// 
+    /// 注：该方法主要用于调度协程。
+    /// </summary>
+    public void EndOfFrame() {
+        // TODO 协程调度
         // 处理延迟销毁
         IndexedDynamicArray<Scene> closedSceneList = _closedSceneList;
         closedSceneList.BeginItr();

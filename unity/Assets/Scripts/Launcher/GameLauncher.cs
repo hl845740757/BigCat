@@ -100,12 +100,14 @@ public class GameLauncher : MonoBehaviour
 
     private void Update() {
         worker.Internal_Update();
-        sceneMgr.EarlyUpdate(Time.unscaledDeltaTime);
+        sceneMgr.BeginOfFrame(Time.unscaledDeltaTime);
+        sceneMgr.EarlyUpdate();
         sceneMgr.Update();
     }
 
     private void LateUpdate() {
         sceneMgr.LateUpdate();
+        sceneMgr.EndOfFrame();
     }
 
     private void OnDestroy() {
