@@ -12,6 +12,7 @@ using Wjybxx.BigCat.UI;
 using Wjybxx.BigCat.Unity;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
+using Wjybxx.Disruptor;
 
 namespace Wjybxx.BigCat.Launcher
 {
@@ -33,6 +34,7 @@ public class GameLauncher : MonoBehaviour
         {
             NodeId = NodeId.MakeNodeId(1, 1),
             WorkerId = "Node",
+            WaitStrategy = new TimeoutSleepingWaitStrategy(5, 2, 5),
             Injector = InjectorExtensions.CreateInjector(new NodeInjectorConfig()),
             // 初始化模块
             ModuleClasses =
@@ -67,6 +69,7 @@ public class GameLauncher : MonoBehaviour
                         WorkerId = "Worker-" + index,
                         Parent = parent,
                         ControlData = controlData,
+                        WaitStrategy = new TimeoutSleepingWaitStrategy(5, 2, 5),
                         Injector = InjectorExtensions.CreateInjector(new WorkerInjectorConfig()),
                         ModuleClasses = { typeof(RpcClient) }
                     };

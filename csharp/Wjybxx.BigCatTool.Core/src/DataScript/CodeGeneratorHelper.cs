@@ -357,6 +357,7 @@ public class CodeGeneratorHelper
             typeBuilder.AddSpec(MacroSpec.Get("region", "codec"));
             CodeGeneratorCfg.ClassCodecCfg? classCfg = GetClassCfg(namedType);
             typeBuilder.AddSpec(BuildReaderConstructor(namedType, classCfg));
+            typeBuilder.AddSpec(BuildReaderObjectMethod(namedType, classCfg));
             typeBuilder.AddSpec(BuildReadFieldMethod(namedType, classCfg));
             typeBuilder.AddSpec(BuildWriteObjectMethod(namedType, classCfg));
             BuildCodecHookMethods(namedType, classCfg, typeBuilder);
@@ -683,8 +684,21 @@ public class CodeGeneratorHelper
         } else if (namedType.IsValueType) {
             constructorBuilder.ConstructorInvoker(CodeBlock.Of("this()")); // 结构体在使用前必须完成基础的初始化
         }
+        return constructorBuilder.Build();
+    }
 
-        CodeBlock.Builder codeBuilder = constructorBuilder.codeBuilder;
+    private MethodSpec BuildReaderObjectMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_READ_OBJECT)
+            .AddModifiers(Modifiers.Public)
+            .AddParameter(TYPE_NAME_READER, "reader");
+        if (namedType.BaseType != null) {
+            methodBuilder.AddModifiers(Modifiers.Override);
+            methodBuilder.codeBuilder.AddStatement("base.ReadObject(reader)");
+        } else if (!namedType.IsValueType) {
+            methodBuilder.AddModifiers(Modifiers.Virtual);
+        }
+
+        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         // Array格式顺序解码 - 读取所有字段
         codeBuilder.BeginControlFlow("if (reader.ContextType == $T.Array)", TYPE_NAME_CONTEXT_TYPE);
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
@@ -720,7 +734,7 @@ public class CodeGeneratorHelper
             codeBuilder.AddStatement("ReadField(reader, reader.ReadName())");
             codeBuilder.EndControlFlow();
         }
-        return constructorBuilder.Build();
+        return methodBuilder.Build();
     }
 
     private MethodSpec BuildReadFieldMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {

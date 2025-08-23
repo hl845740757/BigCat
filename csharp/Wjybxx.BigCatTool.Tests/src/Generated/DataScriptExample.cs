@@ -110,6 +110,9 @@ public class SimpleBean
     #region codec
 
     public SimpleBean(IDsonObjectReader reader) {
+    }
+
+    public virtual void ReadObject(IDsonObjectReader reader) {
         if (reader.ContextType == DsonContextType.Array) {
             this._age = reader.ReadInt(null);
             this._name = reader.ReadString(null);
@@ -268,6 +271,10 @@ public class SimpleChildBean : SimpleBean
 
     public SimpleChildBean(IDsonObjectReader reader)
         : base(reader) {
+    }
+
+    public override void ReadObject(IDsonObjectReader reader) {
+        base.ReadObject(reader);
         if (reader.ContextType == DsonContextType.Array) {
             this._addresses = reader.ReadObject<List<string>>(null);
         }
@@ -358,6 +365,9 @@ public struct Vector3 : IEquatable<Vector3>
 
     public Vector3(IDsonObjectReader reader)
         : this() {
+    }
+
+    public void ReadObject(IDsonObjectReader reader) {
         if (reader.ContextType == DsonContextType.Array) {
             this._x = reader.ReadFloat(null);
             this._y = reader.ReadFloat(null);
@@ -470,6 +480,9 @@ public class GenericBean<T, U>
     #region codec
 
     public GenericBean(IDsonObjectReader reader) {
+    }
+
+    public virtual void ReadObject(IDsonObjectReader reader) {
         if (reader.ContextType == DsonContextType.Array) {
             this._key = reader.ReadObject<T?>(null);
             this._value = reader.ReadObject<U>(null);
@@ -561,6 +574,10 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     public GenericChildBean(IDsonObjectReader reader)
         : base(reader) {
+    }
+
+    public override void ReadObject(IDsonObjectReader reader) {
+        base.ReadObject(reader);
         if (reader.ContextType == DsonContextType.Array) {
             this._addresses = reader.ReadObject<List<string>>(null);
         }
@@ -649,6 +666,10 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     public GenericChildBean2(IDsonObjectReader reader)
         : base(reader) {
+    }
+
+    public override void ReadObject(IDsonObjectReader reader) {
+        base.ReadObject(reader);
         if (reader.ContextType == DsonContextType.Array) {
             this._addresses = reader.ReadObject<List<string>>(null);
         }
@@ -753,6 +774,9 @@ public class OuterClass
     #region codec
 
     public OuterClass(IDsonObjectReader reader) {
+    }
+
+    public virtual void ReadObject(IDsonObjectReader reader) {
         if (reader.ContextType == DsonContextType.Array) {
             this._x = reader.ReadFloat(null);
             this._y = reader.ReadFloat(null);
@@ -851,6 +875,9 @@ public class OuterClass
         #region codec
 
         public Request(IDsonObjectReader reader) {
+        }
+
+        public virtual void ReadObject(IDsonObjectReader reader) {
             if (reader.ContextType == DsonContextType.Array) {
                 this._value = reader.ReadString(null);
                 return;
@@ -929,6 +956,9 @@ public class OuterClass
         #region codec
 
         public Result(IDsonObjectReader reader) {
+        }
+
+        public virtual void ReadObject(IDsonObjectReader reader) {
             if (reader.ContextType == DsonContextType.Array) {
                 this._value = reader.ReadString(null);
                 return;
@@ -1017,6 +1047,9 @@ public class PeerClass
     #region codec
 
     public PeerClass(IDsonObjectReader reader) {
+    }
+
+    public virtual void ReadObject(IDsonObjectReader reader) {
         if (reader.ContextType == DsonContextType.Array) {
             this._request = reader.ReadObject<OuterClass.Request>(null);
             this._result = reader.ReadObject<OuterClass.Result>(null);

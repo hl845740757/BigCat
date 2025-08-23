@@ -35,12 +35,6 @@ public class UINodeCfg
     [Tooltip("如果指定了name，则controller也必须指定name")]
     public string name;
     /// <summary>
-    /// 创建新黑板(切割上下文)
-    /// </summary>
-    [Tooltip("是否需要切割黑板，当Controller数据和父节点存在冲突时勾选")]
-    public bool newBlackboard;
-
-    /// <summary>
     /// 数据地址
     ///
     /// 0.空字符串表示沿用父节点数据
@@ -49,6 +43,12 @@ public class UINodeCfg
     /// </summary>
     [Tooltip("View关联的数据模型地址，规则请查看文档")]
     public string dataAddress;
+
+    /// <summary>
+    /// 创建新黑板(切割上下文)
+    /// </summary>
+    [Tooltip("是否需要切割黑板，当Controller数据和父节点存在冲突时勾选")]
+    public bool newBlackboard;
     /// <summary>
     /// 自定义flags
     ///

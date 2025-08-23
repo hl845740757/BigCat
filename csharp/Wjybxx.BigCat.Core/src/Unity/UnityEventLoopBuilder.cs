@@ -90,7 +90,7 @@ public class UnityEventLoopBuilder<T> : EventLoopBuilder<T> where T : IAgentEven
     /// 对于无界队列来说，采用copy的方式可以减少一次根据sequence查找data槽的开销，在生产者竞争较强的情况下可以提高性能。
     /// 对于有界队列来说，采用copy可以减少一小部分方法调用，影响可能不大。
     /// 用户需要权衡拷贝1次事件的开销和根据sequence查找data槽的开销。
-    /// <see cref="EventSequencer.Publish(long, T)"/>
+    /// <see cref="IDisruptorEventLoop{T}.Publish(long, in T)"/>
     /// </summary>
     public bool PublishValueEventWithCopy {
         get => publishValueEventWithCopy;

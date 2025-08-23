@@ -43,6 +43,7 @@ PS：因此下面的连接都已改为只指向csharp路径。
 10. 表格工具（导出Dson+共享字符串表+代码生成）
 11. [Scene+GameObject框架](csharp/Wjybxx.BigCat.Core)
 12. [UI框架-初版](unity/Assets/Scripts)
+13. [自定义协程](csharp/Wjybxx.BigCat.Core)
 
 ### 废弃特性
 

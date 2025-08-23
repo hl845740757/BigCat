@@ -35,9 +35,10 @@ namespace Wjybxx.BigCat.UI
 /// 2.为减少开销，UINode和ViewScript是合并抽象的，由子类负责绘制 -- 子类应当命名为View。
 /// 3.子类可以将Node绑定的数据模型向下类型转换，缓存到本地。
 /// 4.可以通过<see cref="Behaviour.enabled"/>属性控制Node是否启用。
-/// 5.Node并不独占GameObject，因此Show和Hide的时候不可以调用<see cref="GameObject.SetActive"/>，只操作关联的<see cref="elements"/>即可。
-/// 6.Node每次<see cref="OnHide"/>的时候都应该清理临时数据。
+/// 5.Node每次<see cref="OnHide"/>的时候都应该清理临时数据。
+/// 6.由于组件的引用是通过<see cref="GameObject"/>进行的，因此一个GameObject上不能挂载多个UINode。
 /// </summary>
+[DisallowMultipleComponent]
 public class UINode : MonoBehaviour
 {
     /// <summary>
@@ -150,6 +151,7 @@ public class UINode : MonoBehaviour
             ResetDisplayElements(nodeCfg.defaultDisplayCfg);
         }
         int rid = _reentryId;
+        gameObject.SetActive(true);
         OnShow(firstShow);
         // 确保未退出
         if (rid == _reentryId && NeedUpdate) {
@@ -199,6 +201,7 @@ public class UINode : MonoBehaviour
             child.Hide();
         }
         OnHide();
+        gameObject.SetActive(false);
         _ctl = 0;
         // 私有黑板只需清理
         if (nodeCfg.newBlackboard) {

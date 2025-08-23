@@ -23,9 +23,11 @@ namespace Wjybxx.BigCat.Unity
 {
 /// <summary>
 /// Unity下的等待策略
-/// 1. 先尝试自旋等待一定次数。
-/// 2. 然后尝试yield方式自旋一定次数。
+/// 
+/// 1.先尝试自旋等待一定次数。
+/// 2.然后尝试yield方式自旋一定次数。
 /// 3.如果数据仍不可用，返回超时（sequence-1）。
+/// 注：不可进行太多尝试，避免过高的CPU占用，和阻塞Unity线程。
 /// </summary>
 public class UnityWaitStrategy : WaitStrategy
 {
@@ -36,9 +38,9 @@ public class UnityWaitStrategy : WaitStrategy
     private readonly int yieldTries;
 
     public UnityWaitStrategy() {
-        this.spinTries = 10;
-        this.spinIterations = 1;
-        this.spinTries = 10;
+        this.spinTries = 5;
+        this.spinIterations = 2;
+        this.yieldTries = 5;
     }
 
     public UnityWaitStrategy(int spinTries, int spinIterations,
