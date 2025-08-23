@@ -26,6 +26,7 @@ public class GameLauncher : MonoBehaviour
 
     [NonSerialized] private GameObject uiRoot;
     [NonSerialized] private WindowMgr windowMgr;
+    [NonSerialized] private int lastFrame;
 
     private void Awake() {
         var nodeBuilder = new DefaultNodeBuilder()
@@ -114,12 +115,15 @@ public class GameLauncher : MonoBehaviour
     }
 
     private void FixedUpdate() {
-        sceneMgr.BeginOfFrame(Time.unscaledDeltaTime);
-        windowMgr.BeginOfFrame(Time.unscaledDeltaTime);
         // UI和Scene的Update混合与否都可以
-        sceneMgr.EarlyUpdate();
-        windowMgr.EarlyUpdate();
-        //
+        if (lastFrame < Time.frameCount) {
+            lastFrame = Time.frameCount;
+            //
+            sceneMgr.BeginOfFrame(Time.unscaledDeltaTime);
+            windowMgr.BeginOfFrame(Time.unscaledDeltaTime);
+            sceneMgr.EarlyUpdate();
+            windowMgr.EarlyUpdate();
+        }
         sceneMgr.FixedUpdate(Time.fixedDeltaTime);
     }
 

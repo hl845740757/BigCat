@@ -23,6 +23,7 @@ using UnityEngine.UI;
 using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.UI;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCat.Launcher.UI
 {
@@ -49,9 +50,21 @@ public class LoginView : UINode
             Debug.Log("account is illegal");
             return;
         }
-        // 试一试协程功能 -- 未调用Forget的情况下为什么没提示？
-        Window.CoroutineMgr.TimerMgr.ScheduleAction(() => { Debug.Log("Login, account: " + accountText); }, 1)
-            .Forget();
+        Window.CoroutineMgr.StartCoroutine(LoginAsync, new CoroutineStartArgs()
+        {
+            startArg1 = accountText
+        }).Dispose();
+        // 未调用Forget的情况下为什么没提示？
+        // Window.CoroutineMgr.TimerMgr.ScheduleAction(() => { }, 1);
+    }
+
+    private async ValueFuture LoginAsync(CoroutineTaskContext context) {
+        float timeBefore = Time.time;
+        await context.Sleep(1);
+
+        float timeAfter = Time.time;
+        string accountText = (string)context.StartArg1;
+        Debug.Log($"Login, timeElapsed: {timeAfter - timeBefore}, account: {accountText}");
     }
 }
 }

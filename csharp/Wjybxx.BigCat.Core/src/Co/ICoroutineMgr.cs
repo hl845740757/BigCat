@@ -42,6 +42,8 @@ public interface ICoroutineMgr
 
     /// <summary>
     /// 启动协程
+    /// 
+    /// 注：用户必须手动销毁上下文，否则可能导致内存泄漏；如果不关注协程执行结果，可启动后立即销毁。
     /// </summary>
     /// <param name="func"></param>
     /// <param name="startArgs">启动参数</param>
@@ -51,6 +53,8 @@ public interface ICoroutineMgr
 
     /// <summary>
     /// 启动协程
+    ///
+    /// 注：用户必须手动销毁上下文，否则可能导致内存泄漏；如果不关注协程执行结果，可启动后立即销毁。
     /// </summary>
     /// <param name="func"></param>
     /// <param name="startArgs">启动参数</param>
@@ -59,7 +63,6 @@ public interface ICoroutineMgr
                                                     CoroutineStartArgs<T, R> startArgs);
 
     #endregion
-
 
     #region Timer视图
 
