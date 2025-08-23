@@ -19,31 +19,21 @@
 namespace Wjybxx.BigCat.Gameplay
 {
 /// <summary>
-/// 游戏循环阶段
+/// 场景管理器的配置数据
 /// </summary>
-public enum GameLoopPhase : byte
+public class SceneMgrCfg
 {
     /// <summary>
-    /// 帧首
-    /// 注：帧首和帧尾事件只在SceneMgr、WindowMgr中支持，Scene、Window内部不可使用。
+    /// 定时器的最小间隔
     /// </summary>
-    BeginOfFrame = 0,
-
-    EarlyUpdate = 1,
-    PostEarlyUpdate = 2,
-
-    FixedUpdate = 3,
-    PostFixedUpdate = 4,
-
-    Update = 5,
-    PostUpdate = 6,
-
-    LateUpdate = 7,
-    PostLateUpdate = 8,
-
+    public double minPeriod = 0.01;
     /// <summary>
-    /// 帧尾
+    /// 非缩放时间定时器的最小间隔
     /// </summary>
-    EndOfFrame = 9,
+    public double unscaledMinPeriod = 0.01;
+    /// <summary>
+    /// 是否启用帧定时器
+    /// </summary>
+    public bool enableFrameQueue = false;
 }
 }

@@ -69,7 +69,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     #region logic
 
     public override void ResolveDependence() {
-        this.worker = (Worker)Entity;
+        this.worker = (Worker)EventLoop;
         this.serverAddr = worker.Node.NodeAddr;
     }
 

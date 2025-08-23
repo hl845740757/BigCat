@@ -16,34 +16,17 @@
 
 #endregion
 
-namespace Wjybxx.BigCat.Gameplay
+namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// 游戏循环阶段
+/// Worker引用的持有者，用于容器内组件准确获取Worker的引用。
 /// </summary>
-public enum GameLoopPhase : byte
+public sealed class WorkerHolder
 {
+#nullable disable
     /// <summary>
-    /// 帧首
-    /// 注：帧首和帧尾事件只在SceneMgr、WindowMgr中支持，Scene、Window内部不可使用。
+    /// 建议在在启动Worker前就初始化引用
     /// </summary>
-    BeginOfFrame = 0,
-
-    EarlyUpdate = 1,
-    PostEarlyUpdate = 2,
-
-    FixedUpdate = 3,
-    PostFixedUpdate = 4,
-
-    Update = 5,
-    PostUpdate = 6,
-
-    LateUpdate = 7,
-    PostLateUpdate = 8,
-
-    /// <summary>
-    /// 帧尾
-    /// </summary>
-    EndOfFrame = 9,
+    public Worker Worker { get; set; }
 }
 }

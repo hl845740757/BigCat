@@ -16,34 +16,24 @@
 
 #endregion
 
-namespace Wjybxx.BigCat.Gameplay
+namespace Wjybxx.BigCat.Co
 {
 /// <summary>
-/// 游戏循环阶段
+/// 定时类型
 /// </summary>
-public enum GameLoopPhase : byte
+public enum TimingType
 {
     /// <summary>
-    /// 帧首
-    /// 注：帧首和帧尾事件只在SceneMgr、WindowMgr中支持，Scene、Window内部不可使用。
+    /// 正常计时
     /// </summary>
-    BeginOfFrame = 0,
-
-    EarlyUpdate = 1,
-    PostEarlyUpdate = 2,
-
-    FixedUpdate = 3,
-    PostFixedUpdate = 4,
-
-    Update = 5,
-    PostUpdate = 6,
-
-    LateUpdate = 7,
-    PostLateUpdate = 8,
-
+    Time = 0,
     /// <summary>
-    /// 帧尾
+    /// 非缩放时间计时
     /// </summary>
-    EndOfFrame = 9,
+    UnscaledTime = 1,
+    /// <summary>
+    /// 帧数计时
+    /// </summary>
+    FrameCount = 2,
 }
 }

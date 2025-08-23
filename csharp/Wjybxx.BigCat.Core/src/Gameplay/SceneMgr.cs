@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
@@ -84,7 +85,19 @@ public sealed class SceneMgr
     /// 时间系统
     /// </summary>
     private readonly GTime time = new GTime();
+    /// <summary>
+    /// 协程管理器
+    /// (由于管理器存在自定义设置，因此延迟构造)
+    /// </summary>
+    private readonly CoroutineMgr coroutineMgr;
 #nullable restore
+
+    [Inject]
+    public SceneMgr(WorkerHolder workerHolder, SceneMgrCfg cfg) {
+        coroutineMgr = new CoroutineMgr(workerHolder.Worker, time,
+            cfg.minPeriod, cfg.unscaledMinPeriod,
+            enableFrameQueue: cfg.enableFrameQueue);
+    }
 
     /// <summary>
     /// 所有场景的依赖
@@ -98,6 +111,16 @@ public sealed class SceneMgr
     /// 场景循环的时间轴
     /// </summary>
     public GTime Time => time;
+
+    /// <summary>
+    /// 场景循环关联的协程管理器
+    /// </summary>
+    public CoroutineMgr CoroutineMgr => coroutineMgr;
+
+    /// <summary>
+    /// 创建循环绑定的线程
+    /// </summary>
+    public Worker Worker => (Worker)coroutineMgr.EventLoop;
 
     #region 容器管理
 
@@ -260,6 +283,7 @@ public sealed class SceneMgr
             }
         }
         _sceneList.EndItr();
+        coroutineMgr.Shutdown();
 
         _sceneDic.Clear();
         _sortedSceneList.Clear();
@@ -280,13 +304,15 @@ public sealed class SceneMgr
     /// <param name="unscaledDeltaTime"></param>
     public void BeginOfFrame(double unscaledDeltaTime) {
         time.Update(unscaledDeltaTime);
-        // TODO 协程调度
+        coroutineMgr.Update(GameLoopPhase.BeginOfFrame);
     }
 
     /// <summary>
     /// 执行场景的EarlyUpdate方法
     /// </summary>
     public void EarlyUpdate() {
+        coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+
         double unscaledDeltaTime = time.UnscaledDeltaTime;
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
@@ -303,6 +329,8 @@ public sealed class SceneMgr
             }
         }
         sceneList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
     }
 
     /// <summary>
@@ -310,7 +338,7 @@ public sealed class SceneMgr
     /// </summary>
     public void FixedUpdate(double unscaledDeltaTime) {
         time.FixedUpdate(unscaledDeltaTime);
-        // TODO 协程调度
+        coroutineMgr.Update(GameLoopPhase.FixedUpdate);
 
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
@@ -327,12 +355,16 @@ public sealed class SceneMgr
             }
         }
         sceneList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostFixedUpdate);
     }
 
     /// <summary>
     /// 执行场景的Update方法
     /// </summary>
     public void Update() {
+        coroutineMgr.Update(GameLoopPhase.Update);
+
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
         for (int index = 0, len = sceneList.Length; index < len; index++) {
@@ -348,12 +380,16 @@ public sealed class SceneMgr
             }
         }
         sceneList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostUpdate);
     }
 
     /// <summary>
     /// 执行场景的LateUpdate方法
     /// </summary>
     public void LateUpdate() {
+        coroutineMgr.Update(GameLoopPhase.LateUpdate);
+
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
         for (int index = 0, len = sceneList.Length; index < len; index++) {
@@ -369,6 +405,8 @@ public sealed class SceneMgr
             }
         }
         sceneList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
     /// <summary>
@@ -377,7 +415,6 @@ public sealed class SceneMgr
     /// 注：该方法主要用于调度协程。
     /// </summary>
     public void EndOfFrame() {
-        // TODO 协程调度
         // 处理延迟销毁
         IndexedDynamicArray<Scene> closedSceneList = _closedSceneList;
         closedSceneList.BeginItr();
@@ -389,6 +426,8 @@ public sealed class SceneMgr
             DestroyImmediately(scene);
         }
         closedSceneList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.EndOfFrame);
     }
 
     #endregion

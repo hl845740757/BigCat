@@ -155,6 +155,11 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         return tickTime;
     }
 
+    protected override ISchedulerHelper SchedulerHelper {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => schedulerHelper;
+    }
+
     #region 状态查询
 
     public sealed override EventLoopState State => (EventLoopState)state;
@@ -180,18 +185,16 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
     public override void Execute(ITask task) {
         if (task == null) throw new ArgumentNullException(nameof(task));
-        // 在申请序号之前注入Helper（初始化任务的调度时间，避免被阻塞导致延迟）
-        IScheduledFutureTask? promiseTask = task as IScheduledFutureTask;
-        if (promiseTask != null) {
-            promiseTask.Inject(schedulerHelper);
+        if ((task.Options & TaskOptions.LOCAL_ORDER) != 0
+            && task is IScheduledFutureTask futureTask
+            && InEventLoop()) {
+            schedulerHelper.DoSchedule(futureTask);
+            return;
         }
         long sequence = NextSequence(1);
         if (sequence < 0) {
             rejectedExecutionHandler.Rejected(task, this);
             return;
-        }
-        if (promiseTask != null) {
-            promiseTask.Id = sequence; // nice
         }
         PublishTask(task, sequence, task.Options);
     }
@@ -570,22 +573,15 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         agent.CustomUpdate(tickTime);
     }
 
-    /// <summary>
-    /// 调度协程
-    /// </summary>
-    /// <param name="phase"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ScheduleCoroutine(int phase) {
-        agent.ScheduleCoroutine(phase);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void OnInternalEvent(long curSequence, ref T evt) {
         int type = evt.Type;
         if (type == TYPE_REMOVE_SCHEDULE) {
             // 删除延时任务
+            IScheduledFutureTask futureTask = (IScheduledFutureTask)evt.Obj1;
             long taskId = evt.LongVal1;
-            schedulerHelper.RemoveTask(taskId);
+            int cancelCode = (int)evt.LongVal2;
+            schedulerHelper.Cancel(futureTask, taskId, cancelCode);
         }
     }
 
@@ -713,6 +709,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                 return;
             }
             logger.Warn(e, "receive a confusing signal");
+        }
+        catch (ThreadAbortException) {
+            ShutdownNow(); // unity下直接中断线程
         }
         catch (Exception e) {
             // 不好的等待策略实现

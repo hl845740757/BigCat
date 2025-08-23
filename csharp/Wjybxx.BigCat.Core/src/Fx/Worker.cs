@@ -96,6 +96,8 @@ public interface Worker : IDisruptorEventLoop<WorkerEvent>
 #nullable disable
     /// <summary>
     /// 当前线程关联的Worker
+    ///
+    /// 注：正常业务不应该通过该字段获取引用。
     /// </summary>
     public static Worker CurrentWorker => FxUtils.CURRENT_WORKER.Value;
 

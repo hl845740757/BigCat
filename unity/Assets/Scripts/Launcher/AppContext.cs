@@ -18,6 +18,7 @@
 
 using Wjybxx.BTree;
 using Wjybxx.BTree.FSM;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Launcher
 {
@@ -43,6 +44,10 @@ public static class AppContext
     /// 顶层状态机 -- 避免频繁强制类型转换
     /// </summary>
     private static readonly StateMachineTask<object> fsm = new StateMachineTask<object>();
+    /// <summary>
+    /// APP的所有依赖
+    /// </summary>
+    private static IInjector injector;
 
     static AppContext() {
         taskEntry.RootTask = fsm;
@@ -70,6 +75,14 @@ public static class AppContext
     /// <param name="evt"></param>
     public static void OnEvent(object evt) {
         fsm.OnEvent(evt);
+    }
+
+    /// <summary>
+    /// APP的所有依赖
+    /// </summary>
+    public static IInjector Injector {
+        get => injector;
+        set => injector = value;
     }
 }
 }

@@ -70,7 +70,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
     #region 生命周期
 
     public override void ResolveDependence() {
-        this.node = (Node)Entity;
+        this.node = (Node)EventLoop;
         this.nodeAddr = node.NodeAddr;
 
         this.serializer = node.Injector.GetInstance<RpcSerializer>();

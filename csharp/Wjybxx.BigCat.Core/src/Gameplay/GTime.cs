@@ -24,7 +24,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// World模拟用的计时器
 /// </summary>
-public sealed class GTime
+public sealed class GTime : IReadonlyTime
 {
     private double timeScale = 1;
 
@@ -60,7 +60,7 @@ public sealed class GTime
     }
 
     public void Update(double unscaledDeltaTime) {
-        double scaledDeltaTime = (deltaTime * timeScale);
+        double scaledDeltaTime = (unscaledDeltaTime * timeScale);
         this.frameCount++;
         this.time += scaledDeltaTime;
         this.deltaTime = scaledDeltaTime;
@@ -69,7 +69,7 @@ public sealed class GTime
     }
 
     public void FixedUpdate(double unscaledDeltaTime) {
-        double scaledDeltaTime = (deltaTime * timeScale);
+        double scaledDeltaTime = (unscaledDeltaTime * timeScale);
         this.fixedFrameCount++;
         this.fixedTime += scaledDeltaTime;
         this.fixedDeltaTime = scaledDeltaTime;

@@ -19,31 +19,22 @@
 namespace Wjybxx.BigCat.Gameplay
 {
 /// <summary>
-/// 游戏循环阶段
+/// 用于避免暴露写接口给外部
 /// </summary>
-public enum GameLoopPhase : byte
+public interface IReadonlyTime
 {
-    /// <summary>
-    /// 帧首
-    /// 注：帧首和帧尾事件只在SceneMgr、WindowMgr中支持，Scene、Window内部不可使用。
-    /// </summary>
-    BeginOfFrame = 0,
+    double TimeScale { get; }
 
-    EarlyUpdate = 1,
-    PostEarlyUpdate = 2,
+    int FrameCount { get; }
+    double Time { get; }
+    double DeltaTime { get; }
+    double UnscaledTime { get; }
+    double UnscaledDeltaTime { get; }
 
-    FixedUpdate = 3,
-    PostFixedUpdate = 4,
-
-    Update = 5,
-    PostUpdate = 6,
-
-    LateUpdate = 7,
-    PostLateUpdate = 8,
-
-    /// <summary>
-    /// 帧尾
-    /// </summary>
-    EndOfFrame = 9,
+    public int FixedFrameCount { get; }
+    public double FixedTime { get; }
+    public double FixedDeltaTime { get; }
+    public double FixedUnscaledTime { get; }
+    public double FixedUnscaledDeltaTime { get; }
 }
 }

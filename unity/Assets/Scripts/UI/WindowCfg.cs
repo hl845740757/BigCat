@@ -104,6 +104,18 @@ public class WindowCfg : MonoBehaviour
     public HashSet<int> tags = new HashSet<int>();
 
     /// <summary>
+    /// 是否启用非缩放时间定时器
+    /// (虽然多数UI是不需要的，但还是默认启用)
+    /// </summary>
+    [Tooltip("如果确定不需要非缩放时间定时器，可以关闭该选项以减少开销")]
+    public bool enableUnscaledQueue = true;
+    /// <summary>
+    /// 是否启用帧定时器
+    /// </summary>
+    [Tooltip("如果UI存在按帧Update的逻辑，则需要启用该选项")]
+    public bool enableFrameQueue;
+
+    /// <summary>
     /// 窗口的打开位置
     /// (Unity下好像可以通过锚点解决？)
     /// </summary>

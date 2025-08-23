@@ -4,6 +4,7 @@
     "references": [
         "Wjybxx.Commons.Core",
         "Wjybxx.Commons.Concurrent",
+        "Wjybxx.Commons.Inject",
         "Wjybxx.BigCat.Core"
     ],
     "includePlatforms": [],

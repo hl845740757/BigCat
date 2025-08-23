@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.UI
 internal static class UIInternal
 {
     private static readonly SingleObjectPool<List<Component>> listPool = new SingleObjectPool<List<Component>>(
-        PoolUtil<Component>.listFactory, PoolUtil<Component>.cleaner);
+        ObjectPoolUtil<Component>.listFactory, ObjectPoolUtil<Component>.cleaner);
 
     /// <summary>
     /// 当前节点自身是否为active状态

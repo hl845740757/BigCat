@@ -53,6 +53,7 @@
     <Compile Include="Assets\Scripts\UI\WindowCfg.cs" />
     <Compile Include="Assets\Scripts\UI\Controller.cs" />
     <Compile Include="Assets\Scripts\UI\WComponentCfg.cs" />
+    <Compile Include="Assets\Scripts\UI\WindowMgrCfg.cs" />
     <Compile Include="Assets\Scripts\UI\WindowLoader.cs" />
     <Compile Include="Assets\Scripts\UI\UINode.cs" />
     <Compile Include="Assets\Scripts\UI\UIInternal.cs" />
@@ -729,6 +730,9 @@
     </Reference>
     <Reference Include="Wjybxx.Commons.Concurrent">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Concurrent.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Commons.Inject">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Inject.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

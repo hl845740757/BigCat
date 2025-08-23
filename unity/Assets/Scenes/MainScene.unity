@@ -137,7 +137,7 @@ GameObject:
   - component: {fileID: 204022409}
   - component: {fileID: 204022408}
   - component: {fileID: 204022407}
-  - component: {fileID: 204022405}
+  - component: {fileID: 204022410}
   m_Layer: 5
   m_Name: UIRoot
   m_TagString: Untagged
@@ -188,18 +188,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &204022405
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 204022401}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8e21186de2b47f59a0a92ac4d3f3b57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!222 &204022406
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -266,6 +254,21 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
+--- !u!114 &204022410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 204022401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae0475d9f6794aedba098952bcbf3b17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minPeriod: 0.01
+  unscaledMinPeriod: 0.01
+  enableFrameQueue: 0
 --- !u!1 &767260062
 GameObject:
   m_ObjectHideFlags: 0
@@ -1362,7 +1365,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1694145800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1375,7 +1378,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d61f877d9f7235646b108d67a66940c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moduleClasses: []
 --- !u!224 &1694145801
 RectTransform:
   m_ObjectHideFlags: 0

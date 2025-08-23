@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
@@ -122,6 +123,11 @@ public sealed class Scene
     /// 场景中的所有游戏对象
     /// </summary>
     [NonSerialized] private readonly GameUnitMgr _gameUnitMgr;
+    /// <summary>
+    /// 协程管理器
+    /// (由于管理器存在自定义设置，因此延迟构造)
+    /// </summary>
+    [NonSerialized] private CoroutineMgr _coroutineMgr;
 #nullable restore
 
     public Scene() {
@@ -222,6 +228,7 @@ public sealed class Scene
 
     public GTime Time => _time;
     public GameUnitMgr GameUnitMgr => _gameUnitMgr;
+    public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
     private void CheckStatus() {
         if (_status != ComponentStatus.New) {
@@ -328,6 +335,7 @@ public sealed class Scene
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
+        _coroutineMgr = CoroutineMgr.CreateFrom(_sceneMgr.CoroutineMgr, _time);
         _agent?.Inject(this); // 双向绑定
         _status = ComponentStatus.Initialized;
         // 初始化模块
@@ -406,6 +414,7 @@ public sealed class Scene
         catch (Exception ex) {
             logger.Warn(ex, "agent stop caught exception");
         }
+        _coroutineMgr.Shutdown();
 
         _status = ComponentStatus.Terminated;
         if (_sceneMgr != null) {
@@ -501,9 +510,12 @@ public sealed class Scene
     /// <param name="unscaledDeltaTime"></param>
     public void EarlyUpdate(double unscaledDeltaTime) {
         _time.Update(unscaledDeltaTime);
+        _coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+
         IndexedDynamicArray<SComponent> list = _earlyUpdateList;
         if (list.Length == 0) {
-            return; // 逻辑层也少有EarlyUpdate
+            _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+            return;
         }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
@@ -519,13 +531,18 @@ public sealed class Scene
             }
         }
         list.EndItr();
+
+        _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
     }
 
     public void FixedUpdate(double unscaledDeltaTime) {
         _time.FixedUpdate(unscaledDeltaTime);
+        _coroutineMgr.Update(GameLoopPhase.FixedUpdate);
+
         IndexedDynamicArray<SComponent> list = _fixedUpdateList;
         if (list.Length == 0) {
-            return; // 逻辑层也少有FixedUpdate
+            _coroutineMgr.Update(GameLoopPhase.PostFixedUpdate);
+            return;
         }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
@@ -541,10 +558,18 @@ public sealed class Scene
             }
         }
         list.EndItr();
+
+        _coroutineMgr.Update(GameLoopPhase.PostFixedUpdate);
     }
 
     public void Update() {
+        _coroutineMgr.Update(GameLoopPhase.Update);
+
         IndexedDynamicArray<SComponent> list = _updateList;
+        if (list.Length == 0) {
+            _coroutineMgr.Update(GameLoopPhase.PostUpdate);
+            return;
+        }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
             SComponent component = list[index];
@@ -559,12 +584,17 @@ public sealed class Scene
             }
         }
         list.EndItr();
+
+        _coroutineMgr.Update(GameLoopPhase.PostUpdate);
     }
 
     public void LateUpdate() {
+        _coroutineMgr.Update(GameLoopPhase.LateUpdate);
+
         IndexedDynamicArray<SComponent> list = _lateUpdateList;
         if (list.Length == 0) {
-            return; // 逻辑层也少有LateUpdate
+            _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+            return;
         }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
@@ -580,6 +610,8 @@ public sealed class Scene
             }
         }
         list.EndItr();
+
+        _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
     private void AddToUpdateList(SComponent component) {

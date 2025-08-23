@@ -54,7 +54,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         () => new RpcRequestStub(), stub => stub.Reset(), 100);
 
     public override void OnAwake() {
-        this.worker = (Worker)Entity;
+        this.worker = (Worker)EventLoop;
         this.selfAddr = worker.WorkerAddr;
         this.timeModule = worker.Injector.GetInstance<TimeModule>();
         this.proxyRegistry = worker.Injector.GetInstance<RpcProxyRegistry>();

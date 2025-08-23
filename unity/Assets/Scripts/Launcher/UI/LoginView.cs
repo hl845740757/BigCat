@@ -20,6 +20,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.UI;
 using Wjybxx.Commons;
 
@@ -48,7 +49,9 @@ public class LoginView : UINode
             Debug.Log("account is illegal");
             return;
         }
-        Debug.Log("Login, account: " + accountText);
+        // 试一试协程功能 -- 未调用Forget的情况下为什么没提示？
+        Window.CoroutineMgr.TimerMgr.ScheduleAction(() => { Debug.Log("Login, account: " + accountText); }, 1)
+            .Forget();
     }
 }
 }

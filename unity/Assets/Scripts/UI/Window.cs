@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.Util;
 using Wjybxx.BigCat.MVC;
@@ -152,6 +153,11 @@ public sealed class Window
     /// </summary>
     [NonSerialized] private readonly GTime _time = new GTime();
     /// <summary>
+    /// 协程管理器
+    /// (由于管理器存在自定义设置，因此延迟构造)
+    /// </summary>
+    [NonSerialized] private readonly CoroutineMgr _coroutineMgr;
+    /// <summary>
     /// Window黑板
     /// </summary>
     [NonSerialized] private readonly Blackboard _blackboard = new Blackboard();
@@ -162,6 +168,8 @@ public sealed class Window
         this.windowMgr = windowMgr;
         this._instId = windowCfg.GetInstanceID();
         this._transform = (RectTransform)windowCfg.transform;
+        this._coroutineMgr = CoroutineMgr.CreateFrom(windowMgr.CoroutineMgr, _time,
+            windowCfg.enableUnscaledQueue, windowCfg.enableUnscaledQueue);
 
         this._agent = windowCfg.GetComponent<WindowAgent>() ?? new UIInternal.SimpleWindowAgent();
         this._canvas = windowCfg.GetComponent<Canvas>();
@@ -170,6 +178,13 @@ public sealed class Window
             AddComponent(componentCfg.GetComponent());
         }
     }
+
+    public GTime Time => _time;
+
+    /// <summary>
+    /// 窗口关联的协程管理器
+    /// </summary>
+    public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
     #region 生命周期
 
@@ -241,6 +256,7 @@ public sealed class Window
         }
         ClearUpdateList();
         StopComponents();
+        _coroutineMgr.Shutdown();
 
         _status = ComponentStatus.Terminated;
         if (windowMgr != null) {
@@ -393,9 +409,12 @@ public sealed class Window
     /// <param name="unscaledDeltaTime"></param>
     internal void EarlyUpdate(double unscaledDeltaTime) {
         _time.Update(unscaledDeltaTime);
+        _coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+
         IndexedDynamicArray<WComponent> list = _earlyUpdateList;
         if (list.Length == 0) {
-            return; // 逻辑层也少有EarlyUpdate
+            _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+            return;
         }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
@@ -411,6 +430,8 @@ public sealed class Window
             }
         }
         list.EndItr();
+
+        _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
     }
 
     /// <summary>
@@ -422,8 +443,10 @@ public sealed class Window
         if ((_ctl & UIInternal.MASK_DIRTY_REPAINT) != 0) {
             Repaint();
         }
+        _coroutineMgr.Update(GameLoopPhase.Update);
         UpdateComponents();
         UpdateNodes();
+        _coroutineMgr.Update(GameLoopPhase.PostUpdate);
     }
 
     private void UpdateComponents() {
@@ -468,9 +491,12 @@ public sealed class Window
     }
 
     internal void LateUpdate() {
+        _coroutineMgr.Update(GameLoopPhase.LateUpdate);
+
         IndexedDynamicArray<WComponent> list = _lateUpdateList;
         if (list.Length == 0) {
-            return; // 逻辑层也少有LateUpdate
+            _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+            return;
         }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
@@ -486,6 +512,8 @@ public sealed class Window
             }
         }
         list.EndItr();
+
+        _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
     private void AddToUpdateList(WComponent component) {
@@ -752,7 +780,6 @@ public sealed class Window
     public int ReentryId => _reentryId;
     public WindowAgent Agent => _agent;
     public object DataModel => _dataModel;
-    public GTime Time => _time;
     public Blackboard Blackboard => _blackboard;
     public WindowDisplayMode DisplayMode => _displayMode;
 

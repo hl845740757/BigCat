@@ -19,12 +19,15 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.BigCat.Co;
+using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.MVC;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Fx;
+using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
 
@@ -49,7 +52,7 @@ public sealed class WindowMgr
     /// <summary>
     /// 根画布
     /// </summary>
-    private readonly Canvas canvas;
+    private readonly Canvas _canvas;
     /// <summary>
     /// 窗口加载器
     /// </summary>
@@ -102,6 +105,11 @@ public sealed class WindowMgr
     /// </summary>
     private readonly GTime time = new GTime();
     /// <summary>
+    /// 协程管理器
+    /// (由于管理器存在自定义设置，因此延迟构造)
+    /// </summary>
+    private readonly CoroutineMgr coroutineMgr;
+    /// <summary>
     /// 所有的桌面
     /// (桌面的简单信息会配置在当前Mgr下)
     /// </summary>
@@ -112,23 +120,48 @@ public sealed class WindowMgr
     private Desktop _curDesktop;
 
     /// <summary>
-    /// 
+    /// 如果不通过容器构造该对象，亦可手动创建
     /// </summary>
-    /// <param name="canvas">根画布</param>
-    /// <param name="windowLoader">窗口加载器</param>
-    /// <param name="aggregationModel">聚合数据模型</param>
-    /// <param name="dataModelResolver">数据模型解析器</param>
-    public WindowMgr(Canvas canvas, WindowLoader windowLoader, IAggregationModel aggregationModel, IDataModelResolver dataModelResolver = null) {
-        this.canvas = canvas ?? throw new ArgumentNullException(nameof(canvas));
-        this._windowLoader = windowLoader;
-        this._aggregationModel = aggregationModel;
-        this._dataModelResolver = dataModelResolver ?? new DataModelResolver();
+    /// <param name="workerHolder">事件循环线程</param>
+    /// <param name="cfg">管理器配置</param>
+    [Inject]
+    public WindowMgr(WorkerHolder workerHolder, WindowMgrCfg cfg) {
+        this.coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
+            enableFrameQueue: cfg.enableFrameQueue);
+        this._canvas = cfg.GetComponent<Canvas>() ?? throw new Exception("Canvas not found");
+        this._windowLoader = cfg.windowLoader; // 非必须
+        this._aggregationModel = cfg.aggregationModel;
+        this._dataModelResolver = cfg.dataModelResolver;
         // 初始化Desktop
         for (int desktopId = 1; desktopId <= WindowCfg.MAX_DESKTOP; desktopId++) {
-            _desktops[desktopId - 1] = new Desktop(desktopId, canvas);
+            _desktops[desktopId - 1] = new Desktop(desktopId, _canvas);
         }
         _curDesktop = _desktops[0];
         _curDesktop.Show();
+    }
+
+    /// <summary>
+    /// UI循环的时间轴
+    /// </summary>
+    public GTime Time => time;
+
+    /// <summary>
+    /// UI系统的协程
+    /// (不支持帧定时器)
+    /// </summary>
+    public CoroutineMgr CoroutineMgr => coroutineMgr;
+
+    /// <summary>
+    /// UI系统绑定的线程
+    /// </summary>
+    public Worker Worker => (Worker)coroutineMgr.EventLoop;
+
+    /// <summary>
+    /// 窗口加载的超时时间
+    /// </summary>
+    public double LoadingTimeout {
+        get => loadingTimeout;
+        set => loadingTimeout = Math.Max(0, value);
     }
 
     #region 容器管理
@@ -475,8 +508,8 @@ public sealed class WindowMgr
     /// <param name="unscaledDeltaTime"></param>
     public void BeginOfFrame(double unscaledDeltaTime) {
         time.Update(unscaledDeltaTime);
+        coroutineMgr.Update(GameLoopPhase.BeginOfFrame);
         CheckLoadTimeout();
-        // TODO 协程调度
     }
 
     /// <summary>
@@ -484,6 +517,8 @@ public sealed class WindowMgr
     /// 注：该方法其实主要是为协程服务的
     /// </summary>
     public void EarlyUpdate() {
+        coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+
         double unscaledDeltaTime = time.UnscaledDeltaTime;
         IndexedDynamicArray<Window> windowList = _activeWindowList;
         windowList.BeginItr();
@@ -500,12 +535,16 @@ public sealed class WindowMgr
             }
         }
         windowList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
     }
 
     /// <summary>
     /// 执行窗口的Update方法
     /// </summary>
     public void Update() {
+        coroutineMgr.Update(GameLoopPhase.Update);
+
         IndexedDynamicArray<Window> windowList = _activeWindowList;
         windowList.BeginItr();
         for (int index = 0, len = windowList.Length; index < len; index++) {
@@ -521,12 +560,16 @@ public sealed class WindowMgr
             }
         }
         windowList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostUpdate);
     }
 
     /// <summary>
     /// 执行窗口的LateUpdate方法
     /// </summary>
     public void LateUpdate() {
+        coroutineMgr.Update(GameLoopPhase.LateUpdate);
+
         IndexedDynamicArray<Window> windowList = _activeWindowList;
         windowList.BeginItr();
         for (int index = 0, len = windowList.Length; index < len; index++) {
@@ -542,6 +585,8 @@ public sealed class WindowMgr
             }
         }
         windowList.EndItr();
+
+        coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
     /// <summary>
@@ -550,7 +595,6 @@ public sealed class WindowMgr
     ///  注：该方法主要用于调度协程。
     /// </summary>
     public void EndOfFrame() {
-        // TODO 协程调度
         // 处理延迟销毁
         BetterIndexedPriorityQueue<Window> closedWindowList = _closedWindowList;
         while (closedWindowList.TryDequeue(out Window window)) {
@@ -560,6 +604,7 @@ public sealed class WindowMgr
             closedWindowList.Dequeue();
             DestroyImmediately(window);
         }
+        coroutineMgr.Update(GameLoopPhase.EndOfFrame);
     }
 
     #endregion
@@ -585,12 +630,9 @@ public sealed class WindowMgr
     /// </summary>
     internal void OnTerminated(Window window) {
         float maxIdleTime = window.windowCfg.maxIdleTime;
-        window.destroyTime = maxIdleTime switch
-        {
-            < 0 => time.UnscaledTime + 365 * DatetimeUtil.SecondsPerDay,
-            0 => time.UnscaledTime,
-            _ => time.UnscaledTime + maxIdleTime
-        };
+        window.destroyTime = maxIdleTime > 0
+            ? time.UnscaledTime + maxIdleTime
+            : time.UnscaledTime + 365 * DatetimeUtil.SecondsPerDay;
         _activeWindowList.Remove(window);
         _closedWindowList.Add(window);
 
@@ -624,24 +666,11 @@ public sealed class WindowMgr
 
     #region PROPS
 
-    public Canvas Canvas => canvas;
+    public Canvas Canvas => _canvas;
     public IAggregationModel AggregationModel => _aggregationModel;
     public WindowLoader WindowLoader => _windowLoader;
     public IDataModelResolver DataModelResolver => _dataModelResolver;
     public Desktop CurrentDesktop => _curDesktop;
-
-    /// <summary>
-    /// 窗口加载的超时时间
-    /// </summary>
-    public double LoadingTimeout {
-        get => loadingTimeout;
-        set => loadingTimeout = Math.Max(0, value);
-    }
-
-    /// <summary>
-    /// UI循环的时间轴
-    /// </summary>
-    public GTime Time => time;
 
     #endregion
 

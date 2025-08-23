@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
+using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
+using Wjybxx.BigCat.MVC;
 using Wjybxx.BigCat.Tests;
+using Wjybxx.BigCat.UI;
 using Wjybxx.BigCat.Unity;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
@@ -16,15 +20,12 @@ namespace Wjybxx.BigCat.Launcher
 /// </summary>
 public class GameLauncher : MonoBehaviour
 {
-    /// <summary>
-    /// 挂载的模块
-    /// 由于不能直接配置Type，因此我们配置Type的全限定名
-    /// </summary>
-    public List<string> moduleClasses = new();
-
     [NonSerialized] private Node node;
     [NonSerialized] private UnityWorker worker;
     [NonSerialized] private SceneMgr sceneMgr;
+
+    [NonSerialized] private GameObject uiRoot;
+    [NonSerialized] private WindowMgr windowMgr;
 
     private void Awake() {
         var nodeBuilder = new DefaultNodeBuilder()
@@ -70,13 +71,13 @@ public class GameLauncher : MonoBehaviour
                     };
                 }
                 // 初始化rpc服务
-                if (index == 0) {
-                    workerBuilder.ModuleClasses.Add(typeof(RpcClientExample));
-                    workerBuilder.ServiceClasses.Add(typeof(RpcClientExample));
-                } else {
-                    workerBuilder.ModuleClasses.Add(typeof(RpcServiceExample));
-                    workerBuilder.ServiceClasses.Add(typeof(RpcServiceExample));
-                }
+                // if (index == 0) {
+                //     workerBuilder.ModuleClasses.Add(typeof(RpcClientExample));
+                //     workerBuilder.ServiceClasses.Add(typeof(RpcClientExample));
+                // } else {
+                //     workerBuilder.ModuleClasses.Add(typeof(RpcServiceExample));
+                //     workerBuilder.ServiceClasses.Add(typeof(RpcServiceExample));
+                // }
                 // 覆盖默认值
                 workerBuilder.Agent = workerBuilder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
                 return workerBuilder.Build();
@@ -85,29 +86,56 @@ public class GameLauncher : MonoBehaviour
         nodeBuilder.Agent = nodeBuilder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
         node = (Node)nodeBuilder.Build();
         worker = (UnityWorker)node.MainWorker;
+        // 发布Worker引用
+        WorkerHolder workerHolder = worker.Injector.GetInstance<WorkerHolder>();
+        workerHolder.Worker = worker;
 
         // 需要先启动Worker否则Join会死锁
         worker.Internal_Start();
         node.Start().Join();
-        
+
+        // 初始化场景管理器
         sceneMgr = worker.Injector.GetInstance<SceneMgr>();
         SceneMgr.Inst = sceneMgr;
+
+        // 初始化UI管理器
+        uiRoot = gameObject.scene.GetRootGameObjects().First(e => e.name == "UIRoot");
+        WindowMgrCfg windowMgrCfg = uiRoot.GetComponent<WindowMgrCfg>();
+        windowMgr = new WindowMgr(workerHolder, windowMgrCfg);
+        WindowMgr.Inst = windowMgr;
+    }
+
+    private void Start() {
+        // 打开测试UI
+        Transform child = uiRoot.transform.Find("LoginWindow");
+        if (child) {
+            windowMgr.Open("LoginWindow", child.gameObject, new WindowOpenArgs());
+        }
     }
 
     private void FixedUpdate() {
+        sceneMgr.BeginOfFrame(Time.unscaledDeltaTime);
+        windowMgr.BeginOfFrame(Time.unscaledDeltaTime);
+        // UI和Scene的Update混合与否都可以
+        sceneMgr.EarlyUpdate();
+        windowMgr.EarlyUpdate();
+        //
         sceneMgr.FixedUpdate(Time.fixedDeltaTime);
     }
 
     private void Update() {
         worker.Internal_Update();
-        sceneMgr.BeginOfFrame(Time.unscaledDeltaTime);
-        sceneMgr.EarlyUpdate();
+        //
         sceneMgr.Update();
+        windowMgr.Update();
     }
 
     private void LateUpdate() {
         sceneMgr.LateUpdate();
+        windowMgr.LateUpdate();
+        //
         sceneMgr.EndOfFrame();
+        windowMgr.EndOfFrame();
     }
 
     private void OnDestroy() {
@@ -142,7 +170,9 @@ public class GameLauncher : MonoBehaviour
 
             binder.Bind<RpcClientExample>(); // worker1
             binder.Bind<RpcServiceExample>(); // worker2
-            
+
+            binder.Bind<WorkerHolder>(); // 发布Worker引用
+            binder.Bind<SceneMgrCfg>(); // 场景管理器配置
             binder.Bind<SceneMgr>(); // 场景管理器
         }
     }

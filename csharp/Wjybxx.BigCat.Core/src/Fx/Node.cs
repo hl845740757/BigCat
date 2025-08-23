@@ -88,6 +88,8 @@ public interface Node : Worker
 
     /// <summary>
     /// 获取当前线程关联的Node
+    ///
+    /// 注：正常业务不应该通过该字段获取引用。
     /// </summary>
     public static Node CurrentNode {
         get {
