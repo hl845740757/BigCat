@@ -151,7 +151,6 @@ public abstract class WComponent
     /// 自定义事件支持
     /// </summary>
     public virtual void OnEvent(object eventData) {
-
     }
 
     #endregion

@@ -363,6 +363,7 @@ public class CoroutineMgr : ICoroutineMgr
     public void Reset() {
         _lastTimerId = 0;
         _isShuttingDown = false;
+        // 不能清理协程字典，否则会导致协程对象无法回收
     }
 
     public void Shutdown() {

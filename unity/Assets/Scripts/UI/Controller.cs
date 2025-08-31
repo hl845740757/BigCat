@@ -27,6 +27,8 @@ namespace Wjybxx.BigCat.UI
 /// 1.Controller的生命周期跟随Node。
 /// 2.不可定义<see cref="MonoBehaviour"/>中的Update方法，Controller主要用于处理事件，不应当包含Update逻辑。
 /// 3.不可使用<see cref="MonoBehaviour"/>中的协程方法，如果需要协程功能，请通过<see cref="Window"/>的组件实现。
+///
+/// TODO：是否提供一个接口类型？目前是觉得在编辑器中指定Controller更灵活。
 /// </summary>
 public abstract class Controller : MonoBehaviour
 {

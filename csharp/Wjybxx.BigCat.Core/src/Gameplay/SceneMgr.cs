@@ -49,7 +49,7 @@ public sealed class SceneMgr
     /// </summary>
     private const int INIT_CAPACITY = 4;
 #else
-    private const int INIT_CAPACITY = 100;
+    private const int INIT_CAPACITY = 20;
 #endif
 
 #nullable disable
@@ -73,7 +73,6 @@ public sealed class SceneMgr
     private readonly IndexedDynamicArray<Scene> _sceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(0), INIT_CAPACITY);
     /// <summary>
     /// 所有活动中的Scene列表
-    /// (包括处于暂停状态的Scene)
     /// </summary>
     private readonly IndexedDynamicArray<Scene> _activeSceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(1), 10);
     /// <summary>
@@ -87,7 +86,6 @@ public sealed class SceneMgr
     private readonly GTime time = new GTime();
     /// <summary>
     /// 协程管理器
-    /// (由于管理器存在自定义设置，因此延迟构造)
     /// </summary>
     private readonly CoroutineMgr coroutineMgr;
 #nullable restore

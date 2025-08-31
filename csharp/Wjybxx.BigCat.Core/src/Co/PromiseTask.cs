@@ -259,14 +259,14 @@ internal sealed class PromiseTask
                 task();
                 return null;
             }
-            case TYPE_FUNC: {
-                Func<object, object> invoker = (Func<object, object>)this.invoker;
-                return invoker(task);
-            }
             case TYPE_ACTION_CTX: {
                 Action<object> task = (Action<object>)this.task;
                 task(ctx);
                 return null;
+            }
+            case TYPE_FUNC: {
+                Func<object, object> invoker = (Func<object, object>)this.invoker;
+                return invoker(task);
             }
             case TYPE_FUNC_CTX: {
                 Func<object, object, object> invoker = (Func<object, object, object>)this.invoker;
@@ -327,7 +327,7 @@ internal sealed class PromiseTask
     /// <summary>
     /// 是否是周期性任务
     /// </summary>
-    public bool IsPeriodic => ScheduleType != SCHEDULE_ONCE;
+    public bool IsPeriodic => (ctl & MASK_SCHEDULE_TYPE) != 0;
 
     /// <summary>
     /// 是否包含执行时间限制

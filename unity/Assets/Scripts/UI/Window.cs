@@ -325,6 +325,7 @@ public sealed class Window
             component.Reset();
         }
         ClearUpdateList();
+        _coroutineMgr.Reset();
 
         if (_status > ComponentStatus.Initialized) {
             _status = ComponentStatus.Initialized;
@@ -645,8 +646,10 @@ public sealed class Window
     /// <param name="comp">套添加的组件</param>
     /// <param name="addFirst">是否添加到首部，通常用于插入基础组件</param>
     public void AddComponent(WComponent comp, bool addFirst = false) {
-        if (comp == null) throw new ArgumentNullException(nameof(comp));
         if (_status != ComponentStatus.New) throw new InvalidOperationException();
+        if (_indexedComponents.Count(comp.Cid) >= comp.Cid.maxCount) {
+            throw new InvalidOperationException($"countLimit: {comp.Cid.maxCount}");
+        }
         if (addFirst) {
             _components.Insert(0, comp);
         } else {

@@ -79,7 +79,7 @@ public interface SceneAgent
     }
 
     /// <summary>
-    /// 游戏对象添加到<see cref="GameUnitMgr"/>后调用，主要用于维护缓存列表。
+    /// 游戏对象添加到Scene后调用，主要用于维护缓存列表。
     ///
     /// 注：可以在此时绑定<see cref="GameUnitAgent"/>。
     /// </summary>
@@ -88,18 +88,16 @@ public interface SceneAgent
     }
 
     /// <summary>
-    /// 游戏对象从<see cref="GameUnitMgr"/>删除后调用，主要用于删除额外的缓存数据。
-    /// 
-    /// 注：已自动从<see cref="GameUnitMgr"/>的缓存列表中删除。
+    /// 游戏对象从Scene删除后调用，主要用于删除额外的缓存数据。
     /// </summary>
     /// <param name="gameUnit"></param>
     void OnGameUnitRemoved(GameUnit gameUnit) {
     }
 
     /// <summary>
-    /// 游戏对象在<see cref="GameUnitMgr"/>中的索引发生变化时调用。
+    /// 游戏对象在Scene中的索引发生变化时调用。
     /// 
-    /// 1.添加和移除时也会调用。
+    /// 1.添加和移除时也会调用
     /// 2.主要用于维护缓存数据
     /// </summary>
     /// <param name="gameUnit"></param>

@@ -45,6 +45,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// 3.Scene在初始化完成后禁止增删组件，只有在New状态下可增删组件。
 /// 4.Scene暂时限制最多128类组件。
 /// 5.数据组件不支持重复，需要提前将元素转换为List类型。
+/// 6.反序列化创建场景后，还需要额外的初始化才能运行。
 /// </summary>
 [DsonSerializable(SkipFields = new[] { "*" })]
 public sealed class Scene
@@ -108,8 +109,18 @@ public sealed class Scene
     /// </summary>
     [NonSerialized] private readonly IndexedDynamicArray<SComponent> _earlyUpdateList = new(SComponentIndexHelper.GetInst(1), 4);
     [NonSerialized] private readonly IndexedDynamicArray<SComponent> _fixedUpdateList = new(SComponentIndexHelper.GetInst(2), 4);
-    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _updateList = new(SComponentIndexHelper.GetInst(3));
+    [NonSerialized] private readonly IndexedDynamicArray<SComponent> _updateList = new(SComponentIndexHelper.GetInst(3), 10);
     [NonSerialized] private readonly IndexedDynamicArray<SComponent> _lateUpdateList = new(SComponentIndexHelper.GetInst(4), 4);
+
+    /// <summary>
+    /// 场景中所有的游戏单位
+    /// </summary>
+    private readonly IndexedDynamicArray<GameUnit> _gameUnitList = new(GIndexHelper.MAIN_HELPER, 20, 0.1f);
+    /// <summary>
+    /// 游戏单位的字典映射
+    /// 注意：不能用于迭代。
+    /// </summary>
+    [NonSerialized] private readonly Dictionary<long, GameUnit> _gameUnitDic = new Dictionary<long, GameUnit>();
 
     /// <summary>
     /// 在队列中的索引缓存
@@ -120,10 +131,6 @@ public sealed class Scene
     /// </summary>
     [NonSerialized] private readonly GTime _time = new GTime();
     /// <summary>
-    /// 场景中的所有游戏对象
-    /// </summary>
-    [NonSerialized] private readonly GameUnitMgr _gameUnitMgr;
-    /// <summary>
     /// 协程管理器
     /// (由于管理器存在自定义设置，因此延迟构造)
     /// </summary>
@@ -131,12 +138,11 @@ public sealed class Scene
 #nullable restore
 
     public Scene() {
-        _gameUnitMgr = new GameUnitMgr(this);
     }
 
     public Scene(IDsonObjectReader reader) : this() {
         _configId = reader.ReadInt("configId");
-        //
+        // 组件
         List<SComponent> components = reader.ReadObject<List<SComponent>>("components");
         _components.EnsureCapacity(components.Count);
         _indexedComponents.EnsureCapacity(components.Count);
@@ -144,11 +150,18 @@ public sealed class Scene
             _components.Add(component);
             _indexedComponents.Add(component);
         }
+        // 游戏单位 -- 由于尚未分配instId，因此不能加入到字典 
+        List<GameUnit> gameUnits = reader.ReadObject<List<GameUnit>>("gameUnits");
+        _gameUnitList.EnsureCapacity(gameUnits.Count);
+        foreach (GameUnit gameUnit in gameUnits) {
+            _gameUnitList.Add(gameUnit);
+        }
     }
 
     public void WriteObject(IDsonObjectWriter writer) {
         writer.WriteInt("configId", _configId);
         writer.WriteObject("components", _components);
+        writer.WriteObject("gameUnits", _gameUnitList.ToList());
     }
 
     #region prop
@@ -226,8 +239,9 @@ public sealed class Scene
         }
     }
 
+    public IndexedDynamicArray<GameUnit> GameUnitList => _gameUnitList;
+    public Dictionary<long, GameUnit> GameUnitDic => _gameUnitDic;
     public GTime Time => _time;
-    public GameUnitMgr GameUnitMgr => _gameUnitMgr;
     public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
     private void CheckStatus() {
@@ -248,8 +262,10 @@ public sealed class Scene
     /// <param name="comp">套添加的组件</param>
     /// <param name="addFirst">是否添加到首部，通常用于插入基础组件</param>
     public void AddComponent(SComponent comp, bool addFirst = false) {
-        if (comp == null) throw new ArgumentNullException(nameof(comp));
         if (_status != ComponentStatus.New) throw new InvalidOperationException();
+        if (_indexedComponents.Count(comp.Cid) >= comp.Cid.maxCount) {
+            throw new InvalidOperationException($"countLimit: {comp.Cid.maxCount}");
+        }
         if (addFirst) {
             _components.Insert(0, comp);
         } else {
@@ -325,6 +341,72 @@ public sealed class Scene
     #endregion
 
 #nullable restore
+
+    #region GameUnit
+
+    /// <summary>
+    /// 添加游戏单位
+    /// </summary>
+    /// <param name="gameUnit"></param>
+    public void AddGameUnit(GameUnit gameUnit) {
+        gameUnit.Scene = this;
+        if (gameUnit.Status == ComponentStatus.New) {
+            gameUnit.SetInitialized();
+        }
+        _gameUnitDic.Add(gameUnit.InstId, gameUnit); // 检测重复
+        _gameUnitList.Add(gameUnit);
+        _agent?.OnGameUnitAdded(gameUnit); // 维护缓存
+        try {
+            gameUnit.Agent?.Start(gameUnit); // 启动对象
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "gameUnit.Start caught exception");
+        }
+    }
+
+    /// <summary>
+    /// 删除游戏单位
+    /// </summary>
+    /// <param name="gameUnit"></param>
+    /// <returns></returns>
+    public bool RemoveGameUnit(GameUnit gameUnit) {
+        if (_gameUnitList.ContainsRef(gameUnit)) {
+            try {
+                gameUnit.Agent?.Stop(gameUnit);
+            }
+            catch (Exception ex) {
+                logger.Warn(ex, "gameUnit.Stop caught exception");
+            }
+            gameUnit.Scene = null!;
+            //
+            _gameUnitList.Remove(gameUnit);
+            _gameUnitDic.Remove(gameUnit.InstId);
+            _agent?.OnGameUnitRemoved(gameUnit);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 根据运行时实例id查询游戏对象
+    /// </summary>
+    /// <param name="instId"></param>
+    /// <returns></returns>
+    public GameUnit? GetGameUnit(long instId) {
+        return _gameUnitDic.TryGetValue(instId, out GameUnit gameUnit) ? gameUnit : null;
+    }
+
+    private void ClearGameUnits() {
+        _gameUnitList.BeginItr();
+        for (int i = 0, len = _gameUnitList.Length; i < len; i++) {
+            GameUnit gameUnit = _gameUnitList.Set(i, null);
+            if (gameUnit == null) continue;
+            RemoveGameUnit(gameUnit);
+        }
+        _gameUnitList.EndItr();
+    }
+
+    #endregion
 
     #region 生命周期
 
@@ -437,6 +519,7 @@ public sealed class Scene
             component.Reset();
         }
         ClearUpdateList();
+        _coroutineMgr.Reset();
 
         if (_status > ComponentStatus.Initialized) {
             _status = ComponentStatus.Initialized;
@@ -444,7 +527,7 @@ public sealed class Scene
         _active = true;
         _agent?.Reset();
         _time.Restart();
-        _gameUnitMgr.Destroy();
+        ClearGameUnits();
     }
 
     /// <summary>
@@ -471,7 +554,7 @@ public sealed class Scene
         _components.Clear();
         _indexedComponents.Clear();
         ClearUpdateList();
-        _gameUnitMgr.Destroy();
+        ClearGameUnits();
     }
 
     /// <summary>

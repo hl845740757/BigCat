@@ -126,7 +126,7 @@ public sealed class GameUnit
     public GameUnit(IDsonObjectReader reader) {
         _configId = reader.ReadInt("configId");
         _active = reader.ReadBool("active");
-        //
+        // 组件列表
         List<GComponent> components = reader.ReadObject<List<GComponent>>("components");
         _components.EnsureCapacity(components.Count);
         _indexedComponents.EnsureCapacity(components.Count);
@@ -207,8 +207,10 @@ public sealed class GameUnit
     /// <param name="comp">套添加的组件</param>
     /// <param name="addFirst">是否添加到首部，通常用于插入基础组件</param>
     public void AddComponent(GComponent comp, bool addFirst = false) {
-        if (comp == null) throw new ArgumentNullException(nameof(comp));
         if (_status != ComponentStatus.New) throw new InvalidOperationException();
+        if (_indexedComponents.Count(comp.Cid) >= comp.Cid.maxCount) {
+            throw new InvalidOperationException($"countLimit: {comp.Cid.maxCount}");
+        }
         if (addFirst) {
             _components.Insert(0, comp);
         } else {
@@ -292,6 +294,9 @@ public sealed class GameUnit
     /// 注：应当在加入场景前调用。
     /// </summary>
     public void SetInitialized() {
+        if (_status == ComponentStatus.Destroyed) {
+            throw new InvalidOperationException("already destroyed");
+        }
         _status = ComponentStatus.Initialized;
         // 初始化模块
         foreach (GComponent component in _components) {
@@ -319,6 +324,7 @@ public sealed class GameUnit
         if (_status == ComponentStatus.Destroyed) {
             throw new InvalidOperationException("already destroyed");
         }
+        // Scene的Reset是为了重新Start，不会清理所有缓存；而GameUnit的Reset是为了跨场景复用，需要清理所有缓存。
         foreach (GComponent component in _components) {
             if (component.Cid.shared) continue;
             if (component.Status == ComponentStatus.New) continue; // 小心：这里与Scene不同

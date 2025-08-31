@@ -51,6 +51,10 @@ public class DataModelResolver : IDataModelResolver
     /// 数据地址解析缓存
     /// </summary>
     private readonly Dictionary<string, List<Item>> itemCache = new Dictionary<string, List<Item>>();
+    /// <summary>
+    /// 用于字典查询时的缓存
+    /// </summary>
+    private readonly object[] _arrayCache = new object[1];
 
     public object Resolve(IAggregationModel aggregationModel, object? parentModel, string dataAddress, int uiIndex = -1) {
         dataAddress = dataAddress.Trim();
@@ -94,15 +98,18 @@ public class DataModelResolver : IDataModelResolver
             ParameterInfo indexParameter = propertyInfo.GetIndexParameters()[0]; // 这里会创建数组，但字典使用频率不高
             if (indexParameter.ParameterType == typeof(int)) {
                 int index = (int)item.number;
-                return propertyInfo.GetValue(dataModel, new object[] { index });
+                _arrayCache[0] = index;
+                return propertyInfo.GetValue(dataModel, _arrayCache);
             }
             if (indexParameter.ParameterType == typeof(long)) {
                 long index = item.number;
-                return propertyInfo.GetValue(dataModel, new object[] { index });
+                _arrayCache[0] = index;
+                return propertyInfo.GetValue(dataModel, _arrayCache);
             }
             if (indexParameter.ParameterType == typeof(string)) {
                 string index = item.name;
-                return propertyInfo.GetValue(dataModel, new object[] { index });
+                _arrayCache[0] = index;
+                return propertyInfo.GetValue(dataModel, _arrayCache);
             }
             return null;
         }

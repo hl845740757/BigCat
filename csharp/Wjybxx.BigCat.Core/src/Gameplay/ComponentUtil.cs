@@ -27,7 +27,7 @@ internal static class ComponentUtil
 {
     /// <summary>
     /// 当前节点自身是否为active状态
-    /// active和enable其实是一码事，只是作用与GameObject时使用Active更符合语义，作用与脚本时Enable更符合语义。
+    /// active和enable其实是一码事，只是作用于GameObject时使用Active更符合语义，作用于脚本时Enable更符合语义。
     /// </summary>
     public const int MASK_NOT_ACTIVE_SELF = 1;
     /// <summary>

@@ -97,7 +97,7 @@ public readonly struct CoroutineTaskContext
     /// <param name="timingType">计时类型</param>
     /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture Sleep(double time, int extraDelayFrame = 0, TimingType timingType = TimingType.Time,
+    public ValueFuture Sleep(double time, int extraDelayFrame = 1, TimingType timingType = TimingType.Time,
                              GameLoopPhase phase = GameLoopPhase.Update) {
         return coroutine.Sleep(token, time, extraDelayFrame, timingType, phase);
     }
@@ -265,7 +265,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// <param name="timingType">计时类型</param>
     /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture Sleep(double time, int extraDelayFrame = 0, TimingType timingType = TimingType.Time,
+    public ValueFuture Sleep(double time, int extraDelayFrame = 1, TimingType timingType = TimingType.Time,
                              GameLoopPhase phase = GameLoopPhase.Update) {
         return coroutine.Sleep(token, time, extraDelayFrame, timingType, phase);
     }

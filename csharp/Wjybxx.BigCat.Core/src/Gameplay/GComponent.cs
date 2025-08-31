@@ -40,7 +40,7 @@ public abstract class GComponent
     [NonSerialized] private ComponentId _cid;
     [NonSerialized] private ComponentStatus _status = ComponentStatus.New;
     private bool _enabled = true; // 启用状态，需要持久化
-    [NonSerialized] private bool _activeAndEnabled = true;
+    [NonSerialized] private bool _activeAndEnabled = true; // 预留属性
 
     [NonSerialized] private GComponent? _next; // 索引用，避免为每个组件创建一个List
     [NonSerialized] internal GIndexes indexes = GIndexes.Create();
@@ -162,13 +162,13 @@ public abstract class GComponent
     /// <summary>
     /// 注：框架默认不会调度该方法，由用户扩展
     /// </summary>
-    public virtual void OnEnabled() {
+    public virtual void OnEnable() {
     }
 
     /// <summary>
     /// 注：框架默认不会调度该方法，由用户扩展
     /// </summary>
-    public virtual void OnDisabled() {
+    public virtual void OnDisable() {
     }
 
     /// <summary>
