@@ -66,7 +66,8 @@ internal static class UIInternal
     public const int MASK_SHOWING = 1 << 6;
 
     /// <summary>
-    /// 组件的重写信息
+    /// 组件的方法重写信息
+    /// 注：理论上可以合并到ctl控制标记中
     /// </summary>
     private static readonly ConcurrentDictionary<Type, ScriptMethods> overridesCache = new();
 

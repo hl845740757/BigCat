@@ -185,16 +185,6 @@ public sealed class GameUnit
         set => _active = value;
     }
 
-    /// <summary>
-    /// 设置GameObject的状态
-    /// 
-    /// 注：尽量避免使用该方法
-    /// </summary>
-    /// <param name="status"></param>
-    public void SetStatus(ComponentStatus status) {
-        _status = status;
-    }
-
     #endregion
 
 #nullable disable

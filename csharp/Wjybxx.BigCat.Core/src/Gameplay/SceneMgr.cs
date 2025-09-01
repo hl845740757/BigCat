@@ -196,7 +196,6 @@ public sealed class SceneMgr
         _activeSceneList.Add(scene);
         try {
             scene.SceneMgr = this;
-            scene.Injector ??= _injector;
             if (scene.Status == ComponentStatus.New) {
                 scene.SetInitialized();
             }
@@ -238,8 +237,8 @@ public sealed class SceneMgr
         }
 
         _sceneDic.Remove(scene.InstId);
-        _sceneList.Remove(scene);
         _sortedSceneList.Remove(new SceneSortKey(scene.ConfigId, scene.InstId));
+        _sceneList.Remove(scene);
         _activeSceneList.Remove(scene);
         _closedSceneList.Remove(scene);
 
@@ -249,45 +248,6 @@ public sealed class SceneMgr
         catch (Exception ex) {
             logger.Warn(ex, "scene.Destroy caught exception, configId: " + scene.ConfigId);
         }
-    }
-
-    #endregion
-
-    #region 生命流程
-
-    /// <summary>
-    /// 启动管理器
-    /// </summary>
-    public void Start() {
-    }
-
-    /// <summary>
-    /// 停止管理器
-    /// </summary>
-    public void Stop() {
-        // 停止并销毁所有场景
-        _sceneList.BeginItr();
-        for (int index = 0, len = _sceneList.Length; index < len; index++) {
-            Scene scene = _sceneList[index];
-            if (scene == null) {
-                continue;
-            }
-            try {
-                scene.Stop();
-                scene.Destroy();
-            }
-            catch (Exception e) {
-                logger.Warn(e, "scene.Stop caught exception, configId: " + scene.ConfigId);
-            }
-        }
-        _sceneList.EndItr();
-        coroutineMgr.Shutdown();
-
-        _sceneDic.Clear();
-        _sortedSceneList.Clear();
-        _sceneList.Clear();
-        _activeSceneList.Clear();
-        _closedSceneList.Clear();
     }
 
     #endregion

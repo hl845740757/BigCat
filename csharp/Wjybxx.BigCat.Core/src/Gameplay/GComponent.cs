@@ -40,7 +40,6 @@ public abstract class GComponent
     [NonSerialized] private ComponentId _cid;
     [NonSerialized] private ComponentStatus _status = ComponentStatus.New;
     private bool _enabled = true; // 启用状态，需要持久化
-    [NonSerialized] private bool _activeAndEnabled = true; // 预留属性
 
     [NonSerialized] private GComponent? _next; // 索引用，避免为每个组件创建一个List
     [NonSerialized] internal GIndexes indexes = GIndexes.Create();
@@ -64,7 +63,6 @@ public abstract class GComponent
             throw new InvalidOperationException("already bind");
         }
         this._gameUnit = gameUnit ?? throw new ArgumentNullException(nameof(gameUnit));
-        this._activeAndEnabled = _enabled && gameUnit.IsActive;
         this._status = ComponentStatus.Initialized;
         this.OnAwake();
     }
@@ -81,15 +79,6 @@ public abstract class GComponent
         finally {
             _gameUnit = null;
         }
-    }
-
-    /// <summary>
-    /// 设置组件的状态
-    /// 注：尽量避免使用该方法
-    /// </summary>
-    /// <param name="status"></param>
-    public void SetStatus(ComponentStatus status) {
-        _status = status;
     }
 
     #endregion
@@ -112,18 +101,6 @@ public abstract class GComponent
     public bool Enabled {
         get => _enabled;
         set => _enabled = value;
-    }
-
-    /// <summary>
-    /// 游戏单位在【层次化结构中】是否处于激活状态，且组件处于启用状态。
-    /// 
-    /// 1.该值为缓存值，用于判断是否应当触发事件。
-    /// 2.事件触发由用户扩展，框架只提供数据支持。
-    /// 3.框架暂不打算支持层次化结构，但这里的是active指的的层次化结构中的激活状态。
-    /// </summary>
-    public bool IsActiveAndEnabled {
-        get => _activeAndEnabled;
-        set => _activeAndEnabled = value;
     }
 
     private void CheckStatus() {
@@ -180,7 +157,6 @@ public abstract class GComponent
             _status = ComponentStatus.Initialized;
         }
         _enabled = true;
-        _activeAndEnabled = true;
     }
 
     #endregion

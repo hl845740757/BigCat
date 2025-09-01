@@ -517,11 +517,17 @@ public sealed class Window
         _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
-    private void AddToUpdateList(WComponent component) {
+    internal void AddToUpdateList(WComponent component) {
         ScriptMethods overrideInfo = UIInternal.GetOverrideInfo(typeof(WComponent), component.GetType());
         if (overrideInfo.IsIntersect(ScriptMethods.EarlyUpdate)) _earlyUpdateList.Add(component);
         if (overrideInfo.IsIntersect(ScriptMethods.Update)) _updateList.Add(component);
         if (overrideInfo.IsIntersect(ScriptMethods.LateUpdate)) _lateUpdateList.Add(component);
+    }
+
+    internal void RemoveFromUpdateList(WComponent component) {
+        _earlyUpdateList.Remove(component);
+        _updateList.Remove(component);
+        _lateUpdateList.Remove(component);
     }
 
     private void ClearUpdateList() {

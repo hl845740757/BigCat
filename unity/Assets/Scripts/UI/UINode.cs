@@ -137,9 +137,6 @@ public class UINode : MonoBehaviour
         _dataModel = dataModel;
         _reentryId++;
         _ctl |= UIInternal.MASK_SHOWING;
-        if (firstShow) {
-            InitController();
-        }
         // 重置UI元素
         if (displayMode >= 0) {
             UINodeDisplayCfg displayCfg = nodeCfg.FindDisplayCfg(displayMode);
@@ -149,6 +146,11 @@ public class UINode : MonoBehaviour
             ResetDisplayElements(displayCfg);
         } else {
             ResetDisplayElements(nodeCfg.defaultDisplayCfg);
+        }
+        // 执行初始化
+        if (firstShow) {
+            InitController();
+            OnStart();
         }
         int rid = _reentryId;
         gameObject.SetActive(true);
@@ -203,6 +205,10 @@ public class UINode : MonoBehaviour
         OnHide();
         gameObject.SetActive(false);
         _ctl = 0;
+        // 清理引用 - OnHide可能存在回收逻辑，因此需放在OnHide后
+        elements.Clear();
+        hooks.Clear();
+        children.Clear();
         // 私有黑板只需清理
         if (nodeCfg.newBlackboard) {
             blackboard?.Clear();
@@ -212,13 +218,21 @@ public class UINode : MonoBehaviour
     }
 
     /// <summary>
+    /// UI节点首次展示时调用
+    ///
+    /// 额外的钩子方法，方便首次初始化
+    /// </summary>
+    protected virtual void OnStart() {
+    }
+
+    /// <summary>
     /// UI节点启动的时候调用
     ///
     /// 1.通常的逻辑为：初始化事件监听，为子节点绑定数据，刷新一次UI。
     /// 2.如果需要心跳，可在此方法中设置<see cref="NeedUpdate"/>。
     /// 3.如果有直接操控的<see cref="elements"/>，需要重写该方法
     /// </summary>
-    /// <param name="firstShow"></param>
+    /// <param name="firstShow">是否是首次展示</param>
     protected virtual void OnShow(bool firstShow) {
         foreach (UINode hook in hooks) {
             if (!hook.IsShowing && hook.enabled) {
@@ -486,7 +500,7 @@ public class UINode : MonoBehaviour
     /// </summary>
     /// <param name="child"></param>
     public void ShowChild(UINode child) {
-        object dataModel = _window.windowMgr.ResolveDataModel(_dataModel, child.nodeCfg.dataAddress, uiIndex);
+        object dataModel = _window.windowMgr.ResolveDataModel(_dataModel, child.nodeCfg.dataAddress, child.uiIndex);
         child.Show(_window, this, dataModel);
     }
 
@@ -538,6 +552,9 @@ public class UINode : MonoBehaviour
     protected virtual void Reset() {
         nodeCfg ??= new UINodeCfg();
         defaultDisplayCfg ??= new UINodeDisplayCfg();
+        //
+        nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
+        nodeCfg.moreDisplayCfgs = moreDisplayCfgs;
     }
 
     protected virtual void OnValidate() {

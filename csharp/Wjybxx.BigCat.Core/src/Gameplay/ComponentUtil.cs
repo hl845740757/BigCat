@@ -36,7 +36,17 @@ internal static class ComponentUtil
     public const int MASK_NOT_ACTIVE_IN_HIERARCHY = 1 << 1;
 
     /// <summary>
-    /// 组件的重写信息
+    /// 历史执行过Start方法
+    /// </summary>
+    public const int MASK_HISTORICALLY_STARTED = 1 << 2;
+    /// <summary>
+    /// 历史执行过OnEnable方法
+    /// </summary>
+    public const int MASK_HISTORICALLY_ENABLED = 1 << 3;
+
+    /// <summary>
+    /// 组件的方法重写信息
+    /// 注：理论上可以合并到ctl控制标记中
     /// </summary>
     private static readonly ConcurrentDictionary<Type, ScriptMethods> overridesCache = new();
 

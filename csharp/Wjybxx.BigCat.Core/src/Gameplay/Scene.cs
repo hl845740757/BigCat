@@ -24,7 +24,6 @@ using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Fx;
-using Wjybxx.Commons.Inject;
 using Wjybxx.Commons.Logger;
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
@@ -78,10 +77,6 @@ public sealed class Scene
     /// 注意：该代理由用户创建
     /// </summary>
     [NonSerialized] private SceneAgent _agent;
-    /// <summary>
-    /// Scene的依赖
-    /// </summary>
-    [NonSerialized] private IInjector _injector;
     /// <summary>
     /// 用户自定义数据
     /// </summary>
@@ -196,14 +191,6 @@ public sealed class Scene
         set {
             CheckStatus();
             _agent = value;
-        }
-    }
-
-    public IInjector Injector {
-        get => _injector;
-        set {
-            CheckStatus();
-            _injector = value;
         }
     }
 
@@ -353,7 +340,9 @@ public sealed class Scene
         if (gameUnit.Status == ComponentStatus.New) {
             gameUnit.SetInitialized();
         }
-        _gameUnitDic.Add(gameUnit.InstId, gameUnit); // 检测重复
+        if (gameUnit.InstId != 0) {
+            _gameUnitDic.Add(gameUnit.InstId, gameUnit); // 检测重复
+        }
         _gameUnitList.Add(gameUnit);
         _agent?.OnGameUnitAdded(gameUnit); // 维护缓存
         try {
@@ -697,12 +686,19 @@ public sealed class Scene
         _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
-    private void AddToUpdateList(SComponent component) {
+    internal void AddToUpdateList(SComponent component) {
         ScriptMethods overrideInfo = ComponentUtil.GetOverrideInfo(typeof(SComponent), component.GetType());
-        if (overrideInfo.IsIntersect(ScriptMethods.FixedUpdate)) _fixedUpdateList.Add(component);
         if (overrideInfo.IsIntersect(ScriptMethods.EarlyUpdate)) _earlyUpdateList.Add(component);
+        if (overrideInfo.IsIntersect(ScriptMethods.FixedUpdate)) _fixedUpdateList.Add(component);
         if (overrideInfo.IsIntersect(ScriptMethods.Update)) _updateList.Add(component);
         if (overrideInfo.IsIntersect(ScriptMethods.LateUpdate)) _lateUpdateList.Add(component);
+    }
+
+    internal void RemoveFromUpdateList(SComponent component) {
+        _earlyUpdateList.Remove(component);
+        _fixedUpdateList.Remove(component);
+        _updateList.Remove(component);
+        _lateUpdateList.Remove(component);
     }
 
     private void ClearUpdateList() {
