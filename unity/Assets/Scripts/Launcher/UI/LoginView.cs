@@ -35,10 +35,13 @@ public class LoginView : UINode
     private TMP_InputField _inputAccount;
     private Button _buttonLogin;
 
-    protected override void OnInit() {
-        _inputAccount = FindElement("Input_Account").GetComponent<TMP_InputField>();
-        _buttonLogin = FindElement("Button_Login").GetComponent<Button>();
-        _buttonLogin.onClick.AddListener(OnClickLogin);
+    protected override void OnShow(bool firstShow) {
+        if (firstShow) {
+            _inputAccount = FindElement("Input_Account").GetComponent<TMP_InputField>();
+            _buttonLogin = FindElement("Button_Login").GetComponent<Button>();
+            _buttonLogin.onClick.AddListener(OnClickLogin);
+        }
+        base.OnShow(firstShow);
     }
 
     private void OnClickLogin() {

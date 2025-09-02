@@ -150,7 +150,6 @@ public class UINode : MonoBehaviour
         // 执行初始化
         if (firstShow) {
             InitController();
-            OnInit();
         }
         int rid = _reentryId;
         gameObject.SetActive(true);
@@ -215,14 +214,6 @@ public class UINode : MonoBehaviour
         } else {
             blackboard = null;
         }
-    }
-
-    /// <summary>
-    /// UI节点首次展示时调用
-    ///
-    /// 额外的钩子方法，方便首次初始化
-    /// </summary>
-    protected virtual void OnInit() {
     }
 
     /// <summary>
