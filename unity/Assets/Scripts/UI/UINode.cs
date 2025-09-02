@@ -150,7 +150,7 @@ public class UINode : MonoBehaviour
         // 执行初始化
         if (firstShow) {
             InitController();
-            OnStart();
+            OnInit();
         }
         int rid = _reentryId;
         gameObject.SetActive(true);
@@ -222,7 +222,7 @@ public class UINode : MonoBehaviour
     ///
     /// 额外的钩子方法，方便首次初始化
     /// </summary>
-    protected virtual void OnStart() {
+    protected virtual void OnInit() {
     }
 
     /// <summary>
@@ -524,7 +524,7 @@ public class UINode : MonoBehaviour
 
     #region unity脚本生命周期
 
-    protected void Awake() {
+    protected virtual void Awake() {
         nodeCfg ??= new UINodeCfg();
         nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
         nodeCfg.moreDisplayCfgs = moreDisplayCfgs; // 发布到cfg对象，方便外部访问

@@ -130,40 +130,4 @@ public sealed class GIndexHelper : IIndexedElementHelper<GameUnit>
         return CACHE[queueId];
     }
 }
-
-/// <summary>
-/// <see cref="GComponent"/>的索引辅助类
-/// 注：我们可能会在外部缓存组件列表。
-/// </summary>
-public class GComponentIndexHelper : IIndexedElementHelper<GComponent>
-{
-    private readonly int queueId;
-
-    private GComponentIndexHelper(int queueId) {
-        this.queueId = queueId;
-    }
-
-    public int CollectionIndex(object collection, GComponent element) {
-        return element.indexes[queueId];
-    }
-
-    public void CollectionIndex(object collection, GComponent element, int index) {
-        element.indexes[queueId] = index;
-    }
-
-    private static readonly GComponentIndexHelper[] CACHE = new GComponentIndexHelper[10];
-
-    static GComponentIndexHelper() {
-        for (int index = 0; index < CACHE.Length; index++) {
-            CACHE[index] = new GComponentIndexHelper(index);
-        }
-    }
-
-    public static GComponentIndexHelper GetInst(int queueId) {
-        if (queueId < 0 || queueId >= CACHE.Length) {
-            throw new ArgumentException("queueId: " + queueId);
-        }
-        return CACHE[queueId];
-    }
-}
 }

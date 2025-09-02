@@ -342,7 +342,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &787364775
 RectTransform:
   m_ObjectHideFlags: 0
@@ -409,6 +409,8 @@ MonoBehaviour:
   unclosable: 0
   isCrossDesktop: 0
   isMask: 0
+  enableUnscaledQueue: 1
+  enableFrameQueue: 0
   location: 0
   offset: {x: 0, y: 0, z: 0}
   maxIdleTime: 30
@@ -519,8 +521,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodeCfg:
     name: 
-    newBlackboard: 0
     dataAddress: 
+    newBlackboard: 0
     flags: 0
   defaultDisplayCfg:
     mode: 0
@@ -1478,6 +1480,8 @@ MonoBehaviour:
   unclosable: 0
   isCrossDesktop: 0
   isMask: 0
+  enableUnscaledQueue: 1
+  enableFrameQueue: 0
   location: 0
   offset: {x: 0, y: 0, z: 0}
   maxIdleTime: 30

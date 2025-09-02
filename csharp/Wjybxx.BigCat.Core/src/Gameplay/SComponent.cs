@@ -146,7 +146,9 @@ public abstract class SComponent
 
     /// <summary>
     /// 重置数据
-    /// (清理运行过程中产生的临时数据，以支持重新启动)
+    /// 
+    /// 1.清理运行过程中产生的临时数据，以支持重新启动；Reset后会重新start，但不会再执行onAwake。
+    /// 2.Scene并不推荐复用，因此可不实现该方法。
     /// </summary>
     public virtual void Reset() {
         if (_status > ComponentStatus.Initialized) {

@@ -45,6 +45,11 @@ public sealed class SceneMgr
     public static SceneMgr Inst { get; set; }
 
     /// <summary>
+    /// 客户端栈结构解析
+    /// (数据在这里提供，方法通过扩展方法实现)
+    /// </summary>
+    public readonly List<Scene> stack = new List<Scene>(4);
+    /// <summary>
     /// List的初始空间
     /// </summary>
     private const int INIT_CAPACITY = 4;

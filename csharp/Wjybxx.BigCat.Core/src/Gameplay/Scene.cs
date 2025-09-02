@@ -94,8 +94,6 @@ public sealed class Scene
     private readonly List<SComponent> _components = new List<SComponent>();
     /// <summary>
     /// 索引后的组件 - 提高查询速度
-    /// 
-    /// PS：场景的数量较少，且其组件数也较少，因此无需在意这里的空间浪费。
     /// </summary>
     [NonSerialized] private readonly ComponentList<SComponent?> _indexedComponents = new(SComponentListHelper.Inst);
     /// <summary>
@@ -109,14 +107,9 @@ public sealed class Scene
 
     /// <summary>
     /// 场景中所有的游戏单位
+    /// (字典缓存也通过Agent+组件实现；该字段引用也可缓存到缓存组件)
     /// </summary>
     private readonly IndexedDynamicArray<GameUnit> _gameUnitList = new(GIndexHelper.MAIN_HELPER, 20, 0.1f);
-    /// <summary>
-    /// 游戏单位的字典映射
-    /// 注意：不能用于迭代。
-    /// </summary>
-    [NonSerialized] private readonly Dictionary<long, GameUnit> _gameUnitDic = new Dictionary<long, GameUnit>();
-
     /// <summary>
     /// 在队列中的索引缓存
     /// </summary>
@@ -227,7 +220,6 @@ public sealed class Scene
     }
 
     public IndexedDynamicArray<GameUnit> GameUnitList => _gameUnitList;
-    public Dictionary<long, GameUnit> GameUnitDic => _gameUnitDic;
     public GTime Time => _time;
     public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
@@ -340,13 +332,10 @@ public sealed class Scene
         if (gameUnit.Status == ComponentStatus.New) {
             gameUnit.SetInitialized();
         }
-        if (gameUnit.InstId != 0) {
-            _gameUnitDic.Add(gameUnit.InstId, gameUnit); // 检测重复
-        }
         _gameUnitList.Add(gameUnit);
-        _agent?.OnGameUnitAdded(gameUnit); // 维护缓存
+        _agent?.OnGameUnitAdded(gameUnit);
         try {
-            gameUnit.Agent?.Start(gameUnit); // 启动对象
+            gameUnit.Agent?.Start(gameUnit);
         }
         catch (Exception ex) {
             logger.Warn(ex, "gameUnit.Start caught exception");
@@ -369,26 +358,16 @@ public sealed class Scene
             gameUnit.Scene = null!;
             //
             _gameUnitList.Remove(gameUnit);
-            _gameUnitDic.Remove(gameUnit.InstId);
             _agent?.OnGameUnitRemoved(gameUnit);
             return true;
         }
         return false;
     }
 
-    /// <summary>
-    /// 根据运行时实例id查询游戏对象
-    /// </summary>
-    /// <param name="instId"></param>
-    /// <returns></returns>
-    public GameUnit? GetGameUnit(long instId) {
-        return _gameUnitDic.TryGetValue(instId, out GameUnit gameUnit) ? gameUnit : null;
-    }
-
     private void ClearGameUnits() {
         _gameUnitList.BeginItr();
         for (int i = 0, len = _gameUnitList.Length; i < len; i++) {
-            GameUnit gameUnit = _gameUnitList.Set(i, null);
+            GameUnit gameUnit = _gameUnitList[i];
             if (gameUnit == null) continue;
             RemoveGameUnit(gameUnit);
         }
@@ -504,7 +483,7 @@ public sealed class Scene
         Stop();
         foreach (SComponent component in _components) {
             if (component.Cid.shared) continue;
-            if (component.Status <= ComponentStatus.Initialized) continue;
+            if (component.Status == ComponentStatus.New) continue;
             component.Reset();
         }
         ClearUpdateList();

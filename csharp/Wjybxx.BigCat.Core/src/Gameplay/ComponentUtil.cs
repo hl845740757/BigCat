@@ -38,11 +38,11 @@ internal static class ComponentUtil
     /// <summary>
     /// 历史执行过Start方法
     /// </summary>
-    public const int MASK_HISTORICALLY_STARTED = 1 << 2;
+    public const int MASK_BEEN_STARTED = 1 << 2;
     /// <summary>
     /// 历史执行过OnEnable方法
     /// </summary>
-    public const int MASK_HISTORICALLY_ENABLED = 1 << 3;
+    public const int MASK_BEEN_ENABLED = 1 << 3;
 
     /// <summary>
     /// 组件的方法重写信息

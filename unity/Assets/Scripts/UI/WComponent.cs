@@ -137,8 +137,8 @@ public abstract class WComponent
 
     /// <summary>
     /// 重置数据
-    ///
-    /// 1.清理运行过程中产生的临时数据，以支持重新启动。
+    /// 
+    /// 1.清理运行过程中产生的临时数据，以支持重新启动；Reset后会重新start，但不会再执行onAwake。
     /// 2.Window相关组件必须实现重置方法，以支持复用
     /// </summary>
     public virtual void Reset() {

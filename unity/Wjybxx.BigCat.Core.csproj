@@ -56,7 +56,6 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Co\Coroutine.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\GameUnitAgent.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\ScriptMethods.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\GameUnitMgr.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneMgr.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\Node.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcContext.cs" />

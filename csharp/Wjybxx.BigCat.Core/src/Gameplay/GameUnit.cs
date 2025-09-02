@@ -101,7 +101,7 @@ public sealed class GameUnit
 #endif
 
     /// <summary>
-    /// GameUnit上的组件 -- 通常通过反序列化初始化，也支持运行时动态增加
+    /// GameUnit上的组件
     /// </summary>
     private readonly List<GComponent> _components = new List<GComponent>();
     /// <summary>
@@ -314,10 +314,9 @@ public sealed class GameUnit
         if (_status == ComponentStatus.Destroyed) {
             throw new InvalidOperationException("already destroyed");
         }
-        // Scene的Reset是为了重新Start，不会清理所有缓存；而GameUnit的Reset是为了跨场景复用，需要清理所有缓存。
         foreach (GComponent component in _components) {
             if (component.Cid.shared) continue;
-            if (component.Status == ComponentStatus.New) continue; // 小心：这里与Scene不同
+            if (component.Status == ComponentStatus.New) continue;
             component.Reset();
         }
         indexes.Clear();

@@ -42,7 +42,6 @@ public abstract class GComponent
     private bool _enabled = true; // 启用状态，需要持久化
 
     [NonSerialized] private GComponent? _next; // 索引用，避免为每个组件创建一个List
-    [NonSerialized] internal GIndexes indexes = GIndexes.Create();
 #nullable restore
 
     protected GComponent() {
@@ -136,21 +135,12 @@ public abstract class GComponent
     public virtual void ResolveDependence() {
     }
 
-    /// <summary>
-    /// 注：框架默认不会调度该方法，由用户扩展
-    /// </summary>
-    public virtual void OnEnable() {
-    }
-
-    /// <summary>
-    /// 注：框架默认不会调度该方法，由用户扩展
-    /// </summary>
-    public virtual void OnDisable() {
-    }
 
     /// <summary>
     /// 重置组件状态
-    /// (清理运行过程中产生的临时数据，以支持重用对象 -- 跨场景重用)
+    ///
+    /// 1.清理运行过程中产生的临时数据，以支持跨场景复用；Reset后会重新start，但不会再执行onAwake。
+    /// 2.Scene的Reset是为了重新Start，不会清理所有缓存；而GameUnit的Reset是为了跨场景复用，需要清理所有缓存。
     /// </summary>
     public virtual void Reset() {
         if (_status > ComponentStatus.Initialized) {

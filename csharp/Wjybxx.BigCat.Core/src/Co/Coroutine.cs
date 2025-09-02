@@ -39,12 +39,12 @@ namespace Wjybxx.BigCat.Co
 internal sealed class Coroutine
 {
     // private static readonly ILogger logger = LoggerFactory.GetLogger(typeof(Coroutine));
-    public static readonly DataKey<object> CODEC_INPUT = DataKeys.NewObjectKey("co_input");
-    public static readonly DataKey<object> CODEC_OUTPUT = DataKeys.NewObjectKey("co_output");
+    // public static readonly DataKey<object> CODEC_INPUT = DataKeys.NewObjectKey("co_input");
+    // public static readonly DataKey<object> CODEC_OUTPUT = DataKeys.NewObjectKey("co_output");
 
     private const int MASK_CANCEL_REQUESTED = 0x01; // 已收到取消信号
     private const int MASK_INTERRUPTED = 0x02; // 已收到中断请求
-    private const int MASK_TERMINATED = 0x04; // 已执行结束
+    private const int MASK_TERMINATED = 0x04; // 已执行结束 - 任务上下文已销毁
     private const int MASK_USER_CONTEXT_DISPOSED = 0x08; // 用户上下文已销毁
 
 #nullable disable

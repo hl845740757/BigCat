@@ -169,7 +169,7 @@ public sealed class Window
         this._instId = windowCfg.GetInstanceID();
         this._transform = (RectTransform)windowCfg.transform;
         this._coroutineMgr = CoroutineMgr.CreateFrom(windowMgr.CoroutineMgr, _time,
-            windowCfg.enableUnscaledQueue, windowCfg.enableUnscaledQueue);
+            windowCfg.enableUnscaledQueue, windowCfg.enableFrameQueue);
 
         this._agent = windowCfg.GetComponent<WindowAgent>() ?? new UIInternal.SimpleWindowAgent();
         this._canvas = windowCfg.GetComponent<Canvas>();
@@ -321,7 +321,7 @@ public sealed class Window
         Stop();
         foreach (WComponent component in _components) {
             if (component.Cid.shared) continue;
-            if (component.Status <= ComponentStatus.Initialized) continue;
+            if (component.Status == ComponentStatus.New) continue;
             component.Reset();
         }
         ClearUpdateList();
