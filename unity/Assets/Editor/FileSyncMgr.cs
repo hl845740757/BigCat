@@ -20,7 +20,7 @@ using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor
+namespace Wjybxx.BigCat.Editor
 {
 /// <summary>
 /// 用户拷贝C#目录下的文件到本地

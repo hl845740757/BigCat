@@ -1,0 +1,16 @@
+{
+    "name": "Wjybxx.BitCat.UnityCore",
+    "rootNamespace": "Wjybxx.BitCat.Core",
+    "references": [
+        "Wjybxx.Commons.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

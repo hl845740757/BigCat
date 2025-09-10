@@ -47,21 +47,21 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\UI\WindowMgr.cs" />
-    <Compile Include="Assets\Scripts\UI\Desktop.cs" />
-    <Compile Include="Assets\Scripts\UI\WindowAgent.cs" />
-    <Compile Include="Assets\Scripts\UI\WindowCfg.cs" />
-    <Compile Include="Assets\Scripts\UI\Controller.cs" />
-    <Compile Include="Assets\Scripts\UI\WComponentCfg.cs" />
-    <Compile Include="Assets\Scripts\UI\WindowMgrCfg.cs" />
-    <Compile Include="Assets\Scripts\UI\WindowLoader.cs" />
-    <Compile Include="Assets\Scripts\UI\UINode.cs" />
-    <Compile Include="Assets\Scripts\UI\UIInternal.cs" />
-    <Compile Include="Assets\Scripts\UI\WComponent.cs" />
-    <Compile Include="Assets\Scripts\UI\Window.cs" />
-    <Compile Include="Assets\Scripts\UI\WIndexes.cs" />
-    <Compile Include="Assets\Scripts\UI\UINodeCfg.cs" />
-    <None Include="Assets\Scripts\UI\Wjybxx.BigCat.UI.asmdef" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowMgr.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\Desktop.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowAgent.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowCfg.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\Controller.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WComponentCfg.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowMgrCfg.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowLoader.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\UINode.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\UIInternal.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WComponent.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\Window.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WIndexes.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\UINodeCfg.cs" />
+    <None Include="Assets\Scripts\UI\Runtime\Wjybxx.BigCat.UI.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>

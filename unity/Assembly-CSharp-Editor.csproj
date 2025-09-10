@@ -735,29 +735,14 @@
     <Reference Include="Wjybxx.Dson.Codec">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
     </Reference>
-    <Reference Include="Wjybxx.Commons.Inject">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Inject.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.VSCode.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VSCode.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Shared.Editor">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualStudio.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualStudio.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.Disruptor">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Disruptor.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.BTree.Codec">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Codec.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Timeline.Editor">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Timeline.dll</HintPath>
@@ -774,29 +759,17 @@
     <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Wjybxx.BTree.Core">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.Commons.Core">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Wjybxx.Dson.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Flow">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Flow.dll</HintPath>
     </Reference>
-    <Reference Include="Wjybxx.Logger.Unity">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Logger.Unity.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Rider.Editor">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.PlasticSCM.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.PlasticSCM.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.VisualScripting.State">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
+    <Reference Include="Unity.Rider.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
@@ -804,27 +777,78 @@
     <Reference Include="Wjybxx.Commons.Concurrent">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Concurrent.dll</HintPath>
     </Reference>
+    <Reference Include="Wjybxx.Commons.Inject">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Inject.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Shared.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Disruptor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Disruptor.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.BTree.Codec">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Codec.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Timeline.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.BTree.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Commons.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Logger.Unity">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Logger.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.State">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Wjybxx.BigCat.UI.csproj">
-      <Project>{6808e82e-ba76-da77-5e49-d00fac67d4e5}</Project>
-      <Name>Wjybxx.BigCat.UI</Name>
+    <ProjectReference Include="Assembly-CSharp-firstpass.csproj">
+      <Project>{b2228651-5090-53a1-e465-3e4bd155181a}</Project>
+      <Name>Assembly-CSharp-firstpass</Name>
+    </ProjectReference>
+    <ProjectReference Include="Assembly-CSharp-Editor-firstpass.csproj">
+      <Project>{2b61375c-80af-db25-739d-b40d9ebfe347}</Project>
+      <Name>Assembly-CSharp-Editor-firstpass</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.Animator.csproj">
+      <Project>{7d6185e1-0913-6abd-9f7e-b1604da1d651}</Project>
+      <Name>Wjybxx.BigCat.Animator</Name>
     </ProjectReference>
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
       <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
       <Name>Wjybxx.BigCat.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="Wjybxx.BigCat.Launcher.csproj">
-      <Project>{fde3c8a7-4e2d-691e-3da3-8fa2e8023b2e}</Project>
-      <Name>Wjybxx.BigCat.Launcher</Name>
-    </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>
       <Name>UnityEditor.UI</Name>
     </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.AnimatorEditor.csproj">
+      <Project>{ba3a1b4c-7f24-c885-849b-6d7df56eadda}</Project>
+      <Name>Wjybxx.BigCat.AnimatorEditor</Name>
+    </ProjectReference>
     <ProjectReference Include="UnityEngine.UI.csproj">
       <Project>{ff8527d1-008a-d49a-39ff-8369ade6a345}</Project>
       <Name>UnityEngine.UI</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.Launcher.csproj">
+      <Project>{fde3c8a7-4e2d-691e-3da3-8fa2e8023b2e}</Project>
+      <Name>Wjybxx.BigCat.Launcher</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BitCat.UnityCore.csproj">
+      <Project>{c7f3146e-8144-eaa3-11d5-1273ca972b99}</Project>
+      <Name>Wjybxx.BitCat.UnityCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.CoreEditor.csproj">
+      <Project>{8a8eabd8-9cd1-54f4-9cd1-0547e36a1252}</Project>
+      <Name>Wjybxx.BigCat.CoreEditor</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.UI.csproj">
+      <Project>{6808e82e-ba76-da77-5e49-d00fac67d4e5}</Project>
+      <Name>Wjybxx.BigCat.UI</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

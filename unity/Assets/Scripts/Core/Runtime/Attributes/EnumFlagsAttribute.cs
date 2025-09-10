@@ -16,29 +16,16 @@
 
 #endregion
 
+using System;
 using UnityEngine;
-using Wjybxx.Commons.Attributes;
-using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.BigCat.Editor
+namespace Wjybxx.BigCat.UnityCore
 {
 /// <summary>
-/// 用于为Unity的常用类型生成DsonCodec
+/// 只读属性
 /// </summary>
-[UsedForReflectionBasedGenerator]
-[DsonCodecLinkerGroup]
-public class UnityCodecLinker
+[AttributeUsage(AttributeTargets.Field)]
+public sealed class EnumFlagsAttribute : PropertyAttribute
 {
-    private Vector2 _vector2;
-    private Vector3 _vector3;
-    private Vector4 _vector4;
-
-    private Quaternion _quaternion;
-    private Vector2Int _vector2Int;
-    private Vector3Int _vector3Int;
-
-    private Color _color;
-    private Color32 _color32;
-    private Rect _rect;
 }
 }

@@ -23,7 +23,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor
+namespace Wjybxx.BigCat.Editor
 {
 /// <summary>
 /// 验证想法的菜单项
