@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using Wjybxx.Commons;
 
 #if UNITY_2021_3_OR_NEWER
@@ -35,7 +36,11 @@ namespace Wjybxx.BigCat.Util
 ///
 /// <h3>泛型</h3>
 /// 理论上，多数场景下我们只需要name相等即镶嵌，但默认的Equals还是校验了类型，即泛型参数不仅仅用于避免拆装箱，也用于测试Key的相等性。
-/// 也就是说，不同地方的类型声明必须是相同的，否则将无法读写黑板。 
+/// 也就是说，不同地方的类型声明必须是相同的，否则将无法读写黑板。
+///
+/// <h3>池化</h3>
+/// 可以通过<see cref="Intern"/>方法将Key放入常量池，可以有效提高查找效率，减少内存开销。
+/// 
 /// </summary>
 public static class DataKeys
 {
@@ -65,6 +70,34 @@ public static class DataKeys
     public const int TYPE_KEY_CODE = 20;
 
     public const int TYPE_BITSET = 21;
+
+    private static readonly ConcurrentDictionary<DataKey, DataKey> internedKeys = new ConcurrentDictionary<DataKey, DataKey>();
+
+    /// <summary>
+    /// 将DataKey加入常量池，如果Key已存在于常量池，则返回常量池中的对象，否则返回当前对象。 
+    /// </summary>
+    public static DataKey Intern(DataKey key) {
+        if (key == null) {
+            throw new ArgumentNullException(nameof(key));
+        }
+        if (internedKeys.TryAdd(key, key)) {
+            return key;
+        }
+        return internedKeys[key];
+    }
+
+    /// <summary>
+    /// 将DataKey加入常量池，如果Key已存在于常量池，则返回常量池中的对象，否则返回当前对象。 
+    /// </summary>
+    public static DataKey<T> Intern<T>(DataKey<T> key) {
+        if (key == null) {
+            throw new ArgumentNullException(nameof(key));
+        }
+        if (internedKeys.TryAdd(key, key)) {
+            return key;
+        }
+        return (DataKey<T>)internedKeys[key];
+    }
 
     public static DataKey<int> NewIntKey(string name) {
         return new IntKey(name);
