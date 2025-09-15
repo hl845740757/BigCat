@@ -49,7 +49,14 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\AssetReferenceAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\ReadOnlyAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringEnumFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\LabelClassFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\ObjectReferenceAttribute.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BitCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -716,6 +723,9 @@
     </Reference>
     <Reference Include="Wjybxx.Commons.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Dson.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

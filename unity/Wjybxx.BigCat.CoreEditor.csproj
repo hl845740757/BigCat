@@ -47,8 +47,10 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Core\Editor\MaskFieldPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\ReadOnlyPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\EnumFlagsPropertyDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\StringEnumPropertyDrawer.cs" />
     <None Include="Assets\Scripts\Core\Editor\Wjybxx.BigCat.CoreEditor.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

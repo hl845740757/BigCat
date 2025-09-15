@@ -681,6 +681,9 @@
     <Reference Include="Unity.VisualScripting.Flow.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Flow.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.2D.Tilemap.Extras">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.dll</HintPath>
+    </Reference>
     <Reference Include="Wjybxx.Dson.Codec">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
     </Reference>
@@ -720,6 +723,9 @@
     <Reference Include="Unity.Rider.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.2D.Tilemap.Extras.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.Editor.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VisualScripting.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
     </Reference>
@@ -755,6 +761,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Unity.2D.Tilemap.Editor.csproj">
+      <Project>{c226abae-1f95-4724-989a-874baa5557c3}</Project>
+      <Name>Unity.2D.Tilemap.Editor</Name>
+    </ProjectReference>
     <ProjectReference Include="Wjybxx.BigCat.Animator.csproj">
       <Project>{7d6185e1-0913-6abd-9f7e-b1604da1d651}</Project>
       <Name>Wjybxx.BigCat.Animator</Name>

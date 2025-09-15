@@ -16,12 +16,10 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
-using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
 
-namespace Wjybxx.BigCat.UI
+namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 基础的的黑板实现

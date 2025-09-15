@@ -39,7 +39,7 @@ namespace Wjybxx.BigCat.UI
 /// 注：
 /// 1.该管理器不是MonoBehavior，还需要一个组件来调度所有UI相关的管理器。
 /// 2.该管理器不可直接实现<see cref="WindowCmdMgr"/>，而是为<see cref="WindowCmdMgr"/>提供服务。
-/// 3.暂不支持同一个地址的窗口打开多个，游戏应当是不需要的。
+/// 3.暂不支持同一个地址的窗口打开多个，游戏应当是不需要的；可通过addr曲线救国实现。
 /// </summary>
 public sealed class WindowMgr
 {

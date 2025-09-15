@@ -174,7 +174,7 @@ public struct GRegulator
     /// <summary>
     /// 获取下次执行的延迟
     /// </summary>
-    /// <param name="curTime">当前事件</param>
+    /// <param name="curTime">当前时间</param>
     /// <returns></returns>
     public double GetDelay(double curTime) {
         if (triggerCount == 0) {

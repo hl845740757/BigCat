@@ -18,7 +18,7 @@
 
 using System;
 
-namespace Wjybxx.BigCatTool.Core
+namespace Wjybxx.BigCat.Util
 {
 public readonly struct IntPair : IEquatable<IntPair>
 {

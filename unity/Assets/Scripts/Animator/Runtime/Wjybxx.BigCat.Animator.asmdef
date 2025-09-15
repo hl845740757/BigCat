@@ -1,9 +1,13 @@
 {
-    "name": "Wjybxx.BitCat.UnityCore",
-    "rootNamespace": "Wjybxx.BitCat.Core",
+    "name": "Wjybxx.BigCat.Animator",
+    "rootNamespace": "Wjybxx.BigCat.Animator",
     "references": [
         "Wjybxx.Commons.Core",
-        "Wjybxx.Dson.Core"
+        "Wjybxx.BitCat.UnityCore",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.Dson.Codec",
+        "Wjybxx.BigCat.Core",
+        "Wjybxx.BTree.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
