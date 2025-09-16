@@ -34,12 +34,20 @@ public sealed class ObjectBytes
     /// </summary>
     public int category;
     /// <summary>
-    /// 程序分配的id
+    /// 全局唯一id
     ///
-    /// 1.可能桶内唯一，也可能全局唯一，取决于应用。
+    /// 1.可能为null，部分场景下不使用。
     /// 2.为保证较好的兼容性，我们统一使用string类型 -- 逻辑上可能是long。
     /// </summary>
-    public string objectId;
+    public string guid;
+    /// <summary>
+    /// 桶内唯一Id
+    ///
+    /// 1.可能为0，部分场景下不使用。
+    /// 2.一个桶被拆分为多个分桶时，仍然保持唯一；可类比Sql数据表的主键，不保证全局唯一。
+    /// 3.定义两个字段，主要考虑避免运行时频繁生成字符串。
+    /// </summary>
+    public long localId;
     /// <summary>
     /// 用户分配的对象名
     /// (可选，尽量唯一)
@@ -70,10 +78,14 @@ public sealed class ObjectBytes
     public ObjectBytes() {
     }
 
-    public ObjectBytes(string objectId, byte[] data) {
-        this.objectId = objectId;
+    public ObjectBytes(string guid, byte[] data) {
+        this.guid = guid;
         this.data = data;
-        this.name = null;
+    }
+
+    public ObjectBytes(long localId, byte[] data) {
+        this.localId = localId;
+        this.data = data;
     }
 }
 }

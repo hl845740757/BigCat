@@ -48,10 +48,14 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     [SerializeField]
     private List<ObjectBytes> bytesList = new List<ObjectBytes>();
     /// <summary>
-    /// id到字节数组的缓存(保持插入序)
+    /// guid到字节数组的缓存(保持插入序)
+    /// </summary>
+    public readonly LinkedDictionary<string, ObjectBytes> guid2BytesDic = new();
+    /// <summary>
+    /// localId到字节数组的缓存(保持插入序)
     /// </summary>
     /// <returns></returns>
-    public readonly LinkedDictionary<string, ObjectBytes> id2BytesDic = new();
+    public readonly LinkedDictionary<long, ObjectBytes> localId2BytesDic = new();
     /// <summary>
     /// name到Bytes的映射
     ///
@@ -60,19 +64,37 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     public readonly Dictionary<string, ObjectBytes> name2BytesDic = new();
 
     public void OnBeforeSerialize() {
-        bytesList.Clear();
-        bytesList.AddRange(id2BytesDic.Values);
+        // 用户可能在编辑期没有同步修改List，通过字典覆盖 - 其实用户自己转换才是最准确的
+        // bytesList.Clear();
+        // if (guid2BytesDic.Count > localId2BytesDic.Count) {
+        //     bytesList.AddRange(guid2BytesDic.Values);
+        // } else {
+        //     bytesList.AddRange(localId2BytesDic.Values);
+        // }
     }
 
     public void OnAfterDeserialize() {
-        id2BytesDic.Clear();
+        guid2BytesDic.Clear();
+        localId2BytesDic.Clear();
         name2BytesDic.Clear();
-        id2BytesDic.EnsureCapacity(bytesList.Count);
-        name2BytesDic.EnsureCapacity(bytesList.Count);
-
+        //
         foreach (ObjectBytes objectBytes in bytesList) {
-            id2BytesDic.Add(objectBytes.objectId, objectBytes); // 重复抛出异常
+            if (!string.IsNullOrWhiteSpace(objectBytes.guid)) {
+                if (guid2BytesDic.Count == 0) {
+                    guid2BytesDic.EnsureCapacity(bytesList.Count);
+                }
+                guid2BytesDic.Add(objectBytes.guid, objectBytes);
+            }
+            if (objectBytes.localId != 0) {
+                if (localId2BytesDic.Count == 0) {
+                    localId2BytesDic.EnsureCapacity(bytesList.Count);
+                }
+                localId2BytesDic.Add(objectBytes.localId, objectBytes);
+            }
             if (!string.IsNullOrWhiteSpace(objectBytes.name)) {
+                if (name2BytesDic.Count == 0) {
+                    name2BytesDic.EnsureCapacity(bytesList.Count);
+                }
                 name2BytesDic[objectBytes.name] = objectBytes; // 重复时覆盖
             }
         }

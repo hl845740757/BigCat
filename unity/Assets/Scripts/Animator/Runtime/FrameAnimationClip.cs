@@ -29,7 +29,6 @@ namespace Wjybxx.BigCat.Animator
 /// 序列帧动画资源抽象
 ///
 /// 注：运行时修改帧动画信息时必须拷贝。
-/// TODO 纳入资源管理，引用计数
 /// </summary>
 [CreateAssetMenu(menuName = "FrameAnimation/AnimationClip", fileName = "NewAnimationClip")]
 public sealed class FrameAnimationClip : ScriptableObject
@@ -149,34 +148,63 @@ public sealed class FrameAnimationClip : ScriptableObject
         duration -= frame.duration;
     }
 
+    private void OnValidate() {
+        RefreshDuration();
+    }
+
     /// <summary>
     /// 同步帧动画每帧的时间
     ///
     /// 注：主要用于同步身体各个部件之间的帧动画时长。
     /// </summary>
-    /// <param name="clip"></param>
+    /// <param name="source"></param>
     /// <param name="target"></param>
-    public static void SyncFrameDuration(FrameAnimationClip clip, FrameAnimationClip target) {
+    public static void SyncFrameDuration(FrameAnimationClip source, FrameAnimationClip target) {
+        if (source == target) {
+            return;
+        }
 #if UNITY_EDITOR
-        if (clip.FrameCount != target.FrameCount) {
-            Debug.LogWarning($"{clip.name}.FrameCount != {target.name}.FrameCount");
+        if (source.FrameCount != target.FrameCount) {
+            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
         }
 #endif
-        int len = Mathf.Min(clip.FrameCount, target.FrameCount);
+        int len = Mathf.Min(source.FrameCount, target.FrameCount);
         for (int i = 0; i < len; i++) {
-            AnimationFrame frame = clip.frames[i];
-            target.frames[i] = target.frames[i].WithDuration(frame.duration);
+            AnimationFrame sourceFrame = source.frames[i];
+            target.frames[i] = target.frames[i].WithDuration(sourceFrame.duration);
         }
     }
 
-    public static void SyncFrameDuration(FrameAnimationClip clip, List<FrameAnimationClip> targetList) {
-        foreach (FrameAnimationClip target in targetList) {
-            SyncFrameDuration(clip, target);
+    /// <summary>
+    /// 同步帧序列
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="target"></param>
+    public static void SyncFrameOrder(FrameAnimationClip source, FrameAnimationClip target) {
+        if (source == target) {
+            return;
         }
-    }
-
-    private void OnValidate() {
-        RefreshDuration();
+        if (source.FrameCount != target.FrameCount) {
+            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
+        }
+        // 先建立索引，方便快速查询
+        Dictionary<string, AnimationFrame> frameDic = new();
+        foreach (AnimationFrame frame in target.frames) {
+            if (frame.sprite) {
+                frameDic.TryAdd(frame.sprite.name, frame);
+            }
+        }
+        // 根据基础动画的图片名字重排序
+        List<AnimationFrame> frameList = new List<AnimationFrame>();
+        foreach (AnimationFrame sourceFrame in source.frames) {
+            if (sourceFrame.sprite && frameDic.TryGetValue(sourceFrame.sprite.name, out AnimationFrame frame)) {
+                frameList.Add(frame);
+            } else {
+                frameList.Add(default);
+            }
+        }
+        target.FrameCount = 0; // 先清理再批量添加的效率更好
+        target.AddFrames(frameList);
     }
 }
 }

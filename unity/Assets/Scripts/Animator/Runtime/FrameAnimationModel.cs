@@ -50,10 +50,17 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
     public int partGroupId;
     /// <summary>
     /// 部件渲染层级
+    /// (图层内排序)
     /// </summary>
-    [Tooltip("部件渲染层级")]
-    public int partLayer;
+    [Tooltip("部件渲染顺序")]
+    public int orderInLayer;
 
+    /// <summary>
+    /// 模型基础动画
+    ///
+    /// 注：对于角色模型，推荐所有帧打包为一个帧动画，然后通过区间播放；这可以有更好的加载效率，也避免过多的资产文件。
+    /// </summary>
+    public FrameAnimationClip modelClip;
     /// <summary>
     /// 模型动作
     /// </summary>
@@ -108,14 +115,14 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
         return null;
 #else
         (string, string) key = (actionA, actionB);
-        return actionMixCfgDic.TryGetValue(key, out AnimationMixCfg actionMixCfg) ? actionMixCfg : null;
+        return actionMixCfgDic.TryGetValue(key, out var actionMixCfg) ? actionMixCfg : null;
 #endif
     }
 
     #region 序列化
 
     public void OnBeforeSerialize() {
-        // 用于用户可能在编辑器中直接重排序Action，因此如何保存由用户觉得
+        // 用于用户可能在编辑器中直接重排序Action，因此如何保存由用户决定
         // actionList.Clear();
         // actionList.AddRange(actionDic.Values);
     }

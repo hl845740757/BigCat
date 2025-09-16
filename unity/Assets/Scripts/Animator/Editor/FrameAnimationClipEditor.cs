@@ -40,7 +40,7 @@ public class FrameAnimationClipEditor : Editor
 
     private float _interval = 0.1f;
     private int _frameCount;
-    private static bool _listMode = false; // 静态字段保留状态
+    private static bool _listMode; // 静态字段保留状态
 
     private Vector2 scrollPos;
     private GUILayoutOption[] scrollOptions;
@@ -55,8 +55,12 @@ public class FrameAnimationClipEditor : Editor
 
     private void Awake() {
         _clip = (FrameAnimationClip)target;
-        _previewer = new FrameAnimationPreviewer(this, _clip);
+        _previewer = new FrameAnimationPreviewer(_clip);
         _frameCount = _clip.frames.Length;
+        // 如果图片数量过多，默认初始化为List模式，否则极其占用CPU
+        if (_clip.frames.Length > 20) {
+            _listMode = true;
+        }
 
         scrollOptions = new[]
         {
@@ -69,17 +73,43 @@ public class FrameAnimationClipEditor : Editor
         contentDelete = new GUIContent("Delete");
     }
 
-    // reload以后会调用OnEnable
-    private void OnEnable() {
-        _previewer = new FrameAnimationPreviewer(this, _clip);
-    }
-
     private void OnDestroy() {
         _clip = null;
     }
 
+    /// <summary>
+    /// 修改当前编辑的对象
+    /// </summary>
+    /// <param name="clip"></param>
+    public void SetClip(FrameAnimationClip clip) {
+        _clip = clip;
+        if (_previewer != null) {
+            _previewer.Clip = clip;
+        }
+    }
+
+    /// <summary>
+    /// 启用预览视图
+    /// </summary>
+    public void EnablePreviewer() {
+        if (_previewer == null) {
+            _previewer = new FrameAnimationPreviewer(_clip);
+            Repaint();
+        }
+    }
+
+    /// <summary>
+    /// 禁用预览视图
+    /// </summary>
+    public void DisablePreviewer() {
+        if (_previewer != null) {
+            _previewer = null;
+            Repaint();
+        }
+    }
+
     public override void OnInspectorGUI() {
-        GUI.enabled = !_previewer.IsPlaying;
+        GUI.enabled = _previewer == null || !_previewer.IsPlaying;
         base.OnInspectorGUI();
         EditorGUILayout.LabelField(SEPARATOR);
 
@@ -115,14 +145,24 @@ public class FrameAnimationClipEditor : Editor
         // 帧图
         DrawRawImages();
         EditorGUILayout.LabelField(SEPARATOR);
-        GUI.enabled = true;
 
         // 拖拽添加区
         DrawDragArea();
-        EditorGUILayout.LabelField(SEPARATOR);
+        GUI.enabled = true;
 
         // 绘制播放区
+        if (_previewer == null) return;
+        EditorGUILayout.LabelField(SEPARATOR);
+
+        // 更新UI之前更新动画
+        if (_previewer.IsPlaying) {
+            _previewer.Update();
+        }
         _previewer.OnInspectorGUI();
+        // 模拟Update
+        if (_previewer.IsPlaying) {
+            Repaint();
+        }
     }
 
     #region draw-dragArea
