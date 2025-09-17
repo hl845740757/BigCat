@@ -44,15 +44,9 @@ public class FrameAnimationClipEditor : Editor
 
     private Vector2 scrollPos;
     private GUILayoutOption[] scrollOptions;
-    private readonly GUIContent _tempLabel = new GUIContent();
     //
     private static string lastFilePath;
     // private static string lastFolderPath;
-
-    /// <summary>
-    /// 在使用临时的Label之前应当重置
-    /// </summary>
-    private GUIContent GetTempLabel() => _tempLabel.Reset();
 
     private void Awake() {
         _clip = (FrameAnimationClip)target;
@@ -239,8 +233,6 @@ public class FrameAnimationClipEditor : Editor
         }
         EditorGUILayout.EndHorizontal();
 
-        // 有滚动条的情况下，无需折叠
-        // foldout = EditorGUILayout.Foldout(foldout, foldout ? "折叠" : "展开");
         EditorGUI.BeginChangeCheck();
         EditorGUILayout.BeginVertical();
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos, scrollOptions);
@@ -270,14 +262,14 @@ public class FrameAnimationClipEditor : Editor
             if (Event.current.type == EventType.ContextClick &&
                 GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition)) {
                 Event.current.Use();
+                // 创建Menu不能使用池化的Label
                 GenericMenu menu = new GenericMenu();
-                // 标注选择的元素
-                menu.AddDisabledItem(GetTempLabel().WithText(GetElementName(index)));
+                menu.AddDisabledItem(new GUIContent("index: " + index));
                 menu.AddSeparator("");
                 //
-                menu.AddItem(GetTempLabel().WithText("MoveUp"), false, OnClickMoveUp, index);
-                menu.AddItem(GetTempLabel().WithText("MoveDown"), false, OnClickMoveDown, index);
-                menu.AddItem(GetTempLabel().WithText("Delete"), false, OnClickDelete, index);
+                menu.AddItem(new GUIContent("MoveUp"), false, OnClickMoveUp, index);
+                menu.AddItem(new GUIContent("MoveDown"), false, OnClickMoveDown, index);
+                menu.AddItem(new GUIContent("Delete"), false, OnClickDelete, index);
                 menu.ShowAsContext();
             }
         }

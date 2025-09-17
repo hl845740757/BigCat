@@ -76,7 +76,7 @@ public class FrameAnimationPreviewer
             _renderer = (SpriteRenderer)EditorGUILayout.ObjectField("Renderer", _renderer, typeof(SpriteRenderer), true);
         }
         _drawMode = (SpriteDrawMode)EditorGUILayout.EnumPopup("DrawMode", _drawMode);
-        _orderInLayer = EditorGUILayout.LayerField("orderInLayer", _orderInLayer);
+        _orderInLayer = EditorGUILayout.IntField("OrderInLayer", _orderInLayer);
         _flipX = EditorGUILayout.Toggle("flipX", _flipX);
         _flipY = EditorGUILayout.Toggle("flipY", _flipY);
         _loop = EditorGUILayout.Toggle("loop", _loop);

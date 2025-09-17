@@ -30,8 +30,19 @@ public sealed class AnimationMixCfg
 {
     public string actionA;
     public string actionB;
-    public float weightA;
-    public float weightB;
-    public float crossFade; // 过渡时间
+    public float weightA = 0.5f;
+    public float weightB = 0.5f;
+    public float crossFadeTime; // 过渡时间
+
+    public AnimationMixCfg() {
+    }
+
+    public AnimationMixCfg(AnimationMixCfg src) {
+        this.actionA = src.actionA;
+        this.actionB = src.actionB;
+        this.weightA = src.weightA;
+        this.weightB = src.weightB;
+        this.crossFadeTime = src.crossFadeTime;
+    }
 }
 }

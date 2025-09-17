@@ -40,8 +40,10 @@ public class FrameAnimationCliEditorPlus : EditorWindow
     private int _toolIndex;
     private Vector2 scrollPos;
 
+    private GUIContent _pooledLabel;
     private GUILayoutOption[] _syncListOptions;
     private List<FrameAnimationClip> _syncList = new List<FrameAnimationClip>();
+
     private GameObject _rootObject;
     private FrameAnimationPreviewer _rootPreviewer;
 
@@ -52,20 +54,19 @@ public class FrameAnimationCliEditorPlus : EditorWindow
         win.Show();
     }
 
+    private GUIContent PooledLabel() => _pooledLabel.Reset();
+
     private void OnEnable() {
         if (_clip) {
             _clipEditor = (FrameAnimationClipEditor)Editor.CreateEditor(_clip, typeof(FrameAnimationClipEditor));
             _clipEditor.DisablePreviewer();
         }
-        _previewer = new FrameAnimationPreviewer(_clip);
-
         // 方便reload
-        _syncListOptions = new GUILayoutOption[]
-        {
-            GUILayout.ExpandWidth(true),
-            // GUILayout.Height(50),
-        };
+        _previewer = new FrameAnimationPreviewer(_clip);
         _rootPreviewer = new FrameAnimationPreviewer(null);
+        //
+        _pooledLabel = new GUIContent();
+        _syncListOptions = new GUILayoutOption[] { GUILayout.MinHeight(300), GUILayout.ExpandHeight(true) };
     }
 
     private void OnDisable() {
@@ -82,6 +83,12 @@ public class FrameAnimationCliEditorPlus : EditorWindow
         } else if (_toolIndex == 1) {
             DrawClipSyncEditor();
         }
+    }
+
+    private static void DrawSeparator() {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1);
+        EditorGUI.DrawRect(rect, Color.gray);
+        // EditorGUILayout.LabelField(SEPARATOR);
     }
 
     /// <summary>
@@ -115,8 +122,8 @@ public class FrameAnimationCliEditorPlus : EditorWindow
     /// 多个帧动画的同步工具
     /// </summary>
     private void DrawClipSyncEditor() {
-        EditorGUILayout.LabelField("同步队列：");
-        EditorGUILayout.BeginVertical();
+        EditorGUILayout.HelpBox(PooledLabel().WithText("同步队列：(拖拽到列表区添加)"));
+        EditorGUILayout.BeginVertical(_syncListOptions);
         int moveTopIndex = -1;
         int deleteIndex = -1;
         for (int index = 0; index < _syncList.Count; index++) {
@@ -133,22 +140,21 @@ public class FrameAnimationCliEditorPlus : EditorWindow
             EditorGUILayout.EndHorizontal();
         }
         EditorGUILayout.EndVertical();
+        Rect controlRect = GUILayoutUtility.GetLastRect();
 
         // 循环外处理移动和删除事件
-        if (moveTopIndex >= 0 && moveTopIndex < _syncList.Count) {
+        if (moveTopIndex >= 0) {
             FrameAnimationClip animationClip = _syncList[moveTopIndex];
             _syncList.RemoveAt(moveTopIndex);
             _syncList.Insert(0, animationClip);
             Repaint();
         }
-        if (deleteIndex >= 0 && deleteIndex < _syncList.Count) {
+        if (deleteIndex >= 0) {
             _syncList.RemoveAt(deleteIndex);
             Repaint();
         }
+        DrawSeparator();
 
-        GUILayout.Box("拖拽到这里添加", _syncListOptions);
-        Rect controlRect = GUILayoutUtility.GetLastRect();
-        EditorGUILayout.LabelField(SEPARATOR);
         //
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("同步间隔")) {
@@ -162,9 +168,10 @@ public class FrameAnimationCliEditorPlus : EditorWindow
             Repaint();
         }
         EditorGUILayout.EndHorizontal();
-        EditorGUILayout.LabelField(SEPARATOR);
+        DrawSeparator();
 
         // 播放区
+        EditorGUILayout.HelpBox(PooledLabel().WithText("选择Root并初始化Render可播放"));
         EditorGUILayout.BeginHorizontal();
         _rootObject = (GameObject)EditorGUILayout.ObjectField("Root", _rootObject, typeof(GameObject), true);
         if (GUILayout.Button("InitRenderers")) {
@@ -199,6 +206,11 @@ public class FrameAnimationCliEditorPlus : EditorWindow
 
     private void InitRenderers() {
         if (!_rootObject) return;
+        const string message = "该操作会为目标对象创建子对象，请确保目标GameObject是临时对象";
+        if (!EditorUtility.DisplayDialog("二次确认", message, "确认", "取消 ")) {
+            return;
+        }
+
         // 先清理
         _rootPreviewer.Renderer = null;
         _rootPreviewer.Followers.Clear();
@@ -272,7 +284,5 @@ public class FrameAnimationCliEditorPlus : EditorWindow
             }
         }
     }
-
-    private const string SEPARATOR = "-----------------------------------------------------------------------------";
 }
 }

@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationPreviewer.cs" />
     <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationClipEditor.cs" />
+    <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationModelEditor.cs" />
     <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationCliEditorPlus.cs" />
     <None Include="Assets\Scripts\Animator\Editor\Wjybxx.BigCat.AnimatorEditor.asmdef" />
     <Reference Include="UnityEngine">

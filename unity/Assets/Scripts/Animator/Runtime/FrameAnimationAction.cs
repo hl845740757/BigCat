@@ -62,6 +62,17 @@ public sealed class FrameAnimationAction : ISerializationCallbackReceiver
     public Vector2 offset;
 
     // TODO 受击碰撞盒？
+    public FrameAnimationAction() {
+    }
+
+    public FrameAnimationAction(FrameAnimationAction src) {
+        this.name = src.name;
+        this.clip = src.clip;
+        this.startFrame = src.startFrame;
+        this.endFrame = src.endFrame;
+        this.weight = src.weight;
+        this.offset = src.offset;
+    }
 
     public void OnBeforeSerialize() {
 

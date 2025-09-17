@@ -66,10 +66,10 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
     /// </summary>
     public List<FrameAnimationAction> actionList = new List<FrameAnimationAction>();
     /// <summary>
-    /// 动作名到动作的映射(保持插入序)
+    /// 动作名到动作的映射
     /// </summary>
     [NonSerialized]
-    public LinkedDictionary<string, FrameAnimationAction> actionDic = new();
+    public Dictionary<string, FrameAnimationAction> actionDic = new();
 
     /// <summary>
     /// 动作之间的融合配置
