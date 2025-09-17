@@ -18,7 +18,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices; // unity环境下依赖
+using System.Linq;
+
+#if UNITY_2021_3_OR_NEWER
+using UnityEngine;
+using System.Runtime.CompilerServices;
+#endif
+
+#if UNITY_EDITOR
+using System.IO;
+using UnityEditor;
+#endif
 
 namespace System
 {
@@ -44,13 +54,94 @@ public static class SystemExtensions
     }
 
     /// <summary>
-    /// 对象是否处于存活状态
+    /// 检测obj的有效性
+    /// (用于Lua项目)
     /// </summary>
     /// <param name="obj"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool CheckObject(UnityEngine.Object obj) {
         return obj;
+    }
+#endif
+
+#if UNITY_EDITOR
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GUIContent Reset(this GUIContent content) {
+        content.text = "";
+        content.tooltip = "";
+        content.image = null;
+        return content;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GUIContent WithText(this GUIContent content, string text) {
+        content.text = text;
+        return content;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GUIContent WithText(this GUIContent content, string text, string tooltip) {
+        content.text = text;
+        content.tooltip = tooltip;
+        return content;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GUIContent WithTooltip(this GUIContent content, string tooltip) {
+        content.tooltip = tooltip;
+        return content;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GUIContent WithImage(this GUIContent content, Texture image) {
+        content.image = image;
+        return content;
+    }
+
+    /// <summary>
+    /// 将文件路径转换为资产路径
+    /// </summary>
+    /// <param name="filePath"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string ConvertToAssetPath(string filePath) {
+        if (string.IsNullOrWhiteSpace(filePath)) {
+            return filePath;
+        }
+        if (filePath.StartsWith("Assets")) {
+            return filePath;
+        }
+        return filePath.Replace(Application.dataPath, "Assets");
+    }
+
+    /// <summary>
+    /// 加载指定目录下的所有资产文件
+    ///
+    /// 以笨办法加载指定目录下的特定类型资产文件。
+    /// </summary>
+    /// <param name="folderPath">文件夹</param>
+    /// <param name="extensions">文件扩展名</param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static List<T> LoadAllAssetsAtPath<T>(string folderPath, params string[] extensions) {
+        List<T> result = new List<T>();
+        foreach (string filePath in Directory.GetFiles(folderPath)) {
+            bool contains = extensions.Length switch
+            {
+                0 => !filePath.EndsWith(".meta"),
+                1 => filePath.EndsWith(extensions[0]),
+                _ => extensions.Any(extension => filePath.EndsWith(extension))
+            };
+            if (!contains) {
+                continue;
+            }
+            string assetPath = ConvertToAssetPath(filePath);
+            if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(T)) is T asset) {
+                result.Add(asset);
+            }
+        }
+        return result;
     }
 #endif
 }

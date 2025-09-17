@@ -176,21 +176,23 @@ public class FrameAnimationCliEditorPlus : EditorWindow
         if (_rootPreviewer.IsPlaying) {
             Repaint();
         }
-
         // 检查拖拽事件
+        CheckDragAddEvent(controlRect);
+    }
+
+    private void CheckDragAddEvent(Rect controlRect) {
         Event evt = Event.current;
         if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform) return;
         if (!controlRect.Contains(evt.mousePosition)) return;
         //
         DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
-        if (evt.type == EventType.DragPerform) {
-            // 拖拽结束 - path是文件全路径
-            foreach (string filePah in DragAndDrop.paths) {
-                string assetPath = filePah.Replace(Application.dataPath, "Assets");
-                FrameAnimationClip clip = AssetDatabase.LoadAssetAtPath(assetPath, typeof(FrameAnimationClip)) as FrameAnimationClip;
-                if (clip && !_syncList.Contains(clip)) {
-                    _syncList.Add(clip);
-                }
+        if (evt.type != EventType.DragPerform) return;
+        // 拖拽结束 - path是文件全路径
+        foreach (string filePath in DragAndDrop.paths) {
+            string assetPath = SystemExtensions.ConvertToAssetPath(filePath);
+            if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(FrameAnimationClip)) is FrameAnimationClip clip
+                && !_syncList.Contains(clip)) {
+                _syncList.Add(clip);
             }
         }
     }

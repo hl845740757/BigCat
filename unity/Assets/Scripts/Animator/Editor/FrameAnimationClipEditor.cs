@@ -44,14 +44,15 @@ public class FrameAnimationClipEditor : Editor
 
     private Vector2 scrollPos;
     private GUILayoutOption[] scrollOptions;
-    private GUIContent contentIndex;
-    private GUIContent contentMoveUp;
-    private GUIContent contentMoveDown;
-    private GUIContent contentDelete;
-
+    private readonly GUIContent _tempLabel = new GUIContent();
     //
     private static string lastFilePath;
     // private static string lastFolderPath;
+
+    /// <summary>
+    /// 在使用临时的Label之前应当重置
+    /// </summary>
+    private GUIContent GetTempLabel() => _tempLabel.Reset();
 
     private void Awake() {
         _clip = (FrameAnimationClip)target;
@@ -67,10 +68,10 @@ public class FrameAnimationClipEditor : Editor
             GUILayout.MaxHeight(440),
             // GUILayout.ExpandHeight(true),
         };
-        contentIndex = new GUIContent();
-        contentMoveUp = new GUIContent("MoveUp");
-        contentMoveDown = new GUIContent("MoveDown");
-        contentDelete = new GUIContent("Delete");
+    }
+
+    private void OnEnable() {
+        lastFilePath ??= Application.dataPath + "/Resources/";
     }
 
     private void OnDestroy() {
@@ -111,7 +112,7 @@ public class FrameAnimationClipEditor : Editor
     public override void OnInspectorGUI() {
         GUI.enabled = _previewer == null || !_previewer.IsPlaying;
         base.OnInspectorGUI();
-        EditorGUILayout.LabelField(SEPARATOR);
+        DrawSeparator();
 
         // 批量修改帧时间
         EditorGUILayout.BeginHorizontal();
@@ -136,7 +137,7 @@ public class FrameAnimationClipEditor : Editor
             EditorUtility.SetDirty(_clip);
         }
         EditorGUILayout.EndHorizontal();
-        EditorGUILayout.LabelField(SEPARATOR);
+        DrawSeparator();
         // 退出输入状态重置
         if (GUI.GetNameOfFocusedControl() != controlName) {
             _frameCount = _clip.FrameCount;
@@ -144,7 +145,7 @@ public class FrameAnimationClipEditor : Editor
 
         // 帧图
         DrawRawImages();
-        EditorGUILayout.LabelField(SEPARATOR);
+        DrawSeparator();
 
         // 拖拽添加区
         DrawDragArea();
@@ -152,7 +153,7 @@ public class FrameAnimationClipEditor : Editor
 
         // 绘制播放区
         if (_previewer == null) return;
-        EditorGUILayout.LabelField(SEPARATOR);
+        DrawSeparator();
 
         // 更新UI之前更新动画
         if (_previewer.IsPlaying) {
@@ -165,6 +166,12 @@ public class FrameAnimationClipEditor : Editor
         }
     }
 
+    private static void DrawSeparator() {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1);
+        EditorGUI.DrawRect(rect, Color.gray);
+        // EditorGUILayout.LabelField(SEPARATOR);
+    }
+
     #region draw-dragArea
 
     /// <summary>
@@ -174,7 +181,7 @@ public class FrameAnimationClipEditor : Editor
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("添加文件")) {
             lastFilePath = EditorUtility.OpenFilePanel("添加图片文件", lastFilePath, "");
-            string assetPath = lastFilePath.Replace(Application.dataPath, "Assets");
+            string assetPath = SystemExtensions.ConvertToAssetPath(lastFilePath);
             Sprite sprite = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Sprite)) as Sprite;
             if (sprite) {
                 _clip.AddFrame(new AnimationFrame(sprite, 0.1f));
@@ -192,14 +199,14 @@ public class FrameAnimationClipEditor : Editor
     }
 
     private void AddFreamsByFolder(string folderPath) {
-        // string assetPath = folderPath.Replace(Application.dataPath, "Assets");
+        // string assetPath = SystemExtensions.ConvertToAssetPath(folderPath);
         // AssetDatabase.LoadAllAssetsAtPath(assetPath); 不好使...
         List<AnimationFrame> frames = new List<AnimationFrame>(10);
         foreach (string filePath in Directory.GetFiles(folderPath)) {
             if (!filePath.EndsWith(".png") && !filePath.EndsWith(".jpg")) {
                 continue;
             }
-            string assetPath = filePath.Replace(Application.dataPath, "Assets");
+            string assetPath = SystemExtensions.ConvertToAssetPath(filePath);
             Sprite sprite = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Sprite)) as Sprite;
             if (sprite) {
                 frames.Add(new AnimationFrame(sprite, 0.1f));
@@ -238,7 +245,10 @@ public class FrameAnimationClipEditor : Editor
         EditorGUILayout.BeginVertical();
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos, scrollOptions);
         for (int index = 0, len = _clip.FrameCount; index < len; index++) {
-            EditorGUILayout.LabelField(GetElementName(index), index > 0 ? SEPARATOR : null);
+            if (index > 0) {
+                DrawSeparator();
+            }
+            EditorGUILayout.LabelField(GetElementName(index));
             AnimationFrame animationFrame = _clip[index];
             if (_listMode) {
                 EditorGUILayout.BeginHorizontal();
@@ -262,13 +272,12 @@ public class FrameAnimationClipEditor : Editor
                 Event.current.Use();
                 GenericMenu menu = new GenericMenu();
                 // 标注选择的元素
-                contentIndex.text = GetElementName(index);
-                menu.AddDisabledItem(contentIndex);
+                menu.AddDisabledItem(GetTempLabel().WithText(GetElementName(index)));
                 menu.AddSeparator("");
                 //
-                menu.AddItem(contentMoveUp, false, OnClickMoveUp, index);
-                menu.AddItem(contentMoveDown, false, OnClickMoveDown, index);
-                menu.AddItem(contentDelete, false, OnClickDelete, index);
+                menu.AddItem(GetTempLabel().WithText("MoveUp"), false, OnClickMoveUp, index);
+                menu.AddItem(GetTempLabel().WithText("MoveDown"), false, OnClickMoveDown, index);
+                menu.AddItem(GetTempLabel().WithText("Delete"), false, OnClickDelete, index);
                 menu.ShowAsContext();
             }
         }
@@ -337,7 +346,7 @@ public class FrameAnimationClipEditor : Editor
     #region cache
 
     private static readonly string[] elementNameCache = new string[100];
-    private const string SEPARATOR = "-----------------------------------------------------------------------------";
+    // private const string SEPARATOR = "-----------------------------------------------------------------------------";
 
     static FrameAnimationClipEditor() {
         for (int i = 0; i < elementNameCache.Length; i++) {

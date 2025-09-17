@@ -320,11 +320,12 @@ public class FrameAnimationPreviewer
     /// 
     /// </summary>
     private void ApplySetting() {
-        _renderer.drawMode = _drawMode;
-        _renderer.sortingOrder = _orderInLayer;
-        _renderer.flipX = _flipX;
-        _renderer.flipY = _flipY;
-        //
+        if (_renderer) {
+            _renderer.drawMode = _drawMode;
+            _renderer.sortingOrder = _orderInLayer;
+            _renderer.flipX = _flipX;
+            _renderer.flipY = _flipY;
+        }
         foreach (FrameAnimationPreviewer follower in followers) {
             SyncSetting(follower);
         }
