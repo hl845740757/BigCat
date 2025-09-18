@@ -106,11 +106,6 @@ public sealed class Scene
     [NonSerialized] private readonly IndexedDynamicArray<SComponent> _lateUpdateList = new(SComponentIndexHelper.GetInst(4), 4);
 
     /// <summary>
-    /// 场景中所有的游戏单位
-    /// (字典缓存也通过Agent+组件实现；该字段引用也可缓存到缓存组件)
-    /// </summary>
-    private readonly IndexedDynamicArray<GameUnit> _gameUnitList = new(GIndexHelper.MAIN_HELPER, 20, 0.1f);
-    /// <summary>
     /// 在队列中的索引缓存
     /// </summary>
     [NonSerialized] internal SIndexes indexes = SIndexes.Create();
@@ -138,18 +133,11 @@ public sealed class Scene
             _components.Add(component);
             _indexedComponents.Add(component);
         }
-        // 游戏单位 -- 由于尚未分配instId，因此不能加入到字典 
-        List<GameUnit> gameUnits = reader.ReadObject<List<GameUnit>>("gameUnits");
-        _gameUnitList.EnsureCapacity(gameUnits.Count);
-        foreach (GameUnit gameUnit in gameUnits) {
-            _gameUnitList.Add(gameUnit);
-        }
     }
 
     public void WriteObject(IDsonObjectWriter writer) {
         writer.WriteInt("configId", _configId);
         writer.WriteObject("components", _components);
-        writer.WriteObject("gameUnits", _gameUnitList.ToList());
     }
 
     #region prop
@@ -219,7 +207,6 @@ public sealed class Scene
         }
     }
 
-    public IndexedDynamicArray<GameUnit> GameUnitList => _gameUnitList;
     public GTime Time => _time;
     public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
@@ -320,61 +307,6 @@ public sealed class Scene
     #endregion
 
 #nullable restore
-
-    #region GameUnit
-
-    /// <summary>
-    /// 添加游戏单位
-    /// </summary>
-    /// <param name="gameUnit"></param>
-    public void AddGameUnit(GameUnit gameUnit) {
-        gameUnit.Scene = this;
-        if (gameUnit.Status == ComponentStatus.New) {
-            gameUnit.SetInitialized();
-        }
-        _gameUnitList.Add(gameUnit);
-        _agent?.OnGameUnitAdded(gameUnit);
-        try {
-            gameUnit.Agent?.Start(gameUnit);
-        }
-        catch (Exception ex) {
-            logger.Warn(ex, "gameUnit.Start caught exception");
-        }
-    }
-
-    /// <summary>
-    /// 删除游戏单位
-    /// </summary>
-    /// <param name="gameUnit"></param>
-    /// <returns></returns>
-    public bool RemoveGameUnit(GameUnit gameUnit) {
-        if (_gameUnitList.ContainsRef(gameUnit)) {
-            try {
-                gameUnit.Agent?.Stop(gameUnit);
-            }
-            catch (Exception ex) {
-                logger.Warn(ex, "gameUnit.Stop caught exception");
-            }
-            gameUnit.Scene = null!;
-            //
-            _gameUnitList.Remove(gameUnit);
-            _agent?.OnGameUnitRemoved(gameUnit);
-            return true;
-        }
-        return false;
-    }
-
-    private void ClearGameUnits() {
-        _gameUnitList.BeginItr();
-        for (int i = 0, len = _gameUnitList.Length; i < len; i++) {
-            GameUnit gameUnit = _gameUnitList[i];
-            if (gameUnit == null) continue;
-            RemoveGameUnit(gameUnit);
-        }
-        _gameUnitList.EndItr();
-    }
-
-    #endregion
 
     #region 生命周期
 
@@ -495,7 +427,6 @@ public sealed class Scene
         _active = true;
         _agent?.Reset();
         _time.Restart();
-        ClearGameUnits();
     }
 
     /// <summary>
@@ -522,7 +453,6 @@ public sealed class Scene
         _components.Clear();
         _indexedComponents.Clear();
         ClearUpdateList();
-        ClearGameUnits();
     }
 
     /// <summary>

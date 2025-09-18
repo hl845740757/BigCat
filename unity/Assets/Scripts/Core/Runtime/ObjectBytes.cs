@@ -30,24 +30,18 @@ public sealed class ObjectBytes
 {
     /// <summary>
     /// 对象归类，非详细类型
-    /// (真实对象类型在data中，该字段用于确定大致属于哪类资产)
+    ///
+    /// 1.真实对象类型在data中，该字段用于确定大致属于哪类资产。
+    /// 2.尽量保持在0~255区间。
     /// </summary>
     public int category;
     /// <summary>
-    /// 全局唯一id
+    /// 对象id
     ///
-    /// 1.可能为null，部分场景下不使用。
-    /// 2.为保证较好的兼容性，我们统一使用string类型 -- 逻辑上可能是long。
+    /// 1.至少需要保证桶内唯一，即使是分块数据桶。
+    /// 2.为保证较好的兼容性，我们统一使用string类型存储 -- 逻辑上可能是long。
     /// </summary>
-    public string guid;
-    /// <summary>
-    /// 桶内唯一Id
-    ///
-    /// 1.可能为0，部分场景下不使用。
-    /// 2.一个桶被拆分为多个分桶时，仍然保持唯一；可类比Sql数据表的主键，不保证全局唯一。
-    /// 3.定义两个字段，主要考虑避免运行时频繁生成字符串。
-    /// </summary>
-    public long localId;
+    public string objectId;
     /// <summary>
     /// 用户分配的对象名
     /// (可选，尽量唯一)
@@ -78,13 +72,8 @@ public sealed class ObjectBytes
     public ObjectBytes() {
     }
 
-    public ObjectBytes(string guid, byte[] data) {
-        this.guid = guid;
-        this.data = data;
-    }
-
-    public ObjectBytes(long localId, byte[] data) {
-        this.localId = localId;
+    public ObjectBytes(string objectId, byte[] data) {
+        this.objectId = objectId;
         this.data = data;
     }
 }

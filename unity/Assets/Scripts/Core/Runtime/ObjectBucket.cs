@@ -48,14 +48,14 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     [SerializeField]
     private List<ObjectBytes> bytesList = new List<ObjectBytes>();
     /// <summary>
-    /// guid到字节数组的缓存(保持插入序)
+    /// 字符串id到字节数组的缓存(保持插入序)
     /// </summary>
-    public readonly LinkedDictionary<string, ObjectBytes> guid2BytesDic = new();
+    public readonly LinkedDictionary<string, ObjectBytes> id2BytesDic = new();
     /// <summary>
-    /// localId到字节数组的缓存(保持插入序)
+    /// 数字id到字节数组的缓存(保持插入序)
     /// </summary>
     /// <returns></returns>
-    public readonly LinkedDictionary<long, ObjectBytes> localId2BytesDic = new();
+    public readonly LinkedDictionary<long, ObjectBytes> numberId2BytesDic = new();
     /// <summary>
     /// name到Bytes的映射
     ///
@@ -64,32 +64,26 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     public readonly Dictionary<string, ObjectBytes> name2BytesDic = new();
 
     public void OnBeforeSerialize() {
-        // 用户可能在编辑期没有同步修改List，通过字典覆盖 - 其实用户自己转换才是最准确的
-        // bytesList.Clear();
-        // if (guid2BytesDic.Count > localId2BytesDic.Count) {
-        //     bytesList.AddRange(guid2BytesDic.Values);
-        // } else {
-        //     bytesList.AddRange(localId2BytesDic.Values);
-        // }
+        // 用户自己转换才是最准确的
     }
 
     public void OnAfterDeserialize() {
-        guid2BytesDic.Clear();
-        localId2BytesDic.Clear();
+        id2BytesDic.Clear();
+        numberId2BytesDic.Clear();
         name2BytesDic.Clear();
         //
         foreach (ObjectBytes objectBytes in bytesList) {
-            if (!string.IsNullOrWhiteSpace(objectBytes.guid)) {
-                if (guid2BytesDic.Count == 0) {
-                    guid2BytesDic.EnsureCapacity(bytesList.Count);
+            if (!string.IsNullOrWhiteSpace(objectBytes.objectId)) {
+                if (id2BytesDic.Count == 0) {
+                    id2BytesDic.EnsureCapacity(bytesList.Count);
                 }
-                guid2BytesDic.Add(objectBytes.guid, objectBytes);
+                id2BytesDic.Add(objectBytes.objectId, objectBytes);
             }
-            if (objectBytes.localId != 0) {
-                if (localId2BytesDic.Count == 0) {
-                    localId2BytesDic.EnsureCapacity(bytesList.Count);
+            if (long.TryParse(objectBytes.objectId, out long numberId)) {
+                if (numberId2BytesDic.Count == 0) {
+                    numberId2BytesDic.EnsureCapacity(bytesList.Count);
                 }
-                localId2BytesDic.Add(objectBytes.localId, objectBytes);
+                numberId2BytesDic.Put(numberId, objectBytes); // 重复时覆盖
             }
             if (!string.IsNullOrWhiteSpace(objectBytes.name)) {
                 if (name2BytesDic.Count == 0) {
