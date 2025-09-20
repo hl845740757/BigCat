@@ -56,6 +56,9 @@ public class FrameAnimationModelEditor : EditorWindow
     private bool _fileListFoldout = true;
     private bool _playListFoldout = true;
 
+    private static readonly string[] toolbarNames = new[] { "模型编辑", "模型预览" };
+    private int _toolIndex; // 0表示编辑栏，1表示预览
+
     // 右侧属性区
     private GUILayoutOption[] _propertyAreaOptions;
     private GUILayoutOption[] _width100;
@@ -67,9 +70,10 @@ public class FrameAnimationModelEditor : EditorWindow
     private bool _modelActionFoldOut = true;
     private bool _modelMixerFoldOut = true;
 
+    private GUILayoutOption[] _minHeight100;
     private GameObject _rootObject; // 模型挂载的父节点
+    private int _rootObjectId;
     private FrameAnimationPreviewer _rootPreviewer;
-
 
     [MenuItem("Window/BigCat/FAnimModelEditor")]
     private static void OpenWindow() {
@@ -92,6 +96,11 @@ public class FrameAnimationModelEditor : EditorWindow
         _propertyAreaOptions = new GUILayoutOption[] { GUILayout.MinWidth(300), GUILayout.MaxWidth(800) };
         _width100 = new GUILayoutOption[] { GUILayout.MaxWidth(100) };
         _width50 = new GUILayoutOption[] { GUILayout.MaxWidth(50) };
+        _minHeight100 = new GUILayoutOption[] { GUILayout.MinHeight(100) };
+        
+        // 默认插入第0组和第一组
+        _dataModel.group2Actions[0] = "";
+        _dataModel.group2Actions[1] = "";
     }
 
     private void OnEnable() {
@@ -106,6 +115,9 @@ public class FrameAnimationModelEditor : EditorWindow
     }
 
     private void Update() {
+        if (_toolIndex == 1 && _rootPreviewer.IsPlaying) {
+            _rootPreviewer.Update();
+        }
     }
 
     private void OnGUI() {
@@ -114,18 +126,22 @@ public class FrameAnimationModelEditor : EditorWindow
         EditorGUILayout.BeginVertical(_fileListAreaOptions);
         DrawFileListArea();
         GUILayout.Box("", _vSpaceOptions);
-        // EditorGUILayout.Space(10);
         DrawPlayListArea();
         EditorGUILayout.EndVertical();
+        //
         GUILayout.Box("", _hSpaceOptions);
-        // EditorGUILayout.Space(10);
-        // 中部预览区
-        // 右侧属性区
+        //
         EditorGUILayout.BeginVertical(_propertyAreaOptions);
-        DrawPropertyArea();
-        // GUILayout.Box("", _hSpaceOptions);
-        DrawPreviewerArea();
+        _toolIndex = GUILayout.Toolbar(_toolIndex, toolbarNames);
+        if (_toolIndex == 0) {
+            // 右侧属性区
+            DrawPropertyArea();
+        } else {
+            // 预览区
+            DrawPreviewerArea();
+        }
         EditorGUILayout.EndVertical();
+        //
         EditorGUILayout.EndHorizontal();
     }
 
@@ -207,6 +223,7 @@ public class FrameAnimationModelEditor : EditorWindow
                 }
             } else {
                 if (GUILayout.Button("编辑")) {
+                    _toolIndex = 0;
                     _dataModel.selectedModel = model;
                 }
             }
@@ -218,7 +235,7 @@ public class FrameAnimationModelEditor : EditorWindow
         }
         // 循环外处理删除
         if (deleteIndex >= 0
-            && EditorUtility.DisplayDialog("", "确定删除?", "确定", "取消")) {
+            && EditorUtility.DisplayDialog("", "确定删除？", "确定", "取消")) {
             FrameAnimationModel model = modelList[deleteIndex];
             AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(model));
             modelList.RemoveAt(deleteIndex);
@@ -345,6 +362,7 @@ public class FrameAnimationModelEditor : EditorWindow
                 }
             } else {
                 if (GUILayout.Button("编辑")) {
+                    _toolIndex = 0;
                     _dataModel.selectedModel = model;
                 }
             }
@@ -564,7 +582,7 @@ public class FrameAnimationModelEditor : EditorWindow
         }
         // 循环外处理删除
         if (deleteIndex >= 0
-            && EditorUtility.DisplayDialog("", "确定删除?", "确定", "取消")) {
+            && EditorUtility.DisplayDialog("", $"确定删除？", "确定", "取消")) {
             model.actionList.RemoveAt(deleteIndex);
             Repaint();
         }
@@ -631,7 +649,7 @@ public class FrameAnimationModelEditor : EditorWindow
         }
         // 循环外处理删除
         if (deleteIndex >= 0
-            && EditorUtility.DisplayDialog("", "确定删除?", "确定", "取消")) {
+            && EditorUtility.DisplayDialog("", "确定删除？", "确定", "取消")) {
             model.actionMixCfgList.RemoveAt(deleteIndex);
             Repaint();
         }
@@ -641,10 +659,11 @@ public class FrameAnimationModelEditor : EditorWindow
         AnimationMixCfg mixCfg = model.actionMixCfgList[index];
         string currentActionName = fieldIndex == 0 ? mixCfg.actionA : mixCfg.actionB;
         // Mune不能使用池化的Label，否则会出异常
+        GenericMenu.MenuFunction2 callback = PickActionCallback;
         GenericMenu menu = new GenericMenu();
         foreach (FrameAnimationAction action in model.actionList) {
             PickActionContext ctx = new PickActionContext(index, fieldIndex, action.name);
-            menu.AddItem(new GUIContent(action.name), action.name == currentActionName, PickActionCallback, ctx);
+            menu.AddItem(new GUIContent(action.name), action.name == currentActionName, callback, ctx);
         }
         menu.ShowAsContext();
     }
@@ -704,7 +723,139 @@ public class FrameAnimationModelEditor : EditorWindow
     #region draw-previewer
 
     private void DrawPreviewerArea() {
+        // 要播放的action
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("要播放的动画：(模型部件组 => 模型Action)");
+        _dataModel.tempGroupId = EditorGUILayout.IntField(_dataModel.tempGroupId, _width50);
+        if (GUILayout.Button("添加")) {
+            _dataModel.group2Actions.TryAdd(_dataModel.tempGroupId, "");
+        }
+        EditorGUILayout.EndHorizontal();
 
+        EditorGUILayout.BeginVertical(_minHeight100);
+        int deleteIndex = -1;
+        for (int index = 0; index < _dataModel.group2Actions.Count; index++) {
+            KeyValuePair<int, string> pair = _dataModel.group2Actions.GetPair(index);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.IntField("Group", pair.Key);
+            EditorGUILayout.TextField("Action", pair.Value);
+            if (GUILayout.Button("删除")) {
+                deleteIndex = index;
+            }
+            if (GUILayout.Button("选择")) {
+                ShowPickActionMenu2(index);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        EditorGUILayout.EndVertical();
+
+        // 循环外处理删除
+        if (deleteIndex >= 0) {
+            int key = _dataModel.group2Actions.GetKey(deleteIndex);
+            _dataModel.group2Actions.Remove(key);
+        }
+        DrawSeparator();
+
+        // 播放区
+        EditorGUILayout.HelpBox(PooledLabel().WithText("选择Root并初始化Render可播放"));
+        EditorGUILayout.BeginHorizontal();
+        _rootObject = (GameObject)EditorGUILayout.ObjectField("Root", _rootObject, typeof(GameObject), true);
+        if (GUILayout.Button("InitRenderers")) {
+            InitRenderers();
+        }
+        EditorGUILayout.EndHorizontal();
+        // 需要每帧刷新时间
+        _rootPreviewer.OnInspectorGUI(true);
+        if (_rootPreviewer.IsPlaying) {
+            Repaint();
+        }
+    }
+
+    private void ShowPickActionMenu2(int index) {
+        KeyValuePair<int, string> pair = _dataModel.group2Actions.GetPair(index);
+        int groupId = pair.Key;
+        string currentActionName = pair.Value;
+        // 找到第一个groupId匹配的
+        FrameAnimationModel model = _dataModel.playModelList.FirstOrDefault(e => e.partGroupId == groupId);
+        if (!model) {
+            EditorUtility.DisplayDialog("错误", "不存在对应组的模型", "关闭");
+            return;
+        }
+        // Mune不能使用池化的Label，否则会出异常
+        GenericMenu.MenuFunction2 callback = PickActionCallback2;
+        GenericMenu menu = new GenericMenu();
+        foreach (FrameAnimationAction action in model.actionList) {
+            PickActionContext ctx = new PickActionContext(index, 0, action.name);
+            menu.AddItem(new GUIContent(action.name), action.name == currentActionName, callback, ctx);
+        }
+        menu.ShowAsContext();
+    }
+
+    private void PickActionCallback2(object obj) {
+        PickActionContext ctx = (PickActionContext)obj;
+        KeyValuePair<int, string> pair = _dataModel.group2Actions.GetPair(ctx.index);
+        _dataModel.group2Actions[pair.Key] = ctx.actionName;
+    }
+
+    private void InitRenderers() {
+        if (!_rootObject) return;
+        if (_rootObjectId != _rootObject.GetInstanceID()) {
+            const string message = "该操作会为目标对象创建子对象，请确保目标GameObject是临时对象";
+            if (!EditorUtility.DisplayDialog("二次确认", message, "确认", "取消 ")) {
+                return;
+            }
+            _rootObjectId = _rootObject.GetInstanceID();
+        }
+        // 先清理
+        _rootPreviewer.Renderer = null;
+        _rootPreviewer.Followers.Clear();
+        if (_dataModel.playModelList.Count == 0) {
+            return;
+        }
+        FrameAnimationModel baseModel = _dataModel.playModelList[0];
+        if (!_dataModel.group2Actions.TryGetValue(baseModel.partGroupId, out string actionName)) {
+            EditorUtility.DisplayDialog("错误", $"找不到模型{baseModel.name}的action", "关闭");
+            return;
+        }
+        SetClip(_rootPreviewer, baseModel.FindAction(actionName));
+        _rootPreviewer.Renderer = GetChildRenderer(baseModel.name); // 绑定模型名
+        _rootPreviewer.OrderInLayer = 0;
+        //
+        for (int index = 1; index < _dataModel.playModelList.Count; index++) {
+            FrameAnimationModel model = _dataModel.playModelList[index];
+            if (!_dataModel.group2Actions.TryGetValue(model.partGroupId, out actionName)) {
+                EditorUtility.DisplayDialog("错误", $"找不到模型{model.name}的action", "关闭");
+                return;
+            }
+            FrameAnimationPreviewer follower = new FrameAnimationPreviewer(null);
+            SetClip(follower, model.FindAction(actionName));
+            follower.Renderer = GetChildRenderer(model.name); // 绑定模型名
+            follower.OrderInLayer = 1; // 其它覆盖在上面
+            _rootPreviewer.AddFollower(follower);
+        }
+    }
+
+    private static void SetClip(FrameAnimationPreviewer previewer, FrameAnimationAction action) {
+        if (action == null) {
+            previewer.Clip = null;
+            previewer.StartFrame = 0;
+            previewer.EndFrame = 0;
+            return;
+        }
+        previewer.Clip = action.clip;
+        previewer.StartFrame = action.startFrame;
+        previewer.EndFrame = action.endFrame;
+    }
+
+    private SpriteRenderer GetChildRenderer(string name) {
+        Transform transform = _rootObject.transform.Find(name);
+        if (transform) {
+            transform.gameObject.SetActive(true);
+            return transform.gameObject.GetComponent<SpriteRenderer>();
+        }
+        GameObject child = new GameObject(name);
+        child.transform.SetParent(_rootObject.transform);
+        return child.AddComponent<SpriteRenderer>();
     }
 
     #endregion
@@ -741,6 +892,11 @@ public class FrameAnimationModelEditor : EditorWindow
         /// 协同播放的动画列表
         /// </summary>
         public List<FrameAnimationModel> playModelList = new List<FrameAnimationModel>();
+
+        /// <summary>
+        /// 要插入的组id
+        /// </summary>
+        public int tempGroupId;
         /// <summary>
         /// 当前要播放的动作
         /// 按模型分组播放

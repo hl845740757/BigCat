@@ -48,8 +48,8 @@ public sealed class FrameAnimationAction : ISerializationCallbackReceiver
     /// <summary>
     /// 动画结束帧
     /// </summary>
-    [Tooltip("动画结束帧，包含")]
-    public int endFrame;
+    [Tooltip("动画结束帧，包含；-1表示播放到动画结束")]
+    public int endFrame = -1;
     /// <summary>
     /// 动画权重
     /// </summary>
@@ -73,6 +73,11 @@ public sealed class FrameAnimationAction : ISerializationCallbackReceiver
         this.weight = src.weight;
         this.offset = src.offset;
     }
+
+    /// <summary>
+    /// 是否指定了结束帧，如果未指定结束帧，则自动播放到Clip结束。
+    /// </summary>
+    public bool HasEndFrame => endFrame == -1;
 
     public void OnBeforeSerialize() {
 

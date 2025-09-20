@@ -232,6 +232,8 @@ public class FrameAnimationPreviewer
     /// </summary>
     public void Stop() {
         _playState = PlayState.Stopped;
+        _time = 0; // 时间还是重置更好
+        _frameIndex = _startFrame;
         foreach (FrameAnimationPreviewer follower in followers) {
             follower.Stop();
         }
@@ -276,6 +278,22 @@ public class FrameAnimationPreviewer
                 _renderer.sortingOrder = value;
             }
         }
+    }
+
+    /// <summary>
+    /// 动画开始帧
+    /// </summary>
+    public int StartFrame {
+        get => _startFrame;
+        set => _startFrame = value;
+    }
+
+    /// <summary>
+    /// 动画结束帧
+    /// </summary>
+    public int EndFrame {
+        get => _endFrame;
+        set => _endFrame = value;
     }
 
     /// <summary>

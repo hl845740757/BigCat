@@ -45,6 +45,7 @@ public class FrameAnimationCliEditorPlus : EditorWindow
     private List<FrameAnimationClip> _syncList = new List<FrameAnimationClip>();
 
     private GameObject _rootObject;
+    private int _rootObjectId;
     private FrameAnimationPreviewer _rootPreviewer;
 
     [MenuItem("Window/BigCat/FAnimClipEditor")]
@@ -206,11 +207,13 @@ public class FrameAnimationCliEditorPlus : EditorWindow
 
     private void InitRenderers() {
         if (!_rootObject) return;
-        const string message = "该操作会为目标对象创建子对象，请确保目标GameObject是临时对象";
-        if (!EditorUtility.DisplayDialog("二次确认", message, "确认", "取消 ")) {
-            return;
+        if (_rootObjectId != _rootObject.GetInstanceID()) {
+            const string message = "该操作会为目标对象创建子对象，请确保目标GameObject是临时对象";
+            if (!EditorUtility.DisplayDialog("二次确认", message, "确认", "取消 ")) {
+                return;
+            }
+            _rootObjectId = _rootObject.GetInstanceID();
         }
-
         // 先清理
         _rootPreviewer.Renderer = null;
         _rootPreviewer.Followers.Clear();
@@ -234,6 +237,7 @@ public class FrameAnimationCliEditorPlus : EditorWindow
     private SpriteRenderer GetChildRenderer(string name) {
         Transform transform = _rootObject.transform.Find(name);
         if (transform) {
+            transform.gameObject.SetActive(true);
             return transform.gameObject.GetComponent<SpriteRenderer>();
         }
         GameObject child = new GameObject(name);
