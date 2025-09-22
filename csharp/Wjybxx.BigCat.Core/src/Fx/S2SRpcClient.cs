@@ -37,7 +37,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     private Worker worker;
     private WorkerAddr selfAddr;
     private TimeModule timeModule;
-    private RpcProxyRegistry proxyRegistry;
+    private RpcMethodRegistry _methodRegistry;
     private S2SSessionMgr sessionMgr;
     private RpcSupport rpcSupport;
 
@@ -57,7 +57,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         this.worker = (Worker)EventLoop;
         this.selfAddr = worker.WorkerAddr;
         this.timeModule = worker.Injector.GetInstance<TimeModule>();
-        this.proxyRegistry = worker.Injector.GetInstance<RpcProxyRegistry>();
+        this._methodRegistry = worker.Injector.GetInstance<RpcMethodRegistry>();
         this.sessionMgr = worker.Injector.GetInstance<S2SSessionMgr>();
         // Node上的组件
         Node node = worker.Node;
@@ -333,8 +333,8 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     #region rcv-request
 
     public void OnRcvRequestStep3(RpcRequest request) {
-        RpcMethodInvoker? invoker = proxyRegistry.GetInvoker(request.ServiceId, request.MethodId);
-        if (invoker == null || proxyRegistry.IsDisabled(request.ServiceId, request.MethodId)) {
+        RpcMethodInvoker? invoker = _methodRegistry.GetInvoker(request.ServiceId, request.MethodId);
+        if (invoker == null || _methodRegistry.IsDisabled(request.ServiceId, request.MethodId)) {
             Reject(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE);
             return;
         }

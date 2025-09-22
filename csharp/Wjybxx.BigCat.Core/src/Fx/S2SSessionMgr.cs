@@ -82,7 +82,7 @@ public class S2SSessionMgr : EventLoopModule
     /// 测试请求是否可以派发 -- 通常检查连接的有效性和会话状态。
     /// 1.走到这里的时候，方法参数已反序列化
     /// 2.该方法在Worker线程执行（即主线程执行）
-    /// 3.信息应该来源于方法的切面数据<see cref="RpcProxyRegistry.GetProxyData"/>
+    /// 3.信息应该来源于方法的切面数据<see cref="RpcMethodRegistry.GetProxyData"/>
     /// 4.错误码约定见<see cref="RpcErrorCodes"/>
     /// </summary>
     /// <param name="request"></param>

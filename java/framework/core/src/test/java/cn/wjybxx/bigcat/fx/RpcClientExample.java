@@ -76,7 +76,7 @@ public class RpcClientExample extends EventLoopModule implements ExtensibleServi
 
     @Override
     public void resolveDependence() {
-        this.worker = (Worker) getEntity();
+        this.worker = (Worker) getEventLoop();
         this.serverAddr = worker.node().nodeAddr();
     }
 

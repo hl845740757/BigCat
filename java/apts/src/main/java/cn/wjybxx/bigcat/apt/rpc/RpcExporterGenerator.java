@@ -72,7 +72,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
     /**
      * 生成注册方法
      * <pre>{@code
-     * public static void export(RpcProxyRegistry registry, T instance) {
+     * public static void export(RpcMethodRegistry registry, T instance) {
      *     exportMethod1(registry, instance);
      *     exportMethod2(registry, instance);
      * }
@@ -98,7 +98,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * 1. 有返回值的，直接返回方法执行结果; 如果方法签名中包含context，需要传入；
      * <pre>
      * {@code
-     * 		private static void exportMethod1(RpcProxyRegistry registry, T instance) {
+     * 		private static void exportMethod1(RpcMethodRegistry registry, T instance) {
      * 		    registry.<R>register(10001, (context, parameter) -> {
      * 		        R r = instance.method10001(context, (T) parameter);
      * 		        if (context.isManualReturn()) return;
@@ -107,7 +107,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      *     }
      * }
      * {@code
-     * 		private static void exportMethod1(RpcProxyRegistry registry, T instance) {
+     * 		private static void exportMethod1(RpcMethodRegistry registry, T instance) {
      * 		    registry.<R>register(10001, (context, parameter) -> {
      * 		        IFuture<R> r = instance.method10001(context, (T) parameter);
      * 		        if (context.isManualReturn()) return;
@@ -119,7 +119,7 @@ public class RpcExporterGenerator extends AbstractGenerator<RpcServiceProcessor>
      * 2. 无返回值的，代理执行完之后直接返回null；如果方法签名中包含context，需要传入
      * <pre>
      * {@code
-     *      private static void exportMethod2(RpcProxyRegistry registry, T instance) {
+     *      private static void exportMethod2(RpcMethodRegistry registry, T instance) {
      * 		    registry.<Object>register(10002, (context, parameter) -> {
      * 		        instance.method10001(context, (T) parameter);
      *          }

@@ -40,12 +40,11 @@ public abstract class WorkerBuilder {
     /**
      * Worker上绑定的容器，需要包含：
      * {@link IEventLoopAgent}、{@link TimeModule}
-     * {@link RpcClient}、{@link RpcProxyRegistry}、
+     * {@link RpcClient}、{@link RpcMethodRegistry}、
      * {@link S2SSessionMgr}
      * <p>
      * 如果是Node，则还需要包含：
      * {@link RpcSupport}、{@link RpcRouter}、{@link RpcSerializer}、
-     * {@link RpcMethodRegistry}
      */
     private Injector injector;
 

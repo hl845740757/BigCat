@@ -49,7 +49,7 @@ public class RpcServiceProcessor : ISourceGenerator
     // C#的RpcMethodSpec包含一个泛型类和一个非泛型类
     private const string CNAME_METHOD_SPEC = "Wjybxx.BigCat.Fx.RpcMethodSpec";
     private const string CNAME_METHOD_SPEC_T = "Wjybxx.BigCat.Fx.RpcMethodSpec`1";
-    private const string CNAME_METHOD_REGISTRY = "Wjybxx.BigCat.Fx.RpcProxyRegistry";
+    private const string CNAME_METHOD_REGISTRY = "Wjybxx.BigCat.Fx.RpcMethodRegistry";
     private const string CNAME_CONTEXT = "Wjybxx.BigCat.Fx.RpcContext`1";
 
     private const int MAX_PARAMETER_COUNT = 1; // 限制最大一个参数

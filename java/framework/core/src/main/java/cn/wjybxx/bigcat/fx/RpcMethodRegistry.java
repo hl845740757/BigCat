@@ -16,75 +16,121 @@
 
 package cn.wjybxx.bigcat.fx;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import cn.wjybxx.base.annotation.StableName;
+import it.unimi.dsi.fastutil.ints.IntSet;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
- * rpc方法信息注册表
- * 1.客户端和服务端的方法都需要注册。
- * 2.整个Node（或进程）一份。
- * 3.禁止服务id重复，一个确定的服务id，对应的服务是确定的。
- * <p>
- * {@link RpcMethodInfo}通常由主线程进行注册，IO线程查询使用，
- * 为保证线程可见性和安全性，主线程在注册完成之后需调用{@link #makeImmutable()}将registry变更为不可变状态（注册完成），
- * IO线程在启动时可调用{@link #ensureImmutable()}检查registry的状态。
- * (另一种方案是通过线程的启动顺序来保证可见性，同时后续禁止修改。)
+ * Rpc方法代理注册表(服务注册表)
  *
  * @author wjybxx
- * date - 2023/10/12
+ * date 2023/4/1
  */
-public final class RpcMethodRegistry {
+public interface RpcMethodRegistry {
 
-    private volatile boolean mutable = true;
-    private final Int2ObjectMap<RpcMethodInfo> methodInfoMap = new Int2ObjectOpenHashMap<>(100);
-
-    /** 注册rpc方法 */
-    public void register(RpcMethodInfo methodInfo) {
-        if (!mutable) {
-            throw new IllegalStateException("registry is immutable");
-        }
-        int methodKey = RpcMethodKey.methodKey(methodInfo.serviceId, methodInfo.methodId);
-        RpcMethodInfo exist = methodInfoMap.get(methodKey);
-        if (exist == null) {
-            methodInfoMap.put(methodKey, methodInfo);
-        } else if (!exist.equals(methodInfo)) {
-            // 同一个方法被重复注入是安全的，主要处理继承来的方法...
-            throw new IllegalStateException("methodKey: %d-%d".formatted(methodInfo.serviceId, methodInfo.methodId));
-        }
-    }
+    /** 注册rpc方法信息 */
+    void register(RpcMethodInfo methodInfo);
 
     /** @return 如果方法不存在，则返回null */
-    public RpcMethodInfo getMethodInfo(int serviceId, int methodId) {
-        int methodKey = RpcMethodKey.methodKey(serviceId, methodId);
-        return methodInfoMap.get(methodKey);
-    }
+    RpcMethodInfo getMethodInfo(int serviceId, int methodId);
 
-    /** 当前是否处于可变状态 */
-    public boolean isMutable() {
-        return mutable;
+    /**
+     * 注册一个rpc方法代理
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @param proxy     代理方法
+     * @throws IllegalArgumentException 如果已存在对应的proxy，则抛出异常
+     */
+    @StableName
+    <T> void register(int serviceId, int methodId, @Nonnull RpcMethodProxy<T> proxy);
+
+    /**
+     * 设置代理的切面数据
+     * 由于一个方法只能由一个proxy，因此切面数据可以独立注册
+     *
+     * @param serviceId  服务id
+     * @param methodId   方法id
+     * @param customData 自定义切面数据(string或object)；若为null则表示删除;
+     */
+    @StableName
+    void setProxyData(int serviceId, int methodId, Object customData);
+
+    /** 获取设置的代理数据 -- 切面数据 */
+    Object getProxyData(int serviceId, int methodId);
+
+    /**
+     * 注册一个rpc方法代理
+     *
+     * @param serviceId  服务id
+     * @param methodId   方法id
+     * @param proxy      代理方法
+     * @param customData 自定义切面数据；也可用于指示是否可覆盖
+     */
+    @StableName
+    default <T> void register(int serviceId, int methodId, @Nonnull RpcMethodProxy<T> proxy,
+                              @Nullable Object customData) {
+        register(serviceId, methodId, proxy);
+        setProxyData(serviceId, methodId, customData);
     }
 
     /**
-     * 设置为不可变(主线程注册完毕后调用)
-     * 1.设置为不可变后，不再可增删MethodInfo和MethodProxy，切面数据可以动态变更
-     * 2.建议执行该方法
+     * 查询方法绑定的Proxy
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @return 如果不存在，则返回null
      */
-    public void makeImmutable() {
-        mutable = true;
-    }
+    RpcMethodProxy<?> getProxy(int serviceId, int methodId);
 
-    /** 检查是否处于不可变状态(IO线程启动时调用) */
-    public void ensureImmutable() {
-        if (mutable) {
-            throw new IllegalStateException("registry is mutable");
-        }
-    }
+    /**
+     * 删除指定方法的Proxy
+     * 在删除后可重新注册，通常用于覆盖特定方法的proxy
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     * @return 如果不存在，则返回null
+     */
+    RpcMethodProxy<?> removeProxy(int serviceId, int methodId);
 
-    /** 检查是否处于可变状态(主线程检测) */
-    public void ensureMutable() {
-        if (!mutable) {
-            throw new IllegalStateException("registry is immutable");
-        }
-    }
+    /**
+     * 临时禁用服务（用于线上临时关闭功能）
+     *
+     * @param serviceId 服务id
+     * @param methodId  -1表示全部
+     */
+    void disable(int serviceId, int methodId);
+
+    /**
+     * 解除禁用
+     *
+     * @param serviceId 服务id
+     * @param methodId  -1表示全部
+     */
+    void enable(int serviceId, int methodId);
+
+    /**
+     * 查询服务是否被禁用
+     *
+     * @param serviceId 服务id
+     * @param methodId  方法id
+     */
+    boolean isDisabled(int serviceId, int methodId);
+
+    /**
+     * 导出注册表中包含的服务
+     *
+     * @return 注册的所有服务的id
+     */
+    IntSet export();
+
+    /**
+     * 清理注册表
+     * 因为{@link #register(int, int, RpcMethodProxy)}会捕获太多对象，
+     * 当不再使用{@link RpcMethodRegistry}时，执行该方法可释放{@link RpcMethodProxy}捕获的对象。
+     */
+    void clear();
 
 }

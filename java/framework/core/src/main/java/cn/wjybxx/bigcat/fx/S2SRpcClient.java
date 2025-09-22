@@ -49,7 +49,7 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
     private Worker worker;
     private WorkerAddr selfAddr;
     private TimeModule timeModule;
-    private RpcProxyRegistry proxyRegistry;
+    private RpcMethodRegistry proxyRegistry;
     private S2SSessionMgr sessionMgr;
     private RpcSupport rpcSupport;
 
@@ -66,10 +66,10 @@ public final class S2SRpcClient extends EventLoopModule implements RpcClientImpl
 
     @Override
     public void onAwake() {
-        this.worker = (Worker) getEntity();
+        this.worker = (Worker) getEventLoop();
         this.selfAddr = worker.workerAddr();
         this.timeModule = worker.injector().getInstance(TimeModule.class);
-        this.proxyRegistry = worker.injector().getInstance(RpcProxyRegistry.class);
+        this.proxyRegistry = worker.injector().getInstance(RpcMethodRegistry.class);
         this.sessionMgr = worker.injector().getInstance(S2SSessionMgr.class);
         // Node上的组件
         Node node = worker.node();

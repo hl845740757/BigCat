@@ -89,7 +89,7 @@ public class FxUtils {
     /** 导出Rpc服务 */
     public static void exportService(WorkerBuilder builder) {
         Injector injector = builder.getInjector();
-        RpcProxyRegistry registry = injector.getInstance(RpcProxyRegistry.class);
+        RpcMethodRegistry registry = injector.getInstance(RpcMethodRegistry.class);
         for (Class<?> clazz : builder.getServiceClasses()) {
             Object instance = injector.getInstance(clazz);
             exportService(registry, clazz, instance);
@@ -97,14 +97,14 @@ public class FxUtils {
     }
 
     /** 导出Rpc服务 */
-    public static void exportService(RpcProxyRegistry registry, Class<?> serviceInterface, Object serviceImpl) {
+    public static void exportService(RpcMethodRegistry registry, Class<?> serviceInterface, Object serviceImpl) {
         if (!serviceInterface.isInstance(serviceImpl)) {
             throw new IllegalArgumentException("interface: %s, impl: %s".formatted(serviceInterface, serviceImpl.getClass()));
         }
-        // public static void export(RpcProxyRegistry registry, RpcServiceExample instance) {}
+        // public static void export(RpcMethodRegistry registry, RpcServiceExample instance) {}
         try {
             Class<?> exporter = Class.forName(serviceInterface.getName() + "Proxy");
-            Method method = exporter.getDeclaredMethod("export", RpcProxyRegistry.class, serviceInterface); // 生成的静态export方法
+            Method method = exporter.getDeclaredMethod("export", RpcMethodRegistry.class, serviceInterface); // 生成的静态export方法
             method.invoke(null, registry, serviceImpl);
         } catch (Exception e) {
             throw new RuntimeException("service:" + serviceInterface.getSimpleName(), e);

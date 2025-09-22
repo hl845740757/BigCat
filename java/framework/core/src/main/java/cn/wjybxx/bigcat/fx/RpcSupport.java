@@ -77,7 +77,7 @@ public final class RpcSupport extends EventLoopModule implements IAgentEventHand
 
     @Override
     public void resolveDependence() {
-        this.node = (Node) getEntity();
+        this.node = (Node) getEventLoop();
         this.nodeAddr = node.nodeAddr();
 
         this.serializer = node.injector().getInstance(RpcSerializer.class);

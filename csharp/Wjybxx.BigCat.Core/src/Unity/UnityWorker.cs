@@ -114,7 +114,7 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
     }
 
     private void ExportServices() {
-        RpcProxyRegistry registry = injector.GetInstance<RpcProxyRegistry>();
+        RpcMethodRegistry registry = injector.GetInstance<RpcMethodRegistry>();
         SetServiceIdSet(registry.Export());
     }
 

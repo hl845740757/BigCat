@@ -74,7 +74,7 @@ public class RpcExporterGenerator
     /// 生成注册方法
     /// 
     /// <![CDATA[
-    /// public static void export(RpcProxyRegistry registry, T instance) {
+    /// public static void export(RpcMethodRegistry registry, T instance) {
     ///     exportMethod1(registry, instance);
     ///     exportMethod2(registry, instance);
     /// }

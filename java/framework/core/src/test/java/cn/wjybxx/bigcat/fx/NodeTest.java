@@ -107,13 +107,12 @@ public class NodeTest {
                 bind(IEventLoopAgent.class).to(DefaultMainModule.class).in(Singleton.class);
                 bind(TimeModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(S2SRpcClient.class).in(Singleton.class);
-                bind(RpcProxyRegistry.class).to(DefaultRpcProxyRegistry.class).in(Singleton.class);
+                bind(RpcMethodRegistry.class).to(DefaultRpcMethodRegistry.class).in(Singleton.class);
                 bind(S2SSessionMgr.class).in(Singleton.class); // 具体项目需要绑定子类
 
                 // RPC组件
                 bind(RpcSupport.class).in(Singleton.class);
                 bind(RpcSerializer.class).to(TestRpcSerializer.class).in(Singleton.class);
-                bind(RpcMethodRegistry.class).in(Singleton.class);
                 bind(RpcRouter.class).to(TestRpcRouter.class).in(Singleton.class);
                 bind(TestRpcRouter.class).in(Singleton.class); // 具体子类也被引用
             }
@@ -130,7 +129,7 @@ public class NodeTest {
                 bind(IEventLoopAgent.class).to(DefaultMainModule.class).in(Singleton.class);
                 bind(TimeModule.class).in(Singleton.class);
                 bind(RpcClient.class).to(S2SRpcClient.class).in(Singleton.class);
-                bind(RpcProxyRegistry.class).to(DefaultRpcProxyRegistry.class).in(Singleton.class);
+                bind(RpcMethodRegistry.class).to(DefaultRpcMethodRegistry.class).in(Singleton.class);
                 bind(S2SSessionMgr.class).in(Singleton.class); // 具体项目需要绑定子类
 
                 bind(RpcClientExample.class).in(Singleton.class); // worker1

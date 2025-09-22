@@ -130,7 +130,7 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
     }
 
     private void exportServices() {
-        RpcProxyRegistry registry = injector.getInstance(RpcProxyRegistry.class);
+        RpcMethodRegistry registry = injector.getInstance(RpcMethodRegistry.class);
         setServiceIdSet(registry.export());
     }
 

@@ -96,7 +96,7 @@ public static class FxUtils
     /// </summary>
     public static void ExportService(WorkerBuilder builder) {
         IInjector injector = builder.Injector;
-        RpcProxyRegistry registry = injector.GetInstance<RpcProxyRegistry>();
+        RpcMethodRegistry registry = injector.GetInstance<RpcMethodRegistry>();
         foreach (Type clazz in builder.ServiceClasses) {
             object instance = injector.GetInstance(clazz);
             ExportService(registry, clazz, instance);
@@ -104,11 +104,11 @@ public static class FxUtils
     }
 
     /** 导出Rpc服务 */
-    public static void ExportService(RpcProxyRegistry registry, Type serviceInterface, object serviceImpl) {
+    public static void ExportService(RpcMethodRegistry registry, Type serviceInterface, object serviceImpl) {
         if (!serviceInterface.IsInstanceOfType(serviceImpl)) {
             throw new ArgumentException($"interface: {serviceInterface}, impl: {serviceImpl.GetType()}");
         }
-        // public static void export(RpcProxyRegistry registry, RpcServiceExample instance) {}
+        // public static void export(RpcMethodRegistry registry, RpcServiceExample instance) {}
         // Exporter默认在同命名空间下
         Type exporter = serviceInterface.Assembly.GetType(serviceInterface.FullName + "Proxy");
         if (exporter == null) {

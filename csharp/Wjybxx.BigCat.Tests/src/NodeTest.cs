@@ -102,13 +102,12 @@ public class NodeTest
             binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IEventLoopAgent<WorkerEvent>));
             binder.Bind<TimeModule>();
             binder.Bind<S2SRpcClient, RpcClient>();
-            binder.Bind<DefaultRpcProxyRegistry, RpcProxyRegistry>();
+            binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
             binder.Bind<S2SSessionMgr>(); // 具体项目需要绑定子类
 
             // RPC组件
             binder.Bind<RpcSupport>();
             binder.Bind<TestRpcSerializer, RpcSerializer>();
-            binder.Bind<RpcMethodRegistry>();
             binder.Bind<TestRpcRouter>(InjectScope.Singleton, typeof(TestRpcRouter), typeof(RpcRouter)); // 具体子类也被引用
         }
     }
@@ -119,7 +118,7 @@ public class NodeTest
             binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IEventLoopAgent<WorkerEvent>));
             binder.Bind<TimeModule>();
             binder.Bind<S2SRpcClient, RpcClient>();
-            binder.Bind<DefaultRpcProxyRegistry, RpcProxyRegistry>();
+            binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
             binder.Bind<S2SSessionMgr>(); // 具体项目需要绑定子类
 
             binder.Bind<RpcClientExample>(); // worker1
