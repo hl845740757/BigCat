@@ -32,6 +32,8 @@ public sealed class AnimationStateCfg
 {
     /// <summary>
     /// 部件组 => 要播放的Action
+    ///
+    /// 注：数据量很少，通常1~2，因此也可以改用List。
     /// </summary>
     public ArrayDictionary<int, string> group2Actions = new ArrayDictionary<int, string>();
     /// <summary>

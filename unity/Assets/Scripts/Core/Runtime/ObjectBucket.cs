@@ -30,7 +30,7 @@ namespace Wjybxx.BitCat.Core.Core.Runtime
 /// 1.项目按照自己需求，用扩展方法扩展。
 /// 2.资产名很重要，最好可表达对象桶的用途 —— 我们不使用额外的字段标注，因为不如资产名直观。
 /// </summary>
-[CreateAssetMenu(menuName = "Object/ObjectBucket", fileName = "NewBucket")]
+[CreateAssetMenu(menuName = "BigCat/ObjectBucket", fileName = "NewBucket")]
 public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackReceiver
 {
     /// <summary>

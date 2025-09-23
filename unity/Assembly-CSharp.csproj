@@ -88,6 +88,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Library\PackageCache\com.unity.modules.director@1.0.0\package.json" />
     <None Include="Library\PackageCache\com.unity.modules.terrain@1.0.0\package.json" />
+    <None Include="Library\PackageCache\com.unity.2d.sprite@1.0.0\package.json" />
     <None Include="Library\PackageCache\com.unity.modules.androidjni@1.0.0\package.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />

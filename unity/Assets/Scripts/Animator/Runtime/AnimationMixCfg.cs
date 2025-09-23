@@ -37,6 +37,11 @@ public sealed class AnimationMixCfg
     public AnimationMixCfg() {
     }
 
+    public AnimationMixCfg(string actionA, string actionB) {
+        this.actionA = actionA;
+        this.actionB = actionB;
+    }
+
     public AnimationMixCfg(AnimationMixCfg src) {
         this.actionA = src.actionA;
         this.actionB = src.actionB;

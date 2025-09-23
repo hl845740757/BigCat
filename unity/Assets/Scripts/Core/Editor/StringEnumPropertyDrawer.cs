@@ -40,7 +40,7 @@ public class StringEnumPropertyDrawer : PropertyDrawer
         // 暂时先Index查询吧...
         int index = Array.IndexOf(displayNames, property.stringValue);
         if (index < 0) index = 0;
-        
+
         index = EditorGUI.Popup(position, label, index, namesCache);
         property.stringValue = displayNames[index];
     }

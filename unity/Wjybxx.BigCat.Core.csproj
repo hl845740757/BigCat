@@ -139,7 +139,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\BitSet64.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\WorkerHolder.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Unity\UnityEventLoopBuilder.cs" />
-    <Compile Include="..\csharp\Wjybxx.BigCat.Core\src\Fx\RpcMethodRegistry.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcMethodRegistry.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\MVC\ListenerContainer.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\GComponent.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\MVC\IAggregationModel.cs" />

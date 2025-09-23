@@ -116,6 +116,16 @@ public static class SystemExtensions
     }
 
     /// <summary>
+    /// 是否是图片文件(测试文件路径后缀)
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static bool IsImageFile(string filePath) {
+        if (string.IsNullOrWhiteSpace(filePath)) return false;
+        return filePath.EndsWith(".png") || filePath.EndsWith(".jpg") || filePath.EndsWith(".jpeg");
+    }
+
+    /// <summary>
     /// 加载指定目录下的所有资产文件
     ///
     /// 以笨办法加载指定目录下的特定类型资产文件。

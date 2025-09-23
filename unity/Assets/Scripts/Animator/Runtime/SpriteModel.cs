@@ -19,16 +19,17 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
+using UnityEngine.U2D;
 
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 基于帧动画的（角色)模型
+/// 2D图片模型
+///
+/// 注：运行时需要指定图集（贴图），否则没有表现。
 /// </summary>
-[CreateAssetMenu(menuName = "FrameAnimation/AnimationModel", fileName = "NewAnimationModel")]
-public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallbackReceiver
+[CreateAssetMenu(menuName = "BigCat/SpriteModel", fileName = "NewSpriteModel")]
+public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiver
 {
     /// <summary>
     /// 模型部件id
@@ -56,24 +57,32 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
     public int orderInLayer;
 
     /// <summary>
-    /// 模型基础动画
-    ///
-    /// 注：对于角色模型，推荐所有帧打包为一个帧动画，然后通过区间播放；这可以有更好的加载效率，也避免过多的资产文件。
+    /// 模型默认图集
     /// </summary>
-    public FrameAnimationClip modelClip;
+    [Tooltip("模型默认图集，即默认贴图")]
+    public SpriteAtlas spriteAtlas;
     /// <summary>
     /// 模型动作
     /// </summary>
-    public List<FrameAnimationAction> actionList = new List<FrameAnimationAction>();
+    [Tooltip("模型关联的动作")]
+    public List<SpriteAnimationClip> actionList = new List<SpriteAnimationClip>();
     /// <summary>
-    /// 动作名到动作的映射
+    /// 动作映射
+    /// </summary>
+    [Tooltip("动作映射信息，逻辑动作名到美术资源的映射")]
+    public List<KeyValuePair<string, string>> actionRemap = new();
+    /// <summary>
+    /// 动作名到动作的映射缓存
+    /// (运行时使用，包含动作映射数据，反序列化自动处理)
     /// </summary>
     [NonSerialized]
-    public Dictionary<string, FrameAnimationAction> actionDic = new();
+    public Dictionary<string, SpriteAnimationClip> actionDic = new();
 
     /// <summary>
     /// 动作之间的融合配置
+    /// (动作融合按照真实action配置，不处理动作重映射)
     /// </summary>
+    [Tooltip("动作融合信息")]
     public List<AnimationMixCfg> actionMixCfgList = new();
     /// <summary>
     /// 动作融合配置缓存
@@ -83,11 +92,17 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
 
     /// <summary>
     /// 查找Action
+    ///
+    /// 注：如果返回的资源名和请求Action名不一样，表示动作存在重映射。
     /// </summary>
-    /// <param name="actionName"></param>
+    /// <param name="actionName">要查找的动作名</param>
+    /// <param name="resolveRemap">是否处理重映射</param>
     /// <returns></returns>
-    public FrameAnimationAction FindAction(string actionName) {
+    public SpriteAnimationClip FindAction(string actionName, bool resolveRemap = true) {
 #if UNITY_EDITOR
+        if (resolveRemap) {
+            actionName = ResolveRemap(actionName);
+        }
         foreach (var action in actionList) {
             if (action.name == actionName) {
                 return action;
@@ -95,7 +110,8 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
         }
         return null;
 #else
-        return actionDic.TryGetValue(actionName, out var action) ? action : null;
+        if (!actionDic.TryGetValue(actionName, out var action)) return null;
+        return (resolveRemap || action.name == actionName) ? action : null;
 #endif
     }
 
@@ -119,6 +135,24 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
 #endif
     }
 
+    /// <summary>
+    /// 解析重映射信息，找到最终的actionName
+    ///
+    /// 注：避免频繁调用，性能不佳。
+    /// </summary>
+    /// <param name="actionName"></param>
+    /// <returns></returns>
+    public string ResolveRemap(string actionName) {
+        for (int depth = 0; depth < 5; depth++) {
+            KeyValuePair<string, string> pair = actionRemap.Find(pair2 => pair2.Key == actionName);
+            if (pair.Key != actionName) {
+                return actionName;
+            }
+            actionName = pair.Value;
+        }
+        throw new Exception("Action mapping exceeds limit");
+    }
+
     #region 序列化
 
     public void OnBeforeSerialize() {
@@ -136,15 +170,31 @@ public sealed class FrameAnimationModel : ScriptableObject, ISerializationCallba
         // Action
         actionDic.Clear();
         for (int index = 0; index < actionList.Count; index++) {
-            FrameAnimationAction action = actionList[index];
+            SpriteAction action = actionList[index];
             if (string.IsNullOrWhiteSpace(action.name)) {
                 continue;
             }
             // name池化
             action.name = string.Intern(action.name);
-            actionList[index] = action; // 兼容值类型
             actionDic.Add(action.name, action);
         }
+
+        // ActionRemap
+        for (int index = 0; index < actionRemap.Count; index++) {
+            KeyValuePair<string, string> pair = actionRemap[index];
+            // name池化
+            string key = string.Intern(pair.Key);
+            string value = string.Intern(pair.Value);
+            actionRemap[index] = new KeyValuePair<string, string>(key, value);
+        }
+        // 缓存最终映射结果
+        for (int index = 0; index < actionRemap.Count; index++) {
+            KeyValuePair<string, string> pair = actionRemap[index];
+            string actionName = ResolveRemap(pair.Key);
+            SpriteAction action = actionList.Find(e => e.name == actionName);
+            actionDic.Add(pair.Key, action);
+        }
+
         // MixCfg
         actionMixCfgDic.Clear();
         for (int index = 0; index < actionMixCfgList.Count; index++) {

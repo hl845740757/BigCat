@@ -47,10 +47,10 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationPreviewer.cs" />
-    <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationClipEditor.cs" />
+    <Compile Include="Assets\Scripts\Animator\Editor\SpriteAnimationPreviewer.cs" />
     <Compile Include="Assets\Scripts\Animator\Editor\SpriteModelEditor.cs" />
-    <Compile Include="Assets\Scripts\Animator\Editor\FrameAnimationCliEditorPlus.cs" />
+    <Compile Include="Assets\Scripts\Animator\Editor\SpriteAnimationClipEditorPlus.cs" />
+    <Compile Include="Assets\Scripts\Animator\Editor\SpriteAnimationClipEditor.cs" />
     <None Include="Assets\Scripts\Animator\Editor\Wjybxx.BigCat.AnimatorEditor.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

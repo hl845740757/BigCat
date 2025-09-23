@@ -54,5 +54,6 @@ public enum AnimationEventType
     PauseGraph = 4, // 暂停整个动画图
     SetWeight = 5, // 调整动画的融合权重
     SetLayer = 6, // 调整动画的渲染层级
+    SetAction = 7, // 切换模型动作
 }
 }

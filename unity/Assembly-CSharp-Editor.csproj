@@ -324,6 +324,12 @@
     <Reference Include="Unity.VisualScripting.YamlDotNet">
       <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.8.0\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Burst.Unsafe">
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.burst@1.6.6\Unity.Burst.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst.Cecil.Mdb">
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.burst@1.6.6\Unity.Burst.CodeGen\Unity.Burst.Cecil.Mdb.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
       <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.8.0\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
     </Reference>
@@ -333,11 +339,20 @@
     <Reference Include="Wjybxx.Commons.Poet">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Commons.Poet.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Burst.Cecil.Pdb">
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.burst@1.6.6\Unity.Burst.CodeGen\Unity.Burst.Cecil.Pdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst.Cecil">
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.burst@1.6.6\Unity.Burst.CodeGen\Unity.Burst.Cecil.dll</HintPath>
+    </Reference>
     <Reference Include="log4netPlastic">
       <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.0.5\Lib\Editor\PlasticSCM\log4netPlastic.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.8.0\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst.Cecil.Rocks">
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.burst@1.6.6\Unity.Burst.CodeGen\Unity.Burst.Cecil.Rocks.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
@@ -735,11 +750,20 @@
     <Reference Include="Unity.2D.Tilemap.Extras">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.2D.Animation.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Animation.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.InternalAPIEngineBridge.001">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.InternalAPIEngineBridge.001.dll</HintPath>
+    </Reference>
     <Reference Include="Wjybxx.Dson.Codec">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VSCode.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VSCode.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="PsdPlugin">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\PsdPlugin.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.TextMeshPro.Editor.dll</HintPath>
@@ -759,8 +783,17 @@
     <Reference Include="Unity.VisualScripting.State.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.State.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Burst.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Burst.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.IK.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.IK.Editor.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.Psdimporter.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Psdimporter.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Dson.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
@@ -777,17 +810,32 @@
     <Reference Include="Unity.2D.Tilemap.Extras.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.InternalAPIEditorBridge.001">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.InternalAPIEditorBridge.001.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VisualScripting.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Commons.Concurrent">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Concurrent.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.IK.Runtime">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.IK.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Wjybxx.Commons.Inject">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Inject.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Burst">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Burst.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VisualScripting.Shared.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.Animation.Runtime">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Animation.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Disruptor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Disruptor.dll</HintPath>
@@ -801,11 +849,20 @@
     <Reference Include="Wjybxx.BTree.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Mathematics.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Mathematics.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.Common.Runtime">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Common.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Wjybxx.Commons.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Logger.Unity">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Logger.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.Common.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Common.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.State">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
@@ -831,6 +888,10 @@
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
       <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
       <Name>Wjybxx.BigCat.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="Unity.2D.Sprite.Editor.csproj">
+      <Project>{9c2f54bc-6fb1-78ca-4f17-6404f842d8e3}</Project>
+      <Name>Unity.2D.Sprite.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>

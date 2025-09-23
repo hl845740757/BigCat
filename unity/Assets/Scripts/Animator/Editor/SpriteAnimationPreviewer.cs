@@ -31,13 +31,13 @@ namespace Wjybxx.BigCat.AnimatorEditor
 /// 如果是自定义Window，可以在<see cref="EditorWindow.Update"/>方法中调用该对象的Update；
 /// 如果是普通的InspectorGUI，可以在<see cref="Editor.OnInspectorGUI"/>方法中调用该对象的Update。
 /// </summary>
-public class FrameAnimationPreviewer
+public class SpriteAnimationPreviewer
 {
-    private FrameAnimationClip _clip;
+    private SpriteAnimationClip _clip;
     private SpriteRenderer _renderer;
     private PlayState _playState;
     private SpriteDrawMode _drawMode;
-    private int _orderInLayer; // 不同步
+    private int _orderInLayer; // 不同步给Follower
     private bool _flipX;
     private bool _flipY;
     private bool _loop = true;
@@ -57,9 +57,12 @@ public class FrameAnimationPreviewer
     /// <summary>
     /// 随同播放器
     /// </summary>
-    private readonly List<FrameAnimationPreviewer> followers = new();
+    private readonly List<SpriteAnimationPreviewer> followers = new();
 
-    public FrameAnimationPreviewer(FrameAnimationClip clip) {
+    public SpriteAnimationPreviewer() {
+    }
+
+    public SpriteAnimationPreviewer(SpriteAnimationClip clip) {
         _clip = clip;
     }
 
@@ -127,12 +130,12 @@ public class FrameAnimationPreviewer
             return;
         }
         float revisedTime = _time + (_startFrame > 0 ? _timeStamps[_startFrame - 1] : 0);
-        if (revisedTime + 0.01f >= _timeStamps[_endFrame]) {
+        if (revisedTime + _deltaTime >= _timeStamps[_endFrame]) {
             // 达到结束帧，判断是否重新开始 - 不跳帧
             if (_loop) {
                 _time = 0;
                 _frameIndex = _startFrame;
-                _renderer.sprite = _clip.frames[_frameIndex].sprite;
+                SetSprite(_frameIndex);
             } else {
                 _time = _duration;
             }
@@ -142,12 +145,30 @@ public class FrameAnimationPreviewer
             // 判断是否进入下一帧
             if (revisedTime >= _timeStamps[_frameIndex]) {
                 _frameIndex++;
-                _renderer.sprite = _clip.frames[_frameIndex].sprite;
+                SetSprite(_frameIndex);
             }
         }
-        foreach (FrameAnimationPreviewer follower in followers) {
+        foreach (SpriteAnimationPreviewer follower in followers) {
             follower.Update();
         }
+    }
+
+    private void SetSprite(int frameIndex) {
+        SpriteAnimationFrame frame = _clip[frameIndex];
+        _renderer.sprite = frame.sprite;
+
+        Vector2 offset = frame.offset;
+        float rotation = frame.rotation;
+        if (_flipX) {
+            offset.x *= -1;
+            rotation *= -1;
+        }
+        if (_flipY) {
+            offset.y *= -1;
+            rotation *= -1;
+        }
+        _renderer.transform.localPosition = offset;
+        _renderer.transform.localRotation = Quaternion.Euler(0, 0, rotation);
     }
 
     private int FindFrame(float time) {
@@ -183,7 +204,7 @@ public class FrameAnimationPreviewer
         _timeStamps.Clear();
         _timeStamps.EnsureCapacity(_clip.FrameCount);
         for (int index = 0; index < _clip.frames.Length; index++) {
-            AnimationFrame frame = _clip.frames[index];
+            SpriteAnimationFrame frame = _clip.frames[index];
             if (index == 0) {
                 _timeStamps.Add(frame.duration);
             } else {
@@ -207,10 +228,10 @@ public class FrameAnimationPreviewer
         if (prevState == PlayState.Stopped) {
             _time = 0;
             _frameIndex = _startFrame;
-            _renderer.sprite = _clip.frames[_frameIndex].sprite;
+            SetSprite(_frameIndex);
         }
         // SceneView.RepaintAll();
-        foreach (FrameAnimationPreviewer follower in followers) {
+        foreach (SpriteAnimationPreviewer follower in followers) {
             follower.Play();
         }
     }
@@ -222,7 +243,7 @@ public class FrameAnimationPreviewer
         if (_playState == PlayState.Playing) {
             _playState = PlayState.Paused;
         }
-        foreach (FrameAnimationPreviewer follower in followers) {
+        foreach (SpriteAnimationPreviewer follower in followers) {
             follower.Pause();
         }
     }
@@ -234,7 +255,8 @@ public class FrameAnimationPreviewer
         _playState = PlayState.Stopped;
         _time = 0; // 时间还是重置更好
         _frameIndex = _startFrame;
-        foreach (FrameAnimationPreviewer follower in followers) {
+        SetSprite(_frameIndex);
+        foreach (SpriteAnimationPreviewer follower in followers) {
             follower.Stop();
         }
     }
@@ -242,7 +264,7 @@ public class FrameAnimationPreviewer
     /// <summary>
     /// 更改clip会停止动画播放
     /// </summary>
-    public FrameAnimationClip Clip {
+    public SpriteAnimationClip Clip {
         get => _clip;
         set {
             if (_clip == value) {
@@ -299,13 +321,13 @@ public class FrameAnimationPreviewer
     /// <summary>
     /// 所有的跟随播放器
     /// </summary>
-    public List<FrameAnimationPreviewer> Followers => followers;
+    public List<SpriteAnimationPreviewer> Followers => followers;
 
     /// <summary>
     /// 添加一个跟随播放器
     /// </summary>
     /// <param name="follower"></param>
-    public void AddFollower(FrameAnimationPreviewer follower) {
+    public void AddFollower(SpriteAnimationPreviewer follower) {
         followers.Add(follower);
         SyncSetting(follower);
     }
@@ -314,7 +336,7 @@ public class FrameAnimationPreviewer
     /// 删除跟随播放器
     /// </summary>
     /// <param name="follower"></param>
-    public void RemoveFollower(FrameAnimationPreviewer follower) {
+    public void RemoveFollower(SpriteAnimationPreviewer follower) {
         followers.Remove(follower);
     }
 
@@ -329,7 +351,7 @@ public class FrameAnimationPreviewer
         _duration = 0;
         _frameIndex = 0;
         // 同步停止
-        foreach (FrameAnimationPreviewer follower in followers) {
+        foreach (SpriteAnimationPreviewer follower in followers) {
             follower.ResetPlayState();
         }
     }
@@ -343,13 +365,17 @@ public class FrameAnimationPreviewer
             _renderer.sortingOrder = _orderInLayer;
             _renderer.flipX = _flipX;
             _renderer.flipY = _flipY;
+            //
+            if (_clip && _frameIndex < _clip.FrameCount) {
+                SetSprite(_frameIndex);
+            }
         }
-        foreach (FrameAnimationPreviewer follower in followers) {
+        foreach (SpriteAnimationPreviewer follower in followers) {
             SyncSetting(follower);
         }
     }
 
-    private void SyncSetting(FrameAnimationPreviewer follower) {
+    private void SyncSetting(SpriteAnimationPreviewer follower) {
         follower._drawMode = _drawMode;
         follower._flipX = _flipX;
         follower._flipY = _flipY;
@@ -370,9 +396,9 @@ public class FrameAnimationPreviewer
         }
         _time = time;
         _frameIndex = FindFrame(time);
-        _renderer.sprite = _clip.frames[_frameIndex].sprite;
+        SetSprite(_frameIndex);
         //
-        foreach (FrameAnimationPreviewer follower in followers) {
+        foreach (SpriteAnimationPreviewer follower in followers) {
             follower.SetPlayTime(time);
         }
     }
