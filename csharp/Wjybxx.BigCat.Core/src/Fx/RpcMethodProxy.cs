@@ -35,7 +35,7 @@ public interface RpcMethodInvoker
     ///
     /// 注：不能传入<see cref="RpcRequest"/>对象，否则不能兼容自定义协议。
     /// </summary>
-    void Invoke(S2SRpcClient rpcClient, long sessionId, WorkerAddr srcAddr,
+    void Invoke(RpcClientImpl rpcClient, long sessionId, WorkerAddr srcAddr,
                 long requestId, int serviceId, int methodId, int invokeType,
                 object parameter);
 }
@@ -52,7 +52,7 @@ public sealed class RpcMethodInvoker<T> : RpcMethodInvoker
         this.proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
     }
 
-    public void Invoke(S2SRpcClient rpcClient, long sessionId, WorkerAddr srcAddr,
+    public void Invoke(RpcClientImpl rpcClient, long sessionId, WorkerAddr srcAddr,
                        long requestId, int serviceId, int methodId, int invokeType,
                        object parameter) {
         RpcContext<T> context = new RpcContext<T>(rpcClient, sessionId, srcAddr, requestId, serviceId, methodId, invokeType);

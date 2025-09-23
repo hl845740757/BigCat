@@ -63,15 +63,14 @@ public class SstGenerator : ISheetProcessor
     /// Location到SST的索引文件
     ///
     /// 1.二进制，运行时需要
-    /// 2.int => int
+    /// 2.locationId => ssti
     /// </summary>
     public const string FILE_LSST_INDEX = "lsst.index";
     /// <summary>
-    /// 共享字符串数据库，按分区存储
-    /// 
-    /// 文件名规则：<code>sst.db.0 sst.db.1 ...</code>
+    /// 共享字符串数据库
+    ///
     /// 1.二进制，运行时需要
-    /// 2.文件内字符串id递增
+    /// 2.不再分区存储，意义不大
     /// </summary>
     public const string FILE_SST_DB = "sst.db";
 
@@ -81,7 +80,7 @@ public class SstGenerator : ISheetProcessor
 
     private readonly LinkedDictionary<Location, int> locationMap = new(1000);
     private readonly LinkedDictionary<int, int> indexMap = new(1000);
-    private readonly List<Partition> partitions;
+    private readonly LinkedDictionary<string, Item> itemMap = new(10000);
     private readonly StringBuilder _sb = new StringBuilder(64);
 
     /// <summary>
@@ -90,31 +89,22 @@ public class SstGenerator : ISheetProcessor
     /// <param name="repository">要处理的表格</param>
     /// <param name="workDir">sst文件所在目录</param>
     /// <param name="rebuild">是否是重新构建sst数据库文件</param>
-    /// <param name="partitionCount">sst文件分区数量</param>
-    public SstGenerator(SheetRepository repository, string workDir, bool rebuild = false, int partitionCount = 10) {
+    public SstGenerator(SheetRepository repository, string workDir, bool rebuild = false) {
         _repository = repository;
         _workDir = workDir;
         _rebuild = rebuild;
-
-        partitions = new List<Partition>(partitionCount);
-        for (int i = 0; i < partitionCount; i++) {
-            partitions.Add(new Partition(i));
-        }
     }
 
     public void Execute() {
         if (_rebuild) {
             File.Delete(_workDir + "/" + FILE_LSST_INDEX);
-            string[] filePaths = Directory.GetFiles(_workDir, FILE_SST_DB + ".*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in filePaths) {
-                File.Delete(filePath);
-            }
+            File.Delete(_workDir + "/" + FILE_SST_DB);
         }
         if (!Directory.Exists(_workDir)) {
             Directory.CreateDirectory(_workDir);
         }
         LoadLocation();
-        LoadPartitions();
+        LoadSst();
         LoadIndex();
 
         List<Header> headers = new List<Header>(10);
@@ -137,7 +127,7 @@ public class SstGenerator : ISheetProcessor
         }
 
         SaveLocation();
-        SavePartitions();
+        SaveSst();
         SaveIndex();
     }
 
@@ -318,18 +308,6 @@ public class SstGenerator : ISheetProcessor
     /// 字符串小于多少个字节时预加载
     /// </summary>
     private const int PRELOAD_THRESHOLD = 16;
-    /// <summary>
-    /// 每个分区的最大文本数量
-    /// 每张表应该不至于超过10W个文本...
-    /// </summary>
-    private const int PARTITION_FACTOR = 10_0000;
-
-    private static int MakeGuid(int partition, int value) {
-        if (value >= PARTITION_FACTOR) {
-            throw new ArgumentException("overflow: " + value);
-        }
-        return partition * PARTITION_FACTOR + value;
-    }
 
     /// <summary>
     /// 我们调整了算法，DB里保存CellId，这样可以让同一个单元格多条数据的id相邻，可读性更好。
@@ -357,21 +335,19 @@ public class SstGenerator : ISheetProcessor
     }
 
     private int AddInternString(string value) {
-        int idx = string.IsNullOrEmpty(value) ? 0 : Math.Abs(value.GetHashCode()) % partitions.Count;
-        Partition partition = partitions[idx];
-        if (partition.itemMap.TryGetValue(value, out Item item)) {
+        if (itemMap.TryGetValue(value, out Item item)) {
             return item.ssti;
         }
         int ssti;
-        if (partition.itemMap.Count == 0) {
-            ssti = MakeGuid(partition.id, partition.itemMap.Count + 1); // 1开始，避免尾部全0
+        if (itemMap.Count == 0) {
+            ssti = 1;
         } else {
-            Item last = partition.itemMap.PeekLast().Value;
+            Item last = itemMap.PeekLast().Value;
             ssti = last.ssti + 1;
         }
         bool preload = string.IsNullOrEmpty(value) || Encoding.UTF8.GetByteCount(value) <= PRELOAD_THRESHOLD;
         item = new Item(ssti, preload, value);
-        partition.itemMap.Add(value, item);
+        itemMap.Add(value, item);
         return ssti;
     }
 
@@ -446,63 +422,46 @@ public class SstGenerator : ISheetProcessor
         }
     }
 
-    private void LoadPartitions() {
+    private void LoadSst() {
         byte[] buffer = new byte[BUFFER_LENGTH];
-        foreach (Partition partition in partitions) {
-            string filePath = _workDir + "/" + partition.fileName;
-            if (!File.Exists(filePath)) {
-                continue;
-            }
-            using (FileStream fileStream = File.OpenRead(filePath)) {
-                while (fileStream.Position < fileStream.Length) {
-                    // [ssti, preload, len, data]
-                    _ = fileStream.Read(buffer, 0, 4 + 1 + 2);
-                    int ssti = ByteBufferUtil.GetInt32LE(buffer, 0);
-                    bool preload = ByteBufferUtil.GetByte(buffer, 4) == 1;
-                    int len = ByteBufferUtil.GetInt16LE(buffer, 4 + 1);
-                    if (len > buffer.Length) {
-                        throw new AssertionError();
-                    }
-                    _ = fileStream.Read(buffer, 0, len);
-                    string value = Encoding.UTF8.GetString(buffer, 0, len);
-                    partition.itemMap[value] = new Item(ssti, preload, value);
+        string filePath = _workDir + "/" + FILE_SST_DB;
+        if (!File.Exists(filePath)) {
+            return;
+        }
+        using (FileStream fileStream = File.OpenRead(filePath)) {
+            while (fileStream.Position < fileStream.Length) {
+                // [ssti, preload, len, data]
+                _ = fileStream.Read(buffer, 0, 4 + 1 + 2);
+                int ssti = ByteBufferUtil.GetInt32LE(buffer, 0);
+                bool preload = ByteBufferUtil.GetByte(buffer, 4) == 1;
+                int len = ByteBufferUtil.GetInt16LE(buffer, 4 + 1);
+                if (len > buffer.Length) {
+                    throw new AssertionError();
                 }
+                _ = fileStream.Read(buffer, 0, len);
+                string value = Encoding.UTF8.GetString(buffer, 0, len);
+                itemMap[value] = new Item(ssti, preload, value);
             }
         }
     }
 
-    private void SavePartitions() {
+    private void SaveSst() {
         byte[] buffer = new byte[BUFFER_LENGTH];
-        foreach (Partition partition in partitions) {
-            string filePath = _workDir + "/" + partition.fileName;
-            using (FileStream fileStream = File.OpenWrite(filePath)) {
-                foreach (Item item in partition.itemMap.Values) {
-                    // [ssti, preload, len, data]
-                    ByteBufferUtil.SetInt32LE(buffer, 0, item.ssti);
-                    ByteBufferUtil.SetByte(buffer, 4, item.preload ? (byte)1 : (byte)0);
+        string filePath = _workDir + "/" + FILE_SST_DB;
+        using (FileStream fileStream = File.OpenWrite(filePath)) {
+            foreach (Item item in itemMap.Values) {
+                // [ssti, preload, len, data]
+                ByteBufferUtil.SetInt32LE(buffer, 0, item.ssti);
+                ByteBufferUtil.SetByte(buffer, 4, item.preload ? (byte)1 : (byte)0);
 
-                    int len = Encoding.UTF8.GetBytes(item.value, 0, item.value.Length, buffer, 7);
-                    ByteBufferUtil.SetInt16LE(buffer, 5, (short)len);
-                    fileStream.Write(buffer, 0, 7 + len);
-                }
+                int len = Encoding.UTF8.GetBytes(item.value, 0, item.value.Length, buffer, 7);
+                ByteBufferUtil.SetInt16LE(buffer, 5, (short)len);
+                fileStream.Write(buffer, 0, 7 + len);
             }
         }
     }
 
     #endregion
-
-    private readonly struct Partition
-    {
-        public readonly int id;
-        public readonly string fileName;
-        public readonly LinkedDictionary<string, Item> itemMap;
-
-        public Partition(int id) {
-            this.id = id;
-            this.fileName = FILE_SST_DB + "." + id;
-            this.itemMap = new(1000);
-        }
-    }
 
     private readonly struct Item
     {

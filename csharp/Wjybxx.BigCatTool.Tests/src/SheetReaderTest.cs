@@ -125,17 +125,15 @@ public class SheetReaderTest
         if (!Directory.Exists(sstDir)) {
             Directory.CreateDirectory(sstDir);
         }
-        List<string> fileList = new List<string>(11);
-        fileList.Add(sstDir + "/" + SstGenerator.FILE_LSST_INDEX);
-        fileList.AddRange(Directory.GetFiles(sstDir, SstGenerator.FILE_SST_DB + ".*"));
-        SstMgr.Init(fileList);
+        string indexFile = sstDir + "/" + SstGenerator.FILE_LSST_INDEX;
+        SstMgr.Init(Directory.GetFiles(sstDir, SstGenerator.FILE_SST_DB + ".*"), indexFile);
 
         string str1 = SstMgr.GetString(21);
         string str2 = SstMgr.GetString(22);
         Console.WriteLine("str1: " + str1);
         Console.WriteLine("str2: " + str2);
-        Console.WriteLine("ReferenceEquals:"  + ReferenceEquals(str1, str2));
-        
+        Console.WriteLine("ReferenceEquals:" + ReferenceEquals(str1, str2));
+
         // Console.WriteLine(SstMgr.GetString(11)); // 预加载的字符串
         // Console.WriteLine(SstMgr.GetString(201)); // 延迟加载的字符串
     }

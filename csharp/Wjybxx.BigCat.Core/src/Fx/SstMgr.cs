@@ -134,16 +134,15 @@ public static class SstMgr
     /// 初始化共享字符串表，必须在游戏初始化流程时调用
     /// 由于版本更新机制，SST文件可能不在同一个物理目录，所以由用户收集所有文件后传入该方法。
     /// </summary>e
-    /// <param name="files">sst目录下的文件</param>
-    public static void Init(List<string> files) {
+    /// <param name="sstFiles">共享字符串表文件</param>
+    /// <param name="indexFile">索引文件</param>
+    public static void Init(IEnumerable<string> sstFiles, string indexFile) {
         // 读取sst.db文件
         Dictionary<int, Item> sstStringMap = new Dictionary<int, Item>(1000);
-        foreach (string file in files) {
-            if (file.EndsWith(".index")) continue;
+        foreach (string file in sstFiles) {
             ReadSstMetaInfo(sstStringMap, file);
         }
         // 读取索引文件 -- 对索引文件进行排序，让相同ssti的字段集中在一起
-        string indexFile = files.First(e => e.EndsWith(".index"));
         KeyValuePair<int, int>[] sortedIndexMap = ReadIndexMap(indexFile).ToArray();
         Array.Sort(sortedIndexMap, (a, b) => {
             int r = a.Value.CompareTo(b.Value);

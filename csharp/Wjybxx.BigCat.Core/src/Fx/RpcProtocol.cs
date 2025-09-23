@@ -46,7 +46,7 @@ public abstract class RpcProtocol
     /// 2.bytes 表示已经序列化；TODO 改为Bytebuf
     /// 3.null 表示无参数和结果，或是用户的参数和结果为null；在写入最终协议时需要区分
     /// 4.string 表示错误信息
-    /// 5.结构 表示正常的参数和结构
+    /// 5.结构 表示正常的参数和结果
     /// </summary>
     protected object data;
     /// <summary>
