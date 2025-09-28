@@ -107,7 +107,7 @@ public class SpriteGroupEditor : Editor
         HashSet<Sprite> spriteSet = new HashSet<Sprite>(_group.sprites);
         List<Sprite> tempSprites = new(10);
 
-        // 目录变更不一定需要清理引用，因为关联的文件可能也在目录下，但需要清理不在目录下的文件
+        // 目录变更不一定需要清理引用，因为关联的文件可能仍在目录下，但需要清理不在目录下的文件
         string groupAssetDir = AssetDatabase.GetAssetPath(_group);
         groupAssetDir = groupAssetDir.Substring(0, groupAssetDir.LastIndexOf('/'));
         for (int index = 0; index < _group.sprites.Length; index++) {

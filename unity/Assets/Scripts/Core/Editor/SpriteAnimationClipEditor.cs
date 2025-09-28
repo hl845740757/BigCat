@@ -17,10 +17,10 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Animator;
+using Wjybxx.BigCat.CoreEditor.Core.Editor;
 using Wjybxx.BigCat.UnityCore;
 using Wjybxx.Commons;
 using Object = UnityEngine.Object;
@@ -43,19 +43,12 @@ public class SpriteAnimationClipEditor : Editor
 
     private bool _imagesFoldout = true;
     private Vector2 _imagesScrollPos;
-    private bool _eventsFoldout = false;
-    private Vector2 _eventsScrollPos;
-
     private GUILayoutOption[] scrollOptions;
     private GUILayoutOption[] _width150;
     private GUILayoutOption[] _width100;
     private GUILayoutOption[] _width20;
     //
     private readonly GUIContent _pooledLabel = new GUIContent();
-
-    private static readonly string[] _searchFolders = new[] { "Assets/Resources/Sprites", "Assets/Sprites" };
-    private static readonly Dictionary<string, SpriteGroup> _nameToSpriteGroup = new();
-    private static double lastSearchTime;
 
     private GUIContent PooledLabel() => _pooledLabel.Reset();
 
@@ -425,86 +418,16 @@ public class SpriteAnimationClipEditor : Editor
     #region SelectSprite
 
     private void OnClickSelectSpriteGroup(SpriteAnimationFrame frame) {
-        SpriteGroup spriteGroup = LoadSpriteGroup(frame.spritePath.groupPath);
-        string groupAssetFolder = spriteGroup ? UnityHelper.GetAssetFolderPath(spriteGroup) : _searchFolders[0];
-        string filePath = EditorUtility.OpenFilePanel("选择SpriteGroup", groupAssetFolder, "asset");
-        if (string.IsNullOrEmpty(filePath)) {
-            return;
-        }
-        string assetPath = UnityHelper.ConvertToAssetPath(filePath);
-        spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
-        if (spriteGroup) {
-            frame.spritePath.groupPath = spriteGroup.preferName ? spriteGroup.name : assetPath;
-        } else {
-            frame.spritePath.groupPath = null;
-        }
-        if (frame.spritePath.index >= 0) {
-            frame.sprite = LoadSprite(frame.spritePath);
-        }
+        SpritePathEditor.OnClickSelectSpriteGroup(ref frame.spritePath);
+        LoadSprite(frame.spritePath);
     }
 
     private void OnClickSelectSprite(SpriteAnimationFrame frame) {
-        SpriteGroup spriteGroup = LoadSpriteGroup(frame.spritePath.groupPath);
-        if (!spriteGroup) {
-            return;
-        }
-        string groupAssetFolder = spriteGroup ? UnityHelper.GetAssetFolderPath(spriteGroup) : _searchFolders[0];
-        string filePath = EditorUtility.OpenFilePanel("选择图片", groupAssetFolder, "png");
-        if (string.IsNullOrEmpty(filePath)) {
-            return;
-        }
-        string assetPath = UnityHelper.ConvertToAssetPath(filePath);
-        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
-        if (sprite) {
-            frame.spritePath.index = spriteGroup.IndexOf(sprite.name);
-        } else {
-            frame.spritePath.index = -1;
-        }
-    }
-
-    private static SpriteGroup LoadSpriteGroup(string groupPath) {
-        if (string.IsNullOrWhiteSpace(groupPath)) {
-            return null;
-        }
-        if (groupPath.LastIndexOf('.') > 0) { // 路径引用
-            return AssetDatabase.LoadAssetAtPath<SpriteGroup>(groupPath);
-        }
-        // name引用
-        string assetName = groupPath;
-        if (_nameToSpriteGroup.TryGetValue(assetName, out SpriteGroup spriteGroup)) {
-            if (spriteGroup && assetName == spriteGroup.name) {
-                return spriteGroup;
-            }
-            _nameToSpriteGroup.Remove(assetName);
-        }
-        // 避免频繁检索资源
-        if (Time.realtimeSinceStartup - lastSearchTime < 1) {
-            return null;
-        }
-        lastSearchTime = Time.realtimeSinceStartup;
-        foreach (string guid in AssetDatabase.FindAssets("t:SpriteGroup", _searchFolders)) {
-            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-            spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
-            if (!spriteGroup) {
-                continue;
-            }
-            if (spriteGroup.preferName) {
-                _nameToSpriteGroup[spriteGroup.name] = spriteGroup;
-            }
-        }
-        _nameToSpriteGroup.TryGetValue(assetName, out spriteGroup);
-        return spriteGroup;
+        SpritePathEditor.OnClickSelectSprite(ref frame.spritePath);
     }
 
     private static Sprite LoadSprite(SpritePath spritePath) {
-        if (spritePath.IsEmpty) {
-            return null;
-        }
-        SpriteGroup spriteGroup = LoadSpriteGroup(spritePath.groupPath);
-        if (spriteGroup) {
-            return spriteGroup.GetSprite(spritePath.index);
-        }
-        return null;
+        return SpritePathEditor.LoadSprite(spritePath);
     }
 
     #endregion

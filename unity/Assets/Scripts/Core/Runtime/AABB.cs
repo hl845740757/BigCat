@@ -74,7 +74,7 @@ public struct AABB
     /// <summary>
     /// 底部中心点
     /// </summary>
-    public Vector3 BottomCenter {
+    public Vector3 Bottom {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
             float x = (min.x + max.x) / 2;
@@ -91,6 +91,8 @@ public struct AABB
 
     /// <summary>
     /// Cube大小
+    ///
+    /// 注意：修改min和max会影响size，因此以min+size模式使用AABB时要小心。
     /// </summary>
     public Vector3 Size {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -225,7 +227,7 @@ public struct AABB
     /// <param name="bottom"></param>
     /// <param name="size"></param>
     /// <returns></returns>
-    public static AABB OfBottomCenter(Vector3 bottom, Vector3 size) {
+    public static AABB OfBottom(Vector3 bottom, Vector3 size) {
         float minX = bottom.x - size.x / 2;
         float minZ = bottom.z - size.z / 2;
         float minY = bottom.y;

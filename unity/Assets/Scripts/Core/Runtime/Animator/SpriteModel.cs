@@ -45,7 +45,7 @@ public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiv
     ///
     /// 注：
     /// 1.将Body相关的部件归属在同一组，使得我们可以按组切换模型动作。
-    /// 2.角色通常划分为两组：Body + 武器。
+    /// 2.角色通常可划分为三组：Body + 武器 + 其它。
     /// </summary>
     [Tooltip("部件所属的组，建议角色Body相关的部件归属在同一组")]
     public int partGroupId;

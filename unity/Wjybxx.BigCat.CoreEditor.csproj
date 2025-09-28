@@ -53,6 +53,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationPreviewer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteGroupEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpritePathEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteModelEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\StringEnumPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\AABBEditor.cs" />

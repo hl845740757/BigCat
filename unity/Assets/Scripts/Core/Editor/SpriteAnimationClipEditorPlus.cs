@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Animator;
+using Wjybxx.BigCat.UnityCore;
 using Object = System.Object;
 
 namespace Wjybxx.BigCat.AnimatorEditor
@@ -161,6 +162,7 @@ public class SpriteAnimationClipEditorPlus : EditorWindow
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("同步序列")) {
             SyncFrameSprite();
+            GUIUtility.ExitGUI(); // 打开新窗口，中断当前GUI
         }
         if (GUILayout.Button("同步帧长")) {
             SyncFrameInterval();
@@ -293,14 +295,27 @@ public class SpriteAnimationClipEditorPlus : EditorWindow
 
     private void SyncFrameSprite() {
         if (_syncList.Count <= 1) return;
+        const string message = "该操作将同步第一个动画的帧序信息到其它模型，确定同步吗？";
+        if (!EditorUtility.DisplayDialog("二次确认", message, "确定", "取消")) {
+            return;
+        }
         SpriteAnimationClip baseClip = _syncList[0];
         for (int index = 1; index < _syncList.Count; index++) {
-            SpriteAnimationClip animationClip = _syncList[index];
-            if (animationClip) {
+            SpriteAnimationClip animClip = _syncList[index];
+            if (!animClip || animClip == baseClip) {
                 continue;
             }
-            SpriteAnimationClip.SyncFrameOrder(baseClip, animationClip);
-            EditorUtility.SetDirty(animationClip);
+            string groupPath = EditorUtility.OpenFilePanel("选择SpriteGroup：" + animClip.name, "", "asset");
+            if (string.IsNullOrWhiteSpace(groupPath)) {
+                continue;
+            }
+            groupPath = UnityHelper.ConvertToAssetPath(groupPath);
+            SpriteGroup spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(groupPath);
+            if (spriteGroup) {
+                groupPath = spriteGroup.preferName ? spriteGroup.name : AssetDatabase.GetAssetPath(spriteGroup);
+                SpriteAnimationClip.SyncFrameOrder(baseClip, animClip, groupPath);
+                EditorUtility.SetDirty(animClip);
+            }
         }
     }
 

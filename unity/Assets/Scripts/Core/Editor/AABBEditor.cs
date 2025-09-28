@@ -50,7 +50,7 @@ public class AABBEditor : PropertyDrawer
         SerializedProperty pMax = property.FindPropertyRelative("max");
         AABB aabb = new AABB(pMin.vector3Value, pMax.vector3Value);
 
-        // 功能按钮 - rect的position是中心点，计算下一个矩形框时，按width的一半计算偏移; TODO 右对齐
+        // 功能按钮 - Rect的xy是minX和minY...
         Rect modeRect = new Rect(position.x + 150, position.y, 100, EditorGUIUtility.singleLineHeight);
         _mode = EditorGUI.IntPopup(modeRect, _mode, _modeDisplay, _modeValues);
 
@@ -80,7 +80,7 @@ public class AABBEditor : PropertyDrawer
                 break;
             }
             case 3: {
-                aabb.BottomCenter = EditorGUI.Vector3Field(minRect, "Bottom", aabb.BottomCenter);
+                aabb.Bottom = EditorGUI.Vector3Field(minRect, "Bottom", aabb.Bottom);
                 aabb.Size = EditorGUI.Vector3Field(maxRect, "Size", aabb.Size);
                 break;
             }

@@ -34,7 +34,7 @@ namespace Wjybxx.BigCatTool.DataScript
 {
 /// <summary>
 /// 
-/// 注意：与DS的仓库不同，我们的数据脚本顶层有Inst类型，而Inst的名字可以和其它元素重复。
+/// 注意：与PB的仓库不同，我们的数据脚本顶层有Inst类型，而Inst的名字可以和类型元素重复。
 /// </summary>
 public sealed class DSRepository
 {
@@ -498,6 +498,11 @@ public sealed class DSRepository
     #region Resolve-DsonTypeName
 
     /// <summary>
+    /// 开放字段，允许用户手动修正冲突
+    /// </summary>
+    public Dictionary<string, DSNamedType> DsonAlias2TypeDic => dsonAlias2TypeDic;
+
+    /// <summary>
     /// 根据类型的序列化名字计算其真实类型
     ///
     /// 1.这里我们不验证作用域，因为Name通常来源于最终数据文件，而非DS文件。
@@ -640,9 +645,10 @@ public sealed class DSRepository
                 namedType.DsonAliases.Add(alias);
             }
         }
-        // 加入缓存 -- 冲突时抛异常
+        // 加入缓存 - 冲突可能只是暂时的：目标类型可能不会生成Dson数据
         foreach (string alias in namedType.DsonAliases) {
-            dsonAlias2TypeDic.Add(alias, namedType);
+            dsonAlias2TypeDic[alias] = namedType;
+            // dsonAlias2TypeDic.Add(alias, namedType);
         }
         // 此时都是泛型原型，无需延迟处理
         namedType.DsonTypeName = NameOfType(namedType);

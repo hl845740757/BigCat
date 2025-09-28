@@ -312,31 +312,22 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// </summary>
     /// <param name="source"></param>
     /// <param name="target"></param>
-    public static void SyncFrameOrder(SpriteAnimationClip source, SpriteAnimationClip target) {
+    /// <param name="groupPath">目标图组</param>
+    public static void SyncFrameOrder(SpriteAnimationClip source, SpriteAnimationClip target,
+                                      string groupPath) {
         if (source == target) {
             return;
         }
         if (source.FrameCount != target.FrameCount) {
             Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
         }
-        // 先建立索引，方便快速查询
-        Dictionary<string, SpriteAnimationFrame> frameDic = new();
-        foreach (SpriteAnimationFrame frame in target.frames) {
-            if (frame.sprite) {
-                frameDic.TryAdd(frame.sprite.name, frame);
-            }
+        target.FrameCount = source.FrameCount;
+        for (int index = 0; index < source.frames.Length; index++) {
+            SpriteAnimationFrame sourceFrame = source.frames[index];
+            SpriteAnimationFrame targetFrame = target[index];
+            targetFrame.spritePath.groupPath = groupPath;
+            targetFrame.spritePath.index = sourceFrame.spritePath.index;
         }
-        // 根据基础动画的图片名字重排序
-        List<SpriteAnimationFrame> frameList = new List<SpriteAnimationFrame>();
-        foreach (SpriteAnimationFrame sourceFrame in source.frames) {
-            if (sourceFrame.sprite && frameDic.TryGetValue(sourceFrame.sprite.name, out SpriteAnimationFrame frame)) {
-                frameList.Add(frame);
-            } else {
-                frameList.Add(default);
-            }
-        }
-        target.FrameCount = 0; // 先清理再批量添加的效率更好
-        target.AddFrames(frameList);
     }
 #endif
 }

@@ -5,7 +5,8 @@
         "Wjybxx.Commons.Core",
         "Wjybxx.Dson.Core",
         "Wjybxx.BitCat.UnityCore",
-        "Wjybxx.BigCat.Core"
+        "Wjybxx.BigCat.Core",
+        "Wjybxx.BigCatTool.Core"
     ],
     "includePlatforms": [
         "Editor"

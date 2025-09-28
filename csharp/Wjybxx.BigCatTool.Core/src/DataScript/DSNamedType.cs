@@ -74,9 +74,9 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     private readonly DSTypeKind _typeKind;
     /// <summary>
-    /// 基类的类型符号 -- 类型名是解析文本时解析的
+    /// 基类的类型符号
     /// (这里的基类名字可能尚不包含命名空间，延迟解析时需要根据Type查询命名空间)
-    /// (已去除空白字符)
+    /// (类型名是解析文本时解析的，已去除空白字符)
     /// </summary>
     private readonly string? _baseTypeSymbol;
     /// <summary>
@@ -84,7 +84,9 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     private DSNamedType? _baseType;
     /// <summary>
-    /// 类型的全名 -- 缓存值，不包含泛型参数
+    /// 类型的全限定名（包含文件名）
+    ///
+    /// 注：缓存值，不包含泛型参数；
     /// </summary>
     private readonly string _fullName;
 
@@ -115,7 +117,7 @@ public sealed class DSNamedType : DSTypeElement
     /// Dson序列化时的类型别名
     /// 
     /// 1.<see cref="DSAnnotations.CODEC"/>注解的缓存数据，避免频繁创建List。
-    /// 2.如果未显式指定，将被初始化为文件内的相对路径，<code>FileName.A.B.C => A.B.C</code>
+    /// 2.如果未显式指定，将被初始化为文件内的路径，<code>FileName.A.B.C => A.B.C</code>
     /// 3.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
     /// </summary>
     private readonly List<string> _dsonAliases = new();
