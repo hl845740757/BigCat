@@ -17,27 +17,23 @@
 #endregion
 
 using System;
-using UnityEngine;
-using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.UnityCore
 {
 /// <summary>
-/// 数据引用属性 -- <see cref="ObjectBucket"/>
+/// 对象重定向
 ///
-/// 注意：只可用于<see cref="ObjectPath"/>和List[ObjectPath]类型。
+/// 注：用于外部为目标定义别名的情况。
 /// </summary>
-[AttributeUsage(AttributeTargets.Field)]
-public sealed class ObjectReferenceAttribute : PropertyAttribute
+[Serializable]
+public struct ObjectRedir
 {
-    public readonly bool preferName;
+    public string name;
+    public UnityEngine.Object target;
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="preferName">是否name优先</param>
-    public ObjectReferenceAttribute(bool preferName = true) {
-        this.preferName = preferName;
+    public ObjectRedir(string name, UnityEngine.Object target) {
+        this.name = name;
+        this.target = target;
     }
 }
 }

@@ -50,7 +50,13 @@
     <Compile Include="Assets\Scripts\Core\Editor\MaskFieldPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\ReadOnlyPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\EnumFlagsPropertyDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationPreviewer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpriteGroupEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpriteModelEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\StringEnumPropertyDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\AABBEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditorPlus.cs" />
     <None Include="Assets\Scripts\Core\Editor\Wjybxx.BigCat.CoreEditor.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -736,6 +742,12 @@
     <Reference Include="System.Xml.XPath.XDocument">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\Facades\System.Xml.XPath.XDocument.dll</HintPath>
     </Reference>
+    <Reference Include="Wjybxx.Commons.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Dson.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.TestRunner">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
     </Reference>
@@ -747,6 +759,10 @@
     <ProjectReference Include="Wjybxx.BitCat.UnityCore.csproj">
       <Project>{c7f3146e-8144-eaa3-11d5-1273ca972b99}</Project>
       <Name>Wjybxx.BitCat.UnityCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
+      <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
+      <Name>Wjybxx.BigCat.Core</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>

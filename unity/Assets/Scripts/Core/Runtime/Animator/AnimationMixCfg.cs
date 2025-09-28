@@ -28,8 +28,8 @@ namespace Wjybxx.BigCat.Animator
 [Serializable]
 public sealed class AnimationMixCfg
 {
-    public string actionA;
-    public string actionB;
+    public string motionA;
+    public string motionB;
     public float weightA = 0.5f;
     public float weightB = 0.5f;
     public float crossFadeTime; // 过渡时间
@@ -37,14 +37,14 @@ public sealed class AnimationMixCfg
     public AnimationMixCfg() {
     }
 
-    public AnimationMixCfg(string actionA, string actionB) {
-        this.actionA = actionA;
-        this.actionB = actionB;
+    public AnimationMixCfg(string motionA, string motionB) {
+        this.motionA = motionA;
+        this.motionB = motionB;
     }
 
     public AnimationMixCfg(AnimationMixCfg src) {
-        this.actionA = src.actionA;
-        this.actionB = src.actionB;
+        this.motionA = src.motionA;
+        this.motionB = src.motionB;
         this.weightA = src.weightA;
         this.weightB = src.weightB;
         this.crossFadeTime = src.crossFadeTime;

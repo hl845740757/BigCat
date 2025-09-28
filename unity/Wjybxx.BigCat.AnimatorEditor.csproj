@@ -47,11 +47,6 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Animator\Editor\SpriteAnimationPreviewer.cs" />
-    <Compile Include="Assets\Scripts\Animator\Editor\SpriteModelEditor.cs" />
-    <Compile Include="Assets\Scripts\Animator\Editor\SpriteAnimationClipEditorPlus.cs" />
-    <Compile Include="Assets\Scripts\Animator\Editor\SpriteAnimationClipEditor.cs" />
-    <None Include="Assets\Scripts\Animator\Editor\Wjybxx.BigCat.AnimatorEditor.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
@@ -776,6 +771,9 @@
       <Project>{ff8527d1-008a-d49a-39ff-8369ade6a345}</Project>
       <Name>UnityEngine.UI</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Assets\Scripts\Animator\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

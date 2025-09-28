@@ -26,37 +26,35 @@ using Wjybxx.Commons;
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 序列帧动画资源抽象
+/// 序列帧动画数据抽象
 /// </summary>
 [CreateAssetMenu(menuName = "BigCat/SpriteAnimationClip", fileName = "NewAnimationClip")]
 public sealed class SpriteAnimationClip : ScriptableObject
 {
     /// <summary>
     /// 动画的帧数据
-    ///
-    /// 注：在运行时可以使用ref以避免拷贝。
     /// </summary>
-    [HideInInspector]
     public SpriteAnimationFrame[] frames = Array.Empty<SpriteAnimationFrame>();
+    /// <summary>
+    /// 动画事件
+    /// </summary>
+    public AnimationEvent[] events = Array.Empty<AnimationEvent>();
 
-    /// <summary>
-    /// 是否是图集动画
-    /// </summary>
-    [Tooltip("是否保存为Sprite文件的简单名，如果Sprite存储在SpriteAtlas中，则可以勾选")]
-    public bool saveAsSpriteName = true;
-    /// <summary>
-    /// 
-    /// </summary>
-    [Tooltip("动画融合的默认权重")]
-    public float weight;
     /// <summary>
     /// 动画总时长（缓存值）
     ///
     /// 注：运行时可调用<see cref="RefreshDuration"/>确保缓存值的正确性。
     /// </summary>
-    [Tooltip("动画总时长缓存")]
     [ReadOnly]
     public float duration;
+    /// <summary>
+    /// 是否循环播放
+    /// </summary>
+    public bool loop = true;
+    /// <summary>
+    /// 动画融合的默认权重
+    /// </summary>
+    public float weight = 0.5f;
 
     //////////////////////////////////////////////////////////////
 
@@ -81,7 +79,12 @@ public sealed class SpriteAnimationClip : ScriptableObject
     public int FrameCount {
         get => frames.Length;
         set {
+            int preLength = frames.Length;
             Array.Resize(ref frames, value);
+            // 扩展数据时不可以为null
+            for (int index = preLength; index < value; index++) {
+                frames[index] = new SpriteAnimationFrame();
+            }
             RefreshDuration();
         }
     }
@@ -147,6 +150,9 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// </summary>
     /// <param name="index"></param>
     public void RemoveFrame(int index) {
+        if (index < 0 || index >= frames.Length) {
+            return;
+        }
         var frame = frames[index];
         ArrayUtil.RemoveAt(ref frames, index);
         duration -= frame.duration;
@@ -165,37 +171,37 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 设置所有帧的偏移
+    /// 设置所有帧的坐标
     /// </summary>
-    /// <param name="offset"></param>
-    public void SetFrameOffset(Vector2 offset) {
+    /// <param name="position"></param>
+    public void SetFramePosition(Vector2 position) {
         for (int index = 0; index < frames.Length; index++) {
             var frame = frames[index];
-            frames[index] = frame.WithOffset(offset);
+            frames[index] = frame.WithPosition(position);
         }
     }
 
     /// <summary>
-    /// 设置所有帧的偏移
+    /// 设置所有帧的坐标
     /// </summary>
-    /// <param name="offset"></param>
-    public void AddFrameOffset(Vector2 offset) {
+    /// <param name="position"></param>
+    public void AddFramePosition(Vector2 position) {
         for (int index = 0; index < frames.Length; index++) {
             var frame = frames[index];
-            frames[index] = frame.WithOffset(frame.offset + offset);
+            frames[index] = frame.WithPosition(frame.position + position);
         }
     }
 
     /// <summary>
-    /// 线性插值帧偏移
+    /// 线性插值帧坐标
     /// </summary>
-    /// <param name="offset"></param>
-    public void LerpFrameOffset(Vector2 offset) {
+    /// <param name="position"></param>
+    public void LerpFramePosition(Vector2 position) {
         if (frames.Length <= 1) return;
-        Vector2 baseOffset = frames[0].offset;
+        Vector2 baseOffset = frames[0].position;
         for (int index = 1; index < frames.Length; index++) {
             var frame = frames[index];
-            frames[index] = frame.WithOffset(baseOffset + offset * index);
+            frames[index] = frame.WithPosition(baseOffset + position * index);
         }
     }
 
@@ -237,7 +243,9 @@ public sealed class SpriteAnimationClip : ScriptableObject
 #if UNITY_EDITOR
     private void Reset() {
         frames = Array.Empty<SpriteAnimationFrame>();
+        events = Array.Empty<AnimationEvent>();
         duration = 0;
+        weight = 0.5f;
     }
 
     /// <summary>
@@ -262,11 +270,11 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 同步帧偏移
+    /// 同步帧坐标
     /// </summary>
     /// <param name="source"></param>
     /// <param name="target"></param>
-    public static void SyncFrameOffset(SpriteAnimationClip source, SpriteAnimationClip target) {
+    public static void SyncFramePosition(SpriteAnimationClip source, SpriteAnimationClip target) {
         if (source == target) {
             return;
         }
@@ -276,7 +284,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         int len = Mathf.Min(source.FrameCount, target.FrameCount);
         for (int i = 0; i < len; i++) {
             SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i] = target.frames[i].WithOffset(sourceFrame.offset);
+            target.frames[i] = target.frames[i].WithPosition(sourceFrame.position);
         }
     }
 

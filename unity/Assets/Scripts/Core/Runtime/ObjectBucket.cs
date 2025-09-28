@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wjybxx.Commons.Collections;
 
-namespace Wjybxx.BitCat.Core.Core.Runtime
+namespace Wjybxx.BigCat.UnityCore
 {
 /// <summary>
 /// 对象桶（用于存储任意的数据）
@@ -35,18 +35,20 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
 {
     /// <summary>
     /// 对象桶资产范畴
+    /// (int类型的表意不够)
     /// </summary>
-    public int category;
+    public string category;
     /// <summary>
-    /// 需要伴随加载的资产
+    /// 
     /// </summary>
-    public List<UnityEngine.Object> preloadAssets = new();
-
+    [Tooltip("是否可通过[name引用]代替[路径引用]，如果name具有唯一性，则可以勾选")]
+    public bool preferName;
     /// <summary>
     /// 最终序列化的数据
     /// </summary>
     [SerializeField]
     private List<ObjectBytes> bytesList = new List<ObjectBytes>();
+
     /// <summary>
     /// 字符串id到字节数组的缓存(保持插入序)
     /// </summary>
@@ -59,7 +61,7 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     /// <summary>
     /// name到Bytes的映射
     ///
-    /// 注：多个对象name相同时，后加载的数据覆盖前面的。
+    /// 注：命名的对象通常都是特殊对象，name通常唯一；当多个对象name相同时，后加载的数据覆盖前面的。
     /// </summary>
     public readonly Dictionary<string, ObjectBytes> name2BytesDic = new();
 
@@ -68,6 +70,7 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     }
 
     public void OnAfterDeserialize() {
+#if !UNITY_EDITOR
         id2BytesDic.Clear();
         numberId2BytesDic.Clear();
         name2BytesDic.Clear();
@@ -83,7 +86,7 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
                 if (numberId2BytesDic.Count == 0) {
                     numberId2BytesDic.EnsureCapacity(bytesList.Count);
                 }
-                numberId2BytesDic.Put(numberId, objectBytes); // 重复时覆盖
+                numberId2BytesDic.Add(numberId, objectBytes);
             }
             if (!string.IsNullOrWhiteSpace(objectBytes.name)) {
                 if (name2BytesDic.Count == 0) {
@@ -92,6 +95,7 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
                 name2BytesDic[objectBytes.name] = objectBytes; // 重复时覆盖
             }
         }
+#endif
     }
 }
 }

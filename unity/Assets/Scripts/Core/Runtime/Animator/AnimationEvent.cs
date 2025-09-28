@@ -17,8 +17,7 @@
 #endregion
 
 using System;
-using Wjybxx.Dson.Codec.Attributes;
-using Wjybxx.Dson.Types;
+using Wjybxx.BigCat.UnityCore;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -27,7 +26,7 @@ namespace Wjybxx.BigCat.Animator
 ///
 /// 注：如果使用Unity内置的序列化，需要使用ScriptableObject才能实现多态，我们并不想将事件数据存储在外部。
 /// </summary>
-[DsonSerializable]
+[Serializable]
 public sealed class AnimationEvent
 {
     public bool enabled = true; // 是否启用
@@ -38,8 +37,9 @@ public sealed class AnimationEvent
     public AnimationEventType type; // 事件类型
     public double doubleParameter; // int, float, long, double
     public string stringParameter; // 字符串参数
-    public object objectParameter; // 对象参数(内联)
-    public ObjectPtr objectPtr; // 对象参数(引用)
+    [NonSerialized]
+    public object objectParameter; // Unity不能指向自定义对象，因此作为运行时查询缓存字段
+    public ObjectPath objectPath; // 目标对象路径
 }
 
 /// <summary>
@@ -50,10 +50,8 @@ public enum AnimationEventType
     Custom = 0, // 默认自定义
     SetSuccess = 1, // 设置任务完成
     SetFailure = 2, // 设置任务失败
-    Pause = 3, // 暂停自己
-    PauseGraph = 4, // 暂停整个动画图
-    SetWeight = 5, // 调整动画的融合权重
-    SetLayer = 6, // 调整动画的渲染层级
-    SetAction = 7, // 切换模型动作
+    Pause = 3, // 暂停自己，double参数为暂时时间，大于0有效
+    PauseGraph = 4, // 暂停整个动画图，double参数为暂时时间，大于0有效
+    PlaySound = 5, // 播放音效，string参数为音效路径
 }
 }

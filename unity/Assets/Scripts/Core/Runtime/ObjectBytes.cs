@@ -18,9 +18,8 @@
 
 using System;
 using UnityEngine;
-using Wjybxx.BigCat.UnityCore;
 
-namespace Wjybxx.BitCat.Core.Core.Runtime
+namespace Wjybxx.BigCat.UnityCore
 {
 /// <summary>
 /// 对象的二进制数据
@@ -43,16 +42,9 @@ public sealed class ObjectBytes
     /// </summary>
     public string objectId;
     /// <summary>
-    /// 用户分配的对象名
-    /// (可选，尽量唯一)
+    /// 用户分配的对象名(可选)
     /// </summary>
     public string name;
-    /// <summary>
-    /// 编码类型
-    ///
-    /// 注：unity默认是将字节数组转换为16进制的字符串保存的。
-    /// </summary>
-    public byte coder;
     /// <summary>
     /// 数据
     ///
@@ -60,15 +52,27 @@ public sealed class ObjectBytes
     /// </summary>
     [HideInInspector]
     public byte[] data;
+    /// <summary>
+    /// 共享对象缓存
+    ///
+    /// 注：当Object可以共享时，直接存储在这里。
+    /// </summary>
+    [NonSerialized]
+    public object cachedObject;
+
 #if UNITY_EDITOR
     /// <summary>
-    /// 用于编辑器下预览Data字段，但数据量过大时可能导致Unity卡死；为避免Unity卡死，我们将显示行数限制为999行
+    /// UI节点的坐标，用于恢复编辑器数据
     /// </summary>
-    [TextArea(1, 999)]
-    [ReadOnly]
-    public string dataString;
+    [NonSerialized]
+    public Vector2 position;
+    /// <summary>
+    /// 归属的文件
+    ///
+    /// 注：编辑器下分组，可选。
+    /// </summary>
+    public string fileName;
 #endif
-
     public ObjectBytes() {
     }
 

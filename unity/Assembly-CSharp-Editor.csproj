@@ -807,11 +807,11 @@
     <Reference Include="Unity.Rider.Editor">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.2D.Tilemap.Extras.Editor">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.Editor.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.InternalAPIEditorBridge.001">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.InternalAPIEditorBridge.001.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.Tilemap.Extras.Editor">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
@@ -881,10 +881,6 @@
       <Project>{c226abae-1f95-4724-989a-874baa5557c3}</Project>
       <Name>Unity.2D.Tilemap.Editor</Name>
     </ProjectReference>
-    <ProjectReference Include="Wjybxx.BigCat.Animator.csproj">
-      <Project>{7d6185e1-0913-6abd-9f7e-b1604da1d651}</Project>
-      <Name>Wjybxx.BigCat.Animator</Name>
-    </ProjectReference>
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
       <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
       <Name>Wjybxx.BigCat.Core</Name>
@@ -896,10 +892,6 @@
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>
       <Name>UnityEditor.UI</Name>
-    </ProjectReference>
-    <ProjectReference Include="Wjybxx.BigCat.AnimatorEditor.csproj">
-      <Project>{ba3a1b4c-7f24-c885-849b-6d7df56eadda}</Project>
-      <Name>Wjybxx.BigCat.AnimatorEditor</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.UI.csproj">
       <Project>{ff8527d1-008a-d49a-39ff-8369ade6a345}</Project>

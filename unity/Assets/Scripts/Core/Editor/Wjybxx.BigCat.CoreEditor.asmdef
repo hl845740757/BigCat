@@ -2,7 +2,10 @@
     "name": "Wjybxx.BigCat.CoreEditor",
     "rootNamespace": "Wjybxx.BigCat.CoreEditor",
     "references": [
-        "Wjybxx.BitCat.UnityCore"
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.BitCat.UnityCore",
+        "Wjybxx.BigCat.Core"
     ],
     "includePlatforms": [
         "Editor"

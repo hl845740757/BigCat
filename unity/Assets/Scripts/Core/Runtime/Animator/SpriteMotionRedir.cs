@@ -16,29 +16,22 @@
 
 #endregion
 
-using System.Collections.Generic;
-using Wjybxx.Commons.Collections;
-using Wjybxx.Dson.Codec.Attributes;
+using System;
 
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 动画状态配置（序列帧动画、Spine、3D动画）
-/// 
-/// 注：提取该抽象以方便扩展真正的AnimationState。
+/// 模型动作映射
 /// </summary>
-[DsonSerializable]
-public sealed class AnimationStateCfg
+[Serializable]
+public struct SpriteMotionRedir
 {
-    /// <summary>
-    /// 部件组 => 要播放的Action
-    ///
-    /// 注：数据量很少，通常1~2，因此也可以改用List。
-    /// </summary>
-    public ArrayDictionary<int, string> group2Actions = new ArrayDictionary<int, string>();
-    /// <summary>
-    /// 所有的事件
-    /// </summary>
-    public List<AnimationEvent> events = new List<AnimationEvent>();
+    public string name;
+    public SpriteAnimationClip clip;
+
+    public SpriteMotionRedir(string name, SpriteAnimationClip clip) {
+        this.name = name;
+        this.clip = clip;
+    }
 }
 }

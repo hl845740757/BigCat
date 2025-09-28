@@ -162,11 +162,11 @@ public class SpriteAnimationClipEditorPlus : EditorWindow
         if (GUILayout.Button("同步序列")) {
             SyncFrameSprite();
         }
-        if (GUILayout.Button("同步间隔")) {
+        if (GUILayout.Button("同步帧长")) {
             SyncFrameInterval();
         }
-        if (GUILayout.Button("同步偏移")) {
-            SyncFrameOffset();
+        if (GUILayout.Button("同步坐标")) {
+            SyncFramePosition();
         }
         if (GUILayout.Button("同步旋转")) {
             SyncFrameRotation();
@@ -204,7 +204,7 @@ public class SpriteAnimationClipEditorPlus : EditorWindow
         if (evt.type != EventType.DragPerform) return;
         // 拖拽结束 - path是文件全路径
         foreach (string filePath in DragAndDrop.paths) {
-            string assetPath = SystemExtensions.ConvertToAssetPath(filePath);
+            string assetPath = UnityHelper.ConvertToAssetPath(filePath);
             if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAnimationClip)) is SpriteAnimationClip clip
                 && !_syncList.Contains(clip)) {
                 _syncList.Add(clip);
@@ -260,12 +260,12 @@ public class SpriteAnimationClipEditorPlus : EditorWindow
             if (!animationClip) {
                 continue;
             }
-            SpriteAnimationClip.SyncFrameOffset(baseClip, animationClip);
+            SpriteAnimationClip.SyncFrameRotation(baseClip, animationClip);
             EditorUtility.SetDirty(animationClip);
         }
     }
 
-    private void SyncFrameOffset() {
+    private void SyncFramePosition() {
         if (_syncList.Count <= 1) return;
         SpriteAnimationClip baseClip = _syncList[0];
         for (int index = 1; index < _syncList.Count; index++) {
@@ -273,7 +273,7 @@ public class SpriteAnimationClipEditorPlus : EditorWindow
             if (!animationClip) {
                 continue;
             }
-            SpriteAnimationClip.SyncFrameOffset(baseClip, animationClip);
+            SpriteAnimationClip.SyncFramePosition(baseClip, animationClip);
             EditorUtility.SetDirty(animationClip);
         }
     }

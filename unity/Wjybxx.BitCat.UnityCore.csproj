@@ -50,13 +50,24 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\AssetReferenceAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationFrame.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\ReadOnlyAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\ObjectPath.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\AABB.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringEnumFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\LabelClassFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\SpritePath.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationMixCfg.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\ObjectReferenceAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BitCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

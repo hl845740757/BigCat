@@ -22,9 +22,8 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.U2D;
 using Wjybxx.BigCat.Animator;
-using Wjybxx.BigCat.Util;
+using Wjybxx.BigCat.UnityCore;
 using Wjybxx.Commons.Collections;
 using Object = UnityEngine.Object;
 
@@ -58,10 +57,9 @@ public class SpriteModelEditor : EditorWindow
     private bool _fileListFoldout = true;
     private bool _syncListFoldout = true;
 
-    private static readonly string[] toolbarNames = new[] { "模型编辑", "动作编辑", "模型预览" };
+    private static readonly string[] toolbarNames = new[] { "模型编辑", "模型预览" };
     private const int INDEX_MODEL_EDIT = 0;
-    private const int INDEX_ACTION_EDIT = 1;
-    private const int INDEX_MODEL_PREVIEW = 2;
+    private const int INDEX_MODEL_PREVIEW = 1;
     private int _toolIndex; // 0表示编辑栏，1表示预览
 
     // 右侧属性区
@@ -71,11 +69,10 @@ public class SpriteModelEditor : EditorWindow
     private GUILayoutOption[] _width100;
     private GUILayoutOption[] _width50;
 
-    private Vector2 _actionListScrollPos;
+    private Vector2 _motionListScrollPos;
     private Vector2 _remapListScrollPos;
     private Vector2 _mixerListScrollPos;
-    private bool _actionListFoldOut = true;
-    private bool _actionRemapFoldOut = false;
+    private bool _motionListFoldOut = true;
     private bool _mixerListFoldOut = false;
 
     private GUILayoutOption[] _minHeight100;
@@ -108,8 +105,8 @@ public class SpriteModelEditor : EditorWindow
         _minHeight100 = new[] { GUILayout.MinHeight(100), GUILayout.ExpandHeight(true) };
 
         // 默认插入第0组和第一组
-        _dataModel.group2Actions[0] = "";
-        _dataModel.group2Actions[1] = "";
+        _dataModel.group2Motions[0] = "";
+        _dataModel.group2Motions[1] = "";
     }
 
     private void OnEnable() {
@@ -144,7 +141,6 @@ public class SpriteModelEditor : EditorWindow
         _toolIndex = GUILayout.Toolbar(_toolIndex, toolbarNames);
         switch (_toolIndex) {
             case INDEX_MODEL_EDIT: DrawModelPropertyArea(); break;
-            case INDEX_ACTION_EDIT: DrawActionPropertyArea(); break;
             case INDEX_MODEL_PREVIEW: DrawPreviewerArea(); break;
         }
         EditorGUILayout.EndVertical();
@@ -179,6 +175,7 @@ public class SpriteModelEditor : EditorWindow
             if (!string.IsNullOrEmpty(folderPath)) {
                 ChangeWorkDir(folderPath);
             }
+            GUIUtility.ExitGUI(); // 打开Panel后出当前GUI绘制
         }
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.SelectableLabel(_dataModel.workDir);
@@ -188,15 +185,14 @@ public class SpriteModelEditor : EditorWindow
         EditorGUILayout.BeginHorizontal();
         GUI.enabled = !string.IsNullOrEmpty(_dataModel.workDir);
         _dataModel.newAssetName = EditorGUILayout.TextField(_dataModel.newAssetName);
-        if (GUILayout.Button("创建Model", _width150)) CreateAsset<SpriteModel>();
-        if (GUILayout.Button("创建Action", _width150)) CreateAsset<SpriteAnimationClip>();
+        if (GUILayout.Button("创建Model", _width150)) CreateModel();
         GUI.enabled = true;
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.Space(10, true);
 
         // 模型列表
         EditorGUILayout.BeginHorizontal();
-        _fileListFoldout = EditorGUILayout.Foldout(_fileListFoldout, _fileListFoldout ? "收起" : "展开");
+        _fileListFoldout = EditorGUILayout.Foldout(_fileListFoldout, "");
         if (GUILayout.Button("刷新") && Event.current.button == 0) {
             RefreshWorkDir();
         }
@@ -213,33 +209,28 @@ public class SpriteModelEditor : EditorWindow
 
     private void DrawFileList() {
         int deleteIndex = -1;
-        List<Object> assetList = _dataModel.workAssetList;
+        List<SpriteModel> assetList = _dataModel.workModelList;
         for (int index = 0; index < assetList.Count; index++) {
-            Object assetObject = assetList[index];
+            SpriteModel model = assetList[index];
+            // 对象框和功能按钮
             EditorGUILayout.BeginHorizontal();
-            // 只读
-            if (assetObject is SpriteModel) {
-                EditorGUILayout.ObjectField(assetObject, typeof(SpriteModel), false);
-            } else if (assetObject is SpriteAnimationClip) {
-                EditorGUILayout.ObjectField(assetObject, typeof(SpriteAnimationClip), false);
-            }
-            // 功能按钮
+            EditorGUILayout.ObjectField(model, typeof(SpriteModel), false);
             if (GUILayout.Button("删除", _width100)) {
                 deleteIndex = index;
             }
-            if (IsSelectedObject(assetObject)) {
+            if (model == _dataModel.selectedModel) {
                 if (GUILayout.Button("关闭", _width100)) {
                     _dataModel.selectedModel = null;
-                    _dataModel.selectedAction = null;
                 }
             } else {
                 if (GUILayout.Button("编辑", _width100)) {
-                    OnClickSelectButton(assetObject);
+                    _dataModel.selectedModel = model;
+                    _toolIndex = INDEX_MODEL_EDIT;
                 }
             }
             EditorGUILayout.EndHorizontal();
             // 选中高亮提示
-            if (IsSelectedObject(assetObject)) {
+            if (IsSelectedObject(model)) {
                 DrawSeparator(Color.yellow);
             }
         }
@@ -254,22 +245,10 @@ public class SpriteModelEditor : EditorWindow
     }
 
     private bool IsSelectedObject(Object obj) {
-        return obj && (obj == _dataModel.selectedModel || obj == _dataModel.selectedAction);
+        return obj && obj == _dataModel.selectedModel;
     }
 
-    private void OnClickSelectButton(Object assetObject) {
-        if (assetObject is SpriteModel model) {
-            _toolIndex = 0;
-            _dataModel.selectedModel = model;
-            _dataModel.selectedAction = null;
-        } else if (assetObject is SpriteAnimationClip action) {
-            _toolIndex = 1;
-            _dataModel.selectedAction = action;
-            _dataModel.selectedModel = null;
-        }
-    }
-
-    private void CreateAsset<T>() where T : ScriptableObject {
+    private void CreateModel() {
         if (string.IsNullOrEmpty(_dataModel.workDir)) {
             return;
         }
@@ -278,16 +257,16 @@ public class SpriteModelEditor : EditorWindow
             return;
         }
         assetName = assetName.Trim();
-        string assetPath = SystemExtensions.ConvertToAssetPath(_dataModel.workDir) + "/" + assetName + ".asset";
+        string assetPath = UnityHelper.ConvertToAssetPath(_dataModel.workDir) + "/" + assetName + ".asset";
         if (AssetDatabase.LoadAssetAtPath<Object>(assetPath)) {
             EditorUtility.DisplayDialog("错误", $"资产{assetName}已存在", "关闭");
             return;
         }
         // _dataModel.newAssetName = "";
         try {
-            T assetObject = CreateInstance<T>();
+            SpriteModel assetObject = CreateInstance<SpriteModel>();
             assetObject.name = assetName;
-            _dataModel.workAssetList.Add(assetObject);
+            _dataModel.workModelList.Add(assetObject);
             AssetDatabase.CreateAsset(assetObject, assetPath);
             Repaint();
         }
@@ -307,7 +286,7 @@ public class SpriteModelEditor : EditorWindow
     }
 
     private void RefreshWorkDir() {
-        _dataModel.workAssetList.Clear();
+        _dataModel.workModelList.Clear();
         if (string.IsNullOrWhiteSpace(_dataModel.workDir)) {
             return;
         }
@@ -315,11 +294,9 @@ public class SpriteModelEditor : EditorWindow
             if (!filePath.EndsWith(".asset")) {
                 continue;
             }
-            string assetPath = SystemExtensions.ConvertToAssetPath(filePath);
+            string assetPath = UnityHelper.ConvertToAssetPath(filePath);
             if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteModel)) is SpriteModel model) {
-                _dataModel.workAssetList.Add(model);
-            } else if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAnimationClip)) is SpriteAnimationClip action) {
-                _dataModel.workAssetList.Add(action);
+                _dataModel.workModelList.Add(model);
             }
         }
     }
@@ -334,7 +311,7 @@ public class SpriteModelEditor : EditorWindow
         EditorGUILayout.BeginVertical(_syncListOptions);
         //
         EditorGUILayout.BeginHorizontal();
-        _syncListFoldout = EditorGUILayout.Foldout(_syncListFoldout, _syncListFoldout ? "收起" : "展开");
+        _syncListFoldout = EditorGUILayout.Foldout(_syncListFoldout, "");
         if (GUILayout.Button("清空") && Event.current.button == 0) {
             _dataModel.syncModelList.Clear();
             _rootPreviewer.Stop();
@@ -354,11 +331,13 @@ public class SpriteModelEditor : EditorWindow
 
         // 功能列表
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("同步Action") && Event.current.button == 0) {
-            SyncActionList();
+        if (GUILayout.Button("同步Motion") && Event.current.button == 0) {
+            SyncMotionList();
+            GUIUtility.ExitGUI();
         }
         if (GUILayout.Button("同步MixCfg") && Event.current.button == 0) {
             SyncMixCfg();
+            GUIUtility.ExitGUI();
         }
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
@@ -420,7 +399,7 @@ public class SpriteModelEditor : EditorWindow
         if (evt.type != EventType.DragPerform) return;
         // 拖拽结束 - path是文件全路径
         foreach (string filePath in DragAndDrop.paths) {
-            string assetPath = SystemExtensions.ConvertToAssetPath(filePath);
+            string assetPath = UnityHelper.ConvertToAssetPath(filePath);
             if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteModel)) is SpriteModel model
                 && !_dataModel.syncModelList.Contains(model)) {
                 _dataModel.syncModelList.Add(model);
@@ -428,26 +407,33 @@ public class SpriteModelEditor : EditorWindow
         }
     }
 
-    private void SyncActionList() {
+    private void SyncMotionList() {
         List<SpriteModel> modelList = _dataModel.syncModelList;
         if (modelList.Count <= 1) {
             return;
         }
-        const string message = "该操作将同步第一个模型的Action信息到其它模型，确定同步吗？";
+        const string message = "该操作将同步第一个模型的Motion映射信息到其它模型，确定同步吗？";
         if (!EditorUtility.DisplayDialog("二次确认", message, "确定", "取消")) {
             return;
         }
+        // 需要指定模型的动画资源目录
         SpriteModel baseModel = modelList[0];
         for (int index = 1; index < modelList.Count; index++) {
             SpriteModel animModel = modelList[index];
-            if (animModel == baseModel) continue;
-            // 拷贝Action
-            animModel.actionList.Clear();
-            for (int i = 0; i < baseModel.actionList.Count; i++) {
-                SpriteAnimationClip action = baseModel.actionList[i];
-                SpriteAnimationClip copiedAction = Instantiate(action);
-                copiedAction.name = action.name; // 保留名字
-                animModel.actionList.Add(copiedAction);
+            string animDir = EditorUtility.OpenFolderPanel("选择动画目录：" + animModel.name,
+                UnityHelper.GetAssetFolderPath(animModel), "");
+            if (string.IsNullOrWhiteSpace(animDir)) {
+                continue;
+            }
+            animModel.motionList.Clear();
+            animDir = UnityHelper.ConvertToAssetPath(animDir);
+            for (int j = 0; j < baseModel.motionList.Count; j++) {
+                SpriteMotionRedir motionRedir = baseModel.motionList[j];
+                if (motionRedir.clip) {
+                    string clipAssetPath = animDir + "/" + motionRedir.clip.name + ".asset";
+                    motionRedir.clip = AssetDatabase.LoadAssetAtPath<SpriteAnimationClip>(clipAssetPath);
+                }
+                animModel.motionList.Add(motionRedir);
             }
             EditorUtility.SetDirty(animModel);
         }
@@ -467,17 +453,16 @@ public class SpriteModelEditor : EditorWindow
             SpriteModel animModel = modelList[index];
             if (animModel == baseModel) continue;
             // 拷贝MixCfg
-            animModel.actionMixCfgList.Clear();
-            for (int i = 0; i < baseModel.actionMixCfgList.Count; i++) {
-                AnimationMixCfg copiedAction = new AnimationMixCfg(baseModel.actionMixCfgList[i]);
-                animModel.actionMixCfgList.Add(copiedAction);
+            animModel.motionMixCfgList.Clear();
+            for (int i = 0; i < baseModel.motionMixCfgList.Count; i++) {
+                AnimationMixCfg copiedMixCfg = new AnimationMixCfg(baseModel.motionMixCfgList[i]);
+                animModel.motionMixCfgList.Add(copiedMixCfg);
             }
             EditorUtility.SetDirty(animModel);
         }
     }
 
     #endregion
-
 
     #region draw-model-properties
 
@@ -511,67 +496,39 @@ public class SpriteModelEditor : EditorWindow
         model.partId = EditorGUILayout.TextField(PooledLabel().WithText("PartId", "部件Id"), model.partId);
         model.partGroupId = EditorGUILayout.IntField(PooledLabel().WithText("PartGroupId", "部件组Id"), model.partGroupId);
         model.orderInLayer = EditorGUILayout.IntField(PooledLabel().WithText("OrderInLayer", "渲染顺序，越大越上层"), model.orderInLayer);
-        model.spriteAtlas = EditorGUILayout.ObjectField(PooledLabel().WithText("SpriteAtlas", "默认贴图"), model.spriteAtlas, typeof(SpriteAtlas), false) as SpriteAtlas;
+        model.spriteGroup = EditorGUILayout.ObjectField(PooledLabel().WithText("SpriteAtlas", "默认贴图"), model.spriteGroup, typeof(SpriteGroup), false) as SpriteGroup;
         EditorGUILayout.Space(5);
 
-        // ActionList
-        EditorGUILayout.LabelField("ActionList: 拖拽添加");
+        // MotionList
+        EditorGUILayout.LabelField("MotionList:");
         EditorGUILayout.BeginHorizontal();
-        _actionListFoldOut = EditorGUILayout.Foldout(_actionListFoldOut, _actionListFoldOut ? "收起" : "展开");
-        EditorGUILayout.IntField(model.actionList.Count, _width100);
+        _motionListFoldOut = EditorGUILayout.Foldout(_motionListFoldOut, "");
+        EditorGUILayout.IntField(model.motionList.Count, _width100);
 
-        _dataModel.tempActionName = EditorGUILayout.TextField(_dataModel.tempActionName);
-        if (GUILayout.Button("增加") && Event.current.button == 0) model.actionList.Add(null);
-        if (GUILayout.Button("排序 ↑") && Event.current.button == 0) SortAction(1);
-        if (GUILayout.Button("排序 ↓") && Event.current.button == 0) SortAction(-1);
+        _dataModel.tempMotionName = EditorGUILayout.TextField(_dataModel.tempMotionName);
+        if (GUILayout.Button("创建") && Event.current.button == 0) model.motionList.Add(default);
+        if (GUILayout.Button("排序 ↑") && Event.current.button == 0) SortMotion(1);
+        if (GUILayout.Button("排序 ↓") && Event.current.button == 0) SortMotion(-1);
         EditorGUILayout.EndHorizontal();
         DrawSeparator();
         EditorGUILayout.Space(5);
         //
-        if (_actionListFoldOut) {
-            _actionListScrollPos = EditorGUILayout.BeginScrollView(_actionListScrollPos, false, false);
-            DrawModelActionList();
-            EditorGUILayout.EndScrollView();
-            // 拖拽添加
-            Rect controlRect = GUILayoutUtility.GetLastRect();
-            CheckAddModelAction(controlRect);
-
-            DrawSeparator();
-            EditorGUILayout.Space(5);
-        }
-
-        // ActionRemap
-        EditorGUILayout.LabelField("ActionRemap: 逻辑动作到美术动作的映射");
-        EditorGUILayout.BeginHorizontal();
-        _actionRemapFoldOut = EditorGUILayout.Foldout(_actionRemapFoldOut, _actionRemapFoldOut ? "收起" : "展开");
-        EditorGUILayout.IntField(model.actionRemap.Count, _width100);
-
-        _dataModel.srcActionName = EditorGUILayout.TextField(_dataModel.srcActionName);
-        _dataModel.destActionName = EditorGUILayout.TextField(_dataModel.destActionName);
-        if (GUILayout.Button("创建") && Event.current.button == 0) CreateRemapCfg();
-        if (GUILayout.Button("排序 ↑") && Event.current.button == 0) SortRemapCfg(1);
-        if (GUILayout.Button("排序 ↓") && Event.current.button == 0) SortRemapCfg(-1);
-        EditorGUILayout.EndHorizontal();
-        DrawSeparator();
-        EditorGUILayout.Space(5);
-        //
-        if (_actionRemapFoldOut) {
-            _remapListScrollPos = EditorGUILayout.BeginScrollView(_remapListScrollPos, false, false);
-            DrawRemapList();
+        if (_motionListFoldOut) {
+            _motionListScrollPos = EditorGUILayout.BeginScrollView(_motionListScrollPos, false, false);
+            DrawMotionList();
             EditorGUILayout.EndScrollView();
 
             DrawSeparator();
             EditorGUILayout.Space(5);
         }
-
-        // ActionMix
-        EditorGUILayout.LabelField("ActionMixCfgList:");
+        // MixConfigList
+        EditorGUILayout.LabelField("MixConfigList:");
         EditorGUILayout.BeginHorizontal();
-        _mixerListFoldOut = EditorGUILayout.Foldout(_mixerListFoldOut, _mixerListFoldOut ? "收起" : "展开");
-        EditorGUILayout.IntField(model.actionMixCfgList.Count, _width100);
+        _mixerListFoldOut = EditorGUILayout.Foldout(_mixerListFoldOut, "");
+        EditorGUILayout.IntField(model.motionMixCfgList.Count, _width100);
 
-        _dataModel.mixActionA = EditorGUILayout.TextField(_dataModel.mixActionA);
-        _dataModel.mixActionB = EditorGUILayout.TextField(_dataModel.mixActionB);
+        _dataModel.mixMotionA = EditorGUILayout.TextField(_dataModel.mixMotionA);
+        _dataModel.mixMotionB = EditorGUILayout.TextField(_dataModel.mixMotionB);
         if (GUILayout.Button("创建") && Event.current.button == 0) CreateMixCfg();
         if (GUILayout.Button("排序 ↑") && Event.current.button == 0) SortMixCfg(1);
         if (GUILayout.Button("排序 ↓") && Event.current.button == 0) SortMixCfg(-1);
@@ -590,23 +547,24 @@ public class SpriteModelEditor : EditorWindow
     }
 
     /// <summary>
-    /// 模型Action列表
+    /// 模型动作列表
     /// </summary>
-    private void DrawModelActionList() {
+    private void DrawMotionList() {
         SpriteModel model = _dataModel.selectedModel;
         int deleteIndex = -1;
-        for (int index = 0; index < model.actionList.Count; index++) {
+        for (int index = 0; index < model.motionList.Count; index++) {
             if (index > 0) {
                 DrawSeparator();
             }
-            SpriteAnimationClip modelAction = model.actionList[index];
-            if (modelAction && modelAction.name == _dataModel.tempActionName) { // 醒目条
+            SpriteMotionRedir motionRedir = model.motionList[index];
+            if (motionRedir.name == _dataModel.tempMotionName) { // 醒目条
                 Rect rect = EditorGUILayout.GetControlRect(false, 1);
                 EditorGUI.DrawRect(rect, Color.yellow);
             }
             EditorGUILayout.BeginHorizontal();
-            modelAction = EditorGUILayout.ObjectField(modelAction, typeof(SpriteAnimationClip), false) as SpriteAnimationClip;
-            model.actionList[index] = modelAction;
+            motionRedir.name = EditorGUILayout.TextField(motionRedir.name);
+            motionRedir.clip = EditorGUILayout.ObjectField(motionRedir.clip, typeof(SpriteAnimationClip), false) as SpriteAnimationClip;
+            model.motionList[index] = motionRedir;
             if (GUILayout.Button("删除", _width100) && Event.current.button == 0) {
                 deleteIndex = index;
             }
@@ -615,115 +573,14 @@ public class SpriteModelEditor : EditorWindow
         // 循环外处理删除
         if (deleteIndex >= 0
             && EditorUtility.DisplayDialog("", $"确定删除？", "确定", "取消")) {
-            model.actionList.RemoveAt(deleteIndex);
+            model.motionList.RemoveAt(deleteIndex);
             Repaint();
         }
     }
 
-    private void CheckAddModelAction(Rect controlRect) {
-        Event evt = Event.current;
-        if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform) return;
-        if (!controlRect.Contains(evt.mousePosition)) return;
-        //
-        DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
-        if (evt.type != EventType.DragPerform) return;
-
+    private void SortMotion(int sign) {
         SpriteModel model = _dataModel.selectedModel;
-        // 拖拽结束 - path是文件全路径
-        foreach (string filePath in DragAndDrop.paths) {
-            string assetPath = SystemExtensions.ConvertToAssetPath(filePath);
-            if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAnimationClip)) is SpriteAnimationClip action
-                && !model.actionList.Contains(action)) {
-                model.actionList.Add(action);
-            }
-        }
-    }
-
-    private void SortAction(int sign) {
-        SpriteModel model = _dataModel.selectedModel;
-        model.actionList.Sort((actionA, actionB) => sign * string.Compare(actionA.name, actionB.name, StringComparison.OrdinalIgnoreCase));
-    }
-
-    /// <summary>
-    /// 动作映射列表
-    /// </summary>
-    private void DrawRemapList() {
-        SpriteModel model = _dataModel.selectedModel;
-        int deleteIndex = -1;
-        for (int index = 0; index < model.actionRemap.Count; index++) {
-            if (index > 0) {
-                DrawSeparator();
-            }
-            var pair = model.actionRemap[index];
-            if (IsSelectedRemapCfg(pair)) {
-                Rect rect = EditorGUILayout.GetControlRect(false, 1);
-                EditorGUI.DrawRect(rect, Color.yellow); // 醒目条
-            }
-            EditorGUILayout.BeginHorizontal();
-            string src = EditorGUILayout.TextField("Src", pair.Key);
-            string dest = EditorGUILayout.TextField("Dest", pair.Value);
-            model.actionRemap[index] = new KeyValuePair<string, string>(src, dest);
-            //
-            if (GUILayout.Button("选择", _width100)) {
-                ShowPickActionMenu2(index);
-            }
-            if (GUILayout.Button("删除", _width100)) {
-                deleteIndex = index;
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-        // 循环外处理删除
-        if (deleteIndex >= 0
-            && EditorUtility.DisplayDialog("", "确定删除？", "确定", "取消")) {
-            model.actionMixCfgList.RemoveAt(deleteIndex);
-            Repaint();
-        }
-    }
-
-    private bool IsSelectedRemapCfg(KeyValuePair<string, string> remap) {
-        // 动作映射只检测Key
-        return !string.IsNullOrWhiteSpace(remap.Key) && remap.Key == _dataModel.srcActionName;
-    }
-
-    private void CreateRemapCfg() {
-        SpriteModel model = _dataModel.selectedModel;
-        // 无效输入忽略
-        if (string.IsNullOrWhiteSpace(_dataModel.srcActionName)
-            || string.IsNullOrWhiteSpace(_dataModel.destActionName)) {
-            EditorUtility.DisplayDialog("通知", "输入无效", "关闭");
-            return;
-        }
-        // 有输入的情况下进行去重检测
-        if (model.actionRemap.Any(IsSelectedRemapCfg)) {
-            EditorUtility.DisplayDialog("通知", "目标配置已存在", "关闭");
-            return;
-        }
-        model.actionRemap.Add(new KeyValuePair<string, string>(_dataModel.srcActionName, _dataModel.destActionName));
-    }
-
-    private void SortRemapCfg(int sign) {
-        SpriteModel model = _dataModel.selectedModel;
-        model.actionRemap.Sort((a, b) => {
-            int r = string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase);
-            if (r != 0) return sign * r;
-            return sign * string.Compare(a.Value, b.Value, StringComparison.OrdinalIgnoreCase);
-        });
-    }
-
-    private void ShowPickActionMenu2(int index) {
-        SpriteModel model = _dataModel.selectedModel;
-        GenericMenu.MenuFunction2 callback = obj => {
-            string actionName = (string)obj;
-            string src = model.actionRemap[index].Key;
-            model.actionRemap[index] = new KeyValuePair<string, string>(src, actionName);
-        };
-        // Mune不能使用池化的Label，否则会出异常
-        GenericMenu menu = new GenericMenu();
-        string currentActionName = model.actionRemap[index].Value;
-        foreach (SpriteAnimationClip action in model.actionList) {
-            menu.AddItem(new GUIContent(action.name), action.name == currentActionName, callback, action.name);
-        }
-        menu.ShowAsContext();
+        model.motionList.Sort((a, b) => sign * string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -732,28 +589,28 @@ public class SpriteModelEditor : EditorWindow
     private void DrawMixCfgList() {
         SpriteModel model = _dataModel.selectedModel;
         int deleteIndex = -1;
-        for (int index = 0; index < model.actionMixCfgList.Count; index++) {
+        for (int index = 0; index < model.motionMixCfgList.Count; index++) {
             if (index > 0) {
                 DrawSeparator();
             }
-            AnimationMixCfg mixCfg = model.actionMixCfgList[index];
+            AnimationMixCfg mixCfg = model.motionMixCfgList[index];
             if (IsSelectedMixCfg(mixCfg)) {
                 Rect rect = EditorGUILayout.GetControlRect(false, 1);
                 EditorGUI.DrawRect(rect, Color.yellow); // 醒目条
             }
             EditorGUILayout.BeginHorizontal();
-            mixCfg.actionA = EditorGUILayout.TextField("ActionA", mixCfg.actionA);
+            mixCfg.motionA = EditorGUILayout.TextField("MotionA", mixCfg.motionA);
             mixCfg.weightA = EditorGUILayout.FloatField("Weight", mixCfg.weightA);
             if (GUILayout.Button("选择")) {
-                ShowPickActionMenu(index, 0);
+                ShowPickMotionMenu(index, 0);
             }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            mixCfg.actionB = EditorGUILayout.TextField("ActionB", mixCfg.actionB);
+            mixCfg.motionB = EditorGUILayout.TextField("MotionB", mixCfg.motionB);
             mixCfg.weightB = EditorGUILayout.FloatField("Weight", mixCfg.weightB);
             if (GUILayout.Button("选择", _width100)) {
-                ShowPickActionMenu(index, 1);
+                ShowPickMotionMenu(index, 1);
             }
             EditorGUILayout.EndHorizontal();
 
@@ -767,100 +624,64 @@ public class SpriteModelEditor : EditorWindow
         // 循环外处理删除
         if (deleteIndex >= 0
             && EditorUtility.DisplayDialog("", "确定删除？", "确定", "取消")) {
-            model.actionMixCfgList.RemoveAt(deleteIndex);
+            model.motionMixCfgList.RemoveAt(deleteIndex);
             Repaint();
         }
     }
 
     private bool IsSelectedMixCfg(AnimationMixCfg mixCfg) {
-        if (string.IsNullOrEmpty(mixCfg.actionA) || string.IsNullOrEmpty(mixCfg.actionB)) return false;
-        return mixCfg.actionA == _dataModel.mixActionA && mixCfg.actionB == _dataModel.mixActionB;
+        if (string.IsNullOrEmpty(mixCfg.motionA) || string.IsNullOrEmpty(mixCfg.motionB)) return false;
+        return mixCfg.motionA == _dataModel.mixMotionA && mixCfg.motionB == _dataModel.mixMotionB;
     }
 
     private void CreateMixCfg() {
         SpriteModel model = _dataModel.selectedModel;
         // 无效输入忽略
-        if (string.IsNullOrWhiteSpace(_dataModel.mixActionA)
-            || string.IsNullOrWhiteSpace(_dataModel.mixActionB)) {
+        if (string.IsNullOrWhiteSpace(_dataModel.mixMotionA)
+            || string.IsNullOrWhiteSpace(_dataModel.mixMotionB)) {
             EditorUtility.DisplayDialog("通知", "输入无效", "关闭");
             return;
         }
         // 有输入的情况下进行去重检测
-        if (model.actionMixCfgList.Any(IsSelectedMixCfg)) {
+        if (model.motionMixCfgList.Any(IsSelectedMixCfg)) {
             EditorUtility.DisplayDialog("通知", "目标配置已存在", "关闭");
             return;
         }
-        model.actionMixCfgList.Add(new AnimationMixCfg()
+        model.motionMixCfgList.Add(new AnimationMixCfg()
         {
-            actionA = _dataModel.mixActionA,
-            actionB = _dataModel.mixActionB
+            motionA = _dataModel.mixMotionA,
+            motionB = _dataModel.mixMotionB
         });
     }
 
     private void SortMixCfg(int sign) {
         SpriteModel model = _dataModel.selectedModel;
-        model.actionMixCfgList.Sort((a, b) => {
-            int r = string.Compare(a.actionA, b.actionA, StringComparison.OrdinalIgnoreCase);
+        model.motionMixCfgList.Sort((a, b) => {
+            int r = string.Compare(a.motionA, b.motionA, StringComparison.OrdinalIgnoreCase);
             if (r != 0) return sign * r;
-            return sign * string.Compare(a.actionB, b.actionB, StringComparison.OrdinalIgnoreCase);
+            return sign * string.Compare(a.motionB, b.motionB, StringComparison.OrdinalIgnoreCase);
         });
     }
 
-    private void ShowPickActionMenu(int index, int fieldIndex) {
+    private void ShowPickMotionMenu(int index, int fieldIndex) {
         SpriteModel model = _dataModel.selectedModel;
-        AnimationMixCfg mixCfg = model.actionMixCfgList[index];
+        AnimationMixCfg mixCfg = model.motionMixCfgList[index];
         // 回调
         GenericMenu.MenuFunction2 callback = obj => {
-            string actionName = (string)obj;
+            string motionName = (string)obj;
             if (fieldIndex == 0) {
-                mixCfg.actionA = actionName;
+                mixCfg.motionA = motionName;
             } else {
-                mixCfg.actionB = actionName;
+                mixCfg.motionB = motionName;
             }
         };
         // Mune不能使用池化的Label，否则会出异常
         GenericMenu menu = new GenericMenu();
-        string currentActionName = fieldIndex == 0 ? mixCfg.actionA : mixCfg.actionB;
-        foreach (SpriteAnimationClip action in model.actionList) {
-            menu.AddItem(new GUIContent(action.name), action.name == currentActionName, callback, action.name);
+        string motionName = fieldIndex == 0 ? mixCfg.motionA : mixCfg.motionB;
+        foreach (var motionRedir in model.motionList) {
+            menu.AddItem(new GUIContent(motionRedir.name), motionRedir.name == motionName, callback, motionRedir.name);
         }
         menu.ShowAsContext();
-    }
-
-    #endregion
-
-    #region draw-action-properties
-
-    private void DrawActionPropertyArea() {
-        EditorGUILayout.HelpBox(PooledLabel().WithText("动作编辑区:"));
-        EditorGUILayout.BeginVertical();
-        //
-        if (_dataModel.selectedAction) {
-            EditorGUI.BeginChangeCheck();
-            DrawActionProperty();
-            if (EditorGUI.EndChangeCheck() && _dataModel.selectedAction) { // 可能被关闭
-                EditorUtility.SetDirty(_dataModel.selectedAction);
-            }
-        }
-        EditorGUILayout.EndVertical();
-    }
-
-
-    private void DrawActionProperty() {
-        SpriteAnimationClip action = _dataModel.selectedAction;
-        bool closed = false;
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.ObjectField(action, typeof(SpriteAnimationClip), false);
-        if (GUILayout.Button("关闭")) {
-            closed = true;
-        }
-        EditorGUILayout.EndHorizontal();
-        // 在绘制外处理事件
-        if (closed) {
-            _dataModel.selectedAction = null;
-            return;
-        }
-        // TODO 
     }
 
     #endregion
@@ -868,27 +689,27 @@ public class SpriteModelEditor : EditorWindow
     #region draw-previewer
 
     private void DrawPreviewerArea() {
-        // 要播放的action
+        // 要播放的动作
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("要播放的动画：(模型部件组 => 模型Action)");
+        EditorGUILayout.LabelField("要播放的动画：(模型部件组 => 模型动作)");
         _dataModel.tempGroupId = EditorGUILayout.IntField(_dataModel.tempGroupId, _width50);
         if (GUILayout.Button("添加")) {
-            _dataModel.group2Actions.TryAdd(_dataModel.tempGroupId, "");
+            _dataModel.group2Motions.TryAdd(_dataModel.tempGroupId, "");
         }
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.BeginVertical(_minHeight100);
         int deleteIndex = -1;
-        for (int index = 0; index < _dataModel.group2Actions.Count; index++) {
-            KeyValuePair<int, string> pair = _dataModel.group2Actions.GetPair(index);
+        for (int index = 0; index < _dataModel.group2Motions.Count; index++) {
+            KeyValuePair<int, string> pair = _dataModel.group2Motions.GetPair(index);
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.IntField("Group", pair.Key);
-            EditorGUILayout.TextField("Action", pair.Value);
+            EditorGUILayout.TextField("Motion", pair.Value);
             if (GUILayout.Button("删除")) {
                 deleteIndex = index;
             }
             if (GUILayout.Button("选择")) {
-                ShowPickActionMenu3(index);
+                ShowPickMotionMenu2(index);
             }
             EditorGUILayout.EndHorizontal();
         }
@@ -896,8 +717,8 @@ public class SpriteModelEditor : EditorWindow
 
         // 循环外处理删除
         if (deleteIndex >= 0) {
-            int key = _dataModel.group2Actions.GetKey(deleteIndex);
-            _dataModel.group2Actions.Remove(key);
+            int key = _dataModel.group2Motions.GetKey(deleteIndex);
+            _dataModel.group2Motions.Remove(key);
         }
         DrawSeparator();
 
@@ -916,8 +737,8 @@ public class SpriteModelEditor : EditorWindow
         }
     }
 
-    private void ShowPickActionMenu3(int index) {
-        KeyValuePair<int, string> pair = _dataModel.group2Actions.GetPair(index);
+    private void ShowPickMotionMenu2(int index) {
+        KeyValuePair<int, string> pair = _dataModel.group2Motions.GetPair(index);
         int groupId = pair.Key;
         // 找到第一个groupId匹配的
         SpriteModel model = _dataModel.syncModelList.FirstOrDefault(e => e.partGroupId == groupId);
@@ -926,14 +747,14 @@ public class SpriteModelEditor : EditorWindow
             return;
         }
         GenericMenu.MenuFunction2 callback = obj => {
-            string actionName = (string)obj;
-            _dataModel.group2Actions[groupId] = actionName;
+            string motionName = (string)obj;
+            _dataModel.group2Motions[groupId] = motionName;
         };
         // Mune不能使用池化的Label，否则会出异常
         GenericMenu menu = new GenericMenu();
-        string currentActionName = pair.Value;
-        foreach (SpriteAnimationClip action in model.actionList) {
-            menu.AddItem(new GUIContent(action.name), action.name == currentActionName, callback, action.name);
+        string motionName = pair.Value;
+        foreach (var motionRedir in model.motionList) {
+            menu.AddItem(new GUIContent(motionRedir.name), motionRedir.name == motionName, callback, motionRedir.name);
         }
         menu.ShowAsContext();
     }
@@ -954,37 +775,37 @@ public class SpriteModelEditor : EditorWindow
             return;
         }
         SpriteModel baseModel = _dataModel.syncModelList[0];
-        if (!_dataModel.group2Actions.TryGetValue(baseModel.partGroupId, out string actionName)) {
-            EditorUtility.DisplayDialog("错误", $"找不到模型{baseModel.name}的action", "关闭");
+        if (!_dataModel.group2Motions.TryGetValue(baseModel.partGroupId, out string motionName)) {
+            EditorUtility.DisplayDialog("错误", $"找不到模型{baseModel.name}的动作", "关闭");
             return;
         }
-        SetClip(_rootPreviewer, baseModel.FindAction(actionName));
+        SetClip(_rootPreviewer, baseModel.FindMotion(motionName));
         _rootPreviewer.Renderer = GetChildRenderer(baseModel.name); // 绑定模型名
         _rootPreviewer.OrderInLayer = 0;
         //
         for (int index = 1; index < _dataModel.syncModelList.Count; index++) {
             SpriteModel model = _dataModel.syncModelList[index];
-            if (!_dataModel.group2Actions.TryGetValue(model.partGroupId, out actionName)) {
-                EditorUtility.DisplayDialog("错误", $"找不到模型{model.name}的action", "关闭");
+            if (!_dataModel.group2Motions.TryGetValue(model.partGroupId, out motionName)) {
+                EditorUtility.DisplayDialog("错误", $"找不到模型{model.name}的动作", "关闭");
                 return;
             }
             SpriteAnimationPreviewer follower = new SpriteAnimationPreviewer();
-            SetClip(follower, model.FindAction(actionName));
+            SetClip(follower, model.FindMotion(motionName));
             follower.Renderer = GetChildRenderer(model.name); // 绑定模型名
             follower.OrderInLayer = 1; // 其它覆盖在上面
             _rootPreviewer.AddFollower(follower);
         }
     }
 
-    private void SetClip(SpriteAnimationPreviewer previewer, SpriteAnimationClip action) {
-        if (action == null) {
+    private void SetClip(SpriteAnimationPreviewer previewer, SpriteAnimationClip motion) {
+        if (motion == null) {
             previewer.Clip = null;
             previewer.StartFrame = 0;
             previewer.EndFrame = 0;
             return;
         }
         // TODO 初始化Sprite
-        previewer.Clip = action;
+        previewer.Clip = motion;
         previewer.StartFrame = 0;
         previewer.EndFrame = -1;
     }
@@ -1018,21 +839,15 @@ public class SpriteModelEditor : EditorWindow
         /// 当前编辑（选中）的模型
         /// </summary>
         public SpriteModel selectedModel;
-        /// <summary>
-        /// 当前编辑（选中）的动作
-        /// </summary>
-        public SpriteAnimationClip selectedAction;
 
-        public string tempActionName;
-        public string srcActionName;
-        public string destActionName;
-        public string mixActionA;
-        public string mixActionB;
+        public string tempMotionName;
+        public string mixMotionA;
+        public string mixMotionB;
 
         /// <summary>
-        /// 当前工作目录下的模型和动作
+        /// 当前工作目录下的模型
         /// </summary>
-        public List<Object> workAssetList = new List<Object>();
+        public List<SpriteModel> workModelList = new List<SpriteModel>();
         /// <summary>
         /// 模型同步列表
         /// </summary>
@@ -1046,15 +861,13 @@ public class SpriteModelEditor : EditorWindow
         /// 当前要播放的动作
         /// 按模型分组播放
         /// </summary>
-        public ArrayDictionary<int, string> group2Actions = new ArrayDictionary<int, string>(4);
+        public ArrayDictionary<int, string> group2Motions = new ArrayDictionary<int, string>(4);
     }
 
     private enum PlayMode
     {
         SelectModel, // 播放选中的模型动画
-        SelectAction, // 播放选中的Action动画
         MultiModel, // 同步播放play列表中所有模型
-        MultiAction // 同步播放play列表中所有模型的指定action
     }
 
     #endregion

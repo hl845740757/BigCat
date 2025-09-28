@@ -105,7 +105,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneIdMgr.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\ComponentList.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcMethodInfo.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\SystemExtensions.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Unity\UnityHelper.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\S2SSessionMgr.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\ServiceInfo.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneMgrCfg.cs" />

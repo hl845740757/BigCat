@@ -18,15 +18,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Wjybxx.Commons;
+using System.Runtime.CompilerServices;
 
 #if UNITY_2021_3_OR_NEWER
 using UnityEngine;
-using System.Runtime.CompilerServices;
 #endif
 
 #if UNITY_EDITOR
-using System.IO;
 using UnityEditor;
 #endif
 
@@ -38,7 +39,7 @@ namespace System
 /// 1.主要给Unity用
 /// 2.特意命名System命名空间
 /// </summary>
-public static class SystemExtensions
+public static class UnityHelper
 {
 #if UNITY_2021_3_OR_NEWER
     public static void EnsureCapacity<T>(this List<T> list, int capacity) {
@@ -66,6 +67,24 @@ public static class SystemExtensions
 #endif
 
 #if UNITY_EDITOR
+    /// <summary>
+    /// 展开状态标识
+    /// </summary>
+    public const string SYMBOL_FOLD_OUT = "▼";
+    /// <summary>
+    /// 折叠状态标识
+    /// </summary>
+    public const string SYMBOL_FOLD_UP = "▶";
+
+    /// <summary>
+    /// 收起和展开的符号
+    /// </summary>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string GetFoldoutSymbol(bool b) {
+        return b ? "▼" : "▶";
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GUIContent Reset(this GUIContent content) {
@@ -104,15 +123,36 @@ public static class SystemExtensions
     /// 将文件路径转换为资产路径
     /// </summary>
     /// <param name="filePath"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ConvertToAssetPath(string filePath) {
         if (string.IsNullOrWhiteSpace(filePath)) {
             return filePath;
         }
         if (filePath.StartsWith("Assets")) {
-            return filePath;
+            return filePath.Replace("\\", "/");
         }
-        return filePath.Replace(Application.dataPath, "Assets");
+        return filePath.Replace(Application.dataPath, "Assets").Replace("\\", "/");
+    }
+
+    /// <summary>
+    /// 将资产路径转换为文件路径
+    /// </summary>
+    /// <param name="assetPath"></param>
+    /// <returns></returns>
+    public static string ConvertToFilePath(string assetPath) {
+        // "assets".Length == 6
+        return Application.dataPath + "/" + assetPath.Substring(6);
+    }
+
+    /// <summary>
+    /// 将资产路径转换为文件夹路径
+    /// </summary>
+    /// <returns></returns>
+    public static string GetAssetFolderPath(UnityEngine.Object obj) {
+        string assetPath = AssetDatabase.GetAssetPath(obj);
+        if (assetPath.LastIndexOf('.') > 0) { // 文件
+            return assetPath.Substring(0, assetPath.LastIndexOf('/'));
+        }
+        return assetPath;
     }
 
     /// <summary>

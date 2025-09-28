@@ -28,7 +28,7 @@ namespace Wjybxx.BigCat.AnimatorEditor
 /// 用于编辑器下预览帧动画
 ///
 /// 注：外部需要调用<see cref="OnInspectorGUI"/>绘制UI，调用<see cref="Update"/>方法驱动动画播放；
-/// 如果是自定义Window，可以在<see cref="EditorWindow.Update"/>方法中调用该对象的Update；
+/// 如果是自定义Window，可以在<code>EditorWindow.Update</code>>方法中调用该对象的Update；
 /// 如果是普通的InspectorGUI，可以在<see cref="Editor.OnInspectorGUI"/>方法中调用该对象的Update。
 /// </summary>
 public class SpriteAnimationPreviewer
@@ -157,17 +157,17 @@ public class SpriteAnimationPreviewer
         SpriteAnimationFrame frame = _clip[frameIndex];
         _renderer.sprite = frame.sprite;
 
-        Vector2 offset = frame.offset;
+        Vector2 position = frame.position;
         float rotation = frame.rotation;
         if (_flipX) {
-            offset.x *= -1;
+            position.x *= -1;
             rotation *= -1;
         }
         if (_flipY) {
-            offset.y *= -1;
+            position.y *= -1;
             rotation *= -1;
         }
-        _renderer.transform.localPosition = offset;
+        _renderer.transform.localPosition = position;
         _renderer.transform.localRotation = Quaternion.Euler(0, 0, rotation);
     }
 
@@ -179,6 +179,11 @@ public class SpriteAnimationPreviewer
             }
         }
         return _clip.frames.Length - 1;
+    }
+
+    // TODO 绘制受击框和攻击框
+    public void OnSceneGUI() {
+        // Handles.DrawWireCube();
     }
 
     #endregion
