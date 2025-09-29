@@ -9,10 +9,10 @@
         "Wjybxx.Dson.Codec",
         "Wjybxx.Dson.Core"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [
+    "includePlatforms": [
         "Editor"
     ],
+    "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],

@@ -70,10 +70,10 @@ public sealed class Sheet : IValueProvider
         this.type = type;
         //
         if (type == SheetType.Param && headers.Count == 0) {
-            this.headers.AdjustCapacity(valueRows.Count);
+            this.headers.EnsureCapacity(valueRows.Count);
             RefreshHeaders();
         } else {
-            this.headers.AdjustCapacity(headers.Count);
+            this.headers.EnsureCapacity(headers.Count);
             foreach (Header header in headers) {
                 this.headers[header.name] = header;
             }

@@ -26,6 +26,7 @@ using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
+using static Wjybxx.BigCatTool.DataScript.DSUtil;
 
 namespace Wjybxx.BigCatTool.Generator.Excel
 {
@@ -126,7 +127,7 @@ public class ClassGenerator : ISheetProcessor
             if (field.IsReadonly) {
                 return null;
             }
-            if (IsListType(field.Type) || IsSetType(field.Type) || IsDictionaryType(field.Type)) {
+            if (IsListType(field.Type) || IsSetType(field.Type) || IsMapType(field.Type)) {
                 return CodeBlock.Of("$T.Empty", fieldTypeName);
             }
             return null;
@@ -171,12 +172,10 @@ public class ClassGenerator : ISheetProcessor
                 DSKeywords.TYPE_LIST => TYPE_NAME_IMMUTABLE_LIST,
                 DSKeywords.TYPE_HASH_SET => TYPE_NAME_IMMUTABLE_SET,
                 DSKeywords.TYPE_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
-                TYPE_LINKED_DICTIONARY => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 TYPE_LINKED_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 //
                 TYPE_IMMUTABLE_LIST => TYPE_NAME_IMMUTABLE_LIST,
                 TYPE_IMMUTABLE_SET => TYPE_NAME_IMMUTABLE_SET,
-                TYPE_IMMUTABLE_DICTIONARY => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 TYPE_IMMUTABLE_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 _ => base.GetBuiltinMetaTypeName(originDefine)
             };

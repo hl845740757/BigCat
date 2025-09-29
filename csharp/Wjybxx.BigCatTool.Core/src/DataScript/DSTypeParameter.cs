@@ -52,7 +52,7 @@ public sealed class DSTypeParameter : DSTypeElement
     public override DSElementKind Kind => DSElementKind.TypeParameter;
     public override DSTypeKind TypeKind => DSTypeKind.TypeParameter;
     public override bool IsGenericType => false;
-    public override DSTypeElement OriginDefine => this;
+    public override DSElement OriginDefine => this;
     public new TypeParameterName TypeName => (TypeParameterName)typeName;
 
     /// <summary>

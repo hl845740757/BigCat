@@ -220,7 +220,7 @@ public class DSFileParser
             templates = Array.Empty<string>();
         } else {
             name = content.Substring2(startIdx, spIdx).Trim();
-            templates = content.Substring2(spIdx + "from".Length, endIdx).Split(',', StringSplitOptions.TrimEntries);
+            templates = ObjectUtil.SplitAndTrim(content.Substring2(spIdx + "from".Length, endIdx), ',');
         }
         string firstLine = content.Substring2(endIdx);
         string value = ScanDsonValue(firstLine, lineInfo.ln);
@@ -722,7 +722,7 @@ public class DSFileParser
             className = GetClassName(dsFile, enclosingType, name, typeParameterNames);
             return;
         }
-        string[] tpNames = name.Substring2(tpStart + 1, name.Length - 1).Split(',', StringSplitOptions.TrimEntries);
+        string[] tpNames = ObjectUtil.SplitAndTrim(name.Substring2(tpStart + 1, name.Length - 1), ',');
         // 解析泛型变量约束 -- 从1开始，跳过name
         for (int tokenIdx = 1; tokenIdx < tokens.Length; tokenIdx++) {
             string token = tokens[tokenIdx];
@@ -751,7 +751,7 @@ public class DSFileParser
 
     private static TypeParameterConstraints ParseConstraints(string constraintsToken) {
         TypeParameterConstraints constraints = TypeParameterConstraints.None;
-        foreach (string s in constraintsToken.Split(',', StringSplitOptions.TrimEntries)) {
+        foreach (string s in ObjectUtil.SplitAndTrim(constraintsToken, ',')) {
             if (s == DSKeywords.STRUCT) {
                 constraints |= TypeParameterConstraints.ValueTypeConstraint;
             } else if (s == DSKeywords.CLASS) {

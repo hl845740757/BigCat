@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson.Text;
@@ -408,6 +408,33 @@ public sealed class DSNamedType : DSTypeElement
         foreach (string alias in aliases) {
             this._dsonAliases.Add(alias);
         }
+        return this;
+    }
+
+    /// <summary>
+    /// 添加嵌套元素
+    ///
+    /// 注：用于方便手动构建类型。
+    /// </summary>
+    /// <param name="enclosed"></param>
+    /// <returns></returns>
+    public new DSNamedType AddEnclosedElement(DSElement enclosed) {
+        base.AddEnclosedElement(enclosed);
+        return this;
+    }
+
+    public new DSNamedType AddAnnotation(Annotation annotation) {
+        base.AddAnnotation(annotation);
+        return this;
+    }
+
+    public new DSNamedType AddComment(string comment) {
+        base.AddComment(comment);
+        return this;
+    }
+
+    public new DSNamedType AddOption(string name, string value) {
+        base.AddOption(name, value);
         return this;
     }
 

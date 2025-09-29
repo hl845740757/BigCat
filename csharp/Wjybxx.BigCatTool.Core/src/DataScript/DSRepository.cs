@@ -96,8 +96,12 @@ public sealed class DSRepository
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES).AddDsonAliases("bin", "binary"));
         // 内建结构
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME).AddDsonAliases("DateTime")); // 不是Dson内建结构
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP).AddDsonAliases("ts", "Timestamp")); // ts是Dson内建结构
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR).AddDsonAliases("Pair", "KeyValuePair"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP).AddDsonAliases("Timestamp")); // 虽然是内建结构，但也不缩写
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR)
+            .AddEnclosedElement(new DSField("key", "K", 1))
+            .AddEnclosedElement(new DSField("value", "V", 2))
+            .AddDsonAliases("Pair", "KeyValuePair"));
+
         // 基础容器
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST).AddDsonAliases("List"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_HASH_SET).AddDsonAliases("HashSet", "Set"));
@@ -105,9 +109,11 @@ public sealed class DSRepository
         // 装箱类型
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT).AddDsonAliases("Object", "object"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE, new List<DSTypeParameter>(1)
-        {
-            new DSTypeParameter("T", TypeParameterConstraints.ValueTypeConstraint)
-        }).AddDsonAliases("Nullable"));
+            {
+                new DSTypeParameter("T", TypeParameterConstraints.ValueTypeConstraint)
+            })
+            .AddEnclosedElement(new DSField("value", "T", 1))
+            .AddDsonAliases("Nullable"));
     }
 
     #region props

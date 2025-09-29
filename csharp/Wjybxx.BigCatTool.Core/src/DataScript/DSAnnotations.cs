@@ -112,11 +112,33 @@ public static class DSAnnotations
 
     /// <summary>
     /// 类型的Editor配置
+    /// 语法：<code>// @Editor{displayType: List, tooltip: "半径" }</code>
+    /// - displayType 展示类型
+    /// - tooltip 编辑器中的tip
     ///
-    /// Editor相关的配置较复杂，所以可能不是很适合直接配置在类型数据上，而更适合通过额外的数据进行配置 -- 避免对类型元数据造成过多污染。
-    /// (Editor需要对字段进行大量的配置，直接配置在类型元数据上，污染太严重)
+    /// 注：Editor相关的数据直接配置在类型上，如果数据量较多，可能影响阅读代码。
     /// </summary>
-    private const string Editor = "Editor";
+    public const string EDITOR = "Editor";
+    /// <summary>
+    /// 分支字段（标签类字段）
+    ///
+    /// 语法：<code>// @Branch{ ctrl: type, value: 1, alias: radius, tooltip: "半径" }</code>
+    /// - ctrl 控制字段的名字
+    /// - value 控制字段的值，支持数字和字符串
+    /// - alias 在该类型下的展示别名
+    /// - tooltip 编辑器下的tip
+    /// 
+    /// 示例解析：示例表示当type字段的值为1时字段有效，并展示为别名radius，tips为半径。
+    /// </summary>
+    public const string BRANCH = "Branch";
+    /// <summary>
+    /// 多态字段支持的类型
+    /// 
+    /// 语法：<code>// @SupportedTypes[Vector2, Vector3]</code>
+    /// 如果存在该属性，则只可以切换到限定的类型，如果没有该属性，则可以切换到任意类型。
+    /// (如非必要，不要限制 - 宽松的限制更不容易出Bug)
+    /// </summary>
+    public const string SUPPORTED_TYPES = "SupportedTypes";
 
     #region 注解属性的键
 
@@ -140,6 +162,11 @@ public static class DSAnnotations
     private const string KEY_ASYNC = "async";
     private const string KEY_MANUAL = "manual";
     private const string KEY_CTX = "ctx";
+    // Editor
+    public const string KEY_CTRL = "ctrl";
+    public const string KEY_VALUE = "value";
+    // public const string KEY_ALIAS = "alias"; // 重复
+    public const string KEY_TOOLTIP = "tooltip";
 
     #endregion
 }

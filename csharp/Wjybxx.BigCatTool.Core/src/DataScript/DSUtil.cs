@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
@@ -31,6 +32,14 @@ namespace Wjybxx.BigCatTool.DataScript
 {
 public static class DSUtil
 {
+    // 常用扩展集合类型
+    public const string TYPE_LINKED_HASHSET = "LinkedHashset";
+    public const string TYPE_LINKED_MAP = "LinkedMap";
+    // 不可变集合
+    public const string TYPE_IMMUTABLE_LIST = "ImmutableList";
+    public const string TYPE_IMMUTABLE_SET = "ImmutableSet";
+    public const string TYPE_IMMUTABLE_MAP = "ImmutableMap";
+
     public static bool IsType(this DSElementKind kind) {
         return kind == DSElementKind.Class
                || kind == DSElementKind.Strut
@@ -39,6 +48,7 @@ public static class DSUtil
                || kind == DSElementKind.TypeParameter;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsNamedType(this DSElementKind kind) {
         return kind == DSElementKind.Class
                || kind == DSElementKind.Strut
@@ -152,7 +162,7 @@ public static class DSUtil
     /// 数字类型支持Dson文本支持的所有格式，此外还支持Flags格式<code>A|B|C</code>；
     /// 如果其它类型也期望使用支持Flags类型，需要自定义<see cref="DSTypeHandler"/>。
     /// </summary>
-    public static bool IsNumberType(DSTypeElement typeElement) {
+    public static bool IsNumberType(DSElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
             return typeElement.SimpleName switch
             {
@@ -169,29 +179,89 @@ public static class DSUtil
     /// <summary>
     /// 是否是bool类型
     /// </summary>
-    public static bool IsBoolType(DSTypeElement typeElement) {
+    public static bool IsBoolType(DSElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_BOOL;
     }
 
     /// <summary>
     /// 是否是string类型
     /// </summary>
-    public static bool IsStringType(DSTypeElement typeElement) {
+    public static bool IsStringType(DSElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_STRING;
     }
 
     /// <summary>
     /// 是否是日期时间类型
     /// </summary>
-    public static bool IsDateTimeType(DSTypeElement typeElement) {
+    public static bool IsDateTimeType(DSElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_DATETIME;
     }
 
     /// <summary>
     /// 是否是可空值类型
     /// </summary>
-    public static bool IsNullableType(DSTypeElement typeElement) {
+    public static bool IsNullableType(DSElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_NULLABLE;
+    }
+
+    /// <summary>
+    /// 是否是Pair类型
+    /// </summary>
+    public static bool IsPairType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_PAIR;
+    }
+
+    /// <summary>
+    /// 是否是List类型
+    /// </summary>
+    public static bool IsListType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
+        {
+            DSKeywords.TYPE_LIST => true,
+            TYPE_IMMUTABLE_LIST => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// 是否是Set类型
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    public static bool IsSetType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
+        {
+            DSKeywords.TYPE_HASH_SET => true,
+            TYPE_LINKED_HASHSET => true,
+            TYPE_IMMUTABLE_SET => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// 是否是字典类型
+    ///
+    /// 注意：这里的仅仅是测试类型的字符串，因此并不完全精确，使用时要小心。
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    public static bool IsMapType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
+        {
+            DSKeywords.TYPE_MAP => true,
+            TYPE_LINKED_MAP => true,
+            TYPE_IMMUTABLE_MAP => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// 是否是集合类型(List或Set)
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    public static bool IsCollectionType(DSElement typeElement) {
+        return IsListType(typeElement) || IsSetType(typeElement);
     }
 
     #region Name工具方法

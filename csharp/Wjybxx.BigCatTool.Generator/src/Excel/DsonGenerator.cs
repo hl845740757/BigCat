@@ -431,7 +431,22 @@ public class DsonGenerator : ISheetProcessor
     /// <param name="namedType"></param>
     /// <param name="container"></param>
     private DsonValue RepairFieldValue(DSNamedType namedType, DsonValue container) {
-        if (CodeGeneratorHelper.IsCollectionType(namedType)) {
+        if (DSUtil.IsPairType(namedType)) {
+            // 修正value的值
+            DSNamedType valueType = (DSNamedType)namedType.TypeArguments[1];
+            if (container.DsonType == DsonType.Array) {
+                DsonArray<string> dsonArray = container.AsArray();
+                Debug.Assert(dsonArray.Count == 2);
+                dsonArray[1] = RepairFieldValue(valueType, dsonArray[1]);
+            } else {
+                DsonObject<string> dsonObject = container.AsObject();
+                Debug.Assert(dsonObject.Count == 1);
+                KeyValuePair<string, DsonValue> pair = dsonObject.First();
+                dsonObject[pair.Key] = RepairFieldValue(valueType, pair.Value);
+            }
+            return container;
+        }
+        if (DSUtil.IsCollectionType(namedType)) {
             // 修正List的Value
             DsonArray<string> dsonArray = (DsonArray<string>)container;
             DSTypeElement elementType = namedType.TypeArguments[0];
@@ -445,7 +460,7 @@ public class DsonGenerator : ISheetProcessor
             }
             return container;
         }
-        if (CodeGeneratorHelper.IsDictionaryType(namedType)) {
+        if (DSUtil.IsMapType(namedType)) {
             // 修正Map的Value - 覆盖数据不会导致迭代抛出异常
             DsonObject<string> dsonObject = (DsonObject<string>)container;
             DSTypeElement elementType = namedType.TypeArguments[1];

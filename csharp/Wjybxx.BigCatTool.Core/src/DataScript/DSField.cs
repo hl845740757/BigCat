@@ -45,7 +45,7 @@ public class DSField : DSElement
     private readonly DSField _originDefine;
 #nullable restore
 
-    public DSField(string simpleName, string typeSymbol, int number, bool isReadonly)
+    public DSField(string simpleName, string typeSymbol, int number, bool isReadonly = false)
         : base(simpleName) {
         this.typeSymbol = typeSymbol;
         this.number = number;
@@ -63,7 +63,7 @@ public class DSField : DSElement
 
     public override DSElementKind Kind => DSElementKind.Field;
     public override DSElement OriginDefine => _originDefine ?? this;
-    public DSField OriginFiled => _originDefine ?? this;
+    public DSField OriginField => _originDefine ?? this;
 #nullable disable
 
     #region props

@@ -32,6 +32,7 @@ using Wjybxx.Dson.Codec.Attributes;
 using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
+using static Wjybxx.BigCatTool.DataScript.DSUtil;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -51,20 +52,6 @@ namespace Wjybxx.BigCatTool.DataScript
 /// </summary>
 public class CodeGeneratorHelper
 {
-    #region 常量
-
-    public const string TYPE_LINKED_HASHSET = "LinkedHashset";
-    public const string TYPE_LINKED_DICTIONARY = "LinkedDictionary";
-    public const string TYPE_LINKED_MAP = "LinkedMap"; // 别名
-
-    // 不可变
-    public const string TYPE_IMMUTABLE_LIST = "ImmutableList";
-    public const string TYPE_IMMUTABLE_SET = "ImmutableSet";
-    public const string TYPE_IMMUTABLE_MAP = "ImmutableMap"; // 别名
-    public const string TYPE_IMMUTABLE_DICTIONARY = "ImmutableDictionary";
-
-    #endregion
-
     protected readonly CodeGeneratorCfg generatorCfg;
     private readonly AttributeSpec processorInfo;
     // 缓存
@@ -918,7 +905,7 @@ public class CodeGeneratorHelper
             } else if (IsListType(field.Type)) {
                 // List默认使用SequenceEqual -- Util类处理了null
                 codeBuilder.AddStatement("if (!$T.SequenceEqual(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
-            } else if (IsSetOrDictionaryType(field.Type)) {
+            } else if (IsSetOrMapType(field.Type)) {
                 // 集合和字典使用DataEquals
                 codeBuilder.AddStatement("if (!$T.DataEquals(this.$L, other.$L)) return false", TYPE_NAME_COLLECTION_UTIL, fieldName, fieldName);
             } else {
@@ -971,7 +958,7 @@ public class CodeGeneratorHelper
             if (field.Type.IsValueType) {
                 // 值类型直接调用HashCode
                 codeBuilder.AddStatement("this.$L.GetHashCode()", fieldName);
-            } else if (IsListType(field.Type) || IsSetOrDictionaryType(field.Type)) {
+            } else if (IsListType(field.Type) || IsSetOrMapType(field.Type)) {
                 // 集合类型调用Util的HashCode
                 codeBuilder.AddStatement("$T.HashCode(this.$L)", TYPE_NAME_COLLECTION_UTIL, fieldName);
             } else {
@@ -988,7 +975,7 @@ public class CodeGeneratorHelper
     }
 
     /** 是否使用 '==' 操作符测试相等性，<see cref="Nullable{T}"/> */
-    protected virtual bool UsingEqualsOperator(DSTypeElement typeElement) {
+    protected virtual bool UsingEqualsOperator(DSElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
             return typeElement.SimpleName switch
             {
@@ -1007,7 +994,7 @@ public class CodeGeneratorHelper
     }
 
     /** 是否是csharp基本类型 */
-    public static bool IsPrimitiveType(DSTypeElement typeElement) {
+    private static bool IsPrimitiveType(DSElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
             return typeElement.SimpleName switch
             {
@@ -1022,52 +1009,8 @@ public class CodeGeneratorHelper
         return false;
     }
 
-    public static bool IsListType(DSTypeElement typeElement) {
-        if (typeElement.Kind.IsNamedType()) {
-            return typeElement.SimpleName switch
-            {
-                DSKeywords.TYPE_LIST => true,
-                TYPE_IMMUTABLE_LIST => true,
-                _ => false
-            };
-        }
-        return false;
-    }
-
-    public static bool IsSetType(DSTypeElement typeElement) {
-        if (typeElement.Kind.IsNamedType()) {
-            return typeElement.SimpleName switch
-            {
-                DSKeywords.TYPE_HASH_SET => true,
-                TYPE_LINKED_HASHSET => true,
-                TYPE_IMMUTABLE_SET => true,
-                _ => false
-            };
-        }
-        return false;
-    }
-
-    public static bool IsDictionaryType(DSTypeElement typeElement) {
-        if (typeElement.Kind.IsNamedType()) {
-            return typeElement.SimpleName switch
-            {
-                DSKeywords.TYPE_MAP => true,
-                TYPE_LINKED_DICTIONARY => true,
-                TYPE_LINKED_MAP => true,
-                TYPE_IMMUTABLE_DICTIONARY => true,
-                TYPE_IMMUTABLE_MAP => true,
-                _ => false
-            };
-        }
-        return false;
-    }
-
-    public static bool IsCollectionType(DSTypeElement typeElement) {
-        return IsListType(typeElement) || IsSetType(typeElement);
-    }
-
-    public static bool IsSetOrDictionaryType(DSTypeElement typeElement) {
-        return IsSetType(typeElement) || IsDictionaryType(typeElement);
+    private static bool IsSetOrMapType(DSElement typeElement) {
+        return IsSetType(typeElement) || IsMapType(typeElement);
     }
 
     #endregion
@@ -1098,7 +1041,7 @@ public class CodeGeneratorHelper
             }
             string fieldName = GetFieldName(field.SimpleName);
             // 集合类型调用Util类的ToString，避免创建额外的StringBuilder
-            if (IsListType(field.Type) || IsSetOrDictionaryType(field.Type)) {
+            if (IsListType(field.Type) || IsSetOrMapType(field.Type)) {
                 codeBuilder.AddStatement("sb.Append($S).Append(':')", field.SimpleName);
                 codeBuilder.AddStatement("$T.ToStringHelper(this.$L, sb)", TYPE_NAME_COLLECTION_UTIL, fieldName);
                 continue;
@@ -1234,12 +1177,10 @@ public class CodeGeneratorHelper
             DSKeywords.TYPE_MAP => TYPE_NAME_DICTIONARY,
             // 扩展支持
             TYPE_LINKED_HASHSET => TYPE_NAME_LINKED_HASHSET,
-            TYPE_LINKED_DICTIONARY => TYPE_NAME_LINKED_DICTIONARY,
             TYPE_LINKED_MAP => TYPE_NAME_LINKED_DICTIONARY,
 
             TYPE_IMMUTABLE_LIST => TYPE_NAME_IMMUTABLE_LIST,
             TYPE_IMMUTABLE_SET => TYPE_NAME_IMMUTABLE_SET,
-            TYPE_IMMUTABLE_DICTIONARY => TYPE_NAME_IMMUTABLE_DICTIONARY,
             TYPE_IMMUTABLE_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
             _ => null
         };
