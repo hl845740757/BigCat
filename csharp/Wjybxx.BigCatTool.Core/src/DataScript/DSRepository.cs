@@ -102,10 +102,17 @@ public sealed class DSRepository
             .AddEnclosedElement(new DSField("value", "V", 2))
             .AddDsonAliases("Pair", "KeyValuePair"));
 
-        // 基础容器
-        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST).AddDsonAliases("List"));
-        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_HASH_SET).AddDsonAliases("HashSet", "Set"));
-        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP).AddDsonAliases("Map", "Dictionary"));
+        // 基础容器 - 暂不定义count字段
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST)
+            .AddEnclosedElement(new DSField("values", "T", 1) { IsRepeated = true })
+            .AddDsonAliases("List"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_HASH_SET)
+            .AddEnclosedElement(new DSField("values", "T", 1) { IsRepeated = true })
+            .AddDsonAliases("HashSet", "Set"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP)
+            .AddEnclosedElement(new DSField("keys", "K", 1) { IsRepeated = true })
+            .AddEnclosedElement(new DSField("values", "V", 2) { IsRepeated = true })
+            .AddDsonAliases("Map", "Dictionary"));
         // 装箱类型
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT).AddDsonAliases("Object", "object"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE, new List<DSTypeParameter>(1)

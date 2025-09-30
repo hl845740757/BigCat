@@ -1173,7 +1173,7 @@ public class CodeGeneratorHelper
             DSKeywords.TYPE_OBJECT => TypeName.OBJECT,
             //
             DSKeywords.TYPE_LIST => TYPE_NAME_LIST,
-            DSKeywords.TYPE_HASH_SET => TYPE_NAME_HASHSET,
+            DSKeywords.TYPE_HASHSET => TYPE_NAME_HASHSET,
             DSKeywords.TYPE_MAP => TYPE_NAME_DICTIONARY,
             // 扩展支持
             TYPE_LINKED_HASHSET => TYPE_NAME_LINKED_HASHSET,

@@ -52,6 +52,10 @@ public abstract class DSElement
     /** 定义元素的结束行号 -- -1表示非源码文件定义 */
     private int endLine = -1;
 #nullable restore
+#if UNITY_EDITOR
+    /** editor上下文 - 存储一些解析后的元数据 */
+    public object editorContext;
+#endif
 
     protected DSElement(string simpleName) {
         this.simpleName = simpleName ?? throw new ArgumentNullException(nameof(simpleName));

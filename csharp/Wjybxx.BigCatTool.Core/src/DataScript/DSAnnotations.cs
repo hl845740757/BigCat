@@ -51,7 +51,7 @@ public static class DSAnnotations
     /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true}</code>
     /// - isFlags 用于标识枚举类型是否是Flags类型
     /// - dataClass 用于标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
-    /// - nonGenerate 非生成类，表示生成代码时跳过
+    /// - nonGenerate 表示生成代码时跳过
     ///
     /// <h3>用于字段时</h3>
     /// <code>// @Options{nonSerialized: true, nonEqual: true, ssti: true}</code>
@@ -75,9 +75,10 @@ public static class DSAnnotations
     /// - elemStyle 用于指定数组元素或字典的Value的排版；非必需功能，可能不会生效。
     ///
     /// <h3>用于字段时</h3>
-    /// <code>// @Codec{name: xyz, style: flow} </code>
+    /// <code>// @Codec{name: xyz, style: flow, elemStyle: flow} </code>
     /// - name 表示字段序列化的名字，不推荐使用
     /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
+    /// - elemStyle 用于指定数组元素或字典的Value的排版；非必需功能，可能不会生效。
     ///
     /// 注：style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
     /// </summary>
@@ -111,34 +112,52 @@ public static class DSAnnotations
     public const string RPC_CUSTOM = "RpcCustom";
 
     /// <summary>
-    /// 类型的Editor配置
-    /// 语法：<code>// @Editor{displayType: List, tooltip: "半径" }</code>
+    /// 类型或字段的编辑器基础选项
+    /// 
+    /// 语法：<code>// @Editor{ displayName: position, displayType: Vector3, tooltip: "Tip" }</code>
+    /// - displayName 展示名
     /// - displayType 展示类型
-    /// - tooltip 编辑器中的tip
-    ///
-    /// 注：Editor相关的数据直接配置在类型上，如果数据量较多，可能影响阅读代码。
+    /// - tooltip 类型tip，可选
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
-    /// 分支字段（标签类字段）
+    /// 端口字段
     ///
-    /// 语法：<code>// @Branch{ ctrl: type, value: 1, alias: radius, tooltip: "半径" }</code>
-    /// - ctrl 控制字段的名字
+    /// 语法：<code>// @NodePort{ side: Left }</code>
+    /// - side 端口的显示位置：Left、Right、Bottom，未指定的情况下默认Right
+    /// </summary>
+    public const string PORT_FIELD = "PortField";
+
+    /// <summary>
+    /// Pop字段(支持多个)
+    /// 
+    /// 语法：<code>// @PopField{ value: 1, displayName: AABB}</code>
+    /// - value 字段对应的值
+    /// - displayName 字段的展示名
+    ///
+    /// 注：Pop字段通常和分支字段配套使用，实现标签类；也用于IntMask字段。
+    /// </summary>
+    public const string POP_FIELD = "PopField";
+    /// <summary>
+    /// 分支字段（标签类字段）(支持多个)
+    ///
+    /// 语法：<code>// @BranchField{ ctrl: type, value: 1, displayName: radius, tooltip: "半径" }</code>
+    /// - ctrl 控制字段的名字，通常为PopField或枚举字段
     /// - value 控制字段的值，支持数字和字符串
-    /// - alias 在该类型下的展示别名
-    /// - tooltip 编辑器下的tip
+    /// - displayName 在该类型下的展示别名
+    /// - tooltip 编辑器下的tip，可选
     /// 
     /// 示例解析：示例表示当type字段的值为1时字段有效，并展示为别名radius，tips为半径。
     /// </summary>
-    public const string BRANCH = "Branch";
+    public const string BRANCH_FIELD = "BranchField";
+
     /// <summary>
-    /// 多态字段支持的类型
-    /// 
-    /// 语法：<code>// @SupportedTypes[Vector2, Vector3]</code>
-    /// 如果存在该属性，则只可以切换到限定的类型，如果没有该属性，则可以切换到任意类型。
-    /// (如非必要，不要限制 - 宽松的限制更不容易出Bug)
+    /// 多态字段
+    /// 语法：<code>// @PloyField[ Vector2, Vector3 ]</code>
+    ///
+    /// 注：注解为数组类型，Value为为支持的类型。
     /// </summary>
-    public const string SUPPORTED_TYPES = "SupportedTypes";
+    public const string PLOY_FIELD = "PloyField";
 
     #region 注解属性的键
 
@@ -157,15 +176,20 @@ public static class DSAnnotations
     public const string KEY_STYLE = "style";
     public const string KEY_ELEM_STYLE = "elemStyle";
     public const string KEY_NAME = "name";
+
     // Rpc
     private const string KEY_ID = "id";
     private const string KEY_ASYNC = "async";
     private const string KEY_MANUAL = "manual";
     private const string KEY_CTX = "ctx";
+
     // Editor
+    public const string KEY_DISPLAY_NAME = "displayName";
+    public const string KEY_DISPLAY_TYPE = "displayType";
+    public const string KEY_FIELD_PATH = "fieldPath";
+    public const string KEY_SIDE = "side";
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";
-    // public const string KEY_ALIAS = "alias"; // 重复
     public const string KEY_TOOLTIP = "tooltip";
 
     #endregion

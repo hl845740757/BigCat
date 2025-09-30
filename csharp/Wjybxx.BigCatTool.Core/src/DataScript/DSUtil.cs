@@ -33,7 +33,7 @@ namespace Wjybxx.BigCatTool.DataScript
 public static class DSUtil
 {
     // 常用扩展集合类型
-    public const string TYPE_LINKED_HASHSET = "LinkedHashset";
+    public const string TYPE_LINKED_HASHSET = "LinkedHashSet";
     public const string TYPE_LINKED_MAP = "LinkedMap";
     // 不可变集合
     public const string TYPE_IMMUTABLE_LIST = "ImmutableList";
@@ -231,7 +231,7 @@ public static class DSUtil
     public static bool IsSetType(DSElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
         {
-            DSKeywords.TYPE_HASH_SET => true,
+            DSKeywords.TYPE_HASHSET => true,
             TYPE_LINKED_HASHSET => true,
             TYPE_IMMUTABLE_SET => true,
             _ => false
@@ -262,6 +262,29 @@ public static class DSUtil
     /// <returns></returns>
     public static bool IsCollectionType(DSElement typeElement) {
         return IsListType(typeElement) || IsSetType(typeElement);
+    }
+
+    /// <summary>
+    /// 是否是原子值类型(不能再切割的类型)
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    public static bool IsAtomicType(DSElement typeElement) {
+        if (!typeElement.Kind.IsNamedType()) return false;
+        if (typeElement.Kind == DSElementKind.Enum) {
+            return true;
+        }
+        return typeElement.SimpleName switch
+        {
+            DSKeywords.TYPE_INT32 => true,
+            DSKeywords.TYPE_INT64 => true,
+            DSKeywords.TYPE_FLOAT => true,
+            DSKeywords.TYPE_DOUBLE => true,
+            DSKeywords.TYPE_BOOL => true,
+            DSKeywords.TYPE_STRING => true,
+            DSKeywords.TYPE_BYTES => true,
+            _ => false
+        };
     }
 
     #region Name工具方法

@@ -36,8 +36,10 @@ public class DSField : DSElement
     private readonly string typeSymbol;
     /** 数字id */
     private readonly int number;
-    /** 字段是否是只读的 -- 对应字段来说，还是修饰符好用 */
+    /** 字段是否是只读的 -- 对字段来说，还是修饰符好用 */
     private readonly bool isReadonly;
+    /** 是否是可重复字段 - 即数组 */
+    private bool isRepeated;
     /** 类型 -- build时解析 */
     private DSTypeElement type;
 
@@ -58,12 +60,14 @@ public class DSField : DSElement
         _originDefine = originDefine;
         this.number = originDefine.number;
         this.isReadonly = originDefine.isReadonly;
+        this.isRepeated = originDefine.IsRepeated;
         this.type = type;
     }
 
     public override DSElementKind Kind => DSElementKind.Field;
     public override DSElement OriginDefine => _originDefine ?? this;
     public DSField OriginField => _originDefine ?? this;
+    public new DSNamedType EnclosingElement => (DSNamedType)base.EnclosingElement;
 #nullable disable
 
     #region props
@@ -89,6 +93,16 @@ public class DSField : DSElement
     public DSTypeElement Type {
         get => type;
         set => type = value;
+    }
+
+    /// <summary>
+    /// 是否是可重复字段(数组字段)
+    /// 
+    /// 注：该属性服务于List和Map结构，一般业务不应该使用该属性。
+    /// </summary>
+    public bool IsRepeated {
+        get => false;
+        internal set => isRepeated = value;
     }
 
     #endregion

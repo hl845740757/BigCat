@@ -33,6 +33,7 @@ public class DSEnumValue : DSElement
     }
 
     public override DSElementKind Kind => DSElementKind.EnumValue;
+    public new DSNamedType EnclosingElement => (DSNamedType)base.EnclosingElement;
     public int Number => number;
 
     protected override void ToString(StringBuilder sb) {

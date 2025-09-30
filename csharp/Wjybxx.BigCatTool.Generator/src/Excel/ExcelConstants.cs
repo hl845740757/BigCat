@@ -421,7 +421,7 @@ public static class ExcelConstants
     /// <param name="type"></param>
     /// <returns></returns>
     public static bool IsHashSetType(string type) {
-        return type == DSKeywords.TYPE_HASH_SET || type.StartsWith(DSKeywords.TYPE_HASH_SET + "<");
+        return type == DSKeywords.TYPE_HASHSET || type.StartsWith(DSKeywords.TYPE_HASHSET + "<");
     }
 
     /// <summary>

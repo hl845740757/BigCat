@@ -170,7 +170,7 @@ public class ClassGenerator : ISheetProcessor
             {
                 // 集合全部转不可变
                 DSKeywords.TYPE_LIST => TYPE_NAME_IMMUTABLE_LIST,
-                DSKeywords.TYPE_HASH_SET => TYPE_NAME_IMMUTABLE_SET,
+                DSKeywords.TYPE_HASHSET => TYPE_NAME_IMMUTABLE_SET,
                 DSKeywords.TYPE_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 TYPE_LINKED_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 //

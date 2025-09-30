@@ -111,7 +111,7 @@ public static class DSKeywords
     public const string TYPE_PAIR = "Pair"; // 除了拆分配置Map时，其它时候避免使用Pair
     // 容器类型
     public const string TYPE_LIST = "List";
-    public const string TYPE_HASH_SET = "HashSet";
+    public const string TYPE_HASHSET = "HashSet";
     public const string TYPE_MAP = "Map";
     // 装箱类型
     public const string TYPE_OBJECT = "Object";
@@ -138,7 +138,7 @@ public static class DSKeywords
     {
         TypeParameterName.Get("T")
     });
-    public static readonly ClassName TYPE_NAME_HASH_SET = ClassName.Get(GLOBAL, TYPE_HASH_SET, new List<TypeName>()
+    public static readonly ClassName TYPE_NAME_HASH_SET = ClassName.Get(GLOBAL, TYPE_HASHSET, new List<TypeName>()
     {
         TypeParameterName.Get("T")
     });

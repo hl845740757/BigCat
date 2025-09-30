@@ -385,7 +385,7 @@ public class DsonGenerator : ISheetProcessor
                 DSKeywords.TYPE_BOOL => DsonBool.FALSE,
                 // 集合类型默认返回空集合，而不是null
                 DSKeywords.TYPE_LIST => root ? new DsonArray<string>() : DsonNull.NULL,
-                DSKeywords.TYPE_HASH_SET => root ? new DsonArray<string>() : DsonNull.NULL,
+                DSKeywords.TYPE_HASHSET => root ? new DsonArray<string>() : DsonNull.NULL,
                 DSKeywords.TYPE_MAP => root ? new DsonObject<string>() : DsonNull.NULL,
                 _ => DsonNull.NULL
             };
