@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
@@ -89,20 +88,32 @@ public sealed class DSRepository
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32).AddDsonAliases("i", "int32"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64).AddDsonAliases("L", "int64"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT).AddDsonAliases("f", "float"));
-        ;
+
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE).AddDsonAliases("d", "double"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL).AddDsonAliases("b", "bool"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING).AddDsonAliases("s", "string"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES).AddDsonAliases("bin", "binary"));
         // 内建结构
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME).AddDsonAliases("DateTime")); // 不是Dson内建结构
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP).AddDsonAliases("Timestamp")); // 虽然是内建结构，但也不缩写
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME)
+            .AddEnclosedElement(new DSField("seconds", "int64", 1))
+            .AddEnclosedElement(new DSField("nanos", "int32", 2))
+            .AddDsonAliases("DateTime"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP)
+            .AddEnclosedElement(new DSField("seconds", "int64", 1))
+            .AddEnclosedElement(new DSField("nanos", "int32", 2))
+            .AddDsonAliases("Timestamp"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_POINTER)
+            .AddEnclosedElement(new DSField("collection", "string", 1))
+            .AddEnclosedElement(new DSField("localPath", "string", 2))
+            .AddEnclosedElement(new DSField("localId", "int64", 3))
+            .AddEnclosedElement(new DSField("type", "int32", 4))
+            .AddDsonAliases("ptr", "ObjectPtr"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR)
             .AddEnclosedElement(new DSField("key", "K", 1))
             .AddEnclosedElement(new DSField("value", "V", 2))
             .AddDsonAliases("Pair", "KeyValuePair"));
 
-        // 基础容器 - 暂不定义count字段
+        // 基础容器 - 暂不定义count字段；集合元素的值统一命名为values
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST)
             .AddEnclosedElement(new DSField("values", "T", 1) { IsRepeated = true })
             .AddDsonAliases("List"));
@@ -113,12 +124,10 @@ public sealed class DSRepository
             .AddEnclosedElement(new DSField("keys", "K", 1) { IsRepeated = true })
             .AddEnclosedElement(new DSField("values", "V", 2) { IsRepeated = true })
             .AddDsonAliases("Map", "Dictionary"));
-        // 装箱类型
-        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT).AddDsonAliases("Object", "object"));
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE, new List<DSTypeParameter>(1)
-            {
-                new DSTypeParameter("T", TypeParameterConstraints.ValueTypeConstraint)
-            })
+        // 装箱类型 - Nullable去除了值类型约束，使得我们在编辑器中可以支持字符串为null
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT)
+            .AddDsonAliases("Object", "object"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE)
             .AddEnclosedElement(new DSField("value", "T", 1))
             .AddDsonAliases("Nullable"));
     }
@@ -511,7 +520,7 @@ public sealed class DSRepository
     #region Resolve-DsonTypeName
 
     /// <summary>
-    /// 开放字段，允许用户手动修正冲突
+    /// 开放字段以允许用户手动修正冲突
     /// </summary>
     public Dictionary<string, DSNamedType> DsonAlias2TypeDic => dsonAlias2TypeDic;
 
@@ -608,7 +617,7 @@ public sealed class DSRepository
             dsFile.BuildCache();
             foreach (DSNamedType namedType in dsFile.TypeMap.Values) {
                 indexedElementMap.Add(new IndexKey(isInst: false, namedType.FullName), namedType);
-                InitCodecInfo(namedType);
+                InitCodecInfo(dsFile, namedType);
             }
             foreach (DSInst inst in dsFile.InstMap.Values) {
                 string fullName = dsFile.SimpleName + "." + inst.SimpleName;
@@ -644,7 +653,7 @@ public sealed class DSRepository
         }
     }
 
-    private void InitCodecInfo(DSNamedType namedType) {
+    private void InitCodecInfo(DSFile dsFile, DSNamedType namedType) {
         DsonObject<string> options = DSUtil.GetCodecOptions(namedType);
         namedType.DsonStyle = DSUtil.GetObjectStyle(options, namedType.DsonStyle);
         // 用户可能手动指定了别名
@@ -654,7 +663,11 @@ public sealed class DSRepository
                     namedType.DsonAliases.Add(alias.AsString());
                 }
             } else {
+                string prefix = dsFile.GetOption(DSKeywords.CODEC_ALIAS_PREFIX);
                 string alias = DSUtil.RemoveFirstName(namedType.FullName);
+                if (!string.IsNullOrWhiteSpace(prefix)) {
+                    alias = prefix + alias;
+                }
                 namedType.DsonAliases.Add(alias);
             }
         }

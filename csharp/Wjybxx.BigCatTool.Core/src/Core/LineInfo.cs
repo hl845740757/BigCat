@@ -74,8 +74,6 @@ public sealed class LineInfo
 
     /// <summary>
     /// 解析行信息（默认方案）
-    ///
-    /// 不支持'/'为正常内容，如果'/'可能为正常内容，请自定义解析。
     /// </summary>
     /// <param name="ln">行号--不约束</param>
     /// <param name="rawLine">原始行数据</param>
@@ -83,23 +81,18 @@ public sealed class LineInfo
     public static LineInfo Parse(int ln, string rawLine) {
         if (rawLine == null) throw new ArgumentNullException(nameof(rawLine));
 
-        string content;
-        string? comment;
+        string content = null;
+        string? comment = "";
+        // 单斜杠则继续扫描
         int slashIdx = rawLine.IndexOf('/');
-        if (slashIdx < 0) {
-            content = rawLine.Trim();
-            comment = null;
+        while (slashIdx >= 0 && slashIdx + 1 < rawLine.Length && rawLine[slashIdx + 1] != '/') {
+            slashIdx = rawLine.IndexOf('/', slashIdx + 1);
+        }
+        if (slashIdx >= 0 && slashIdx + 1 < rawLine.Length && rawLine[slashIdx + 1] == '/') {
+            content = rawLine.Substring(0, slashIdx).Trim();
+            comment = rawLine.Substring(slashIdx); // 保留斜杠
         } else {
-            if (slashIdx + 1 >= rawLine.Length || rawLine[slashIdx + 1] != '/') {
-                throw new IOException("incorrect comment format, ln: " + ln);
-            }
-            if (slashIdx == 0) {
-                content = "";
-                comment = rawLine;
-            } else {
-                content = rawLine.Substring2(0, slashIdx).Trim();
-                comment = rawLine.Substring(slashIdx); // 保留斜杠
-            }
+            content = rawLine.Trim();
         }
         return new LineInfo(ln, rawLine, content, comment);
     }

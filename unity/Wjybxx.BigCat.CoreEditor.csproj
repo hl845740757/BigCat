@@ -48,15 +48,28 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Core\Editor\MaskFieldPropertyDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataDisplayType.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\ReadOnlyPropertyDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataNode.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\EnumFlagsPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationPreviewer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\NullableVariableDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataDisplayCfg.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditorUtil.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\MapVariableDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteGroupEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditorModel.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataVariableDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpritePathEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\ListVariableDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteModelEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataNodeDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\StringEnumPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\AABBEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\ObjectVariableDrawer.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataVariable.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditorPlus.cs" />
     <None Include="Assets\Scripts\Core\Editor\Wjybxx.BigCat.CoreEditor.asmdef" />
     <Reference Include="UnityEngine">
@@ -749,6 +762,9 @@
     <Reference Include="Wjybxx.Dson.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Wjybxx.Dson.Codec">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.TestRunner">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
     </Reference>
@@ -764,6 +780,10 @@
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
       <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
       <Name>Wjybxx.BigCat.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCatTool.Core.csproj">
+      <Project>{17f05252-00fc-5af4-329a-8e14725841f9}</Project>
+      <Name>Wjybxx.BigCatTool.Core</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>

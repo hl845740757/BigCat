@@ -18,9 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Wjybxx.Commons;
 using System.Runtime.CompilerServices;
 
 #if UNITY_2021_3_OR_NEWER
@@ -64,9 +61,79 @@ public static class UnityHelper
     public static bool CheckObject(UnityEngine.Object obj) {
         return obj;
     }
+
+    /// <summary>
+    /// 是否是图片文件(测试文件路径后缀)
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static bool IsImageFile(string filePath) {
+        if (string.IsNullOrWhiteSpace(filePath)) return false;
+        return filePath.EndsWith(".png")
+               || filePath.EndsWith(".jpg")
+               || filePath.EndsWith(".psd")
+               || filePath.EndsWith(".tga");
+        // 其它还有tif
+    }
+
+    /// <summary>
+    /// 是否是音效文件
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static bool IsAudioFile(string filePath) {
+        if (string.IsNullOrWhiteSpace(filePath)) return false;
+        return filePath.EndsWith(".ogg")
+               || filePath.EndsWith(".mp3")
+               || filePath.EndsWith(".wav")
+               || filePath.EndsWith(".flac");
+    }
 #endif
 
 #if UNITY_EDITOR
+
+    #region asset-path
+
+    /// <summary>
+    /// 将文件路径转换为资产路径
+    /// </summary>
+    /// <param name="filePath"></param>
+    public static string ConvertToAssetPath(string filePath) {
+        if (string.IsNullOrWhiteSpace(filePath)) {
+            return filePath;
+        }
+        if (filePath.StartsWith("Assets")) {
+            return filePath.Replace('\\', '/');
+        }
+        return filePath.Replace(Application.dataPath, "Assets").Replace('\\', '/');
+    }
+
+    /// <summary>
+    /// 将资产路径转换为文件路径
+    /// </summary>
+    /// <param name="assetPath"></param>
+    /// <returns></returns>
+    public static string ConvertToFilePath(string assetPath) {
+        // "assets/sprites/xx" 
+        return Application.dataPath + assetPath.Substring(6);
+    }
+
+    /// <summary>
+    /// 将资产路径转换为文件夹路径
+    /// </summary>
+    /// <returns></returns>
+    public static string GetAssetFolderPath(UnityEngine.Object obj) {
+        string assetPath = AssetDatabase.GetAssetPath(obj);
+        if (assetPath.LastIndexOf('.') > 0) { // 文件
+            return assetPath.Substring(0, assetPath.LastIndexOf('/'));
+        }
+        return assetPath;
+    }
+
+    #endregion
+
+    #region draw
+
     /// <summary>
     /// 展开状态标识
     /// </summary>
@@ -84,6 +151,47 @@ public static class UnityHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetFoldoutSymbol(bool b) {
         return b ? "▼" : "▶";
+    }
+
+    /** 单行绘制Vector2 */
+    public static Vector2 DrawVector2(string label, Vector2 value) {
+        bool wideMode = EditorGUIUtility.wideMode;
+        EditorGUIUtility.wideMode = true; // 强制单行显示
+        value = EditorGUILayout.Vector2Field(label, value);
+        EditorGUIUtility.wideMode = wideMode;
+        return value;
+    }
+
+    /** 单行绘制Vector3 */
+    public static Vector3 DrawVector3(string label, Vector3 value) {
+        bool wideMode = EditorGUIUtility.wideMode;
+        EditorGUIUtility.wideMode = true; // 强制单行显示
+        value = EditorGUILayout.Vector3Field(label, value);
+        EditorGUIUtility.wideMode = wideMode;
+        return value;
+    }
+
+    /** 绘制分割线 */
+    public static void DrawSeparator() {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1);
+        EditorGUI.DrawRect(rect, Color.gray);
+    }
+
+    /** 绘制分割线 */
+    public static void DrawSeparator(Color color) {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1);
+        EditorGUI.DrawRect(rect, color);
+    }
+
+    #endregion
+
+    #region GUIContent
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsEmpty(this GUIContent content) {
+        return string.IsNullOrEmpty(content.text)
+               && string.IsNullOrEmpty(content.tooltip)
+               && !content.image;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -108,91 +216,13 @@ public static class UnityHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GUIContent WithTooltip(this GUIContent content, string tooltip) {
-        content.tooltip = tooltip;
-        return content;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GUIContent WithImage(this GUIContent content, Texture image) {
         content.image = image;
         return content;
     }
 
-    /// <summary>
-    /// 将文件路径转换为资产路径
-    /// </summary>
-    /// <param name="filePath"></param>
-    public static string ConvertToAssetPath(string filePath) {
-        if (string.IsNullOrWhiteSpace(filePath)) {
-            return filePath;
-        }
-        if (filePath.StartsWith("Assets")) {
-            return filePath.Replace("\\", "/");
-        }
-        return filePath.Replace(Application.dataPath, "Assets").Replace("\\", "/");
-    }
+    #endregion
 
-    /// <summary>
-    /// 将资产路径转换为文件路径
-    /// </summary>
-    /// <param name="assetPath"></param>
-    /// <returns></returns>
-    public static string ConvertToFilePath(string assetPath) {
-        // "assets".Length == 6
-        return Application.dataPath + "/" + assetPath.Substring(6);
-    }
-
-    /// <summary>
-    /// 将资产路径转换为文件夹路径
-    /// </summary>
-    /// <returns></returns>
-    public static string GetAssetFolderPath(UnityEngine.Object obj) {
-        string assetPath = AssetDatabase.GetAssetPath(obj);
-        if (assetPath.LastIndexOf('.') > 0) { // 文件
-            return assetPath.Substring(0, assetPath.LastIndexOf('/'));
-        }
-        return assetPath;
-    }
-
-    /// <summary>
-    /// 是否是图片文件(测试文件路径后缀)
-    /// </summary>
-    /// <param name="filePath"></param>
-    /// <returns></returns>
-    public static bool IsImageFile(string filePath) {
-        if (string.IsNullOrWhiteSpace(filePath)) return false;
-        return filePath.EndsWith(".png") || filePath.EndsWith(".jpg") || filePath.EndsWith(".jpeg");
-    }
-
-    /// <summary>
-    /// 加载指定目录下的所有资产文件
-    ///
-    /// 以笨办法加载指定目录下的特定类型资产文件。
-    /// </summary>
-    /// <param name="folderPath">文件夹</param>
-    /// <param name="extensions">文件扩展名</param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public static List<T> LoadAllAssetsAtPath<T>(string folderPath, params string[] extensions) {
-        List<T> result = new List<T>();
-        foreach (string filePath in Directory.GetFiles(folderPath)) {
-            bool contains = extensions.Length switch
-            {
-                0 => !filePath.EndsWith(".meta"),
-                1 => filePath.EndsWith(extensions[0]),
-                _ => extensions.Any(extension => filePath.EndsWith(extension))
-            };
-            if (!contains) {
-                continue;
-            }
-            string assetPath = ConvertToAssetPath(filePath);
-            if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(T)) is T asset) {
-                result.Add(asset);
-            }
-        }
-        return result;
-    }
 #endif
 }
 }

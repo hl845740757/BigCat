@@ -16,28 +16,25 @@
 
 #endregion
 
-using System;
+using UnityEditor;
 using UnityEngine;
-using Wjybxx.Dson.Types;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.CoreEditor
 {
 /// <summary>
-/// 数据引用属性 -- <see cref="ObjectBucket"/>
-///
-/// 注意：只可用于<see cref="ObjectPath"/>和List[ObjectPath]类型。
+/// 数据绘制器
+/// 
+/// 1.类似<see cref="PropertyDrawer"/>，但使用自动布局（计算布局真的累死）。
+/// 2.实现类需保持为无可变状态的，状态数据可保存在<see cref="DataVariable.editorState"/>字段上。
 /// </summary>
-[AttributeUsage(AttributeTargets.Field)]
-public sealed class ObjectReferenceAttribute : PropertyAttribute
+public abstract class DataVariableDrawer
 {
-    public readonly bool preferName;
-
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="preferName">是否name优先</param>
-    public ObjectReferenceAttribute(bool preferName = true) {
-        this.preferName = preferName;
-    }
+    /// <param name="editor">用于获取上下文</param>
+    /// <param name="variable">要绘制的变量</param>
+    /// <param name="label">变量对应的label</param>
+    public abstract void OnGUI(DataEditor editor, DataVariable variable, GUIContent label);
 }
 }

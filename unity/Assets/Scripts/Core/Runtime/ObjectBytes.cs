@@ -28,6 +28,13 @@ namespace Wjybxx.BigCat.UnityCore
 public sealed class ObjectBytes
 {
     /// <summary>
+    /// 对象归属的文件（分组）
+    ///
+    /// 注：如果folder不为空.外部应当通过<code>folder/name</code>的方式引用。
+    /// </summary>
+    public string folder;
+
+    /// <summary>
     /// 对象归类，非详细类型
     ///
     /// 1.真实对象类型在data中，该字段用于确定大致属于哪类资产。
@@ -35,14 +42,15 @@ public sealed class ObjectBytes
     /// </summary>
     public int category;
     /// <summary>
-    /// 对象id
+    /// 对象本地id(桶内id)
     ///
-    /// 1.至少需要保证桶内唯一，即使是分块数据桶。
-    /// 2.为保证较好的兼容性，我们统一使用string类型存储 -- 逻辑上可能是long。
+    /// 注：至少需要保证桶内唯一，即使是分块数据桶。
     /// </summary>
-    public string objectId;
+    public long localId;
     /// <summary>
     /// 用户分配的对象名(可选)
+    ///
+    /// 注：name可以带有一层下划线，表示分组。
     /// </summary>
     public string name;
     /// <summary>
@@ -55,30 +63,12 @@ public sealed class ObjectBytes
     /// <summary>
     /// 共享对象缓存
     ///
-    /// 注：当Object可以共享时，直接存储在这里。
+    /// 注：当Object可以共享时，直接存储在这里；也可以保存DsonValue加速反序列化。
     /// </summary>
     [NonSerialized]
     public object cachedObject;
 
-#if UNITY_EDITOR
-    /// <summary>
-    /// UI节点的坐标，用于恢复编辑器数据
-    /// </summary>
-    [NonSerialized]
-    public Vector2 position;
-    /// <summary>
-    /// 归属的文件
-    ///
-    /// 注：编辑器下分组，可选。
-    /// </summary>
-    public string fileName;
-#endif
     public ObjectBytes() {
-    }
-
-    public ObjectBytes(string objectId, byte[] data) {
-        this.objectId = objectId;
-        this.data = data;
     }
 }
 }

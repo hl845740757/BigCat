@@ -78,7 +78,7 @@ public class DSField : DSElement
     public string TypeSymbol => typeSymbol;
 
     /// <summary>
-    /// 字段的数字
+    /// 字段的数字，推荐1开始
     /// </summary>
     public int Number => number;
 

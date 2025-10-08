@@ -173,6 +173,7 @@ public class ClassGenerator : ISheetProcessor
                 DSKeywords.TYPE_HASHSET => TYPE_NAME_IMMUTABLE_SET,
                 DSKeywords.TYPE_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 TYPE_LINKED_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
+                TYPE_ARRAY_MAP => TYPE_NAME_IMMUTABLE_DICTIONARY,
                 //
                 TYPE_IMMUTABLE_LIST => TYPE_NAME_IMMUTABLE_LIST,
                 TYPE_IMMUTABLE_SET => TYPE_NAME_IMMUTABLE_SET,

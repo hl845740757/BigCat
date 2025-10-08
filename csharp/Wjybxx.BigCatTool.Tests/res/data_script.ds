@@ -27,7 +27,8 @@ class SimpleChildBean : SimpleBean {
 }
 
 // 测试结构体，顺便测试codec注解解析
-// @Codec{alias: [Vector3, V3], style: flow}
+// @Codec{ alias: [Vector3, V3], style: flow }
+// @Editor{ displayType: Vector3 }
 struct Vector3 {
     readonly float x = 1;
     readonly float y = 2;
@@ -70,12 +71,20 @@ class OuterClass {
     float y = 2;
     Request request = 3;
     Result result = 4;
+	
+	List<Vector3> vecList = 5;
+	Map<int32, Color> colorMap = 6;
+	Map<int32, Vector3> posMap = 7;
 
     class Request {
-        string value = 1;
+		int32 a = 1;
+        int64 b = 2;
+		string str = 3;
     }    
     class Result {
-        string value = 1;
+		int32 a = 1;
+        int64 b = 2;
+		string str = 3;
     }
 }
 // 测试访问其它类型的内部类

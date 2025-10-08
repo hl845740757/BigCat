@@ -35,6 +35,7 @@ public static class DSUtil
     // 常用扩展集合类型
     public const string TYPE_LINKED_HASHSET = "LinkedHashSet";
     public const string TYPE_LINKED_MAP = "LinkedMap";
+    public const string TYPE_ARRAY_MAP = "ArrayMap";
     // 不可变集合
     public const string TYPE_IMMUTABLE_LIST = "ImmutableList";
     public const string TYPE_IMMUTABLE_SET = "ImmutableSet";
@@ -197,6 +198,19 @@ public static class DSUtil
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_DATETIME;
     }
 
+    public static bool IsTimestampType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_TIMESTAMP;
+    }
+
+    /// <summary>
+    /// 是否是对象指针类型
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    public static bool IsPointerType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_POINTER;
+    }
+
     /// <summary>
     /// 是否是可空值类型
     /// </summary>
@@ -250,6 +264,7 @@ public static class DSUtil
         {
             DSKeywords.TYPE_MAP => true,
             TYPE_LINKED_MAP => true,
+            TYPE_ARRAY_MAP => true,
             TYPE_IMMUTABLE_MAP => true,
             _ => false
         };
@@ -260,8 +275,19 @@ public static class DSUtil
     /// </summary>
     /// <param name="typeElement"></param>
     /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsCollectionType(DSElement typeElement) {
         return IsListType(typeElement) || IsSetType(typeElement);
+    }
+
+    /// <summary>
+    /// 是否是集合或字典类型
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsCollectionOrMapType(DSElement typeElement) {
+        return IsListType(typeElement) || IsSetType(typeElement) || IsMapType(typeElement);
     }
 
     /// <summary>
@@ -285,6 +311,11 @@ public static class DSUtil
             DSKeywords.TYPE_BYTES => true,
             _ => false
         };
+    }
+
+    public static bool IsFlagEnum(DSNamedType namedType) {
+        DsonObject<string> options = GetOptions(namedType);
+        return Annotation.GetBool(options, DSAnnotations.KEY_IS_FLAGS);
     }
 
     #region Name工具方法
@@ -385,7 +416,7 @@ public static class DSUtil
             return defaultStyle;
         }
         if (value.IsNumber) {
-            return (ObjectStyle)value.AsDsonNumber().IntValue;
+            return (ObjectStyle)value.AsNumber().IntValue;
         }
         string style = value.AsString().ToLower();
         return name2ObjectStyleDic.TryGetValue(style, out ObjectStyle result) ? result : defaultStyle;
@@ -396,7 +427,7 @@ public static class DSUtil
             return defaultStyle;
         }
         if (value.IsNumber) {
-            return (NumberStyle)value.AsDsonNumber().IntValue;
+            return (NumberStyle)value.AsNumber().IntValue;
         }
         string style = value.AsString().ToLower();
         return name2NumberStyleDic.TryGetValue(style, out NumberStyle result) ? result : defaultStyle;
@@ -407,7 +438,7 @@ public static class DSUtil
             return defaultStyle;
         }
         if (value.IsNumber) {
-            return (StringStyle)value.AsDsonNumber().IntValue;
+            return (StringStyle)value.AsNumber().IntValue;
         }
         string style = value.AsString().ToLower();
         return name2StringStyleDic.TryGetValue(style, out StringStyle result) ? result : defaultStyle;

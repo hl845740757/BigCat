@@ -30,22 +30,23 @@ public class SpritePathEditor : PropertyDrawer
     private static readonly string[] _searchFolders = new[] { "Assets/Resources/Sprites", "Assets/Sprites" };
     private static readonly Dictionary<string, SpriteGroup> _nameToSpriteGroup = new();
     private static double lastSearchTime;
+    private static readonly GUILayoutOption[] _width120 = new GUILayoutOption[] { GUILayout.Width(120) };
+    private static readonly GUILayoutOption[] _width50 = new GUILayoutOption[] { GUILayout.Width(50) };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
         EditorGUI.BeginProperty(position, label, property);
         // Draw label
         Rect foldRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-        property.isExpanded = EditorGUI.Foldout(foldRect, property.isExpanded, GUIContent.none);
-        EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+        property.isExpanded = EditorGUI.Foldout(foldRect, property.isExpanded, label);
         if (!property.isExpanded) {
             return;
         }
         SerializedProperty pGroupPath = property.FindPropertyRelative("groupPath");
         SerializedProperty pIndex = property.FindPropertyRelative("index");
         SpritePath spritePath = new SpritePath(pGroupPath.stringValue, pIndex.intValue);
-        // Rect的xy是minX和minY...
-        Rect groupRect = new Rect(position.x, position.y + 18, position.width - 120, EditorGUIUtility.singleLineHeight);
-        Rect indexRect = new Rect(position.x, position.y + 38, position.width - 120, EditorGUIUtility.singleLineHeight);
+        // x+缩进
+        Rect groupRect = new Rect(position.x + 10, position.y + 18, position.width - 120, EditorGUIUtility.singleLineHeight);
+        Rect indexRect = new Rect(position.x + 10, position.y + 38, position.width - 120, EditorGUIUtility.singleLineHeight);
 
         spritePath.groupPath = EditorGUI.TextField(groupRect, "groupPath", spritePath.groupPath);
         spritePath.index = EditorGUI.IntField(indexRect, "index", spritePath.index);
@@ -84,6 +85,40 @@ public class SpritePathEditor : PropertyDrawer
         }
         return EditorGUIUtility.singleLineHeight;
     }
+
+    /// <summary>
+    ///
+    /// 如果返回true表示应当调用<see cref="GUIUtility.ExitGUI"/>退出当前绘制。
+    /// </summary>
+    /// <returns>是否需要退出当前GUI</returns>
+    public static bool DoLayout(ref SpritePath spritePath, ref bool isExpanded, GUIContent label) {
+        EditorGUILayout.BeginVertical();
+        isExpanded = EditorGUILayout.Foldout(isExpanded, label);
+        if (!isExpanded) {
+            EditorGUILayout.EndVertical();
+            return false;
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        spritePath.groupPath = EditorGUILayout.TextField("groupPath", spritePath.groupPath, _width120);
+        if (GUILayout.Button("选择", _width50)) {
+            OnClickSelectSpriteGroup(ref spritePath);
+            return true;
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        spritePath.index = EditorGUILayout.IntField("index", spritePath.index);
+        if (GUILayout.Button("选择", _width50)) {
+            OnClickSelectSprite(ref spritePath);
+            return true;
+        }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
+        return false;
+    }
+
+    #region events
 
     internal static bool OnClickSelectSpriteGroup(ref SpritePath spritePath) {
         SpriteGroup spriteGroup = LoadSpriteGroup(spritePath.groupPath);
@@ -126,7 +161,7 @@ public class SpritePathEditor : PropertyDrawer
         if (string.IsNullOrWhiteSpace(groupPath)) {
             return null;
         }
-        if (groupPath.LastIndexOf('.') > 0) { // 路径引用
+        if (groupPath.LastIndexOf('/') > 0) {
             return AssetDatabase.LoadAssetAtPath<SpriteGroup>(groupPath);
         }
         // name引用
@@ -166,5 +201,7 @@ public class SpritePathEditor : PropertyDrawer
         }
         return null;
     }
+
+    #endregion
 }
 }

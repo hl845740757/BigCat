@@ -52,8 +52,8 @@ public sealed class AssetReferenceAttribute : PropertyAttribute
 /// </summary>
 public enum AssetReferenceMode
 {
-    Path = 0, // 按资产路径引用，默认模式
-    Name = 1, // 按资产文件名引用，当某类资产具有规则唯一命名时可使用，可大幅减少
+    Path = 0, // 按资产路径引用；如果目标资产包含preferName属性，则根据preferName属性决定
+    Name = 1, // 按资产文件名引用，当某类资产具有规则唯一命名时可使用
     Guid = 2, // 按Unity资产guid引用，适用于静态资源引用
 }
 }

@@ -69,16 +69,14 @@ public static class DSAnnotations
     /// 类型的序列化配置
     ///
     /// <h3>用于类型时</h3>
-    /// <code>// @Codec{alias: [xxx, xxx, xxx], style: flow, elemStyle: flow} </code>
-    /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写
+    /// <code>// @Codec{alias: [xxx, xxx, xxx], style: flow} </code>
+    /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写；不会自动追加文件中约定的别名默认前缀
     /// - style 表示该类型输出为Dson文本时的默认排版
-    /// - elemStyle 用于指定数组元素或字典的Value的排版；非必需功能，可能不会生效。
     ///
     /// <h3>用于字段时</h3>
-    /// <code>// @Codec{name: xyz, style: flow, elemStyle: flow} </code>
-    /// - name 表示字段序列化的名字，不推荐使用
+    /// <code>// @Codec{name: xyz, style: flow} </code>
+    /// - name 表示字段序列化的名字，不推荐使用 -- 尽量直接使用字段名
     /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
-    /// - elemStyle 用于指定数组元素或字典的Value的排版；非必需功能，可能不会生效。
     ///
     /// 注：style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
     /// </summary>
@@ -95,7 +93,6 @@ public static class DSAnnotations
     /// - manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
     ///
     /// 注：服务上的async等参数为参数的模式值，避免每个方法重复配置。
-    /// 
     ///
     /// <h3>用于方法时</h3>
     /// <code>//@Rpc {async: true, ctx: true, manual: true}</code>
@@ -114,26 +111,34 @@ public static class DSAnnotations
     /// <summary>
     /// 类型或字段的编辑器基础选项
     /// 
-    /// 语法：<code>// @Editor{ displayName: position, displayType: Vector3, tooltip: "Tip" }</code>
-    /// - displayName 展示名
-    /// - displayType 展示类型
-    /// - tooltip 类型tip，可选
+    /// 语法：<code>// @Editor{ displayName: Vector3, displayType: Vector3, tooltip: "Tip", dsonType: Pointer }</code>
+    /// - displayName 展示名；如果不配置，默认为类型名或字段名
+    /// - displayType 展示类型，枚举名见代码
+    /// - tooltip 类型和字段tip
+    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr。
+    /// - min 数字类型的最小值
+    /// - max 数字类型的最大值
+    /// - initNull bool类型，是否将字段初始化为null值，不适用List和Map字段
+    /// - menuPath 字符串类型，节点菜单路径，用于配置脚本
+    /// - scrollView bool类型，表示List和Map是否启用滚动视图
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
     /// 端口字段
     ///
-    /// 语法：<code>// @NodePort{ side: Left }</code>
+    /// 语法：<code>// @NodePort{ side: Right }</code>
     /// - side 端口的显示位置：Left、Right、Bottom，未指定的情况下默认Right
+    ///
+    /// 注：当List内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
     /// </summary>
     public const string PORT_FIELD = "PortField";
 
     /// <summary>
     /// Pop字段(支持多个)
     /// 
-    /// 语法：<code>// @PopField{ value: 1, displayName: AABB}</code>
+    /// 语法：<code>// @PopField{ value: 1, displayName: AABB }</code>
     /// - value 字段对应的值
-    /// - displayName 字段的展示名
+    /// - displayName 字段的展示名；如果是string字段，无需配置
     ///
     /// 注：Pop字段通常和分支字段配套使用，实现标签类；也用于IntMask字段。
     /// </summary>
@@ -143,7 +148,7 @@ public static class DSAnnotations
     ///
     /// 语法：<code>// @BranchField{ ctrl: type, value: 1, displayName: radius, tooltip: "半径" }</code>
     /// - ctrl 控制字段的名字，通常为PopField或枚举字段
-    /// - value 控制字段的值，支持数字和字符串
+    /// - value 控制字段的值，支持int32和string
     /// - displayName 在该类型下的展示别名
     /// - tooltip 编辑器下的tip，可选
     /// 
@@ -152,10 +157,23 @@ public static class DSAnnotations
     public const string BRANCH_FIELD = "BranchField";
 
     /// <summary>
+    /// Mask字段
+    ///
+    /// 语法：<code>// @MaskField[ Left, Right, Bottom ]</code>
+    ///
+    /// 注：
+    /// 1.注解为数组类型，Value为每个bit对应的名字，无特殊字符时可不加双引号。
+    /// 2.如果字段是集合或Map类型，则表示集合内元素支持的多态类型。
+    /// 3.如果是枚举字段，数组保持为空即可。
+    /// </summary>
+    public const string MASK_FIELD = "MaskField";
+    /// <summary>
     /// 多态字段
     /// 语法：<code>// @PloyField[ Vector2, Vector3 ]</code>
     ///
-    /// 注：注解为数组类型，Value为为支持的类型。
+    /// 注：
+    /// 1.注解为数组类型，Value为为支持的类型。
+    /// 2.如果字段是集合或Map类型，则表示集合内元素支持的多态类型。
     /// </summary>
     public const string PLOY_FIELD = "PloyField";
 
@@ -174,7 +192,6 @@ public static class DSAnnotations
     // Codec
     public const string KEY_ALIAS = "alias";
     public const string KEY_STYLE = "style";
-    public const string KEY_ELEM_STYLE = "elemStyle";
     public const string KEY_NAME = "name";
 
     // Rpc
@@ -186,11 +203,18 @@ public static class DSAnnotations
     // Editor
     public const string KEY_DISPLAY_NAME = "displayName";
     public const string KEY_DISPLAY_TYPE = "displayType";
-    public const string KEY_FIELD_PATH = "fieldPath";
+    public const string KEY_DSON_TYPE = "dsonType";
+    public const string KEY_MIN = "min";
+    public const string KEY_MAX = "max";
+    public const string KEY_INIT_NULL = "initNull";
+
     public const string KEY_SIDE = "side";
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";
     public const string KEY_TOOLTIP = "tooltip";
+
+    public const string KEY_MENU_PATH = "menuPath";
+    public const string KEY_SCROLL_VIEW = "scrollView";
 
     #endregion
 }

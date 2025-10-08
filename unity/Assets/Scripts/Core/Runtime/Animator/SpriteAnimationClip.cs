@@ -240,6 +240,18 @@ public sealed class SpriteAnimationClip : ScriptableObject
         }
     }
 
+    /// <summary>
+    /// 应用目标图组（贴图）
+    /// 注：该接口仅修改Sprite，不修改配置的路径引用。
+    /// </summary>
+    /// <param name="spriteGroup"></param>
+    public void ApplySpriteGroup(SpriteGroup spriteGroup) {
+        for (int index = 1; index < frames.Length; index++) {
+            var frame = frames[index];
+            frame.sprite = spriteGroup.GetSprite(frame.spritePath.index);
+        }
+    }
+
 #if UNITY_EDITOR
     private void Reset() {
         frames = Array.Empty<SpriteAnimationFrame>();

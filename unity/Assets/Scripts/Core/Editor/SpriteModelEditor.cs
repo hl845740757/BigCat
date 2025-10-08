@@ -37,11 +37,8 @@ public class SpriteModelEditor : EditorWindow
     /// 逻辑层数据
     /// (本计划拆分多个类绘制的，好像也没有那么复杂)
     /// </summary>
-    private DataModel _dataModel = new DataModel();
-    /// <summary>
-    /// 上次的工作目录，使用静态字段模拟持久化
-    /// </summary>
-    private static string _lastWorkDir;
+    private readonly DataModel _dataModel = new DataModel();
+    private static string _lastWorkDir; // 静态字段保留历史记录
 
     // 垂直和水平分隔选项
     private GUILayoutOption[] _vSpaceOptions;
@@ -592,7 +589,8 @@ public class SpriteModelEditor : EditorWindow
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            mixCfg.crossFadeTime = EditorGUILayout.FloatField("CrossFadeTime", mixCfg.crossFadeTime);
+            mixCfg.fadeTimeA = EditorGUILayout.FloatField("FadeTimeA", mixCfg.fadeTimeA);
+            mixCfg.fadeTimeB = EditorGUILayout.FloatField("FadeTimeB", mixCfg.fadeTimeB);
             if (GUILayout.Button("删除", _width100)) {
                 deleteIndex = index;
             }

@@ -66,6 +66,8 @@ public static class DSKeywords
     public const string CSHARP_NAMESPACE = "csharp_namespace";
     /** 用于指示文件内的数据结构都是数据类 -- value为bool类型，true或false */
     public const string DATA_CLASS = "data_class";
+    /** codec别名的前缀 -- value为字符串类型，需要加双引号 */
+    public const string CODEC_ALIAS_PREFIX = "codec_alias_prefix";
 
     #endregion
 
@@ -108,6 +110,7 @@ public static class DSKeywords
     // 内建结构
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
+    public const string TYPE_POINTER = "ObjectPtr";
     public const string TYPE_PAIR = "Pair"; // 除了拆分配置Map时，其它时候避免使用Pair
     // 容器类型
     public const string TYPE_LIST = "List";
@@ -128,6 +131,7 @@ public static class DSKeywords
     // 内建结构
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(GLOBAL, TYPE_DATETIME);
     public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(GLOBAL, TYPE_TIMESTAMP);
+    public static readonly ClassName TYPE_NAME_POINTER = ClassName.Get(GLOBAL, TYPE_POINTER);
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(GLOBAL, TYPE_PAIR, new List<TypeName>()
     {
         TypeParameterName.Get("K"),

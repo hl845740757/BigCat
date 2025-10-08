@@ -320,6 +320,7 @@ public class CoroutineMgr : ICoroutineMgr
                 continue;
             }
             taskQueue.Dequeue();
+            futureTask.gatingFrame = 0; // 避免影响排序
 
             bool enqueued = false;
             if (futureTask.Trigger(tickTime)) {
@@ -344,6 +345,7 @@ public class CoroutineMgr : ICoroutineMgr
                 break;
             }
             taskQueue.Dequeue();
+            futureTask.gatingFrame = 0; // 避免影响排序
 
             bool enqueued = false;
             if (futureTask.Trigger(tickTime)) {

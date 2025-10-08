@@ -16,28 +16,18 @@
 
 #endregion
 
-using System.Text;
-
-namespace Wjybxx.BigCatTool.DataScript
+namespace Wjybxx.BigCat.CoreEditor
 {
 /// <summary>
-/// 枚举值
+/// 数据节点绘制器
 /// </summary>
-public class DSEnumValue : DSElement
+public abstract class DataNodeDrawer
 {
-    /** 数字id - 推荐0开始 */
-    private readonly int number;
-
-    public DSEnumValue(string simpleName, int number) : base(simpleName) {
-        this.number = number;
-    }
-
-    public override DSElementKind Kind => DSElementKind.EnumValue;
-    public new DSNamedType EnclosingElement => (DSNamedType)base.EnclosingElement;
-    public int Number => number;
-
-    protected override void ToString(StringBuilder sb) {
-        sb.Append(", number=").Append(number);
-    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="editor">用于获取上下文</param>
+    /// <param name="node">要绘制的Node</param>
+    public abstract void OnGUI(DataEditor editor, DataNode node);
 }
 }

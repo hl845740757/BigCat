@@ -117,8 +117,9 @@ public sealed class DSNamedType : DSTypeElement
     /// Dson序列化时的类型别名
     /// 
     /// 1.<see cref="DSAnnotations.CODEC"/>注解的缓存数据，避免频繁创建List。
-    /// 2.如果未显式指定，将被初始化为文件内的路径，<code>FileName.A.B.C => A.B.C</code>
-    /// 3.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
+    /// 2.如果未显式指定，将被初始化为文件内的路径，<code>FileName.A.B.C => A.B.C</code>。
+    /// 3.可通过<see cref="DSKeywords.CODEC_ALIAS_PREFIX"/>指定默认别名的前缀。
+    /// 4.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
     /// </summary>
     private readonly List<string> _dsonAliases = new();
     /// <summary>
@@ -169,8 +170,6 @@ public sealed class DSNamedType : DSTypeElement
         _typeKind = originDefine._typeKind;
         _typeParameters = ImmutableList<DSTypeParameter>.Empty;
         _typeArguments = typeArguments.ToImmutableList2();
-
-        _dsonStyle = originDefine.DsonStyle;
     }
 
     #region core
@@ -233,6 +232,8 @@ public sealed class DSNamedType : DSTypeElement
 
     /// <summary>
     /// 获取指定Name的字段
+    ///
+    /// 注：字段不能通过number查找，因为number在继承层次中会重复。
     /// </summary>
     /// <param name="name"></param>
     /// <param name="flatInherit"></param>
@@ -343,6 +344,24 @@ public sealed class DSNamedType : DSTypeElement
                 : string.Equals(enclosedElement.SimpleName, name);
             if (match) {
                 return enclosedElement as DSEnumValue;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 根据枚举数查询对应的枚举值
+    /// </summary>
+    /// <param name="number">枚举对应的数字</param>
+    /// <returns></returns>
+    public DSEnumValue? GetEnumValue(int number) {
+        foreach (DSElement enclosedElement in EnclosedElements) {
+            if (enclosedElement.Kind != DSElementKind.EnumValue) {
+                continue;
+            }
+            DSEnumValue enumValue = (DSEnumValue)enclosedElement;
+            if (enumValue.Number == number) {
+                return enumValue;
             }
         }
         return null;

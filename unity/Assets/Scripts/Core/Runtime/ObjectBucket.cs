@@ -31,7 +31,7 @@ namespace Wjybxx.BigCat.UnityCore
 /// 2.资产名很重要，最好可表达对象桶的用途 —— 我们不使用额外的字段标注，因为不如资产名直观。
 /// </summary>
 [CreateAssetMenu(menuName = "BigCat/ObjectBucket", fileName = "NewBucket")]
-public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackReceiver
+public sealed class ObjectBucket : ScriptableObject
 {
     /// <summary>
     /// 对象桶资产范畴
@@ -39,7 +39,7 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     /// </summary>
     public string category;
     /// <summary>
-    /// 
+    /// 是否优先通过name进行引用
     /// </summary>
     [Tooltip("是否可通过[name引用]代替[路径引用]，如果name具有唯一性，则可以勾选")]
     public bool preferName;
@@ -50,52 +50,16 @@ public sealed class ObjectBucket : ScriptableObject, ISerializationCallbackRecei
     private List<ObjectBytes> bytesList = new List<ObjectBytes>();
 
     /// <summary>
-    /// 字符串id到字节数组的缓存(保持插入序)
+    /// localId到字节数组的缓存(保持插入序)
     /// </summary>
-    public readonly LinkedDictionary<string, ObjectBytes> id2BytesDic = new();
+    public readonly LinkedDictionary<long, ObjectBytes> id2BytesDic = new();
     /// <summary>
-    /// 数字id到字节数组的缓存(保持插入序)
-    /// </summary>
-    /// <returns></returns>
-    public readonly LinkedDictionary<long, ObjectBytes> numberId2BytesDic = new();
-    /// <summary>
-    /// name到Bytes的映射
+    /// localPath到Bytes的映射
     ///
-    /// 注：命名的对象通常都是特殊对象，name通常唯一；当多个对象name相同时，后加载的数据覆盖前面的。
+    /// 注：
+    /// 1.key为<code>folder/name</code>，如果folder为空，则为name。
+    /// 2.当多个对象name相同时，后加载的数据覆盖前面的。
     /// </summary>
-    public readonly Dictionary<string, ObjectBytes> name2BytesDic = new();
-
-    public void OnBeforeSerialize() {
-        // 用户自己转换才是最准确的
-    }
-
-    public void OnAfterDeserialize() {
-#if !UNITY_EDITOR
-        id2BytesDic.Clear();
-        numberId2BytesDic.Clear();
-        name2BytesDic.Clear();
-        //
-        foreach (ObjectBytes objectBytes in bytesList) {
-            if (!string.IsNullOrWhiteSpace(objectBytes.objectId)) {
-                if (id2BytesDic.Count == 0) {
-                    id2BytesDic.EnsureCapacity(bytesList.Count);
-                }
-                id2BytesDic.Add(objectBytes.objectId, objectBytes);
-            }
-            if (long.TryParse(objectBytes.objectId, out long numberId)) {
-                if (numberId2BytesDic.Count == 0) {
-                    numberId2BytesDic.EnsureCapacity(bytesList.Count);
-                }
-                numberId2BytesDic.Add(numberId, objectBytes);
-            }
-            if (!string.IsNullOrWhiteSpace(objectBytes.name)) {
-                if (name2BytesDic.Count == 0) {
-                    name2BytesDic.EnsureCapacity(bytesList.Count);
-                }
-                name2BytesDic[objectBytes.name] = objectBytes; // 重复时覆盖
-            }
-        }
-#endif
-    }
+    public readonly Dictionary<string, ObjectBytes> path2BytesDic = new();
 }
 }

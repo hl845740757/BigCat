@@ -100,12 +100,6 @@ public sealed class Window
     /// 注：用于同层级内排序，后打开的排上面。
     /// </summary>
     internal int openOrder;
-#if UNITY_EDITOR
-    /// <summary>
-    /// Editor窗口的引用，用于Editor开发
-    /// </summary>
-    public EditorWindow editorWindow;
-#endif
 
     /// <summary>
     /// 窗口打开参数
@@ -356,9 +350,6 @@ public sealed class Window
         _dataModel = null;
         _rootNode = null;
         UnityEngine.Object.Destroy(gameObject);
-        if (editorWindow) {
-            UnityEngine.Object.Destroy(editorWindow);
-        }
         //
         foreach (WComponent component in _components) {
             if (component.Cid.shared) continue;
@@ -582,7 +573,7 @@ public sealed class Window
 
     /// <summary>
     /// 切换窗口的展示模式
-    /// (该方法由Agent或Window里的Controller)
+    /// (该方法由Agent或Root节点的Controller调用)
     /// </summary>
     /// <param name="mode"></param>
     public void ChangeDisplayMode(WindowDisplayMode mode) {

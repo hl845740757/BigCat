@@ -171,10 +171,9 @@ public static class ExcelConstants
     /// <summary>
     /// 解析表格选项
     /// 
-    /// 
     /// 格式:<code>C/S {}</code>，
     /// 1.C表示客户端需要该字段，S表示服务器需要该字段，'{}'中的内容为其它可选项。
-    /// 2.默认不会拆为C/S为独立的C和S，由上层自行验证。
+    /// 2.默认不会将C/S拆为独立的C和S，由上层自行验证。
     /// 
     /// 注意：在解析options时，C/S信息默认会被追加到DsonObject中，且删除了其中的空白字符。
     /// </summary>

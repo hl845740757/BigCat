@@ -64,7 +64,8 @@ public class SpriteGroup : ScriptableObject
     /// <returns></returns>
     public int IndexOf(string spriteName) {
         for (int index = 0; index < sprites.Length; index++) {
-            if (sprites[index] && sprites[index].name == spriteName) {
+            Sprite sprite = sprites[index];
+            if (sprite && sprite.name == spriteName) {
                 return index;
             }
         }

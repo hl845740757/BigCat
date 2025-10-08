@@ -1079,7 +1079,6 @@ public class CodeGeneratorHelper
 
     public static readonly ClassName TYPE_NAME_BINARY = ClassName.Get(typeof(Binary));
     public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(typeof(ObjectPtr));
-    public static readonly ClassName TYPE_NAME_LPTR = ClassName.Get(typeof(ObjectLitePtr));
     public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(typeof(Timestamp));
     // 集合接口
     public static readonly ClassName TYPE_NAME_ICOLLECTION = ClassName.Get(typeof(ICollection<>));
@@ -1092,6 +1091,7 @@ public class CodeGeneratorHelper
     public static readonly ClassName TYPE_NAME_DICTIONARY = ClassName.Get(typeof(Dictionary<,>));
     public static readonly ClassName TYPE_NAME_LINKED_HASHSET = ClassName.Get(typeof(LinkedHashSet<>));
     public static readonly ClassName TYPE_NAME_LINKED_DICTIONARY = ClassName.Get(typeof(LinkedDictionary<,>));
+    public static readonly ClassName TYPE_NAME_ARRAY_DICTIONARY = ClassName.Get(typeof(ArrayDictionary<,>));
     // 不可变集合
     public static readonly ClassName TYPE_NAME_IMMUTABLE_LIST = ClassName.Get(typeof(ImmutableList<>));
     public static readonly ClassName TYPE_NAME_IMMUTABLE_SET = ClassName.Get(typeof(ImmutableSet<>));
@@ -1167,6 +1167,7 @@ public class CodeGeneratorHelper
             //
             DSKeywords.TYPE_DATETIME => TYPE_NAME_DATETIME,
             DSKeywords.TYPE_TIMESTAMP => TYPE_NAME_TIMESTAMP,
+            DSKeywords.TYPE_POINTER => TYPE_NAME_PTR,
             DSKeywords.TYPE_PAIR => TYPE_NAME_PAIR,
             //
             DSKeywords.TYPE_NULLABLE => ClassName.NULLABLE,
@@ -1178,6 +1179,7 @@ public class CodeGeneratorHelper
             // 扩展支持
             TYPE_LINKED_HASHSET => TYPE_NAME_LINKED_HASHSET,
             TYPE_LINKED_MAP => TYPE_NAME_LINKED_DICTIONARY,
+            TYPE_ARRAY_MAP => TYPE_NAME_ARRAY_DICTIONARY,
 
             TYPE_IMMUTABLE_LIST => TYPE_NAME_IMMUTABLE_LIST,
             TYPE_IMMUTABLE_SET => TYPE_NAME_IMMUTABLE_SET,
@@ -1280,7 +1282,6 @@ public class CodeGeneratorHelper
         if (typeName == TYPE_NAME_BYTE_ARRAY) return "ReadBytes";
         if (typeName == TYPE_NAME_BINARY) return "ReadBinary";
         if (typeName == TYPE_NAME_PTR) return "ReadPtr";
-        if (typeName == TYPE_NAME_LPTR) return "ReadLitePtr";
         if (typeName == TYPE_NAME_DATETIME) return "ReadDateTime";
         if (typeName == TYPE_NAME_TIMESTAMP) return "ReadTimestamp";
         return "ReadObject";
@@ -1306,7 +1307,6 @@ public class CodeGeneratorHelper
         if (typeName == TYPE_NAME_BYTE_ARRAY) return "WriteBytes";
         if (typeName == TYPE_NAME_BINARY) return "WriteBinary";
         if (typeName == TYPE_NAME_PTR) return "WritePtr";
-        if (typeName == TYPE_NAME_LPTR) return "WriteLitePtr";
         if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";
         if (typeName == TYPE_NAME_TIMESTAMP) return "WriteTimestamp";
         return "WriteObject";
@@ -1336,13 +1336,13 @@ public class CodeGeneratorHelper
     // @Rpc {id: 1, async: true, ctx: true, manual: true}
     public static int GetServiceId(DsonObject<string> methodData) {
         // 默认是double类型
-        return methodData["id"].AsDsonNumber().IntValue;
+        return methodData["id"].AsNumber().IntValue;
     }
 
     // @Rpc {id: 1, async: true, ctx: true, manual: true}
     public static int GetMethodId(int? number, DsonObject<string> methodData) {
         // 默认是double类型
-        return number ?? methodData["id"].AsDsonNumber().IntValue;
+        return number ?? methodData["id"].AsNumber().IntValue;
     }
 
     public static bool IsAsyncMethod(DsonObject<string> methodData, DsonObject<string> serviceData) {
@@ -1376,7 +1376,7 @@ public class CodeGeneratorHelper
 
     private static bool GetBool(DsonValue value) {
         if (value.DsonType == DsonType.Bool) return value.AsBool();
-        if (value.IsNumber) return value.AsDsonNumber().IntValue == 1;
+        if (value.IsNumber) return value.AsNumber().IntValue == 1;
         return false;
     }
 

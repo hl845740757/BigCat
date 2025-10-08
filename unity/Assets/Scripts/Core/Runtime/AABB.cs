@@ -177,19 +177,19 @@ public struct AABB
     /// 修正Min和Max的数据
     /// </summary>
     public void Repair() {
-        float minX = Mathf.Min(min.x, max.x);
-        float minY = Mathf.Min(min.y, max.y);
-        float minZ = Mathf.Min(min.z, max.z);
-        float maxX = Mathf.Max(max.x, min.x);
-        float maxY = Mathf.Max(max.y, min.y);
-        float maxZ = Mathf.Max(max.z, min.z);
-        //
-        min.x = minX;
-        min.y = minY;
-        min.z = minZ;
-        max.x = maxX;
-        max.y = maxY;
-        max.z = maxZ;
+        MinMax(min.x, max.x, out min.x, out max.x);
+        MinMax(min.y, max.y, out min.y, out max.y);
+        MinMax(min.z, max.z, out min.z, out max.z);
+    }
+
+    private static void MinMax(float a, float b, out float min, out float max) {
+        if ((double)a < (double)b) {
+            min = a;
+            max = b;
+        } else {
+            min = b;
+            max = a;
+        }
     }
 
     #region util

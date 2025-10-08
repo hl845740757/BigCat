@@ -34,18 +34,18 @@ public class AABBEditor : PropertyDrawer
     private static readonly string[] _modeDisplay = { "Min + Max", "Min + Size", "Center + Size", "Bottom + Size" };
     private static readonly int[] _modeValues = { 0, 1, 2, 3 };
     private static int _mode = 0;
+    private static readonly GUILayoutOption[] _width100 = new GUILayoutOption[] { GUILayout.Width(100) };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
         EditorGUI.BeginProperty(position, label, property);
-        // 
-        Rect foldRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-        property.isExpanded = EditorGUI.Foldout(foldRect, property.isExpanded, GUIContent.none);
         // Draw label
-        EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+        // EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+        Rect foldRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+        property.isExpanded = EditorGUI.Foldout(foldRect, property.isExpanded, label);
         if (!property.isExpanded) {
             return;
         }
-        // 缓存属性会导致修改所有属性...
+        // 缓存属性会导致修改所有属性...可能是未禁用CanCacheInspectorGUI方法
         SerializedProperty pMin = property.FindPropertyRelative("min");
         SerializedProperty pMax = property.FindPropertyRelative("max");
         AABB aabb = new AABB(pMin.vector3Value, pMax.vector3Value);
@@ -95,6 +95,57 @@ public class AABBEditor : PropertyDrawer
             return EditorGUIUtility.singleLineHeight * 3 + (2 * 2); // 3排
         }
         return EditorGUIUtility.singleLineHeight;
+    }
+
+    /// <summary>
+    /// 使用自动布局方案绘制AABB
+    /// </summary>
+    public static void DoLayout(ref AABB aabb, ref bool isExpanded, GUIContent label) {
+        EditorGUILayout.BeginVertical();
+        // 功能按钮
+        EditorGUILayout.BeginHorizontal();
+        isExpanded = EditorGUILayout.Foldout(isExpanded, label);
+        if (!isExpanded) {
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
+            return;
+        }
+        _mode = EditorGUILayout.IntPopup(_mode, _modeDisplay, _modeValues);
+        if (GUILayout.Button("Repair", _width100)) {
+            aabb.Repair();
+        }
+        EditorGUILayout.EndHorizontal();
+
+        // 强制Vector3单行显示
+        bool wideMode = EditorGUIUtility.wideMode;
+        EditorGUIUtility.wideMode = true;
+        switch (_mode) {
+            default: {
+                aabb.min = EditorGUILayout.Vector3Field("Min", aabb.min);
+                aabb.max = EditorGUILayout.Vector3Field("Max", aabb.max);
+                break;
+            }
+            case 1: {
+                // 不能直接赋值到AABB，修改Min导致Size变化
+                Vector3 min = EditorGUILayout.Vector3Field("Min", aabb.min);
+                Vector3 size = EditorGUILayout.Vector3Field("Size", aabb.Size);
+                aabb.min = min;
+                aabb.max = min + size;
+                break;
+            }
+            case 2: {
+                aabb.Center = EditorGUILayout.Vector3Field("Center", aabb.Center);
+                aabb.Size = EditorGUILayout.Vector3Field("Size", aabb.Size);
+                break;
+            }
+            case 3: {
+                aabb.Bottom = EditorGUILayout.Vector3Field("Bottom", aabb.Bottom);
+                aabb.Size = EditorGUILayout.Vector3Field("Size", aabb.Size);
+                break;
+            }
+        }
+        EditorGUIUtility.wideMode = wideMode;
+        EditorGUILayout.EndVertical();
     }
 }
 }

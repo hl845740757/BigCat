@@ -17,7 +17,7 @@
 #endregion
 
 using System;
-using Wjybxx.BigCat.UnityCore;
+using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -37,8 +37,6 @@ public sealed class AnimationEvent
     public AnimationEventType type; // 事件类型
     public double doubleParameter; // int, float, long, double
     public string stringParameter; // 字符串参数
-    [NonSerialized]
-    public object objectParameter; // Unity不能指向自定义对象，因此作为运行时查询缓存字段
     public ObjectPath objectPath; // 目标对象路径
 }
 

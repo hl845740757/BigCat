@@ -97,7 +97,6 @@ public class SpriteGroupEditor : Editor
         }
         EditorGUILayout.Space(10);
 
-        // 布局内打开新窗口会导致Bug
         if (clickRefresh) {
             RefreshSprites();
         }
@@ -115,7 +114,7 @@ public class SpriteGroupEditor : Editor
             if (!sprite) continue;
 
             string assetPath = AssetDatabase.GetAssetPath(sprite);
-            if (assetPath.StartsWith(groupAssetDir) && assetPath.IndexOf('/', groupAssetDir.Length) <= 0) {
+            if (assetPath.StartsWith(groupAssetDir) && assetPath[groupAssetDir.Length] == '/') {
                 continue; // 仍在当前目录下
             }
             _group[index] = null; // 只增不删，保持索引稳定

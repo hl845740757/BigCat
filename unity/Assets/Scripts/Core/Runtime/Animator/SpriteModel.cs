@@ -58,6 +58,7 @@ public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiv
 
     /// <summary>
     /// 模型默认图集
+    /// (也应该通过路径引用)
     /// </summary>
     [Tooltip("模型默认图集，即默认贴图")]
     public SpriteGroup spriteGroup;

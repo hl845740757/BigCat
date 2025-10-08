@@ -142,7 +142,7 @@ public sealed class Annotation
         }
         if (value.DsonType == DsonType.Bool) return value.AsBool();
         if (value.IsNumber) {
-            int number = value.AsDsonNumber().IntValue;
+            int number = value.AsNumber().IntValue;
             if (number == 0) return false;
             if (number == 1) return true;
             throw new Exception("invalid number: " + number);
@@ -161,7 +161,7 @@ public sealed class Annotation
         if (!options.TryGetValue(key, out DsonValue value)) {
             return defValue;
         }
-        return value.IsNumber ? value.AsDsonNumber().IntValue : defValue;
+        return value.IsNumber ? value.AsNumber().IntValue : defValue;
     }
 
     /// <summary>
@@ -175,7 +175,7 @@ public sealed class Annotation
         if (!options.TryGetValue(key, out DsonValue value)) {
             return defValue;
         }
-        return value.IsNumber ? value.AsDsonNumber().DoubleValue : defValue;
+        return value.IsNumber ? value.AsNumber().DoubleValue : defValue;
     }
 
     #endregion

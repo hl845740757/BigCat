@@ -32,7 +32,8 @@ public sealed class AnimationMixCfg
     public string motionB;
     public float weightA = 0.5f;
     public float weightB = 0.5f;
-    public float crossFadeTime; // 过渡时间
+    public float fadeTimeA;
+    public float fadeTimeB;
 
     public AnimationMixCfg() {
     }
@@ -47,7 +48,7 @@ public sealed class AnimationMixCfg
         this.motionB = src.motionB;
         this.weightA = src.weightA;
         this.weightB = src.weightB;
-        this.crossFadeTime = src.crossFadeTime;
+        this.fadeTimeA = src.fadeTimeA;
     }
 }
 }
