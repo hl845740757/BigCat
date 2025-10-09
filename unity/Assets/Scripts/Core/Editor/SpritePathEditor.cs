@@ -120,12 +120,12 @@ public class SpritePathEditor : PropertyDrawer
 
     #region events
 
-    internal static bool OnClickSelectSpriteGroup(ref SpritePath spritePath) {
+    internal static void OnClickSelectSpriteGroup(ref SpritePath spritePath) {
         SpriteGroup spriteGroup = LoadSpriteGroup(spritePath.groupPath);
         string groupAssetFolder = spriteGroup ? UnityHelper.GetAssetFolderPath(spriteGroup) : _searchFolders[0];
         string filePath = EditorUtility.OpenFilePanel("选择SpriteGroup", groupAssetFolder, "asset");
         if (string.IsNullOrEmpty(filePath)) {
-            return false;
+            return;
         }
         string assetPath = UnityHelper.ConvertToAssetPath(filePath);
         spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
@@ -134,18 +134,17 @@ public class SpritePathEditor : PropertyDrawer
         } else {
             spritePath.groupPath = null;
         }
-        return true;
     }
 
-    internal static bool OnClickSelectSprite(ref SpritePath spritePath) {
+    internal static void OnClickSelectSprite(ref SpritePath spritePath) {
         SpriteGroup spriteGroup = LoadSpriteGroup(spritePath.groupPath);
         if (!spriteGroup) {
-            return false;
+            return;
         }
         string groupAssetFolder = spriteGroup ? UnityHelper.GetAssetFolderPath(spriteGroup) : _searchFolders[0];
         string filePath = EditorUtility.OpenFilePanel("选择图片", groupAssetFolder, "png");
         if (string.IsNullOrEmpty(filePath)) {
-            return false;
+            return;
         }
         string assetPath = UnityHelper.ConvertToAssetPath(filePath);
         Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
@@ -154,7 +153,6 @@ public class SpritePathEditor : PropertyDrawer
         } else {
             spritePath.index = -1;
         }
-        return true;
     }
 
     private static SpriteGroup LoadSpriteGroup(string groupPath) {

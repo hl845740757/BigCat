@@ -105,6 +105,7 @@ public class SpriteGroupEditor : Editor
     private void RefreshSprites() {
         HashSet<Sprite> spriteSet = new HashSet<Sprite>(_group.sprites);
         List<Sprite> tempSprites = new(10);
+        List<int> nullIndexes = new();
 
         // 目录变更不一定需要清理引用，因为关联的文件可能仍在目录下，但需要清理不在目录下的文件
         string groupAssetDir = AssetDatabase.GetAssetPath(_group);
@@ -118,8 +119,9 @@ public class SpriteGroupEditor : Editor
                 continue; // 仍在当前目录下
             }
             _group[index] = null; // 只增不删，保持索引稳定
+            nullIndexes.Add(index);
         }
-        // 其实可以填充到null元素所在的位置，我们暂不优化 - dataPath是以assets结尾的
+        // dataPath是以assets结尾的
         string groupDir = UnityHelper.ConvertToFilePath(groupAssetDir);
         foreach (string filePath in Directory.GetFiles(groupDir)) {
             if (!UnityHelper.IsImageFile(filePath)) {
@@ -137,7 +139,21 @@ public class SpriteGroupEditor : Editor
         }
         // 图片通常命名为数字类型，尽量让数字小的排前面
         tempSprites.Sort(CompareSprite);
-        ArrayUtility.AddRange(ref _group.sprites, tempSprites.ToArray());
+        // 当null占比较大时，新图片插在既有的null槽
+        float nullFactor = nullIndexes.Count * 1f / _group.sprites.Length;
+        if (nullIndexes.Count >= 4 && nullFactor >= 0.25f) {
+            int fillCount = Math.Min(nullIndexes.Count, tempSprites.Count);
+            for (int idx = 0; idx < fillCount; idx++) {
+                int nullIndex = nullIndexes[idx];
+                _group.sprites[nullIndex] = tempSprites[idx];
+            }
+            if (tempSprites.Count > fillCount) {
+                tempSprites.RemoveRange(0, fillCount);
+                ArrayUtility.AddRange(ref _group.sprites, tempSprites.ToArray());
+            }
+        } else {
+            ArrayUtility.AddRange(ref _group.sprites, tempSprites.ToArray());
+        }
         EditorUtility.SetDirty(_group);
     }
 

@@ -277,7 +277,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         int len = Mathf.Min(source.FrameCount, target.FrameCount);
         for (int i = 0; i < len; i++) {
             SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i] = target.frames[i].WithDuration(sourceFrame.duration);
+            target.frames[i].duration = sourceFrame.duration;
         }
     }
 
@@ -296,7 +296,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         int len = Mathf.Min(source.FrameCount, target.FrameCount);
         for (int i = 0; i < len; i++) {
             SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i] = target.frames[i].WithPosition(sourceFrame.position);
+            target.frames[i].position = sourceFrame.position;
         }
     }
 
@@ -315,7 +315,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         int len = Mathf.Min(source.FrameCount, target.FrameCount);
         for (int i = 0; i < len; i++) {
             SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i] = target.frames[i].WithRotation(sourceFrame.rotation);
+            target.frames[i].rotation = sourceFrame.rotation;
         }
     }
 
@@ -336,7 +336,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         target.FrameCount = source.FrameCount;
         for (int index = 0; index < source.frames.Length; index++) {
             SpriteAnimationFrame sourceFrame = source.frames[index];
-            SpriteAnimationFrame targetFrame = target[index];
+            SpriteAnimationFrame targetFrame = target.frames[index];
             targetFrame.spritePath.groupPath = groupPath;
             targetFrame.spritePath.index = sourceFrame.spritePath.index;
         }

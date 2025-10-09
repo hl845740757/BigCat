@@ -90,7 +90,7 @@ public sealed class DataDisplayCfg
     ///
     /// 注：如果是List或Map字段，表示Value的多态类型。
     /// </summary>
-    public GUIContent[] supportedTypes;
+    public string[] supportedTypes;
     /// <summary>
     /// 可用实例，可用于初始化类型
     /// </summary>
@@ -287,10 +287,10 @@ public sealed class DataDisplayCfg
     }
 
     private static void ParsePolyInfo(DsonArray<string> dsonArray, DataDisplayCfg cfg) {
-        cfg.supportedTypes = new GUIContent[dsonArray.Count];
+        cfg.supportedTypes = new string[dsonArray.Count];
         for (int index = 0; index < dsonArray.Count; index++) {
             DsonValue dsonValue = dsonArray[index];
-            cfg.supportedTypes[index] = new GUIContent(dsonValue.AsString());
+            cfg.supportedTypes[index] = new string(dsonValue.AsString());
         }
     }
 

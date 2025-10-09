@@ -6,7 +6,6 @@
         "Wjybxx.Dson.Core",
         "Wjybxx.Dson.Codec",
         "Wjybxx.BitCat.UnityCore",
-        "Wjybxx.BigCat.Core",
         "Wjybxx.BigCatTool.Core"
     ],
     "includePlatforms": [

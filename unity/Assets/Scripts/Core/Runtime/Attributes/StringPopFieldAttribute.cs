@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace Wjybxx.BigCat.UnityCore
@@ -24,12 +25,12 @@ namespace Wjybxx.BigCat.UnityCore
 /// <summary>
 /// 字符串枚举值
 /// </summary>
-public class StringEnumFieldAttribute : PropertyAttribute
+public class StringPopFieldAttribute : PropertyAttribute
 {
-    public readonly string[] displayNames;
+    public readonly GUIContent[] displayNames;
 
-    public StringEnumFieldAttribute(params string[] displayNames) {
-        this.displayNames = displayNames ?? throw new ArgumentNullException(nameof(displayNames));
+    public StringPopFieldAttribute(params string[] displayNames) {
+        this.displayNames = displayNames.Select(e => new GUIContent(e)).ToArray();
     }
 }
 }

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Logger;
 using Wjybxx.Dson.Codec;
@@ -47,7 +48,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// 理论上讲，按Component复用对内存更好，但我们还是选择以GameUnit为单位复用。有几个原因：
 /// 1.游戏对象主要通过反序列化创建，因此按组件复用的话，数据的初始化管理会比较麻烦 —— 需要从模板拷贝。
 /// 2.以GameUnit为单位复用会更加安全，也会更容易扩展。
-/// 3.重用对象时需要更改<see cref="InstId"/>，使得旧id引用无法从<see cref="GameUnitMgr"/>查询到对象。
+/// 3.重用对象时需要更改<see cref="InstId"/>，使得旧id引用无法从GameUnitMgr查询到对象。
 /// 4.完全由手工创建的对象，如子弹，可以进行单独的池化管理。
 ///
 /// 注：

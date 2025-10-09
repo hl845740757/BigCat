@@ -58,7 +58,8 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\AABB.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringEnumFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\UnityHelper.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\LabelClassFieldAttribute.cs" />

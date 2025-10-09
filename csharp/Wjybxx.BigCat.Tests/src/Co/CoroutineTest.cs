@@ -51,7 +51,7 @@ public class CoroutineTest
     [Test]
     public void Test() {
         globalEventLoop.ScheduleWithFixedDelay(MainLoop, TimeSpan.Zero, TimeSpan.FromMilliseconds(10))
-            .AsFuture().Join();
+            .AsFuture().Await();
     }
 
     private static void MainLoop() {

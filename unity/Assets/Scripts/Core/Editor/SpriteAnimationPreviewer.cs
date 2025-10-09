@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Animator;
+using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCat.AnimatorEditor
 {
@@ -54,10 +55,8 @@ public class SpriteAnimationPreviewer
     private float _duration; // 播放区间的时长
     private int _frameIndex; // 当前帧号
 
-    /// <summary>
-    /// 随同播放器
-    /// </summary>
-    private readonly List<SpriteAnimationPreviewer> followers = new();
+    private readonly List<SpriteAnimationPreviewer> followers = new(); // 随同播放器
+    private Predicate<SpriteAnimationPreviewer> _onPlayRequested;
 
     public SpriteAnimationPreviewer() {
     }
@@ -154,6 +153,7 @@ public class SpriteAnimationPreviewer
     }
 
     private void SetSprite(int frameIndex) {
+        if (!_renderer) return; // destroyed
         SpriteAnimationFrame frame = _clip[frameIndex];
         _renderer.sprite = frame.sprite;
 
@@ -194,14 +194,17 @@ public class SpriteAnimationPreviewer
     public bool IsPlaying => _playState == PlayState.Playing && _renderer;
 
     /// <summary>
-    /// 开始播放动画
+    /// 请求播放动画
     /// </summary>
     public void Play() {
-        if (!_clip || !_renderer) {
-            return;
-        }
         PlayState prevState = _playState;
         if (prevState == PlayState.Playing) {
+            return;
+        }
+        if (_onPlayRequested != null && !_onPlayRequested(this)) {
+            return;
+        }
+        if (!_clip || !_renderer) { // 初始化不正确-需放在OnPlay调用之后
             return;
         }
         _playState = PlayState.Playing;
@@ -324,7 +327,18 @@ public class SpriteAnimationPreviewer
     }
 
     /// <summary>
-    /// 所有的跟随播放器
+    /// 在用户请求Play时调用
+    ///
+    /// 1.由于Previewer是嵌套在其它编辑器下的，因此可能还有其它播放条件。
+    /// 2.如果返回值为false则禁止播放。
+    /// </summary>
+    public Predicate<SpriteAnimationPreviewer> OnPlayRequested {
+        get => _onPlayRequested;
+        set => _onPlayRequested = value;
+    }
+
+    /// <summary>
+    /// 所有的随同播放器
     /// </summary>
     public List<SpriteAnimationPreviewer> Followers => followers;
 

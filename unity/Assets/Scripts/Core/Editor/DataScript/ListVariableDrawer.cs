@@ -67,7 +67,7 @@ internal class ListVariableDrawer : DataVariableDrawer
         Rect rect = EditorGUILayout.BeginVertical();
         int indentLevel = EditorGUI.indentLevel;
         EditorGUI.indentLevel = 1;
-     
+
         if (variable.values.Count == 0) {
             EditorGUILayout.HelpBox(_emptyLabel);
         } else {

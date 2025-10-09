@@ -47,8 +47,8 @@
 
     <!-- OutputItemType="Analyzer" 表示将项目添加为分析器，ReferenceOutputAssembly="false" 表示此项目无需拷贝到当前程序集输出目录 -->
     <ItemGroup>
-        <PackageReference Include="Wjybxx.Commons.Apt" Version="1.5.0-rc1" />
-        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.5.0-rc1" />
+        <PackageReference Include="Wjybxx.Commons.Apt" Version="1.5.0" />
+        <PackageReference Include="Wjybxx.Commons.Poet" Version="1.5.0" />
     </ItemGroup>
 
     <ItemGroup>

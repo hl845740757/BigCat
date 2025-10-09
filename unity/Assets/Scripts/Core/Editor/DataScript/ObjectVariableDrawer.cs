@@ -22,6 +22,7 @@ using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
+using Wjybxx.Dson.Text;
 using static Wjybxx.BigCat.CoreEditor.DataEditorUtil;
 
 namespace Wjybxx.BigCat.CoreEditor
@@ -34,23 +35,17 @@ public class ObjectVariableDrawer : DataVariableDrawer
     private readonly GUILayoutOption[] _width15 = new[] { GUILayout.Width(15) };
     private readonly GUILayoutOption[] _noExpand = new[] { GUILayout.ExpandHeight(false) };
     private readonly GUIContent _emptyLabel = new GUIContent("Object Is Null");
-    // private readonly Texture2D blueTexture;
 
     public ObjectVariableDrawer() {
-        // blueTexture = new Texture2D(1, 1); // 选中效果并不好看
-        // blueTexture.SetPixel(0, 0, new Color(0.3f, 0.5f, 1f, 0.3f));
-        // blueTexture.Apply();
+
     }
 
     public override void OnGUI(DataEditor editor, DataVariable variable, GUIContent label) {
         // 功能条，标准的显示不出来...
-        Rect headerRect = EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginHorizontal();
         variable.isExpanded = EditorGUILayout.Foldout(variable.isExpanded, label);
         if (GUILayout.Button("┆", EditorStyles.toolbarButton, _width15)) {
             OnClickToolbarButton(editor, variable);
-        }
-        if (IsContextClickEvent(Event.current, headerRect)) {
-            ShowContextMenu(editor, variable);
             Event.current.Use();
         }
         EditorGUILayout.EndHorizontal();
@@ -84,16 +79,80 @@ public class ObjectVariableDrawer : DataVariableDrawer
         EditorGUILayout.EndVertical();
     }
 
-    private static void ShowContextMenu(DataEditor editor, DataVariable variable) {
+    #region menu
+
+    private class MenuContext
+    {
+        public readonly DataEditor editor;
+        public readonly DataVariable variable;
+        public readonly int index;
+
+        public MenuContext(DataEditor editor, DataVariable variable, int index) {
+            this.editor = editor;
+            this.variable = variable;
+            this.index = index;
+        }
+    }
+
+    private static void OnClickToolbarButton(DataEditor editor, DataVariable variable) {
         GenericMenu menu = new GenericMenu();
-        menu.AddItem(new GUIContent("Copy"), false, OnClickCopy, new MenuContext(editor, variable, 0));
+        // Copy/Paste
+        if (variable.isNull) {
+            menu.AddDisabledItem(new GUIContent("Copy"));
+        } else {
+            menu.AddItem(new GUIContent("Copy"), false, OnClickCopy, new MenuContext(editor, variable, 0));
+        }
         string copyBuffer = GUIUtility.systemCopyBuffer;
-        if (!string.IsNullOrWhiteSpace(copyBuffer) && copyBuffer[0] == '{') {
+        if (MaybeDsonObject(copyBuffer)) {
             menu.AddItem(new GUIContent("Paste"), false, OnClickPaste, new MenuContext(editor, variable, 0));
         } else {
             menu.AddDisabledItem(new GUIContent("Paste"));
         }
+        // Create/Reset
+        if (variable.isNull) {
+            menu.AddItem(new GUIContent("Create"), false, OnClickCreateValues, new MenuContext(editor, variable, 0));
+            menu.AddDisabledItem(new GUIContent("SetNull"));
+            menu.AddDisabledItem(new GUIContent("Reset"));
+        } else {
+            menu.AddDisabledItem(new GUIContent("Create"));
+            menu.AddItem(new GUIContent("SetNull"), false, OnClickSetNull, new MenuContext(editor, variable, 0));
+            menu.AddItem(new GUIContent("Reset"), false, _ => editor.model.ResetVariable(variable), null);
+        }
+        // 实例选择
+        DataDisplayCfg displayCfg = variable.displayCfg;
+        if (displayCfg.HasSupportedInsts) {
+            GenericMenu.MenuFunction2 callback = OnClickResetWith;
+            for (int index = 0; index < displayCfg.supportedInsts.Count; index++) {
+                DSInst inst = displayCfg.supportedInsts[index];
+                int spIndex = inst.SimpleName.LastIndexOf('/');
+                string label = spIndex > 0 ? inst.SimpleName.Substring(spIndex + 1) : inst.SimpleName;
+                label = "ResetWith/" + label;
+                menu.AddItem(new GUIContent(label), false, callback, new MenuContext(editor, variable, index));
+            }
+        } else {
+            menu.AddDisabledItem(new GUIContent("ResetWith"));
+        }
+        // 多态类型选择
+        if (displayCfg.HasSupportedTypes) {
+            GenericMenu.MenuFunction2 callback = OnClickChangeType;
+            for (int index = 0; index < displayCfg.supportedTypes.Length; index++) {
+                string label = displayCfg.supportedTypes[index];
+                label = "ChangeType/" + label;
+                menu.AddItem(new GUIContent(label), false, callback, new MenuContext(editor, variable, index));
+            }
+        }
         menu.ShowAsContext();
+    }
+
+    private static bool MaybeDsonObject(string text) {
+        if (string.IsNullOrWhiteSpace(text)) {
+            return false;
+        }
+        text = text.Trim();
+        if (string.IsNullOrWhiteSpace(text)) {
+            return false;
+        }
+        return text[0] == '{' && text[text.Length - 1] == '}';
     }
 
     private static void OnClickPaste(object obj) {
@@ -123,56 +182,7 @@ public class ObjectVariableDrawer : DataVariableDrawer
             return;
         }
         DsonValue dsonValue = editor.model.Encode(variable);
-        GUIUtility.systemCopyBuffer = dsonValue.ToDson();
-    }
-
-    private class MenuContext
-    {
-        public readonly DataEditor editor;
-        public readonly DataVariable variable;
-        public readonly int index;
-
-        public MenuContext(DataEditor editor, DataVariable variable, int index) {
-            this.editor = editor;
-            this.variable = variable;
-            this.index = index;
-        }
-    }
-
-    #region 多态和多实例
-
-    private static void OnClickToolbarButton(DataEditor editor, DataVariable variable) {
-        GenericMenu menu = new GenericMenu();
-        if (variable.isNull) {
-            menu.AddItem(new GUIContent("Create"), false, OnClickCreateValues, new MenuContext(editor, variable, 0));
-            menu.AddDisabledItem(new GUIContent("SetNull"));
-            menu.AddDisabledItem(new GUIContent("Reset"));
-        } else {
-            menu.AddDisabledItem(new GUIContent("Create"));
-            menu.AddItem(new GUIContent("SetNull"), false, OnClickSetNull, new MenuContext(editor, variable, 0));
-            menu.AddItem(new GUIContent("Reset"), false, _ => editor.model.ResetVariable(variable), null);
-        }
-        // 实例选择
-        DataDisplayCfg displayCfg = variable.displayCfg;
-        if (displayCfg.HasSupportedInsts) {
-            GenericMenu.MenuFunction2 callback = OnClickResetWith;
-            for (int index = 0; index < displayCfg.supportedInsts.Count; index++) {
-                DSInst inst = displayCfg.supportedInsts[index];
-                int spIndex = inst.SimpleName.LastIndexOf('/');
-                string label = spIndex > 0 ? inst.SimpleName.Substring(spIndex + 1) : inst.SimpleName;
-                label = "ResetWith/" + label;
-                menu.AddItem(new GUIContent(label), false, callback, new MenuContext(editor, variable, index));
-            }
-        }
-        // 多态类型选择
-        if (displayCfg.HasSupportedTypes) {
-            GenericMenu.MenuFunction2 callback = OnClickChangeType;
-            for (int index = 0; index < displayCfg.supportedTypes.Length; index++) {
-                GUIContent label = displayCfg.supportedTypes[index];
-                menu.AddItem(new GUIContent(label), false, callback, new MenuContext(editor, variable, index));
-            }
-        }
-        menu.ShowAsContext();
+        GUIUtility.systemCopyBuffer = dsonValue.ToDson(ObjectStyle.Indent, editor.model.writerSettings);
     }
 
     private static void OnClickCreateValues(object obj) {
@@ -203,9 +213,9 @@ public class ObjectVariableDrawer : DataVariableDrawer
         MenuContext context = (MenuContext)obj;
         DataEditor editor = context.editor;
         DataVariable variable = context.variable;
-        GUIContent content = variable.displayCfg.supportedTypes[context.index];
+        string typeSymbol = variable.displayCfg.supportedTypes[context.index];
         // 找不到目标类型会抛出异常
-        DSNamedType namedType = editor.model.repository.ResolveTypeSymbol(null, content.text) as DSNamedType;
+        DSNamedType namedType = editor.model.repository.ResolveTypeSymbol(null, typeSymbol) as DSNamedType;
         if (namedType == null) {
             return;
         }

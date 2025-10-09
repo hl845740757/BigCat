@@ -149,7 +149,7 @@ public class ClassGenerator : ISheetProcessor
             Annotation annotation = namedType.GetAnnotation(ExcelAnnotations.SHEET_INFO);
             if (annotation == null) return false;
             if (!annotation.AsObject().TryGetValue(ExcelAnnotations.KEY_TYPE, out DsonValue value)) return false;
-            return value.AsDsonNumber().IntValue == (int)SheetType.Normal;
+            return value.AsNumber().IntValue == (int)SheetType.Normal;
         }
 
         protected override void BuildToStringMethod(DSNamedType namedType, TypeSpec.Builder typeBuilder) {

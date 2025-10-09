@@ -38,19 +38,6 @@ namespace System
 /// </summary>
 public static class UnityHelper
 {
-#if UNITY_2021_3_OR_NEWER
-    public static void EnsureCapacity<T>(this List<T> list, int capacity) {
-        if (list.Capacity >= capacity) {
-            return;
-        }
-        if (capacity <= 4) {
-            list.Capacity = 4;
-            return;
-        }
-        int newCapacity = list.Capacity + list.Capacity / 2;
-        list.Capacity = Math.Max(newCapacity, capacity);
-    }
-
     /// <summary>
     /// 检测obj的有效性
     /// (用于Lua项目)
@@ -88,7 +75,6 @@ public static class UnityHelper
                || filePath.EndsWith(".wav")
                || filePath.EndsWith(".flac");
     }
-#endif
 
 #if UNITY_EDITOR
 

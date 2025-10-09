@@ -23,26 +23,18 @@ using Wjybxx.BigCat.UnityCore;
 
 namespace Wjybxx.BigCat.CoreEditor
 {
-[CustomPropertyDrawer(typeof(StringEnumFieldAttribute))]
-public class StringEnumPropertyDrawer : PropertyDrawer
+[CustomPropertyDrawer(typeof(StringPopFieldAttribute))]
+public class StringPopPropertyDrawer : PropertyDrawer
 {
-    private GUIContent[] namesCache;
-
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-        StringEnumFieldAttribute fieldAttribute = (StringEnumFieldAttribute)this.attribute;
-        string[] displayNames = fieldAttribute.displayNames;
-        if (namesCache == null) {
-            namesCache = new GUIContent[displayNames.Length];
-            for (int i = 0; i < displayNames.Length; i++) {
-                namesCache[i] = new GUIContent(displayNames[i]);
-            }
-        }
+        StringPopFieldAttribute fieldAttribute = (StringPopFieldAttribute)this.attribute;
+        GUIContent[] displayNames = fieldAttribute.displayNames;
         // 暂时先Index查询吧...
         int index = Array.IndexOf(displayNames, property.stringValue);
         if (index < 0) index = 0;
 
-        index = EditorGUI.Popup(position, label, index, namesCache);
-        property.stringValue = displayNames[index];
+        index = EditorGUI.Popup(position, label, index, displayNames);
+        property.stringValue = displayNames[index].text;
     }
 }
 }
