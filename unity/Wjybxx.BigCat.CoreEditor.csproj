@@ -57,7 +57,6 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataDisplayCfg.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditorUtil.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\MapVariableDrawer.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteGroupEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditorModel.cs" />
@@ -70,7 +69,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\AABBEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\ObjectVariableDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataVariable.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditorPlus.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimationClipEditor.cs" />
     <None Include="Assets\Scripts\Core\Editor\Wjybxx.BigCat.CoreEditor.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.29f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

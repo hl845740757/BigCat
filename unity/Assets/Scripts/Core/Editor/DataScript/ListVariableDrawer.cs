@@ -95,7 +95,7 @@ internal class ListVariableDrawer : DataVariableDrawer
         DataVariable value = variable.values[index];
         GUIContent label = editor.labelPool.Acquire();
 
-        editor.DrawVariable(value, label.WithText(GetElementName(index)));
+        editor.DrawVariable(value, label.WithText(UnityHelper.GetElementName(index)));
         editor.labelPool.Release(label); // label已回收
 
         Event evt = Event.current; // 这里无法监听到左键事件 - 被内部控件消耗
@@ -278,21 +278,6 @@ internal class ListVariableDrawer : DataVariableDrawer
         public Vector2 scrollPos;
         public int moveIndex = -1;
         public int selected = -1;
-    }
-
-    /// <summary>
-    /// 列表元素的名字缓存，避免频繁构建字符串
-    /// </summary>
-    private static readonly string[] elementNameCache = new string[100];
-
-    static ListVariableDrawer() {
-        for (int index = 0; index < elementNameCache.Length; index++) {
-            elementNameCache[index] = "Element " + index;
-        }
-    }
-
-    private static string GetElementName(int index) {
-        return index >= 0 && index < elementNameCache.Length ? elementNameCache[index] : "Element " + index;
     }
 }
 }

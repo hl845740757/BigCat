@@ -34,6 +34,7 @@ public class AABBEditor : PropertyDrawer
     private static readonly string[] _modeDisplay = { "Min + Max", "Min + Size", "Center + Size", "Bottom + Size" };
     private static readonly int[] _modeValues = { 0, 1, 2, 3 };
     private static int _mode = 0;
+    private static readonly GUILayoutOption[] _width150 = new GUILayoutOption[] { GUILayout.Width(150) };
     private static readonly GUILayoutOption[] _width100 = new GUILayoutOption[] { GUILayout.Width(100) };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
@@ -100,7 +101,7 @@ public class AABBEditor : PropertyDrawer
     /// <summary>
     /// 使用自动布局方案绘制AABB
     /// </summary>
-    public static void DoLayout(ref AABB aabb, ref bool isExpanded, GUIContent label) {
+    public static AABB DoLayout(AABB aabb, ref bool isExpanded, GUIContent label) {
         EditorGUILayout.BeginVertical();
         // 功能按钮
         EditorGUILayout.BeginHorizontal();
@@ -108,9 +109,9 @@ public class AABBEditor : PropertyDrawer
         if (!isExpanded) {
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
-            return;
+            return aabb;
         }
-        _mode = EditorGUILayout.IntPopup(_mode, _modeDisplay, _modeValues);
+        _mode = EditorGUILayout.IntPopup(_mode, _modeDisplay, _modeValues, _width150);
         if (GUILayout.Button("Repair", _width100)) {
             aabb.Repair();
         }
@@ -146,6 +147,7 @@ public class AABBEditor : PropertyDrawer
         }
         EditorGUIUtility.wideMode = wideMode;
         EditorGUILayout.EndVertical();
+        return aabb;
     }
 }
 }

@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
@@ -32,54 +33,21 @@ public static class DataEditorUtil
     #region util
 
     /** 定位资源 */
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CheckPingObjectEvent(string assetPath, Event evt, Rect controlRect) {
-        if (string.IsNullOrWhiteSpace(assetPath)) {
-            return;
-        }
-        if (IsPrimaryClickEvent(evt, controlRect)) {
-            Object someObj = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
-            if (someObj) {
-                EditorGUIUtility.PingObject(someObj);
-            }
-        }
+        UnityHelper.CheckPingObjectEvent(assetPath, evt, controlRect);
     }
 
-    /** 回车键事件 */
-    public static bool IsClickEnterEvent(Event evt) {
-        if (evt.type == EventType.KeyDown) {
-            return evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter;
-        }
-        return false;
-    }
-
-    /** 鼠标左键 */
     public static bool IsPrimaryClickEvent(Event evt) {
         return evt.type == EventType.MouseDown && evt.button == 0;
     }
 
-    /** 鼠标左键 */
     public static bool IsPrimaryClickEvent(Event evt, Rect rect) {
         return evt.type == EventType.MouseDown && evt.button == 0 && rect.Contains(evt.mousePosition);
     }
 
-    /** 鼠标右键 */
     public static bool IsContextClickEvent(Event evt, Rect rect) {
         return evt.type == EventType.ContextClick && rect.Contains(evt.mousePosition);
-    }
-
-    /* 计算label的宽度 */
-    public static void CalcLabelWidth(GUIContent label, out float min, out float max) {
-        EditorStyles.label.CalcMinMaxWidth(label, out min, out max);
-    }
-
-    public static void DrawSeparator() {
-        Rect rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, Color.gray);
-    }
-
-    public static void DrawSeparator(Color color) {
-        Rect rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, color);
     }
 
     /// <summary>

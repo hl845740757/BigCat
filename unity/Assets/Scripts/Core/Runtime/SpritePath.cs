@@ -52,7 +52,7 @@ public struct SpritePath : IEquatable<SpritePath>
     }
 
     public bool Equals(SpritePath other) {
-        return groupPath == other.groupPath && index == other.index;
+        return index == other.index && groupPath == other.groupPath;
     }
 
     public override bool Equals(object obj) {

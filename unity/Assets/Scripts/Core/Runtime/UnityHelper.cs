@@ -19,10 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-
-#if UNITY_2021_3_OR_NEWER
 using UnityEngine;
-#endif
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -120,25 +117,6 @@ public static class UnityHelper
 
     #region draw
 
-    /// <summary>
-    /// 展开状态标识
-    /// </summary>
-    public const string SYMBOL_FOLD_OUT = "▼";
-    /// <summary>
-    /// 折叠状态标识
-    /// </summary>
-    public const string SYMBOL_FOLD_UP = "▶";
-
-    /// <summary>
-    /// 收起和展开的符号
-    /// </summary>
-    /// <param name="b"></param>
-    /// <returns></returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string GetFoldoutSymbol(bool b) {
-        return b ? "▼" : "▶";
-    }
-
     /** 单行绘制Vector2 */
     public static Vector2 DrawVector2(string label, Vector2 value) {
         bool wideMode = EditorGUIUtility.wideMode;
@@ -170,6 +148,65 @@ public static class UnityHelper
     }
 
     #endregion
+
+    #region check-event
+
+    /// <summary>
+    /// 鼠标左键事件
+    /// </summary>
+    public static bool IsPrimaryClickEvent(Event evt) {
+        return evt.type == EventType.MouseDown && evt.button == 0;
+    }
+
+    /// <summary>
+    /// 鼠标左键事件
+    /// </summary>
+    public static bool IsPrimaryClickEvent(Event evt, Rect rect) {
+        return evt.type == EventType.MouseDown && evt.button == 0 && rect.Contains(evt.mousePosition);
+    }
+
+    /// <summary>
+    /// 鼠标右键事件
+    /// </summary>
+    public static bool IsContextClickEvent(Event evt, Rect rect) {
+        return evt.type == EventType.ContextClick && rect.Contains(evt.mousePosition);
+    }
+
+    /// <summary>
+    /// 回车键事件
+    /// </summary>
+    public static bool IsClickEnterEvent(Event evt) {
+        if (evt.type == EventType.KeyDown) {
+            return evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Ping一下目标资产对象
+    /// </summary>
+    public static void CheckPingObjectEvent(string assetPath, Event evt, Rect controlRect) {
+        if (string.IsNullOrWhiteSpace(assetPath) || !IsPrimaryClickEvent(evt, controlRect)) {
+            return;
+        }
+        UnityEngine.Object someObj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+        if (someObj) {
+            EditorGUIUtility.PingObject(someObj);
+        }
+    }
+
+    /// <summary>
+    /// 如果当前整聚焦在目标控件，则取消聚焦
+    /// </summary>
+    /// <param name="controlName"></param>
+    public static void Unfocus(string controlName) {
+        if (GUI.GetNameOfFocusedControl() == controlName) {
+            GUI.FocusControl("");
+        }
+    }
+
+    #endregion
+
 
     #region GUIContent
 
@@ -209,6 +246,25 @@ public static class UnityHelper
 
     #endregion
 
+    /// <summary>
+    /// 列表元素的名字缓存，避免频繁构建字符串
+    /// </summary>
+    private static readonly string[] elementNameCache = new string[100];
+
+    static UnityHelper() {
+        for (int index = 0; index < elementNameCache.Length; index++) {
+            elementNameCache[index] = "Element " + index;
+        }
+    }
+
+    /// <summary>
+    /// 获取编辑器模式下，数组元素的名字
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static string GetElementName(int index) {
+        return index >= 0 && index < elementNameCache.Length ? elementNameCache[index] : "Element " + index;
+    }
 #endif
 }
 }

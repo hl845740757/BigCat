@@ -17,99 +17,123 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Animator;
+using Wjybxx.BigCat.CoreEditor;
 using Wjybxx.BigCat.CoreEditor.Core.Editor;
 using Wjybxx.BigCat.UnityCore;
 using Wjybxx.Commons;
-using Object = UnityEngine.Object;
+using Object = System.Object;
 
 namespace Wjybxx.BigCat.AnimatorEditor
 {
 /// <summary>
-/// 序列帧动画编辑器
+/// 帧动画编辑器增强版。
+/// 
+/// 注：使用独立的窗口打开帧动画编辑器，方便快速切换动画。
 /// </summary>
-[CustomEditor(typeof(SpriteAnimationClip))]
-public class SpriteAnimationClipEditor : Editor
+public class SpriteAnimationClipEditor : EditorWindow
 {
-    private SpriteAnimationClip _clip;
-    private SpriteAnimationPreviewer _previewer;
+    private static readonly string[] toolBarNames = new[] { "编辑工具", "预览&同步工具" };
+    private int _toolIndex;
 
+    private SpriteAnimationClip _clip;
     private float _interval = 0.1f;
     private Vector2 _position;
     private float _rotation;
-    private int _frameCount;
+    private Vector2 _scrollPos;
+    private int _frameIndex = 0; // 当前编辑帧号
+    private GUILayoutOption[] _imageAreaOptions;
+    private bool _hurtBoxFoldout;
+    private Vector2 _hurtBoxScrollPos;
+    private bool _damageFoldout;
+    private Vector2 _damageScrollPos;
+    private SpriteAnimationPreviewer _previewer;
 
-    private bool _imagesFoldout = true;
-    private Vector2 _imagesScrollPos;
-    private GUILayoutOption[] scrollOptions;
-    private GUILayoutOption[] _width150;
-    private GUILayoutOption[] _width100;
-    private GUILayoutOption[] _width20;
-    //
+    private readonly List<SpriteAnimationClip> _syncList = new List<SpriteAnimationClip>();
+    private GUILayoutOption[] _syncListOptions;
+    private SpriteAnimationPreviewer _rootPreviewer;
     private readonly GUIContent _pooledLabel = new GUIContent();
+
+    private GameObject _rootObject;
+    private int _rootObjectId;
+    private GUILayoutOption[] _width100;
+    private GUILayoutOption[] _width50;
+    private GUILayoutOption[] _width20;
+    private GUILayoutOption[] _noExpand;
+
+    [MenuItem("Window/BigCat/SpriteAnimClipEditor")]
+    private static void OpenWindow() {
+        SpriteAnimationClipEditor win = GetWindow<SpriteAnimationClipEditor>("帧动画编辑器");
+        win.minSize = new Vector2(400, 600);
+        win.Show();
+    }
 
     private GUIContent PooledLabel() => _pooledLabel.Reset();
 
-    private void Awake() {
-        _clip = (SpriteAnimationClip)target;
-        _previewer = new SpriteAnimationPreviewer(_clip);
-        _frameCount = _clip.frames.Length;
-        scrollOptions = new[]
-        {
-            GUILayout.MaxHeight(440),
-            // GUILayout.ExpandHeight(true),
-        };
-        _width150 = new GUILayoutOption[] { GUILayout.MaxWidth(150) };
-        _width100 = new GUILayoutOption[] { GUILayout.MaxWidth(100) };
-        _width20 = new GUILayoutOption[] { GUILayout.MaxWidth(20) };
-    }
-
     private void OnEnable() {
-        // 初始化Sprite
-        for (int index = 0; index < _clip.frames.Length; index++) {
-            SpriteAnimationFrame frame = _clip.frames[index];
-            frame.sprite = LoadSprite(frame.spritePath);
+        _previewer = new SpriteAnimationPreviewer(_clip);
+        _rootPreviewer = new SpriteAnimationPreviewer();
+        _rootPreviewer.OnPlayRequested = LoadClipSprites;
+        // 方便reload
+        _imageAreaOptions = new[] { GUILayout.MinHeight(100), GUILayout.ExpandHeight(true) };
+        _syncListOptions = new[] { GUILayout.MinHeight(300), GUILayout.ExpandHeight(true) };
+        _width100 = new GUILayoutOption[] { GUILayout.Width(100) };
+        _width50 = new GUILayoutOption[] { GUILayout.Width(50) };
+        _width20 = new GUILayoutOption[] { GUILayout.Width(20) };
+        _noExpand = new GUILayoutOption[] { GUILayout.ExpandHeight(false) };
+    }
+
+    private void OnGUI() {
+        _toolIndex = GUILayout.Toolbar(_toolIndex, toolBarNames);
+        if (_toolIndex == 0) {
+            DrawClipEditor();
+        } else if (_toolIndex == 1) {
+            DrawClipSyncEditor();
         }
     }
 
-    /// <summary>
-    /// 当前绑定的Clip
-    /// </summary>
-    public SpriteAnimationClip Clip => _clip;
-
-    /// <summary>
-    /// 启用预览视图
-    /// </summary>
-    public void EnablePreviewer() {
-        if (_previewer == null) {
-            _previewer = new SpriteAnimationPreviewer(_clip);
-            Repaint();
+    private void Update() {
+        if (_toolIndex == 0) {
+            if (_previewer.IsPlaying) {
+                _previewer.Update();
+            }
+        } else if (_toolIndex == 1) {
+            if (_rootPreviewer.IsPlaying) {
+                _rootPreviewer.Update();
+            }
         }
     }
 
-    /// <summary>
-    /// 禁用预览视图
-    /// </summary>
-    public void DisablePreviewer() {
-        if (_previewer != null) {
-            _previewer = null;
-            Repaint();
-        }
-    }
+    #region clip-editor
 
-    public override void OnInspectorGUI() {
-        GUI.enabled = _previewer == null || !_previewer.IsPlaying;
-        // base.OnInspectorGUI();
+    /// <summary>
+    /// 单个动画的编辑工具
+    /// </summary>
+    private void DrawClipEditor() {
+        _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+        var clip = EditorGUILayout.ObjectField("clip", _clip, typeof(SpriteAnimationClip), true) as SpriteAnimationClip;
+        if (clip != _clip) {
+            _clip = clip;
+            _previewer.Clip = clip;
+        }
+        if (!clip) {
+            EditorGUILayout.EndScrollView();
+            return;
+        }
+
+        GUI.enabled = !_previewer.IsPlaying;
+        EditorGUIUtility.labelWidth = 150;
         EditorGUILayout.FloatField("Duration", _clip.duration);
         _clip.loop = EditorGUILayout.Toggle("Loop", _clip.loop);
-        _clip.weight = EditorGUILayout.FloatField(PooledLabel().WithText("Weight", "动画融合默认权重"), _clip.weight);
-        DrawSeparator();
+        _clip.weight = EditorGUILayout.FloatField("Weight", _clip.weight);
+        UnityHelper.DrawSeparator();
 
         // 批量修改帧偏移
         EditorGUILayout.BeginHorizontal();
-        _position = DrawVector2("批量·帧坐标", _position);
+        _position = UnityHelper.DrawVector2("批量·帧坐标", _position);
         if (GUILayout.Button("Add", _width100)) {
             _clip.AddFramePosition(_position);
             EditorUtility.SetDirty(_clip);
@@ -150,307 +174,424 @@ public class SpriteAnimationClipEditor : Editor
             EditorUtility.SetDirty(_clip);
         }
         EditorGUILayout.EndHorizontal();
-        DrawSeparator(Color.yellow);
-        // 帧图
-        DrawRawImages();
-        GUI.enabled = true;
-        //
-        DrawSeparator(Color.yellow);
-        DrawEvents();
 
-        // 绘制播放区
-        if (_previewer == null) return;
-        DrawSeparator();
-        // 更新UI之前更新动画
-        if (_previewer.IsPlaying) {
-            _previewer.Update();
+        // 帧图
+        UnityHelper.DrawSeparator();
+        EditorGUI.BeginChangeCheck();
+        DrawFrames();
+        if (EditorGUI.EndChangeCheck()) {
+            EditorUtility.SetDirty(_clip);
         }
-        _previewer.OnInspectorGUI();
-        // 模拟Update
+        GUI.enabled = true;
+        // 事件
+        // UnityHelper.DrawSeparator();
+        // DrawEvents();
+
+        // 绘制播放区 - 布局太紧凑考虑切页预览
+        // UnityHelper.DrawSeparator();
+        // // 更新UI之前更新动画
+        // if (_previewer.IsPlaying) {
+        //     _previewer.Update();
+        // }
+        // _previewer.OnInspectorGUI();
+        EditorGUILayout.EndScrollView();
+
+        // 持续绘制模拟Update
         if (_previewer.IsPlaying) {
             Repaint();
         }
     }
 
-    private void OnClickAddFrame() {
-        SpriteAnimationFrame frame = new SpriteAnimationFrame();
-        // 超过一个元素时，拷贝前面元素的基础数据
-        if (_clip.FrameCount > 0) {
-            SpriteAnimationFrame prevFrame = _clip[_clip.FrameCount - 1];
-            frame.sprite = prevFrame.sprite;
-            frame.spritePath = prevFrame.spritePath;
-            frame.duration = prevFrame.duration;
-            frame.position = prevFrame.position;
-            frame.rotation = prevFrame.rotation;
-        }
-        _clip.AddFrame(frame);
-        EditorUtility.SetDirty(_clip);
-    }
-
-    private void OnClickDeleteFrame() {
-        if (_clip.FrameCount > 0) {
-            _clip.RemoveFrame(_clip.FrameCount - 1);
-            EditorUtility.SetDirty(_clip);
-        }
-    }
-
-    private static void DrawSeparator() {
-        Rect rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, Color.gray);
-        // EditorGUILayout.LabelField(SEPARATOR);
-    }
-
-    private static void DrawSeparator(Color color) {
-        Rect rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, color);
-        // EditorGUILayout.LabelField(SEPARATOR);
-    }
-
-    #region draw-events
-
-    private void DrawEvents() {
-        SerializedProperty propFrameArray = serializedObject.FindProperty("events");
-        EditorGUILayout.PropertyField(propFrameArray, true);
-        serializedObject.ApplyModifiedProperties();
-    }
-
-    #endregion
-
-    #region draw-iamges
-
     /// <summary>
-    /// 绘制原始图片
+    /// 更改为翻页时预览
     /// </summary>
-    private void DrawRawImages() {
-        EditorGUILayout.BeginVertical();
-        // 统一调整label宽度
-        float labelWidth = EditorGUIUtility.labelWidth;
-        EditorGUIUtility.labelWidth = 150;
-
-        // 帧数信息
+    private void DrawFrames() {
         EditorGUILayout.BeginHorizontal();
-        _imagesFoldout = EditorGUILayout.Foldout(_imagesFoldout, "Frames");
-        //
-        string controlName = "_frameCount";
+        // 当前帧数
+        string controlName = "_count";
         GUI.SetNextControlName(controlName);
-        _frameCount = EditorGUILayout.IntField(_frameCount, _width100);
-        _frameCount = Math.Max(0, _frameCount);
+        int tempCount = Math.Max(0, EditorGUILayout.DelayedIntField("FrameCount", _clip.FrameCount));
+        if (tempCount != _clip.FrameCount && GUI.GetNameOfFocusedControl() == controlName) {
+            _clip.FrameCount = tempCount;
+            EditorUtility.SetDirty(_clip);
+        }
         if (GUILayout.Button("+", _width20)) {
-            OnClickAddFrame();
+            var lastFrame = _clip.FrameCount > 0 ? _clip.LastFrame : null;
+            _clip.FrameCount++;
+            InheritFrameProps(lastFrame, _clip.LastFrame); // 继承常用属性
+            EditorUtility.SetDirty(_clip);
         }
+        GUI.enabled = _clip.FrameCount > 0;
         if (GUILayout.Button("-", _width20)) {
-            OnClickDeleteFrame();
-        }
-        if (GUILayout.Button("Apply", _width100)) {
-            _clip.FrameCount = _frameCount;
+            _clip.FrameCount--;
             EditorUtility.SetDirty(_clip);
         }
+        GUI.enabled = true;
         EditorGUILayout.EndHorizontal();
-        // 退出输入状态重置输入
-        if (GUI.GetNameOfFocusedControl() != controlName) {
-            _frameCount = _clip.FrameCount;
-        }
-        // object数据写入到properties - 下面要使用frames
-        serializedObject.Update();
 
-        if (_imagesFoldout) {
-            SerializedProperty propFrameArray = serializedObject.FindProperty("frames");
-            _imagesScrollPos = EditorGUILayout.BeginScrollView(_imagesScrollPos, scrollOptions);
-            for (int index = 0, len = _clip.FrameCount; index < len; index++) {
-                if (index > 0) {
-                    DrawSeparator();
-                }
-                SpriteAnimationFrame frame = _clip.frames[index];
-                SerializedProperty propFrame = propFrameArray.GetArrayElementAtIndex(index);
-                // 帧号和图片总是展示出来，直观
-                EditorGUILayout.BeginHorizontal();
-                // EditorGUILayout.LabelField();
-                GUIContent guiContent = PooledLabel().WithText(GetElementName(index, propFrame.isExpanded));
-                propFrame.isExpanded = EditorGUILayout.Foldout(propFrame.isExpanded, guiContent, true);
-                EditorGUILayout.ObjectField(frame.sprite, typeof(Sprite), false);
-                EditorGUILayout.EndHorizontal();
-
-                Rect controlRect = GUILayoutUtility.GetLastRect();
-                if (Event.current.type == EventType.ContextClick
-                    && controlRect.Contains(Event.current.mousePosition)) {
-                    ShowFrameContextMenu(index);
-                    return;
-                }
-                if (!propFrame.isExpanded) {
-                    continue;
-                }
-                // 图片路径
-                // EditorGUILayout.LabelField("SpritePath");
-                EditorGUILayout.BeginHorizontal();
-                string groupPath = EditorGUILayout.TextField("SpriteGroup", frame.spritePath.groupPath);
-                bool clickSelectSpriteGroup = GUILayout.Button("选择", _width100);
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.BeginHorizontal();
-                int spriteIndex = EditorGUILayout.IntField("Index", frame.spritePath.index);
-                bool clickSelectSprite = GUILayout.Button("选择", _width100);
-                EditorGUILayout.EndHorizontal();
-                //
-                SpritePath spritePath = new SpritePath(groupPath, spriteIndex);
-                if (clickSelectSpriteGroup) {
-                    OnClickSelectSpriteGroup(frame);
-                    GUIUtility.ExitGUI(); // 打开Panel后出当前GUI绘制
-                } else if (clickSelectSprite) {
-                    OnClickSelectSprite(frame);
-                    GUIUtility.ExitGUI(); // 打开Panel后出当前GUI绘制
-                } else if (spritePath != frame.spritePath) {
-                    frame.spritePath = spritePath;
-                    frame.sprite = LoadSprite(spritePath);
-                    Repaint();
-                }
-                EditorGUILayout.BeginHorizontal();
-                frame.position = DrawVector2("position", frame.position);
-                EditorGUILayout.EndHorizontal();
-                frame.rotation = EditorGUILayout.FloatField("rotation", frame.rotation);
-                frame.duration = EditorGUILayout.FloatField("duration", frame.duration);
-                //
-                frame.graphic = EditorGUILayout.IntField("graphic", frame.graphic);
-                frame.interp = EditorGUILayout.IntField("interp", frame.interp);
-                //
-                // 包围盒信息 -- 手动拼接常量字符串，避免频繁创建字符串
-                SerializedProperty propHurtBoxes = propFrame.FindPropertyRelative("hurtBoxes");
-                GUIContent content = propHurtBoxes.isExpanded
-                    ? PooledLabel().WithText("Hurt Boxes " + UnityHelper.SYMBOL_FOLD_OUT)
-                    : PooledLabel().WithText("Hurt Boxes " + UnityHelper.SYMBOL_FOLD_UP);
-                EditorGUILayout.PropertyField(propHurtBoxes, content, true);
-                //
-                SerializedProperty propHitBoxes = propFrame.FindPropertyRelative("hitBoxes");
-                content = propHitBoxes.isExpanded
-                    ? PooledLabel().WithText("Hit Boxes " + UnityHelper.SYMBOL_FOLD_OUT)
-                    : PooledLabel().WithText("Hit Boxes " + UnityHelper.SYMBOL_FOLD_UP);
-                EditorGUILayout.PropertyField(propHitBoxes, content, true);
+        Rect lastRect = GUILayoutUtility.GetLastRect();
+        Rect imageRect = new Rect(lastRect.x, lastRect.yMax + 2, lastRect.width, 200);
+        // 绘制图片 - 不使用自动布局，避免图片自动调整
+        _frameIndex = ClampFrameIndex(_frameIndex, _clip.FrameCount);
+        if (_frameIndex < _clip.FrameCount) {
+            var frame = _clip[_frameIndex];
+            Sprite sprite = frame.sprite;
+            if (!sprite) {
+                sprite = frame.sprite = SpritePathEditor.LoadSprite(frame.spritePath);
             }
-            EditorGUILayout.EndScrollView();
-            serializedObject.ApplyModifiedProperties();
+            if (sprite) {
+                EditorGUI.DrawTextureTransparent(imageRect, sprite.texture, ScaleMode.ScaleToFit);
+            }
         }
-        EditorGUIUtility.labelWidth = labelWidth;
+        EditorGUILayout.Space(imageRect.height - 18); // 切页按钮显示在图片右下角
+
+        // 切页按钮
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("");
+        // 左翻页
+        GUI.enabled = _frameIndex > 0;
+        if (GUILayout.Button("◁", _width20)) {
+            _frameIndex--;
+        }
+        GUI.enabled = true;
+        // 当前帧索引
+        controlName = "_frameIndex";
+        GUI.SetNextControlName(controlName);
+        int tempIndex = EditorGUILayout.DelayedIntField(_frameIndex, _width50);
+        if (tempCount != _frameIndex && GUI.GetNameOfFocusedControl() == controlName) {
+            _frameIndex = tempIndex;
+        }
+        // 右翻页
+        GUI.enabled = _frameIndex + 1 < _clip.FrameCount;
+        if (GUILayout.Button("▷", _width20)) {
+            _frameIndex++;
+        }
+        GUILayout.Space(10);
+        // 删除按钮
+        GUI.enabled = _frameIndex < _clip.FrameCount;
+        if (GUILayout.Button("Del", _width50)) {
+            _clip.RemoveFrame(_frameIndex);
+            _frameIndex = ClampFrameIndex(_frameIndex, _clip.FrameCount);
+        }
+        GUI.enabled = true;
+        EditorGUILayout.EndHorizontal();
+
+        // 绘制帧信息
+        EditorGUILayout.BeginVertical();
+        if (_frameIndex < _clip.FrameCount) {
+            var frame = _clip[_frameIndex];
+            DrawFrameDetails(frame);
+        }
         EditorGUILayout.EndVertical();
+    }
 
-        //
-        if (EditorGUI.EndChangeCheck()) {
-            _clip.RefreshDuration();
-            EditorUtility.SetDirty(_clip);
+    private static void InheritFrameProps(SpriteAnimationFrame srcFrame,
+                                          SpriteAnimationFrame targetFrame) {
+        if (srcFrame == null) return;
+        targetFrame.spritePath = srcFrame.spritePath;
+        targetFrame.spritePath.index++;
+        targetFrame.duration = srcFrame.duration;
+    }
+
+    private static int ClampFrameIndex(int frameIndex, int frameCount) {
+        return frameCount == 0 ? 0 : Math.Clamp(frameIndex, 0, frameCount - 1);
+    }
+
+    private void DrawFrameDetails(SpriteAnimationFrame frame) {
+        GUIContent label = PooledLabel().WithText("SpritePath");
+        SpritePath spritePath = SpritePathEditor.DoLayout(frame.spritePath, label, out bool exitGui);
+        if (frame.spritePath != spritePath) {
+            frame.spritePath = spritePath;
+            frame.sprite = SpritePathEditor.LoadSprite(spritePath);
         }
+        if (exitGui) {
+            GUIUtility.ExitGUI();
+        }
+
+        frame.position = UnityHelper.DrawVector2("Position", frame.position);
+        frame.rotation = EditorGUILayout.FloatField("Rotation", frame.rotation);
+
+        float duration = Mathf.Max(0, EditorGUILayout.FloatField("Duration", frame.duration));
+        if (!Mathf.Approximately(duration, frame.duration)) {
+            frame.duration = duration;
+            _clip.RefreshDuration();
+        }
+        GUI.enabled = false;
+        EditorGUILayout.FloatField("EndTime", frame.endTime); // 编辑器下预览
+        GUI.enabled = true;
+
+        frame.graphic = EditorGUILayout.IntField(label.Reset().WithText("Graphic", "攻击盒形状，动态绘制"), frame.graphic);
+        frame.interp = EditorGUILayout.IntField(label.Reset().WithText("Interp", "插值函数"), frame.interp);
+
+        // 攻击包围盒
+        DrawBoxes(ref _hurtBoxFoldout, ref _hurtBoxScrollPos, ref frame.hurtBoxes, false,
+            label.Reset().WithText("HurtBoxes", "受击包围盒"));
+        DrawBoxes(ref _damageFoldout, ref _damageScrollPos, ref frame.damageBoxes, true,
+            label.Reset().WithText("DmgBoxes", "攻击包围盒"));
     }
 
-    private Vector2 DrawVector2(string label, Vector2 vector2) {
-        EditorGUILayout.LabelField(label, _width150);
-        EditorGUILayout.LabelField("x", _width20);
-        float x = EditorGUILayout.FloatField(vector2.x);
-        EditorGUILayout.LabelField("y", _width20);
-        float y = EditorGUILayout.FloatField(vector2.y);
-        return new Vector2(x, y);
+    private void DrawBoxes(ref bool isExpanded, ref Vector2 scrollPos, ref AABB[] boxes,
+                           bool isDamageBoxes, GUIContent label) {
+        EditorGUILayout.BeginHorizontal();
+        isExpanded = EditorGUILayout.Foldout(isExpanded, label);
+
+        const int maxBox = 50; // 限制最大数量
+        string controlName = label.text;
+        GUI.SetNextControlName(controlName);
+        int count = Mathf.Clamp(EditorGUILayout.DelayedIntField(boxes.Length), 0, maxBox);
+        if (count != boxes.Length) {
+            Array.Resize(ref boxes, count);
+        }
+        GUI.enabled = boxes.Length < maxBox;
+        if (GUILayout.Button("+", _width20)) {
+            Array.Resize(ref boxes, boxes.Length + 1);
+        }
+        GUI.enabled = boxes.Length > 0;
+        if (GUILayout.Button("-", _width20)) {
+            Array.Resize(ref boxes, boxes.Length - 1);
+        }
+        GUI.enabled = true;
+        EditorGUILayout.EndHorizontal();
+
+        scrollPos = EditorGUILayout.BeginScrollView(scrollPos, _noExpand);
+        int indentLevel = EditorGUI.indentLevel;
+        EditorGUI.indentLevel = 1;
+        for (int index = 0; index < boxes.Length; index++) {
+            AABB aabb = boxes[index];
+            //
+            label = PooledLabel().WithText(UnityHelper.GetElementName(index));
+            boxes[index] = AABBEditor.DoLayout(aabb, ref isExpanded, label);
+            //
+            if (UnityHelper.IsContextClickEvent(Event.current, GUILayoutUtility.GetLastRect())) {
+                Event.current.Use();
+                ShowBoxContextMenu(index, isDamageBoxes);
+            }
+        }
+        EditorGUI.indentLevel = indentLevel;
+        EditorGUILayout.EndScrollView();
     }
 
-    #region click-menu
-
-    private void ShowFrameContextMenu(int index) {
-        // 创建Menu不能使用池化的Label
+    private void ShowBoxContextMenu(int boxIndex, bool isDamageBoxes) {
         GenericMenu menu = new GenericMenu();
-        menu.AddDisabledItem(new GUIContent("index: " + index));
-        menu.AddSeparator("");
-        //
-        menu.AddItem(new GUIContent("Duplicate"), false, OnClickDuplicate, index);
-        menu.AddItem(new GUIContent("MoveUp"), false, OnClickMoveUp, index);
-        menu.AddItem(new GUIContent("MoveDown"), false, OnClickMoveDown, index);
-        menu.AddItem(new GUIContent("Delete"), false, OnClickDelete, index);
-        menu.AddItem(new GUIContent("Inherit HurtBox"), false, OnClickInheritHurtBox, index);
-        menu.AddItem(new GUIContent("Inherit HitBox"), false, OnClickInheritHitBox, index);
+        menu.AddItem(new GUIContent("Delete"), false, _ => {
+            SpriteAnimationFrame frame = _clip[_frameIndex];
+            if (isDamageBoxes) {
+                ArrayUtility.RemoveAt(ref frame.damageBoxes, boxIndex);
+            } else {
+                ArrayUtility.RemoveAt(ref frame.hurtBoxes, boxIndex);
+            }
+        }, null);
         menu.ShowAsContext();
     }
 
-    private void OnClickInheritHurtBox(object obj) {
-        int index = (int)obj;
-        if (index > 0) {
-            SpriteAnimationFrame frame = _clip[index];
-            SpriteAnimationFrame prevFrame = _clip[index - 1];
-            frame.hurtBoxes = (AABB[])prevFrame.hurtBoxes.Clone();
-        }
-    }
-
-    private void OnClickInheritHitBox(object obj) {
-        int index = (int)obj;
-        if (index > 0) {
-            SpriteAnimationFrame frame = _clip[index];
-            SpriteAnimationFrame prevFrame = _clip[index - 1];
-            frame.hitBoxes = (AABB[])prevFrame.hitBoxes.Clone();
-        }
-    }
-
-    private void OnClickDuplicate(object obj) {
-        int index = (int)obj;
-        SerializedProperty propFrameArray = serializedObject.FindProperty("frames");
-        propFrameArray.GetArrayElementAtIndex(index).DuplicateCommand();
-        serializedObject.ApplyModifiedProperties();
-    }
-
-    private void OnClickMoveUp(object obj) {
-        int index = (int)obj;
-        if (index > 0) {
-            _clip.frames.Swap(index, index - 1);
-            EditorUtility.SetDirty(_clip);
-        }
-    }
-
-    private void OnClickMoveDown(object obj) {
-        int index = (int)obj;
-        if (index < _clip.FrameCount - 1) {
-            _clip.frames.Swap(index, index + 1);
-            EditorUtility.SetDirty(_clip);
-        }
-    }
-
-    private void OnClickDelete(object obj) {
-        int index = (int)obj;
-        if (index < _clip.FrameCount) {
-            _clip.RemoveFrame(index);
-            EditorUtility.SetDirty(_clip);
-        }
-    }
-
     #endregion
 
-    #region SelectSprite
+    #region sync-area
 
-    private void OnClickSelectSpriteGroup(SpriteAnimationFrame frame) {
-        SpritePathEditor.OnClickSelectSpriteGroup(ref frame.spritePath);
-        LoadSprite(frame.spritePath);
+    /// <summary>
+    /// 多个帧动画的同步工具
+    /// </summary>
+    private void DrawClipSyncEditor() {
+        EditorGUILayout.HelpBox(PooledLabel().WithText("同步队列：(拖拽到列表区添加)"));
+        EditorGUILayout.BeginVertical(_syncListOptions);
+        int moveTopIndex = -1;
+        int deleteIndex = -1;
+        for (int index = 0; index < _syncList.Count; index++) {
+            EditorGUILayout.BeginHorizontal();
+            SpriteAnimationClip animationClip = _syncList[index];
+            animationClip = (SpriteAnimationClip)EditorGUILayout.ObjectField(animationClip, typeof(SpriteAnimationClip), false);
+            _syncList[index] = animationClip;
+            if (GUILayout.Button("置顶") && Event.current.button == 0) {
+                moveTopIndex = index;
+            }
+            if (GUILayout.Button("删除") && Event.current.button == 0) {
+                deleteIndex = index;
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        EditorGUILayout.EndVertical();
+        Rect controlRect = GUILayoutUtility.GetLastRect();
+
+        // 循环外处理移动和删除事件
+        if (moveTopIndex >= 0) {
+            SpriteAnimationClip animationClip = _syncList[moveTopIndex];
+            _syncList.RemoveAt(moveTopIndex);
+            _syncList.Insert(0, animationClip);
+            Repaint();
+        }
+        if (deleteIndex >= 0) {
+            _syncList.RemoveAt(deleteIndex);
+            Repaint();
+        }
+        UnityHelper.DrawSeparator();
+
+        //
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("同步序列")) {
+            SyncFrameSprite();
+            GUIUtility.ExitGUI(); // 打开新窗口，中断当前GUI
+        }
+        if (GUILayout.Button("同步帧长")) {
+            SyncFrameInterval();
+        }
+        if (GUILayout.Button("同步坐标")) {
+            SyncFramePosition();
+        }
+        if (GUILayout.Button("同步旋转")) {
+            SyncFrameRotation();
+        }
+        if (GUILayout.Button("清空列表")) {
+            _syncList.Clear();
+            Repaint();
+        }
+        EditorGUILayout.EndHorizontal();
+        UnityHelper.DrawSeparator();
+
+        // 播放区
+        EditorGUILayout.HelpBox(PooledLabel().WithText("设置Root后可播放"));
+        EditorGUILayout.BeginHorizontal();
+        _rootObject = (GameObject)EditorGUILayout.ObjectField("Root", _rootObject, typeof(GameObject), true);
+        if (GUILayout.Button("Bind")) {
+            BindRootObject();
+        }
+        EditorGUILayout.EndHorizontal();
+        //
+        _rootPreviewer.OnInspectorGUI(true);
+        if (_rootPreviewer.IsPlaying) {
+            Repaint();
+        }
+        // 检查拖拽事件
+        CheckDragAddEvent(controlRect);
     }
 
-    private void OnClickSelectSprite(SpriteAnimationFrame frame) {
-        SpritePathEditor.OnClickSelectSprite(ref frame.spritePath);
-    }
-
-    private static Sprite LoadSprite(SpritePath spritePath) {
-        return SpritePathEditor.LoadSprite(spritePath);
-    }
-
-    #endregion
-
-    #endregion
-
-    #region cache
-
-    private static readonly string[] elementNameCache1 = new string[100];
-    private static readonly string[] elementNameCache2 = new string[100];
-
-    static SpriteAnimationClipEditor() {
-        for (int index = 0; index < elementNameCache1.Length; index++) {
-            elementNameCache1[index] = $"Frame: {index}  {UnityHelper.GetFoldoutSymbol(true)}";
-            elementNameCache2[index] = $"Frame: {index}  {UnityHelper.GetFoldoutSymbol(false)}";
+    private void CheckDragAddEvent(Rect controlRect) {
+        Event evt = Event.current;
+        if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform) return;
+        if (!controlRect.Contains(evt.mousePosition)) return;
+        //
+        DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
+        if (evt.type != EventType.DragPerform) return;
+        // 拖拽结束 - path是文件全路径
+        foreach (string filePath in DragAndDrop.paths) {
+            string assetPath = UnityHelper.ConvertToAssetPath(filePath);
+            if (AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAnimationClip)) is SpriteAnimationClip clip
+                && !_syncList.Contains(clip)) {
+                _syncList.Add(clip);
+            }
         }
     }
 
-    private static string GetElementName(int index, bool isExpanded) {
-        if (index < 0 || index >= elementNameCache1.Length) {
-            return $"Frame: {index}  {UnityHelper.GetFoldoutSymbol(isExpanded)}";
+    private void BindRootObject() {
+        if (!_rootObject) return;
+        if (_rootObjectId != _rootObject.GetInstanceID()) {
+            const string message = "播放动画时会在目标GameObject下创建子对象，请确保目标GameObject是临时对象";
+            if (!EditorUtility.DisplayDialog("二次确认", message, "确认", "取消 ")) {
+                return;
+            }
+            _rootObjectId = _rootObject.GetInstanceID();
         }
-        return isExpanded ? elementNameCache1[index] : elementNameCache2[index];
+        if (_syncList.Count == 0) {
+            return;
+        }
+        // 初始化Render和Previewer
+        Transform rootTransform = _rootObject.transform;
+        while (rootTransform.childCount < _syncList.Count) {
+            GameObject child = new GameObject("Render: " + rootTransform.childCount);
+            child.AddComponent<SpriteRenderer>();
+            child.transform.SetParent(rootTransform);
+        }
+        while (_rootPreviewer.Followers.Count + 1 < _syncList.Count) {
+            _rootPreviewer.Followers.Add(new SpriteAnimationPreviewer());
+        }
+        _rootPreviewer.Clip = _syncList[0];
+        _rootPreviewer.Renderer = rootTransform.GetChild(0).GetComponent<SpriteRenderer>();
+        _rootPreviewer.OrderInLayer = 0;
+        for (int index = 1; index < _syncList.Count; index++) {
+            SpriteAnimationClip clip = _syncList[index];
+            SpriteAnimationPreviewer follower = _rootPreviewer.Followers[index - 1];
+            follower.Renderer = rootTransform.GetChild(index).GetComponent<SpriteRenderer>();
+            follower.Clip = clip;
+            follower.OrderInLayer = 1; // 其它覆盖在上面
+            _rootPreviewer.AddFollower(follower);
+        }
+    }
+
+    private bool LoadClipSprites(SpriteAnimationPreviewer _) {
+        if (_syncList.Count == 0) {
+            return false;
+        }
+        foreach (SpriteAnimationClip clip in _syncList) {
+            foreach (SpriteAnimationFrame frame in clip.frames) {
+                frame.sprite = SpritePathEditor.LoadSprite(frame.spritePath);
+            }
+            clip.RefreshDuration();
+        }
+        return true;
+    }
+
+    private void SyncFrameRotation() {
+        if (_syncList.Count <= 1) return;
+        SpriteAnimationClip baseClip = _syncList[0];
+        for (int index = 1; index < _syncList.Count; index++) {
+            SpriteAnimationClip animationClip = _syncList[index];
+            if (!animationClip) {
+                continue;
+            }
+            SpriteAnimationClip.SyncFrameRotation(baseClip, animationClip);
+            EditorUtility.SetDirty(animationClip);
+        }
+    }
+
+    private void SyncFramePosition() {
+        if (_syncList.Count <= 1) return;
+        SpriteAnimationClip baseClip = _syncList[0];
+        for (int index = 1; index < _syncList.Count; index++) {
+            SpriteAnimationClip animationClip = _syncList[index];
+            if (!animationClip) {
+                continue;
+            }
+            SpriteAnimationClip.SyncFramePosition(baseClip, animationClip);
+            EditorUtility.SetDirty(animationClip);
+        }
+    }
+
+    private void SyncFrameInterval() {
+        if (_syncList.Count <= 1) return;
+        SpriteAnimationClip baseClip = _syncList[0];
+        for (int index = 1; index < _syncList.Count; index++) {
+            SpriteAnimationClip animationClip = _syncList[index];
+            if (!animationClip) {
+                continue;
+            }
+            SpriteAnimationClip.SyncFrameDuration(baseClip, animationClip);
+            EditorUtility.SetDirty(animationClip);
+        }
+    }
+
+    private void SyncFrameSprite() {
+        if (_syncList.Count <= 1) return;
+        const string message = "该操作将同步第一个动画的帧序信息到其它模型，确定同步吗？";
+        if (!EditorUtility.DisplayDialog("二次确认", message, "确定", "取消")) {
+            return;
+        }
+        SpriteAnimationClip baseClip = _syncList[0];
+        for (int index = 1; index < _syncList.Count; index++) {
+            SpriteAnimationClip animClip = _syncList[index];
+            if (!animClip || animClip == baseClip) {
+                continue;
+            }
+            string groupPath = EditorUtility.OpenFilePanel("选择SpriteGroup：" + animClip.name, "", "asset");
+            if (string.IsNullOrWhiteSpace(groupPath)) {
+                continue;
+            }
+            groupPath = UnityHelper.ConvertToAssetPath(groupPath);
+            SpriteGroup spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(groupPath);
+            if (spriteGroup) {
+                groupPath = spriteGroup.preferName ? spriteGroup.name : AssetDatabase.GetAssetPath(spriteGroup);
+                SpriteAnimationClip.SyncFrameOrder(baseClip, animClip, groupPath);
+                EditorUtility.SetDirty(animClip);
+            }
+        }
     }
 
     #endregion

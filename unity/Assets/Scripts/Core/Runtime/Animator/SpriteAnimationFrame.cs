@@ -47,6 +47,7 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
     public Vector2 position;
     /// <summary>
     /// z轴旋转
+    /// (运行时应当进行规格化)
     /// </summary>
     [Tooltip("顺时针旋转值")]
     public float rotation;
@@ -57,6 +58,13 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
     /// </summary>
     [Min(0f)]
     public float duration = 0.1f;
+    /// <summary>
+    /// 播放结束时间
+    /// 
+    /// 注：缓存字段，运行时使用；编辑器下预览时也可使用。
+    /// </summary>
+    [NonSerialized]
+    public float endTime;
 
     /// <summary>
     /// 受击包围盒
@@ -65,9 +73,10 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
     public AABB[] hurtBoxes = Array.Empty<AABB>();
     /// <summary>
     /// 攻击包围盒
+    /// 注：damage比hit更具区分度
     /// </summary>
     [Tooltip("攻击包围盒")]
-    public AABB[] hitBoxes = Array.Empty<AABB>();
+    public AABB[] damageBoxes = Array.Empty<AABB>();
 
     /// <summary>
     /// 攻击盒形状
@@ -108,7 +117,8 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
         return new SpriteAnimationFrame(spritePath, duration, position, rotation)
         {
             sprite = sprite,
-            hitBoxes = hitBoxes,
+            endTime = endTime,
+            damageBoxes = damageBoxes,
             hurtBoxes = hurtBoxes,
             graphic = graphic,
             interp = interp
@@ -120,7 +130,8 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
         return new SpriteAnimationFrame(spritePath, duration, position, rotation)
         {
             sprite = sprite,
-            hitBoxes = hitBoxes,
+            endTime = endTime,
+            damageBoxes = damageBoxes,
             hurtBoxes = hurtBoxes,
             graphic = graphic,
             interp = interp,
@@ -132,7 +143,8 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
         return new SpriteAnimationFrame(spritePath, duration, position, rotation)
         {
             sprite = sprite,
-            hitBoxes = hitBoxes,
+            endTime = endTime,
+            damageBoxes = damageBoxes,
             hurtBoxes = hurtBoxes,
             graphic = graphic,
             interp = interp,
@@ -144,7 +156,8 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
         return new SpriteAnimationFrame(spritePath, duration, position, rotation)
         {
             sprite = sprite,
-            hitBoxes = hitBoxes,
+            endTime = endTime,
+            damageBoxes = damageBoxes,
             hurtBoxes = hurtBoxes,
             graphic = graphic,
             interp = interp,

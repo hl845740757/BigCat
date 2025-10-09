@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Animator;
-using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCat.AnimatorEditor
 {
@@ -51,7 +50,6 @@ public class SpriteAnimationPreviewer
     private float _deltaTime;
     private float _time;
 
-    private readonly List<float> _timeStamps = new List<float>(); // 每一帧的结束时间，play状态下可用
     private float _duration; // 播放区间的时长
     private int _frameIndex; // 当前帧号
 
@@ -128,8 +126,9 @@ public class SpriteAnimationPreviewer
         if (!IsPlaying) {
             return;
         }
-        float revisedTime = _time + (_startFrame > 0 ? _timeStamps[_startFrame - 1] : 0);
-        if (revisedTime + _deltaTime >= _timeStamps[_endFrame]) {
+        float timeOffset = _startFrame > 0 ? _clip[_startFrame - 1].endTime : 0;
+        float revisedTime = _time + timeOffset;
+        if (revisedTime + _deltaTime >= _clip[_endFrame].endTime) {
             // 达到结束帧，判断是否重新开始 - 不跳帧
             if (_loop) {
                 _time = 0;
@@ -142,7 +141,7 @@ public class SpriteAnimationPreviewer
             _time += _deltaTime;
             revisedTime += _deltaTime;
             // 判断是否进入下一帧
-            if (revisedTime >= _timeStamps[_frameIndex]) {
+            if (revisedTime >= _clip[_frameIndex].endTime) {
                 _frameIndex++;
                 SetSprite(_frameIndex);
             }
@@ -169,16 +168,6 @@ public class SpriteAnimationPreviewer
         }
         _renderer.transform.localPosition = position;
         _renderer.transform.localRotation = Quaternion.Euler(0, 0, rotation);
-    }
-
-    private int FindFrame(float time) {
-        for (int index = _startFrame; index < _clip.frames.Length; index++) {
-            time -= _clip.frames[index].duration;
-            if (time <= 0) {
-                return index;
-            }
-        }
-        return _clip.frames.Length - 1;
     }
 
     // TODO 绘制受击框和攻击框
@@ -208,26 +197,12 @@ public class SpriteAnimationPreviewer
             return;
         }
         _playState = PlayState.Playing;
-        // 快照每一帧结束时间
-        _timeStamps.Clear();
-        _timeStamps.EnsureCapacity(_clip.FrameCount);
-        for (int index = 0; index < _clip.frames.Length; index++) {
-            SpriteAnimationFrame frame = _clip.frames[index];
-            if (index == 0) {
-                _timeStamps.Add(frame.duration);
-            } else {
-                _timeStamps.Add(frame.duration + _timeStamps[index - 1]);
-            }
-        }
         // 修正播放区间
         if (_endFrame == -1) {
             _endFrame = _clip.frames.Length - 1;
         }
         _startFrame = Math.Clamp(_startFrame, 0, _clip.FrameCount - 1);
-        _endFrame = Math.Clamp(_endFrame, 0, _clip.FrameCount - 1);
-        if (_endFrame < _startFrame) {
-            _endFrame = _startFrame;
-        }
+        _endFrame = Math.Clamp(_endFrame, _startFrame, _clip.FrameCount - 1);
         _duration = _clip.GetSubDuration(_startFrame, _endFrame);
 
         _tickTime = Time.realtimeSinceStartup;
@@ -366,7 +341,6 @@ public class SpriteAnimationPreviewer
         _playState = PlayState.Stopped;
         _startFrame = 0;
         _endFrame = -1;
-        _timeStamps.Clear();
         _duration = 0;
         _frameIndex = 0;
         // 同步停止
@@ -414,7 +388,7 @@ public class SpriteAnimationPreviewer
             return;
         }
         _time = time;
-        _frameIndex = FindFrame(time);
+        _frameIndex = _clip.SearchFrameByTime(time);
         SetSprite(_frameIndex);
         //
         foreach (SpriteAnimationPreviewer follower in followers) {

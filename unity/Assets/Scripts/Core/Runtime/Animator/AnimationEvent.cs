@@ -35,8 +35,9 @@ public sealed class AnimationEvent
     public float exitTime; // 结束时间
 
     public AnimationEventType type; // 事件类型
-    public double doubleParameter; // int, float, long, double
+    public double numberParameter; // int, float, long, double, bool
     public string stringParameter; // 字符串参数
+    public object objectParameter; // 目标对象（内联对象）
     public ObjectPath objectPath; // 目标对象路径
 }
 
@@ -45,7 +46,7 @@ public sealed class AnimationEvent
 /// </summary>
 public enum AnimationEventType
 {
-    Custom = 0, // 默认自定义
+    Custom = 0, // 自定义（默认）
     SetSuccess = 1, // 设置任务完成
     SetFailure = 2, // 设置任务失败
     Pause = 3, // 暂停自己，double参数为暂时时间，大于0有效

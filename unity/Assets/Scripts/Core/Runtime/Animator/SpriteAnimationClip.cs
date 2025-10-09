@@ -32,7 +32,7 @@ namespace Wjybxx.BigCat.Animator
 public sealed class SpriteAnimationClip : ScriptableObject
 {
     /// <summary>
-    /// 动画的帧数据
+    /// 帧数据
     /// </summary>
     public SpriteAnimationFrame[] frames = Array.Empty<SpriteAnimationFrame>();
     /// <summary>
@@ -66,10 +66,11 @@ public sealed class SpriteAnimationClip : ScriptableObject
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => frames[index];
         set {
-            // 根据delta计算其实会有一点误差，我们在序列化保存前再纠正一次
             float delta = value.duration - frames[index].duration;
             frames[index] = value;
-            duration += delta;
+            if (delta != 0) {
+                RefreshDuration();
+            }
         }
     }
 
@@ -77,16 +78,24 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// 帧数
     /// </summary>
     public int FrameCount {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => frames.Length;
         set {
             int preLength = frames.Length;
             Array.Resize(ref frames, value);
-            // 扩展数据时不可以为null
             for (int index = preLength; index < value; index++) {
                 frames[index] = new SpriteAnimationFrame();
             }
             RefreshDuration();
         }
+    }
+
+    /// <summary>
+    /// 最后一帧
+    /// </summary>
+    public SpriteAnimationFrame LastFrame {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => frames[frames.Length - 1];
     }
 
     /// <summary>
@@ -96,6 +105,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         duration = 0;
         foreach (var frame in frames) {
             duration += frame.duration;
+            frame.endTime = duration;
         }
     }
 
@@ -115,6 +125,24 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
+    /// 根据播放时间搜索关联的帧号
+    /// 
+    /// 注意：该方法只能在正确维护帧信息缓存的情况下调用。
+    /// </summary>
+    /// <param name="time"></param>
+    /// <returns>如果大于总播放时间，则固定返回最后一帧</returns>
+    public int SearchFrameByTime(float time) {
+        int index = ArrayUtil.BinarySearch(frames, mid => mid.endTime.CompareTo(time));
+        if (index < 0) {
+            index = (index + 1) * -1;
+        }
+        if (index >= frames.Length) {
+            return frames.Length - 1;
+        }
+        return index;
+    }
+
+    /// <summary>
     /// 添加帧
     /// </summary>
     /// <param name="frame"></param>
@@ -123,10 +151,13 @@ public sealed class SpriteAnimationClip : ScriptableObject
         if (index == -1) {
             Array.Resize(ref frames, frames.Length + 1);
             frames[frames.Length - 1] = frame;
+            //
+            duration += frame.duration;
+            frame.endTime = duration;
         } else {
             ArrayUtil.Insert(ref frames, index, frame);
+            RefreshDuration();
         }
-        duration += frame.duration;
     }
 
     /// <summary>
@@ -141,7 +172,9 @@ public sealed class SpriteAnimationClip : ScriptableObject
         Array.Resize(ref frames, prevLen + targetFrames.Count);
         foreach (var frame in targetFrames) {
             frames[prevLen++] = frame;
+            //
             duration += frame.duration;
+            frame.endTime = duration;
         }
     }
 
@@ -153,9 +186,8 @@ public sealed class SpriteAnimationClip : ScriptableObject
         if (index < 0 || index >= frames.Length) {
             return;
         }
-        var frame = frames[index];
         ArrayUtil.RemoveAt(ref frames, index);
-        duration -= frame.duration;
+        RefreshDuration();
     }
 
     /// <summary>
@@ -163,11 +195,14 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// </summary>
     /// <param name="frameInterval">帧间隔</param>
     public void SetFrameInterval(float frameInterval) {
+        duration = 0;
         for (int index = 0; index < frames.Length; index++) {
             var frame = frames[index];
-            frames[index] = frame.WithDuration(frameInterval);
+            frames[index].duration = frameInterval;
+            //
+            duration += frameInterval;
+            frame.endTime = duration;
         }
-        duration = frames.Length * frameInterval;
     }
 
     /// <summary>
@@ -176,8 +211,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="position"></param>
     public void SetFramePosition(Vector2 position) {
         for (int index = 0; index < frames.Length; index++) {
-            var frame = frames[index];
-            frames[index] = frame.WithPosition(position);
+            frames[index].position = position;
         }
     }
 
@@ -187,8 +221,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="position"></param>
     public void AddFramePosition(Vector2 position) {
         for (int index = 0; index < frames.Length; index++) {
-            var frame = frames[index];
-            frames[index] = frame.WithPosition(frame.position + position);
+            frames[index].position += position;
         }
     }
 
@@ -200,8 +233,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         if (frames.Length <= 1) return;
         Vector2 baseOffset = frames[0].position;
         for (int index = 1; index < frames.Length; index++) {
-            var frame = frames[index];
-            frames[index] = frame.WithPosition(baseOffset + position * index);
+            frames[index].position = baseOffset + position * index;
         }
     }
 
@@ -211,8 +243,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="rotation"></param>
     public void SetFrameRotation(float rotation) {
         for (int index = 0; index < frames.Length; index++) {
-            var frame = frames[index];
-            frames[index] = frame.WithRotation(rotation);
+            frames[index].rotation = rotation;
         }
     }
 
@@ -222,8 +253,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="rotation"></param>
     public void AddFrameRotation(float rotation) {
         for (int index = 0; index < frames.Length; index++) {
-            var frame = frames[index];
-            frames[index] = frame.WithRotation(frame.rotation + rotation);
+            frames[index].rotation += rotation;
         }
     }
 
@@ -235,8 +265,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         if (frames.Length <= 1) return;
         float baseRotation = frames[0].rotation;
         for (int index = 1; index < frames.Length; index++) {
-            var frame = frames[index];
-            frames[index] = frame.WithRotation(baseRotation + rotation * index);
+            frames[index].rotation = baseRotation + rotation * index;
         }
     }
 
@@ -250,6 +279,13 @@ public sealed class SpriteAnimationClip : ScriptableObject
             var frame = frames[index];
             frame.sprite = spriteGroup.GetSprite(frame.spritePath.index);
         }
+    }
+
+    /// <summary>
+    /// 确保时间的正确性
+    /// </summary>
+    private void OnEnable() {
+        RefreshDuration();
     }
 
 #if UNITY_EDITOR

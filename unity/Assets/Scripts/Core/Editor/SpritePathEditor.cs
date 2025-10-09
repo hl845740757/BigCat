@@ -30,29 +30,22 @@ public class SpritePathEditor : PropertyDrawer
     private static readonly string[] _searchFolders = new[] { "Assets/Resources/Sprites", "Assets/Sprites" };
     private static readonly Dictionary<string, SpriteGroup> _nameToSpriteGroup = new();
     private static double lastSearchTime;
-    private static readonly GUILayoutOption[] _width120 = new GUILayoutOption[] { GUILayout.Width(120) };
     private static readonly GUILayoutOption[] _width50 = new GUILayoutOption[] { GUILayout.Width(50) };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
         EditorGUI.BeginProperty(position, label, property);
-        // Draw label
-        Rect foldRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-        property.isExpanded = EditorGUI.Foldout(foldRect, property.isExpanded, label);
-        if (!property.isExpanded) {
-            return;
-        }
         SerializedProperty pGroupPath = property.FindPropertyRelative("groupPath");
         SerializedProperty pIndex = property.FindPropertyRelative("index");
         SpritePath spritePath = new SpritePath(pGroupPath.stringValue, pIndex.intValue);
         // x+缩进
-        Rect groupRect = new Rect(position.x + 10, position.y + 18, position.width - 120, EditorGUIUtility.singleLineHeight);
-        Rect indexRect = new Rect(position.x + 10, position.y + 38, position.width - 120, EditorGUIUtility.singleLineHeight);
+        Rect groupRect = new Rect(position.x, position.y, position.width - 80, EditorGUIUtility.singleLineHeight);
+        Rect indexRect = new Rect(position.x + 10, position.y + 20, position.width - 70, EditorGUIUtility.singleLineHeight);
 
-        spritePath.groupPath = EditorGUI.TextField(groupRect, "groupPath", spritePath.groupPath);
-        spritePath.index = EditorGUI.IntField(indexRect, "index", spritePath.index);
+        spritePath.groupPath = EditorGUI.TextField(groupRect, label, spritePath.groupPath);
+        spritePath.index = EditorGUI.IntField(indexRect, "Index", spritePath.index);
         // 右对齐
-        groupRect.x = position.xMax - 100;
-        groupRect.width = 100;
+        groupRect.x = position.xMax - 60;
+        groupRect.width = 60;
         if (GUI.Button(groupRect, "选择")) {
             OnClickSelectSpriteGroup(ref spritePath);
             WriteBack(pGroupPath, pIndex, spritePath);
@@ -61,8 +54,8 @@ public class SpritePathEditor : PropertyDrawer
         }
 
         EditorGUIUtility.labelWidth = 20;
-        indexRect.x = position.xMax - 100;
-        indexRect.width = 100;
+        indexRect.x = position.xMax - 60;
+        indexRect.width = 60;
         if (GUI.Button(indexRect, "选择")) {
             OnClickSelectSprite(ref spritePath);
             WriteBack(pGroupPath, pIndex, spritePath);
@@ -80,42 +73,39 @@ public class SpritePathEditor : PropertyDrawer
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
-        if (property.isExpanded) {
-            return EditorGUIUtility.singleLineHeight * 3 + (2 * 2); // 3排
-        }
-        return EditorGUIUtility.singleLineHeight;
+        return EditorGUIUtility.singleLineHeight * 2 + 4;
     }
 
     /// <summary>
     ///
     /// 如果返回true表示应当调用<see cref="GUIUtility.ExitGUI"/>退出当前绘制。
     /// </summary>
-    /// <returns>是否需要退出当前GUI</returns>
-    public static bool DoLayout(ref SpritePath spritePath, ref bool isExpanded, GUIContent label) {
+    public static SpritePath DoLayout(SpritePath spritePath, GUIContent label, out bool exitGui) {
+        exitGui = false;
         EditorGUILayout.BeginVertical();
-        isExpanded = EditorGUILayout.Foldout(isExpanded, label);
-        if (!isExpanded) {
-            EditorGUILayout.EndVertical();
-            return false;
-        }
 
         EditorGUILayout.BeginHorizontal();
-        spritePath.groupPath = EditorGUILayout.TextField("groupPath", spritePath.groupPath, _width120);
+        spritePath.groupPath = EditorGUILayout.TextField(label, spritePath.groupPath);
         if (GUILayout.Button("选择", _width50)) {
             OnClickSelectSpriteGroup(ref spritePath);
-            return true;
+            exitGui = true;
+            return spritePath;
         }
         EditorGUILayout.EndHorizontal();
 
+        EditorGUI.indentLevel++;
         EditorGUILayout.BeginHorizontal();
-        spritePath.index = EditorGUILayout.IntField("index", spritePath.index);
+        spritePath.index = EditorGUILayout.IntField("Index", spritePath.index);
         if (GUILayout.Button("选择", _width50)) {
             OnClickSelectSprite(ref spritePath);
-            return true;
+            exitGui = true;
+            return spritePath;
         }
         EditorGUILayout.EndHorizontal();
+        EditorGUI.indentLevel--;
+
         EditorGUILayout.EndVertical();
-        return false;
+        return spritePath;
     }
 
     #region events

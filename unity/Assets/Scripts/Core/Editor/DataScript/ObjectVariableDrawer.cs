@@ -140,6 +140,8 @@ public class ObjectVariableDrawer : DataVariableDrawer
                 label = "ChangeType/" + label;
                 menu.AddItem(new GUIContent(label), false, callback, new MenuContext(editor, variable, index));
             }
+        } else {
+            menu.AddDisabledItem(new GUIContent("ChangeType"));
         }
         menu.ShowAsContext();
     }
@@ -164,7 +166,7 @@ public class ObjectVariableDrawer : DataVariableDrawer
         if (string.IsNullOrWhiteSpace(copyBuffer)) {
             return;
         }
-        GUIUtility.systemCopyBuffer = "";
+        // GUIUtility.systemCopyBuffer = "";
         try {
             DsonValue dsonValue = Dsons.FromDson(copyBuffer);
             editor.model.ResetVariable(variable, dsonValue);

@@ -164,6 +164,38 @@ public struct AABB
     }
 
     /// <summary>
+    /// AABB是否包含目标点
+    /// </summary>
+    /// <param name="point"></param>
+    /// <returns></returns>
+    public bool Contains(Vector3 point) {
+        if (point.x < min.x || point.x > max.x) return false;
+        if (point.y < min.y || point.y > max.y) return false;
+        if (point.z < min.z || point.z > max.z) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// 确保AABB包含目标点
+    /// </summary>
+    /// <param name="point"></param>
+    public void Encapsulate(Vector3 point) {
+        min = Vector3.Min(min, point);
+        max = Vector3.Max(max, point);
+    }
+
+    /// <summary>
+    /// 确保AABB包含目标包围盒
+    /// </summary>
+    /// <param name="aabb"></param>
+    public void Encapsulate(AABB aabb) {
+        Encapsulate(aabb.min);
+        Encapsulate(aabb.max);
+    }
+
+    #region util
+
+    /// <summary>
     /// 校验AABB数据的正确性
     /// </summary>
     /// <exception cref="IllegalStateException"></exception>
@@ -177,22 +209,10 @@ public struct AABB
     /// 修正Min和Max的数据
     /// </summary>
     public void Repair() {
-        MinMax(min.x, max.x, out min.x, out max.x);
-        MinMax(min.y, max.y, out min.y, out max.y);
-        MinMax(min.z, max.z, out min.z, out max.z);
+        MathCommon.MinMax(min.x, max.x, out min.x, out max.x);
+        MathCommon.MinMax(min.y, max.y, out min.y, out max.y);
+        MathCommon.MinMax(min.z, max.z, out min.z, out max.z);
     }
-
-    private static void MinMax(float a, float b, out float min, out float max) {
-        if ((double)a < (double)b) {
-            min = a;
-            max = b;
-        } else {
-            min = b;
-            max = a;
-        }
-    }
-
-    #region util
 
     /// <summary>
     /// 检测包围盒是否产生碰撞
@@ -201,7 +221,7 @@ public struct AABB
     /// <param name="b"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool CheckCollision(in AABB a, in AABB b) {
+    public static bool Intersect(in AABB a, in AABB b) {
         if (a.max.x < b.min.x || a.min.x > b.max.x) return false;
         if (a.max.y < b.min.y || a.min.y > b.max.y) return false;
         if (a.max.z < b.min.z || a.min.z > b.max.z) return false;
@@ -243,12 +263,9 @@ public struct AABB
     /// </summary>
     /// <returns></returns>
     public static AABB OfVertices(Vector3 v1, Vector3 v2) {
-        float minX = Mathf.Min(v1.x, v2.x);
-        float minY = Mathf.Min(v1.y, v2.y);
-        float minZ = Mathf.Min(v1.z, v2.z);
-        float maxX = Mathf.Max(v1.x, v2.x);
-        float maxY = Mathf.Max(v1.y, v2.y);
-        float maxZ = Mathf.Max(v1.z, v2.z);
+        MathCommon.MinMax(v1.x, v2.x, out float minX, out float maxX);
+        MathCommon.MinMax(v1.y, v2.y, out float minY, out float maxY);
+        MathCommon.MinMax(v1.z, v2.z, out float minZ, out float maxZ);
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
