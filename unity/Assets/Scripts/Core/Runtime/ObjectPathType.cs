@@ -33,6 +33,7 @@ public enum ObjectPathType
     Default = 0,
     /// <summary>
     /// 图组中的图片，GroupPath + index
+    /// (其实可以考虑配置为name，运行时再转为index)
     /// </summary>
     SpriteOfGroup = 1,
     /// <summary>

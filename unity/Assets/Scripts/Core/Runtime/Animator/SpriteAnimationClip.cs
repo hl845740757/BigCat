@@ -444,6 +444,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         for (int index = 0; index < source.frames.Length; index++) {
             SpriteAnimationFrame sourceFrame = source.frames[index];
             SpriteAnimationFrame targetFrame = target.frames[index];
+            targetFrame.spritePath.localPath = sourceFrame.spritePath.localPath;
             targetFrame.spritePath.localId = sourceFrame.spritePath.localId;
         }
     }

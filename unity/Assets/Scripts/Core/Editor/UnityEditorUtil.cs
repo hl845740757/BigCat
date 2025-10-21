@@ -301,6 +301,9 @@ public static class UnityEditorUtil
     /// <param name="path"></param>
     /// <returns></returns>
     public static Sprite LoadSprite(ObjectPath path) {
+        if (path.IsEmpty) {
+            return null;
+        }
         ObjectPathType type = (ObjectPathType)path.type;
         return type switch
         {
@@ -466,6 +469,13 @@ public static class UnityEditorUtil
             if (element.userData is T userData) return userData;
         }
         return null;
+    }
+
+    internal static void SetBorderWidth(this VisualElement element, int width) {
+        element.style.borderLeftWidth = width;
+        element.style.borderRightWidth = width;
+        element.style.borderTopWidth = width;
+        element.style.borderBottomWidth = width;
     }
 
     #endregion
