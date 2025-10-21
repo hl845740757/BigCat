@@ -1,0 +1,116 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Template name="ObjectPath" src="project://database/Assets/Scripts/Core/Editor/UIElements/ObjectPathField.uxml?fileID=9197481963319205126&amp;guid=007468af889367b48b09e8eb93250d97&amp;type=3#ObjectPathField" />
+    <ui:Template name="AABBField" src="project://database/Assets/Scripts/Core/Editor/UIElements/AABBField.uxml?fileID=9197481963319205126&amp;guid=79f08d19f94ff8a4e85536709572ec9b&amp;type=3#AABBField" />
+    <Style src="project://database/Assets/Scripts/Core/Editor/SpriteAnimation/AnimationClipEditor.uss?fileID=7433441132597879392&amp;guid=5cd94e7d85ef5ee408817f039ad54a30&amp;type=3#AnimationClipEditor" />
+    <uie:Toolbar style="margin-bottom: 0; border-left-color: rgb(166, 166, 166); border-right-color: rgb(166, 166, 166); border-top-color: rgb(166, 166, 166); border-bottom-color: rgb(166, 166, 166);">
+        <uie:ToolbarButton text="动画编辑" display-tooltip-when-elided="true" name="toolbar0" style="-unity-font-style: bold;" />
+        <uie:ToolbarButton text="同步工具" display-tooltip-when-elided="true" name="toolbar1" style="-unity-font-style: bold;" />
+    </uie:Toolbar>
+    <ui:VisualElement style="height: 100%; width: 100%; flex-direction: row; align-items: stretch; justify-content: flex-start; flex-wrap: nowrap; min-height: auto; flex-grow: 1;">
+        <ui:VisualElement name="inspector-div" style="flex-shrink: 0; width: auto; max-width: 400px; min-width: 220px; display: flex; overflow: visible;">
+            <ui:VisualElement style="flex-direction: row; height: auto; min-height: 18px; justify-content: space-between;">
+                <ui:Label text="文件列表：(可拖拽添加)" display-tooltip-when-elided="true" enable-rich-text="true" tooltip="可支持多个对象，置顶对象使用属性栏" />
+                <ui:Button text="添加" display-tooltip-when-elided="true" name="pick-clip" />
+            </ui:VisualElement>
+            <ui:VisualElement name="clip-list" style="border-left-color: rgb(193, 193, 193); border-right-color: rgb(193, 193, 193); border-top-color: rgb(193, 193, 193); border-bottom-color: rgb(193, 193, 193); border-bottom-width: 1px; min-height: 40px; flex-grow: 0; flex-shrink: 0; max-height: none; justify-content: flex-start;" />
+            <ui:VisualElement style="display: flex; flex-shrink: 0;">
+                <ui:VisualElement name="clip-info-div" style="align-items: stretch; justify-content: flex-start; flex-shrink: 0; margin-right: 5px; width: auto; max-width: 400px; min-width: 220px;">
+                    <ui:Toggle label="循环" name="loop" tooltip="是否循环播放" value="true" />
+                    <uie:FloatField label="融合权重" value="0.5" tooltip="动画融合的默认权重" name="weight" style="height: auto; width: auto; align-items: stretch; justify-content: flex-end;" />
+                    <uie:FloatField label="总时长" value="0" name="duration" readonly="true" tooltip="动画持续时间，根据帧信息统计获得" style="height: auto; width: auto; align-items: auto;" />
+                    <uie:Vector2IntField label="帧域" name="frame-size" tooltip="注意！需要能放下角色的所有部件" x="500" y="500" style="justify-content: center;" />
+                    <uie:Vector2Field label="轴心点" name="frame-pivot" tooltip="角色坐标的模拟位置" x="0.5" y="0.25" style="flex-direction: row; align-items: stretch; min-width: auto; justify-content: space-between; flex-wrap: nowrap;" />
+                    <ui:VisualElement style="flex-direction: row; justify-content: space-between; flex-shrink: 0; align-items: stretch; width: 100%;">
+                        <uie:IntegerField label="总帧数" value="0" is-delayed="false" name="frame-count" style="height: auto; width: auto; min-width: 220px; margin-top: 3px; margin-right: 1px;" />
+                        <ui:VisualElement style="flex-direction: row; justify-content: flex-end;">
+                            <ui:Button text="+" display-tooltip-when-elided="true" name="frame-count-add" tooltip="所有帧的旋转加上指定值" />
+                            <ui:Button text="-" display-tooltip-when-elided="true" name="frame-count-dec" tooltip="设置所有帧的旋转值" />
+                            <ui:Button text="Apply" display-tooltip-when-elided="true" tooltip="以第一帧的旋转为基础线性插值" name="frame-count-apply" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="batch-div" style="flex-shrink: 0; border-top-color: rgb(161, 161, 161); border-bottom-color: rgb(134, 134, 134); border-top-width: 1px; border-bottom-width: 1px;">
+                    <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: flex-end; flex-wrap: nowrap;">
+                        <uie:Vector2Field label="批量·坐标" name="batch-position" style="flex-direction: column; align-items: flex-start; min-width: auto;" />
+                        <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0;">
+                            <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-position-add" tooltip="所有帧的坐标加上指定值" />
+                            <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-position-set" tooltip="设置所有帧的坐标" />
+                            <ui:Button text="Lerp" display-tooltip-when-elided="true" tooltip="以第一帧的坐标为基础线性插值" name="batch-position-lerp" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: flex-end; flex-wrap: nowrap;">
+                        <uie:Vector2Field label="批量·缩放" name="batch-scale" x="1" y="1" style="flex-direction: column; align-items: flex-start; min-width: auto;" />
+                        <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0;">
+                            <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-scale-add" tooltip="所有帧的缩放加上指定值" />
+                            <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-scale-set" tooltip="设置所有帧的缩放" />
+                            <ui:Button text="Lerp" display-tooltip-when-elided="true" tooltip="以第一帧的缩放为基础线性插值" name="batch-scale-lerp" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement style="flex-direction: row; justify-content: space-between;">
+                        <uie:FloatField label="批量·旋转" value="0" name="batch-rotation" style="width: auto; min-width: 220px;" />
+                        <ui:VisualElement style="flex-direction: row; justify-content: flex-end;">
+                            <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-rotation-add" tooltip="所有帧的旋转加上指定值" />
+                            <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-rotation-set" tooltip="设置所有帧的旋转值" />
+                            <ui:Button text="Lerp" display-tooltip-when-elided="true" tooltip="以第一帧的旋转为基础线性插值" name="batch-rotation-lerp" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: stretch;">
+                        <uie:FloatField label="批量·帧长" value="0.1" name="batch-duration" style="justify-content: flex-start; width: auto; min-width: 220px; height: auto;" />
+                        <ui:VisualElement style="flex-direction: row; justify-content: flex-end;">
+                            <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-duration-add" tooltip="所有帧的帧时长加上指定值" />
+                            <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-duration-set" tooltip="设置所有帧的帧时长" />
+                            <ui:Button text="Lerp" display-tooltip-when-elided="true" tooltip="以第一帧的帧时长为基础线性插值" name="batch-duration-lerp" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="frame-info-div" style="justify-content: flex-start; align-items: flex-start; flex-shrink: 0;">
+                    <ui:Instance template="ObjectPath" name="sprite-path" tooltip="图片路径" style="justify-content: flex-start; align-items: stretch; min-width: auto; height: auto;" />
+                    <uie:Vector2Field label="Position" name="position" tooltip="图片坐标，图片bottom相对角色坐标的位置" style="width: auto; min-width: 100%; height: auto;" />
+                    <uie:Vector2Field label="Scale" name="scale" x="1" y="1" tooltip="图片缩放。以场景效果为准" style="min-width: 100%;" />
+                    <uie:FloatField label="Rotation" value="0" name="rotation" tooltip="旋转角度，顺时针为正" is-delayed="false" style="width: auto; min-width: 220px;" />
+                    <uie:FloatField label="Duration" value="0.1" name="duration" tooltip="当前帧的持续时间，秒" is-delayed="true" style="width: auto; min-width: 220px;" />
+                    <uie:IntegerField label="Interp" value="0" name="interp" tooltip="攻击盒插值函数" style="width: auto; min-width: 220px;" />
+                    <ui:Toggle label="Shadow" value="true" name="shadow" tooltip="是否开启阴影" style="min-width: 220px;" />
+                    <uie:ColorField label="Tint" value="#FFFFFFFF" name="tint" tooltip="色调效果，叠加在图片之上" style="justify-content: flex-start; width: 98%;" />
+                    <ui:ListView focusable="true" tooltip="受击Box，图片bottom相对角色坐标的位置" name="hurt-boxes" header-title="受击Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="FixedHeight" style="border-top-width: 1px; border-left-color: rgb(145, 145, 145); border-right-color: rgb(145, 145, 145); border-top-color: rgb(145, 145, 145); border-bottom-color: rgb(145, 145, 145); max-height: none; width: 98%;" />
+                    <ui:ListView focusable="true" tooltip="伤害Box，图片bottom相对角色坐标的位置" name="damage-boxes" header-title="伤害Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="FixedHeight" style="max-height: none; width: 98%;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="clip-sync-div" style="flex-shrink: 0; flex-direction: column; flex-wrap: wrap; max-height: 60px; max-width: 400px; display: none; flex-grow: 0; width: auto; justify-content: flex-end; overflow: visible;">
+                <ui:VisualElement style="flex-direction: row; flex-shrink: 0;">
+                    <ui:Button text="同步帧域" display-tooltip-when-elided="true" name="sync-frame-size" tooltip="同步第一个动画的帧域和轴心到其它动画" style="font-size: 12px; -unity-font-style: bold;" />
+                    <ui:Button text="同步序列" display-tooltip-when-elided="true" name="sync-frame-order" tooltip="按照第一个动画的图片名字重排序其它动画，慎重点击" style="font-size: 12px; -unity-font-style: bold;" />
+                </ui:VisualElement>
+                <ui:VisualElement style="flex-shrink: 1; flex-direction: row;">
+                    <ui:Button text="同步帧长" display-tooltip-when-elided="true" name="sync-frame-duration" tooltip="将第一个动画的每一帧时长同步到其它动画" style="-unity-font-style: bold; font-size: 12px;" />
+                    <ui:Button text="同步坐标" display-tooltip-when-elided="true" name="sync-frame-position" tooltip="将第一个动画的每一帧坐标同步到其它动画" style="font-size: 12px; -unity-font-style: bold;" />
+                    <ui:Button text="同步旋转" display-tooltip-when-elided="true" name="sync-frame-rotation" tooltip="将第一个动画的每一帧旋转值同步到其它动画" style="-unity-font-style: bold; font-size: 12px;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="frame-area-div" style="height: 100%; align-items: flex-start; justify-content: flex-start; position: relative; top: auto; left: auto; flex-wrap: nowrap; flex-direction: column; flex-shrink: 0; min-height: auto; min-width: 300px; display: flex; margin-left: 10px; margin-right: 0; transform-origin: center; width: auto; flex-grow: 1;">
+            <ui:VisualElement name="frame-area" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; min-width: 400px; min-height: 300px; flex-shrink: 0; transform-origin: center; align-items: flex-start;">
+                <ui:VisualElement name="frame-pivot-icon" style="flex-shrink: 0; width: 1px; height: 1px; border-left-color: rgb(248, 255, 0); border-right-color: rgb(248, 255, 0); border-top-color: rgb(248, 255, 0); border-bottom-color: rgb(248, 255, 0); border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-left-radius: 1px; border-top-right-radius: 1px; border-bottom-right-radius: 1px; border-bottom-left-radius: 1px; position: absolute;" />
+                <ui:VisualElement name="image-style" tooltip="用于持有图片显示样式，不直接展示" style="height: auto; width: auto; bottom: auto; flex-shrink: 0; min-height: auto; min-width: auto; -unity-background-scale-mode: scale-to-fit; transform-origin: bottom; -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0; overflow: visible; max-height: none; justify-content: flex-start; margin-top: 0; border-left-color: rgb(128, 224, 255); border-right-color: rgb(128, 224, 255); border-top-color: rgb(128, 224, 255); border-bottom-color: rgb(128, 224, 255); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; background-image: none; -unity-background-image-tint-color: rgb(56, 56, 56); display: flex; visibility: hidden; position: absolute;" />
+                <ui:VisualElement name="dmg-box-style" focusable="true" tooltip="用于配置攻击盒样式，不直接展示" style="height: auto; width: auto; bottom: auto; flex-shrink: 0; min-height: auto; min-width: auto; -unity-background-scale-mode: scale-to-fit; transform-origin: bottom; -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0; overflow: visible; max-height: none; justify-content: flex-start; margin-top: 0; border-left-color: rgb(255, 0, 0); border-right-color: rgb(255, 0, 0); border-top-color: rgb(255, 0, 0); border-bottom-color: rgb(255, 0, 0); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; background-image: none; -unity-background-image-tint-color: rgb(56, 56, 56); display: flex; visibility: hidden; position: absolute;" />
+                <ui:VisualElement name="hurt-box-style" tooltip="用于配置受击盒的样式，不直接展示" focusable="true" style="height: auto; width: auto; bottom: auto; flex-shrink: 0; min-height: auto; min-width: auto; -unity-background-scale-mode: scale-to-fit; transform-origin: bottom; -unity-slice-left: 0; -unity-slice-top: 0; -unity-slice-right: 0; -unity-slice-bottom: 0; overflow: visible; max-height: none; justify-content: flex-start; margin-top: 0; border-left-color: rgb(0, 255, 159); border-right-color: rgb(0, 255, 159); border-top-color: rgb(0, 255, 159); border-bottom-color: rgb(0, 255, 159); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; background-image: none; -unity-background-image-tint-color: rgb(56, 56, 56); display: flex; visibility: hidden; position: absolute;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="frame-menu-area" focusable="false" style="flex-direction: column; align-items: flex-start;">
+                <ui:VisualElement style="justify-content: flex-start; height: auto; width: 380px; flex-direction: row; bottom: auto; right: auto; left: auto; top: auto; margin-bottom: 0; flex-shrink: 0; padding-bottom: 0; margin-right: 0; align-items: flex-start;">
+                    <ui:Button text="&lt;" display-tooltip-when-elided="true" name="frame-index-prev" />
+                    <uie:IntegerField value="100" name="frame-index" is-delayed="true" style="min-width: 40px;" />
+                    <ui:Button text="&gt;" display-tooltip-when-elided="true" name="frame-index-next" />
+                    <ui:Toggle label="攻击盒" value="true" name="show-dmg-box" style="flex-direction: column; width: 60px; margin-left: 10px; margin-right: 10px;" />
+                    <ui:Toggle label="受击盒" value="true" name="show-hurt-box" style="flex-direction: column; width: 60px; margin-left: 3px; margin-right: 3px;" />
+                    <ui:Toggle label="禁用图片" value="false" name="disable-image-click" tooltip="可禁用图片点击，以避免影响点击攻击盒" style="flex-direction: column; width: 60px; margin-left: 3px; margin-right: 3px;" />
+                    <uie:ColorField label="背景色" value="#353535FF" name="bg-color" style="flex-direction: column; width: 60px;" />
+                </ui:VisualElement>
+                <ui:VisualElement style="flex-direction: row; margin-top: 10px; margin-bottom: 10px; flex-shrink: 0;">
+                    <ui:Toggle label="循环播放：" name="play" style="width: 100px;" />
+                    <ui:Slider picking-mode="Ignore" value="0" high-value="100" name="play-time" style="width: 250px; margin-left: 15px;" />
+                </ui:VisualElement>
+                <ui:Instance template="AABBField" name="AABBField" tooltip="当前选中攻击盒或受击盒的信息" style="min-width: 300px; max-width: 500px; flex-grow: 1; flex-shrink: 0; margin-top: 0; margin-bottom: 0;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

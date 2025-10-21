@@ -1,0 +1,17 @@
+{
+    "name": "Wjybxx.BigCat.UnityCore",
+    "rootNamespace": "Wjybxx.BigCat.Core",
+    "references": [
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Dson.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -19,7 +19,7 @@
 using System;
 using UnityEngine;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 标签类字段

@@ -18,7 +18,7 @@
 
 using System;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 对象重定向

@@ -19,7 +19,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
-using Wjybxx.BigCat.UnityCore;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.CoreEditor
 {

@@ -60,9 +60,14 @@ public sealed class DataNode
     /// </summary>
     public DataVariable value;
     /// <summary>
-    /// 数据端口（连接其它Node）
+    /// 数据端口
+    ///
+    /// 注：需要独立排序，因此分为4个列表存储。
     /// </summary>
-    [NonSerialized] public List<NodePort> ports = new List<NodePort>();
+    [NonSerialized] public List<NodePort> leftPorts = new List<NodePort>();
+    [NonSerialized] public List<NodePort> rightPorts = new List<NodePort>();
+    [NonSerialized] public List<NodePort> bottomPorts = new List<NodePort>();
+    [NonSerialized] public List<NodePort> topPorts = new List<NodePort>();
 
     /// <summary>
     /// UI坐标
@@ -85,6 +90,31 @@ public sealed class DataNode
     #region util
 
     /// <summary>
+    /// 获取指定方位的Ports
+    /// </summary>
+    /// <param name="side"></param>
+    public List<NodePort> GetPorts(Side side) {
+        return side switch
+        {
+            Side.Top => topPorts,
+            Side.Bottom => bottomPorts,
+            Side.Right => rightPorts,
+            Side.Left => leftPorts,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    /// <summary>
+    /// 清理所有端口
+    /// </summary>
+    public void ClearPorts() {
+        topPorts.Clear();
+        bottomPorts.Clear();
+        rightPorts.Clear();
+        leftPorts.Clear();
+    }
+
+    /// <summary>
     /// 查找port
     ///
     /// 注：由于数据量通常较少，因此不做额外的缓存。
@@ -92,7 +122,18 @@ public sealed class DataNode
     /// <param name="portId"></param>
     /// <returns></returns>
     public NodePort FindPort(int portId) {
-        foreach (NodePort nodePort in ports) {
+        NodePort port = FindPort(bottomPorts, portId); // 概率最大
+        if (port != null) return port;
+        port = FindPort(topPorts, portId);
+        if (port != null) return port;
+        port = FindPort(rightPorts, portId);
+        if (port != null) return port;
+        return FindPort(leftPorts, portId); // 概率最低
+    }
+
+    private static NodePort FindPort(List<NodePort> ports, int portId) {
+        for (int index = 0; index < ports.Count; index++) {
+            NodePort nodePort = ports[index];
             if (nodePort.id == portId) return nodePort;
         }
         return null;

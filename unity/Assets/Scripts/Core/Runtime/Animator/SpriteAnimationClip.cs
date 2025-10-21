@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using Wjybxx.BigCat.UnityCore;
+using Wjybxx.BigCat.Core;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Animator
@@ -32,20 +32,25 @@ namespace Wjybxx.BigCat.Animator
 public sealed class SpriteAnimationClip : ScriptableObject
 {
     /// <summary>
+    /// 动画帧域大小
+    ///
+    /// 1.模型所有部件的帧域大小、轴心点应当一致。
+    /// 2.左手坐标系，即场景坐标系，而非UI坐标系。
+    /// </summary>
+    public Vector2Int frameSize = new Vector2Int(500, 500);
+    /// <summary>
+    /// 帧域轴心点（角色坐标位置）
+    /// </summary>
+    public Vector2 framePivot = new Vector2(0.5f, 0.25f);
+    /// <summary>
     /// 帧数据
     /// </summary>
     public SpriteAnimationFrame[] frames = Array.Empty<SpriteAnimationFrame>();
-    /// <summary>
-    /// 动画事件
-    /// </summary>
-    public AnimationEvent[] events = Array.Empty<AnimationEvent>();
-
     /// <summary>
     /// 动画总时长（缓存值）
     ///
     /// 注：运行时可调用<see cref="RefreshDuration"/>确保缓存值的正确性。
     /// </summary>
-    [ReadOnly]
     public float duration;
     /// <summary>
     /// 是否循环播放
@@ -82,6 +87,9 @@ public sealed class SpriteAnimationClip : ScriptableObject
         get => frames.Length;
         set {
             int preLength = frames.Length;
+            if (preLength == value) {
+                return;
+            }
             Array.Resize(ref frames, value);
             for (int index = preLength; index < value; index++) {
                 frames[index] = new SpriteAnimationFrame();
@@ -148,7 +156,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="frame"></param>
     /// <param name="index"></param>
     public void AddFrame(SpriteAnimationFrame frame, int index = -1) {
-        if (index == -1) {
+        if (index == -1 || index == frames.Length) {
             Array.Resize(ref frames, frames.Length + 1);
             frames[frames.Length - 1] = frame;
             //
@@ -191,6 +199,33 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
+    /// 应用目标图组（贴图）
+    /// 注：该接口仅修改Sprite，不修改配置的路径引用。
+    /// </summary>
+    /// <param name="spriteGroup"></param>
+    public void ApplySpriteGroup(SpriteGroup spriteGroup) {
+        for (int index = 1; index < frames.Length; index++) {
+            var frame = frames[index];
+            int spriteIndex = (int)frame.spritePath.localId;
+            frame.sprite = spriteGroup.GetSprite(spriteIndex);
+        }
+    }
+
+    /// <summary>
+    /// 确保时间的正确性
+    /// </summary>
+    private void OnEnable() {
+        RefreshDuration();
+    }
+
+#if UNITY_EDITOR
+    private void Reset() {
+        frames = Array.Empty<SpriteAnimationFrame>();
+        duration = 0;
+        weight = 0.5f;
+    }
+
+    /// <summary>
     /// 设置所有帧的间隔
     /// </summary>
     /// <param name="frameInterval">帧间隔</param>
@@ -200,7 +235,39 @@ public sealed class SpriteAnimationClip : ScriptableObject
             var frame = frames[index];
             frames[index].duration = frameInterval;
             //
-            duration += frameInterval;
+            duration += frame.duration;
+            frame.endTime = duration;
+        }
+    }
+
+    /// <summary>
+    /// 设置所有帧的间隔
+    /// </summary>
+    /// <param name="frameInterval">帧间隔</param>
+    public void AddFrameInterval(float frameInterval) {
+        duration = 0;
+        for (int index = 0; index < frames.Length; index++) {
+            var frame = frames[index];
+            frames[index].duration += frameInterval;
+            //
+            duration += frame.duration;
+            frame.endTime = duration;
+        }
+    }
+
+    /// <summary>
+    /// 线性插值帧间隔
+    /// </summary>
+    /// <param name="frameInterval">帧间隔</param>
+    public void LerpFrameInterval(float frameInterval) {
+        if (frames.Length <= 1) return;
+        float baseValue = frames[0].duration;
+        duration = baseValue;
+        for (int index = 1; index < frames.Length; index++) {
+            var frame = frames[index];
+            frames[index].duration = baseValue + frameInterval * index;
+            //
+            duration += frame.duration;
             frame.endTime = duration;
         }
     }
@@ -231,9 +298,41 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="position"></param>
     public void LerpFramePosition(Vector2 position) {
         if (frames.Length <= 1) return;
-        Vector2 baseOffset = frames[0].position;
+        Vector2 baseValue = frames[0].position;
         for (int index = 1; index < frames.Length; index++) {
-            frames[index].position = baseOffset + position * index;
+            frames[index].position = baseValue + position * index;
+        }
+    }
+
+    /// <summary>
+    /// 设置所有帧的缩放
+    /// </summary>
+    /// <param name="scale"></param>
+    public void SetFrameScale(Vector2 scale) {
+        for (int index = 0; index < frames.Length; index++) {
+            frames[index].scale = scale;
+        }
+    }
+
+    /// <summary>
+    /// 设置所有帧的缩放
+    /// </summary>
+    /// <param name="scale"></param>
+    public void AddFrameScale(Vector2 scale) {
+        for (int index = 0; index < frames.Length; index++) {
+            frames[index].scale += scale;
+        }
+    }
+
+    /// <summary>
+    /// 线性插值帧缩放
+    /// </summary>
+    /// <param name="scale"></param>
+    public void LerpFrameScale(Vector2 scale) {
+        if (frames.Length <= 1) return;
+        Vector2 baseValue = frames[0].scale;
+        for (int index = 1; index < frames.Length; index++) {
+            frames[index].scale = baseValue + scale * index;
         }
     }
 
@@ -263,37 +362,10 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="rotation"></param>
     public void LerpFrameRotation(float rotation) {
         if (frames.Length <= 1) return;
-        float baseRotation = frames[0].rotation;
+        float baseValue = frames[0].rotation;
         for (int index = 1; index < frames.Length; index++) {
-            frames[index].rotation = baseRotation + rotation * index;
+            frames[index].rotation = baseValue + rotation * index;
         }
-    }
-
-    /// <summary>
-    /// 应用目标图组（贴图）
-    /// 注：该接口仅修改Sprite，不修改配置的路径引用。
-    /// </summary>
-    /// <param name="spriteGroup"></param>
-    public void ApplySpriteGroup(SpriteGroup spriteGroup) {
-        for (int index = 1; index < frames.Length; index++) {
-            var frame = frames[index];
-            frame.sprite = spriteGroup.GetSprite(frame.spritePath.index);
-        }
-    }
-
-    /// <summary>
-    /// 确保时间的正确性
-    /// </summary>
-    private void OnEnable() {
-        RefreshDuration();
-    }
-
-#if UNITY_EDITOR
-    private void Reset() {
-        frames = Array.Empty<SpriteAnimationFrame>();
-        events = Array.Empty<AnimationEvent>();
-        duration = 0;
-        weight = 0.5f;
     }
 
     /// <summary>
@@ -315,6 +387,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
             SpriteAnimationFrame sourceFrame = source.frames[i];
             target.frames[i].duration = sourceFrame.duration;
         }
+        target.RefreshDuration();
     }
 
     /// <summary>
@@ -357,12 +430,10 @@ public sealed class SpriteAnimationClip : ScriptableObject
 
     /// <summary>
     /// 按照基础动画的图片(名)序列重排序其它动画的图片序列
+    /// 
+    /// 注：需要保持动画归属的图组数据一致，可通过工具同步。
     /// </summary>
-    /// <param name="source"></param>
-    /// <param name="target"></param>
-    /// <param name="groupPath">目标图组</param>
-    public static void SyncFrameOrder(SpriteAnimationClip source, SpriteAnimationClip target,
-                                      string groupPath) {
+    public static void SyncFrameOrder(SpriteAnimationClip source, SpriteAnimationClip target) {
         if (source == target) {
             return;
         }
@@ -373,8 +444,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         for (int index = 0; index < source.frames.Length; index++) {
             SpriteAnimationFrame sourceFrame = source.frames[index];
             SpriteAnimationFrame targetFrame = target.frames[index];
-            targetFrame.spritePath.groupPath = groupPath;
-            targetFrame.spritePath.index = sourceFrame.spritePath.index;
+            targetFrame.spritePath.localId = sourceFrame.spritePath.localId;
         }
     }
 #endif

@@ -51,6 +51,8 @@ public enum AnimationEventType
     SetFailure = 2, // 设置任务失败
     Pause = 3, // 暂停自己，double参数为暂时时间，大于0有效
     PauseGraph = 4, // 暂停整个动画图，double参数为暂时时间，大于0有效
-    PlaySound = 5, // 播放音效，string参数为音效路径
+    PlaySound = 5, // 播放音效
+    SetAnimTime = 6, // 设置动画播放时间
+    SetAnimFrame = 7, // 设置动画的帧号
 }
 }

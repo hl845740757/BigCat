@@ -22,6 +22,7 @@ using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
+using Wjybxx.BigCat.Core;
 using Wjybxx.Commons.Collections;
 using static Wjybxx.BigCat.CoreEditor.DataEditorUtil;
 

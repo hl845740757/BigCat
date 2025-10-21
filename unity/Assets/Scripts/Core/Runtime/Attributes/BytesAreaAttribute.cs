@@ -18,7 +18,7 @@
 
 using UnityEngine;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 用于将字节数组展示为文本块，只读。

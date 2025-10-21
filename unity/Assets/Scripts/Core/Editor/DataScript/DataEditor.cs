@@ -23,6 +23,7 @@ using UnityEngine;
 using UnityEditor;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
+using Wjybxx.BigCat.Core;
 using Wjybxx.Commons.Pool;
 
 namespace Wjybxx.BigCat.CoreEditor

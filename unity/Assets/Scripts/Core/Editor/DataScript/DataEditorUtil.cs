@@ -24,6 +24,7 @@ using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Dson.Types;
+using Wjybxx.BigCat.Core;
 using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.CoreEditor
@@ -35,7 +36,7 @@ public static class DataEditorUtil
     /** 定位资源 */
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CheckPingObjectEvent(string assetPath, Event evt, Rect controlRect) {
-        UnityHelper.CheckPingObjectEvent(assetPath, evt, controlRect);
+        UnityEditorUtil.CheckPingObjectEvent(assetPath, evt, controlRect);
     }
 
     public static bool IsPrimaryClickEvent(Event evt) {

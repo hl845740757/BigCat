@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wjybxx.Commons.Collections;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 对象桶（用于存储任意的数据）

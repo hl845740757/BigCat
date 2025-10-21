@@ -19,7 +19,7 @@
 using System;
 using UnityEngine;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 只读属性

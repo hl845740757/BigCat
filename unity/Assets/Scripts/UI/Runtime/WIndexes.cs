@@ -137,17 +137,4 @@ internal sealed class WComponentIndexHelper : IIndexedElementHelper<WComponent>
         return CACHE[queueId];
     }
 }
-
-internal sealed class NodeIndexHelper : IIndexedElementHelper<UINode>
-{
-    public static NodeIndexHelper Inst { get; } = new NodeIndexHelper();
-
-    public int CollectionIndex(object collection, UINode element) {
-        return element.qIndex;
-    }
-
-    public void CollectionIndex(object collection, UINode element, int index) {
-        element.qIndex = index;
-    }
-}
 }

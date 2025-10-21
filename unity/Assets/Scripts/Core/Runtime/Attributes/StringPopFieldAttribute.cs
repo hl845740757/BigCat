@@ -20,7 +20,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 字符串枚举值

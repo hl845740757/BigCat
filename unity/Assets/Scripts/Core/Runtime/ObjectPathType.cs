@@ -1,0 +1,52 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using Wjybxx.Commons;
+
+namespace Wjybxx.BigCat.Core
+{
+/// <summary>
+/// 资产对象类型
+///
+/// 定义<see cref="ObjectPath"/>中的type，用于编辑器和运行时。
+/// </summary>
+public enum ObjectPathType
+{
+    /// <summary>
+    /// 默认，路径为资产全路径
+    /// </summary>
+    Default = 0,
+    /// <summary>
+    /// 图组中的图片，GroupPath + index
+    /// </summary>
+    SpriteOfGroup = 1,
+    /// <summary>
+    /// 图集中的图片，AtlasPath + name
+    /// </summary>
+    SpriteOfAtlas = 2,
+    /// <summary>
+    /// 音效组中的音效，GroupPath + index
+    /// </summary>
+    SoundOfGroup = 3,
+
+    /// <summary>
+    /// Excel表单元格，通常是I18N字符串坐标
+    /// </summary>
+    ExcelValue = 9,
+}
+}

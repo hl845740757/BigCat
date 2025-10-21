@@ -300,7 +300,7 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public override void Update() {
         long curTime = timeModule.Time;
-        RpcRequestStub? stub;
+        RpcRequestStub stub;
         while (stubQueue.TryPeekHead(out stub)) {
             if (curTime < stub.deadline) {
                 return;

@@ -154,7 +154,7 @@ public class DataEditorModel : ScriptableObject
             return;
         }
         // TODO 收集所有port
-        node.ports.Clear();
+        node.ClearPorts();
     }
 
     /// <summary>
@@ -654,6 +654,9 @@ public class DataEditorModel : ScriptableObject
         DsonObject<string> dsonObject = new DsonObject<string>(variable.values.Count);
         foreach (DataVariable fieldValue in variable.values) {
             DsonValue dsonValue = Encode(fieldValue);
+            if (dsonValue.DsonType == DsonType.Null && fieldValue.displayCfg.initNull) {
+                continue;
+            }
             DSNamedType fieldDeclaredType = GetDeclaredType(fieldValue.defineInfo);
             WriteClassNameHeader(fieldDeclaredType, fieldValue.type, dsonValue);
             //

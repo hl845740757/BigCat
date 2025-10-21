@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
 
@@ -47,16 +48,10 @@ public class UINode : MonoBehaviour
     /// </summary>
     public UINodeCfg nodeCfg;
     /// <summary>
-    /// 默认配置
-    /// 注：由于大多数情况下只有一个配置，因此我们将默认配置提到外层，便于配置
+    /// 视图展示配置
+    /// (提到上层以避免过多的嵌套，方便编辑)
     /// </summary>
-    [SerializeField]
-    private UINodeDisplayCfg defaultDisplayCfg;
-    /// <summary>
-    /// 更多展示模式配置
-    /// </summary>
-    [SerializeField]
-    private List<UINodeDisplayCfg> moreDisplayCfgs = new List<UINodeDisplayCfg>();
+    public UINodeDisplayCfg displayCfg;
 
     /// <summary>
     /// Node所属的窗口
@@ -73,26 +68,6 @@ public class UINode : MonoBehaviour
     /// 2.建议子类强转之后保存自身上
     /// </summary>
     [NonSerialized] private object _dataModel;
-
-    /// <summary>
-    /// 控制标记，避免过多的bool字段
-    /// </summary>
-    [NonSerialized] private int _ctl;
-    /// <summary>
-    /// 重入Id，只增不减
-    ///
-    /// 注：事件处理脚本可以捕获该id，以判断UI是否进入到了新的生命周期；
-    /// </summary>
-    [NonSerialized] private int _reentryId;
-    /// <summary>
-    /// 在Update队列中的索引
-    /// </summary>
-    [NonSerialized] internal int qIndex = -1;
-    /// <summary>
-    /// 在父节点中的索引(hook始终是-1)
-    /// </summary>
-    [NonSerialized] internal int uiIndex = -1;
-
     /// <summary>
     /// Node绑定的黑板
     ///
@@ -110,25 +85,35 @@ public class UINode : MonoBehaviour
     [NonSerialized] protected Controller controller;
 
     /// <summary>
-    /// Node当前的展示模式
+    /// 控制标记，避免过多的bool字段
     /// </summary>
-    [NonSerialized] protected UINodeDisplayCfg curDisplayCfg;
+    [NonSerialized] private int _ctl;
     /// <summary>
-    /// Node要操作的对象
+    /// 重入Id，只增不减
+    ///
+    /// 注：事件处理脚本可以捕获该id，以判断UI是否进入到了新的生命周期；
+    /// </summary>
+    [NonSerialized] private int _reentryId;
+    /// <summary>
+    /// 在父节点中的索引(hook始终是-1)
+    /// </summary>
+    [NonSerialized] internal int uiIndex = -1;
+    /// <summary>
+    /// Node当前控制的元素
     /// </summary>
     [NonSerialized] protected readonly List<GameObject> elements = new List<GameObject>();
     /// <summary>
-    /// Node要操作的钩子节点
+    /// Node当前的钩子节点
     /// </summary>
     [NonSerialized] protected readonly List<UINode> hooks = new List<UINode>();
     /// <summary>
-    /// Node的子节点
+    /// Node当前的子节点
     /// </summary>
     [NonSerialized] protected readonly List<UINode> children = new List<UINode>();
 
     #region 生命周期
 
-    public void Show(Window window, UINode parent, object dataModel, int displayMode = -1) {
+    public void Show(Window window, UINode parent, object dataModel) {
         if (IsShowing) {
             throw new InvalidOperationException("node is already showing");
         }
@@ -138,31 +123,19 @@ public class UINode : MonoBehaviour
         _dataModel = dataModel;
         _reentryId++;
         _ctl |= UIInternal.MASK_SHOWING;
-        // 重置UI元素
-        if (displayMode >= 0) {
-            UINodeDisplayCfg displayCfg = nodeCfg.FindDisplayCfg(displayMode);
-            if (displayCfg == null) {
-                throw new ArgumentException("invalid display mode: " + displayMode);
-            }
-            ResetDisplayElements(displayCfg);
-        } else {
-            ResetDisplayElements(nodeCfg.defaultDisplayCfg);
+        // 父节点可以提前绑定子节点的黑板和controller，即指定子节点的上下文
+        if (blackboard == null) {
+            blackboard = _parent ? _parent.Blackboard : _window.Blackboard;
         }
-        // 执行初始化
-        if (firstShow) {
-            InitController();
+        if (!controller && (controller = UIInternal.FindController(this))) {
+            controller.Init(this);
         }
-        int rid = _reentryId;
+        ResetDisplayElements();
         gameObject.SetActive(true);
         OnShow(firstShow);
-        // 确保未退出
-        if (rid == _reentryId && NeedUpdate) {
-            window.AddUpdateNode(this);
-        }
     }
 
-    private void ResetDisplayElements(UINodeDisplayCfg displayCfg) {
-        curDisplayCfg = displayCfg;
+    private void ResetDisplayElements() {
         elements.Clear();
         hooks.Clear();
         children.Clear();
@@ -174,24 +147,12 @@ public class UINode : MonoBehaviour
         }
     }
 
-    private void InitController() {
-        if (nodeCfg.newBlackboard) {
-            blackboard ??= new Blackboard();
-        } else {
-            blackboard = _parent ? _parent.Blackboard : _window.Blackboard;
-        }
-        if (!controller && (controller = UIInternal.FindController(this))) {
-            controller.Init(this);
-        }
-    }
-
     public void Hide() {
         if (!IsShowing) {
             return;
         }
         _reentryId++;
         _ctl &= ~UIInternal.MASK_SHOWING;
-        _window.RemoveUpdateNode(this);
         // 隐藏所有元素
         foreach (GameObject element in elements) {
             element.SetActive(false);
@@ -204,24 +165,20 @@ public class UINode : MonoBehaviour
         }
         OnHide();
         gameObject.SetActive(false);
+        _dataModel = null;
+        blackboard = null;
         _ctl = 0;
         // 清理引用 - OnHide可能存在回收逻辑，因此需放在OnHide后
         elements.Clear();
         hooks.Clear();
         children.Clear();
-        // 私有黑板只需清理
-        if (nodeCfg.newBlackboard) {
-            blackboard?.Clear();
-        } else {
-            blackboard = null;
-        }
     }
 
     /// <summary>
     /// UI节点启动的时候调用
     ///
     /// 1.通常的逻辑为：初始化事件监听，为子节点绑定数据，刷新一次UI。
-    /// 2.如果需要心跳，可在此方法中设置<see cref="NeedUpdate"/>。
+    /// 2.如果需要心跳，可通过Window上的<see cref="CoroutineMgr"/>实现。
     /// 3.如果有直接操控的<see cref="elements"/>，需要重写该方法
     /// </summary>
     /// <param name="firstShow">是否是首次展示</param>
@@ -266,23 +223,6 @@ public class UINode : MonoBehaviour
     }
 
     /// <summary>
-    /// UI心跳方法
-    ///
-    /// 关注<see cref="NeedUpdate"/>属性和<see cref="ClearDirtyRepaint"/>方法。
-    /// </summary>
-    public virtual void OnUpdate() {
-    }
-
-    /// <summary>
-    /// 是否需要Update
-    /// 注：该属性为false的节点也可以加入到调度队列，但执行一次<see cref="OnUpdate"/>后就会被删除。
-    /// </summary>
-    public bool NeedUpdate {
-        get => (_ctl & UIInternal.MASK_NEED_UPDATE) != 0;
-        set => _ctl = BitFlags.Set(_ctl, UIInternal.MASK_NEED_UPDATE, value);
-    }
-
-    /// <summary>
     /// 标记为需要下一帧重新绘制
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -300,60 +240,6 @@ public class UINode : MonoBehaviour
             return true;
         }
         return false;
-    }
-
-    /// <summary>
-    /// 切换展示模式
-    ///
-    /// 注：默认的切换可能会显得生硬，因此子类可重写实现。
-    /// </summary>
-    /// <param name="mode"></param>
-    public virtual bool ChangeDisplayMode(int mode) {
-        UINodeDisplayCfg displayCfg = nodeCfg.FindDisplayCfg(mode);
-        if (displayCfg == null) {
-            return false;
-        }
-        if (curDisplayCfg != null && curDisplayCfg.mode == mode) {
-            return false;
-        }
-        // 隐藏Elements - 可能不同模式存在交集，由子类自行优化
-        foreach (GameObject element in elements) {
-            element.SetActive(false);
-        }
-        foreach (UINode hook in hooks) {
-            hook.Hide();
-        }
-        foreach (UINode child in children) {
-            child.Hide();
-        }
-        // 切换Elements
-        UINodeDisplayCfg prevDisplayCfg = curDisplayCfg;
-        ResetDisplayElements(displayCfg);
-        if (IsShowing) {
-            OnDisplayModeChanged(prevDisplayCfg);
-        }
-        return true;
-    }
-
-    /// <summary>
-    /// 模式切换
-    /// 
-    /// 注：如果有直接操控的<see cref="elements"/>，需要重写该方法
-    /// </summary>
-    /// <param name="prevDisplayCfg"></param>
-    protected virtual void OnDisplayModeChanged(UINodeDisplayCfg prevDisplayCfg) {
-        // 可能存在在不同模式下都展示的Node，因此需要检测IsShowing
-        foreach (UINode hook in hooks) {
-            if (!hook.IsShowing && hook.enabled) {
-                ShowChild(hook);
-            }
-        }
-        foreach (UINode child in children) {
-            if (!child.IsShowing && child.enabled) {
-                ShowChild(child);
-            }
-        }
-        controller?.OnDisplayModeChanged(prevDisplayCfg);
     }
 
     #endregion
@@ -481,8 +367,8 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 用户显式指定child的数据
     /// </summary>
-    public void ShowChild(UINode child, object dataModel, int displayMode = -1) {
-        child.Show(_window, this, dataModel, displayMode);
+    public void ShowChild(UINode child, object dataModel) {
+        child.Show(_window, this, dataModel);
     }
 
     /// <summary>
@@ -518,8 +404,7 @@ public class UINode : MonoBehaviour
 
     protected virtual void Awake() {
         nodeCfg ??= new UINodeCfg();
-        nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
-        nodeCfg.moreDisplayCfgs = moreDisplayCfgs; // 发布到cfg对象，方便外部访问
+        nodeCfg.displayCfg = displayCfg;
     }
 
     protected virtual void OnEnable() {
@@ -534,7 +419,6 @@ public class UINode : MonoBehaviour
         _parent = null;
         _dataModel = null;
 
-        curDisplayCfg = null;
         elements.Clear();
         hooks.Clear();
         children.Clear();
@@ -543,10 +427,8 @@ public class UINode : MonoBehaviour
 #if UNITY_EDITOR
     protected virtual void Reset() {
         nodeCfg ??= new UINodeCfg();
-        defaultDisplayCfg ??= new UINodeDisplayCfg();
-        //
-        nodeCfg.defaultDisplayCfg = defaultDisplayCfg;
-        nodeCfg.moreDisplayCfgs = moreDisplayCfgs;
+        displayCfg ??= new UINodeDisplayCfg();
+        nodeCfg.displayCfg = displayCfg;
     }
 
     protected virtual void OnValidate() {
@@ -574,8 +456,6 @@ public class UINode : MonoBehaviour
         get => controller;
         set => controller = value;
     }
-
-    public UINodeDisplayCfg CurrentDisplayCfg => curDisplayCfg;
 
     #endregion
 }

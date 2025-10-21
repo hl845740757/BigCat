@@ -19,7 +19,7 @@
 using System;
 using UnityEngine;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 对象的二进制数据

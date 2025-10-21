@@ -96,10 +96,9 @@ public interface ITimerMgr
     /// <param name="action">要调度的任务</param>
     /// <param name="delay">首次执行延迟</param>
     /// <param name="period">后续执行间隔</param>
-    /// <param name="countLimit">执行次数限制</param>
     /// <param name="cancelToken">取消令牌</param>
     /// <returns></returns>
-    ValueFuture ScheduleWithFixedDelay(Action action, double delay, double period, int countLimit = -1, ICancelToken? cancelToken = null);
+    ValueFuture ScheduleWithFixedDelay(Action action, double delay, double period, ICancelToken? cancelToken = null);
 
     /// <summary>
     /// 以固定延迟执行给定的任务
@@ -110,35 +109,32 @@ public interface ITimerMgr
     /// <param name="timerArg">timer参数，注意<see cref="IContext"/>类型</param>
     /// <param name="delay">首次执行延迟</param>
     /// <param name="period">后续执行间隔</param>
-    /// <param name="countLimit">执行次数限制</param>
     /// <returns></returns>
-    ValueFuture ScheduleWithFixedDelay(Action<object> action, object timerArg, double delay, double period, int countLimit = -1);
+    ValueFuture ScheduleWithFixedDelay(Action<object> action, object timerArg, double delay, double period);
 
     /// <summary>
     /// 以固定频率执行给定的任务（慎用）
-    ///
+    /// 
     /// 注：FixedRate会尽可能保证总的执行次数。
     /// </summary>
     /// <param name="action">要调度的任务</param>
     /// <param name="delay">首次执行延迟</param>
     /// <param name="period">后续执行间隔</param>
-    /// <param name="countLimit">执行次数限制</param>
     /// <param name="cancelToken">取消令牌</param>
     /// <returns></returns>
-    ValueFuture ScheduleAtFixedRate(Action action, double delay, double period, int countLimit = -1, ICancelToken? cancelToken = null);
+    ValueFuture ScheduleAtFixedRate(Action action, double delay, double period, ICancelToken? cancelToken = null);
 
     /// <summary>
     /// 以固定频率执行给定的任务（慎用）
-    ///
+    /// 
     /// 注：FixedRate会尽可能保证总的执行次数。
     /// </summary>
     /// <param name="action">要调度的任务</param>
     /// <param name="timerArg">timer参数，注意<see cref="IContext"/>类型</param>
     /// <param name="delay">首次执行延迟</param>
     /// <param name="period">后续执行间隔</param>
-    /// <param name="countLimit">执行次数限制</param>
     /// <returns></returns>
-    ValueFuture ScheduleAtFixedRate(Action<object> action, object timerArg, double delay, double period, int countLimit = -1);
+    ValueFuture ScheduleAtFixedRate(Action<object> action, object timerArg, double delay, double period);
 
     /// <summary>
     /// 取消协程或定时器

@@ -149,7 +149,7 @@ internal sealed class TimerMgr : ITimerMgr
         return promise.Future;
     }
 
-    public ValueFuture ScheduleWithFixedDelay(Action action, double delay, double period, int countLimit = -1, ICancelToken? cancelToken = null) {
+    public ValueFuture ScheduleWithFixedDelay(Action action, double delay, double period, ICancelToken? cancelToken = null) {
         ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
         PromiseTask asyncTask = taskPool.Acquire();
         asyncTask.id = NextId();
@@ -160,18 +160,14 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
         asyncTask.gatingFrame = GetGatingFrame();
-
         asyncTask.period = CorrectPeriod(period);
         asyncTask.ScheduleType = SCHEDULE_FIXED_DELAY;
-        if (countLimit > 0) {
-            asyncTask.countdown = countLimit;
-            asyncTask.HasCountdown = true;
-        }
+        //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
         return promise.VoidFuture;
     }
 
-    public ValueFuture ScheduleWithFixedDelay(Action<object> action, object timerArg, double delay, double period, int countLimit = -1) {
+    public ValueFuture ScheduleWithFixedDelay(Action<object> action, object timerArg, double delay, double period) {
         ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
         PromiseTask asyncTask = taskPool.Acquire();
         asyncTask.id = NextId();
@@ -182,18 +178,14 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
         asyncTask.gatingFrame = GetGatingFrame();
-
         asyncTask.period = CorrectPeriod(period);
         asyncTask.ScheduleType = SCHEDULE_FIXED_DELAY;
-        if (countLimit > 0) {
-            asyncTask.countdown = countLimit;
-            asyncTask.HasCountdown = true;
-        }
+        //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
         return promise.VoidFuture;
     }
 
-    public ValueFuture ScheduleAtFixedRate(Action action, double delay, double period, int countLimit = -1, ICancelToken? cancelToken = null) {
+    public ValueFuture ScheduleAtFixedRate(Action action, double delay, double period, ICancelToken? cancelToken = null) {
         ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
         PromiseTask asyncTask = taskPool.Acquire();
         asyncTask.id = NextId();
@@ -204,18 +196,14 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
         asyncTask.gatingFrame = GetGatingFrame();
-
         asyncTask.period = CorrectPeriod(period);
         asyncTask.ScheduleType = SCHEDULE_FIXED_RATE;
-        if (countLimit > 0) {
-            asyncTask.countdown = countLimit;
-            asyncTask.HasCountdown = true;
-        }
+        //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
         return promise.VoidFuture;
     }
 
-    public ValueFuture ScheduleAtFixedRate(Action<object> action, object timerArg, double delay, double period, int countLimit = -1) {
+    public ValueFuture ScheduleAtFixedRate(Action<object> action, object timerArg, double delay, double period) {
         ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
         PromiseTask asyncTask = taskPool.Acquire();
         asyncTask.id = NextId();
@@ -226,13 +214,9 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
         asyncTask.gatingFrame = GetGatingFrame();
-
         asyncTask.period = CorrectPeriod(period);
         asyncTask.ScheduleType = SCHEDULE_FIXED_RATE;
-        if (countLimit > 0) {
-            asyncTask.countdown = countLimit;
-            asyncTask.HasCountdown = true;
-        }
+        //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
         return promise.VoidFuture;
     }

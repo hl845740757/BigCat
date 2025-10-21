@@ -1,0 +1,22 @@
+{
+    "name": "Wjybxx.BigCatEditor.Core",
+    "rootNamespace": "Wjybxx.BigCat.CoreEditor",
+    "references": [
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.Dson.Codec",
+        "Wjybxx.BigCatTool.Core",
+        "Wjybxx.BigCat.UnityCore"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

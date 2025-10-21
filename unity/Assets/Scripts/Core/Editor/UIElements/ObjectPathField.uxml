@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" uibigcat="Wjybxx.BigCat.CoreEditor.UIElements" editor-extension-mode="True">
+    <Wjybxx.BigCat.CoreEditor.UIElements.ObjectPathField name="VisualElement" lock-type="false" style="justify-content: flex-end; align-items: stretch; min-width: auto;">
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between;">
+            <ui:TextField picking-mode="Ignore" label="AssetPath" tooltip="资产文件路径" name="collection" multiline="false" style="min-width: 300px;" />
+            <ui:Button text="选择" display-tooltip-when-elided="true" name="select-collection" />
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between;">
+            <ui:TextField picking-mode="Ignore" label="LocalPath" name="local-path" tooltip="对象在资产内的相对路径" style="height: auto; min-width: 300px;" />
+            <ui:Button text="选择" display-tooltip-when-elided="true" name="select-local-path" />
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between;">
+            <uie:LongField label="LocalId" value="10001" name="local-id" tooltip="对象在资产内的ID" style="min-width: 300px;" />
+            <ui:Button text="选择" display-tooltip-when-elided="true" name="select-local-id" />
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between;">
+            <uie:IntegerField label="AssetType" value="1" name="type" tooltip="资产类型" is-delayed="true" readonly="false" style="min-width: 300px;" />
+            <ui:Toggle label="锁定" name="lock-type" value="true" style="flex-direction: row-reverse; align-items: stretch; justify-content: flex-end; flex-wrap: nowrap; transform-origin: center; height: auto; width: 40px;" />
+        </ui:VisualElement>
+    </Wjybxx.BigCat.CoreEditor.UIElements.ObjectPathField>
+</ui:UXML>

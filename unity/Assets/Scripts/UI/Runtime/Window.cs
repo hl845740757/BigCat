@@ -121,10 +121,6 @@ public sealed class Window
     /// UI根节点
     /// </summary>
     [NonSerialized] private UINode _rootNode;
-    /// <summary>
-    /// 需要Update的Node
-    /// </summary>
-    [NonSerialized] private readonly IndexedDynamicArray<UINode> _updateNodes = new(NodeIndexHelper.Inst);
 
     /// <summary>
     /// 绑定的组件
@@ -241,7 +237,6 @@ public sealed class Window
         }
         _status = ComponentStatus.Shutdown;
         _reentryId++;
-        _updateNodes.Clear();
         try {
             Hide();
         }
@@ -330,7 +325,6 @@ public sealed class Window
         _displayMode = WindowDisplayMode.Normal;
         _dataModel = null;
         _rootNode = null;
-        _updateNodes.Clear();
 
         _time.Restart();
         _blackboard.Clear();
@@ -436,13 +430,11 @@ public sealed class Window
             Repaint();
         }
         _coroutineMgr.Update(GameLoopPhase.Update);
-        UpdateComponents();
-        UpdateNodes();
-        _coroutineMgr.Update(GameLoopPhase.PostUpdate);
-    }
-
-    private void UpdateComponents() {
         IndexedDynamicArray<WComponent> list = _updateList;
+        if (list.Length == 0) {
+            _coroutineMgr.Update(GameLoopPhase.PostUpdate);
+            return;
+        }
         list.BeginItr();
         for (int index = 0, len = list.Length; index < len; index++) {
             WComponent component = list[index];
@@ -457,29 +449,7 @@ public sealed class Window
             }
         }
         list.EndItr();
-    }
-
-    private void UpdateNodes() {
-        IndexedDynamicArray<UINode> updateNodes = _updateNodes;
-        if (updateNodes.Length == 0) {
-            return;
-        }
-        // 更新Node
-        updateNodes.BeginItr();
-        for (int i = 0, len = updateNodes.Length; i < len; i++) {
-            UINode node = updateNodes[i];
-            if (!node) continue;
-            if (!node.NeedUpdate) { // 不需要持续Update的节点
-                updateNodes[i] = null;
-            }
-            try {
-                node.OnUpdate();
-            }
-            catch (Exception ex) {
-                logger.Warn(ex, "node.OnUpdate caught exception");
-            }
-        }
-        updateNodes.EndItr();
+        _coroutineMgr.Update(GameLoopPhase.PostUpdate);
     }
 
     internal void LateUpdate() {
@@ -586,16 +556,6 @@ public sealed class Window
     }
 
     /// <summary>
-    /// 窗口焦点事件
-    /// </summary>
-    /// <param name="hasFocus"></param>
-    public void OnFocus(bool hasFocus) {
-        // TODO 是不是应该设计一个FocusOn的背景图?然后Focus时控制显隐就行？
-        _ctl = BitFlags.Set(_ctl, UIInternal.MASK_FOCUS_ON, hasFocus);
-        _agent.OnFocus(hasFocus);
-    }
-
-    /// <summary>
     /// 窗口绑定的桌面切换
     /// </summary>
     internal void OnDesktopChanged() {
@@ -609,26 +569,6 @@ public sealed class Window
         _canvas.overrideSorting = true;
         _canvas.sortingLayerID = sortingLayerID;
         _canvas.sortingOrder = sortingOrder;
-    }
-
-    /// <summary>
-    /// 添加需要Update的Node
-    /// </summary>
-    /// <param name="node"></param>
-    public void AddUpdateNode(UINode node) {
-        if (_updateNodes.Contains(node)) {
-            // throw new InvalidOperationException("node already exist");
-            return;
-        }
-        _updateNodes.Add(node);
-    }
-
-    /// <summary>
-    /// 删除需要Update的Node
-    /// </summary>
-    /// <param name="node"></param>
-    public void RemoveUpdateNode(UINode node) {
-        _updateNodes.Remove(node);
     }
 
     #endregion
@@ -760,11 +700,6 @@ public sealed class Window
         get => (_ctl & UIInternal.MASK_NO_HANGUP) != 0;
         set => _ctl = BitFlags.Set(_ctl, UIInternal.MASK_NO_HANGUP, value);
     }
-
-    /// <summary>
-    /// 是否被焦点选中
-    /// </summary>
-    public bool HasFocus => (_ctl & UIInternal.MASK_FOCUS_ON) != 0;
 
     /// <summary>
     /// 窗口关联的GameObject

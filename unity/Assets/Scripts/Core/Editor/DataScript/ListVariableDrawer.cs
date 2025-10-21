@@ -22,6 +22,7 @@ using UnityEditorInternal;
 using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
+using Wjybxx.BigCat.Core;
 using Wjybxx.Commons.Collections;
 using static Wjybxx.BigCat.CoreEditor.DataEditorUtil;
 
@@ -95,7 +96,7 @@ internal class ListVariableDrawer : DataVariableDrawer
         DataVariable value = variable.values[index];
         GUIContent label = editor.labelPool.Acquire();
 
-        editor.DrawVariable(value, label.WithText(UnityHelper.GetElementName(index)));
+        editor.DrawVariable(value, label.WithText(UnityEditorUtil.GetElementName(index)));
         editor.labelPool.Release(label); // label已回收
 
         Event evt = Event.current; // 这里无法监听到左键事件 - 被内部控件消耗

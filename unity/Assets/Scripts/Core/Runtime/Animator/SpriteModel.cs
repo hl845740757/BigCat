@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Wjybxx.BigCat.UnityCore;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -127,7 +127,7 @@ public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiv
     #region 序列化
 
     public void OnBeforeSerialize() {
-        // 因此如何保存由用户决定
+        // 如何保存由用户决定
     }
 
     public void OnAfterDeserialize() {

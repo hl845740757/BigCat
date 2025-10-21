@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement style="flex-direction: row; justify-content: flex-end; align-items: flex-start; flex-grow: 0;">
+        <uie:ObjectField style="width: 200px; flex-grow: 1;" />
+        <uie:IntegerField value="0" tooltip="渲染顺序" style="width: 40px; display: none;" />
+        <ui:Button text="删除" display-tooltip-when-elided="true" name="delete" style="height: auto; width: 40px;" />
+        <ui:Button text="置顶" display-tooltip-when-elided="true" name="move-top" style="width: 40px;" />
+    </ui:VisualElement>
+</ui:UXML>

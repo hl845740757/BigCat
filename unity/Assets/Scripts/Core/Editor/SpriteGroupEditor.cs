@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using Wjybxx.BigCat.UnityCore;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.CoreEditor
 {
@@ -87,6 +87,7 @@ public class SpriteGroupEditor : Editor
     private void DrawControlArea() {
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField("资产目录:");
+        bool clickSyncFrom = GUILayout.Button("SyncFrom") && Event.current.button == 0;
         bool clickRefresh = GUILayout.Button("刷新文件") && Event.current.button == 0;
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.SelectableLabel(AssetDatabase.GetAssetPath(_group));
@@ -97,9 +98,42 @@ public class SpriteGroupEditor : Editor
         }
         EditorGUILayout.Space(10);
 
+        if (clickSyncFrom) {
+            SyncFromOther();
+        }
         if (clickRefresh) {
             RefreshSprites();
         }
+    }
+
+    private void SyncFromOther() {
+        string filePath = EditorUtility.OpenFilePanel("选择资产", UnityEditorUtil.lastOpenFolder, "asset");
+        if (string.IsNullOrEmpty(filePath)) {
+            return;
+        }
+        string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
+        UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
+        //
+        SpriteGroup baseGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
+        if (!baseGroup || baseGroup == _group) {
+            return;
+        }
+        _group.sprites = new Sprite[baseGroup.sprites.Length];
+        string assetFolderPath = UnityEditorUtil.GetAssetFolderPath(_group);
+        for (int index = 0; index < baseGroup.sprites.Length; index++) {
+            Sprite sprite = baseGroup.sprites[index];
+            if (!sprite) {
+                continue;
+            }
+            foreach (string fileExtension in UnityEditorUtil.imageFileExtensions) {
+                string spritePath = assetFolderPath + "/" + sprite.name + "." + fileExtension;
+                Sprite sprite2 = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+                if (sprite2) {
+                    _group[index] = sprite2;
+                }
+            }
+        }
+        EditorUtility.SetDirty(_group);
     }
 
     private void RefreshSprites() {
@@ -122,12 +156,12 @@ public class SpriteGroupEditor : Editor
             nullIndexes.Add(index);
         }
         // dataPath是以assets结尾的
-        string groupDir = UnityHelper.ConvertToFilePath(groupAssetDir);
+        string groupDir = UnityEditorUtil.ConvertToFilePath(groupAssetDir);
         foreach (string filePath in Directory.GetFiles(groupDir)) {
-            if (!UnityHelper.IsImageFile(filePath)) {
+            if (!UnityEditorUtil.IsImageFile(filePath)) {
                 continue;
             }
-            string assetPath = UnityHelper.ConvertToAssetPath(filePath);
+            string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
             Sprite sprite = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Sprite)) as Sprite;
             if (!sprite) {
                 continue;

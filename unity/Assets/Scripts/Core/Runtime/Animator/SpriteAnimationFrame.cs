@@ -17,9 +17,9 @@
 #endregion
 
 using System;
-using System.Runtime.CompilerServices;
 using UnityEngine;
-using Wjybxx.BigCat.UnityCore;
+using Wjybxx.BigCat.Core;
+using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -27,7 +27,7 @@ namespace Wjybxx.BigCat.Animator
 /// 帧动画的一帧
 /// </summary>
 [Serializable]
-public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
+public sealed class SpriteAnimationFrame
 {
     /// <summary>
     /// 关联的图片
@@ -38,23 +38,26 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
     public Sprite sprite;
     /// <summary>
     /// 关联的图片路径
+    ///
+    /// 注：在运行时应当转小写并池化字符串。
     /// </summary>
-    public SpritePath spritePath;
+    public ObjectPath spritePath;
     /// <summary>
-    /// 动画偏移(本地坐标)
+    /// 图片坐标
+    ///
+    /// 注：图片bottom相对角色坐标的位置。
     /// </summary>
-    [Tooltip("图片本地坐标")]
     public Vector2 position;
     /// <summary>
-    /// z轴旋转
-    /// (运行时应当进行规格化)
+    /// 图片缩放
     /// </summary>
-    [Tooltip("顺时针旋转值")]
+    public Vector2 scale = new Vector2(1.0f, 1.0f);
+    /// <summary>
+    /// z轴旋转(度)
+    /// </summary>
     public float rotation;
     /// <summary>
     /// 该帧的持续时长
-    ///
-    /// 注：真实时间或帧数，取决于播放器。
     /// </summary>
     [Min(0f)]
     public float duration = 0.1f;
@@ -70,108 +73,31 @@ public sealed class SpriteAnimationFrame : ISerializationCallbackReceiver
     /// 受击包围盒
     /// </summary>
     [Tooltip("受击包围盒")]
-    public AABB[] hurtBoxes = Array.Empty<AABB>();
+    public MinMaxAABB[] hurtBoxes = Array.Empty<MinMaxAABB>();
     /// <summary>
     /// 攻击包围盒
-    /// 注：damage比hit更具区分度
     /// </summary>
     [Tooltip("攻击包围盒")]
-    public AABB[] damageBoxes = Array.Empty<AABB>();
-
+    public MinMaxAABB[] damageBoxes = Array.Empty<MinMaxAABB>();
     /// <summary>
-    /// 攻击盒形状
+    /// 攻击盒插值函数
     ///
     /// 注：0表示HitBox就是最终形状，即离散的AABB。
     /// </summary>
-    [Tooltip("攻击盒形状，动态绘制")]
-    public int graphic;
-    /// <summary>
-    /// 攻击盒插值函数
-    /// </summary>
-    [Tooltip("插值函数")]
+    [Tooltip("攻击盒插值函数")]
     public int interp;
 
+    /// <summary>
+    /// 阴影
+    /// </summary>
+    public bool shadow = true;
+    /// <summary>
+    /// 色调
+    /// </summary>
+    public Color32 tint = new Color32(255, 255, 255, 255);
+
     public SpriteAnimationFrame() {
-    }
-
-    public SpriteAnimationFrame(SpritePath spritePath, float duration) {
-        this.spritePath = spritePath;
-        this.duration = duration;
-
-        this.sprite = null;
-        this.position = default;
-        this.rotation = 0;
-    }
-
-    public SpriteAnimationFrame(SpritePath spritePath, float duration,
-                                Vector2 position, float rotation) {
-        this.sprite = null;
-        this.spritePath = spritePath;
-        this.duration = duration;
-        this.position = position;
-        this.rotation = rotation;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SpriteAnimationFrame WithSprite(Sprite sprite) {
-        return new SpriteAnimationFrame(spritePath, duration, position, rotation)
-        {
-            sprite = sprite,
-            endTime = endTime,
-            damageBoxes = damageBoxes,
-            hurtBoxes = hurtBoxes,
-            graphic = graphic,
-            interp = interp
-        };
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SpriteAnimationFrame WithDuration(float duration) {
-        return new SpriteAnimationFrame(spritePath, duration, position, rotation)
-        {
-            sprite = sprite,
-            endTime = endTime,
-            damageBoxes = damageBoxes,
-            hurtBoxes = hurtBoxes,
-            graphic = graphic,
-            interp = interp,
-        };
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SpriteAnimationFrame WithPosition(Vector2 position) {
-        return new SpriteAnimationFrame(spritePath, duration, position, rotation)
-        {
-            sprite = sprite,
-            endTime = endTime,
-            damageBoxes = damageBoxes,
-            hurtBoxes = hurtBoxes,
-            graphic = graphic,
-            interp = interp,
-        };
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SpriteAnimationFrame WithRotation(float rotation) {
-        return new SpriteAnimationFrame(spritePath, duration, position, rotation)
-        {
-            sprite = sprite,
-            endTime = endTime,
-            damageBoxes = damageBoxes,
-            hurtBoxes = hurtBoxes,
-            graphic = graphic,
-            interp = interp,
-        };
-    }
-
-    public void OnBeforeSerialize() {
-
-    }
-
-    public void OnAfterDeserialize() {
-#if !UNITY_EDITOR
-        spritePath.Intern();
-#endif
+        spritePath.type = (int)ObjectPathType.SpriteOfGroup;
     }
 }
 }

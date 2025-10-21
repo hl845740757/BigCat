@@ -1,0 +1,22 @@
+{
+    "name": "Wjybxx.BigCatEditor.UI",
+    "rootNamespace": "Wjybxx.BigCatEditor.UI",
+    "references": [
+        "Wjybxx.Commons.Core",
+        "Wjybxx.Commons.Concurrent",
+        "Wjybxx.Commons.Inject",
+        "Wjybxx.BigCat.Core",
+        "Wjybxx.BigCat.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

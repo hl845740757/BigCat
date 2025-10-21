@@ -20,7 +20,7 @@ using System;
 using UnityEngine;
 using Wjybxx.Commons;
 
-namespace Wjybxx.BigCat.UnityCore
+namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 将int字段标记可为Mask字段

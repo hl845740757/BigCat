@@ -45,10 +45,12 @@ public class UINodeCfg
     public string dataAddress;
 
     /// <summary>
-    /// 创建新黑板(切割上下文)
+    /// 黑板处理策略
+    ///
+    /// 注：用于处理公共节点的复用问题。
     /// </summary>
-    [Tooltip("是否需要切割黑板，当Controller数据和父节点存在冲突时勾选")]
-    public bool newBlackboard;
+    [Tooltip("黑板策略，用于告诉view和controller如何处理黑板的初始化")]
+    public int blackboardPolicy;
     /// <summary>
     /// 自定义flags
     ///
@@ -57,35 +59,11 @@ public class UINodeCfg
     public int flags;
 
     /// <summary>
-    /// 默认展示模式配置
+    /// 展示模式配置
     /// 
     /// 注：此为缓存字段，为方便策划配置，持久化数据在<see cref="UINode"/>上。
     /// </summary>
-    [NonSerialized] public UINodeDisplayCfg defaultDisplayCfg;
-    /// <summary>
-    /// 更多展示模式配置
-    /// 
-    /// 注：此为缓存字段，为方便策划配置，持久化数据在<see cref="UINode"/>上。
-    /// </summary>
-    [NonSerialized] public List<UINodeDisplayCfg> moreDisplayCfgs;
-
-    #region 工具方法
-
-    /// <summary>
-    /// 查找指定显示模式的配置
-    /// </summary>
-    /// <returns>如果不存在匹配的配置，则返回null</returns>
-    public UINodeDisplayCfg FindDisplayCfg(int mode) {
-        if (defaultDisplayCfg != null && defaultDisplayCfg.mode == mode) {
-            return defaultDisplayCfg;
-        }
-        foreach (UINodeDisplayCfg displayCfg in moreDisplayCfgs) {
-            if (displayCfg.mode == mode) return displayCfg;
-        }
-        return null;
-    }
-
-    #endregion
+    [NonSerialized] public UINodeDisplayCfg displayCfg;
 }
 
 /// <summary>

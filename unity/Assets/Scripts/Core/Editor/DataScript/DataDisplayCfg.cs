@@ -92,14 +92,15 @@ public sealed class DataDisplayCfg
     /// </summary>
     public string[] supportedTypes;
     /// <summary>
-    /// 可用实例，可用于初始化类型
+    /// 类型关联的可用实例，可用于初始化类型
     /// </summary>
     public List<DSInst> supportedInsts;
 
     /// <summary>
     /// 标签类字段配置
     ///
-    /// 注：理论上不同的分支下，所有配置都可能需要独立...暂不处理，不然配置的复杂度太高
+    /// 注：理论上不同的分支下，所有配置都可能需要独立...
+    /// (暂不处理，不然配置的复杂度太高；真要处理的可以通过多ctrl实现)
     /// </summary>
     public List<BranchFieldCfg> branchCfgs;
     /// <summary>
@@ -108,7 +109,7 @@ public sealed class DataDisplayCfg
     public PortFieldCfg portCfg;
 
     /// <summary>
-    /// 是否启用滚动视图
+    /// List和Map字段是否启用滚动视图
     /// </summary>
     public bool scrollView;
     /// <summary>
@@ -182,6 +183,10 @@ public sealed class DataDisplayCfg
     }
 
     private static void CopyListCfg(DataDisplayCfg varCfg, DataDisplayCfg listCfg) {
+        varCfg.min = listCfg.min;
+        varCfg.max = listCfg.max;
+        varCfg.dsonType = listCfg.dsonType;
+
         varCfg.HasDisplayType = listCfg.HasDisplayType;
         varCfg.displayType = listCfg.displayType;
         varCfg.popNames = listCfg.popNames;
@@ -337,7 +342,8 @@ public sealed class DataDisplayCfg
 /// </summary>
 public sealed class PortFieldCfg
 {
-    public Side side = Side.Right;
+    public Side side = Side.Right; // 端口的显示位置
+    public bool preferChild = false; // Port是否指的是List元素上的字段
 }
 
 /// <summary>

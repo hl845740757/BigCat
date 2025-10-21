@@ -207,6 +207,7 @@ public static class DSAnnotations
     public const string KEY_MIN = "min";
     public const string KEY_MAX = "max";
     public const string KEY_INIT_NULL = "initNull";
+    public const string KEY_SKIP_NULL = "skipNull";
 
     public const string KEY_SIDE = "side";
     public const string KEY_CTRL = "ctrl";
