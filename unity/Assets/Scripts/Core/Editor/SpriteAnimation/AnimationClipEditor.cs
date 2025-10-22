@@ -88,6 +88,8 @@ public partial class AnimationClipEditor : EditorWindow
     private void OnUndoExecuted() {
         // 完全不知道撤销了什么，所以全部重新绑定
         foreach (ClipContext context in _clipContextList) {
+            context.frameIndex = ClampFrameIndex(context.frameIndex, context.clip.FrameCount);
+            context.clip.RefreshDuration();
             BindBoxElements(context, true);
             BindBoxElements(context, false);
         }
@@ -172,9 +174,9 @@ public partial class AnimationClipEditor : EditorWindow
         //
         _frameCountField = root.Q<IntegerField>("frame-count");
         _frameCountField.RegisterCallback<FocusOutEvent>(OnFrameCountFocusOut);
+        _frameCountField.RegisterCallback<KeyDownEvent>(OnClickFrameCountApply);
         root.Q<Button>("frame-count-add").RegisterCallback<ClickEvent>(OnClickFrameCountAdd);
         root.Q<Button>("frame-count-dec").RegisterCallback<ClickEvent>(OnClickFrameCountDec);
-        root.Q<Button>("frame-count-apply").RegisterCallback<ClickEvent>(OnClickFrameCountApply);
     }
 
     private void InitSyncOperateArea(VisualElement root) {
@@ -238,7 +240,6 @@ public partial class AnimationClipEditor : EditorWindow
         _frameAreaElement.RegisterCallback<MouseMoveEvent>(OnFrameAreaMouseMove);
         _frameAreaElement.RegisterCallback<MouseUpEvent>(ReleaseMouse);
         _frameAreaElement.RegisterCallback<WheelEvent>(OnFrameAreaWheelEvent);
-        _frameAreaElement.RegisterCallback<ContextClickEvent>(ShowFrameContextMenu);
         //
         _frameIndexField = previewArea.Q<IntegerField>("frame-index");
         _frameIndexField.SetValueWithoutNotify(0);
@@ -256,8 +257,8 @@ public partial class AnimationClipEditor : EditorWindow
         _playTimeField = previewArea.Q<FloatField>("play-time-field");
         _aabbField = previewArea.QueryAABBField("AABBField");
         _imageEditModeToggle.Init(EditMode.Move);
-        _showDmgBoxToggle.Init(RangeMode.All);
-        _showHurtBoxToggle.Init(RangeMode.All);
+        _showDmgBoxToggle.Init(RangeMode.Master);
+        _showHurtBoxToggle.Init(RangeMode.Master);
         _showDmgBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _showHurtBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _bgColorField.RegisterValueChangedCallback(OnBackgroundColorChanged);
@@ -377,14 +378,12 @@ public partial class AnimationClipEditor : EditorWindow
         _clipListView.Add(clipElement);
         _clipListView.style.height = GetClipListViewHeight(_clipListView.childCount);
         //
+        context.frameIndex = ClampFrameIndex(_frameIndexField.value, context.clip.FrameCount);
         BindBoxElements(context, true);
         BindBoxElements(context, false);
         //
         if (_clipContextList.Count == 1) {
-            _frameIndexField.SetValueWithoutNotify(0);
             OnMasterClipChanged();
-        } else {
-            context.frameIndex = ClampFrameIndex(_frameIndexField.value, context.clip.FrameCount);
         }
         RefreshPlayTimeSliderRange();
         RefreshPreviewArea(true);
@@ -398,8 +397,8 @@ public partial class AnimationClipEditor : EditorWindow
         //
         TryMoveClipToTop(context);
     }
-
     private void TryMoveClipToTop(ClipContext context) {
+        if (context == _clipContextList[0]) return;
         _clipContextList.Remove(context);
         _clipContextList.Insert(0, context);
         _clipListView.Remove(context.clipElement);
@@ -407,9 +406,6 @@ public partial class AnimationClipEditor : EditorWindow
         //
         OnMasterClipChanged();
         RefreshPreviewArea(true);
-        // 尽量保留index
-        int frameIndex = ClampFrameIndex(_frameIndexField.value, context.clip.FrameCount);
-        _frameIndexField.value = frameIndex;
     }
 
     private void OnClickClipElementDelete(ClickEvent evt) {
@@ -440,13 +436,15 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void OnMasterClipChanged() {
         _playToggle.value = false;
+        _playTimeSlider.SetValueWithoutNotify(0);
+        _playTimeField.SetValueWithoutNotify(0);
         ClipContext context = GetMasterContext();
         if (context == null) {
             BindFrameInfoElements(); // 绑定到空
             return;
         }
         _frameCountField.SetValueWithoutNotify(context.clip.FrameCount);
-        context.container.SetDisplay(true);
+        _frameIndexField.SetValueWithoutNotify(context.frameIndex);
 
         SerializedObject serializedClip = context.serializedClip;
         _clipLoopToggle.BindProperty(serializedClip.FindProperty("loop"));
@@ -558,6 +556,7 @@ public partial class AnimationClipEditor : EditorWindow
             int frameIndex = context.frameIndex;
             if (context.playTime < playTime) { // 回环
                 context.frameIndex = 0;
+                context.playTime = 0;
             } else {
                 float endTime = context.clip[context.frameIndex].endTime;
                 if (context.playTime < endTime) {
@@ -566,7 +565,7 @@ public partial class AnimationClipEditor : EditorWindow
                 context.frameIndex++;
                 if (context.frameIndex >= context.clip.FrameCount) {
                     context.frameIndex = 0;
-                    context.playTime -= context.clip.duration;
+                    context.playTime = 0;
                 }
             }
             if (frameIndex != context.frameIndex) {
@@ -709,7 +708,7 @@ public partial class AnimationClipEditor : EditorWindow
         foreach (ClipContext context in _clipContextList) {
             int prevIndex = context.frameIndex;
             context.frameIndex = ClampFrameIndex(frameIndex, context.clip.FrameCount);
-            context.playTime = context.frameIndex == 0 ? 0 : context.clip[context.frameIndex - 1].duration;
+            context.playTime = 0;
             if (context.frameIndex != prevIndex) {
                 BindBoxElements(context, true);
                 BindBoxElements(context, false);
@@ -816,7 +815,6 @@ public partial class AnimationClipEditor : EditorWindow
         BoxContext context = _selectedElement.userData as BoxContext;
         if (context == null) return;
         Vector2 offset = (evt.mousePosition - _dragStartMousePosition) / _frameAreaElement.transform.scale;
-        //
         Vector3 minPosition = _dragStartItemPosition + new Vector3(offset.x, -1 * offset.y);
         UnityEditorUtil.Truncate(ref minPosition);
         MinMaxAABB aabb = context.box;
@@ -932,10 +930,102 @@ public partial class AnimationClipEditor : EditorWindow
         VisualElement element = (VisualElement)evt.currentTarget;
         ClipContext context = element.userData as ClipContext;
         if (context == null) return;
-        // 提示一下归属的动画
+
         GenericMenu menu = new GenericMenu();
         menu.AddDisabledItem(new GUIContent("Image(" + context.clip.name + ")"));
+        int frameIndex = _frameIndexField.value;
+        if (frameIndex == 0) {
+            menu.AddDisabledItem(new GUIContent("左移1帧"));
+        } else {
+            menu.AddItem(new GUIContent("左移1帧"), false, OnClickFrameMoveLeft, null);
+        }
+        if (frameIndex + 1 >= context.clip.FrameCount) {
+            menu.AddDisabledItem(new GUIContent("右移1帧"));
+        } else {
+            menu.AddItem(new GUIContent("右移1帧"), false, OnClickFrameMoveRight, null);
+        }
+        menu.AddItem(new GUIContent("删除"), false, OnClickFrameDelete, null);
+        menu.AddItem(new GUIContent("插入"), false, OnClickFrameInsert, null);
+        // 在多动画编辑模式下，如果通过点击空白添加攻击盒，容易产生混乱，不知道添加到哪个动画上了
+        Vector2 localMousePosition = (evt.mousePosition - _frameAreaElement.worldBound.position) / _frameAreaElement.transform.scale;
+        FrameMenuContext menuContext = new FrameMenuContext(localMousePosition);
+        menu.AddItem(new GUIContent("添加攻击盒"), false, OnClickFrameAddDamageBox, menuContext);
+        menu.AddItem(new GUIContent("添加受击盒"), false, OnClickFrameAddHurtBox, menuContext);
         menu.ShowAsContext();
+    }
+
+    private void OnClickFrameMoveRight(object _) {
+        int frameIndex = _frameIndexField.value;
+        SwapFrame(frameIndex + 1);
+    }
+
+    private void OnClickFrameMoveLeft(object _) {
+        int frameIndex = _frameIndexField.value;
+        SwapFrame(frameIndex - 1);
+    }
+
+    private void SwapFrame(int targetIndex) {
+        ClipContext context = GetMasterContext();
+        if (context == null || !context.CheckFrameIndex(targetIndex)) return;
+        int frameIndex = _frameIndexField.value;
+        context.serializedFrameArray.MoveArrayElement(frameIndex, targetIndex);
+        context.ApplyModifiedProperties();
+        context.clip.RefreshDuration();
+        //
+        _frameIndexField.value = targetIndex;
+    }
+
+    private void OnClickFrameAddHurtBox(object obj) {
+        FrameMenuContext context = (FrameMenuContext)obj;
+        OnClickFrameAddBox(context, false);
+    }
+
+    private void OnClickFrameAddDamageBox(object obj) {
+        FrameMenuContext context = (FrameMenuContext)obj;
+        OnClickFrameAddBox(context, true);
+    }
+
+    private void OnClickFrameAddBox(FrameMenuContext context, bool isDamageBox) {
+        ClipContext clipContext = GetMasterContext();
+        if (clipContext == null || !clipContext.CheckFrameIndex()) return;
+        //
+        Vector2 offset = context.localMousePosition - pivotPosition;
+        offset.y = -1 * offset.y;
+        MinMaxAABB aabb = MinMaxAABB.OfCenter(offset, new Vector3(50, 50, 20));
+        clipContext.AddBox(aabb, isDamageBox);
+        //
+        BindBoxElements(clipContext, isDamageBox);
+        RefreshBoxElements(clipContext);
+    }
+
+    private void OnClickFrameInsert(object _) {
+        int frameIndex = _frameIndexField.value;
+        ClipContext context = GetMasterContext();
+        if (context == null || !context.CheckFrameIndex(frameIndex)) return;
+
+        context.serializedFrameArray.InsertArrayElementAtIndex(frameIndex + 1);
+        context.ApplyModifiedProperties();
+        //
+        _frameIndexField.value = frameIndex + 1;
+    }
+
+    private void OnClickFrameDelete(object _) {
+        int frameIndex = _frameIndexField.value;
+        ClipContext context = GetMasterContext();
+        if (context == null || !context.CheckFrameIndex(frameIndex)) return;
+        context.serializedFrameArray.DeleteArrayElementAtIndex(frameIndex);
+        context.ApplyModifiedProperties();
+        //
+        _frameIndexField.value = ClampFrameIndex(frameIndex, context.clip.FrameCount);
+    }
+
+    private class FrameMenuContext
+    {
+        public readonly Vector2 localMousePosition; // image-area下的坐标
+
+        public FrameMenuContext(Vector2 localMousePosition) {
+            this.localMousePosition = localMousePosition;
+        }
     }
 
     #endregion
@@ -983,111 +1073,6 @@ public partial class AnimationClipEditor : EditorWindow
         _dragStartMousePosition = evt.mousePosition;
         _dragStartItemPosition = _frameAreaElement.transform.position;
         _selectedElement.CaptureMouse(); // 拖拽期间不丢失鼠标事件
-    }
-
-    private void ShowFrameContextMenu(ContextClickEvent evt) {
-        if (_playToggle.value) return;
-        evt.StopPropagation();
-        ClipContext context = GetMasterContext();
-        if (context == null || !context.CheckFrameIndex()) return;
-        //
-        Vector2 localMousePosition = (evt.mousePosition - _frameAreaElement.worldBound.position) / _frameAreaElement.transform.scale;
-        FrameMenuContext menuContext = new FrameMenuContext(localMousePosition);
-        GenericMenu menu = new GenericMenu();
-        menu.AddDisabledItem(new GUIContent("Frame(" + context.clip.name + ")"));
-        int frameIndex = _frameIndexField.value;
-        if (frameIndex == 0) {
-            menu.AddDisabledItem(new GUIContent("左移1帧"));
-        } else {
-            menu.AddItem(new GUIContent("左移1帧"), false, OnClickFrameMoveLeft, null);
-        }
-        if (frameIndex + 1 >= context.clip.FrameCount) {
-            menu.AddDisabledItem(new GUIContent("右移1帧"));
-        } else {
-            menu.AddItem(new GUIContent("右移1帧"), false, OnClickFrameMoveRight, null);
-        }
-        menu.AddItem(new GUIContent("删除"), false, OnClickFrameDelete, null);
-        menu.AddItem(new GUIContent("插入"), false, OnClickFrameInsert, null);
-        menu.AddItem(new GUIContent("添加攻击盒"), false, OnClickFrameAddDamageBox, menuContext);
-        menu.AddItem(new GUIContent("添加受击盒"), false, OnClickFrameAddHurtBox, menuContext);
-        menu.ShowAsContext();
-    }
-
-    private void OnClickFrameMoveRight(object _) {
-        int frameIndex = _frameIndexField.value;
-        SwapFrame(frameIndex + 1);
-    }
-
-    private void OnClickFrameMoveLeft(object _) {
-        int frameIndex = _frameIndexField.value;
-        SwapFrame(frameIndex - 1);
-    }
-
-    private void SwapFrame(int targetIndex) {
-        ClipContext context = GetMasterContext();
-        if (context == null) return;
-        int frameIndex = _frameIndexField.value;
-        context.clip.frames.Swap(frameIndex, targetIndex);
-        context.clip.RefreshDuration();
-        context.SetDirty();
-        //
-        _frameIndexField.value = targetIndex;
-    }
-
-    private void OnClickFrameAddHurtBox(object obj) {
-        FrameMenuContext context = (FrameMenuContext)obj;
-        OnClickFrameAddBox(context, false);
-    }
-
-    private void OnClickFrameAddDamageBox(object obj) {
-        FrameMenuContext context = (FrameMenuContext)obj;
-        OnClickFrameAddBox(context, true);
-    }
-
-    private void OnClickFrameAddBox(FrameMenuContext context, bool isDamageBox) {
-        ClipContext clipContext = GetMasterContext();
-        if (clipContext == null || !clipContext.CheckFrameIndex()) return;
-        //
-        Vector2 offset = context.localMousePosition - pivotPosition;
-        offset.y = -1 * offset.y;
-        MinMaxAABB aabb = MinMaxAABB.OfCenter(offset, new Vector3(50, 50, 20));
-        clipContext.AddBox(aabb, isDamageBox);
-        //
-        BindBoxElements(clipContext, isDamageBox);
-        RefreshBoxElements(clipContext);
-    }
-
-    private void OnClickFrameInsert(object _) {
-        int frameIndex = _frameIndexField.value;
-        ClipContext context = GetMasterContext();
-        if (context == null || !context.CheckFrameIndex(frameIndex)) return;
-
-        SpriteAnimationFrame frame = context.clip[frameIndex];
-        SpriteAnimationFrame newFrame = new SpriteAnimationFrame();
-        InheritFrameProps(frame, newFrame);
-        context.clip.AddFrame(newFrame, frameIndex + 1);
-        context.SetDirty();
-        //
-        _frameIndexField.value = frameIndex + 1;
-    }
-
-    private void OnClickFrameDelete(object _) {
-        int frameIndex = _frameIndexField.value;
-        ClipContext context = GetMasterContext();
-        if (context == null || !context.CheckFrameIndex(frameIndex)) return;
-        context.clip.RemoveFrame(frameIndex);
-        context.SetDirty();
-        //
-        _frameIndexField.value = ClampFrameIndex(frameIndex, context.clip.FrameCount);
-    }
-
-    private class FrameMenuContext
-    {
-        public readonly Vector2 localMousePosition; // image-area下的坐标
-
-        public FrameMenuContext(Vector2 localMousePosition) {
-            this.localMousePosition = localMousePosition;
-        }
     }
 
     #endregion
@@ -1141,11 +1126,9 @@ public partial class AnimationClipEditor : EditorWindow
     private void OnFrameSpritePathChanged(ChangeEvent<ObjectPath> evt) {
         evt.StopPropagation();
         ClipContext context = GetMasterContext();
-        if (context.CheckFrameIndex()) {
-            using (SerializedProperty property = context.serializedFrame.FindPropertyRelative("spritePath")) {
-                evt.newValue.WriteProperty(property);
-                context.ApplyModifiedProperties();
-            }
+        using (SerializedProperty property = context.serializedFrame.FindPropertyRelative("spritePath")) {
+            evt.newValue.WriteProperty(property);
+            context.ApplyModifiedProperties();
         }
         RefreshImage(context, true);
     }
@@ -1263,28 +1246,28 @@ public partial class AnimationClipEditor : EditorWindow
         this.rootVisualElement.schedule.Execute(() => {
             ClipContext context = GetMasterContext();
             if (context == null) return;
-            _frameCountField.value = context.clip.FrameCount;
+            _frameCountField.SetValueWithoutNotify(context.clip.FrameCount);
         }).StartingIn(1000);
     }
 
-    private void OnClickFrameCountApply(ClickEvent evt) {
-        evt.StopPropagation();
+    private void OnClickFrameCountApply(KeyDownEvent evt) {
+        if (evt.keyCode != KeyCode.Return && evt.keyCode != KeyCode.KeypadEnter) return;
+        // evt.StopPropagation();
         ClipContext context = GetMasterContext();
         if (context == null) return;
         SpriteAnimationClip clip = context.clip;
         // 限制单次增加数量
         int count = Math.Clamp(_frameCountField.value, 0, clip.FrameCount + 100);
-        _frameCountField.SetValueWithoutNotify(count);
         int delta = count - clip.FrameCount;
         if (delta == 0) {
             return;
         }
-        clip.FrameCount = count;
-        for (int index = clip.FrameCount - count; index < clip.FrameCount; index++) {
-            if (index == 0) continue;
-            InheritFrameProps(clip[index - 1], clip[index]);
-        }
-        context.SetDirty();
+        context.serializedFrameArray.arraySize = count;
+        context.ApplyModifiedProperties();
+        context.clip.RefreshDuration();
+        //
+        _frameCountField.SetValueWithoutNotify(count);
+        _clipDurationField.SetValueWithoutNotify(context.clip.duration);
         RepairFrameIndex();
     }
 
@@ -1292,10 +1275,12 @@ public partial class AnimationClipEditor : EditorWindow
         evt.StopPropagation();
         ClipContext context = GetMasterContext();
         if (context == null || context.clip.FrameCount == 0) return;
-        context.clip.FrameCount--;
-        context.SetDirty();
+        context.serializedFrameArray.arraySize--;
+        context.ApplyModifiedProperties();
+        context.clip.RefreshDuration();
         //
         _frameCountField.SetValueWithoutNotify(context.clip.FrameCount);
+        _clipDurationField.SetValueWithoutNotify(context.clip.duration);
         RepairFrameIndex();
     }
 
@@ -1303,26 +1288,12 @@ public partial class AnimationClipEditor : EditorWindow
         evt.StopPropagation();
         ClipContext context = GetMasterContext();
         if (context == null) return;
-        SpriteAnimationClip clip = context.clip;
-        SpriteAnimationFrame newFrame = new SpriteAnimationFrame();
-        if (clip.FrameCount > 0) {
-            InheritFrameProps(clip.LastFrame, newFrame);
-        }
-        clip.AddFrame(newFrame);
-        context.SetDirty();
+        context.serializedFrameArray.arraySize++;
+        context.ApplyModifiedProperties();
+        context.clip.RefreshDuration();
         //
-        _frameCountField.SetValueWithoutNotify(clip.FrameCount);
-        // RepairFrameIndex();
-    }
-
-    private static void InheritFrameProps(SpriteAnimationFrame srcFrame,
-                                          SpriteAnimationFrame targetFrame) {
-        targetFrame.spritePath = srcFrame.spritePath;
-        targetFrame.spritePath.localId++;
-        targetFrame.position = srcFrame.position;
-        targetFrame.scale = srcFrame.scale;
-        targetFrame.rotation = srcFrame.rotation;
-        targetFrame.duration = srcFrame.duration;
+        _frameCountField.SetValueWithoutNotify(context.clip.FrameCount);
+        _clipDurationField.SetValueWithoutNotify(context.clip.duration);
     }
 
     #endregion
@@ -1498,7 +1469,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private static VisualElement CreateClipElement() {
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Scripts/Core/Editor/SpriteAnimation/ClipListItem.uxml");
-        return visualTree.CloneTree();
+        return visualTree.CloneTree()[0];
     }
 
     // 用于创建图片、攻击盒、受击盒框

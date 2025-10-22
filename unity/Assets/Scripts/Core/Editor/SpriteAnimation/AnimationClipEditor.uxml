@@ -60,9 +60,8 @@
                     <ui:VisualElement style="flex-direction: row; justify-content: space-between; flex-shrink: 0; align-items: stretch; width: 100%;">
                         <uie:IntegerField label="总帧数" value="0" is-delayed="false" name="frame-count" style="height: auto; width: auto; min-width: 220px; margin-top: 3px; margin-right: 1px;" />
                         <ui:VisualElement style="flex-direction: row; justify-content: flex-end;">
-                            <ui:Button text="+" display-tooltip-when-elided="true" name="frame-count-add" tooltip="所有帧的旋转加上指定值" />
                             <ui:Button text="-" display-tooltip-when-elided="true" name="frame-count-dec" tooltip="设置所有帧的旋转值" />
-                            <ui:Button text="Apply" display-tooltip-when-elided="true" tooltip="以第一帧的旋转为基础线性插值" name="frame-count-apply" />
+                            <ui:Button text="+" display-tooltip-when-elided="true" name="frame-count-add" tooltip="所有帧的旋转加上指定值" />
                         </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
@@ -74,9 +73,9 @@
                     <uie:FloatField label="Duration" value="0.1" name="duration" tooltip="当前帧的持续时间，秒" is-delayed="true" style="width: auto; min-width: 220px;" />
                     <uie:IntegerField label="Interp" value="0" name="interp" tooltip="攻击盒插值函数" style="width: auto; min-width: 220px;" />
                     <ui:Toggle label="Shadow" value="true" name="shadow" tooltip="是否开启阴影" style="min-width: 220px;" />
-                    <uie:ColorField label="Tint" value="#FFFFFFFF" name="tint" tooltip="色调效果，叠加在图片之上" style="justify-content: flex-start; width: 98%;" />
-                    <ui:ListView focusable="true" tooltip="受击Box，图片bottom相对角色坐标的位置" name="hurt-boxes" header-title="受击Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="FixedHeight" style="border-top-width: 1px; border-left-color: rgb(145, 145, 145); border-right-color: rgb(145, 145, 145); border-top-color: rgb(145, 145, 145); border-bottom-color: rgb(145, 145, 145); max-height: none; width: 98%;" />
-                    <ui:ListView focusable="true" tooltip="伤害Box，图片bottom相对角色坐标的位置" name="damage-boxes" header-title="伤害Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="FixedHeight" style="max-height: none; width: 98%;" />
+                    <uie:ColorField label="Tint" value="#FFFFFFFF" name="tint" tooltip="色调效果，叠加在图片之上" style="justify-content: flex-start; width: 300px; min-width: auto; max-width: none;" />
+                    <ui:ListView focusable="true" tooltip="受击Box，图片bottom相对角色坐标的位置" name="hurt-boxes" header-title="受击Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="FixedHeight" style="border-top-width: 1px; border-left-color: rgb(145, 145, 145); border-right-color: rgb(145, 145, 145); border-top-color: rgb(145, 145, 145); border-bottom-color: rgb(145, 145, 145); max-height: none; width: 95%;" />
+                    <ui:ListView focusable="true" tooltip="伤害Box，图片bottom相对角色坐标的位置" name="damage-boxes" header-title="伤害Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="FixedHeight" style="max-height: none; width: 95%;" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="clip-sync-div" style="flex-shrink: 0; flex-direction: column; flex-wrap: wrap; max-height: 60px; max-width: 400px; display: none; flex-grow: 0; width: auto; justify-content: flex-end; overflow: visible;">
