@@ -32,17 +32,6 @@ namespace Wjybxx.BigCat.Animator
 public sealed class SpriteAnimationClip : ScriptableObject
 {
     /// <summary>
-    /// 动画帧域大小
-    ///
-    /// 1.模型所有部件的帧域大小、轴心点应当一致。
-    /// 2.左手坐标系，即场景坐标系，而非UI坐标系。
-    /// </summary>
-    public Vector2Int frameSize = new Vector2Int(500, 500);
-    /// <summary>
-    /// 帧域轴心点（角色坐标位置）
-    /// </summary>
-    public Vector2 framePivot = new Vector2(0.5f, 0.25f);
-    /// <summary>
     /// 帧数据
     /// </summary>
     public SpriteAnimationFrame[] frames = Array.Empty<SpriteAnimationFrame>();

@@ -449,8 +449,11 @@ public static class UnityEditorUtil
     internal static void SetVectorFieldDelayed<T>(BaseField<T> field, bool isDelayed) {
         VisualElement values = field[1];
         for (int i = 0; i < values.childCount; i++) {
-            FloatField floatField = (FloatField)values[i];
-            floatField.isDelayed = isDelayed;
+            if (values[i] is FloatField floatField) {
+                floatField.isDelayed = isDelayed;
+            } else if (values[i] is IntegerField integerField) {
+                integerField.isDelayed = isDelayed;
+            }
         }
     }
 

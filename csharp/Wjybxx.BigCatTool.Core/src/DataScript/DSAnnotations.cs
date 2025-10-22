@@ -120,9 +120,16 @@ public static class DSAnnotations
     /// - max 数字类型的最大值
     /// - initNull bool类型，是否将字段初始化为null值，不适用List和Map字段
     /// - menuPath 字符串类型，节点菜单路径，用于配置脚本
-    /// - scrollView bool类型，表示List和Map是否启用滚动视图
     /// </summary>
     public const string EDITOR = "Editor";
+    /// <summary>
+    /// 编辑器风格字段
+    ///
+    /// - isDelayed bool类型，表示输入是否在用户按下回车时或退出Focus时才执行
+    /// - scrollView bool类型，表示List和Map是否启用滚动视图
+    /// </summary>
+    public const string EDITOR_STYLE = "EditorStyle";
+
     /// <summary>
     /// 端口字段
     ///
@@ -203,6 +210,7 @@ public static class DSAnnotations
     // Editor
     public const string KEY_DISPLAY_NAME = "displayName";
     public const string KEY_DISPLAY_TYPE = "displayType";
+    public const string KEY_TOOLTIP = "tooltip";
     public const string KEY_DSON_TYPE = "dsonType";
     public const string KEY_MIN = "min";
     public const string KEY_MAX = "max";
@@ -212,9 +220,9 @@ public static class DSAnnotations
     public const string KEY_SIDE = "side";
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";
-    public const string KEY_TOOLTIP = "tooltip";
 
     public const string KEY_MENU_PATH = "menuPath";
+    public const string KEY_IS_DELAYED = "isDelayed";
     public const string KEY_SCROLL_VIEW = "scrollView";
 
     #endregion

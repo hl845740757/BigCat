@@ -21,11 +21,13 @@ public partial class AnimationClipEditor : EditorWindow
 {
     private Button _pickClipButton;
     private VisualElement _clipListView;
+    private Vector2IntField _frameSizeField;
+    private Vector2Field _framePivotField;
+    private FloatField _frameScaleField;
+
     private Toggle _clipLoopToggle;
     private FloatField _clipWeightField;
     private FloatField _clipDurationField;
-    private Vector2IntField _frameSizeField;
-    private Vector2Field _framePivotField;
     private IntegerField _frameCountField;
 
     private Vector2Field _batchPositionField;
@@ -37,10 +39,12 @@ public partial class AnimationClipEditor : EditorWindow
     private IntegerField _frameIndexField;
     private EnumField _showDmgBoxToggle;
     private EnumField _showHurtBoxToggle;
-    private EnumField _enableImageClickToggle;
+    private EnumField _imageEditModeToggle;
+    private Toggle _imagePickIgnoreToggle;
     private ColorField _bgColorField;
     private Toggle _playToggle;
     private Slider _playTimeSlider;
+    private FloatField _playTimeField;
     private AABBField _aabbField;
 
     private VisualElement _framePivotIcon;
@@ -90,6 +94,25 @@ public partial class AnimationClipEditor : EditorWindow
         this.rootVisualElement.schedule.Execute(_ => RefreshPreviewArea(true));
     }
 
+    private void OnGUI() {
+        if (_frameAreaElement == null) return;
+        if (Event.current.type != EventType.KeyDown) return;
+        switch (Event.current.keyCode) {
+            case KeyCode.Q: {
+                _imageEditModeToggle.SetValueWithoutNotify(EditMode.View);
+                break;
+            }
+            case KeyCode.W: {
+                _imageEditModeToggle.SetValueWithoutNotify(EditMode.Move);
+                break;
+            }
+            case KeyCode.E: {
+                _imageEditModeToggle.SetValueWithoutNotify(EditMode.Rotation);
+                break;
+            }
+        }
+    }
+
     private ClipContext GetMasterContext() {
         return _clipContextList.Count > 0 ? _clipContextList[0] : null;
     }
@@ -100,6 +123,12 @@ public partial class AnimationClipEditor : EditorWindow
         }
         return null;
     }
+
+    private Vector2 pivotPosition => new Vector2(
+        _frameSizeField.value.x * _framePivotField.value.x,
+        _frameSizeField.value.y * (1 - _framePivotField.value.y));
+
+    private EditMode editMode => (EditMode)_imageEditModeToggle.value.GetHashCode();
 
     #region init-GUI
 
@@ -113,6 +142,19 @@ public partial class AnimationClipEditor : EditorWindow
         _clipListView = root.Q("clip-list");
         _pickClipButton.RegisterCallback<ClickEvent>(ShowPickClipWindow);
         _clipListView.RegisterCallback<DragEnterEvent>(OnClipListDragEnter);
+        //
+        _frameSizeField = root.Q<Vector2IntField>("frame-size");
+        _frameSizeField.RegisterValueChangedCallback(OnFrameSizeChanged);
+        UnityEditorUtil.SetVectorFieldDelayed(_frameSizeField, true);
+        //
+        _framePivotField = root.Q<Vector2Field>("frame-pivot");
+        _framePivotField.RegisterValueChangedCallback(OnFramePivotChanged);
+        UnityEditorUtil.SetVectorFieldDelayed(_framePivotField, true);
+        //
+        _frameScaleField = root.Q<FloatField>("frame-scale");
+        _frameScaleField.isDelayed = true;
+        _frameScaleField.RegisterValueChangedCallback(OnFrameScaleChanged);
+
         InitSyncOperateArea(root);
         InitClipInfoArea(root);
         InitBatchOperateArea(root);
@@ -128,14 +170,6 @@ public partial class AnimationClipEditor : EditorWindow
         _clipWeightField = root.Q<FloatField>("weight");
         _clipDurationField = root.Q<FloatField>("duration");
         //
-        _frameSizeField = root.Q<Vector2IntField>("frame-size");
-        _frameSizeField.RegisterCallback<FocusOutEvent>(OnFrameSizeFocusOut);
-        _frameSizeField.RegisterValueChangedCallback(OnFrameSizeChanged);
-        //
-        _framePivotField = root.Q<Vector2Field>("frame-pivot");
-        _framePivotField.RegisterCallback<FocusOutEvent>(OnFramePivotFocusOut);
-        _framePivotField.RegisterValueChangedCallback(OnFramePivotChanged);
-        //
         _frameCountField = root.Q<IntegerField>("frame-count");
         _frameCountField.RegisterCallback<FocusOutEvent>(OnFrameCountFocusOut);
         root.Q<Button>("frame-count-add").RegisterCallback<ClickEvent>(OnClickFrameCountAdd);
@@ -145,7 +179,6 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void InitSyncOperateArea(VisualElement root) {
         VisualElement syncDiv = root.Q("clip-sync-div");
-        syncDiv.Q<Button>("sync-frame-size").RegisterCallback<ClickEvent>(OnClickSyncFrameSize);
         syncDiv.Q<Button>("sync-frame-order").RegisterCallback<ClickEvent>(OnClickSyncFrameOrder);
         syncDiv.Q<Button>("sync-frame-duration").RegisterCallback<ClickEvent>(OnClickSyncFrameDuration);
         syncDiv.Q<Button>("sync-frame-position").RegisterCallback<ClickEvent>(OnClickSyncFramePosition);
@@ -195,36 +228,40 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void InitFramePreviewArea(VisualElement root) {
-        _frameAreaElement = root.Q<VisualElement>("frame-area");
-        //
-        VisualElement frameAreaParent = _frameAreaElement.parent;
-        _framePivotIcon = frameAreaParent.Q<VisualElement>("frame-pivot-icon");
-        _imageStyleElement = frameAreaParent.Q<VisualElement>("image-style");
-        _dmgBoxStyleElement = frameAreaParent.Q<VisualElement>("dmg-box-style");
-        _hurtBoxStyleElement = frameAreaParent.Q<VisualElement>("hurt-box-style");
-        _frameAreaElement.RegisterCallback<MouseDownEvent>(ReleaseSelectedElement);
+        VisualElement previewArea = root.Q("preview-area");
+        _frameAreaElement = previewArea.Q<VisualElement>("frame-area");
+        _framePivotIcon = previewArea.Q<VisualElement>("frame-pivot-icon");
+        _imageStyleElement = previewArea.Q<VisualElement>("image-style");
+        _dmgBoxStyleElement = previewArea.Q<VisualElement>("dmg-box-style");
+        _hurtBoxStyleElement = previewArea.Q<VisualElement>("hurt-box-style");
+        _frameAreaElement.RegisterCallback<MouseDownEvent>(OnFrameAreaMouseDown);
+        _frameAreaElement.RegisterCallback<MouseMoveEvent>(OnFrameAreaMouseMove);
+        _frameAreaElement.RegisterCallback<MouseUpEvent>(ReleaseMouse);
+        _frameAreaElement.RegisterCallback<WheelEvent>(OnFrameAreaWheelEvent);
         _frameAreaElement.RegisterCallback<ContextClickEvent>(ShowFrameContextMenu);
         //
-        _frameIndexField = frameAreaParent.Q<IntegerField>("frame-index");
+        _frameIndexField = previewArea.Q<IntegerField>("frame-index");
         _frameIndexField.SetValueWithoutNotify(0);
         _frameIndexField.RegisterValueChangedCallback(OnFrameIndexChanged);
-        frameAreaParent.Q<Button>("frame-index-prev").RegisterCallback<ClickEvent>(OnClickFrameIndexPrev);
-        frameAreaParent.Q<Button>("frame-index-next").RegisterCallback<ClickEvent>(OnClickFrameIndexNext);
+        previewArea.Q<Button>("frame-index-prev").RegisterCallback<ClickEvent>(OnClickFrameIndexPrev);
+        previewArea.Q<Button>("frame-index-next").RegisterCallback<ClickEvent>(OnClickFrameIndexNext);
         // 
-        _showDmgBoxToggle = frameAreaParent.Q<EnumField>("show-dmg-box");
-        _showHurtBoxToggle = frameAreaParent.Q<EnumField>("show-hurt-box");
-        _enableImageClickToggle = frameAreaParent.Q<EnumField>("enable-image-click");
-        _bgColorField = frameAreaParent.Q<ColorField>("bg-color");
-        _playToggle = frameAreaParent.Q<Toggle>("play");
-        _playTimeSlider = frameAreaParent.Q<Slider>("play-time");
-        _aabbField = frameAreaParent.QueryAABBField("AABBField");
+        _showDmgBoxToggle = previewArea.Q<EnumField>("show-dmg-box");
+        _showHurtBoxToggle = previewArea.Q<EnumField>("show-hurt-box");
+        _imageEditModeToggle = previewArea.Q<EnumField>("image-edit-mode");
+        _imagePickIgnoreToggle = previewArea.Q<Toggle>("image-pick-ignore");
+        _bgColorField = previewArea.Q<ColorField>("bg-color");
+        _playToggle = previewArea.Q<Toggle>("play-toggle");
+        _playTimeSlider = previewArea.Q<Slider>("play-time-slider");
+        _playTimeField = previewArea.Q<FloatField>("play-time-field");
+        _aabbField = previewArea.QueryAABBField("AABBField");
+        _imageEditModeToggle.Init(EditMode.Move);
         _showDmgBoxToggle.Init(RangeMode.All);
         _showHurtBoxToggle.Init(RangeMode.All);
-        _enableImageClickToggle.Init(RangeMode.All);
         _showDmgBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _showHurtBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
-        _enableImageClickToggle.RegisterValueChangedCallback(OnImageToggleChanged);
         _bgColorField.RegisterValueChangedCallback(OnBackgroundColorChanged);
+        _imagePickIgnoreToggle.RegisterValueChangedCallback(OnPickIgnoreChanged);
         //
         UnityEditorUtil.SetFieldLabelMargin(_playToggle, -70);
         _playToggle.SetValueWithoutNotify(false);
@@ -259,6 +296,23 @@ public partial class AnimationClipEditor : EditorWindow
         toolBarIndex = 1;
         rootVisualElement.Q("clip-info-div").parent.SetDisplay(false);
         rootVisualElement.Q("clip-sync-div").SetDisplay(true);
+    }
+
+    private void OnFrameScaleChanged(ChangeEvent<float> evt) {
+        evt.StopPropagation();
+        float value = Mathf.Clamp(evt.newValue, 0.5f, 5f);
+        _frameScaleField.SetValueWithoutNotify(value);
+        _frameAreaElement.transform.scale = new Vector3(value, value);
+    }
+
+    private void OnFrameSizeChanged(ChangeEvent<Vector2Int> evt) {
+        evt.StopPropagation();
+        RefreshPreviewArea();
+    }
+
+    private void OnFramePivotChanged(ChangeEvent<Vector2> evt) {
+        evt.StopPropagation();
+        RefreshPreviewArea();
     }
 
     private void ShowPickClipWindow(ClickEvent evt) {
@@ -308,6 +362,7 @@ public partial class AnimationClipEditor : EditorWindow
         imageElement.RegisterCallback<MouseUpEvent>(ReleaseMouse);
         imageElement.RegisterCallback<WheelEvent>(OnImageElementWheelEvent);
         imageElement.RegisterCallback<ContextClickEvent>(ShowImageElementContextMenu);
+        imageElement.pickingMode = _imagePickIgnoreToggle.value ? PickingMode.Ignore : PickingMode.Position;
         imageElement.userData = context;
         context.imageElement = imageElement;
         //
@@ -397,11 +452,8 @@ public partial class AnimationClipEditor : EditorWindow
         _clipLoopToggle.BindProperty(serializedClip.FindProperty("loop"));
         _clipWeightField.BindProperty(serializedClip.FindProperty("weight"));
         _clipDurationField.BindProperty(serializedClip.FindProperty("duration"));
-        _frameSizeField.BindProperty(serializedClip.FindProperty("frameSize"));
-        _framePivotField.BindProperty(serializedClip.FindProperty("framePivot"));
         //
         BindFrameInfoElements();
-        RefreshImagePickingMode();
         RefreshBoxElementVisible(true);
         RefreshBoxElementVisible(false);
     }
@@ -418,19 +470,18 @@ public partial class AnimationClipEditor : EditorWindow
         ClipContext masterContext = GetMasterContext();
         if (masterContext == null) return;
         // 设置帧域大小和锚点，y需要用1减
-        _frameAreaElement.style.width = masterContext.clip.frameSize.x;
-        _frameAreaElement.style.height = masterContext.clip.frameSize.y;
+        _frameAreaElement.style.width = _frameSizeField.value.x;
+        _frameAreaElement.style.height = _frameSizeField.value.y;
         _frameAreaElement.style.backgroundColor = _bgColorField.value;
         //
-        Vector2 pivotPosition = masterContext.pivotPosition;
         _framePivotIcon.style.position = Position.Absolute;
         _framePivotIcon.transform.position = pivotPosition;
         //
         foreach (ClipContext context in _clipContextList) {
-            RefreshImage(context, pivotPosition, forceReload);
+            RefreshImage(context);
         }
         foreach (ClipContext context in _clipContextList) {
-            RefreshBoxElements(context, pivotPosition);
+            RefreshBoxElements(context);
         }
     }
 
@@ -438,7 +489,7 @@ public partial class AnimationClipEditor : EditorWindow
     /// 图片旋转缩放是基于自身Bottom，基于图片自身Bottom并不影响逻辑层，是纯表现层的，用户设置好最终坐标即可
     /// frame.position为相对帧域轴心点坐标，也即相对角色坐标坐标，这里需要转为UI坐标（左上角）
     /// </summary>
-    private void RefreshImage(ClipContext context, Vector2 pivotPosition, bool forceReload = false) {
+    private void RefreshImage(ClipContext context, bool forceReload = false) {
         VisualElement imageElement = context.imageElement;
         SpriteAnimationFrame frame = context.frame;
         if (forceReload || !frame.sprite) {
@@ -465,18 +516,18 @@ public partial class AnimationClipEditor : EditorWindow
         imageElement.transform.position = imgBottom - new Vector2(rawWidth / 2f, rawHeight);
     }
 
-    private void RefreshBoxElements(ClipContext clipContext, Vector2 pivotPosition) {
+    private void RefreshBoxElements(ClipContext clipContext) {
         foreach (VisualElement boxElement in clipContext.damageBoxElements) {
             if (boxElement.userData is not BoxContext context) break;
-            RefreshBoxElement(boxElement, context.box, pivotPosition);
+            RefreshBoxElement(boxElement, context.box);
         }
         foreach (VisualElement boxElement in clipContext.hurtBoxElements) {
             if (boxElement.userData is not BoxContext context) break;
-            RefreshBoxElement(boxElement, context.box, pivotPosition);
+            RefreshBoxElement(boxElement, context.box);
         }
     }
 
-    private void RefreshBoxElement(VisualElement boxElement, MinMaxAABB aabb, Vector2 pivotPosition) {
+    private void RefreshBoxElement(VisualElement boxElement, MinMaxAABB aabb) {
         boxElement.style.width = aabb.Width;
         boxElement.style.height = aabb.Height;
         boxElement.transform.position = pivotPosition + new Vector2(aabb.min.x, -aabb.max.y);
@@ -488,8 +539,10 @@ public partial class AnimationClipEditor : EditorWindow
         float globalPlayTime = _playTimeSlider.value + state.deltaTime / 1000f;
         if (globalPlayTime >= _playTimeSlider.highValue) {
             _playTimeSlider.SetValueWithoutNotify(0);
+            _playTimeField.SetValueWithoutNotify(0);
         } else {
             _playTimeSlider.SetValueWithoutNotify(globalPlayTime);
+            _playTimeField.SetValueWithoutNotify(globalPlayTime);
         }
         bool needRefreshPreviewArea = false;
         for (int clipIndex = 0; clipIndex < _clipContextList.Count; clipIndex++) {
@@ -533,6 +586,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void OnPlayTimeSliderChanged(ChangeEvent<float> evt) {
         evt.StopPropagation();
+        _playTimeField.SetValueWithoutNotify(evt.newValue);
         bool needRefreshPreviewArea = false;
         for (int clipIndex = 0; clipIndex < _clipContextList.Count; clipIndex++) {
             ClipContext context = _clipContextList[clipIndex];
@@ -593,20 +647,11 @@ public partial class AnimationClipEditor : EditorWindow
         _frameAreaElement.style.backgroundColor = evt.newValue;
     }
 
-    private void OnImageToggleChanged(ChangeEvent<Enum> evt) {
+    private void OnPickIgnoreChanged(ChangeEvent<bool> evt) {
         evt.StopPropagation();
-        RefreshImagePickingMode();
-    }
-
-    private void RefreshImagePickingMode() {
-        RangeMode mode = (RangeMode)_enableImageClickToggle.value.GetHashCode();
+        PickingMode pickingMode = _imagePickIgnoreToggle.value ? PickingMode.Ignore : PickingMode.Position;
         foreach (ClipContext context in _clipContextList) {
-            context.imageElement.pickingMode = mode switch
-            {
-                RangeMode.All => PickingMode.Position,
-                RangeMode.Master => context == GetMasterContext() ? PickingMode.Position : PickingMode.Ignore,
-                _ => PickingMode.Ignore
-            };
+            context.imageElement.pickingMode = pickingMode;
         }
     }
 
@@ -741,8 +786,7 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void OnBoxElementWheelEvent(WheelEvent evt) {
-        if (_selectedElement != evt.currentTarget
-            || !_selectedElement.HasMouseCapture()) {
+        if (_selectedElement != evt.currentTarget) {
             return;
         }
         evt.StopPropagation();
@@ -759,7 +803,7 @@ public partial class AnimationClipEditor : EditorWindow
         aabb.Truncate();
         OnBoxItemValueChanged(context, aabb);
         // 修正拖拽数据
-        _dragStartMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
+        _dragStartMousePosition = evt.mousePosition;
         _dragStartItemPosition = aabb.min;
         _dragStartItemSize = aabb.Size;
     }
@@ -771,12 +815,12 @@ public partial class AnimationClipEditor : EditorWindow
         }
         BoxContext context = _selectedElement.userData as BoxContext;
         if (context == null) return;
-        // 需要计算在FrameArea下的相对坐标 - 使用Center+Size的方式更新AABB时，可能由于浮点数截断导致AABB变小
-        Vector2 localMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
-        Vector2 offset = localMousePosition - _dragStartMousePosition;
-        offset.y *= -1;
+        Vector2 offset = (evt.mousePosition - _dragStartMousePosition) / _frameAreaElement.transform.scale;
+        //
+        Vector3 minPosition = _dragStartItemPosition + new Vector3(offset.x, -1 * offset.y);
+        UnityEditorUtil.Truncate(ref minPosition);
         MinMaxAABB aabb = context.box;
-        aabb.min = _dragStartItemPosition + (Vector3)offset;
+        aabb.min = minPosition;
         aabb.Size = _dragStartItemSize;
         OnBoxItemValueChanged(context, aabb);
     }
@@ -784,8 +828,9 @@ public partial class AnimationClipEditor : EditorWindow
     private void OnBoxElementMouseDown(MouseDownEvent evt) {
         if (evt.button != 0) return;
         evt.StopPropagation();
+        CancelImageSelectEffect();
         _selectedElement = (VisualElement)evt.currentTarget;
-        _dragStartMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
+        _dragStartMousePosition = evt.mousePosition;
         _selectedElement.CaptureMouse(); // 拖拽期间不丢失鼠标事件
 
         BoxContext context = (BoxContext)_selectedElement.userData;
@@ -812,8 +857,7 @@ public partial class AnimationClipEditor : EditorWindow
     #region image-element
 
     private void OnImageElementWheelEvent(WheelEvent evt) {
-        if (_selectedElement != evt.currentTarget
-            || !_selectedElement.HasMouseCapture()) {
+        if (_selectedElement != evt.currentTarget) {
             return;
         }
         evt.StopPropagation();
@@ -821,10 +865,11 @@ public partial class AnimationClipEditor : EditorWindow
         ClipContext context = _selectedElement.userData as ClipContext;
         if (context == null) return;
         float scale = evt.delta.y > 0 ? 0.9f : 1.1f;
-        context.frame.scale *= scale;
-        context.SetDirty();
+        context.serializedScale.vector2Value *= scale;
+        context.ApplyModifiedProperties();
+        context.imageElement.transform.scale = context.serializedScale.vector2Value;
         // 修正拖拽数据
-        _dragStartMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
+        _dragStartMousePosition = evt.mousePosition;
         _dragStartItemPosition = context.frame.position;
         _dragStartItemSize = context.imageElement.transform.position;
     }
@@ -836,28 +881,50 @@ public partial class AnimationClipEditor : EditorWindow
         }
         ClipContext context = _selectedElement.userData as ClipContext;
         if (context == null) return;
-        // 需要计算在FrameArea下的相对坐标
-        Vector2 localMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
-        Vector2 offset = localMousePosition - _dragStartMousePosition;
-        context.imageElement.transform.position = _dragStartItemSize + (Vector3)offset;
-        //
-        offset.y *= -1;
-        Vector2 framePosition = (Vector2)_dragStartItemPosition + offset;
-        context.serializedPosition.vector2Value = framePosition;
-        context.ApplyModifiedProperties();
+        if (editMode == EditMode.Move) {
+            Vector2 offset = (evt.mousePosition - _dragStartMousePosition) / _frameAreaElement.transform.scale;
+            context.imageElement.transform.position = _dragStartItemSize + (Vector3)offset;
+            //
+            Vector2 framePosition = (Vector2)_dragStartItemPosition + new Vector2(offset.x, -offset.y);
+            UnityEditorUtil.Truncate(ref framePosition);
+            context.serializedPosition.vector2Value = framePosition;
+            context.ApplyModifiedProperties();
+        } else if (editMode == EditMode.Rotation) {
+            Vector2 offset = (evt.mousePosition - _dragStartMousePosition);
+            _dragStartMousePosition = evt.mousePosition;
+            float deg = offset.x > 0 ? 1 : -1;
+            deg += context.serializedRotation.floatValue;
+            if (deg > 180) deg = -180;
+            if (deg < -180) deg = 180;
+            context.serializedRotation.floatValue = deg;
+            context.ApplyModifiedProperties();
+        }
     }
 
     private void OnImageElementMouseDown(MouseDownEvent evt) {
         if (evt.button != 0) return;
         evt.StopPropagation();
+        if (evt.currentTarget != _selectedElement) {
+            CancelImageSelectEffect();
+        }
         _selectedElement = (VisualElement)evt.currentTarget;
-        _dragStartMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
+        _dragStartMousePosition = evt.mousePosition;
         _selectedElement.CaptureMouse(); // 拖拽期间不丢失鼠标事件
+        _selectedElement.SetBorderWidth(1);
+        _aabbField.SetEnabled(false);
 
         ClipContext context = (ClipContext)_selectedElement.userData;
         _dragStartItemPosition = context.frame.position;
         _dragStartItemSize = context.imageElement.transform.position;
         TryMoveClipToTop(context);
+    }
+
+    /** 取消图片选中效果 */
+    private void CancelImageSelectEffect() {
+        if (_selectedElement == null) return;
+        if (_selectedElement.userData is ClipContext context) {
+            context.imageElement.SetBorderWidth(0);
+        }
     }
 
     private void ShowImageElementContextMenu(ContextClickEvent evt) {
@@ -880,11 +947,42 @@ public partial class AnimationClipEditor : EditorWindow
         _selectedElement?.ReleaseMouse();
     }
 
-    private void ReleaseSelectedElement(MouseDownEvent evt) {
+    private void OnFrameAreaWheelEvent(WheelEvent evt) {
+        if (_selectedElement != evt.currentTarget) {
+            return;
+        }
         evt.StopPropagation();
-        _selectedElement?.ReleaseMouse();
-        _selectedElement = null;
+
+        float scale = evt.delta.y > 0 ? -0.1f : 0.1f;
+        scale += _frameScaleField.value;
+        scale = Mathf.Clamp(scale, 0.5f, 5f);
+        _frameScaleField.SetValueWithoutNotify(scale);
+        _frameAreaElement.transform.scale = new Vector3(scale, scale);
+
+        // 修正拖拽数据
+        _dragStartMousePosition = evt.mousePosition;
+        _dragStartItemPosition = _frameAreaElement.transform.position;
+    }
+
+    private void OnFrameAreaMouseMove(MouseMoveEvent evt) {
+        if (_selectedElement != evt.currentTarget
+            || !_selectedElement.HasMouseCapture()) {
+            return;
+        }
+        Vector2 offset = evt.mousePosition - _dragStartMousePosition;
+        _frameAreaElement.transform.position = _dragStartItemPosition + (Vector3)offset;
+    }
+
+    private void OnFrameAreaMouseDown(MouseDownEvent evt) {
+        if (evt.button != 0) return;
+        evt.StopPropagation();
+        CancelImageSelectEffect();
+        _selectedElement = _frameAreaElement;
         _aabbField.SetEnabled(false);
+
+        _dragStartMousePosition = evt.mousePosition;
+        _dragStartItemPosition = _frameAreaElement.transform.position;
+        _selectedElement.CaptureMouse(); // 拖拽期间不丢失鼠标事件
     }
 
     private void ShowFrameContextMenu(ContextClickEvent evt) {
@@ -893,7 +991,7 @@ public partial class AnimationClipEditor : EditorWindow
         ClipContext context = GetMasterContext();
         if (context == null || !context.CheckFrameIndex()) return;
         //
-        Vector2 localMousePosition = evt.mousePosition - _frameAreaElement.worldBound.position;
+        Vector2 localMousePosition = (evt.mousePosition - _frameAreaElement.worldBound.position) / _frameAreaElement.transform.scale;
         FrameMenuContext menuContext = new FrameMenuContext(localMousePosition);
         GenericMenu menu = new GenericMenu();
         menu.AddDisabledItem(new GUIContent("Frame(" + context.clip.name + ")"));
@@ -950,13 +1048,13 @@ public partial class AnimationClipEditor : EditorWindow
         ClipContext clipContext = GetMasterContext();
         if (clipContext == null || !clipContext.CheckFrameIndex()) return;
         //
-        Vector2 offset = context.localMousePosition - clipContext.pivotPosition;
+        Vector2 offset = context.localMousePosition - pivotPosition;
         offset.y = -1 * offset.y;
         MinMaxAABB aabb = MinMaxAABB.OfCenter(offset, new Vector3(50, 50, 20));
         clipContext.AddBox(aabb, isDamageBox);
         //
         BindBoxElements(clipContext, isDamageBox);
-        RefreshBoxElements(clipContext, clipContext.pivotPosition);
+        RefreshBoxElements(clipContext);
     }
 
     private void OnClickFrameInsert(object _) {
@@ -1049,24 +1147,24 @@ public partial class AnimationClipEditor : EditorWindow
                 context.ApplyModifiedProperties();
             }
         }
-        RefreshImage(context, context.pivotPosition, true);
+        RefreshImage(context, true);
     }
 
     private void OnImagePropertyChanged(EventBase _) {
         ClipContext context = GetMasterContext();
-        RefreshImage(context, context.pivotPosition);
+        RefreshImage(context);
     }
 
     private void RebindHurtBoxElements() { // 只有通过List添加或删除的才触发...
         ClipContext context = GetMasterContext();
         BindBoxElements(context, false);
-        RefreshBoxElements(context, context.pivotPosition);
+        RefreshBoxElements(context);
     }
 
     private void RebindDamageBoxElements() {
         ClipContext context = GetMasterContext();
         BindBoxElements(context, true);
-        RefreshBoxElements(context, context.pivotPosition);
+        RefreshBoxElements(context);
     }
 
     #endregion
@@ -1128,7 +1226,7 @@ public partial class AnimationClipEditor : EditorWindow
                 _hurtBoxListView.RefreshItem(context.boxIndex);
             }
         }
-        RefreshBoxElement(context.boxElement, box, masterContext.pivotPosition);
+        RefreshBoxElement(context.boxElement, box);
         if (refreshGlobalField && context.Equals(_selectedElement?.userData)) {
             _aabbField.SetValueWithoutNotify(box);
         }
@@ -1151,43 +1249,12 @@ public partial class AnimationClipEditor : EditorWindow
         context.clipContext.DeleteBox(context.boxIndex, context.isDamageBox);
         //
         BindBoxElements(context.clipContext, context.isDamageBox);
-        RefreshBoxElements(context.clipContext, GetMasterContext().pivotPosition);
+        RefreshBoxElements(context.clipContext);
     }
 
     #endregion
 
-    #region frame-size/pivot/count
-
-    private void OnFrameSizeChanged(ChangeEvent<Vector2Int> evt) {
-        evt.StopPropagation();
-        RefreshPreviewArea();
-    }
-
-    private void OnFramePivotChanged(ChangeEvent<Vector2> evt) {
-        evt.StopPropagation();
-        RefreshPreviewArea();
-    }
-
-    // 重置value
-    private void OnFramePivotFocusOut(FocusOutEvent evt) {
-        evt.StopPropagation();
-        // 延迟重置，允许时间点击按钮
-        this.rootVisualElement.schedule.Execute(() => {
-            ClipContext context = GetMasterContext();
-            if (context == null) return;
-            _framePivotField.value = context.clip.framePivot;
-        }).StartingIn(1000);
-    }
-
-    private void OnFrameSizeFocusOut(FocusOutEvent evt) {
-        evt.StopPropagation();
-        // 延迟重置，允许时间点击按钮
-        this.rootVisualElement.schedule.Execute(() => {
-            ClipContext context = GetMasterContext();
-            if (context == null) return;
-            _frameSizeField.value = context.clip.frameSize;
-        }).StartingIn(1000);
-    }
+    #region frame-count
 
     // 重置value
     private void OnFrameCountFocusOut(FocusOutEvent evt) {
@@ -1362,19 +1429,6 @@ public partial class AnimationClipEditor : EditorWindow
 
     #region sync-operate
 
-    private void OnClickSyncFrameSize(ClickEvent evt) {
-        evt.StopPropagation();
-        if (_clipContextList.Count <= 1) return;
-        ClipContext masterContext = _clipContextList[0];
-        for (int index = 1; index < _clipContextList.Count; index++) {
-            ClipContext context = _clipContextList[index];
-            context.clip.frameSize = masterContext.clip.frameSize;
-            context.clip.framePivot = masterContext.clip.framePivot;
-            context.SetDirty();
-        }
-        RefreshPreviewArea();
-    }
-
     private void OnClickSyncFrameDuration(ClickEvent evt) {
         evt.StopPropagation();
         if (_clipContextList.Count <= 1) return;
@@ -1474,6 +1528,16 @@ public partial class AnimationClipEditor : EditorWindow
         All,
         Master,
         None
+    }
+
+    private enum EditMode
+    {
+        [InspectorName("查看")]
+        View,
+        [InspectorName("移动")]
+        Move,
+        [InspectorName("旋转")]
+        Rotation
     }
 
     #endregion

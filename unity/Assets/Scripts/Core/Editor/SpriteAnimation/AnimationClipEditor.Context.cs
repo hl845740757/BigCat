@@ -73,17 +73,23 @@ public partial class AnimationClipEditor
             serializedDamageBoxes?.Dispose();
             serializedHurtBoxes?.Dispose();
             serializedPosition?.Dispose();
+            serializedScale?.Dispose();
+            serializedRotation?.Dispose();
             //
             if (CheckFrameIndex()) {
                 serializedFrame = serializedFrameArray.GetArrayElementAtIndex(_frameIndex);
                 serializedDamageBoxes = serializedFrame.FindPropertyRelative("damageBoxes");
                 serializedHurtBoxes = serializedFrame.FindPropertyRelative("hurtBoxes");
                 serializedPosition = serializedFrame.FindPropertyRelative("position");
+                serializedScale = serializedFrame.FindPropertyRelative("scale");
+                serializedRotation = serializedFrame.FindPropertyRelative("rotation");
             } else {
                 serializedFrame = null;
                 serializedDamageBoxes = null;
                 serializedHurtBoxes = null;
                 serializedPosition = null;
+                serializedScale = null;
+                serializedRotation = null;
             }
         }
 
@@ -92,13 +98,8 @@ public partial class AnimationClipEditor
         public SerializedProperty serializedDamageBoxes { get; private set; }
         public SerializedProperty serializedHurtBoxes { get; private set; }
         public SerializedProperty serializedPosition { get; private set; }
-
-        /// <summary>
-        /// 轴心点的UI坐标
-        /// </summary>
-        public Vector2 pivotPosition => new Vector2(
-            clip.frameSize.x * clip.framePivot.x,
-            clip.frameSize.x * (1 - clip.framePivot.y));
+        public SerializedProperty serializedScale { get; private set; }
+        public SerializedProperty serializedRotation { get; private set; }
 
         /// <summary>
         /// 检查当前索引的有效性

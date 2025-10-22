@@ -144,6 +144,10 @@ public sealed class DataDisplayCfg
         if (annotation != null) {
             ParseBaseOptions(annotation.AsObject(), cfg);
         }
+        annotation = element.GetAnnotation(DSAnnotations.EDITOR_STYLE);
+        if (annotation != null) {
+            ParseStyleOptions(annotation.AsObject(), cfg);
+        }
         annotation = element.GetAnnotation(DSAnnotations.PORT_FIELD);
         if (annotation != null) {
             ParsePortInfo(annotation.AsObject(), cfg);
@@ -308,6 +312,10 @@ public sealed class DataDisplayCfg
         cfg.portCfg = portCfg;
     }
 
+    private static void ParseStyleOptions(DsonObject<string> dsonObject, DataDisplayCfg cfg) {
+        cfg.scrollView = Annotation.GetBool(dsonObject, DSAnnotations.KEY_SCROLL_VIEW);
+    }
+
     private static void ParseBaseOptions(DsonObject<string> dsonObject, DataDisplayCfg cfg) {
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DISPLAY_NAME, out DsonValue dsonValue)) {
             cfg.displayName = dsonValue.AsString();
@@ -333,7 +341,6 @@ public sealed class DataDisplayCfg
         if (dsonObject.TryGetValue(DSAnnotations.KEY_MENU_PATH, out dsonValue)) {
             cfg.menuPath = dsonValue.AsString();
         }
-        cfg.scrollView = Annotation.GetBool(dsonObject, DSAnnotations.KEY_SCROLL_VIEW);
     }
 }
 
