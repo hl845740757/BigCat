@@ -21,9 +21,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.2D.Sprite.Editor", "U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityEditor.UI", "UnityEditor.UI.csproj", "{c69cdfb4-e234-2892-09e0-f3bd60e5c932}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor-firstpass", "Assembly-CSharp-Editor-firstpass.csproj", "{2b61375c-80af-db25-739d-b40d9ebfe347}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor", "Assembly-CSharp-Editor.csproj", "{dcdcc333-cb76-cd1f-751b-4e7e18d0e2df}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor-firstpass", "Assembly-CSharp-Editor-firstpass.csproj", "{2b61375c-80af-db25-739d-b40d9ebfe347}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{e189dac3-c670-6c7d-993e-c8f831d35880}"
 EndProject
@@ -60,10 +60,10 @@ Global
 		{9c2f54bc-6fb1-78ca-4f17-6404f842d8e3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{c69cdfb4-e234-2892-09e0-f3bd60e5c932}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{c69cdfb4-e234-2892-09e0-f3bd60e5c932}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2b61375c-80af-db25-739d-b40d9ebfe347}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2b61375c-80af-db25-739d-b40d9ebfe347}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{dcdcc333-cb76-cd1f-751b-4e7e18d0e2df}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{dcdcc333-cb76-cd1f-751b-4e7e18d0e2df}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2b61375c-80af-db25-739d-b40d9ebfe347}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2b61375c-80af-db25-739d-b40d9ebfe347}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{e189dac3-c670-6c7d-993e-c8f831d35880}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{e189dac3-c670-6c7d-993e-c8f831d35880}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0f3edae0-b4d6-861a-0a5d-fbf82c904a80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

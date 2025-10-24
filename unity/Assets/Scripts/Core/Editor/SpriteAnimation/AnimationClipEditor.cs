@@ -221,8 +221,10 @@ public partial class AnimationClipEditor : EditorWindow
         _damageBoxListView.itemsAdded += _ => RebindDamageBoxElements();
         _damageBoxListView.itemsRemoved += _ => RebindDamageBoxElements();
         // 帧数据变化刷新UI和图片
+        ObjectPathField spritePathField = _frameInfoElement.QueryObjectPathField("sprite-path");
+        spritePathField.label = "SpritePath";
+        spritePathField.RegisterValueChangedCallback(OnFrameSpritePathChanged);
         _frameInfoElement.Q<FloatField>("duration").RegisterValueChangedCallback(OnFrameDurationChanged);
-        _frameInfoElement.QuerySpritePathField("sprite-path").RegisterValueChangedCallback(OnFrameSpritePathChanged);
         _frameInfoElement.Q<Vector2Field>("position").RegisterValueChangedCallback(OnImagePropertyChanged);
         _frameInfoElement.Q<Vector2Field>("scale").RegisterValueChangedCallback(OnImagePropertyChanged);
         _frameInfoElement.Q<FloatField>("rotation").RegisterValueChangedCallback(OnImagePropertyChanged);
@@ -397,6 +399,7 @@ public partial class AnimationClipEditor : EditorWindow
         //
         TryMoveClipToTop(context);
     }
+
     private void TryMoveClipToTop(ClipContext context) {
         if (context == _clipContextList[0]) return;
         _clipContextList.Remove(context);
@@ -1077,6 +1080,8 @@ public partial class AnimationClipEditor : EditorWindow
 
     #endregion
 
+    #endregion
+
     #region frame-info
 
     private void BindFrameInfoElements() {
@@ -1094,7 +1099,7 @@ public partial class AnimationClipEditor : EditorWindow
         // BindProperty不支持绑定到自定义字段，手动维护同步
         SpriteAnimationFrame frame = context.frame;
         SerializedProperty serializedFrame = context.serializedFrame;
-        _frameInfoElement.QuerySpritePathField("sprite-path").value = frame.spritePath;
+        _frameInfoElement.QueryObjectPathField("sprite-path").value = frame.spritePath;
         _frameInfoElement.Q<Vector2Field>("position").BindProperty(serializedFrame.FindPropertyRelative("position"));
         _frameInfoElement.Q<Vector2Field>("scale").BindProperty(serializedFrame.FindPropertyRelative("scale"));
         _frameInfoElement.Q<FloatField>("rotation").BindProperty(serializedFrame.FindPropertyRelative("rotation"));
@@ -1237,7 +1242,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     #endregion
 
-    #region frame-count
+    #region clip-info
 
     // 重置value
     private void OnFrameCountFocusOut(FocusOutEvent evt) {
@@ -1510,7 +1515,5 @@ public partial class AnimationClipEditor : EditorWindow
         [InspectorName("旋转")]
         Rotation
     }
-
-    #endregion
 }
 }

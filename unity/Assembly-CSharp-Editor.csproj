@@ -47,11 +47,13 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Editor\UIToolKitExp.cs" />
     <Compile Include="Assets\Editor\UnityCodecLinker.cs" />
     <Compile Include="Assets\Editor\ExperimentalMenus.cs" />
     <Compile Include="Assets\Editor\FileSyncMgr.cs" />
     <None Include="Assets\Editor\Resources\level-2.txt" />
     <None Include="Assets\Editor\Resources\level-1.txt" />
+    <None Include="Assets\Editor\UIToolKitExp.uxml" />
     <None Include="Assets\Editor\Resources\symbols+level-1.txt" />
     <None Include="Assets\Editor\Resources\level-3.txt" />
     <Reference Include="UnityEngine">

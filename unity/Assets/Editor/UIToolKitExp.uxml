@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Template name="AABBField" src="project://database/Assets/Scripts/Core/Editor/UIElements/AABBField.uxml?fileID=9197481963319205126&amp;guid=79f08d19f94ff8a4e85536709572ec9b&amp;type=3#AABBField" />
+    <ui:Template name="DateTimeField" src="project://database/Assets/Scripts/Core/Editor/UIElements/DateTimeField.uxml?fileID=9197481963319205126&amp;guid=5f4c77dbc3d9ed94788a797128b65dea&amp;type=3#DateTimeField" />
+    <ui:Template name="ObjectPathField" src="project://database/Assets/Scripts/Core/Editor/UIElements/ObjectPathField.uxml?fileID=9197481963319205126&amp;guid=007468af889367b48b09e8eb93250d97&amp;type=3#ObjectPathField" />
+    <ui:Template name="TimestampField" src="project://database/Assets/Scripts/Core/Editor/UIElements/TimestampField.uxml?fileID=9197481963319205126&amp;guid=c82ae0ca413441508b667dc49ee629e1&amp;type=3#TimestampField" />
+    <ui:Instance template="AABBField" name="AABBField">
+        <AttributeOverrides element-name="AABBField" isInteger="true" />
+    </ui:Instance>
+    <ui:Instance template="DateTimeField" name="DateTimeField">
+        <AttributeOverrides element-name="time" x="12" y="59" z="59" />
+    </ui:Instance>
+    <ui:Instance template="ObjectPathField" name="ObjectPathField" />
+    <ui:Instance template="AABBField" name="AABBField">
+        <AttributeOverrides element-name="AABBField" isInteger="true" focusable="false" />
+    </ui:Instance>
+    <ui:Instance template="TimestampField" name="TimestampField">
+        <AttributeOverrides element-name="label" text="时间戳" />
+    </ui:Instance>
+    <Wjybxx.BigCat.CoreEditor.UIElements.MIntegerField hasMin="true" hasMax="true" max="999" label="MInt" value="111" labelMargin="-80" />
+    <Wjybxx.BigCat.CoreEditor.UIElements.MLongField max="999" hasMin="true" hasMax="true" label="MLong" value="222" labelMargin="-80" />
+    <Wjybxx.BigCat.CoreEditor.UIElements.MFloatField label="MFloat" value="1.5" labelMargin="-80" style="height: 18px;" />
+    <Wjybxx.BigCat.CoreEditor.UIElements.MDoubleField label="MDouble" value="1.125" labelMargin="-80" />
+    <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field x-label="Hour" labelMargin="0" y-label="Minutes" x-label-margin="50" y-label-margin="50" />
+</ui:UXML>

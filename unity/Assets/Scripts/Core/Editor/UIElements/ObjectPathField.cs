@@ -24,14 +24,13 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 using Wjybxx.Commons;
-using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
 /// <summary>
 /// 
 /// </summary>
-public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
+public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>, IField
 {
     private TextField _collectionField;
     private TextField _localPathField;
@@ -39,12 +38,12 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
     private IntegerField _typeField;
     private Toggle _lockTypeField;
 
+    private Foldout _foldout;
     private Button _selectCollectionButton;
     private Button _selectLocalPathButton;
     private Button _selectLocalIdButton;
 
     private ObjectPath _value;
-    private bool _valueInited;
     private bool _rebuildingValue;
     private ObjectPathHandler _handler; // 请通过属性访问
 
@@ -52,13 +51,27 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
 
     }
 
+    public string label {
+        get {
+            EnsureInited();
+            return _foldout.text;
+        }
+        set {
+            EnsureInited();
+            _foldout.text = value;
+        }
+    }
+
     /// <summary>
     /// 注意：由于Unity的初始化顺序限制，在刚创建的时候不能读取正确的值。
     /// </summary>
     public ObjectPath value {
-        get => _value;
+        get {
+            EnsureInited();
+            return _value;
+        }
         set {
-            _valueInited = true;
+            EnsureInited();
             if (_value == value) {
                 return;
             }
@@ -75,7 +88,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
     }
 
     public void SetValueWithoutNotify(ObjectPath newValue) {
-        _valueInited = true;
+        EnsureInited();
         // Type变化时需要重建Handler
         if (_value.type != newValue.type) {
             _handler = CreateHandler(newValue.type);
@@ -83,8 +96,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
             // MarkDirtyRepaint();
         }
         _value = newValue;
-        // 字段为null表示无效对象或尚未正确初始化
-        if (_rebuildingValue || _collectionField == null) {
+        if (_rebuildingValue) {
             return;
         }
         _collectionField.SetValueWithoutNotify(value.collection);
@@ -97,9 +109,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
     /// 获取实时值
     /// </summary>
     public ObjectPath GetRealtimeValue() {
-        if (_collectionField == null) {
-            throw new InvalidOperationException();
-        }
+        EnsureInited();
         return new ObjectPath(_collectionField.value,
             _localPathField.value,
             _localIdField.value,
@@ -126,43 +136,57 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
 
     private ObjectPathHandler handler => _handler;
 
-    private void OnEnable() {
-        if (childCount == 0) { // 鼠标移至脚本，系统创建的临时对象
-            SetEnabled(false);
-            return;
+    private void EnsureInited() {
+        if (childCount == 0 || _foldout != null) {
+            return; // Tip创建的临时对象或已初始化
         }
+        _foldout = this.Q<Foldout>();
         _collectionField = this.Q<TextField>("collection");
         _localPathField = this.Q<TextField>("local-path");
         _localIdField = this.Q<LongField>("local-id");
         _typeField = this.Q<IntegerField>("type");
-        _lockTypeField = this.Q<Toggle>("lock-type");
 
         _selectCollectionButton = this.Q<Button>("select-collection");
         _selectLocalPathButton = this.Q<Button>("select-local-path");
         _selectLocalIdButton = this.Q<Button>("select-local-id");
+        _lockTypeField = this.Q<Toggle>("lock-type");
         //
         _typeField.SetEnabled(!_lockTypeField.value);
         _handler = CreateHandler(_typeField.value);
         _handler.InitView();
-
-        // 外部初始化以后，不再从文件初始化，而是覆盖文件中的值
-        if (_valueInited) {
-            SetValueWithoutNotify(_value);
-        } else {
-            RebuildValue(notify: false);
-        }
-
         // 数据变化事件
-        _collectionField.RegisterValueChangedCallback(_ => RebuildValue());
-        _localPathField.RegisterValueChangedCallback(_ => RebuildValue());
-        _localIdField.RegisterValueChangedCallback(_ => RebuildValue());
-        _typeField.RegisterValueChangedCallback(_ => RebuildValue());
-        _lockTypeField.RegisterValueChangedCallback(_ => _typeField.SetEnabled(!_lockTypeField.value));
+        _collectionField.RegisterValueChangedCallback(OnFieldValueChanged);
+        _localPathField.RegisterValueChangedCallback(OnFieldValueChanged);
+        _localIdField.RegisterValueChangedCallback(OnFieldValueChanged);
+        _typeField.RegisterValueChangedCallback(OnFieldValueChanged);
+        _lockTypeField.RegisterValueChangedCallback(evt => {
+            evt.StopPropagation();
+            _typeField.SetEnabled(!_lockTypeField.value);
+        });
+        //
+        _collectionField.RegisterCallback<MouseDownEvent>(evt => {
+            evt.StopPropagation();
+            handler.PingCollection();
+        });
+        _selectCollectionButton.RegisterCallback<ClickEvent>(evt => {
+            evt.StopPropagation();
+            handler.OnClickSelectCollection();
+        });
+        _selectLocalPathButton.RegisterCallback<ClickEvent>(evt => {
+            evt.StopPropagation();
+            handler.OnClickSelectLocalPath();
+        });
+        _selectLocalIdButton.RegisterCallback<ClickEvent>(evt => {
+            evt.StopPropagation();
+            handler.OnClickSelectLocalId();
+        });
+        //
+        RebuildValue(false);
+    }
 
-        _collectionField.RegisterCallback<MouseDownEvent>(_ => handler.PingCollection());
-        _selectCollectionButton.RegisterCallback<ClickEvent>(_ => handler.OnClickSelectCollection());
-        _selectLocalPathButton.RegisterCallback<ClickEvent>(_ => handler.OnClickSelectLocalPath());
-        _selectLocalIdButton.RegisterCallback<ClickEvent>(_ => handler.OnClickSelectLocalId());
+    private void OnFieldValueChanged<T>(ChangeEvent<T> evt) {
+        evt.StopPropagation();
+        RebuildValue();
     }
 
     private ObjectPathHandler CreateHandler(int type) {
@@ -309,8 +333,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
     public static ObjectPathField Create() {
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML_PATH);
         ObjectPathField field = (ObjectPathField)visualTree.CloneTree()[0];
-        field._value = default; // xml中可能有默认值
-        field._valueInited = true;
+        field.SetValueWithoutNotify(default); // xml中可能有默认值
         return field;
     }
 
@@ -318,21 +341,14 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>
     {
     }
 
-    public new class UxmlTraits : VisualElement.UxmlTraits
+    public new class UxmlTraits : BindableElement.UxmlTraits
     {
-        private static readonly UxmlBoolAttributeDescription lockTypeAttribute = new UxmlBoolAttributeDescription { name = "lock-type" };
-
-        public override IEnumerable<UxmlAttributeDescription> uxmlAttributesDescription { get; } = new List<UxmlAttributeDescription>(1)
-        {
-            lockTypeAttribute
-        };
-
         // 初始化方法：将 UXML 属性值赋给元素实例
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
             // 这里有大坑：现在还不能访问到子节点，因此发布的对象可能是未完全构造的，不能提供服务
             var myView = (ObjectPathField)ve;
-            ve.schedule.Execute(() => { myView.OnEnable(); }).StartingIn(0);
+            ve.schedule.Execute(() => { myView.EnsureInited(); }).StartingIn(0);
         }
     }
 

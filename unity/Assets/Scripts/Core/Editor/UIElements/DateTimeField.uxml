@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Wjybxx.BigCat.CoreEditor.UIElements.DateTimeField name="object-content" style="flex-grow: 0; justify-content: flex-start; align-items: stretch; height: auto; max-height: none; flex-direction: column;">
+        <ui:Foldout text="DateTime" name="foldout" style="flex-shrink: 1;">
+            <Wjybxx.BigCat.CoreEditor.UIElements.MVector3IntField name="date" x-label="Y" y-label="M" z-label="D" x="1970" y="1" z="1" xyz-flex-basis="60" isDelayed="true" />
+            <Wjybxx.BigCat.CoreEditor.UIElements.MVector3IntField name="time" x-label="H" y-label="M" z-label="S" x="0" y="0" z="0" isDelayed="true" xyz-flex-basis="60" />
+        </ui:Foldout>
+    </Wjybxx.BigCat.CoreEditor.UIElements.DateTimeField>
+</ui:UXML>

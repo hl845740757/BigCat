@@ -435,19 +435,29 @@ public static class UnityEditorUtil
         field.labelElement.style.marginRight = labelMargin;
     }
 
-    internal static void SetVectorFieldStyle<T>(BaseField<T> field, float labelMargin) {
-        field.labelElement.style.marginRight = labelMargin;
-        VisualElement values = field[1];
+    internal static void SetVectorFieldFlexBasis(VisualElement field, float flexBasis) {
+        VisualElement values = field.childCount == 1 ? field[0] : field[1];
         for (int i = 0; i < values.childCount; i++) {
             values[i].style.flexGrow = 1;
             values[i].style.flexShrink = 1;
-            values[i].style.flexBasis = 120;
-            values[i].style.minWidth = 60;
+            values[i].style.flexBasis = flexBasis;
+            values[i].style.minWidth = 40;
         }
     }
 
-    internal static void SetVectorFieldDelayed<T>(BaseField<T> field, bool isDelayed) {
-        VisualElement values = field[1];
+    internal static void SetVectorFieldReadonly(VisualElement field, bool isReadOnly) {
+        VisualElement values = field.childCount == 1 ? field[0] : field[1];
+        for (int i = 0; i < values.childCount; i++) {
+            if (values[i] is FloatField floatField) {
+                floatField.isReadOnly = isReadOnly;
+            } else if (values[i] is IntegerField integerField) {
+                integerField.isReadOnly = isReadOnly;
+            }
+        }
+    }
+
+    internal static void SetVectorFieldDelayed(VisualElement field, bool isDelayed) {
+        VisualElement values = field.childCount == 1 ? field[0] : field[1];
         for (int i = 0; i < values.childCount; i++) {
             if (values[i] is FloatField floatField) {
                 floatField.isDelayed = isDelayed;
@@ -457,7 +467,18 @@ public static class UnityEditorUtil
         }
     }
 
-    internal static ObjectPathField QuerySpritePathField(this VisualElement container, string name) {
+    internal static void SetVectorFieldLabel(VisualElement field, IList<string> labels) {
+        VisualElement values = field.childCount == 1 ? field[0] : field[1];
+        for (int i = 0; i < values.childCount; i++) {
+            if (values[i] is FloatField floatField) {
+                floatField.label = labels[i];
+            } else if (values[i] is IntegerField integerField) {
+                integerField.label = labels[i];
+            }
+        }
+    }
+
+    internal static ObjectPathField QueryObjectPathField(this VisualElement container, string name) {
         return (ObjectPathField)container.Q(name)[0];
     }
 

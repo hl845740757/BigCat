@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -30,7 +29,7 @@ namespace Wjybxx.BigCat.CoreEditor.UIElements
 /// <summary>
 /// 注意：不要手动修改xml中变量的label
 /// </summary>
-public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
+public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IField
 {
     private const int MODE_MIN_MAX = 0;
     private const int MODE_MIN_SIZE = 1;
@@ -41,21 +40,38 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
     private static readonly string[] _selectedDisplay = { "√ Min + Max", "√ Min + Size", "√ Center + Size", "√ Bottom + Size" };
     private static int _mode = MODE_MIN_SIZE;
 
+    public bool isInteger { get; set; } // 属性才可以保存到UXML
+    private Vector3Field _minField;
+    private Vector3Field _maxField;
+
     private Foldout _foldout;
     private ToolbarMenu _modeMune;
     private ToolbarButton _repairButton;
-    private Vector3Field _minField;
-    private Vector3Field _maxField;
-    private bool isInteger;
 
     private MinMaxAABB _value;
-    private bool _valueInited;
     private bool _rebuildingValue;
 
-    public MinMaxAABB value {
-        get => _value;
+    public AABBField() {
+    }
+
+    public string label {
+        get {
+            EnsureInited();
+            return _foldout.text;
+        }
         set {
-            _valueInited = true;
+            EnsureInited();
+            _foldout.text = value;
+        }
+    }
+
+    public MinMaxAABB value {
+        get {
+            EnsureInited();
+            return _value;
+        }
+        set {
+            EnsureInited();
             if (isInteger) value.Truncate();
             if (_value == value) {
                 return;
@@ -73,13 +89,12 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
     }
 
     public void SetValueWithoutNotify(MinMaxAABB newValue) {
+        EnsureInited();
         if (isInteger) {
             newValue.Truncate();
         }
-        _valueInited = true;
         _value = newValue;
-        // 字段为null表示无效对象或尚未正确初始化
-        if (_rebuildingValue || _minField == null) {
+        if (_rebuildingValue) {
             return;
         }
         switch (_minField.label) {
@@ -107,9 +122,7 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
     /// 获取实时值
     /// </summary>
     public MinMaxAABB GetRealtimeValue() {
-        if (_minField == null) {
-            throw new InvalidOperationException();
-        }
+        EnsureInited();
         // 我们这里通过变量的Label来判断数据的存储模式，会比在XML上再存储一个变量更安全
         switch (_minField.label) {
             case "Min": {
@@ -191,21 +204,16 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
         }
     }
 
-    private void OnEnable() {
-        if (childCount == 0) {
-            return; // 无效实例
+    private void EnsureInited() {
+        if (childCount == 0 || _foldout != null) {
+            return; // Tip创建的临时对象或已初始化
         }
         _foldout = this.Q<Foldout>();
         _modeMune = this.Q<ToolbarMenu>("mode");
         _repairButton = this.Q<ToolbarButton>("repair");
         _minField = this.Q<Vector3Field>("min");
         _maxField = this.Q<Vector3Field>("max");
-        UnityEditorUtil.SetVectorFieldStyle(_minField, -80);
-        UnityEditorUtil.SetVectorFieldStyle(_maxField, -80);
-        UnityEditorUtil.SetVectorFieldDelayed(_minField, true);
-        UnityEditorUtil.SetVectorFieldDelayed(_maxField, true);
         //
-        _foldout.RegisterValueChangedCallback(_ => OnFoldoutChanged());
         _repairButton.RegisterCallback<ClickEvent>(evt => {
             evt.StopPropagation();
             RepairValue();
@@ -228,17 +236,9 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
             }
             RebuildValue();
         });
-        // 外部初始化以后，不再从文件初始化，而是覆盖文件中的值
-        if (_valueInited) {
-            SetValueWithoutNotify(_value);
-        }
-        OnFoldoutChanged();
+        //
+        RebuildValue(false);
         ShowAsMode();
-    }
-
-    private void OnFoldoutChanged() {
-        _minField.SetDisplay(_foldout.value);
-        _maxField.SetDisplay(_foldout.value);
     }
 
     private void RepairValue() {
@@ -263,9 +263,8 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
     public static AABBField Create(bool isInteger = false) {
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML_PATH);
         AABBField field = (AABBField)visualTree.CloneTree()[0];
-        field._value = default; // xml中可能有默认值
-        field._valueInited = true;
         field.isInteger = isInteger;
+        field.SetValueWithoutNotify(default); // xml中可能有默认值
         return field;
     }
 
@@ -273,24 +272,19 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>
     {
     }
 
-    public new class UxmlTraits : VisualElement.UxmlTraits
+    public new class UxmlTraits : BindableElement.UxmlTraits
     {
-        private static readonly UxmlBoolAttributeDescription isIntegerAttribute = new UxmlBoolAttributeDescription
+        private readonly UxmlBoolAttributeDescription isInteger = new UxmlBoolAttributeDescription
         {
             name = "isInteger"
-        };
-
-        public override IEnumerable<UxmlAttributeDescription> uxmlAttributesDescription { get; } = new List<UxmlAttributeDescription>(1)
-        {
-            isIntegerAttribute
         };
 
         // 初始化方法：将 UXML 属性值赋给元素实例
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
             var myView = (AABBField)ve;
-            isIntegerAttribute.TryGetValueFromBag(bag, cc, ref myView.isInteger);
-            ve.schedule.Execute(() => { myView.OnEnable(); }).StartingIn(0);
+            myView.isInteger = isInteger.GetValueFromBag(bag, cc);
+            ve.schedule.Execute(() => { myView.EnsureInited(); }).StartingIn(0);
         }
     }
 

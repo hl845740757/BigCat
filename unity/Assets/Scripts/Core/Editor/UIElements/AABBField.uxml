@@ -1,11 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <Wjybxx.BigCat.CoreEditor.UIElements.AABBField style="flex-grow: 1; justify-content: flex-start; align-items: stretch; height: auto; max-height: 60px;">
-        <uie:Toolbar style="justify-content: flex-start; align-items: flex-start; height: auto;">
-            <ui:Foldout text="Foldout" />
-            <uie:ToolbarMenu display-tooltip-when-elided="true" text="Min + Max" name="mode" style="width: 100px; margin-left: 10px;" />
-            <uie:ToolbarButton text="Repair" display-tooltip-when-elided="true" name="repair" style="width: 60px; margin-left: 10px;" />
-        </uie:Toolbar>
-        <uie:Vector3Field label="Min" name="min" tooltip="最小坐标" x="100" y="100" z="100" style="justify-content: flex-start; flex-shrink: 1; flex-grow: 1; align-items: stretch; flex-direction: row; min-width: auto; height: auto; max-height: 18px;" />
-        <uie:Vector3Field label="Max" name="max" tooltip="最大坐标" x="100" y="100" z="100" style="justify-content: flex-start; flex-shrink: 1; flex-grow: 1; align-items: stretch; min-width: auto; max-height: 18px;" />
+    <Wjybxx.BigCat.CoreEditor.UIElements.AABBField name="object-content" style="flex-grow: 0; justify-content: flex-start; align-items: stretch; height: auto; max-height: none; flex-direction: column; flex-shrink: 0;">
+        <ui:Foldout text="AABB" value="true" name="foldout" style="flex-shrink: 0; width: auto; max-width: none; flex-grow: 0;">
+            <uie:Toolbar style="justify-content: flex-start; align-items: flex-start; height: auto; margin-top: -18px; margin-left: 150px;">
+                <uie:ToolbarMenu display-tooltip-when-elided="true" text="Min + Max" name="mode" style="width: 100px; margin-left: 0; margin-right: 5px;" />
+                <uie:ToolbarButton text="Repair" display-tooltip-when-elided="true" name="repair" style="width: 60px; margin-left: 0;" />
+            </uie:Toolbar>
+            <Wjybxx.BigCat.CoreEditor.UIElements.MVector3Field name="min" label="Min" x="0" y="0" z="0" label-margin="-80" xyz-flex-basis="120" />
+            <Wjybxx.BigCat.CoreEditor.UIElements.MVector3Field name="max" label="Max" x="100" y="100" z="100" label-margin="-80" xyz-flex-basis="120" />
+        </ui:Foldout>
     </Wjybxx.BigCat.CoreEditor.UIElements.AABBField>
 </ui:UXML>
