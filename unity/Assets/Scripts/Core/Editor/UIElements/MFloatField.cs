@@ -21,8 +21,14 @@ using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-public class MFloatField : FloatField, IField
+public class MFloatField : FloatField, IPrefixLabel
 {
+    public MFloatField() {
+    }
+
+    public MFloatField(string label) : base(label) {
+    }
+
     public float min { get; set; }
     public float max { get; set; }
     public bool hasMin { get; set; }
@@ -55,7 +61,7 @@ public class MFloatField : FloatField, IField
     {
     }
 
-    public new class UxmlTraits : TextValueFieldTraits<float, UxmlFloatAttributeDescription>
+    public new class UxmlTraits : FloatField.UxmlTraits
     {
         private readonly UxmlFloatAttributeDescription minAttribute = new()
         {
@@ -77,10 +83,10 @@ public class MFloatField : FloatField, IField
             name = "hasMax",
             defaultValue = false,
         };
-        private readonly UxmlIntAttributeDescription labelMargin = new()
+        private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
-            name = "labelMargin",
-            defaultValue = -60,
+            name = "label-margin",
+            defaultValue = 0,
         };
 
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {

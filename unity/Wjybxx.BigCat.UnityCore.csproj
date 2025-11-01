@@ -55,6 +55,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />

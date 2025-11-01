@@ -21,8 +21,14 @@ using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-public class MIntegerField : IntegerField, IField
+public class MIntegerField : IntegerField, IPrefixLabel
 {
+    public MIntegerField() {
+    }
+
+    public MIntegerField(string label) : base(label) {
+    }
+
     public int min { get; set; }
     public int max { get; set; }
     public bool hasMin { get; set; }
@@ -78,10 +84,10 @@ public class MIntegerField : IntegerField, IField
             name = "hasMax",
             defaultValue = false,
         };
-        private readonly UxmlIntAttributeDescription labelMargin = new()
+        private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
-            name = "labelMargin",
-            defaultValue = -60,
+            name = "label-margin",
+            defaultValue = 0,
         };
 
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {

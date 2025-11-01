@@ -24,6 +24,8 @@ namespace Wjybxx.BigCat.UI
 {
 /// <summary>
 /// 视图配置
+///
+/// TODO 数据模型绑定配置？其实对于游戏开发而言，自动数据绑定不那么必要。
 /// </summary>
 [Serializable]
 public class UINodeCfg
@@ -59,27 +61,6 @@ public class UINodeCfg
     public int flags;
 
     /// <summary>
-    /// 展示模式配置
-    /// 
-    /// 注：此为缓存字段，为方便策划配置，持久化数据在<see cref="UINode"/>上。
-    /// </summary>
-    [NonSerialized] public UINodeDisplayCfg displayCfg;
-}
-
-/// <summary>
-/// 视图展示模式配置
-///
-/// TODO 数据模型绑定配置？其实对于游戏开发而言，自动数据绑定不那么必要。
-/// </summary>
-[Serializable]
-public class UINodeDisplayCfg
-{
-    /// <summary>
-    /// 展示模式，0是合法值
-    /// </summary>
-    [Tooltip("展示模式，0表示默认模式")]
-    public int mode = 0;
-    /// <summary>
     /// 当前Node操作的GameObject
     ///
     /// 注：GameObject的名字是有意义的，Node根据Name查找GameObject。
@@ -87,22 +68,15 @@ public class UINodeDisplayCfg
     [Tooltip("当前Node直接控制的文本和按钮等")]
     public List<GameObject> elements = new List<GameObject>();
     /// <summary>
-    /// 当前Node的钩子节点
-    ///
-    /// 注：钩子节点可以重名，即表示将List类型的元素平铺展开。
-    /// </summary>
-    [Tooltip("钩子是需要当前Node特殊控制的节点")]
-    public List<UINode> hooks = new List<UINode>();
-    /// <summary>
     /// 当前Node的子节点
+    ///
+    /// 注：hook与children混合配置以减少不必要的开销，通过name区分即可。
     /// </summary>
-    [Tooltip("子节点之间通常应当等价，父节点不需要区分它们；如果你需要为子节点分配特殊的名字，通常应该实现为钩子节点")]
     public List<UINode> children = new List<UINode>();
-
     /// <summary>
     /// child模板
     /// </summary>
-    [Tooltip("子节点模板，用于父节点动态创建子节点的情况，如ListView")]
+    [Tooltip("子节点模板，用于动态创建子节点的情况，如ListView")]
     public UINode templateChild;
 
     #region util
@@ -121,26 +95,17 @@ public class UINodeDisplayCfg
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public UINode FindChild(string name) {
+    public UINode FindNode(string name) {
         return UIInternal.FindNode(children, name);
     }
 
     /// <summary>
-    /// 查找钩子节点
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    public UINode FindHook(string name) {
-        return UIInternal.FindNode(hooks, name);
-    }
-
-    /// <summary>
-    /// 查询指定name的所有钩子节点
+    /// 查询指定name的所有子节点
     /// </summary>
     /// <param name="name"></param>
     /// <param name="outList"></param>
-    public void FindHooks(string name, List<UINode> outList) {
-        UIInternal.FindNodes(hooks, name, outList);
+    public void FindNodes(string name, List<UINode> outList) {
+        UIInternal.FindNodes(children, name, outList);
     }
 
     #endregion

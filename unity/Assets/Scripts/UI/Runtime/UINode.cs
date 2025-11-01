@@ -48,12 +48,6 @@ public class UINode : MonoBehaviour
     /// </summary>
     public UINodeCfg nodeCfg;
     /// <summary>
-    /// 视图展示配置
-    /// (提到上层以避免过多的嵌套，方便编辑)
-    /// </summary>
-    public UINodeDisplayCfg displayCfg;
-
-    /// <summary>
     /// Node所属的窗口
     /// </summary>
     [NonSerialized] private Window _window;
@@ -96,16 +90,13 @@ public class UINode : MonoBehaviour
     [NonSerialized] private int _reentryId;
     /// <summary>
     /// 在父节点中的索引(hook始终是-1)
+    /// TODO 考虑是否使用Transform中的SiblingIndex代替，即让UINode的GameObject也具有物理的层级关系
     /// </summary>
     [NonSerialized] internal int uiIndex = -1;
     /// <summary>
     /// Node当前控制的元素
     /// </summary>
     [NonSerialized] protected readonly List<GameObject> elements = new List<GameObject>();
-    /// <summary>
-    /// Node当前的钩子节点
-    /// </summary>
-    [NonSerialized] protected readonly List<UINode> hooks = new List<UINode>();
     /// <summary>
     /// Node当前的子节点
     /// </summary>
@@ -137,12 +128,12 @@ public class UINode : MonoBehaviour
 
     private void ResetDisplayElements() {
         elements.Clear();
-        hooks.Clear();
         children.Clear();
-        if (displayCfg.elements.Count > 0) elements.AddRange(displayCfg.elements);
-        if (displayCfg.hooks.Count > 0) hooks.AddRange(displayCfg.hooks);
-        if (displayCfg.children.Count > 0) {
-            children.AddRange(displayCfg.children);
+        if (nodeCfg.elements.Count > 0) {
+            elements.AddRange(nodeCfg.elements);
+        }
+        if (nodeCfg.children.Count > 0) {
+            children.AddRange(nodeCfg.children);
             RefreshChildrenIndex();
         }
     }
@@ -157,9 +148,6 @@ public class UINode : MonoBehaviour
         foreach (GameObject element in elements) {
             element.SetActive(false);
         }
-        foreach (UINode hook in hooks) {
-            hook.Hide();
-        }
         foreach (UINode child in children) {
             child.Hide();
         }
@@ -170,7 +158,6 @@ public class UINode : MonoBehaviour
         _ctl = 0;
         // 清理引用 - OnHide可能存在回收逻辑，因此需放在OnHide后
         elements.Clear();
-        hooks.Clear();
         children.Clear();
     }
 
@@ -183,11 +170,6 @@ public class UINode : MonoBehaviour
     /// </summary>
     /// <param name="firstShow">是否是首次展示</param>
     protected virtual void OnShow(bool firstShow) {
-        foreach (UINode hook in hooks) {
-            if (!hook.IsShowing && hook.enabled) {
-                ShowChild(hook);
-            }
-        }
         foreach (UINode child in children) {
             if (!child.IsShowing && child.enabled) {
                 ShowChild(child);
@@ -203,11 +185,6 @@ public class UINode : MonoBehaviour
     /// </summary>
     public virtual void Repaint() {
         _ctl &= ~UIInternal.MASK_DIRTY_REPAINT;
-        foreach (UINode hook in hooks) {
-            if (hook.IsShowing) {
-                hook.Repaint();
-            }
-        }
         foreach (UINode child in children) {
             if (child.IsShowing) {
                 child.Repaint();
@@ -300,16 +277,6 @@ public class UINode : MonoBehaviour
     }
 
     /// <summary>
-    /// 设置在父节点中的索引。
-    /// 
-    /// 注：该方法用于辅助<see cref="SetChildIndex"/>实现。
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Internal_SetIndex(int index) {
-        uiIndex = index;
-    }
-
-    /// <summary>
     /// 添加child
     /// </summary>
     /// <param name="child"></param>
@@ -382,20 +349,13 @@ public class UINode : MonoBehaviour
         child.Show(_window, this, dataModel);
     }
 
+    /// <summary>
+    /// 查找指定Name的控件
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     public GameObject FindElement(string name) {
         return UIInternal.FindElement(elements, name);
-    }
-
-    public UINode FindChild(string name) {
-        return UIInternal.FindNode(children, name);
-    }
-
-    public UINode FindHook(string name) {
-        return UIInternal.FindNode(hooks, name);
-    }
-
-    public void FindHooks(string name, List<UINode> outList) {
-        UIInternal.FindNodes(hooks, name, outList);
     }
 
     #endregion
@@ -404,7 +364,6 @@ public class UINode : MonoBehaviour
 
     protected virtual void Awake() {
         nodeCfg ??= new UINodeCfg();
-        nodeCfg.displayCfg = displayCfg;
     }
 
     protected virtual void OnEnable() {
@@ -420,15 +379,12 @@ public class UINode : MonoBehaviour
         _dataModel = null;
 
         elements.Clear();
-        hooks.Clear();
         children.Clear();
     }
 
 #if UNITY_EDITOR
     protected virtual void Reset() {
         nodeCfg ??= new UINodeCfg();
-        displayCfg ??= new UINodeDisplayCfg();
-        nodeCfg.displayCfg = displayCfg;
     }
 
     protected virtual void OnValidate() {

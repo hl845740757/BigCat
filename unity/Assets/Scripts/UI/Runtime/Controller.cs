@@ -69,12 +69,5 @@ public abstract class Controller : MonoBehaviour
     /// </summary>
     public virtual void OnHide() {
     }
-
-    /// <summary>
-    /// Node的展示模式变化
-    /// </summary>
-    /// <param name="prevDisplayCfg">前一个展示模式</param>
-    public virtual void OnDisplayModeChanged(UINodeDisplayCfg prevDisplayCfg) {
-    }
 }
 }

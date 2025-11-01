@@ -50,6 +50,7 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// 1.Sheet是不能被直接合并的，因为每个表的元数据可能不同。
 /// 2.追加的元数据不是<see cref="DsonHeader{TK}"/>类型，因为多Header可能造成奇怪的问题。
 /// 3.程序使用的是二进制文件，文本文件更多是用于Diff。
+/// 4.允许表格使用Pointer类型，引用外部配置，反序列化时直接内联回表格。
 ///
 /// TODO 检测所有分表的Tuple类型的长度 -- 必须全部相同。
 /// </summary>
@@ -405,6 +406,7 @@ public class DsonGenerator : ISheetProcessor
 
             DSKeywords.TYPE_DATETIME => new DsonDateTime(ParseDateTime(rawValue)),
             DSKeywords.TYPE_TIMESTAMP => new DsonTimestamp(Timestamp.Parse(rawValue)),
+            DSKeywords.TYPE_POINTER => new DsonPointer(ParsePointer(rawValue)),
             DSKeywords.TYPE_PAIR => ParsePair(rawValue),
             _ => namedType.IsEnum ? ParseEnum(namedType, rawValue) : ParseDefault(namedType, rawValue)
         };
@@ -431,6 +433,9 @@ public class DsonGenerator : ISheetProcessor
     /// <param name="namedType"></param>
     /// <param name="container"></param>
     private DsonValue RepairFieldValue(DSNamedType namedType, DsonValue container) {
+        if (container.DsonType == DsonType.Pointer) {
+            return container; // 允许引用其它地方对象
+        }
         if (DSUtil.IsPairType(namedType)) {
             // 修正value的值
             DSNamedType valueType = (DSNamedType)namedType.TypeArguments[1];
@@ -522,10 +527,7 @@ public class DsonGenerator : ISheetProcessor
         }
         release:
         fieldListPool.Release(fields);
-
-        // 自定义结构和内建结构都支持修正
-        DSTypeHandler handler = _dsRepository.GetTypeHandler(namedType.OriginNamedType.FullName);
-        return handler != null ? handler.ConvertValue(_dsRepository, namedType, container) : container;
+        return container;
     }
 
     private static string? GetClsName(DsonValue container) {
@@ -639,6 +641,35 @@ public class DsonGenerator : ISheetProcessor
         string format = rawValue.IndexOf('T') > 0 ? "yyyy-MM-ddTHH:mm:ss" : "yyyy-MM-dd HH:mm:ss";
         DateTime dateTime = DateTime.ParseExact(rawValue, format, CultureInfo.InvariantCulture);
         return ExtDateTime.OfDateTime(dateTime);
+    }
+
+    private static ObjectPtr ParsePointer(string rawValue) {
+        if (rawValue.StartsWith("@ptr")) { // 缩写形式
+            rawValue = rawValue.Substring(4).Trim();
+            return new ObjectPtr(long.Parse(rawValue));
+        }
+        // 对象形式，替换字符串转换为普通DsonObject
+        rawValue = rawValue.Replace("@ptr", "");
+        DsonObject<string> dsonObject = (DsonObject<string>)Dsons.FromDson(rawValue);
+        //
+        string? collection = null;
+        string? localPath = null;
+        long localId = 0;
+        int type = 0;
+        DsonValue dsonValue;
+        if (dsonObject.TryGetValue(ObjectPtr.NamesCollection, out dsonValue)) {
+            collection = dsonValue.AsString();
+        }
+        if (dsonObject.TryGetValue(ObjectPtr.NamesLocalPath, out dsonValue)) {
+            localPath = dsonValue.AsString();
+        }
+        if (dsonObject.TryGetValue(ObjectPtr.NamesLocalId, out dsonValue)) {
+            localId = dsonValue.AsNumber().LongValue;
+        }
+        if (dsonObject.TryGetValue(ObjectPtr.NamesType, out dsonValue)) {
+            type = dsonValue.AsNumber().IntValue;
+        }
+        return new ObjectPtr(collection, localPath, localId, type);
     }
 
     private static DsonObject<string> ParsePair(string rawValue) {

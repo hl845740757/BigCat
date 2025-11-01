@@ -34,9 +34,8 @@ public sealed class Annotation
     public readonly string type;
     /** 注解值 -- dson格式，object或array */
     public readonly string value;
-
     /** 解析缓存 -- 延迟初始化 */
-    [NonSerialized] private DsonValue? dsonValue;
+    [NonSerialized] private DsonValue? _dsonValue;
 
     public Annotation(string type, string value) {
         this.type = type;
@@ -45,23 +44,18 @@ public sealed class Annotation
 
     public Annotation(string type, DsonValue dsonValue, string? rawValue = null) {
         this.type = type;
-        this.dsonValue = dsonValue ?? throw new ArgumentNullException(nameof(dsonValue));
+        this._dsonValue = dsonValue ?? throw new ArgumentNullException(nameof(dsonValue));
         this.value = rawValue ?? dsonValue.ToDson(ObjectStyle.Flow);
     }
 
-    public DsonValue DsonValue {
-        get {
-            if (dsonValue == null) {
-                dsonValue = Dsons.FromDson(value);
-            }
-            return dsonValue;
-        }
-        set => dsonValue = value; // 用于运行时替换数据
+    public DsonValue dsonValue {
+        get => _dsonValue ??= Dsons.FromDson(value);
+        set => _dsonValue = value; // 用于运行时替换数据
     }
 
-    public DsonObject<string> AsObject() => DsonValue.AsObject();
+    public DsonObject<string> AsObject() => dsonValue.AsObject();
 
-    public DsonArray<string> AsArray() => DsonValue.AsArray();
+    public DsonArray<string> AsArray() => dsonValue.AsArray();
 
     public override string ToString() {
         return $"{nameof(type)}: {type}, {nameof(value)}: {value}";
@@ -176,6 +170,20 @@ public sealed class Annotation
             return defValue;
         }
         return value.IsNumber ? value.AsNumber().DoubleValue : defValue;
+    }
+
+    /// <summary>
+    /// 获取string类型属性值
+    /// </summary>
+    /// <param name="options">表头options</param>
+    /// <param name="key">Key</param>
+    /// <param name="defValue">key不存在时的默认值</param>
+    /// <returns></returns>
+    public static string GetString(DsonObject<string> options, string key, string defValue = null) {
+        if (!options.TryGetValue(key, out DsonValue value)) {
+            return defValue;
+        }
+        return value.DsonType == DsonType.String ? value.AsString() : defValue;
     }
 
     #endregion

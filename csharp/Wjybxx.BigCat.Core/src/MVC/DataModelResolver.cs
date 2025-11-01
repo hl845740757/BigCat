@@ -36,6 +36,7 @@ namespace Wjybxx.BigCat.MVC
 /// 3.字典类型仅支持Int32、Int64、string三种键。
 /// 
 /// PS：非线程安全，应该不会在主线程之外访问。
+/// TODO 改为点号分隔符，规范化
 /// </summary>
 [NotThreadSafe]
 public class DataModelResolver : IDataModelResolver

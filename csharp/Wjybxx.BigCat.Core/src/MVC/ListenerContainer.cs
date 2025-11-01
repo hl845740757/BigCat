@@ -33,12 +33,12 @@ public readonly struct ListenerContainer
     private static readonly ILogger logger = LoggerFactory.GetLogger(typeof(ListenerContainer));
     public readonly SmallDynamicArray<IDataModelListener?> listeners;
 
-    public static ListenerContainer Create(int capacity) {
-        return new ListenerContainer(capacity);
-    }
-
     private ListenerContainer(int capacity) : this() {
         listeners = new SmallDynamicArray<IDataModelListener>(capacity);
+    }
+
+    public static ListenerContainer Create(int capacity) {
+        return new ListenerContainer(capacity);
     }
 
     public void Add(IDataModelListener listener) {

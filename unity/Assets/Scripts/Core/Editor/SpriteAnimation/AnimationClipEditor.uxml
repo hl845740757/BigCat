@@ -7,7 +7,7 @@
         <uie:ToolbarButton text="同步工具" display-tooltip-when-elided="true" name="toolbar1" style="-unity-font-style: bold;" />
     </uie:Toolbar>
     <ui:VisualElement style="height: 100%; width: 100%; flex-direction: row; align-items: stretch; justify-content: flex-start; flex-wrap: nowrap; min-height: auto; flex-grow: 1;">
-        <ui:VisualElement name="inspector-div" style="flex-shrink: 0; width: auto; max-width: 500px; min-width: 300px; display: flex; overflow: visible;">
+        <ui:VisualElement name="inspector-div" style="flex-shrink: 1; width: auto; max-width: 500px; min-width: 300px; display: flex; overflow: visible;">
             <ui:VisualElement style="flex-shrink: 0; border-bottom-width: 1px; border-left-color: rgb(153, 153, 153); border-right-color: rgb(153, 153, 153); border-top-color: rgb(153, 153, 153); border-bottom-color: rgb(153, 153, 153);">
                 <ui:VisualElement style="flex-direction: row; height: auto; min-height: 18px; justify-content: space-between; flex-shrink: 0;">
                     <ui:Label text="文件列表：(可拖拽添加)" display-tooltip-when-elided="true" enable-rich-text="true" tooltip="可支持多个对象，置顶对象使用属性栏" />
@@ -21,16 +21,16 @@
             <ui:VisualElement style="display: flex; flex-shrink: 0; border-top-width: 0; border-left-color: rgb(140, 140, 140); border-right-color: rgb(140, 140, 140); border-top-color: rgb(140, 140, 140); border-bottom-color: rgb(140, 140, 140);">
                 <ui:VisualElement name="batch-div" style="flex-shrink: 0; border-top-color: rgb(161, 161, 161); border-bottom-color: rgb(134, 134, 134); border-top-width: 0; border-bottom-width: 1px;">
                     <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: flex-end; flex-wrap: nowrap;">
-                        <uie:Vector2Field label="批量·坐标" name="batch-position" style="flex-direction: column; align-items: flex-start; min-width: auto;" />
-                        <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0;">
+                        <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="batch-position" label="批量·坐标" label-margin="0" xyz-flex-basis="60" style="flex-shrink: 1; flex-grow: 1;" />
+                        <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0; flex-shrink: 0;">
                             <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-position-add" tooltip="所有帧的坐标加上指定值" />
                             <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-position-set" tooltip="设置所有帧的坐标" />
                             <ui:Button text="Lerp" display-tooltip-when-elided="true" tooltip="以第一帧的坐标为基础线性插值" name="batch-position-lerp" />
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: flex-end; flex-wrap: nowrap;">
-                        <uie:Vector2Field label="批量·缩放" name="batch-scale" x="1" y="1" style="flex-direction: column; align-items: flex-start; min-width: auto;" />
-                        <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0;">
+                        <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="batch-scale" label="批量·缩放" label-margin="0" xyz-flex-basis="60" style="flex-shrink: 1; flex-grow: 1;" />
+                        <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0; flex-shrink: 0;">
                             <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-scale-add" tooltip="所有帧的缩放加上指定值" />
                             <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-scale-set" tooltip="设置所有帧的缩放" />
                             <ui:Button text="Lerp" display-tooltip-when-elided="true" tooltip="以第一帧的缩放为基础线性插值" name="batch-scale-lerp" />
@@ -92,7 +92,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="preview-area" style="height: 100%; align-items: flex-start; justify-content: flex-start; position: relative; top: auto; left: auto; flex-wrap: nowrap; flex-direction: column; flex-shrink: 0; min-height: auto; min-width: 300px; display: flex; margin-left: 10px; margin-right: 0; transform-origin: center; width: auto; flex-grow: 1; overflow: visible;">
+        <ui:VisualElement name="preview-area" style="height: 100%; align-items: flex-start; justify-content: flex-start; position: relative; top: auto; left: auto; flex-wrap: nowrap; flex-direction: column; flex-shrink: 1; min-height: auto; min-width: 300px; display: flex; margin-left: 10px; margin-right: 0; transform-origin: center; width: auto; flex-grow: 1; overflow: visible;">
             <ui:VisualElement name="frame-area-div" style="overflow: hidden;">
                 <ui:VisualElement name="frame-area" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; min-width: 400px; min-height: 300px; flex-shrink: 0; transform-origin: center; align-items: flex-start; position: relative; left: 0; top: 0;">
                     <ui:VisualElement name="frame-pivot-icon" style="flex-shrink: 0; width: 1px; height: 1px; border-left-color: rgb(248, 255, 0); border-right-color: rgb(248, 255, 0); border-top-color: rgb(248, 255, 0); border-bottom-color: rgb(248, 255, 0); border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-left-radius: 1px; border-top-right-radius: 1px; border-bottom-right-radius: 1px; border-bottom-left-radius: 1px; position: absolute;" />

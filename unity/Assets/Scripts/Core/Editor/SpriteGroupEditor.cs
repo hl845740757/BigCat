@@ -29,7 +29,6 @@ namespace Wjybxx.BigCat.CoreEditor
 public class SpriteGroupEditor : Editor
 {
     private SpriteGroup _group;
-
     private Vector2 scrollPos;
     private GUILayoutOption[] scrollOptions;
     //
@@ -38,12 +37,7 @@ public class SpriteGroupEditor : Editor
 
     private void Awake() {
         _group = target as SpriteGroup;
-
-        scrollOptions = new[]
-        {
-            GUILayout.MaxHeight(440),
-            // GUILayout.ExpandHeight(true),
-        };
+        scrollOptions = new[] { GUILayout.MaxHeight(440) };
     }
 
     private void OnEnable() {
@@ -146,13 +140,15 @@ public class SpriteGroupEditor : Editor
         groupAssetDir = groupAssetDir.Substring(0, groupAssetDir.LastIndexOf('/'));
         for (int index = 0; index < _group.sprites.Length; index++) {
             Sprite sprite = _group[index];
-            if (!sprite) continue;
-
+            if (!sprite) {
+                nullIndexes.Add(index);
+                continue;
+            }
             string assetPath = AssetDatabase.GetAssetPath(sprite);
             if (assetPath.StartsWith(groupAssetDir) && assetPath[groupAssetDir.Length] == '/') {
                 continue; // 仍在当前目录下
             }
-            _group[index] = null; // 只增不删，保持索引稳定
+            _group[index] = null;
             nullIndexes.Add(index);
         }
         // dataPath是以assets结尾的
@@ -163,12 +159,8 @@ public class SpriteGroupEditor : Editor
             }
             string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
             Sprite sprite = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Sprite)) as Sprite;
-            if (!sprite) {
-                continue;
-            }
-            if (!spriteSet.Add(sprite)) {
-                continue;
-            }
+            if (!sprite) continue;
+            if (!spriteSet.Add(sprite)) continue;
             tempSprites.Add(sprite);
         }
         // 图片通常命名为数字类型，尽量让数字小的排前面

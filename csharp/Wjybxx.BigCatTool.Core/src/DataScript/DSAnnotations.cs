@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Wjybxx.Commons;
 using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCatTool.DataScript
@@ -111,22 +112,27 @@ public static class DSAnnotations
     /// <summary>
     /// 类型或字段的编辑器基础选项
     /// 
-    /// 语法：<code>// @Editor{ displayName: Vector3, displayType: Vector3, tooltip: "Tip", dsonType: Pointer }</code>
-    /// - displayName 展示名；如果不配置，默认为类型名或字段名
+    /// 语法：<code>// @Editor{ displayType: Vector3, displayName: Vector3, tooltip: "Tip", dsonType: Pointer }</code>
     /// - displayType 展示类型，枚举名见代码
+    /// - displayName 字段展示别名；默认为类型名或字段名
     /// - tooltip 类型和字段tip
-    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr。
+    ///
     /// - min 数字类型的最小值
     /// - max 数字类型的最大值
-    /// - initNull bool类型，是否将字段初始化为null值，不适用List和Map字段
+    /// - initNull bool类型，是否将字段初始化为null值
+    /// - isDelayed 是否延迟响应输入
+    /// - isMultiline 是否是多行文本
+    /// - isInteger 是否是整数类型AABB
+    /// 
+    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr，Pointer。
     /// - menuPath 字符串类型，节点菜单路径，用于配置脚本
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
     /// 编辑器风格字段
     ///
-    /// - isDelayed bool类型，表示输入是否在用户按下回车时或退出Focus时才执行
-    /// - scrollView bool类型，表示List和Map是否启用滚动视图
+    /// - maxWidth 最大宽度
+    /// - maxHeight 最大高度
     /// </summary>
     public const string EDITOR_STYLE = "EditorStyle";
 
@@ -134,9 +140,13 @@ public static class DSAnnotations
     /// 端口字段
     ///
     /// 语法：<code>// @NodePort{ side: Right }</code>
-    /// - side 端口的显示位置：Left、Right、Bottom，未指定的情况下默认Right
-    ///
-    /// 注：当List内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
+    /// - side 端口的显示位置；Left、Right、Bottom，未指定的情况下默认Right。
+    /// - fieldPath 端口关联的字段路径；当配置该属性时，表示该注解不用于将当前字段展示为Port，而是在内部字段展示为Port；
+    /// 注意，不支持导出List/Map元素导出为Port，即途中不能经过List/Map类型节点。
+    /// 
+    /// 注：
+    /// 1.当List内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
+    /// 2.如果字段是<see cref="ObjectPath"/>类型，表示导出为引用，否则表示内联。
     /// </summary>
     public const string PORT_FIELD = "PortField";
 
@@ -145,7 +155,7 @@ public static class DSAnnotations
     /// 
     /// 语法：<code>// @PopField{ value: 1, displayName: AABB }</code>
     /// - value 字段对应的值
-    /// - displayName 字段的展示名；如果是string字段，无需配置
+    /// - displayName 字段的展示名；如果是string字段，暂无需配置
     ///
     /// 注：Pop字段通常和分支字段配套使用，实现标签类；也用于IntMask字段。
     /// </summary>
@@ -208,22 +218,32 @@ public static class DSAnnotations
     private const string KEY_CTX = "ctx";
 
     // Editor
-    public const string KEY_DISPLAY_NAME = "displayName";
     public const string KEY_DISPLAY_TYPE = "displayType";
+    public const string KEY_DISPLAY_NAME = "displayName";
     public const string KEY_TOOLTIP = "tooltip";
+
     public const string KEY_DSON_TYPE = "dsonType";
+    public const string KEY_MENU_PATH = "menuPath";
+
     public const string KEY_MIN = "min";
     public const string KEY_MAX = "max";
     public const string KEY_INIT_NULL = "initNull";
-    public const string KEY_SKIP_NULL = "skipNull";
+    public const string KEY_IS_DELAYED = "isDelayed";
+    public const string KEY_IS_MULTILINE = "isMultiline";
+    public const string KEY_IS_INTEGER = "isInteger";
 
-    public const string KEY_SIDE = "side";
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";
+    public const string KEY_SIDE = "side";
+    public const string KEY_FIELD_PATH = "fieldPath";
 
-    public const string KEY_MENU_PATH = "menuPath";
-    public const string KEY_IS_DELAYED = "isDelayed";
-    public const string KEY_SCROLL_VIEW = "scrollView";
+    public const string KEY_MAX_WIDTH = "maxWidth";
+    public const string KEY_MAX_HEIGHT = "maxHeight";
+    public const string KEY_LABEL_MARGIN = "labelMargin";
+    public const string KEY_X_LABEL_MARGIN = "xLabelMargin";
+    public const string KEY_Y_LABEL_MARGIN = "yLabelMargin";
+    public const string KEY_Z_LABEL_MARGIN = "zLabelMargin";
+    public const string KEY_W_LABEL_MARGIN = "wLabelMargin";
 
     #endregion
 }

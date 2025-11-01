@@ -877,7 +877,7 @@ public class CodeGeneratorHelper
             // 由于可能存在继承，需要先调用超类方法 -- 而且参数也需要调整，一致
             equalsBuilder = MethodSpec.NewMethodBuilder("EqualsHelper").Returns(TypeName.BOOL);
             if (namedType.BaseType != null) {
-                TypeName rootTypeName = GetTypeName(DSUtil.GetRootType(namedType));
+                TypeName rootTypeName = GetTypeName(GetRootType(namedType));
                 equalsBuilder.AddModifiers(Modifiers.Protected | Modifiers.Override)
                     .AddParameter(rootTypeName, "_other");
                 // 先强转，如果类型错误直接抛出异常，避免超类无效代码
@@ -891,7 +891,7 @@ public class CodeGeneratorHelper
         // 逐字段比较
         CodeBlock.Builder codeBuilder = equalsBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
+            DsonObject<string> fieldOptions = GetOptions(field);
             if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_EQUAL)) {
                 continue;
             }
@@ -986,6 +986,8 @@ public class CodeGeneratorHelper
                 DSKeywords.TYPE_BOOL => true,
                 DSKeywords.TYPE_STRING => true,
                 DSKeywords.TYPE_DATETIME => true,
+                DSKeywords.TYPE_TIMESTAMP => true,
+                DSKeywords.TYPE_POINTER => true,
                 DSKeywords.TYPE_NULLABLE => UsingEqualsOperator(((DSNamedType)typeElement).TypeArguments[0]), // Nullable需要检测Value
                 _ => false
             };
@@ -1050,10 +1052,10 @@ public class CodeGeneratorHelper
             if (IsPrimitiveType(field.Type)) {
                 // 基本类型直接调用StringBuilder的Append，避免额外的ToString调用
                 codeBuilder.Add("this.$L", fieldName);
-            } else if (DSUtil.IsDateTimeType(field.Type)) {
+            } else if (IsDateTimeType(field.Type)) {
                 // DateTime指定ISO8601格式
                 codeBuilder.Add("this.$L.ToString(\"s\")", fieldName);
-            } else if (DSUtil.IsNullableType(field.Type)) {
+            } else if (IsNullableType(field.Type)) {
                 // Nullable我们追加Null -- 默认的ToString返回的是空字符串
                 codeBuilder.Add("this.$L != null ? this.$L.ToString() :  \"null\"", fieldName, fieldName);
             } else if (field.Type.IsValueType) {

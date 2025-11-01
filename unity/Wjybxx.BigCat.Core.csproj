@@ -149,8 +149,8 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\MVC\WindowCmdMgr.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcMethodKey.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\WorkerControlData.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SComponent.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\LongPair.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SComponent.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Wjybxx.BigCat.Core.asmdef" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\package.json" />
     <Reference Include="UnityEngine">

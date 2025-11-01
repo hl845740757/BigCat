@@ -16,46 +16,39 @@
 
 #endregion
 
-using System;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-/// <summary>
-/// TODO 是否考虑支持到毫秒？
-/// </summary>
-public class DateTimeField : BindableElement, INotifyValueChanged<DateTime>, IPrefixLabel
+public class Euler32Field : BindableElement, INotifyValueChanged<Euler32>, IPrefixLabel
 {
-    private Foldout _foldout;
-    private Vector3IntField _dateField;
-    private Vector3IntField _timeField;
-
-    private DateTime _value;
+    private Vector3IntField _field;
+    private Euler32 _value;
     private bool _rebuildingValue;
 
-    public DateTimeField() {
+    public Euler32Field() {
     }
 
     public string label {
         get {
             EnsureInited();
-            return _foldout.text;
+            return _field.label;
         }
         set {
             EnsureInited();
-            _foldout.text = value;
+            _field.label = value;
         }
     }
 
-    public DateTime value {
+    public Euler32 value {
         get {
             EnsureInited();
             return _value;
         }
-
         set {
             EnsureInited();
             if (_value == value) {
@@ -65,7 +58,7 @@ public class DateTimeField : BindableElement, INotifyValueChanged<DateTime>, IPr
                 this.SetValueWithoutNotify(value);
                 return;
             }
-            using (ChangeEvent<DateTime> pooled = ChangeEvent<DateTime>.GetPooled(_value, value)) {
+            using (ChangeEvent<Euler32> pooled = ChangeEvent<Euler32>.GetPooled(_value, value)) {
                 pooled.target = this;
                 this.SetValueWithoutNotify(value);
                 this.SendEvent(pooled);
@@ -73,28 +66,22 @@ public class DateTimeField : BindableElement, INotifyValueChanged<DateTime>, IPr
         }
     }
 
-    public void SetValueWithoutNotify(DateTime newValue) {
+    public void SetValueWithoutNotify(Euler32 newValue) {
         EnsureInited();
         _value = newValue;
         if (_rebuildingValue) {
             return;
         }
-        _dateField.SetValueWithoutNotify(new Vector3Int(newValue.Year, newValue.Month, newValue.Day));
-        _timeField.SetValueWithoutNotify(new Vector3Int(newValue.Hour, newValue.Minute, newValue.Second));
+        _field.SetValueWithoutNotify(newValue);
     }
 
     /// <summary>
     /// 获取实时值
     /// </summary>
-    public DateTime GetRealtimeValue() {
+    public Euler32 GetRealtimeValue() {
         EnsureInited();
-        int year = _dateField.value.x;
-        int month = _dateField.value.y;
-        int day = _dateField.value.z;
-        int hour = _timeField.value.x;
-        int minute = _timeField.value.y;
-        int second = _timeField.value.z;
-        return new DateTime(year, month, day, hour, minute, second);
+        Vector3Int newValue = _field.value;
+        return new Euler32(newValue.x, newValue.y, newValue.z);
     }
 
     /// <summary>
@@ -116,61 +103,46 @@ public class DateTimeField : BindableElement, INotifyValueChanged<DateTime>, IPr
     }
 
     private void EnsureInited() {
-        if (childCount == 0 || _foldout != null) {
+        if (childCount == 0 || _field != null) {
             return; // Tip创建的临时对象或已初始化
         }
-        _foldout = this.Q<Foldout>();
-        _dateField = this.Q<Vector3IntField>("date");
-        _timeField = this.Q<Vector3IntField>("time");
-        _dateField.RegisterValueChangedCallback(OnDateFieldValueChanged);
-        _timeField.RegisterValueChangedCallback(OnTimeFieldValueChanged);
+        _field = this.Q<Vector3IntField>();
+        _field.RegisterValueChangedCallback(OnFieldValueChanged);
         //
         RebuildValue(false);
     }
 
-    private void OnDateFieldValueChanged(ChangeEvent<Vector3Int> evt) {
+    private void OnFieldValueChanged(ChangeEvent<Vector3Int> evt) {
         evt.StopPropagation();
-        Vector3Int newValue = evt.newValue;
-        int year = newValue.x;
-        int month = Mathf.Clamp(newValue.y, 1, 12);
-        int daysInMonth = DateTime.DaysInMonth(year, month); // 动态修正Day范围
-        int day = Math.Clamp(newValue.z, 1, daysInMonth);
-        _dateField.SetValueWithoutNotify(new Vector3Int(year, month, day));
-        RebuildValue();
-    }
-
-    private void OnTimeFieldValueChanged(ChangeEvent<Vector3Int> evt) {
-        evt.StopPropagation();
-        Vector3Int newValue = evt.newValue;
-        int hour = Mathf.Clamp(newValue.x, 0, 23);
-        int minute = Mathf.Clamp(newValue.y, 0, 59);
-        int second = Mathf.Clamp(newValue.z, 0, 59);
-        _timeField.SetValueWithoutNotify(new Vector3Int(hour, minute, second));
+        Vector3Int newValue = _field.value;
+        newValue.x = (int)Mathf.Repeat(newValue.x, 360);
+        newValue.y = (int)Mathf.Repeat(newValue.y, 360);
+        newValue.z = (int)Mathf.Repeat(newValue.z, 360);
+        _field.SetValueWithoutNotify(newValue);
         RebuildValue();
     }
 
     #region uxml
 
-    private const string UXML_PATH = "Assets/Scripts/Core/Editor/UIElements/DateTimeField.uxml";
+    private const string UXML_PATH = "Assets/Scripts/Core/Editor/UIElements/Euler32Field.uxml";
 
-    public static DateTimeField Create() {
+    public static Euler32Field Create() {
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML_PATH);
-        DateTimeField field = (DateTimeField)visualTree.CloneTree()[0];
+        Euler32Field field = (Euler32Field)visualTree.CloneTree()[0];
         field.SetValueWithoutNotify(default); // xml中可能有默认值
         return field;
     }
 
-    public new class UxmlFactory : UxmlFactory<DateTimeField, UxmlTraits>
+    public new class UxmlFactory : UxmlFactory<Euler32Field, UxmlTraits>
     {
     }
 
     public new class UxmlTraits : BindableElement.UxmlTraits
     {
-        // 初始化方法：将 UXML 属性值赋给元素实例
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
-            var myView = (DateTimeField)ve;
-            ve.schedule.Execute(() => { myView.EnsureInited(); }).StartingIn(0);
+            var myView = (Euler32Field)ve;
+            myView.schedule.Execute(() => myView.EnsureInited());
         }
     }
 

@@ -55,8 +55,12 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
 
     public MinMaxAABB(float minX, float minY, float minZ,
                       float maxX, float maxY, float maxZ) {
-        min = new Vector3(minX, minY, minZ);
-        max = new Vector3(maxX, maxY, maxZ);
+        min.x = minX;
+        min.y = minY;
+        min.z = minZ;
+        max.x = maxX;
+        max.y = maxY;
+        max.z = maxZ;
     }
 
     /// <summary>
@@ -157,40 +161,6 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
     }
 
     /// <summary>
-    /// 按照2D格式翻转左右，Z轴数据保持不变
-    /// </summary>
-    /// <param name="baseX">翻转轴的X坐标</param>
-    /// <returns></returns>
-    public MinMaxAABB FlipX2D(float baseX) {
-        float maxX = baseX + (baseX - min.x); // delta
-        float minX = maxX - (max.x - min.x); // width
-        return new MinMaxAABB(minX, min.y, min.z, maxX, max.y, max.z);
-    }
-
-    /// <summary>
-    /// 按照2D格式翻转上下，Z轴数据保持不变
-    /// </summary>
-    /// <param name="baseY">翻转轴的Y坐标</param>
-    /// <returns></returns>
-    public MinMaxAABB FlipY2D(float baseY) {
-        float maxY = baseY + (baseY - min.y); // delta
-        float minY = maxY - (max.y - min.y); // height
-        return new MinMaxAABB(min.x, minY, min.z, max.x, maxY, max.z);
-    }
-
-    /// <summary>
-    /// AABB是否包含目标点
-    /// </summary>
-    /// <param name="point"></param>
-    /// <returns></returns>
-    public bool Contains(Vector3 point) {
-        if (point.x < min.x || point.x > max.x) return false;
-        if (point.y < min.y || point.y > max.y) return false;
-        if (point.z < min.z || point.z > max.z) return false;
-        return true;
-    }
-
-    /// <summary>
     /// 确保AABB包含目标点
     /// </summary>
     /// <param name="point"></param>
@@ -211,6 +181,18 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
     public void Encapsulate(MinMaxAABB aabb) {
         Encapsulate(aabb.min);
         Encapsulate(aabb.max);
+    }
+
+    /// <summary>
+    /// AABB是否包含目标点
+    /// </summary>
+    /// <param name="point"></param>
+    /// <returns></returns>
+    public bool Contains(Vector3 point) {
+        if (point.x < min.x || point.x > max.x) return false;
+        if (point.y < min.y || point.y > max.y) return false;
+        if (point.z < min.z || point.z > max.z) return false;
+        return true;
     }
 
     #region util
@@ -265,12 +247,70 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
 
     /// <summary>
     /// 计算AABB上距离给定点最近的点
+    /// (用于计算和球体的碰撞)
     /// </summary>
     public Vector3 NearestPoint(Vector3 point) {
         float x = Mathf.Clamp(point.x, min.x, max.x);
         float y = Mathf.Clamp(point.y, min.y, max.y);
         float z = Mathf.Clamp(point.z, min.z, max.z);
         return new Vector3(x, y, z);
+    }
+
+    /// <summary>
+    /// 按照2D格式翻转左右，Z轴数据保持不变
+    /// </summary>
+    /// <param name="baseX">翻转轴的X坐标</param>
+    /// <returns></returns>
+    public MinMaxAABB FlipX2D(float baseX) {
+        float maxX = baseX + (baseX - min.x); // delta
+        float minX = maxX - (max.x - min.x); // width
+        return new MinMaxAABB(minX, min.y, min.z, maxX, max.y, max.z);
+    }
+
+    /// <summary>
+    /// 按照2D格式翻转上下，Z轴数据保持不变
+    /// </summary>
+    /// <param name="baseY">翻转轴的Y坐标</param>
+    /// <returns></returns>
+    public MinMaxAABB FlipY2D(float baseY) {
+        float maxY = baseY + (baseY - min.y); // delta
+        float minY = maxY - (max.y - min.y); // height
+        return new MinMaxAABB(min.x, minY, min.z, max.x, maxY, max.z);
+    }
+
+    /// <summary>
+    /// 以2D方式旋转
+    /// (适用于简单场景，复杂需求请使用矩阵缓存中间过程)
+    /// </summary>
+    /// <param name="box">box</param>
+    /// <param name="pivot">旋转轴心点</param>
+    /// <param name="angleDeg">旋转角度</param>
+    /// <returns></returns>
+    public static MinMaxAABB Rotate2D(MinMaxAABB box, Vector2 pivot, float angleDeg) {
+        if (angleDeg == 0) {
+            return box;
+        }
+        float theta = -1 * Mathf.Deg2Rad * angleDeg;
+        float cosT = Mathf.Cos(theta);
+        float sinT = Mathf.Sin(theta);
+        Vector3 p0 = Rotate(box.min, pivot, cosT, sinT);
+        Vector3 p1 = Rotate(box.GetVertex(1), pivot, cosT, sinT);
+        Vector3 p2 = Rotate(box.GetVertex(2), pivot, cosT, sinT);
+        Vector3 p3 = Rotate(box.GetVertex(3), pivot, cosT, sinT);
+        //
+        MinMaxAABB aabb = OfVertices(p0, p1);
+        aabb.Encapsulate(p2);
+        aabb.Encapsulate(p3);
+        aabb.max.z = box.max.z;
+        return aabb;
+    }
+
+    private static Vector3 Rotate(Vector3 point, Vector2 pivot, float cosT, float sinT) {
+        float relativeX = point.x - pivot.x;
+        float relativeY = point.y - pivot.y;
+        float newRelativeX = relativeX * cosT - relativeY * sinT;
+        float newRelativeY = relativeX * sinT + relativeY * cosT;
+        return new Vector3(newRelativeX + pivot.x, newRelativeY + pivot.y, point.z);
     }
 
     /// <summary>

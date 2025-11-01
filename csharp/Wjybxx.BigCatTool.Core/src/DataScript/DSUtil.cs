@@ -192,6 +192,15 @@ public static class DSUtil
     }
 
     /// <summary>
+    /// 是否是字节数组类型
+    /// </summary>
+    /// <param name="typeElement"></param>
+    /// <returns></returns>
+    public static bool IsBytesType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_BYTES;
+    }
+
+    /// <summary>
     /// 是否是日期时间类型
     /// </summary>
     public static bool IsDateTimeType(DSElement typeElement) {

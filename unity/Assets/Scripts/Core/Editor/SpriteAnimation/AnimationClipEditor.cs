@@ -93,6 +93,7 @@ public partial class AnimationClipEditor : EditorWindow
             BindBoxElements(context, true);
             BindBoxElements(context, false);
         }
+        BindFrameInfoElements();
         this.rootVisualElement.schedule.Execute(_ => RefreshPreviewArea(true));
     }
 
@@ -266,7 +267,7 @@ public partial class AnimationClipEditor : EditorWindow
         _bgColorField.RegisterValueChangedCallback(OnBackgroundColorChanged);
         _imagePickIgnoreToggle.RegisterValueChangedCallback(OnPickIgnoreChanged);
         //
-        UnityEditorUtil.SetFieldLabelMargin(_playToggle, -70);
+        _playToggle.SetLabelMargin(-70);
         _playToggle.SetValueWithoutNotify(false);
         _playToggle.RegisterValueChangedCallback(OnPlayToggleChanged);
         _playTimeSlider.SetValueWithoutNotify(0);
@@ -1461,7 +1462,7 @@ public partial class AnimationClipEditor : EditorWindow
         // Import UXML
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Scripts/Core/Editor/SpriteAnimation/AnimationClipEditor.uxml");
         VisualElement clonedTree = visualTree.CloneTree();
-        ScrollView scrollView = new ScrollView(); // 编辑器里不能直接使用ScrollView...
+        ScrollView scrollView = new ScrollView();
         scrollView.contentContainer.Add(clonedTree);
         scrollView.contentContainer.style.flexDirection = FlexDirection.Column;
         // scrollView.contentContainer.style.flexWrap = Wrap.Wrap;

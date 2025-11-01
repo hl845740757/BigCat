@@ -21,12 +21,14 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Wjybxx.BigCat.Core;
 using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-public class TimestampField : BindableElement, INotifyValueChanged<Timestamp>, IField
+/// <summary>
+/// TODO 预览功能
+/// </summary>
+public class TimestampField : BindableElement, INotifyValueChanged<Timestamp>, IPrefixLabel
 {
     private Label labelElement;
     private LongField _secondsField;

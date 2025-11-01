@@ -51,10 +51,6 @@ public sealed class DSRepository
     /// key为文件简单名
     /// </summary>
     private readonly LinkedDictionary<string, DSFile> logicFileMap = new();
-    /// <summary>
-    /// 扩展工具类
-    /// </summary>
-    private readonly Dictionary<string, DSTypeHandler> handlerMap = new();
 
     /// <summary>
     /// 元素名到元素的映射，用于解决查询效率问题
@@ -146,10 +142,6 @@ public sealed class DSRepository
     /// 逻辑文件字典(包含虚拟文件)
     /// </summary>
     public LinkedDictionary<string, DSFile> LogicFileMap => logicFileMap;
-    /// <summary>
-    /// 所有的Handler--可按应用修改
-    /// </summary>
-    public Dictionary<string, DSTypeHandler> HandlerMap => handlerMap;
 
     #endregion
 
@@ -267,26 +259,6 @@ public sealed class DSRepository
             throw new ArgumentException("invalid typeName: " + typeName);
         }
         return result;
-    }
-
-    /// <summary>
-    /// 添加类型关联的handler
-    /// 
-    /// </summary>
-    /// <param name="fullName">FileName.A.B</param>
-    /// <param name="handler"></param>
-    public void AddTypeHandler(string fullName, DSTypeHandler handler) {
-        handlerMap.Add(fullName, handler);
-    }
-
-    /// <summary>
-    /// 获取类型关联的handler
-    /// </summary>
-    /// <param name="fullName">FileName.A.B</param>
-    /// <returns></returns>
-    public DSTypeHandler? GetTypeHandler(string fullName) {
-        handlerMap.TryGetValue(fullName, out DSTypeHandler handler);
-        return handler;
     }
 
     #endregion

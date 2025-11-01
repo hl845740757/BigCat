@@ -22,7 +22,7 @@ using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-public class MVector3Field : Vector3Field, IField
+public class MVector3Field : Vector3Field, IPrefixLabel
 {
     private bool _isReadOnly;
     private bool _isDelayed;
@@ -98,53 +98,53 @@ public class MVector3Field : Vector3Field, IField
 
     public new class UxmlTraits : Vector3Field.UxmlTraits
     {
-        private readonly UxmlBoolAttributeDescription isReadonly = new UxmlBoolAttributeDescription()
+        private readonly UxmlBoolAttributeDescription isReadonly = new()
         {
             name = "isReadonly",
             defaultValue = false
         };
-        private readonly UxmlBoolAttributeDescription isDelayed = new UxmlBoolAttributeDescription()
+        private readonly UxmlBoolAttributeDescription isDelayed = new()
         {
             name = "isDelayed",
             defaultValue = false
         };
-        private readonly UxmlStringAttributeDescription xLabel = new UxmlStringAttributeDescription()
+        private readonly UxmlStringAttributeDescription xLabel = new()
         {
             name = "x-label",
             defaultValue = "X"
         };
-        private readonly UxmlStringAttributeDescription yLabel = new UxmlStringAttributeDescription()
+        private readonly UxmlStringAttributeDescription yLabel = new()
         {
             name = "y-label",
             defaultValue = "Y"
         };
-        private readonly UxmlStringAttributeDescription zLabel = new UxmlStringAttributeDescription()
+        private readonly UxmlStringAttributeDescription zLabel = new()
         {
             name = "z-label",
             defaultValue = "Z"
         };
 
-        private readonly UxmlIntAttributeDescription labelMargin = new()
+        private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
             name = "label-margin",
-            defaultValue = -60,
+            defaultValue = 0,
         };
-        private readonly UxmlIntAttributeDescription xLabelMargin = new()
+        private readonly UxmlFloatAttributeDescription xLabelMargin = new()
         {
             name = "x-label-margin",
             defaultValue = 0,
         };
-        private readonly UxmlIntAttributeDescription yLabelMargin = new()
+        private readonly UxmlFloatAttributeDescription yLabelMargin = new()
         {
             name = "y-label-margin",
             defaultValue = 0,
         };
-        private readonly UxmlIntAttributeDescription zLabelMargin = new()
+        private readonly UxmlFloatAttributeDescription zLabelMargin = new()
         {
             name = "z-label-margin",
             defaultValue = 0,
         };
-        private readonly UxmlFloatAttributeDescription xyzFlexBasis = new UxmlFloatAttributeDescription()
+        private readonly UxmlFloatAttributeDescription xyzFlexBasis = new()
         {
             name = "xyz-flex-basis",
             defaultValue = 120,

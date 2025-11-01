@@ -29,7 +29,7 @@ namespace Wjybxx.BigCat.CoreEditor.UIElements
 /// <summary>
 /// 注意：不要手动修改xml中变量的label
 /// </summary>
-public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IField
+public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IPrefixLabel
 {
     private const int MODE_MIN_MAX = 0;
     private const int MODE_MIN_SIZE = 1;
@@ -274,7 +274,7 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IFiel
 
     public new class UxmlTraits : BindableElement.UxmlTraits
     {
-        private readonly UxmlBoolAttributeDescription isInteger = new UxmlBoolAttributeDescription
+        private readonly UxmlBoolAttributeDescription isInteger = new()
         {
             name = "isInteger"
         };

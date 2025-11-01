@@ -94,7 +94,6 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSFileParser.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFileParser.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBOneof.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSTypeHandler.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\SheetRow.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSElementKind.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\package.json" />

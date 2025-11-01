@@ -21,8 +21,14 @@ using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-public class MDoubleField : DoubleField, IField
+public class MDoubleField : DoubleField, IPrefixLabel
 {
+    public MDoubleField() {
+    }
+
+    public MDoubleField(string label) : base(label) {
+    }
+
     public double min { get; set; }
     public double max { get; set; }
     public bool hasMin { get; set; }
@@ -55,7 +61,7 @@ public class MDoubleField : DoubleField, IField
     {
     }
 
-    public new class UxmlTraits : TextValueFieldTraits<double, UxmlDoubleAttributeDescription>
+    public new class UxmlTraits : DoubleField.UxmlTraits
     {
         private readonly UxmlDoubleAttributeDescription minAttribute = new()
         {
@@ -77,10 +83,10 @@ public class MDoubleField : DoubleField, IField
             name = "hasMax",
             defaultValue = false,
         };
-        private readonly UxmlIntAttributeDescription labelMargin = new()
+        private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
-            name = "labelMargin",
-            defaultValue = -60,
+            name = "label-margin",
+            defaultValue = 0,
         };
 
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {

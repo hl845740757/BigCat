@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Wjybxx.BigCat.CoreEditor.UIElements.Euler32Field name="object-content" style="flex-grow: 0; justify-content: flex-start; align-items: stretch; height: auto; max-height: none; flex-direction: column;">
+        <Wjybxx.BigCat.CoreEditor.UIElements.MVector3IntField name="xyz-input" xyz-flex-basis="60" isDelayed="true" />
+    </Wjybxx.BigCat.CoreEditor.UIElements.Euler32Field>
+</ui:UXML>

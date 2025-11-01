@@ -21,8 +21,14 @@ using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.UIElements
 {
-public class MLongField : LongField, IField
+public class MLongField : LongField, IPrefixLabel
 {
+    public MLongField() {
+    }
+
+    public MLongField(string label) : base(label) {
+    }
+
     public long min { get; set; }
     public long max { get; set; }
     public bool hasMin { get; set; }
@@ -55,7 +61,7 @@ public class MLongField : LongField, IField
     {
     }
 
-    public new class UxmlTraits : TextValueFieldTraits<long, UxmlLongAttributeDescription>
+    public new class UxmlTraits : LongField.UxmlTraits
     {
         private readonly UxmlLongAttributeDescription minAttribute = new()
         {
@@ -77,10 +83,10 @@ public class MLongField : LongField, IField
             name = "hasMax",
             defaultValue = false,
         };
-        private readonly UxmlIntAttributeDescription labelMargin = new()
+        private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
-            name = "labelMargin",
-            defaultValue = -60,
+            name = "label-margin",
+            defaultValue = 0,
         };
 
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {

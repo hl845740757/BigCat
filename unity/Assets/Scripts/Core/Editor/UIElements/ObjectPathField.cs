@@ -30,7 +30,7 @@ namespace Wjybxx.BigCat.CoreEditor.UIElements
 /// <summary>
 /// 
 /// </summary>
-public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>, IField
+public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>, IPrefixLabel
 {
     private TextField _collectionField;
     private TextField _localPathField;

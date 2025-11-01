@@ -107,21 +107,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 获取某段区间的时长
-    /// </summary>
-    /// <param name="startFrame"></param>
-    /// <param name="endFrame"></param>
-    /// <returns></returns>
-    public float GetSubDuration(int startFrame, int endFrame = -1) {
-        if (endFrame == -1) endFrame = frames.Length - 1;
-        float r = 0;
-        for (int index = startFrame; index <= endFrame; index++) {
-            r += frames[index].duration;
-        }
-        return r;
-    }
-
-    /// <summary>
     /// 根据播放时间搜索关联的帧号
     /// 
     /// 注意：该方法只能在正确维护帧信息缓存的情况下调用。
