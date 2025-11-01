@@ -18,9 +18,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
@@ -29,8 +31,10 @@ using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
+using NumberStyles = Wjybxx.Dson.Text.NumberStyles;
+using Object = UnityEngine.Object;
 
-namespace Wjybxx.BigCat.CoreEditor
+namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 /// 数据编辑器数据模型
@@ -39,10 +43,11 @@ namespace Wjybxx.BigCat.CoreEditor
 /// 但该对象只应该存在于内存中，不应该被保存为资产对象。
 /// 
 /// 注：
-/// 1.主要负责<see cref="DataNode"/>和<see cref="DataVariable"/>的创建，和数据修复工作。
+/// 1.主要负责<see cref="NodeData"/>和<see cref="Variable"/>的创建，和数据修复工作。
 /// 2.对于字典类型，如果Key是Int32、Int64、String类型（即标准Map），则导出为DsonObject，否则导出为DsonArray。
+/// 3.Node不一定存在于<see cref="GraphView"/>，但所有的数据抽象都是<see cref="NodeData"/>。
 /// </summary>
-public class DataEditorModel : ScriptableObject
+public class DataEditorModel
 {
     /// <summary>
     /// 编辑器关联的DataScript仓库
@@ -50,32 +55,31 @@ public class DataEditorModel : ScriptableObject
     [NonSerialized] public DSRepository repository = new DSRepository();
     /// <summary>
     /// Key为菜单路径
-    /// Value为创建Node的模板元素
+    /// Value为创建Node的模板元素，也可以考虑绑定VisualElement，从而实现不同样式。
     /// </summary>
     [NonSerialized] public readonly LinkedDictionary<string, DSNamedType> templates = new();
 
     /// <summary>
-    /// 所有需要序列化的Node
+    /// 当前的所有Nodes
     ///
-    /// 注：该字段用于Unity的序列化保存。
-    /// </summary>
-    public List<DataNode> serializedNodes = new();
-    /// <summary>
-    /// 当前的所有Nodes，部分Node是不序列化的。
-    ///
-    /// 注：该List可以用于迭代，因为添加和删除是在循环外处理的。
+    /// 注：部分Node是不保存的，Node也不全存在于GraphView，可以通过Folder字段控制。
     /// </summary>
     [NonSerialized]
-    public List<DataNode> nodeList = new();
+    public readonly IndexedDynamicArray<NodeData> nodeList = new(NodeIndexHelper.Inst);
     /// <summary>
     /// 当前的所有Node(保持插入序)
     /// </summary>
     [NonSerialized]
-    public readonly LinkedDictionary<long, DataNode> nodeDic = new();
+    public readonly LinkedDictionary<long, NodeData> nodeDic = new();
+
     /// <summary>
-    /// 用于实现Undo和Redo
+    /// 用于分配LocalId（需要和已存在的Node去重）
     /// </summary>
-    private SerializedObject _serializedObject;
+    private long _nextLocalId;
+    /// <summary>
+    /// 当前工作目录，GraphView只展示当前Folder的Node
+    /// </summary>
+    private string currentFolder;
 
     /// <summary>
     /// Dson文本生成设置
@@ -86,6 +90,7 @@ public class DataEditorModel : ScriptableObject
     }.Build();
 
     private readonly ObjectPool<List<DSField>> _fieldListCache = ObjectPoolUtil.NewListPool<DSField>(4);
+    private readonly ObjectPool<List<Variable>> _variableListCache = ObjectPoolUtil.NewListPool<Variable>(4);
     private readonly StringBuilder _sbCache = new(16);
 
     /// <summary>
@@ -95,111 +100,169 @@ public class DataEditorModel : ScriptableObject
         // TODO
     }
 
+    #region NODE
 
     /// <summary>
     /// 添加Node
     /// </summary>
-    /// <param name="node"></param>
-    public void AddNode(DataNode node) {
-        nodeList.Add(node);
-        nodeDic[node.localId] = node;
+    /// <param name="nodeData"></param>
+    public void AddNode(NodeData nodeData) {
+        if (_nextLocalId <= nodeData.localId) {
+            _nextLocalId = nodeData.localId + 1;
+        }
+        nodeList.Add(nodeData);
+        nodeDic[nodeData.localId] = nodeData;
     }
 
-    #region NODE
+    /// <summary>
+    /// 删除node
+    /// </summary>
+    /// <param name="localId"></param>
+    /// <param name="destroy"></param>
+    public bool DeleteNode(long localId, bool destroy = true) {
+        if (!nodeDic.TryGetValue(localId, out NodeData node)) {
+            return true;
+        }
+        DisconnectAll(node);
+        nodeDic.Remove(localId);
+        nodeList.Remove(node);
+        if (destroy) {
+            node.value?.Dispose();
+            Object.DestroyImmediate(node);
+        }
+        return true;
+    }
 
     /// <summary>
     /// 创建Node
+    ///
+    /// 注：该方法只负责一些公共的初始化工作，不会立即加入到集合。
     /// </summary>
-    /// <param name="position">node的初始坐标</param>
     /// <param name="namedType">node的初始类型</param>
     /// <returns></returns>
-    public DataNode CreateNode(Rect position, DSNamedType namedType = null) {
-        DataNode node = new DataNode();
-        node.localId = 0;
-        node.position = position;
+    public NodeData CreateNode(DSNamedType namedType = null) {
+        NodeData nodeData = ScriptableObject.CreateInstance<NodeData>();
+        nodeData.localId = ++_nextLocalId;
         if (namedType != null) {
-            node.value = CreateVariable(namedType);
+            nodeData.value = CreateVariable(namedType);
         }
-        AddNode(node);
-        return node;
+        return nodeData;
     }
 
     /// <summary>
-    /// 重置Node的数据，所有指清理为默认值
+    /// 断开Node的所有连接（通常用在删除前）
     /// </summary>
-    public void ResetNode(DataNode node) {
-        DisconnectPorts(node); // Port是双向绑定的，因此需要先解绑
-        ResetVariable(node.value);
+    /// <param name="nodeData"></param>
+    /// <returns>断开连接的变量</returns>
+    public List<Variable> DisconnectAll(NodeData nodeData) {
+        List<Variable> list = new List<Variable>(nodeData.inputFields.Count + nodeData.outputFields.Count);
+        list.AddRange(nodeData.inputFields);
+        list.AddRange(nodeData.outputFields);
+        foreach (Variable variable in list) {
+            ResetVariable(variable); // 重置数据即可断开连接 - 字段的类型应当为ObjectPath
+        }
+        nodeData.inputFields.Clear(); // input清理
+
+
+        return list;
     }
 
     /// <summary>
-    /// 切换Node绑定的数据结构
-    ///
-    /// 注：切换Node时保存数据可能不太符合直觉。
+    /// 初始化Node上关联的Port字段
+    /// 
+    /// 注：
+    /// 1.会递归所有的静态路径字段，并将标记有PortField注解的字段转换为ObjectPath类型。
+    /// 2.该方法应当在决定显示Node前调用，不显示在GraphView中的Node（或者不需要通过连线配置数据）的对象可不调用
     /// </summary>
-    /// <param name="node"></param>
-    /// <param name="newType">目标类型，可以为null</param>
-    /// <param name="inheritData">是否继承当前数据</param>
-    public void ChangeNodeType(DataNode node, DSNamedType newType, bool inheritData = true) {
-        if (newType == null) {
-            node.value = null;
+    public void InitOutputFields(NodeData nodeData) {
+        nodeData.outputFields.Clear();
+        if (nodeData.value == null || !nodeData.enablePort) {
             return;
         }
-        DataVariable value = node.value;
-        if (value == null) {
-            node.value = CreateVariable(newType);
-            return;
-        }
-        if (!ChangeVariableType(value, newType, inheritData)) {
-            return;
-        }
-        // TODO 收集所有port
-        node.ClearPorts();
+        InitOutputFields(nodeData.value, nodeData.outputFields);
     }
 
-    /// <summary>
-    /// 断开Node发起的Port连接(除Top区域)
-    /// </summary>
-    /// <param name="node"></param>
-    private void DisconnectPorts(DataNode node) {
-        // TODO
+    private void InitOutputFields(Variable variable, List<Variable> outList) {
+        DSNamedType varType = variable.type;
+        if (varType.IsValueType || DSUtil.IsAtomicType(varType)) {
+            return;
+        }
+        VariableCfg variableCfg = variable.cfg;
+        if (!variableCfg.HasPortCfg) {
+            if (DSUtil.IsCollectionOrMapType(varType)) {
+                return; // 不扫描动态路径字段
+            }
+            foreach (Variable nestedVar in variable.values) {
+                InitOutputFields(nestedVar, outList);
+            }
+            return;
+        }
+        DSNamedType objectPathType = repository.GetType("ObjectPath");
+        // 集合类型修改为List<ObjectPath>
+        if (DSUtil.IsCollectionType(varType)) {
+            if (varType.TypeArguments[0] != objectPathType) {
+                varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(1)
+                {
+                    objectPathType
+                });
+                ChangeVariableType(variable, varType, false);
+            }
+            outList.Add(variable);
+            return;
+        }
+        // 字典类型修改为Map<Key,ObjectPath>
+        if (DSUtil.IsMapType(varType)) {
+            if (varType.TypeArguments[1] != objectPathType) {
+                varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(2)
+                {
+                    varType.TypeArguments[0],
+                    objectPathType
+                });
+                ChangeVariableType(variable, varType, false);
+            }
+            outList.Add(variable);
+            return;
+        }
+        // 普通Class修改ObjectPath
+        {
+            if (varType != objectPathType) {
+                ChangeVariableType(variable, objectPathType, false);
+            }
+            outList.Add(variable);
+        }
     }
 
     #endregion
-
 
     #region variable
 
     /// <summary>
     /// 创建变量
     /// </summary>
-    public DataVariable CreateVariable(DSElement defineInfo, DataDisplayCfg displayCfg = null) {
-        return CreateVariable(defineInfo, GetDeclaredType(defineInfo), displayCfg);
+    public Variable CreateVariable(DSElement defineInfo, VariableCfg variableCfg = null) {
+        return CreateVariable(defineInfo, GetDeclaredType(defineInfo), variableCfg);
     }
 
     /// <summary>
     /// 创建变量
     /// 
-    /// 1.此时可能尚未完成初始化，因此尚不绑定Drawer
-    /// 2.多态类型的字段，在创建时应当传入目标类型
-    /// 3.集合创建元素变量时，应当传入元素的展示配置
+    /// 1.多态类型的字段，在创建时应当传入目标类型
+    /// 2.集合创建元素变量时，应当传入元素的编辑器配置
     /// </summary>
     /// <param name="defineInfo">变量的定义信息</param>
     /// <param name="type">变量的初始类型</param>
-    /// <param name="displayCfg">变量的展示配置</param>
+    /// <param name="variableCfg">变量的展示配置</param>
     /// <returns></returns>
-    public DataVariable CreateVariable(DSElement defineInfo, DSNamedType type, DataDisplayCfg displayCfg = null) {
-        displayCfg ??= GetDisplayCfg(defineInfo);
-        DataVariable variable = new DataVariable
+    public Variable CreateVariable(DSElement defineInfo, DSNamedType type, VariableCfg variableCfg = null) {
+        variableCfg ??= GetVariableCfg(defineInfo);
+        Variable variable = new Variable
         {
             defineInfo = defineInfo,
-            displayCfg = displayCfg,
+            cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
-            isNull = displayCfg.initNull || DSUtil.IsNullableType(type)
+            isNull = variableCfg.initNull || DSUtil.IsNullableType(type)
         };
-        if (!variable.isNull) {
-            CreateValues(variable);
-        }
+        CreateValues(variable);
         return variable;
     }
 
@@ -209,116 +272,30 @@ public class DataEditorModel : ScriptableObject
     /// 注：创建变量的Values意味着变量不再为null。
     /// </summary>
     /// <param name="variable"></param>
-    public void CreateValues(DataVariable variable) {
+    private void CreateValues(Variable variable) {
         DSNamedType varType = variable.type;
         if (DSUtil.IsAtomicType(varType)) {
             return;
         }
         if (DSUtil.IsCollectionOrMapType(varType)) {
-            variable.values = new List<DataVariable>();
+            variable.values = new List<Variable>();
             return;
         }
+        // Nullable提前创建变量 - 稳定path
         if (DSUtil.IsNullableType(varType)) {
             DSField valueField = variable.type.GetField("value")!;
-            DataDisplayCfg elementCfg = variable.displayCfg.elementCfg;
-            DataVariable value = CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg);
-            variable.values = new List<DataVariable>(1) { value };
-            variable.isNull = false;
+            VariableCfg elementCfg = variable.cfg.elementCfg;
+            Variable nestedVar = CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg);
+            variable.values = new List<Variable>(1) { nestedVar };
             return;
         }
         // 递归创建Value
         List<DSField> fields = varType.GetFields(true, _fieldListCache.Acquire());
-        variable.values = new List<DataVariable>(fields.Count);
-        variable.isNull = false;
+        variable.values = new List<Variable>(fields.Count);
         foreach (DSField field in fields) {
-            variable.values.Add(CreateVariable(field, (DSNamedType)field.Type));
+            variable.values.Add(CreateVariable(field));
         }
         _fieldListCache.Release(fields);
-    }
-
-    /// <summary>
-    /// 重置变量
-    ///
-    /// 注：Nullable类型会自动置为null，其它结构需手动指定。
-    /// </summary>
-    /// <param name="variable">要重置的变量</param>
-    /// <param name="resetNull">是否重置为null</param>
-    public void ResetVariable(DataVariable variable, bool resetNull = false) {
-        if (variable == null) return;
-        variable.longValue = 0;
-        variable.doubleValue = 0;
-        variable.stringValue = null;
-        if (variable.values == null) {
-            return;
-        }
-        // List和字典直接清空
-        if (DSUtil.IsCollectionOrMapType(variable.type)) {
-            variable.values.Clear();
-            return;
-        }
-        // Nullable固定重置为null
-        if (DSUtil.IsNullableType(variable.type)) {
-            variable.values = null;
-            variable.isNull = true;
-            return;
-        }
-        // 普通Object由用户选择是否重置为null
-        if (resetNull) {
-            variable.values = null;
-            variable.isNull = true;
-        } else {
-            foreach (DataVariable nestValue in variable.values) {
-                ResetVariable(nestValue);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 重置变量为指定值
-    /// </summary>
-    /// <param name="variable"></param>
-    /// <param name="dsonValue"></param>
-    public void ResetVariable(DataVariable variable, DsonValue dsonValue) {
-        if (dsonValue.DsonType == DsonType.Null) {
-            ResetVariable(variable, true);
-            return;
-        }
-        if (variable.isNull) {
-            CreateValues(variable);
-        } else {
-            ResetVariable(variable);
-        }
-        Decode(variable, dsonValue);
-    }
-
-    /// <summary>
-    /// 拷贝变量
-    /// (通常只应该集合视图调用)
-    /// </summary>
-    /// <param name="variable"></param>
-    /// <returns></returns>
-    public DataVariable Duplicate(DataVariable variable) {
-        DsonValue dsonValue = Encode(variable);
-        DataVariable newVariable = CreateVariable(variable.defineInfo, variable.type, variable.displayCfg);
-        ResetVariable(newVariable, dsonValue); // 虽然这样写可能创建不必要的中间对象，但代码最容易维护
-        return newVariable;
-    }
-
-    /// <summary>
-    /// 拷贝变量N次
-    /// (批量拷贝可以减少中间对象)
-    /// </summary>
-    /// <param name="variable"></param>
-    /// <param name="count"></param>
-    /// <param name="outList"></param>
-    /// <returns></returns>
-    public void Duplicate(DataVariable variable, int count, List<DataVariable> outList) {
-        DsonValue dsonValue = Encode(variable);
-        for (int i = 0; i < count; i++) {
-            DataVariable newVariable = CreateVariable(variable.defineInfo, variable.type, variable.displayCfg);
-            ResetVariable(newVariable, dsonValue);
-            outList.Add(newVariable);
-        }
     }
 
     /// <summary>
@@ -328,7 +305,7 @@ public class DataEditorModel : ScriptableObject
     /// <param name="newType">新类型</param>
     /// <param name="inheritData">是否继承当前数据</param>
     /// <returns>是否切换了类型</returns>
-    public bool ChangeVariableType(DataVariable variable, DSNamedType newType, bool inheritData = true) {
+    public bool ChangeVariableType(Variable variable, DSNamedType newType, bool inheritData = true) {
         if (Equals(variable.type, newType)) {
             return false;
         }
@@ -344,15 +321,88 @@ public class DataEditorModel : ScriptableObject
     }
 
     /// <summary>
+    /// 重置变量
+    /// 
+    /// 注：Nullable类型会自动置为null，其它结构需手动指定。
+    /// </summary>
+    /// <param name="variable">要重置的变量</param>
+    public void ResetVariable(Variable variable) {
+        if (variable == null) return;
+        variable.longValue = 0;
+        variable.doubleValue = 0;
+        variable.stringValue = null;
+        //
+        List<Variable> values = variable.values;
+        if (values == null || values.Count == 0) {
+            return;
+        }
+        // List和字典直接清空
+        if (DSUtil.IsCollectionOrMapType(variable.type)) {
+            foreach (Variable nestedVar in values) {
+                nestedVar.Dispose();
+            }
+            values.Clear();
+            return;
+        }
+        // Nullable固定重置为null，普通Object由用户选择是否重置为null
+        if (DSUtil.IsNullableType(variable.type)) {
+            variable.isNull = true;
+        }
+        foreach (Variable nestedVar in values) {
+            ResetVariable(nestedVar);
+        }
+    }
+
+    /// <summary>
+    /// 重置变量为指定值
+    /// </summary>
+    /// <param name="variable"></param>
+    /// <param name="dsonValue"></param>
+    public void ResetVariable(Variable variable, DsonValue dsonValue) {
+        ResetVariable(variable);
+        Decode(variable, dsonValue);
+    }
+
+    /// <summary>
+    /// 拷贝变量
+    /// (通常只应该集合视图调用)
+    /// </summary>
+    /// <param name="variable"></param>
+    /// <returns></returns>
+    public Variable Duplicate(Variable variable) {
+        DsonValue dsonValue = Encode(variable);
+        Variable newVariable = CreateVariable(variable.defineInfo, variable.type, variable.cfg);
+        Decode(newVariable, dsonValue); // 虽然这样写可能创建不必要的中间对象，但代码最容易维护
+        return newVariable;
+    }
+
+    /// <summary>
+    /// 拷贝变量N次
+    /// (批量拷贝可以减少中间对象)
+    /// </summary>
+    /// <param name="variable"></param>
+    /// <param name="count"></param>
+    /// <param name="outList"></param>
+    /// <returns></returns>
+    public void Duplicate(Variable variable, int count, List<Variable> outList) {
+        DsonValue dsonValue = Encode(variable);
+        for (int i = 0; i < count; i++) {
+            Variable newVariable = CreateVariable(variable.defineInfo, variable.type, variable.cfg);
+            Decode(newVariable, dsonValue);
+            outList.Add(newVariable);
+        }
+    }
+
+    /// <summary>
     /// 获取类型的编辑器配置
     /// 
     /// 注：不可以修改返回对象的数据。
     /// </summary>
     /// <param name="element"></param>
-    public DataDisplayCfg GetDisplayCfg(DSElement element) {
+    public VariableCfg GetVariableCfg(DSElement element) {
         DSElement originDefine = element.OriginDefine;
         if (originDefine.editorContext == null) {
-            originDefine.editorContext = DataDisplayCfg.Parse(originDefine);
+            originDefine.editorContext = VariableCfg.Parse(originDefine);
             // 匹配关联的实例 - 只匹配顶层类型
             if (originDefine.Kind.IsNamedType()
                 && !DSUtil.IsAtomicType(originDefine)
@@ -360,28 +410,30 @@ public class DataEditorModel : ScriptableObject
                 InitSupportedInsts((DSNamedType)originDefine);
             }
         }
-        return (DataDisplayCfg)originDefine.editorContext;
+        return (VariableCfg)originDefine.editorContext;
     }
 
     private void InitSupportedInsts(DSNamedType namedType) {
-        DataDisplayCfg displayCfg = (DataDisplayCfg)namedType.editorContext;
+        VariableCfg variableCfg = (VariableCfg)namedType.editorContext;
         foreach (DSFile dsFile in repository.FileMap.Values) {
             foreach (var pair in dsFile.InstMap) {
                 if (!MatchInstName(namedType, pair.Key)) {
                     continue;
                 }
-                displayCfg.supportedInsts ??= new List<DSInst>();
-                displayCfg.supportedInsts.Add(pair.Value);
+                variableCfg.supportedInsts ??= new List<DSInst>();
+                variableCfg.supportedInsts.Add(pair.Value);
             }
         }
-        displayCfg.supportedInsts?.TrimExcess();
+        variableCfg.supportedInsts?.TrimExcess();
     }
 
     private static bool MatchInstName(DSNamedType namedType, string instName) {
         string typeName = namedType.SimpleName;
         if (instName == typeName) return true;
         // inst MyClass/A {}
-        return instName.StartsWith(typeName) && instName[typeName.Length] == '/';
+        // inst MyClass:10001  冒号的常见作用之一就是表作用域，更双冒号可能更常见
+        return instName.StartsWith(typeName)
+               && (instName[typeName.Length] == '/' || instName[typeName.Length] == ':');
     }
 
     /// <summary>
@@ -407,14 +459,22 @@ public class DataEditorModel : ScriptableObject
     /// </summary>
     /// <param name="variable"></param>
     /// <param name="dsonValue"></param>
-    public void Decode(DataVariable variable, DsonValue dsonValue) {
+    public void Decode(Variable variable, DsonValue dsonValue) {
         DSNamedType varType = variable.type;
+        if (dsonValue.DsonType == DsonType.Null) {
+            ResetVariable(variable);
+            variable.isNull = true;
+            return;
+        }
+        variable.isNull = false;
         // 原子值
         switch (varType.SimpleName) {
             case DSKeywords.TYPE_INT32:
             case DSKeywords.TYPE_INT64: {
                 if (dsonValue.DsonType == DsonType.String) { // 可能是字典的key
-                    long.TryParse(dsonValue.AsString(), out variable.longValue);
+                    if (long.TryParse(dsonValue.AsString(), out long value)) {
+                        variable.longValue = value;
+                    }
                 } else if (dsonValue.IsNumber) {
                     variable.longValue = dsonValue.AsNumber().LongValue;
                 }
@@ -423,7 +483,9 @@ public class DataEditorModel : ScriptableObject
             case DSKeywords.TYPE_FLOAT:
             case DSKeywords.TYPE_DOUBLE: {
                 if (dsonValue.DsonType == DsonType.String) {
-                    double.TryParse(dsonValue.AsString(), out variable.doubleValue);
+                    if (double.TryParse(dsonValue.AsString(), out double value)) {
+                        variable.doubleValue = value;
+                    }
                 } else if (dsonValue.IsNumber) {
                     variable.doubleValue = dsonValue.AsNumber().DoubleValue;
                 }
@@ -441,9 +503,11 @@ public class DataEditorModel : ScriptableObject
                 variable.stringValue = dsonValue.DsonType switch
                 {
                     DsonType.Int32 => dsonValue.AsInt32().ToString(),
-                    DsonType.Int64 => dsonValue.AsInt64().ToString(), // 浮点数不能简单处理
+                    DsonType.Int64 => dsonValue.AsInt64().ToString(),
+                    DsonType.Float => dsonValue.AsFloat().ToString(CultureInfo.InvariantCulture),
+                    DsonType.Double => dsonValue.AsDouble().ToString(CultureInfo.InvariantCulture),
                     DsonType.String => dsonValue.AsString(),
-                    DsonType.Binary => dsonValue.AsBinary().ToString(),
+                    DsonType.Binary => dsonValue.AsBinary().ToHexString(),
                     _ => null
                 };
                 return;
@@ -473,10 +537,10 @@ public class DataEditorModel : ScriptableObject
         }
 
         // DateTime
-        DataDisplayCfg displayCfg = variable.displayCfg;
+        VariableCfg variableCfg = variable.cfg;
         if (DSUtil.IsDateTimeType(varType) || DSUtil.IsTimestampType(varType)
-                                           || displayCfg.dsonType == DsonType.DateTime
-                                           || displayCfg.dsonType == DsonType.Timestamp) {
+                                           || variableCfg.dsonType == DsonType.DateTime
+                                           || variableCfg.dsonType == DsonType.Timestamp) {
             if (dsonValue.DsonType == DsonType.DateTime) {
                 ExtDateTime dateTime = dsonValue.AsDateTime();
                 variable.values[0].longValue = dateTime.Seconds;
@@ -489,7 +553,7 @@ public class DataEditorModel : ScriptableObject
             return;
         }
         // ObjectPtr
-        if (displayCfg.dsonType == DsonType.Pointer) {
+        if (variableCfg.dsonType == DsonType.Pointer) {
             if (dsonValue.DsonType == DsonType.Pointer) {
                 ObjectPtr objectPtr = dsonValue.AsPointer();
                 variable.values[0].stringValue = objectPtr.Collection;
@@ -501,56 +565,63 @@ public class DataEditorModel : ScriptableObject
         }
         // Nullable
         if (DSUtil.IsNullableType(varType)) {
-            ResetVariable(variable); // 强制清理，确保正确覆盖
-            if (dsonValue.DsonType == DsonType.Null) {
-                return;
-            }
-            CreateValues(variable);
+            // ResetVariable(variable); // 强制清理，确保正确覆盖 - Nullable的路径是稳定的，可不清理
             Decode(variable.values[0], dsonValue);
             return;
         }
-        // 集合
+        // 集合 - 不支持导入Object，无法为key创建定义
         if (DSUtil.IsCollectionType(varType)) {
             ResetVariable(variable); // 强制清理，确保正确覆盖
-            if (dsonValue.DsonType != DsonType.Array) { // 不支持导入Object，无法为key创建定义
+            if (dsonValue.DsonType != DsonType.Array) {
                 return;
             }
             DSField valuesField = varType.GetField("values")!;
             DsonArray<string> dsonArray = dsonValue.AsArray();
             variable.values.EnsureCapacity(dsonArray.Count);
             foreach (DsonValue nestValue in dsonArray) {
-                DataVariable nestedVar = CreateVariable(valuesField, variable.displayCfg);
+                Variable nestedVar = CreateVariable(valuesField, variable.cfg);
                 Decode(nestedVar, nestValue);
                 variable.values.Add(nestedVar);
             }
             return;
         }
+        // 字典 - 从DsonArray恢复时，可能出现兼容问题
         if (DSUtil.IsMapType(varType)) {
             ResetVariable(variable); // 强制清理，确保正确覆盖
-            if (dsonValue.DsonType != DsonType.Object) { // 不支持导入Array，无法保证Key的兼容性...
-                return;
-            }
+            //
             DSField keysField = varType.GetField("keys")!;
             DSField valuesField = varType.GetField("values")!;
-            DsonObject<string> dsonObject = dsonValue.AsObject();
-            variable.values.EnsureCapacity(dsonObject.Count * 2);
-            foreach (var pair in dsonObject) {
-                DataVariable keyVar = CreateVariable(keysField, variable.displayCfg);
-                Decode(keyVar, new DsonString(pair.Key));
-                variable.values.Add(keyVar);
-                //
-                DataVariable valueVar = CreateVariable(valuesField, variable.displayCfg);
-                Decode(valueVar, pair.Value);
-                variable.values.Add(valueVar);
+            if (dsonValue.DsonType == DsonType.Object) {
+                DsonObject<string> dsonObject = dsonValue.AsObject();
+                variable.values.EnsureCapacity(dsonObject.Count * 2);
+                foreach (var pair in dsonObject) {
+                    Variable varKey = CreateVariable(keysField, variable.cfg);
+                    Decode(varKey, new DsonString(pair.Key));
+                    variable.values.Add(varKey);
+                    //
+                    Variable varValue = CreateVariable(valuesField, variable.cfg);
+                    Decode(varValue, pair.Value);
+                    variable.values.Add(varValue);
+                }
+            } else if (dsonValue.DsonType == DsonType.Array) {
+                DsonArray<string> dsonArray = dsonValue.AsArray();
+                variable.values.EnsureCapacity(dsonArray.Count);
+                for (int index = 0; index < dsonArray.Count; index += 2) {
+                    Variable varKey = CreateVariable(keysField, variable.cfg);
+                    Decode(varKey, dsonArray[index]);
+                    variable.values.Add(varKey);
+                    //
+                    Variable varValue = CreateVariable(valuesField, variable.cfg);
+                    Decode(varValue, dsonArray[index + 1]);
+                    variable.values.Add(varValue);
+                }
             }
             return;
         }
         // 自定义结构，按照字段名进行匹配，选择性覆盖
-        if (dsonValue.DsonType == DsonType.Null) {
-            ResetVariable(variable, true);
-        } else if (dsonValue.DsonType == DsonType.Object) {
+        if (dsonValue.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = dsonValue.AsObject();
-            foreach (DataVariable nestedVar in variable.values) {
+            foreach (Variable nestedVar in variable.values) {
                 string fieldName = nestedVar.defineInfo.SimpleName;
                 if (!dsonObject.TryGetValue(fieldName, out DsonValue fieldValue)) {
                     continue;
@@ -567,8 +638,11 @@ public class DataEditorModel : ScriptableObject
     /// </summary>
     /// <param name="variable"></param>
     /// <returns></returns>
-    public DsonValue Encode(DataVariable variable) {
+    public DsonValue Encode(Variable variable) {
         DSNamedType varType = variable.type;
+        if (variable.isNull) {
+            return DsonNull.NULL;
+        }
         // 原子值
         switch (varType.SimpleName) {
             case DSKeywords.TYPE_INT32: return new DsonInt32(variable.intValue);
@@ -578,20 +652,17 @@ public class DataEditorModel : ScriptableObject
             case DSKeywords.TYPE_BOOL: return new DsonBool(variable.boolValue);
             case DSKeywords.TYPE_STRING: {
                 string stringValue = variable.stringValue;
-                if (variable.stringValue == null) {
-                    return DsonNull.NULL;
+                if (string.IsNullOrEmpty(stringValue)) {
+                    return DsonString.EMPTY;
                 }
-                return stringValue.Length == 0 ? DsonString.EMPTY : new DsonString(stringValue);
+                return new DsonString(stringValue);
             }
             case DSKeywords.TYPE_BYTES: {
                 string stringValue = variable.stringValue;
-                if (stringValue == null) {
-                    return DsonNull.NULL;
-                }
-                stringValue = stringValue.Trim();
-                if (stringValue.Length == 0) {
+                if (string.IsNullOrWhiteSpace(stringValue)) {
                     return DsonBinary.EMPTY;
                 }
+                stringValue = ObjectUtil.DeleteWhitespace(stringValue);
                 return new DsonBinary(Binary.FromHexString(stringValue));
             }
         }
@@ -601,28 +672,24 @@ public class DataEditorModel : ScriptableObject
         }
         // 测试类型的投影类型
         // DateTime
-        DataDisplayCfg displayCfg = GetDisplayCfg(varType);
-        if (displayCfg.dsonType == DsonType.DateTime || DSUtil.IsDateTimeType(varType)) {
+        VariableCfg variableCfg = GetVariableCfg(varType);
+        if (variableCfg.dsonType == DsonType.DateTime || DSUtil.IsDateTimeType(varType)) {
             long seconds = variable.values[0].longValue;
             int nanos = variable.values[1].intValue;
             return new DsonDateTime(new ExtDateTime(seconds, nanos));
         }
-        if (displayCfg.dsonType == DsonType.Timestamp || DSUtil.IsTimestampType(varType)) {
+        if (variableCfg.dsonType == DsonType.Timestamp || DSUtil.IsTimestampType(varType)) {
             long seconds = variable.values[0].longValue;
             int nanos = variable.values[1].intValue;
             return new DsonTimestamp(new Timestamp(seconds, nanos));
         }
         // ObjectPtr
-        if (displayCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
+        if (variableCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
             string collection = variable.values[0].stringValue;
             string localPath = variable.values[1].stringValue;
             long localId = variable.values[2].longValue;
             int type = variable.values[3].intValue;
             return new DsonPointer(new ObjectPtr(collection, localPath, localId, type));
-        }
-        // null
-        if (variable.isNull) {
-            return DsonNull.NULL;
         }
         // Nullable - 导出时拆箱
         if (DSUtil.IsNullableType(varType)) {
@@ -650,72 +717,72 @@ public class DataEditorModel : ScriptableObject
         return EncodeStructAsDsonObject(variable);
     }
 
-    private DsonValue EncodeStructAsDsonObject(DataVariable variable) {
+    private DsonValue EncodeStructAsDsonObject(Variable variable) {
         DsonObject<string> dsonObject = new DsonObject<string>(variable.values.Count);
-        foreach (DataVariable fieldValue in variable.values) {
-            DsonValue dsonValue = Encode(fieldValue);
-            if (dsonValue.DsonType == DsonType.Null && fieldValue.displayCfg.initNull) {
+        foreach (Variable nestedVar in variable.values) {
+            DsonValue dsonValue = Encode(nestedVar);
+            if (dsonValue.DsonType == DsonType.Null) {
                 continue;
             }
-            DSNamedType fieldDeclaredType = GetDeclaredType(fieldValue.defineInfo);
-            WriteClassNameHeader(fieldDeclaredType, fieldValue.type, dsonValue);
+            DSNamedType fieldDeclaredType = GetDeclaredType(nestedVar.defineInfo);
+            WriteClassNameHeader(fieldDeclaredType, nestedVar.type, dsonValue);
             //
-            string fieldName = fieldValue.defineInfo.SimpleName;
+            string fieldName = nestedVar.defineInfo.SimpleName;
             dsonObject[fieldName] = dsonValue;
         }
         return dsonObject;
     }
 
-    private DsonValue EncodeCollectionAsDsonArray(DataVariable variable) {
+    private DsonValue EncodeCollectionAsDsonArray(Variable variable) {
         DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[0];
         DsonArray<string> dsonArray = new DsonArray<string>(variable.values.Count);
-        foreach (DataVariable value in variable.values) {
-            DsonValue dsonValue = Encode(value);
-            WriteClassNameHeader(valueDeclaredType, value.type, dsonValue);
+        foreach (Variable nestedVar in variable.values) {
+            DsonValue dsonValue = Encode(nestedVar);
+            WriteClassNameHeader(valueDeclaredType, nestedVar.type, dsonValue);
             dsonArray.Add(dsonValue);
         }
         return dsonArray;
     }
 
-    private DsonArray<string> EncodeMapAsDsonArray(DataVariable variable) {
+    private DsonArray<string> EncodeMapAsDsonArray(Variable variable) {
         // 我们暂时认为Key都不是多态的
         // DSNamedType keyDeclaredType = (DSNamedType)variable.type.TypeArguments[0];
         DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[1];
         DsonArray<string> dsonArray = new DsonArray<string>(variable.values.Count);
         for (int index = 0; index < variable.values.Count; index += 2) {
-            DataVariable key = variable.values[index];
-            DataVariable value = variable.values[index + 1];
+            Variable varKey = variable.values[index];
+            Variable varValue = variable.values[index + 1];
             //
-            DsonValue dsonK = Encode(key);
-            DsonValue dsonV = Encode(value);
-            WriteClassNameHeader(valueDeclaredType, value.type, dsonV);
+            DsonValue dsonK = Encode(varKey);
+            DsonValue dsonV = Encode(varValue);
+            WriteClassNameHeader(valueDeclaredType, varValue.type, dsonV);
             dsonArray.Add(dsonK);
             dsonArray.Add(dsonV);
         }
         return dsonArray;
     }
 
-    private DsonObject<string> EncodeMapAsDsonObject(DataVariable variable, bool isStringKey) {
+    private DsonObject<string> EncodeMapAsDsonObject(Variable variable, bool isStringKey) {
         DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[1];
         DsonObject<string> dsonObject = new DsonObject<string>(variable.values.Count / 2);
         for (int index = 0; index < variable.values.Count; index += 2) {
-            DataVariable key = variable.values[index];
-            DataVariable value = variable.values[index + 1];
+            Variable varKey = variable.values[index];
+            Variable varValue = variable.values[index + 1];
             //
-            DsonValue dsonValue = Encode(value);
-            WriteClassNameHeader(valueDeclaredType, value.type, dsonValue);
+            DsonValue dsonValue = Encode(varValue);
+            WriteClassNameHeader(valueDeclaredType, varValue.type, dsonValue);
             if (isStringKey) {
-                Debug.Assert(key.stringValue != null, "key.stringValue == null");
-                dsonObject[key.stringValue] = dsonValue; // key不能是null
+                Debug.Assert(varKey.stringValue != null, "key.stringValue == null");
+                dsonObject[varKey.stringValue] = dsonValue; // key不能是null
             } else {
-                dsonObject[key.longValue.ToString()] = dsonValue;
+                dsonObject[varKey.longValue.ToString()] = dsonValue;
             }
         }
         return dsonObject;
     }
 
     /// <summary>
-    /// 
+    /// 注：顶层对象不仅要写clsName还需要写localId和localPath
     /// </summary>
     /// <param name="declaredType">变量的声明类型</param>
     /// <param name="varType">变量的真实类型</param>
@@ -724,32 +791,31 @@ public class DataEditorModel : ScriptableObject
         if (exportedValue.DsonType != DsonType.Object && exportedValue.DsonType != DsonType.Array) {
             return;
         }
-        if (DSUtil.IsNullableType(declaredType)) { // Nullable的值无多态
-            return;
-        }
-        if (Equals(varType, declaredType)) { // 真实类型和声明类型一致，开销较大
+        if (declaredType.IsValueType || Equals(varType, declaredType)) {
             return;
         }
         StringBuilder clsName = varType.DsonTypeName.ToString(_sbCache.Clear());
         if (exportedValue is DsonObject<string> dsonObject) {
             dsonObject.Header[DsonHeader.Names_ClassName] = new DsonString(clsName.ToString());
+            // dsonObject.Header[DsonHeader.Names_Count] = new DsonInt32(dsonObject.Count);
         } else {
             DsonArray<string> dsonArray = exportedValue.AsArray();
             dsonArray.Header[DsonHeader.Names_ClassName] = new DsonString(clsName.ToString());
+            // dsonArray.Header[DsonHeader.Names_Count] = new DsonInt32(dsonArray.Count);
         }
     }
 
     #endregion
 
-    private class NodeIndexHelper : IIndexedElementHelper<DataNode>
+    private class NodeIndexHelper : IIndexedElementHelper<NodeData>
     {
         public static NodeIndexHelper Inst { get; } = new NodeIndexHelper();
 
-        public int CollectionIndex(object collection, DataNode element) {
+        public int CollectionIndex(object collection, NodeData element) {
             return element.qIndex;
         }
 
-        public void CollectionIndex(object collection, DataNode element, int index) {
+        public void CollectionIndex(object collection, NodeData element, int index) {
             element.qIndex = index;
         }
     }

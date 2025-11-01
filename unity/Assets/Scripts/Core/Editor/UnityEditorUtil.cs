@@ -22,13 +22,15 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+using Wjybxx.BigCat.Core;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
-namespace Wjybxx.BigCat.Core
+namespace Wjybxx.BigCat.CoreEditor
 {
 /// <summary>
 /// Unity工具类
@@ -67,37 +69,6 @@ public static class UnityEditorUtil
             throw new ArgumentException("Invalid element name: " + elementName);
         }
         return int.Parse(elementName.AsSpan(spIndex + 1));
-    }
-
-    public static MinMaxAABB RotationAtBottom(MinMaxAABB box, float angleDeg) {
-        if (angleDeg == 0) {
-            return box;
-        }
-        float theta = -1 * Mathf.Deg2Rad * angleDeg;
-        float cosT = Mathf.Cos(theta);
-        float sinT = Mathf.Sin(theta);
-        float halfW = box.Width / 2;
-        float h = box.Height;
-        Vector3 bottom = box.Bottom;
-        // 左下
-        float x1 = -halfW * cosT - 0 * sinT + bottom.x;
-        float y1 = -halfW * sinT + 0 * cosT + bottom.y;
-        // 右下
-        float x2 = halfW * cosT - 0 * sinT + bottom.x;
-        float y2 = halfW * sinT + 0 * cosT + bottom.y;
-        // 左上
-        float x3 = -halfW * cosT - h * sinT + bottom.x;
-        float y3 = -halfW * sinT + h * cosT + bottom.y;
-        // 右上
-        float x4 = halfW * cosT - h * sinT + bottom.x;
-        float y4 = halfW * sinT + h * cosT + bottom.y;
-
-        MinMaxAABB r = MinMaxAABB.OfVertices(new Vector3(x1, y1, 0), new Vector3(x2, y2, 0));
-        r.Encapsulate(new Vector3(x3, y3, 0));
-        r.Encapsulate(new Vector3(x4, y4, 0));
-        r.min.z = box.min.z;
-        r.max.z = box.max.z;
-        return r;
     }
 
     /// <summary>
@@ -234,7 +205,8 @@ public static class UnityEditorUtil
     /// 鼠标左键事件
     /// </summary>
     public static bool IsPrimaryClickEvent(Event evt, Rect rect) {
-        return evt.type == EventType.MouseDown && evt.button == 0 && rect.Contains(evt.mousePosition);
+        return evt.type == EventType.MouseDown
+               && evt.button == 0 && rect.Contains(evt.mousePosition);
     }
 
     /// <summary>
@@ -248,10 +220,8 @@ public static class UnityEditorUtil
     /// 回车键事件
     /// </summary>
     public static bool IsClickEnterEvent(Event evt) {
-        if (evt.type == EventType.KeyDown) {
-            return evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter;
-        }
-        return false;
+        return evt.type == EventType.KeyDown
+               && (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter);
     }
 
     /// <summary>
@@ -372,13 +342,6 @@ public static class UnityEditorUtil
     #region GUIContent
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsEmpty(this GUIContent content) {
-        return string.IsNullOrEmpty(content.text)
-               && string.IsNullOrEmpty(content.tooltip)
-               && !content.image;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GUIContent Reset(this GUIContent content) {
         content.text = "";
         content.tooltip = "";
@@ -391,19 +354,7 @@ public static class UnityEditorUtil
         content.text = text;
         return content;
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GUIContent WithText(this GUIContent content, string text, string tooltip) {
-        content.text = text;
-        content.tooltip = tooltip;
-        return content;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GUIContent WithImage(this GUIContent content, Texture image) {
-        content.image = image;
-        return content;
-    }
+    
 
     #endregion
 
@@ -415,15 +366,8 @@ public static class UnityEditorUtil
         element.style.display = display ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    public static void SetFoldout(this ListView listView, bool value) {
-        Foldout foldout = GetHeaderFoldout(listView);
-        if (foldout != null) {
-            foldout.value = value;
-        }
-    }
-
-    public static Foldout GetHeaderFoldout(this ListView listView) {
-        // 另一种方式是通过VisualElement.Hierarchy迭代查询，但效率差一点
+    public static Foldout GetFoldout(this ListView listView) {
+        // 也可通过Query查询，但效率差一点，开销也大
         if (_listFoldoutProperty == null) {
             _listFoldoutProperty = typeof(ListView).GetProperty("headerFoldout",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -431,12 +375,19 @@ public static class UnityEditorUtil
         return (Foldout)_listFoldoutProperty!.GetValue(listView, null);
     }
 
-    internal static void SetFieldLabelMargin<T>(BaseField<T> field, float labelMargin) {
+    public static void SetFoldout(this ListView listView, bool value) {
+        Foldout foldout = GetFoldout(listView);
+        if (foldout != null) {
+            foldout.value = value;
+        }
+    }
+
+    internal static void SetLabelMargin<T>(this BaseField<T> field, float labelMargin) {
         field.labelElement.style.marginRight = labelMargin;
     }
 
     internal static void SetVectorFieldFlexBasis(VisualElement field, float flexBasis) {
-        VisualElement values = field.childCount == 1 ? field[0] : field[1];
+        VisualElement values = field.childCount == 1 ? field[0] : field[1]; // label为空会从层次中删除
         for (int i = 0; i < values.childCount; i++) {
             values[i].style.flexGrow = 1;
             values[i].style.flexShrink = 1;
@@ -495,6 +446,13 @@ public static class UnityEditorUtil
         return null;
     }
 
+    internal static void SetMargin(this VisualElement element, int width) {
+        element.style.marginLeft = width;
+        element.style.marginRight = width;
+        element.style.marginTop = width;
+        element.style.marginBottom = width;
+    }
+
     internal static void SetBorderWidth(this VisualElement element, int width) {
         element.style.borderLeftWidth = width;
         element.style.borderRightWidth = width;
@@ -505,6 +463,26 @@ public static class UnityEditorUtil
     #endregion
 
     #region MyRegion
+
+    public static int AsInt32(Color32 color) {
+        return color.r | color.g << 8 | color.b << 16 | color.a << 24;
+    }
+
+    public static Color32 AsColor32(int rgba) {
+        byte r = (byte)(rgba & 0xff);
+        byte g = (byte)(rgba >> 8);
+        byte b = (byte)(rgba >> 16);
+        byte a = (byte)(rgba >> 24);
+        return new Color32(r, g, b, a);
+    }
+
+    public static Quaternion AsQuaternion(Vector4 vector4) {
+        return new Quaternion(vector4.x, vector4.y, vector4.z, vector4.w);
+    }
+
+    public static Vector4 AsVector4(Quaternion quaternion) {
+        return new Vector4(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+    }
 
     internal static void Truncate(ref Vector2 vector) {
         vector.x = (int)vector.x;
@@ -518,27 +496,51 @@ public static class UnityEditorUtil
     }
 
     public static void WriteProperty(this MinMaxAABB box, SerializedProperty property) {
-        using (SerializedProperty pValue = property.FindPropertyRelative("min")) pValue.vector3Value = box.min;
-        using (SerializedProperty pValue = property.FindPropertyRelative("max")) pValue.vector3Value = box.max;
+        using SerializedProperty pValue = property.Copy();
+        pValue.Next(true);
+        pValue.vector3Value = box.min;
+
+        pValue.Next(false);
+        pValue.vector3Value = box.max;
     }
 
     public static void ReadProperty(this MinMaxAABB box, SerializedProperty property) {
-        using (SerializedProperty pValue = property.FindPropertyRelative("min")) box.min = pValue.vector3Value;
-        using (SerializedProperty pValue = property.FindPropertyRelative("max")) box.max = pValue.vector3Value;
+        using SerializedProperty pValue = property.Copy();
+        pValue.Next(true);
+        box.min = pValue.vector3Value;
+
+        pValue.Next(false);
+        box.max = pValue.vector3Value;
     }
 
     public static void WriteProperty(this ObjectPath path, SerializedProperty property) {
-        using (var pValue = property.FindPropertyRelative("collection")) pValue.stringValue = path.collection;
-        using (var pValue = property.FindPropertyRelative("localPath")) pValue.stringValue = path.localPath;
-        using (var pValue = property.FindPropertyRelative("localId")) pValue.longValue = path.localId;
-        using (var pValue = property.FindPropertyRelative("type")) pValue.intValue = path.type;
+        using var pValue = property.Copy();
+        pValue.Next(true);
+        pValue.stringValue = path.collection;
+
+        pValue.Next(false);
+        pValue.stringValue = path.localPath;
+
+        pValue.Next(false);
+        pValue.longValue = path.localId;
+
+        pValue.Next(false);
+        pValue.intValue = path.type;
     }
 
     public static void ReadProperty(this ObjectPath path, SerializedProperty property) {
-        using (var pValue = property.FindPropertyRelative("collection")) path.collection = pValue.stringValue;
-        using (var pValue = property.FindPropertyRelative("localPath")) path.localPath = pValue.stringValue;
-        using (var pValue = property.FindPropertyRelative("localId")) path.localId = pValue.longValue;
-        using (var pValue = property.FindPropertyRelative("type")) path.type = pValue.intValue;
+        using var pValue = property.Copy();
+        pValue.Next(true);
+        path.collection = pValue.stringValue;
+
+        pValue.Next(false);
+        path.localPath = pValue.stringValue;
+
+        pValue.Next(false);
+        path.localId = pValue.longValue;
+
+        pValue.Next(false);
+        path.type = pValue.intValue;
     }
 
     #endregion

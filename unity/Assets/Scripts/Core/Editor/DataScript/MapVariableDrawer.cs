@@ -24,9 +24,9 @@ using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.BigCat.Core;
 using Wjybxx.Commons.Collections;
-using static Wjybxx.BigCat.CoreEditor.DataEditorUtil;
+using static Wjybxx.BigCat.CoreEditor.DataScript.DataEditorUtil;
 
-namespace Wjybxx.BigCat.CoreEditor
+namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 ///
@@ -37,7 +37,7 @@ internal class MapVariableDrawer : DataVariableDrawer
     private readonly GUILayoutOption[] _noExpand = new[] { GUILayout.ExpandHeight(false) };
     private readonly GUIContent _emptyLabel = new GUIContent("Map Is Empty");
 
-    public override void OnGUI(DataEditor editor, DataVariable variable, GUIContent label) {
+    public override void OnGUI(DataEditor editor, Variable variable, GUIContent label) {
         EditorGUILayout.BeginHorizontal();
         variable.isExpanded = EditorGUILayout.Foldout(variable.isExpanded, label);
 
@@ -61,7 +61,7 @@ internal class MapVariableDrawer : DataVariableDrawer
             return;
         }
         EditorState editorState = variable.GetEditorState<EditorState>();
-        DataDisplayCfg displayCfg = variable.displayCfg;
+        VariableCfg displayCfg = variable.cfg;
         // DrawElements
         Rect rect = EditorGUILayout.BeginVertical();
         int indentLevel = EditorGUI.indentLevel;
@@ -69,15 +69,9 @@ internal class MapVariableDrawer : DataVariableDrawer
         if (variable.values.Count == 0) {
             EditorGUILayout.HelpBox(_emptyLabel);
         } else {
-            if (displayCfg.scrollView) {
-                editorState.scrollPos = EditorGUILayout.BeginScrollView(editorState.scrollPos, _noExpand);
-            }
             for (int index = 0; index < variable.values.Count; index += 2) {
                 if (index > 0) EditorGUILayout.Space(2);
                 DrawElement(editor, variable, index);
-            }
-            if (displayCfg.scrollView) {
-                EditorGUILayout.EndScrollView();
             }
         }
         EditorGUI.indentLevel = indentLevel;
@@ -89,9 +83,9 @@ internal class MapVariableDrawer : DataVariableDrawer
         }
     }
 
-    private void DrawElement(DataEditor editor, DataVariable variable, int index) {
-        DataVariable varKey = variable.values[index];
-        DataVariable varValue = variable.values[index + 1];
+    private void DrawElement(DataEditor editor, Variable variable, int index) {
+        Variable varKey = variable.values[index];
+        Variable varValue = variable.values[index + 1];
         GUIContent label = editor.labelPool.Acquire();
 
         int pairIndex = index / 2;
@@ -108,7 +102,7 @@ internal class MapVariableDrawer : DataVariableDrawer
         }
     }
 
-    private static void OnClickEnter(DataEditor editor, DataVariable variable, int count) {
+    private static void OnClickEnter(DataEditor editor, Variable variable, int count) {
         int listCount = variable.values.Count;
         int mapCount = listCount / 2;
         if (count == mapCount) {
@@ -127,17 +121,17 @@ internal class MapVariableDrawer : DataVariableDrawer
         variable.values.EnsureCapacity(count);
         if (mapCount > 0) {
             // 最后一个拷贝N次 - 批量Duplicate以减少中间对象
-            DataVariable lastKey = variable.values[listCount - 2];
-            DataVariable lastValue = variable.values[listCount - 1];
+            Variable lastKey = variable.values[listCount - 2];
+            Variable lastValue = variable.values[listCount - 1];
             //
-            List<DataVariable> keyList = new List<DataVariable>(addCount);
-            List<DataVariable> valueList = new List<DataVariable>(addCount);
+            List<Variable> keyList = new List<Variable>(addCount);
+            List<Variable> valueList = new List<Variable>(addCount);
             editor.model.Duplicate(lastKey, addCount, keyList);
             editor.model.Duplicate(lastValue, addCount, valueList);
             //
             for (int i = 0; i < addCount; i++) {
-                DataVariable newKey = keyList[i];
-                DataVariable newValue = valueList[i];
+                Variable newKey = keyList[i];
+                Variable newValue = valueList[i];
                 variable.values.Add(newKey);
                 variable.values.Add(newValue);
             }
@@ -145,30 +139,30 @@ internal class MapVariableDrawer : DataVariableDrawer
             // 简单创建N个
             DSField keysField = variable.type.GetField("keys");
             DSField valuesField = variable.type.GetField("values");
-            DataDisplayCfg elementCfg = variable.displayCfg.elementCfg;
+            VariableCfg elementCfg = variable.cfg.elementCfg;
             //
             for (int i = 0; i < addCount; i++) {
-                DataVariable newKey = editor.model.CreateVariable(keysField); // key不应用集合的设置
-                DataVariable newValue = editor.model.CreateVariable(valuesField, elementCfg);
+                Variable newKey = editor.model.CreateVariable(keysField); // key不应用集合的设置
+                Variable newValue = editor.model.CreateVariable(valuesField, elementCfg);
                 variable.values.Add(newKey);
                 variable.values.Add(newValue);
             }
         }
     }
 
-    private static void OnClickAdd(DataEditor editor, DataVariable variable) {
-        DataVariable newKey;
-        DataVariable newValue;
+    private static void OnClickAdd(DataEditor editor, Variable variable) {
+        Variable newKey;
+        Variable newValue;
         int listCount = variable.values.Count;
         if (listCount > 0) {
-            DataVariable lastKey = variable.values[listCount - 2];
-            DataVariable lastValue = variable.values[listCount - 1];
+            Variable lastKey = variable.values[listCount - 2];
+            Variable lastValue = variable.values[listCount - 1];
             newKey = editor.model.Duplicate(lastKey);
             newValue = editor.model.Duplicate(lastValue);
         } else {
             DSField keysField = variable.type.GetField("keys");
             DSField valuesField = variable.type.GetField("values");
-            DataDisplayCfg elementCfg = variable.displayCfg.elementCfg;
+            VariableCfg elementCfg = variable.cfg.elementCfg;
             newKey = editor.model.CreateVariable(keysField);
             newValue = editor.model.CreateVariable(valuesField, elementCfg);
         }
@@ -176,7 +170,7 @@ internal class MapVariableDrawer : DataVariableDrawer
         variable.values.Add(newValue);
     }
 
-    private static void OnClickDelete(DataEditor editor, DataVariable variable) {
+    private static void OnClickDelete(DataEditor editor, Variable variable) {
         int listCount = variable.values.Count;
         if (listCount > 0) {
             variable.values.RemoveAt(listCount - 1);
@@ -186,7 +180,7 @@ internal class MapVariableDrawer : DataVariableDrawer
 
     #region menu
 
-    private static void ShowContextMenu(DataEditor editor, DataVariable variable, int pairIndex) {
+    private static void ShowContextMenu(DataEditor editor, Variable variable, int pairIndex) {
         // 创建Menu不能使用池化的Label
         EditorState editorState = variable.GetEditorState<EditorState>();
         GenericMenu menu = new GenericMenu();
@@ -214,7 +208,7 @@ internal class MapVariableDrawer : DataVariableDrawer
 
     private static void OnClickMoveHere(object obj) {
         MenuContext context = (MenuContext)obj;
-        DataVariable variable = context.variable;
+        Variable variable = context.variable;
         int index = context.index;
 
         EditorState editorState = variable.GetEditorState<EditorState>();
@@ -226,8 +220,8 @@ internal class MapVariableDrawer : DataVariableDrawer
         }
         int keyIndex = moveIndex * 2;
         if (keyIndex < variable.values.Count) {
-            DataVariable key = variable.values[keyIndex];
-            DataVariable value = variable.values[keyIndex + 1];
+            Variable key = variable.values[keyIndex];
+            Variable value = variable.values[keyIndex + 1];
 
             variable.values.RemoveAt(keyIndex); // key
             variable.values.RemoveAt(keyIndex); // value
@@ -239,21 +233,21 @@ internal class MapVariableDrawer : DataVariableDrawer
 
     private static void OnClickMoveTo(object obj) {
         MenuContext context = (MenuContext)obj;
-        DataVariable variable = context.variable;
+        Variable variable = context.variable;
         int index = context.index;
 
         EditorState editorState = variable.GetEditorState<EditorState>();
         editorState.moveIndex = index;
     }
 
-    private static void ClearMoveIndex(DataVariable variable) {
+    private static void ClearMoveIndex(Variable variable) {
         EditorState editorState = variable.GetEditorState<EditorState>();
         editorState.moveIndex = -1;
     }
 
     private static void OnClickDelete(object obj) {
         MenuContext context = (MenuContext)obj;
-        DataVariable variable = context.variable;
+        Variable variable = context.variable;
         int index = context.index;
         ClearMoveIndex(variable);
 
@@ -264,23 +258,23 @@ internal class MapVariableDrawer : DataVariableDrawer
 
     private static void OnClickDuplicate(object obj) {
         MenuContext context = (MenuContext)obj;
-        DataVariable variable = context.variable;
+        Variable variable = context.variable;
         DataEditor editor = context.editor;
         int index = context.index;
         ClearMoveIndex(variable);
 
         int keyIndex = index * 2;
-        DataVariable srcKey = variable.values[keyIndex];
-        DataVariable srcValue = variable.values[keyIndex + 1];
-        DataVariable copiedKey = editor.model.Duplicate(srcKey);
-        DataVariable copiedValue = editor.model.Duplicate(srcValue);
+        Variable srcKey = variable.values[keyIndex];
+        Variable srcValue = variable.values[keyIndex + 1];
+        Variable copiedKey = editor.model.Duplicate(srcKey);
+        Variable copiedValue = editor.model.Duplicate(srcValue);
         variable.values.Insert(keyIndex + 2, copiedKey); // 插在目标Key后面
         variable.values.Insert(keyIndex + 3, copiedValue);
     }
 
     private static void OnClickMoveUp(object obj) {
         MenuContext context = (MenuContext)obj;
-        DataVariable variable = context.variable;
+        Variable variable = context.variable;
         int index = context.index;
         ClearMoveIndex(variable);
 
@@ -294,7 +288,7 @@ internal class MapVariableDrawer : DataVariableDrawer
 
     private static void OnClickMoveDown(object obj) {
         MenuContext context = (MenuContext)obj;
-        DataVariable variable = context.variable;
+        Variable variable = context.variable;
         int index = context.index;
         ClearMoveIndex(variable);
 
@@ -311,10 +305,10 @@ internal class MapVariableDrawer : DataVariableDrawer
     private class MenuContext
     {
         public readonly DataEditor editor;
-        public readonly DataVariable variable;
+        public readonly Variable variable;
         public readonly int index;
 
-        public MenuContext(DataEditor editor, DataVariable variable, int index) {
+        public MenuContext(DataEditor editor, Variable variable, int index) {
             this.editor = editor;
             this.variable = variable;
             this.index = index;

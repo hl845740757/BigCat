@@ -28,8 +28,6 @@ public class MTextField : TextField, IPrefixLabel
     public MTextField(string label) : base(label) {
     }
 
-    public bool isNullable { get; set; }
-
     public float labelMargin {
         get => labelElement.style.marginRight.value.value;
         set => labelElement.style.marginRight = new Length(value);
@@ -41,12 +39,6 @@ public class MTextField : TextField, IPrefixLabel
 
     public new class UxmlTraits : TextField.UxmlTraits
     {
-        private readonly UxmlBoolAttributeDescription enableNullToggle = new()
-        {
-            name = "nullable",
-            defaultValue = false,
-        };
-
         private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
             name = "label-margin",
@@ -56,7 +48,6 @@ public class MTextField : TextField, IPrefixLabel
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
             var myView = (MTextField)ve;
-            myView.isNullable = enableNullToggle.GetValueFromBag(bag, cc);
             myView.labelMargin = labelMargin.GetValueFromBag(bag, cc);
         }
     }

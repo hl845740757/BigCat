@@ -16,25 +16,29 @@
 
 #endregion
 
-using UnityEditor;
-using UnityEngine;
+using UnityEngine.UIElements;
+using Wjybxx.BigCat.CoreEditor.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
-/// <summary>
-/// 数据绘制器
-/// 
-/// 1.类似<see cref="PropertyDrawer"/>，但使用自动布局（计算布局真的累死）。
-/// 2.实现类需保持为无可变状态的，状态数据可保存在<see cref="Variable.editorState"/>字段上。
-/// </summary>
-public abstract class DataVariableDrawer
+public class VarAssetPathField : AssetPathField, IVarField
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="editor">用于获取上下文</param>
-    /// <param name="variable">要绘制的变量</param>
-    /// <param name="label">变量对应的label</param>
-    public abstract void OnGUI(DataEditor editor, Variable variable, GUIContent label);
+    public VarAssetPathField() {
+    }
+
+    public void Bind(DataGraphEditor editor, Variable variable) {
+        userData = variable;
+        VariableCfg variableCfg = variable.cfg;
+        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
+        this.SetValueWithoutNotify(variable.stringValue);
+        this.RegisterValueChangedCallback(evt => {
+            evt.StopPropagation();
+            variable.stringValue = evt.newValue;
+            variable.ApplyModifiedProperties();
+        });
+    }
+
+    public void Refresh() {
+    }
 }
 }

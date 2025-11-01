@@ -16,18 +16,22 @@
 
 #endregion
 
-namespace Wjybxx.BigCat.CoreEditor
+using Wjybxx.BigCat.CoreEditor.UIElements;
+
+namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
-/// <summary>
-/// 数据节点绘制器
-/// </summary>
-public abstract class DataNodeDrawer
+internal interface IVarField : IPrefixLabel
 {
     /// <summary>
-    /// 
+    /// 完成数据绑定之后调用
     /// </summary>
-    /// <param name="editor">用于获取上下文</param>
-    /// <param name="node">要绘制的Node</param>
-    public abstract void OnGUI(DataEditor editor, DataNode node);
+    /// <param name="editor"></param>
+    /// <param name="variable"></param>
+    void Bind(DataGraphEditor editor, Variable variable);
+
+    /// <summary>
+    /// 刷新UI，需要递归刷新子节点数据
+    /// </summary>
+    void Refresh();
 }
 }
