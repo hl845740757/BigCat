@@ -23,19 +23,27 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
+using Wjybxx.Commons;
+using Wjybxx.Dson;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 /// 通用Object字段布局
 ///
+/// TODO 支持自定义Object样式，自定义UXML文件继承该类
 /// 注：为保持风格统一，ObjectField也不使用ToolbarMenu实现菜单栏。
 /// </summary>
 public class VarObjectField : Foldout, IVarField
 {
-    private DataGraphEditor editor { get; set; }
+    private DataGraphEditor _editor;
+    private Variable _variable;
+    private EventCallback<ChangeEvent<int>> _onCtrlValueChanged1;
+    private EventCallback<ChangeEvent<string>> _onCtrlValueChanged2;
 
     public VarObjectField() {
+        style.flexShrink = 0;
+        RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
 
     public string label {
@@ -46,8 +54,9 @@ public class VarObjectField : Foldout, IVarField
     /// <summary>
     /// 刷新View
     /// </summary>
-    public void Refresh() {
-        Variable variable = (Variable)userData;
+    /// <param name="rebuild"></param>
+    public void Refresh(bool rebuild = false) {
+        Variable variable = _variable;
         if (variable == null) return;
         if (variable.isNull) {
             contentContainer.SetEnabled(false);
@@ -57,9 +66,9 @@ public class VarObjectField : Foldout, IVarField
         VisualElement container = contentContainer;
         for (int index = 0; index < container.childCount; index++) {
             VisualElement fieldView = container[index];
-            Variable nestedVar = variable.values[index];
+            Variable nestedVar = variable[index];
             if (!nestedVar.cfg.HasBranchCfg) {
-                DataEditorUtil.Refresh(fieldView);
+                DataEditorUtil.Refresh(fieldView, rebuild);
                 continue;
             }
             // 刷新标签类字段的可见性
@@ -71,7 +80,7 @@ public class VarObjectField : Foldout, IVarField
             fieldView.SetDisplay(true);
             fieldView.tooltip = branchCfg.tooltip;
             DataEditorUtil.SetFieldLabel(fieldView, branchCfg.displayName);
-            DataEditorUtil.Refresh(fieldView);
+            DataEditorUtil.Refresh(fieldView, rebuild);
         }
     }
 
@@ -79,49 +88,95 @@ public class VarObjectField : Foldout, IVarField
     /// 绑定数据后调用
     /// </summary>
     public void Bind(DataGraphEditor editor, Variable variable) {
-        this.editor = editor;
-        this.userData = variable;
+        this.Unbind(_variable != null && _variable.type != variable.type);
+        this._editor = editor;
+        this._variable = variable;
         // 递归创建字段
-        foreach (Variable nestedVar in variable.values) {
-            VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, editor);
-            DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
-            contentContainer.Add(fieldView);
+        if (contentContainer.childCount == 0) {
+            foreach (Variable nestedVar in variable.values) {
+                VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, editor);
+                DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
+                contentContainer.Add(fieldView);
+            }
         }
-        // 需要监听Ctrl字段变更
+        RegisterCtrlFieldEvents();
+        Refresh();
+    }
+
+    public void Unbind() {
+        Unbind(true);
+    }
+
+    private void Unbind(bool clearChildren) {
+        Variable variable = _variable;
+        if (variable == null) return;
+        _editor = null;
+        _variable = null;
+        UnregisterCtrlFieldEvents();
+        if (clearChildren) {
+            contentContainer.Clear();
+        }
+    }
+
+    private void UnregisterCtrlFieldEvents() {
+        HashSet<VisualElement> ctrlFields = CollectCtrlFields();
+        if (ctrlFields != null) {
+            foreach (VisualElement ctrlField in ctrlFields) {
+                if (ctrlField is IntegerField integerField) {
+                    integerField.UnregisterValueChangedCallback(_onCtrlValueChanged1);
+                } else if (ctrlField is PopupField<int> popupIntField) {
+                    popupIntField.UnregisterValueChangedCallback(_onCtrlValueChanged1);
+                } else if (ctrlField is PopupField<string> popupStringField) {
+                    popupStringField.UnregisterValueChangedCallback(_onCtrlValueChanged2);
+                } else if (ctrlField is TextField textField) {
+                    textField.UnregisterValueChangedCallback(_onCtrlValueChanged2);
+                }
+            }
+        }
+    }
+
+    private void RegisterCtrlFieldEvents() {
+        HashSet<VisualElement> ctrlFields = CollectCtrlFields();
+        if (ctrlFields != null) {
+            _onCtrlValueChanged1 ??= _ => Refresh();
+            _onCtrlValueChanged2 ??= _ => Refresh();
+            foreach (VisualElement ctrlField in ctrlFields) {
+                if (ctrlField is IntegerField integerField) {
+                    integerField.RegisterValueChangedCallback(_onCtrlValueChanged1);
+                } else if (ctrlField is PopupField<int> popupIntField) {
+                    popupIntField.RegisterValueChangedCallback(_onCtrlValueChanged1);
+                } else if (ctrlField is PopupField<string> popupStringField) {
+                    popupStringField.RegisterValueChangedCallback(_onCtrlValueChanged2);
+                } else if (ctrlField is TextField textField) {
+                    textField.RegisterValueChangedCallback(_onCtrlValueChanged2);
+                }
+            }
+        }
+    }
+
+    private HashSet<VisualElement> CollectCtrlFields() {
         HashSet<VisualElement> ctrlFields = null;
-        VisualElement container = contentContainer;
-        foreach (Variable nestedVar in variable.values) {
+        foreach (Variable nestedVar in _variable.values) {
             if (!nestedVar.cfg.HasBranchCfg) {
                 continue;
             }
             ctrlFields ??= new HashSet<VisualElement>(4);
             foreach (FieldBranchCfg branchCfg in nestedVar.cfg.branchCfgs) {
-                VisualElement ctrlField = container[branchCfg.ctrlIndex];
-                if (!ctrlFields.Add(ctrlField)) { // 已监听
-                    continue;
-                }
-                if (ctrlField is IntegerField integerField) {
-                    integerField.RegisterValueChangedCallback(_ => Refresh());
-                } else if (ctrlField is PopupField<int> popupIntField) {
-                    popupIntField.RegisterValueChangedCallback(_ => Refresh());
-                } else if (ctrlField is PopupField<string> popupStringField) {
-                    popupStringField.RegisterValueChangedCallback(_ => Refresh());
-                } else if (ctrlField is TextField textField) {
-                    textField.RegisterValueChangedCallback(_ => Refresh());
-                }
+                VisualElement ctrlField = contentContainer[branchCfg.ctrlIndex];
+                ctrlFields.Add(ctrlField);
             }
         }
-        RegisterCallback<ContextClickEvent>(ShowContextMenu);
-        // 刷新UI
-        Refresh();
+        return ctrlFields;
     }
 
-    private void ShowContextMenu(ContextClickEvent evt) {
-        evt.StopPropagation();
-        if (evt.localMousePosition.y > 20) return; // 只检测顶部区域
-        if (editor == null) return;
+    #region context-menu
 
-        Variable variable = (Variable)userData;
+    private void ShowContextMenu(ContextClickEvent evt) {
+        if (evt.localMousePosition.y > 20) return; // 只检测顶部区域
+        if (_variable == null) return;
+        evt.StopPropagation();
+
+        Variable variable = _variable;
         GenericMenu menu = new GenericMenu();
         // SetNull
         if (variable.isNull) {
@@ -137,7 +192,7 @@ public class VarObjectField : Foldout, IVarField
         } else {
             menu.AddItem(new GUIContent("Copy"), false, OnClickCopy, null);
         }
-        if (DataEditorUtil.IsPastable(GUIUtility.systemCopyBuffer)) {
+        if (DataEditorUtil.IsPastable(GUIUtility.systemCopyBuffer, DsonType.Object)) {
             menu.AddItem(new GUIContent("Paste"), false, OnClickPaste, null);
         } else {
             menu.AddDisabledItem(new GUIContent("Paste"));
@@ -174,58 +229,58 @@ public class VarObjectField : Foldout, IVarField
     }
 
     private void OnClickSetNull(object _) {
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         variable.isNull = true;
         variable.ApplyModifiedProperties();
         Refresh();
     }
 
     private void OnClickSetNotNull(object _) {
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         variable.isNull = false;
         variable.ApplyModifiedProperties();
         Refresh();
     }
 
     private void OnClickCopy(object _) {
-        Variable variable = (Variable)userData;
-        DataEditorUtil.DoCopy(variable, editor.model);
-        variable.ApplyModifiedProperties();
-        Refresh();
+        Variable variable = _variable;
+        DataEditorUtil.DoCopy(variable, _editor.model);
     }
 
     private void OnClickPaste(object _) {
-        Variable variable = (Variable)userData;
-        DataEditorUtil.DoPaste(variable, editor.model);
+        Variable variable = _variable;
+        DataEditorUtil.DoPaste(variable, _editor.model);
         variable.ApplyModifiedProperties();
-        Refresh();
+        Refresh(true);
     }
 
     private void OnClickReset(object _) {
-        Variable variable = (Variable)userData;
-        editor.model.ResetVariable(variable);
+        Variable variable = _variable;
+        _editor.model.ResetVariable(variable);
         variable.ApplyModifiedProperties();
-        Refresh();
+        Refresh(true);
     }
 
     private void OnClickResetWith(object obj) {
         int index = (int)obj;
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         DSInst inst = variable.cfg.supportedInsts[index];
-        editor.model.ResetVariable(variable, inst.DsonValue);
+        _editor.model.ResetVariable(variable, inst.DsonValue);
         variable.ApplyModifiedProperties();
-        Refresh();
+        Refresh(true);
     }
 
     private void OnClickChangeType(object obj) {
         int index = (int)obj;
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         string typeSymbol = variable.cfg.supportedTypes[index];
         //
-        DSNamedType namedType = editor.model.repository.ResolveTypeSymbol(null, typeSymbol) as DSNamedType;
-        editor.model.ChangeVariableType(variable, namedType);
+        DSNamedType namedType = _editor.model.repository.ResolveTypeSymbol(null, typeSymbol) as DSNamedType;
+        _editor.model.ChangeVariableType(variable, namedType);
         variable.ApplyModifiedProperties();
-        Refresh(); // 需要刷新port
+        Refresh(true);
     }
+
+    #endregion
 }
 }

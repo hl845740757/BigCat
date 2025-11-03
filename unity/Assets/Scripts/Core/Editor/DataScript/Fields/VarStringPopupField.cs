@@ -23,11 +23,14 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarStringPopupField : PopupField<string>, IVarField
 {
+    private Variable _variable;
+
     public VarStringPopupField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         choices = variableCfg.stringPopValues;
         formatListItemCallback = variableCfg.stringPopNameFunc;
@@ -35,16 +38,22 @@ public class VarStringPopupField : PopupField<string>, IVarField
         //
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.stringValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.stringValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            SetValueWithoutNotify(variable.stringValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<string> evt) {
+        if (_variable != null) {
+            _variable.stringValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.stringValue);
         }
     }
 }

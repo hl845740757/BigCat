@@ -23,24 +23,33 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarBoolField : MToggle, IVarField
 {
+    private Variable _variable;
+
     public VarBoolField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.boolValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.boolValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            SetValueWithoutNotify(variable.boolValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<bool> evt) {
+        if (_variable != null) {
+            _variable.boolValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.boolValue);
         }
     }
 }

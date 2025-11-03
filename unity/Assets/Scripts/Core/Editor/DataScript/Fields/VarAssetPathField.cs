@@ -23,22 +23,34 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarAssetPathField : AssetPathField, IVarField
 {
+    private Variable _variable;
+
     public VarAssetPathField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.stringValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.stringValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<string> evt) {
+        if (_variable != null) {
+            _variable.stringValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.stringValue);
+        }
     }
 }
 }

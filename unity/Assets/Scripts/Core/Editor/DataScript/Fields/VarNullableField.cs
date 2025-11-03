@@ -28,10 +28,12 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// </summary>
 public class VarNullableField : Foldout, IVarField
 {
-    private DataGraphEditor editor { get; set; }
+    private DataGraphEditor _editor;
+    private Variable _variable;
 
     public VarNullableField() {
-
+        style.flexShrink = 0;
+        this.RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
 
     public string label {
@@ -42,42 +44,47 @@ public class VarNullableField : Foldout, IVarField
     /// <summary>
     /// 刷新View
     /// </summary>
-    public void Refresh() {
-        Variable variable = (Variable)userData;
+    /// <param name="rebuild"></param>
+    public void Refresh(bool rebuild = false) {
+        Variable variable = _variable;
         if (variable == null) return;
         if (variable.isNull) {
             contentContainer.SetEnabled(false);
             return;
         }
         contentContainer.SetEnabled(true);
-        //
         VisualElement fieldView = contentContainer[0];
-        DataEditorUtil.Refresh(fieldView);
+        DataEditorUtil.Refresh(fieldView, rebuild);
     }
 
     /// <summary>
     /// 绑定数据后调用
     /// </summary>
     public void Bind(DataGraphEditor editor, Variable variable) {
-        this.editor = editor;
-        this.userData = variable;
+        this._editor = editor;
+        this._variable = variable;
         foreach (Variable nestedVar in variable.values) {
-            VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this.editor);
+            VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
             contentContainer.Add(fieldView);
         }
-        RegisterCallback<ContextClickEvent>(ShowContextMenu);
         Refresh();
     }
+
+    public void Unbind() {
+        _editor = null;
+        _variable = null;
+    }
+
+    #region context menu
 
     private void ShowContextMenu(ContextClickEvent evt) {
         evt.StopPropagation();
         if (evt.localMousePosition.y > 20) return; // 只检测顶部区域
-        if (editor == null) return;
+        if (_variable == null) return;
 
-        Variable variable = (Variable)userData;
         GenericMenu menu = new GenericMenu();
         // SetNull
-        if (variable.isNull) {
+        if (_variable.isNull) {
             menu.AddDisabledItem(new GUIContent("SetNull"), true);
             menu.AddItem(new GUIContent("SetNotNull"), false, OnClickSetNotNull, null);
         } else {
@@ -88,17 +95,19 @@ public class VarNullableField : Foldout, IVarField
     }
 
     private void OnClickSetNull(object _) {
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         variable.isNull = true;
         variable.ApplyModifiedProperties();
         Refresh();
     }
 
     private void OnClickSetNotNull(object _) {
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         variable.isNull = false;
         variable.ApplyModifiedProperties();
         Refresh();
     }
+
+    #endregion
 }
 }

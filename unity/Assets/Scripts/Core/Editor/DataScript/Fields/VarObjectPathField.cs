@@ -18,14 +18,17 @@
 
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.CoreEditor.UIElements;
+using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarObjectPathField : BindableElement, IVarField
 {
     private readonly ObjectPathField field = ObjectPathField.Create();
+    private Variable _variable;
 
     public VarObjectPathField() {
+        field.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public string label {
@@ -34,19 +37,24 @@ public class VarObjectPathField : BindableElement, IVarField
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         field.SetValueWithoutNotify(variable.objectPathValue);
-        field.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.objectPathValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-            variable.portView?.OnValueChanged(evt.previousValue, evt.newValue);
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            field.SetValueWithoutNotify(variable.objectPathValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<ObjectPath> evt) {
+        if (_variable != null) {
+            _variable.objectPathValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild) {
+        if (_variable != null) {
+            field.SetValueWithoutNotify(_variable.objectPathValue);
         }
     }
 }

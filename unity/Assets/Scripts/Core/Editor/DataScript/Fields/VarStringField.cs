@@ -25,44 +25,52 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarStringField : MTextField, IVarField
 {
-    public VarStringField() {
+    private Variable _variable;
 
+    public VarStringField() {
+        this.RegisterCallback<ContextClickEvent>(ShowContextMenu);
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.isDelayed = variableCfg.isDelayed;
         this.multiline = variableCfg.isMultiline;
         this.SetValueWithoutNotify(variable.stringValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.stringValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
-        RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
 
-    public void Refresh() {
-        if (userData is not Variable variable) {
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<string> evt) {
+        if (_variable != null) {
+            _variable.stringValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable == null) {
             return;
         }
-        SetValueWithoutNotify(variable.stringValue);
-        if (variable.isNull) {
+        SetValueWithoutNotify(_variable.stringValue);
+        if (_variable.isNull) {
             textInputBase.SetEnabled(false);
             textInputBase.text = "value is null"; // 其实再使用一个Label更安全
         } else {
             textInputBase.SetEnabled(true);
-            textInputBase.text = variable.stringValue;
+            textInputBase.text = _variable.stringValue;
         }
     }
 
     private void ShowContextMenu(ContextClickEvent evt) {
+        if (_variable == null) return;
         evt.StopPropagation();
-        if (userData is not Variable variable) {
-            return;
-        }
+
+        Variable variable = _variable;
         GenericMenu menu = new GenericMenu();
         // SetNull
         if (variable.isNull) {
@@ -76,14 +84,14 @@ public class VarStringField : MTextField, IVarField
     }
 
     private void OnClickSetNull(object _) {
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         variable.isNull = true;
         variable.ApplyModifiedProperties();
         Refresh();
     }
 
     private void OnClickSetNotNull(object _) {
-        Variable variable = (Variable)userData;
+        Variable variable = _variable;
         variable.isNull = false;
         variable.ApplyModifiedProperties();
         Refresh();

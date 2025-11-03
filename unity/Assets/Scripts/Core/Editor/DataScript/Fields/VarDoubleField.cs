@@ -23,11 +23,15 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarDoubleField : MDoubleField, IVarField
 {
+    private Variable _variable;
+
     public VarDoubleField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
+
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         if (variableCfg.min != null) {
             hasMin = true;
@@ -40,16 +44,22 @@ public class VarDoubleField : MDoubleField, IVarField
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.doubleValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.doubleValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            SetValueWithoutNotify(variable.doubleValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<double> evt) {
+        if (_variable != null) {
+            _variable.doubleValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.doubleValue);
         }
     }
 }

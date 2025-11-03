@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 
@@ -24,8 +25,10 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 public class VarDateTimeField : BindableElement, IVarField
 {
     private readonly DateTimeField field = DateTimeField.Create();
+    private Variable _variable;
 
     public VarDateTimeField() {
+        field.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public string label {
@@ -34,18 +37,24 @@ public class VarDateTimeField : BindableElement, IVarField
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         field.SetValueWithoutNotify(variable.dateTimeValue);
-        field.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.dateTimeValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            field.SetValueWithoutNotify(variable.dateTimeValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<DateTime> evt) {
+        if (_variable != null) {
+            _variable.dateTimeValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            field.SetValueWithoutNotify(_variable.dateTimeValue);
         }
     }
 }

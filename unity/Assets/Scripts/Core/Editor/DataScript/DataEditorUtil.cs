@@ -55,18 +55,18 @@ public static class DataEditorUtil
 
     /// <summary>
     /// 文本是否可执行粘贴
-    ///
+    /// 
     /// 注：由于要执行
     /// </summary>
     /// <param name="text"></param>
+    /// <param name="expectedType"></param>
     /// <returns></returns>
-    public static bool IsPastable(string text) {
+    public static bool IsPastable(string text, DsonType expectedType) {
         if (string.IsNullOrWhiteSpace(text)) {
             return false;
         }
         try {
-            Dsons.FromDson(text);
-            return true;
+            return Dsons.FromDson(text).DsonType == expectedType;
         }
         catch (Exception) {
             return false;
@@ -107,6 +107,25 @@ public static class DataEditorUtil
         }
     }
 
+    internal static int GetFoldoutDepth(VisualElement element) {
+        int foldoutDepth = 0;
+        for (VisualElement parent = element.parent; parent != null; parent = parent.parent) {
+            if (parent is Foldout) {
+                foldoutDepth++;
+            }
+        }
+        return foldoutDepth;
+    }
+
+    internal static int GetListAndFoldoutDepth(VisualElement element) {
+        int listAndFoldoutDepth = 0;
+        for (VisualElement parent = element.hierarchy.parent; parent != null; parent = parent.hierarchy.parent) {
+            if (parent is Foldout || parent is ListView)
+                ++listAndFoldoutDepth;
+        }
+        return listAndFoldoutDepth;
+    }
+
     /// <summary>
     /// 如果返回null则表示当前不可展示
     /// </summary>
@@ -116,7 +135,7 @@ public static class DataEditorUtil
     public static FieldBranchCfg FilterBranchCfg(Variable container, List<FieldBranchCfg> branchCfgs) {
         for (int index = 0; index < branchCfgs.Count; index++) {
             FieldBranchCfg branchCfg = branchCfgs[index];
-            Variable ctrlValue = container.values[branchCfg.ctrlIndex];
+            Variable ctrlValue = container[branchCfg.ctrlIndex];
             // Debug.Assert(ctrlValue.defineInfo.SimpleName == branchCfg.ctrl);
             bool isMatch = ctrlValue.type.SimpleName == DSKeywords.TYPE_STRING
                 ? ctrlValue.stringValue == branchCfg.value
@@ -229,16 +248,16 @@ public static class DataEditorUtil
             }
             case DSKeywords.TYPE_STRING: {
                 if (variableCfg.HasPopNames) return CreateStringPopupField(variable, editor);
-                return CreateTextField(variable, editor);
+                return CreateStringField(variable, editor);
             }
             case DSKeywords.TYPE_BYTES: {
                 variableCfg.isDelayed = true;
                 variableCfg.isMultiline = true;
-                return CreateTextField(variable, editor);
+                return CreateStringField(variable, editor);
             }
             case DSKeywords.TYPE_FLOAT: return CreateFloatField(variable, editor);
             case DSKeywords.TYPE_DOUBLE: return CreateDoubleField(variable, editor);
-            case DSKeywords.TYPE_BOOL: return CreateToggleField(variable, editor);
+            case DSKeywords.TYPE_BOOL: return CreateBoolField(variable, editor);
             case DSKeywords.TYPE_DATETIME: return CreateDateTimeField(variable, editor);
             case DSKeywords.TYPE_TIMESTAMP: return CreateTimestampField(variable, editor);
             case DSKeywords.TYPE_POINTER: return CreateObjectPathField(variable, editor);
@@ -247,7 +266,7 @@ public static class DataEditorUtil
         if (varType.Kind == DSElementKind.Enum) {
             return variableCfg.HasMaskNames
                 ? CreateEnumMaskField(variable, editor)
-                : CreateEnumPopupField(variable, editor);
+                : CreateEnumField(variable, editor);
         }
         // 通用Object类型
         return CreateObjectField(variable, editor);
@@ -274,10 +293,20 @@ public static class DataEditorUtil
         };
     }
 
-    public static void Refresh(VisualElement element) {
+    public static void Refresh(VisualElement element, bool rebuild) {
         if (element is IVarField field) {
-            field.Refresh();
+            field.Refresh(rebuild);
         }
+    }
+
+    public static bool IsCacheable(VisualElement element) {
+        return element is IVarField;
+        // return element switch
+        // {
+        //     VarObjectField or VarListField => false,
+        //     IVarField field => true,
+        //     _ => false
+        // };
     }
 
     #endregion
@@ -308,13 +337,13 @@ public static class DataEditorUtil
         return field;
     }
 
-    public static Toggle CreateToggleField(Variable variable, DataGraphEditor editor) {
+    public static Toggle CreateBoolField(Variable variable, DataGraphEditor editor) {
         VarBoolField field = new VarBoolField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static TextField CreateTextField(Variable variable, DataGraphEditor editor) {
+    public static TextField CreateStringField(Variable variable, DataGraphEditor editor) {
         VarStringField field = new VarStringField();
         field.Bind(editor, variable);
         return field;
@@ -338,7 +367,7 @@ public static class DataEditorUtil
         return field;
     }
 
-    public static PopupField<int> CreateEnumPopupField(Variable variable, DataGraphEditor editor) {
+    public static PopupField<int> CreateEnumField(Variable variable, DataGraphEditor editor) {
         return CreateInt32PopupField(variable, editor);
     }
 
@@ -442,9 +471,10 @@ public static class DataEditorUtil
         return field;
     }
 
-    public static ListView CreateMapField(Variable variable, DataGraphEditor editor) {
-        ListView listView = new ListView();
-        return listView;
+    public static VarListField CreateMapField(Variable variable, DataGraphEditor editor) {
+        VarListField field = new VarListField();
+        field.Bind(editor, variable);
+        return field;
     }
 
     public static VarNullableField CreateNullableField(Variable variable, DataGraphEditor editor) {

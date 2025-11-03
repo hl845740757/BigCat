@@ -17,6 +17,7 @@
 #endregion
 
 using UnityEngine.UIElements;
+using Wjybxx.BigCat.Core;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
@@ -24,8 +25,10 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 public class VarAABBField : BindableElement, IVarField
 {
     private readonly AABBField field = AABBField.Create();
+    private Variable _variable;
 
     public VarAABBField() {
+        field.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public string label {
@@ -34,20 +37,26 @@ public class VarAABBField : BindableElement, IVarField
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         field.isInteger = variableCfg.isInteger;
         field.SetValueWithoutNotify(variable.aabbValue);
-        field.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.aabbValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            field.SetValueWithoutNotify(variable.aabbValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<MinMaxAABB> evt) {
+        if (_variable != null) {
+            _variable.aabbValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            field.SetValueWithoutNotify(_variable.aabbValue);
         }
     }
 }

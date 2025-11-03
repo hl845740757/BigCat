@@ -16,6 +16,7 @@
 
 #endregion
 
+using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 
@@ -23,25 +24,34 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarVector3IntField : MVector3IntField, IVarField
 {
+    private Variable _variable;
+
     public VarVector3IntField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetVectorFieldMargin(this, this.labelElement, variableCfg);
         this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.vector3IntValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.vector3IntValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            SetValueWithoutNotify(variable.vector3IntValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<Vector3Int> evt) {
+        if (_variable != null) {
+            _variable.vector3IntValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.vector3IntValue);
         }
     }
 }

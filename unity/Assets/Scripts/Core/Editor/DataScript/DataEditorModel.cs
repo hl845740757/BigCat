@@ -43,11 +43,11 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// 但该对象只应该存在于内存中，不应该被保存为资产对象。
 /// 
 /// 注：
-/// 1.主要负责<see cref="NodeData"/>和<see cref="Variable"/>的创建，和数据修复工作。
+/// 1.主要负责<see cref="NodeData"/>和<see cref="Variable"/>的创建和数据修复工作。
 /// 2.对于字典类型，如果Key是Int32、Int64、String类型（即标准Map），则导出为DsonObject，否则导出为DsonArray。
 /// 3.Node不一定存在于<see cref="GraphView"/>，但所有的数据抽象都是<see cref="NodeData"/>。
 /// </summary>
-public class DataEditorModel
+public class DataEditorModel : ScriptableObject
 {
     /// <summary>
     /// 编辑器关联的DataScript仓库
@@ -60,12 +60,13 @@ public class DataEditorModel
     [NonSerialized] public readonly LinkedDictionary<string, DSNamedType> templates = new();
 
     /// <summary>
-    /// 当前的所有Nodes
+    /// NodeList
     ///
-    /// 注：部分Node是不保存的，Node也不全存在于GraphView，可以通过Folder字段控制。
+    /// 注：
+    /// 1.部分Node是不保存到资产的，Node也不全存在于GraphView。
+    /// 2.避免直接修改List，请通过封装的数组相关方法操作。
     /// </summary>
-    [NonSerialized]
-    public readonly IndexedDynamicArray<NodeData> nodeList = new(NodeIndexHelper.Inst);
+    public List<NodeData> nodeList = new List<NodeData>();
     /// <summary>
     /// 当前的所有Node(保持插入序)
     /// </summary>
@@ -89,15 +90,39 @@ public class DataEditorModel
         NumberStyle = NumberStyles.Simple
     }.Build();
 
-    private readonly ObjectPool<List<DSField>> _fieldListCache = ObjectPoolUtil.NewListPool<DSField>(4);
-    private readonly ObjectPool<List<Variable>> _variableListCache = ObjectPoolUtil.NewListPool<Variable>(4);
+    private readonly ObjectPool<List<DSField>> _fieldListCache = ObjectPoolUtil.NewListPool<DSField>(8);
+    private readonly ObjectPool<List<DSTypeElement>> _typeListCache = ObjectPoolUtil.NewListPool<DSTypeElement>(2);
     private readonly StringBuilder _sbCache = new(16);
 
     /// <summary>
     /// 
     /// </summary>
-    public void OnEnable() {
+    private void OnEnable() {
         // TODO
+    }
+
+    /// <summary>
+    /// 该方法在Undo/Redo执行以后调用，用于修复数据
+    /// </summary>
+    public void OnUndoRedoPerformed() {
+        // 删除不在使用的引用
+        using var enumerator = nodeDic.GetEnumerator();
+        while (enumerator.MoveNext()) {
+            var pair = enumerator.Current;
+            if (!nodeList.Contains(pair.Value)) {
+                enumerator.Remove();
+            }
+        }
+        // 找回丢失的引用(Redo加回的引用)
+        foreach (NodeData nodeData in nodeList) {
+            if (nodeData) {
+                nodeDic[nodeData.localId] = nodeData;
+            }
+        }
+        // 修复Variable数据
+        foreach (NodeData nodeData in nodeList) {
+            RepairNode(nodeData);
+        }
     }
 
     #region NODE
@@ -116,21 +141,17 @@ public class DataEditorModel
 
     /// <summary>
     /// 删除node
+    ///
+    /// 注：此时不会销毁Node，否则会导致无法执行Undo
     /// </summary>
-    /// <param name="localId"></param>
-    /// <param name="destroy"></param>
-    public bool DeleteNode(long localId, bool destroy = true) {
+    public NodeData DeleteNode(long localId) {
         if (!nodeDic.TryGetValue(localId, out NodeData node)) {
-            return true;
+            return null;
         }
         DisconnectAll(node);
         nodeDic.Remove(localId);
         nodeList.Remove(node);
-        if (destroy) {
-            node.value?.Dispose();
-            Object.DestroyImmediate(node);
-        }
-        return true;
+        return node;
     }
 
     /// <summary>
@@ -146,6 +167,7 @@ public class DataEditorModel
         if (namedType != null) {
             nodeData.value = CreateVariable(namedType);
         }
+        nodeData.UpdateProperties();
         return nodeData;
     }
 
@@ -162,8 +184,6 @@ public class DataEditorModel
             ResetVariable(variable); // 重置数据即可断开连接 - 字段的类型应当为ObjectPath
         }
         nodeData.inputFields.Clear(); // input清理
-
-
         return list;
     }
 
@@ -260,6 +280,7 @@ public class DataEditorModel
             defineInfo = defineInfo,
             cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
+            typeSymbol = DSUtil.ToDisplayString(type.TypeName),
             isNull = variableCfg.initNull || DSUtil.IsNullableType(type)
         };
         CreateValues(variable);
@@ -286,14 +307,15 @@ public class DataEditorModel
             DSField valueField = variable.type.GetField("value")!;
             VariableCfg elementCfg = variable.cfg.elementCfg;
             Variable nestedVar = CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg);
-            variable.values = new List<Variable>(1) { nestedVar };
+            variable.values = new List<Variable>(1);
+            variable.Add(nestedVar);
             return;
         }
         // 递归创建Value
         List<DSField> fields = varType.GetFields(true, _fieldListCache.Acquire());
         variable.values = new List<Variable>(fields.Count);
         foreach (DSField field in fields) {
-            variable.values.Add(CreateVariable(field));
+            variable.Add(CreateVariable(field));
         }
         _fieldListCache.Release(fields);
     }
@@ -313,6 +335,7 @@ public class DataEditorModel
         ResetVariable(variable);
         // 按照新类型再初始化
         variable.type = newType;
+        variable.typeSymbol = DSUtil.ToDisplayString(newType.TypeName);
         CreateValues(variable);
         if (inheritData) {
             Decode(variable, dsonValue);
@@ -336,12 +359,9 @@ public class DataEditorModel
         if (values == null || values.Count == 0) {
             return;
         }
-        // List和字典直接清空
+        // List和字典直接清空 - 需要记录调用电
         if (DSUtil.IsCollectionOrMapType(variable.type)) {
-            foreach (Variable nestedVar in values) {
-                nestedVar.Dispose();
-            }
-            values.Clear();
+            variable.ClearArray();
             return;
         }
         // Nullable固定重置为null，普通Object由用户选择是否重置为null
@@ -361,6 +381,40 @@ public class DataEditorModel
     public void ResetVariable(Variable variable, DsonValue dsonValue) {
         ResetVariable(variable);
         Decode(variable, dsonValue);
+    }
+
+    /// <summary>
+    /// 创建一个Map的值
+    /// </summary>
+    /// <param name="variable"></param>
+    public Variable CreateListItem(Variable variable) {
+        DSField valuesField = variable.type.GetField("values")!;
+        return CreateVariable(valuesField, (DSNamedType)valuesField.Type, variable.cfg.elementCfg);
+    }
+
+    /// <summary>
+    /// 创建一个Map的值
+    /// </summary>
+    /// <param name="variable"></param>
+    public Variable CreateMapItem(Variable variable) {
+        DSNamedType pairType = GetPairType(variable.type);
+        Variable pairVar = CreateVariable(pairType);
+        pairVar[1].cfg = variable.cfg.elementCfg; // 修正value的配置
+        return pairVar;
+    }
+
+    private DSNamedType GetPairType(DSNamedType mapType) {
+        DSField keysField = mapType.GetField("keys")!;
+        DSField valuesField = mapType.GetField("values")!;
+
+        List<DSTypeElement> list = _typeListCache.Acquire();
+        list.Add(keysField.Type);
+        list.Add(valuesField.Type);
+
+        DSNamedType pairType = repository.GetBuiltinType(DSKeywords.TYPE_PAIR);
+        pairType = repository.MakeGenericType(pairType, list);
+        _typeListCache.Release(list);
+        return pairType;
     }
 
     /// <summary>
@@ -449,6 +503,76 @@ public class DataEditorModel
     #endregion
 
     #region 序列化
+
+    /// <summary>
+    /// 修复Node的缓存数据
+    /// 
+    /// 注意：只能修复逻辑层数据，不能修复显示层对象，需要重新构建GraphView。
+    /// </summary>
+    /// <param name="node"></param>
+    public void RepairNode(NodeData node) {
+        if (node.value == null) return;
+        node.serializedObject.Update(); // 奇怪？序列化层的数组长度不匹配
+        node.value.UnbindValuesProperty(); // 此过程不能记录操作，否则会覆盖Undo记录
+        RepairVariable(node.value);
+        node.value.RebindValuesProperty();
+    }
+
+    /// <summary>
+    /// 修复Variable的缓存数据
+    /// </summary>
+    /// <param name="variable">入口必须是Root对象</param>
+    private void RepairVariable(Variable variable) {
+        if (variable.defineInfo == null) {
+            throw new InvalidOperationException();
+        }
+        variable.type ??= (DSNamedType)repository.ResolveTypeSymbol(null, variable.typeSymbol);
+        variable.cfg ??= GetVariableCfg(variable.type);
+        if (variable.values == null) {
+            return;
+        }
+        // 修正集合元素
+        if (DSUtil.IsCollectionType(variable.type)) {
+            DSField valuesField = variable.type.GetField("values")!;
+            for (int index = 0; index < variable.values.Count; index++) {
+                Variable nestedVar = variable.values[index];
+                if (nestedVar == null) { // ListView会先行修改数组长度
+                    nestedVar = CreateVariable(valuesField);
+                    variable[index] = nestedVar;
+                }
+                nestedVar.defineInfo = valuesField;
+                nestedVar.cfg = variable.cfg.elementCfg;
+                RepairVariable(nestedVar);
+            }
+            return;
+        }
+        if (DSUtil.IsMapType(variable.type)) {
+            DSNamedType pairType = GetPairType(variable.type);
+            for (int index = 0; index < variable.values.Count; index++) {
+                Variable pairVar = variable.values[index];
+                if (pairVar == null) { // ListView会先行修改数组长度
+                    pairVar = CreateVariable(pairType);
+                    variable[index] = pairVar;
+                }
+                pairVar.defineInfo = pairType;
+                pairVar.type = pairType;
+                RepairVariable(pairVar);
+                pairVar[1].cfg = variable.cfg.elementCfg; // 修正value的配置
+            }
+            return;
+        }
+        // 修正潜在的List/Map字段
+        List<DSField> fields = variable.type.GetFields(true, _fieldListCache.Acquire());
+        for (int index = 0; index < variable.values.Count; index++) {
+            Variable nestedVar = variable.values[index];
+            if (nestedVar == null) {
+                throw new AssertionError();
+            }
+            nestedVar.defineInfo = fields[index];
+            RepairVariable(nestedVar);
+        }
+        _fieldListCache.Release(fields);
+    }
 
     /// <summary>
     /// 将DsonValue赋值给当前变量（反序列化）
@@ -543,12 +667,12 @@ public class DataEditorModel
                                            || variableCfg.dsonType == DsonType.Timestamp) {
             if (dsonValue.DsonType == DsonType.DateTime) {
                 ExtDateTime dateTime = dsonValue.AsDateTime();
-                variable.values[0].longValue = dateTime.Seconds;
-                variable.values[1].longValue = dateTime.Nanos;
+                variable[0].longValue = dateTime.Seconds;
+                variable[1].longValue = dateTime.Nanos;
             } else if (dsonValue.DsonType == DsonType.Timestamp) {
                 Timestamp timestamp = dsonValue.AsTimestamp();
-                variable.values[0].longValue = timestamp.Seconds;
-                variable.values[1].longValue = timestamp.Nanos;
+                variable[0].longValue = timestamp.Seconds;
+                variable[1].longValue = timestamp.Nanos;
             }
             return;
         }
@@ -556,64 +680,54 @@ public class DataEditorModel
         if (variableCfg.dsonType == DsonType.Pointer) {
             if (dsonValue.DsonType == DsonType.Pointer) {
                 ObjectPtr objectPtr = dsonValue.AsPointer();
-                variable.values[0].stringValue = objectPtr.Collection;
-                variable.values[1].stringValue = objectPtr.LocalPath;
-                variable.values[2].longValue = objectPtr.LocalId;
-                variable.values[3].longValue = objectPtr.Type;
+                variable[0].stringValue = objectPtr.Collection;
+                variable[1].stringValue = objectPtr.LocalPath;
+                variable[2].longValue = objectPtr.LocalId;
+                variable[3].longValue = objectPtr.Type;
             }
             return;
         }
         // Nullable
         if (DSUtil.IsNullableType(varType)) {
             // ResetVariable(variable); // 强制清理，确保正确覆盖 - Nullable的路径是稳定的，可不清理
-            Decode(variable.values[0], dsonValue);
+            Decode(variable[0], dsonValue);
             return;
         }
         // 集合 - 不支持导入Object，无法为key创建定义
         if (DSUtil.IsCollectionType(varType)) {
-            ResetVariable(variable); // 强制清理，确保正确覆盖
+            variable.ClearArray(); // 强制清理，确保正确覆盖
             if (dsonValue.DsonType != DsonType.Array) {
                 return;
             }
-            DSField valuesField = varType.GetField("values")!;
             DsonArray<string> dsonArray = dsonValue.AsArray();
             variable.values.EnsureCapacity(dsonArray.Count);
             foreach (DsonValue nestValue in dsonArray) {
-                Variable nestedVar = CreateVariable(valuesField, variable.cfg);
+                Variable nestedVar = CreateListItem(variable);
                 Decode(nestedVar, nestValue);
-                variable.values.Add(nestedVar);
+                variable.Add(nestedVar);
             }
             return;
         }
         // 字典 - 从DsonArray恢复时，可能出现兼容问题
         if (DSUtil.IsMapType(varType)) {
-            ResetVariable(variable); // 强制清理，确保正确覆盖
-            //
-            DSField keysField = varType.GetField("keys")!;
-            DSField valuesField = varType.GetField("values")!;
+            variable.ClearArray(); // 强制清理，确保正确覆盖
             if (dsonValue.DsonType == DsonType.Object) {
                 DsonObject<string> dsonObject = dsonValue.AsObject();
-                variable.values.EnsureCapacity(dsonObject.Count * 2);
+                variable.values.EnsureCapacity(dsonObject.Count);
                 foreach (var pair in dsonObject) {
-                    Variable varKey = CreateVariable(keysField, variable.cfg);
-                    Decode(varKey, new DsonString(pair.Key));
-                    variable.values.Add(varKey);
-                    //
-                    Variable varValue = CreateVariable(valuesField, variable.cfg);
-                    Decode(varValue, pair.Value);
-                    variable.values.Add(varValue);
+                    Variable varPair = CreateMapItem(variable);
+                    Decode(varPair[0], new DsonString(pair.Key));
+                    Decode(varPair[1], pair.Value);
+                    variable.Add(varPair);
                 }
             } else if (dsonValue.DsonType == DsonType.Array) {
                 DsonArray<string> dsonArray = dsonValue.AsArray();
-                variable.values.EnsureCapacity(dsonArray.Count);
+                variable.values.EnsureCapacity(dsonArray.Count / 2);
                 for (int index = 0; index < dsonArray.Count; index += 2) {
-                    Variable varKey = CreateVariable(keysField, variable.cfg);
-                    Decode(varKey, dsonArray[index]);
-                    variable.values.Add(varKey);
-                    //
-                    Variable varValue = CreateVariable(valuesField, variable.cfg);
-                    Decode(varValue, dsonArray[index + 1]);
-                    variable.values.Add(varValue);
+                    Variable varPair = CreateMapItem(variable);
+                    Decode(varPair[0], dsonArray[index]);
+                    Decode(varPair[1], dsonArray[index + 1]);
+                    variable.Add(varPair);
                 }
             }
             return;
@@ -674,26 +788,26 @@ public class DataEditorModel
         // DateTime
         VariableCfg variableCfg = GetVariableCfg(varType);
         if (variableCfg.dsonType == DsonType.DateTime || DSUtil.IsDateTimeType(varType)) {
-            long seconds = variable.values[0].longValue;
-            int nanos = variable.values[1].intValue;
+            long seconds = variable[0].longValue;
+            int nanos = variable[1].intValue;
             return new DsonDateTime(new ExtDateTime(seconds, nanos));
         }
         if (variableCfg.dsonType == DsonType.Timestamp || DSUtil.IsTimestampType(varType)) {
-            long seconds = variable.values[0].longValue;
-            int nanos = variable.values[1].intValue;
+            long seconds = variable[0].longValue;
+            int nanos = variable[1].intValue;
             return new DsonTimestamp(new Timestamp(seconds, nanos));
         }
         // ObjectPtr
         if (variableCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
-            string collection = variable.values[0].stringValue;
-            string localPath = variable.values[1].stringValue;
-            long localId = variable.values[2].longValue;
-            int type = variable.values[3].intValue;
+            string collection = variable[0].stringValue;
+            string localPath = variable[1].stringValue;
+            long localId = variable[2].longValue;
+            int type = variable[3].intValue;
             return new DsonPointer(new ObjectPtr(collection, localPath, localId, type));
         }
         // Nullable - 导出时拆箱
         if (DSUtil.IsNullableType(varType)) {
-            return Encode(variable.values[0]);
+            return Encode(variable[0]);
         }
         // 普通集合
         if (DSUtil.IsCollectionType(varType)) {
@@ -718,7 +832,7 @@ public class DataEditorModel
     }
 
     private DsonValue EncodeStructAsDsonObject(Variable variable) {
-        DsonObject<string> dsonObject = new DsonObject<string>(variable.values.Count);
+        DsonObject<string> dsonObject = new DsonObject<string>(variable.Count);
         foreach (Variable nestedVar in variable.values) {
             DsonValue dsonValue = Encode(nestedVar);
             if (dsonValue.DsonType == DsonType.Null) {
@@ -735,7 +849,7 @@ public class DataEditorModel
 
     private DsonValue EncodeCollectionAsDsonArray(Variable variable) {
         DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[0];
-        DsonArray<string> dsonArray = new DsonArray<string>(variable.values.Count);
+        DsonArray<string> dsonArray = new DsonArray<string>(variable.Count);
         foreach (Variable nestedVar in variable.values) {
             DsonValue dsonValue = Encode(nestedVar);
             WriteClassNameHeader(valueDeclaredType, nestedVar.type, dsonValue);
@@ -748,10 +862,10 @@ public class DataEditorModel
         // 我们暂时认为Key都不是多态的
         // DSNamedType keyDeclaredType = (DSNamedType)variable.type.TypeArguments[0];
         DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[1];
-        DsonArray<string> dsonArray = new DsonArray<string>(variable.values.Count);
-        for (int index = 0; index < variable.values.Count; index += 2) {
-            Variable varKey = variable.values[index];
-            Variable varValue = variable.values[index + 1];
+        DsonArray<string> dsonArray = new DsonArray<string>(variable.Count);
+        foreach (Variable varPair in variable.values) {
+            Variable varKey = varPair[0];
+            Variable varValue = varPair[1];
             //
             DsonValue dsonK = Encode(varKey);
             DsonValue dsonV = Encode(varValue);
@@ -764,10 +878,10 @@ public class DataEditorModel
 
     private DsonObject<string> EncodeMapAsDsonObject(Variable variable, bool isStringKey) {
         DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[1];
-        DsonObject<string> dsonObject = new DsonObject<string>(variable.values.Count / 2);
-        for (int index = 0; index < variable.values.Count; index += 2) {
-            Variable varKey = variable.values[index];
-            Variable varValue = variable.values[index + 1];
+        DsonObject<string> dsonObject = new DsonObject<string>(variable.Count / 2);
+        foreach (Variable varPair in variable.values) {
+            Variable varKey = varPair[0];
+            Variable varValue = varPair[1];
             //
             DsonValue dsonValue = Encode(varValue);
             WriteClassNameHeader(valueDeclaredType, varValue.type, dsonValue);

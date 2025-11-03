@@ -24,39 +24,44 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarColorField : MColorField, IVarField
 {
+    private Variable _variable;
+
     public VarColorField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
-        this.RegisterValueChangedCallback(OnValueChanged);
         this.Refresh();
     }
 
-    private void OnValueChanged(ChangeEvent<Color> evt) {
-        evt.StopPropagation();
-        if (userData is not Variable variable) {
-            return;
-        }
-        if (variable.values == null) { // Color32
-            variable.intValue = UnityEditorUtil.AsInt32(evt.newValue);
-        } else {
-            variable.colorValue = evt.newValue;
-        }
-        variable.ApplyModifiedProperties();
+    public void Unbind() {
+        _variable = null;
     }
 
-    public void Refresh() {
-        if (userData is not Variable variable) {
+    private void OnValueChanged(ChangeEvent<Color> evt) {
+        if (_variable == null) {
             return;
         }
-        if (variable.values == null) { // Color32
-            Color32 color32 = UnityEditorUtil.AsColor32(variable.intValue);
+        if (_variable.values == null) { // Color32
+            _variable.intValue = UnityEditorUtil.AsInt32(evt.newValue);
+        } else {
+            _variable.colorValue = evt.newValue;
+        }
+        _variable.ApplyModifiedProperties();
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable == null) {
+            return;
+        }
+        if (_variable.values == null) { // Color32
+            Color32 color32 = UnityEditorUtil.AsColor32(_variable.intValue);
             this.SetValueWithoutNotify(color32);
         } else {
-            SetValueWithoutNotify(variable.colorValue);
+            SetValueWithoutNotify(_variable.colorValue);
         }
     }
 }

@@ -19,7 +19,7 @@ public class DataGraphEditor : EditorWindow
     private VisualElement _portValueView; // port详细信息展示，用于排序
 
     public NodeView selectedNode { get; private set; }
-    public DataEditorModel model { get; private set; } = new DataEditorModel();
+    public DataEditorModel model { get; private set; }
 
     private NodeData _nodeData;
 
@@ -31,7 +31,8 @@ public class DataGraphEditor : EditorWindow
 
     private void OnEnable() {
         Undo.undoRedoPerformed += OnUndoExecuted;
-        
+        model = CreateInstance<DataEditorModel>(); // 不可在构造函数中直接构建其它脚本对象
+
         string filePath = Application.dataPath + "/Resources/DataScript/data_script.ds";
         DSFile dsFile = DSFileParser.Parse(new FileInfo(filePath));
         model.repository.AddFile(dsFile);
@@ -45,11 +46,14 @@ public class DataGraphEditor : EditorWindow
 
     private void OnDisable() {
         Undo.undoRedoPerformed -= OnUndoExecuted;
+        DestroyImmediate(model);
+        DestroyImmediate(_nodeData);
     }
 
     private void OnUndoExecuted() {
+        model.RepairNode(_nodeData);
         if (_nodeValueView.childCount > 0) {
-            DataEditorUtil.Refresh(_nodeValueView[0]);
+            DataEditorUtil.Refresh(_nodeValueView[0], true);
         }
     }
 

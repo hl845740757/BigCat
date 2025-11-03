@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Assets/Scripts/Core/Editor/DataScript/NodeGraphView.uss?fileID=7433441132597879392&amp;guid=21f364aa189b437188ee624f81e3f407&amp;type=3#NodeGraphView" />
-    <ui:VisualElement style="flex-direction: row; flex-grow: 1; flex-shrink: 0; min-width: 800px; min-height: 600px;">
+    <ui:VisualElement style="min-width: 800px; min-height: 600px; flex-direction: row; flex-grow: 1;">
         <Wjybxx.BigCat.CoreEditor.DataScript.NodeGraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; min-width: 60%; flex-shrink: 1; min-height: 100%;" />
-        <ui:ScrollView name="inspector-div">
+        <ui:ScrollView name="inspector-div" style="flex-grow: 1; min-height: 100%;">
             <ui:VisualElement name="node-info" tooltip="node基础信息">
                 <Wjybxx.BigCat.CoreEditor.UIElements.MTextField name="name" label="Name" is-delayed="true" tooltip="Node的名字" />
                 <Wjybxx.BigCat.CoreEditor.UIElements.MTextField name="folder" label="Folder" tooltip="Node归属的文件夹（逻辑分组）" is-delayed="true" />
@@ -10,7 +10,7 @@
                 <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="position" label="Position" tooltip="UI坐标" isReadonly="true" isDelayed="false" />
                 <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="Comment" is-delayed="true" multiline="true" tooltip="注释" name="comment" />
             </ui:VisualElement>
-            <ui:VisualElement name="node-value" tooltip="node值信息" style="border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(141, 141, 141, 255); border-right-color: rgba(141, 141, 141, 255); border-top-color: rgba(141, 141, 141, 255); border-bottom-color: rgba(141, 141, 141, 255); min-height: 200px;" />
+            <ui:VisualElement name="node-value" tooltip="node值信息" style="border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(141, 141, 141); border-right-color: rgb(141, 141, 141); border-top-color: rgb(141, 141, 141); border-bottom-color: rgb(141, 141, 141); min-height: 200px;" />
         </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

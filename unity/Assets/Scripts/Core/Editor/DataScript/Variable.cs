@@ -20,17 +20,18 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
 using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 /// 变量（值）
+///
+/// 注：REDO无法保证List元素引用的稳定性，只能保证可序列化数据的相等性；
+/// 因此在执行Undo以后需要自顶向下修正和数组元素的缓存字段。
 /// </summary>
 [Serializable]
 public sealed class Variable : IDisposable
@@ -38,8 +39,9 @@ public sealed class Variable : IDisposable
     /// <summary>
     /// 变量元数据信息
     ///
-    /// 1.如果<see cref="DSNamedType"/>，则表示是顶层对象；否则是<see cref="DSField"/>。
-    /// 2.如果是泛型类，必须是已构造具体泛型，即泛型参数也是<see cref="DSNamedType"/>
+    /// 1.<see cref="DSNamedType"/>或<see cref="DSField"/>类型，避免过多假设。
+    /// 2.如果是泛型类，必须是已构造具体泛型，即泛型参数也是<see cref="DSNamedType"/>。
+    /// 3.普通业务避免使用该属性。
     /// </summary>
     public DSElement defineInfo { get; internal set; }
     /// <summary>
@@ -51,9 +53,20 @@ public sealed class Variable : IDisposable
     /// <summary>
     /// 变量的类型
     ///
-    /// 注：对于多态字段，该属性会变更。
+    /// 注：对于多态字段，该属性会变更；因此需要在Undo之后通过typeSymbol进行恢复。
     /// </summary>
     public DSNamedType type { get; internal set; }
+
+    /// <summary>
+    /// 变量的类型，类型需要和值一起进行undo和redo
+    /// </summary>
+    [SerializeField] private string _typeSymbol;
+    /// <summary>
+    /// 当前是否是null值
+    ///
+    /// 注：值类型需通过Nullable实现null，引用类型可直接使用该属性实现null。
+    /// </summary>
+    [SerializeField] private bool _isNull;
 
     /// <summary>
     /// 整数类型值(int32、int64、bool)
@@ -70,24 +83,12 @@ public sealed class Variable : IDisposable
     /// <summary>
     /// 如果不是原子类型，则Value按字段存储在List中。
     /// 
-    /// 1.对于字典类型，按照[key,value,key,value]的格式存储。
+    /// 1.对于字典类型，KV会封装一个Pair变量 -- 更容易维护。
     /// 2.对于Nullable类型，value也会存储在这里，但仍然通过IsNull属性标识是否为null（依赖注入）。
     /// 3.由框架创建数据结构实例时初始化，可能为null
     /// </summary>
+    [SerializeReference]
     public List<Variable> values;
-
-    /// <summary>
-    /// 当前是否是null值
-    ///
-    /// 注：值类型需通过Nullable实现null，引用类型可直接使用该属性实现null。
-    /// </summary>
-    [SerializeField] private bool _isNull;
-    /// <summary>
-    /// 在List中的索引，缓存字段
-    ///
-    /// 注：非List字段也可能使用，可以存储其它信息。
-    /// </summary>
-    public int index { get; set; } = -1;
 
     /// <summary>
     /// 关联的Port
@@ -95,6 +96,12 @@ public sealed class Variable : IDisposable
     /// 注：引用信息存储在<see cref="objectPathValue"/>中；如果是List类型，则每个Value都是一个ObjectPath。
     /// </summary>
     public PortView portView { get; internal set; }
+    /// <summary>
+    /// 用户自定义数据
+    ///
+    /// 注意：在undo和redo的时候，如果数组的长度发生变更，数组元素的引用可能发生变化导致缓存数据丢失。
+    /// </summary>
+    public object userData { get; set; }
 
     /// <summary>
     /// 序列化对象，用于支持Redo和Undo
@@ -105,21 +112,12 @@ public sealed class Variable : IDisposable
     private SerializedProperty _stringProperty;
     private SerializedProperty _valuesProperty;
 
-    /// <summary>
-    /// 是否处于展开状态
-    /// </summary>
-    public bool isExpanded { get; set; }
-    /// <summary>
-    /// 编辑器使用的缓存数据，通过该字段可以让Drawer总是保持为无（可变）状态的。
-    /// </summary>
-    public object editorState { get; set; }
-
     #region util
 
-    public SerializedProperty longValueProperty => _longProperty ??= serializedProperty.FindPropertyRelative("_longValue");
-    public SerializedProperty doubleValueProperty => _doubleProperty ??= serializedProperty.FindPropertyRelative("_doubleValue");
-    public SerializedProperty stringValueProperty => _stringProperty ??= serializedProperty.FindPropertyRelative("_stringValue");
-    public SerializedProperty valuesProperty => _valuesProperty ??= serializedProperty.FindPropertyRelative("values");
+    public SerializedProperty longValueProperty => _longProperty ??= serializedProperty?.FindPropertyRelative("_longValue");
+    public SerializedProperty doubleValueProperty => _doubleProperty ??= serializedProperty?.FindPropertyRelative("_doubleValue");
+    public SerializedProperty stringValueProperty => _stringProperty ??= serializedProperty?.FindPropertyRelative("_stringValue");
+    public SerializedProperty valuesProperty => _valuesProperty ??= serializedProperty?.FindPropertyRelative("values");
 
     public bool isNull {
         get => _isNull;
@@ -129,6 +127,18 @@ public sealed class Variable : IDisposable
             } else {
                 using SerializedProperty isNullProperty = serializedProperty.FindPropertyRelative("_isNull");
                 isNullProperty.boolValue = value;
+            }
+        }
+    }
+
+    public string typeSymbol {
+        get => _typeSymbol;
+        set {
+            if (serializedProperty == null) {
+                _typeSymbol = value;
+            } else {
+                using SerializedProperty isNullProperty = serializedProperty.FindPropertyRelative("_typeSymbol");
+                isNullProperty.stringValue = value;
             }
         }
     }
@@ -199,7 +209,8 @@ public sealed class Variable : IDisposable
         }
     }
 
-    ////////
+    #region struct
+
     public Vector2 vector2Value {
         get {
             float x = values[0].floatValue;
@@ -354,11 +365,108 @@ public sealed class Variable : IDisposable
         }
     }
 
+    #endregion
+
+    #region array
+
+    /// <summary>
+    /// 字段数量
+    /// </summary>
+    public int Count => values == null ? 0 : values.Count;
+
+    /// <summary>
+    /// 注意：执行set前需确保已和序列化层同步数组长度，最好是通过<see cref="Insert"/>添加元素。
+    /// </summary>
+    /// <param name="index"></param>
+    public Variable this[int index] {
+        get => values[index];
+        set {
+            if (serializedProperty == null) {
+                values[index] = value;
+            } else {
+                values[index]?.UnbindValuesProperty();
+                var property = valuesProperty.GetArrayElementAtIndex(index);
+                property.managedReferenceValue = value;
+                value?.BindProperty(property);
+            }
+        }
+    }
+
+    public void Add(Variable nestedVar) {
+        Insert(values.Count, nestedVar);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="index">元素索引</param>
+    /// <param name="nestedVar">要添加的元素</param>
+    /// <param name="applyModifiers">用于合批Apply</param>
+    public void Insert(int index, Variable nestedVar, bool applyModifiers = true) {
+        if (serializedProperty == null) {
+            values.Insert(index, nestedVar);
+        } else {
+            valuesProperty.InsertArrayElementAtIndex(index);
+            using (var property = valuesProperty.GetArrayElementAtIndex(index)) {
+                property.managedReferenceValue = nestedVar;
+            }
+            if (applyModifiers) {
+                ApplyModifiedProperties();
+                RebindValuesProperty(index);
+            }
+        }
+    }
+
+    public Variable RemoveAt(int index, bool applyModifiers = true) {
+        Variable nestedVar = values[index];
+        if (serializedProperty == null) {
+            values.RemoveAt(index);
+        } else {
+            valuesProperty.DeleteArrayElementAtIndex(index);
+            if (applyModifiers) {
+                ApplyModifiedProperties();
+                RebindValuesProperty(index);
+            }
+        }
+        return nestedVar;
+    }
+
+    public void MoveTo(int index, int newIndex, bool applyModifiers = true) {
+        if (index == newIndex) return;
+        if (serializedProperty == null) {
+            Variable variable = values[index];
+            values.RemoveAt(index);
+            values.Insert(newIndex, variable);
+        } else {
+            valuesProperty.MoveArrayElement(index, newIndex);
+            if (applyModifiers) {
+                ApplyModifiedProperties();
+                MathCommon.MinMax(index, newIndex, out int min, out int max);
+                RebindValuesProperty(min, max);
+            }
+        }
+    }
+
+    public void ClearArray() {
+        if (values == null) return;
+        foreach (Variable nestedVar in values) {
+            nestedVar.UnbindProperty();
+        }
+        if (serializedProperty == null) {
+            values.Clear();
+        } else {
+            valuesProperty.ClearArray();
+            ApplyModifiedProperties();
+        }
+    }
+
+    #endregion
+
     public void ApplyModifiedProperties() {
         serializedProperty.serializedObject.ApplyModifiedProperties();
     }
 
-    public void SetDirty() {
+    public void UpdateProperties() {
         serializedProperty.serializedObject.Update();
         EditorUtility.SetDirty(serializedProperty.serializedObject.targetObject);
     }
@@ -368,31 +476,26 @@ public sealed class Variable : IDisposable
     /// </summary>
     /// <param name="property"></param>
     public void BindProperty(SerializedProperty property) {
-        if (serializedProperty != null) {
+        if (serializedProperty != property) { // 只有切换引用时才能销毁
             UnbindPropertySelf();
-        }
-        serializedProperty = property;
-        if (values == null || property == null) {
-            return;
+            serializedProperty = property;
         }
         RebindValuesProperty();
     }
 
     /// <summary>
-    /// 解除绑定
+    /// 解除属性绑定
     /// </summary>
     public void UnbindProperty() {
         if (serializedProperty != null) {
             UnbindPropertySelf();
         }
-        if (values == null) {
-            return;
-        }
-        foreach (Variable childValue in values) {
-            childValue.UnbindProperty();
-        }
+        UnbindValuesProperty();
     }
 
+    /// <summary>
+    /// 解除自身属性绑定
+    /// </summary>
     private void UnbindPropertySelf() {
         serializedProperty?.Dispose();
         _longProperty?.Dispose();
@@ -408,14 +511,29 @@ public sealed class Variable : IDisposable
     }
 
     /// <summary>
-    /// 重新绑定子节点的属性（数组元素变化时）
+    /// 重新绑定子节点的属性
+    /// </summary>
+    public void RebindValuesProperty(int startIndex, int endIndex = -1) {
+        if (values == null || serializedProperty == null) return;
+        if (endIndex == -1) {
+            endIndex = values.Count - 1;
+        }
+        SerializedProperty arrayProperty = valuesProperty;
+        for (int index = startIndex; index <= endIndex; index++) {
+            Variable nestedVar = values[index];
+            nestedVar?.BindProperty(arrayProperty.GetArrayElementAtIndex(index));
+        }
+    }
+
+    /// <summary>
+    /// 重新绑定子节点的属性
     /// </summary>
     public void RebindValuesProperty() {
         if (values == null || serializedProperty == null) return;
         SerializedProperty arrayProperty = valuesProperty;
         for (int index = 0; index < values.Count; index++) {
-            Variable childValue = values[index];
-            childValue.BindProperty(arrayProperty.GetArrayElementAtIndex(index));
+            Variable nestedVar = values[index];
+            nestedVar?.BindProperty(arrayProperty.GetArrayElementAtIndex(index));
         }
     }
 
@@ -424,9 +542,8 @@ public sealed class Variable : IDisposable
     /// </summary>
     public void UnbindValuesProperty() {
         if (values == null || serializedProperty == null) return;
-        for (int index = 0; index < values.Count; index++) {
-            Variable childValue = values[index];
-            childValue.UnbindProperty();
+        foreach (Variable nestedVar in values) {
+            nestedVar?.UnbindProperty();
         }
     }
 
@@ -436,7 +553,7 @@ public sealed class Variable : IDisposable
     public void Dispose() {
         if (values != null) {
             foreach (Variable nestedVar in values) {
-                nestedVar.Dispose();
+                nestedVar?.Dispose();
             }
         }
         UnbindPropertySelf();
@@ -454,11 +571,23 @@ public sealed class Variable : IDisposable
     public Variable FindValue(string name) {
         if (values == null) return null;
         // TODO 支持路径表达式
-        foreach (Variable variable in values) {
-            if (variable.defineInfo.SimpleName == name) return variable;
+        foreach (Variable nestedVar in values) {
+            if (nestedVar == null) continue;
+            if (nestedVar.defineInfo.SimpleName == name) {
+                return nestedVar;
+            }
         }
         return null;
     }
+
+    /// <summary>
+    /// 是否处于展开状态
+    /// </summary>
+    public bool isExpanded { get; set; }
+    /// <summary>
+    /// 编辑器使用的缓存数据，通过该字段可以让Drawer总是保持为无（可变）状态的。
+    /// </summary>
+    public object editorState { get; set; }
 
     public T GetEditorState<T>() where T : new() {
         if (editorState == null) {

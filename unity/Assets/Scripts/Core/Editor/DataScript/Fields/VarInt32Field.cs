@@ -23,11 +23,14 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarInt32Field : MIntegerField, IVarField
 {
+    private Variable _variable;
+
     public VarInt32Field() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         if (variableCfg.min != null) {
             hasMin = true;
@@ -40,16 +43,22 @@ public class VarInt32Field : MIntegerField, IVarField
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.intValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.intValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            SetValueWithoutNotify(variable.intValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<int> evt) {
+        if (_variable != null) {
+            _variable.intValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.intValue);
         }
     }
 }

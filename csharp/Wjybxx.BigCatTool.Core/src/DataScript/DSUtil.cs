@@ -353,6 +353,7 @@ public static class DSUtil
             while (className.enclosingClassName != null) {
                 className = className.enclosingClassName;
                 sb.Insert(0, className.simpleName);
+                sb.Insert(0, '.');
             }
             // 命名空间(顶层是文件名)
             sb.Insert(0, className.ns);
@@ -360,6 +361,43 @@ public static class DSUtil
         }
         finally {
             ConcurrentObjectPool.SharedStringBuilderPool.Release(sb);
+        }
+    }
+
+    /// <summary>
+    /// 将ClassName转换为我们在源码中使用的字符串符号
+    ///
+    /// <![CDATA[
+    ///    Map<int32, Vector3>
+    ///    Map<int32, Vector3?>
+    /// ]]>
+    /// </summary>
+    /// <param name="typeName"></param>
+    /// <returns></returns>
+    public static string ToDisplayString(TypeName typeName) {
+        if (typeName is TypeParameterName parameterName) {
+            return parameterName.name;
+        }
+        ClassName className = (ClassName)typeName;
+        if (className.simpleName == DSKeywords.TYPE_NULLABLE) {
+            return ToDisplayString(className.typeArguments[0]) + "?";
+        }
+        string name = className.simpleName;
+        IList<TypeName> declaredTypeArguments = className.declaredTypeArguments;
+        if (declaredTypeArguments.Count > 0) {
+            StringBuilder sb = new StringBuilder(name);
+            sb.Append('<');
+            for (int i = 0; i < declaredTypeArguments.Count; i++) {
+                if (i > 0) sb.Append(',');
+                sb.Append(ToDisplayString(declaredTypeArguments[i]));
+            }
+            sb.Append('>');
+            name = sb.ToString();
+        }
+        if (className.enclosingClassName != null) {
+            return ToDisplayString(className.enclosingClassName) + "." + name;
+        } else {
+            return className.ns + "." + name; // ns为文件名
         }
     }
 

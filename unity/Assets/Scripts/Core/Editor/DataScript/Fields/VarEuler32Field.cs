@@ -25,6 +25,12 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 public class VarEuler32Field : BindableElement, IVarField
 {
     private readonly Euler32Field field = Euler32Field.Create();
+    private Variable _variable;
+
+    public VarEuler32Field() {
+        field.RegisterValueChangedCallback(OnValueChanged);
+    }
+
 
     public string label {
         get => field.label;
@@ -32,18 +38,24 @@ public class VarEuler32Field : BindableElement, IVarField
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         field.SetValueWithoutNotify((Euler32)variable.intValue);
-        field.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.intValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            field.SetValueWithoutNotify((Euler32)variable.intValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<Euler32> evt) {
+        if (_variable != null) {
+            _variable.intValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            field.SetValueWithoutNotify((Euler32)_variable.intValue);
         }
     }
 }

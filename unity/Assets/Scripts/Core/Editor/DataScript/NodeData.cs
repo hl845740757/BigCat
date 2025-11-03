@@ -54,7 +54,7 @@ public sealed class NodeData : ScriptableObject
     /// <summary>
     /// 数据的值
     /// 
-    /// 注：顶层Node在导出数据时都会写入类型信息。
+    /// 注：顶层Node在导出数据时都会写入类型信息；避免修改Value对象的引用，否则可能导致Redo后数据缓存数据丢失。
     /// </summary>
     public Variable value;
 
@@ -68,6 +68,10 @@ public sealed class NodeData : ScriptableObject
     /// graphView的坐标，需要支持undo
     /// </summary>
     [SerializeField] private Vector2 _position;
+    /// <summary>
+    /// 用户自定义数据(额外缓存数据)
+    /// </summary>
+    public object userData { get; set; }
 
     /// <summary>
     /// Node上的input信息(保存的是发起端的变量)
@@ -101,15 +105,15 @@ public sealed class NodeData : ScriptableObject
     /// 注：在首次完成反序列化时，应当执行<see cref="SerializedObject.ApplyModifiedPropertiesWithoutUndo"/>
     /// </summary>
     public SerializedObject serializedObject { get; private set; }
-    public SerializedProperty positionProperty { get; private set; }
     public SerializedProperty valueProperty { get; private set; }
+    public SerializedProperty positionProperty { get; private set; }
 
     #region util
 
     private void Awake() {
         serializedObject = new SerializedObject(this);
-        positionProperty = this.serializedObject.FindProperty("_position");
         valueProperty = this.serializedObject.FindProperty("value");
+        positionProperty = this.serializedObject.FindProperty("_position");
     }
 
     public string folder {
@@ -145,13 +149,13 @@ public sealed class NodeData : ScriptableObject
         serializedObject.ApplyModifiedProperties();
     }
 
-    public new void SetDirty() {
-        // serializedObject.Update();
-        EditorUtility.SetDirty(serializedObject.targetObject);
+    public void UpdateProperties() {
+        serializedObject.Update();
+        // EditorUtility.SetDirty(serializedObject.targetObject);
     }
 
     public void RebindValueProperty() {
-        value?.BindProperty(valueProperty);
+        value?.BindProperty(valueProperty); // value绑定的序列化属性不会改变
     }
 
     #endregion

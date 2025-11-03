@@ -18,33 +18,50 @@
 
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+using Wjybxx.BigCatTool.DataScript;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class VarInt32PopupField : PopupField<int>, IVarField
 {
+    private Variable _variable;
+
     public VarInt32PopupField() {
+        this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataGraphEditor editor, Variable variable) {
-        userData = variable;
+        _variable = variable;
         VariableCfg variableCfg = variable.cfg;
-        choices = variableCfg.intPopValues;
-        formatListItemCallback = variableCfg.intPopNameFunc;
-        formatSelectedValueCallback = variableCfg.intPopNameFunc;
+        if (variable.type.Kind == DSElementKind.Enum) {
+            VariableCfg typeCfg = editor.model.GetVariableCfg(variable.type);
+            choices = typeCfg.intPopValues;
+            formatListItemCallback = typeCfg.intPopNameFunc;
+            formatSelectedValueCallback = typeCfg.intPopNameFunc;
+        } else {
+            choices = variableCfg.intPopValues;
+            formatListItemCallback = variableCfg.intPopNameFunc;
+            formatSelectedValueCallback = variableCfg.intPopNameFunc;
+        }
         //
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.intValue);
-        this.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            variable.intValue = evt.newValue;
-            variable.ApplyModifiedProperties();
-        });
     }
 
-    public void Refresh() {
-        if (userData is Variable variable) {
-            SetValueWithoutNotify(variable.intValue);
+    public void Unbind() {
+        _variable = null;
+    }
+
+    private void OnValueChanged(ChangeEvent<int> evt) {
+        if (_variable != null) {
+            _variable.intValue = evt.newValue;
+            _variable.ApplyModifiedProperties();
+        }
+    }
+
+    public void Refresh(bool rebuild = false) {
+        if (_variable != null) {
+            SetValueWithoutNotify(_variable.intValue);
         }
     }
 }

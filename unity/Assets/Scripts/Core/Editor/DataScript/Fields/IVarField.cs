@@ -16,10 +16,18 @@
 
 #endregion
 
+using UnityEngine.UIElements;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
+/// <summary>
+/// 变量字段抽象
+/// 
+/// 注：
+/// 1.字段自身不应该阻断ValueChanged事件传播，需要上报给应用层，由应用层决定是否停止传播。
+/// 2.字段类避免使用<see cref="VisualElement"/>的userData属性，保留给用户。
+/// </summary>
 internal interface IVarField : IPrefixLabel
 {
     /// <summary>
@@ -30,8 +38,16 @@ internal interface IVarField : IPrefixLabel
     void Bind(DataGraphEditor editor, Variable variable);
 
     /// <summary>
-    /// 刷新UI，需要递归刷新子节点数据
+    /// 解除绑定
     /// </summary>
-    void Refresh();
+    void Unbind();
+
+    /// <summary>
+    /// 刷新UI，需要递归刷新子节点数据
+    ///
+    /// 注：rebuild参数需要递归传递给子节点。
+    /// </summary>
+    /// <param name="rebuild"></param>
+    void Refresh(bool rebuild = false);
 }
 }
