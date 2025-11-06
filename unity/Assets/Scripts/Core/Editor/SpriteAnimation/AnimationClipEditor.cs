@@ -24,6 +24,7 @@ public partial class AnimationClipEditor : EditorWindow
     private Vector2IntField _frameSizeField;
     private Vector2Field _framePivotField;
     private FloatField _frameScaleField;
+    private FloatField _timeScaleField;
 
     private Toggle _clipLoopToggle;
     private FloatField _clipWeightField;
@@ -157,6 +158,8 @@ public partial class AnimationClipEditor : EditorWindow
         _frameScaleField = root.Q<FloatField>("frame-scale");
         _frameScaleField.isDelayed = true;
         _frameScaleField.RegisterValueChangedCallback(OnFrameScaleChanged);
+        //
+        _timeScaleField = root.Q<FloatField>("time-scale");
 
         InitSyncOperateArea(root);
         InitClipInfoArea(root);
@@ -538,7 +541,7 @@ public partial class AnimationClipEditor : EditorWindow
     #region frame-menu-area
 
     private void OnPlayTimerCallback(TimerState state) {
-        float globalPlayTime = _playTimeSlider.value + state.deltaTime / 1000f;
+        float globalPlayTime = _playTimeSlider.value + (state.deltaTime / 1000f) * _timeScaleField.value;
         if (globalPlayTime >= _playTimeSlider.highValue) {
             _playTimeSlider.SetValueWithoutNotify(0);
             _playTimeField.SetValueWithoutNotify(0);
@@ -561,15 +564,19 @@ public partial class AnimationClipEditor : EditorWindow
             if (context.playTime < playTime) { // 回环
                 context.frameIndex = 0;
                 context.playTime = 0;
+                context.frameTime = 0;
             } else {
-                float endTime = context.clip[context.frameIndex].endTime;
-                if (context.playTime < endTime) {
+                context.frameTime += (context.playTime - playTime);
+                if (context.frameTime <= context.frame.duration) {
                     continue;
                 }
+                context.frameTime -= context.frame.duration;
                 context.frameIndex++;
-                if (context.frameIndex >= context.clip.FrameCount) {
+                //
+                if (context.frameIndex >= context.clip.FrameCount) { // 回环
                     context.frameIndex = 0;
                     context.playTime = 0;
+                    context.frameTime = 0;
                 }
             }
             if (frameIndex != context.frameIndex) {
@@ -596,11 +603,14 @@ public partial class AnimationClipEditor : EditorWindow
             if (!context.CheckFrameIndex()) {
                 continue;
             }
-            context.playTime = evt.newValue;
-            while (context.playTime >= context.clip.duration) {
-                context.playTime -= context.clip.duration;
+            float playTime = evt.newValue;
+            while (playTime >= context.clip.duration) {
+                playTime -= context.clip.duration;
             }
-            int frameIndex = context.clip.SearchFrameByTime(context.playTime);
+            context.playTime = evt.newValue;
+            //
+            int frameIndex = context.clip.SearchFrameByTime(playTime, out float endTime);
+            context.frameTime = endTime - playTime;
             if (frameIndex == context.frameIndex) {
                 continue;
             }
@@ -713,6 +723,7 @@ public partial class AnimationClipEditor : EditorWindow
             int prevIndex = context.frameIndex;
             context.frameIndex = ClampFrameIndex(frameIndex, context.clip.FrameCount);
             context.playTime = 0;
+            context.frameTime = 0;
             if (context.frameIndex != prevIndex) {
                 BindBoxElements(context, true);
                 BindBoxElements(context, false);

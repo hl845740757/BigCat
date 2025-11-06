@@ -61,13 +61,6 @@ public sealed class SpriteAnimationFrame
     /// </summary>
     [Min(0f)]
     public float duration = 0.1f;
-    /// <summary>
-    /// 播放结束时间
-    /// 
-    /// 注：缓存字段，运行时使用；编辑器下预览时也可使用。
-    /// </summary>
-    [NonSerialized]
-    public float endTime;
 
     /// <summary>
     /// 受击包围盒

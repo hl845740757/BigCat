@@ -17,6 +17,7 @@
                 <uie:Vector2IntField label="帧域" name="frame-size" tooltip="注意！需要能放下角色的所有部件" x="600" y="500" style="justify-content: center;" />
                 <uie:Vector2Field label="轴心点" name="frame-pivot" tooltip="角色坐标的模拟位置" x="0.5" y="0.25" style="flex-direction: row; align-items: stretch; min-width: auto; justify-content: space-between; flex-wrap: nowrap;" />
                 <uie:FloatField value="1" name="frame-scale" label="帧域缩放" />
+                <uie:FloatField label="时间缩放" value="1" name="time-scale" />
             </ui:VisualElement>
             <ui:VisualElement style="display: flex; flex-shrink: 0; border-top-width: 0; border-left-color: rgb(140, 140, 140); border-right-color: rgb(140, 140, 140); border-top-color: rgb(140, 140, 140); border-bottom-color: rgb(140, 140, 140);">
                 <ui:VisualElement name="batch-div" style="flex-shrink: 0; border-top-color: rgb(161, 161, 161); border-bottom-color: rgb(134, 134, 134); border-top-width: 0; border-bottom-width: 1px;">
@@ -68,7 +69,7 @@
                 <ui:VisualElement name="frame-info-div" style="justify-content: flex-start; align-items: flex-start; flex-shrink: 0;">
                     <ui:Instance template="ObjectPath" name="sprite-path" tooltip="图片路径" style="justify-content: flex-start; align-items: stretch; min-width: auto; height: auto; flex-shrink: 0; flex-grow: 1; width: 98%;">
                         <AttributeOverrides element-name="foldout" text="SpritePath" value="true" />
-                        <AttributeOverrides element-name="type" value="1" />
+                        <AttributeOverrides element-name="type" value="SpriteOfGroup" />
                     </ui:Instance>
                     <uie:Vector2Field label="Position" name="position" tooltip="图片坐标，图片bottom相对角色坐标的位置" style="width: auto; min-width: 100%; height: auto;" />
                     <uie:Vector2Field label="Scale" name="scale" x="1" y="1" tooltip="图片缩放。以场景效果为准" style="min-width: 100%;" />
@@ -113,7 +114,7 @@
                     <uie:ColorField label="背景色" value="#353535FF" name="bg-color" style="flex-direction: column; width: 60px;" />
                 </ui:VisualElement>
                 <ui:VisualElement style="flex-direction: row; margin-top: 10px; margin-bottom: 10px; flex-shrink: 0;">
-                    <ui:Toggle label="循环播放：" name="play-toggle" tooltip="由动画时长最长的动画确定" style="width: 100px;" />
+                    <Wjybxx.BigCat.CoreEditor.UIElements.MToggle name="play-toggle" tooltip="由动画时长最长的动画确定" label="循环播放：" label-margin="-90" />
                     <ui:Slider picking-mode="Ignore" value="0" high-value="1" name="play-time-slider" style="width: 250px; margin-left: 15px;" />
                     <uie:FloatField value="0" name="play-time-field" readonly="true" style="width: 40px;" />
                 </ui:VisualElement>

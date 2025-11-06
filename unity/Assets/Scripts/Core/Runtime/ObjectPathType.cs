@@ -23,7 +23,8 @@ namespace Wjybxx.BigCat.Core
 /// <summary>
 /// 资产对象类型
 ///
-/// 定义<see cref="ObjectPath"/>中的type，用于编辑器和运行时。
+/// 1.定义<see cref="ObjectPath"/>中的type，用于编辑器和运行时。
+/// 2.暂只定义需要特殊加载的类型
 /// </summary>
 public enum ObjectPathType
 {

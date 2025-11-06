@@ -112,7 +112,7 @@ public sealed class DSNamedType : DSTypeElement
     /// 1.该数据很重要，因为编辑器在导出Dson文本时必须知道类型关联的序列化Name。
     /// 2.如果当前类型是泛型定义类，该值不可以用于生成数据。
     /// </summary>
-    private DsonTypeName _dsonTypeName;
+    private DsonTypeName _codecTypeName;
     /// <summary>
     /// Dson序列化时的类型别名
     /// 
@@ -121,7 +121,7 @@ public sealed class DSNamedType : DSTypeElement
     /// 3.可通过<see cref="DSKeywords.CODEC_ALIAS_PREFIX"/>指定默认别名的前缀。
     /// 4.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
     /// </summary>
-    private readonly List<string> _dsonAliases = new();
+    private readonly List<string> _codecAliases = new();
     /// <summary>
     /// Dson序列化时的文本样式
     /// </summary>
@@ -414,8 +414,8 @@ public sealed class DSNamedType : DSTypeElement
     /// 添加序列化别名
     /// </summary>
     /// <returns>this</returns>
-    public DSNamedType AddDsonAlias(string alias) {
-        this._dsonAliases.Add(alias);
+    public DSNamedType AddCodecAlias(string alias) {
+        this._codecAliases.Add(alias);
         return this;
     }
 
@@ -423,9 +423,9 @@ public sealed class DSNamedType : DSTypeElement
     /// 添加序列化别名
     /// </summary>
     /// <returns>this</returns>
-    public DSNamedType AddDsonAliases(params string[] aliases) {
+    public DSNamedType AddCodecAliases(params string[] aliases) {
         foreach (string alias in aliases) {
-            this._dsonAliases.Add(alias);
+            this._codecAliases.Add(alias);
         }
         return this;
     }
@@ -481,11 +481,11 @@ public sealed class DSNamedType : DSTypeElement
 
     public ImmutableList<DSTypeParameter> TypeParameters => _typeParameters;
     public ImmutableList<DSTypeElement> TypeArguments => _typeArguments;
-    public DsonTypeName DsonTypeName {
-        get => _dsonTypeName;
-        set => _dsonTypeName = value ?? throw new ArgumentNullException(nameof(value));
+    public DsonTypeName CodecTypeName {
+        get => _codecTypeName;
+        set => _codecTypeName = value ?? throw new ArgumentNullException(nameof(value));
     }
-    public List<string> DsonAliases => _dsonAliases;
+    public List<string> CodecAliases => _codecAliases;
     public ObjectStyle DsonStyle {
         get => _dsonStyle;
         set => _dsonStyle = value;

@@ -63,13 +63,13 @@ public sealed class DSRepository
     private readonly Dictionary<ClassName, DSNamedType> genericTypeCache = new();
 
     /// <summary>
-    /// 序列化类型别名到类型的映射（配置）
+    /// 序列化别名到类型的映射(配置数据)
     /// </summary>
-    private readonly Dictionary<string, DSNamedType> dsonAlias2TypeDic = new();
+    private readonly Dictionary<string, DSNamedType> codecAlias2TypeDic = new();
     /// <summary>
-    /// 类型名到类型的解析缓存（多对1）
+    /// 类型名到类型的解析缓存(多对1)
     /// </summary>
-    private readonly Dictionary<string, DSNamedType> dsonClsName2TypeDic = new Dictionary<string, DSNamedType>();
+    private readonly Dictionary<string, DSNamedType> codecTypeName2TypeDic = new();
 
     public DSRepository() {
         InitBuiltinTypes();
@@ -81,51 +81,51 @@ public sealed class DSRepository
     /// </summary>
     private void InitBuiltinTypes() {
         // 原子类型
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32).AddDsonAliases("i", "int32"));
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64).AddDsonAliases("L", "int64"));
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT).AddDsonAliases("f", "float"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32).AddCodecAliases("i", "int32"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64).AddCodecAliases("L", "int64"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT).AddCodecAliases("f", "float"));
 
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE).AddDsonAliases("d", "double"));
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL).AddDsonAliases("b", "bool"));
-        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING).AddDsonAliases("s", "string"));
-        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES).AddDsonAliases("bin", "binary"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE).AddCodecAliases("d", "double"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL).AddCodecAliases("b", "bool"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING).AddCodecAliases("s", "string"));
+        AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES).AddCodecAliases("bin", "binary"));
         // 内建结构
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DATETIME)
             .AddEnclosedElement(new DSField("seconds", "int64", 1))
             .AddEnclosedElement(new DSField("nanos", "int32", 2))
-            .AddDsonAliases("DateTime"));
+            .AddCodecAliases("DateTime"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_TIMESTAMP)
             .AddEnclosedElement(new DSField("seconds", "int64", 1))
             .AddEnclosedElement(new DSField("nanos", "int32", 2))
-            .AddDsonAliases("Timestamp"));
+            .AddCodecAliases("Timestamp"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_POINTER)
             .AddEnclosedElement(new DSField("collection", "string", 1))
             .AddEnclosedElement(new DSField("localPath", "string", 2))
             .AddEnclosedElement(new DSField("localId", "int64", 3))
             .AddEnclosedElement(new DSField("type", "int32", 4))
-            .AddDsonAliases("ptr", "ObjectPtr"));
+            .AddCodecAliases("ptr", "ObjectPtr"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR)
             .AddEnclosedElement(new DSField("key", "K", 1))
             .AddEnclosedElement(new DSField("value", "V", 2))
-            .AddDsonAliases("Pair", "KeyValuePair"));
+            .AddCodecAliases("Pair", "KeyValuePair"));
 
         // 基础容器 - 暂不定义count字段；集合元素的值统一命名为values
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_LIST)
             .AddEnclosedElement(new DSField("values", "T", 1) { IsRepeated = true })
-            .AddDsonAliases("List"));
+            .AddCodecAliases("List"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_HASH_SET)
             .AddEnclosedElement(new DSField("values", "T", 1) { IsRepeated = true })
-            .AddDsonAliases("HashSet", "Set"));
+            .AddCodecAliases("HashSet", "Set"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_MAP)
             .AddEnclosedElement(new DSField("keys", "K", 1) { IsRepeated = true })
             .AddEnclosedElement(new DSField("values", "V", 2) { IsRepeated = true })
-            .AddDsonAliases("Map", "Dictionary"));
+            .AddCodecAliases("Map", "Dictionary"));
         // 装箱类型 - Nullable去除了值类型约束，使得我们在编辑器中可以支持字符串为null
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_OBJECT)
-            .AddDsonAliases("Object", "object"));
+            .AddCodecAliases("Object", "object"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_NULLABLE)
             .AddEnclosedElement(new DSField("value", "T", 1))
-            .AddDsonAliases("Nullable"));
+            .AddCodecAliases("Nullable"));
     }
 
     #region props
@@ -320,7 +320,7 @@ public sealed class DSRepository
             result.BaseType = (DSNamedType)ResolveTypeSymbol(result, namedType.BaseTypeSymbol);
         }
         // 缓存CodecName
-        result.DsonTypeName = NameOfType(result);
+        result.CodecTypeName = NameOfType(result);
         return result;
     }
 
@@ -494,7 +494,7 @@ public sealed class DSRepository
     /// <summary>
     /// 开放字段以允许用户手动修正冲突
     /// </summary>
-    public Dictionary<string, DSNamedType> DsonAlias2TypeDic => dsonAlias2TypeDic;
+    public Dictionary<string, DSNamedType> CodecAlias2TypeDic => codecAlias2TypeDic;
 
     /// <summary>
     /// 根据类型的序列化名字计算其真实类型
@@ -504,15 +504,15 @@ public sealed class DSRepository
     /// </summary>
     /// <param name="clsName">对象的序列化名字</param>
     /// <returns></returns>
-    public DSNamedType? ResolveDsonTypeName(string clsName) {
-        if (dsonAlias2TypeDic.TryGetValue(clsName, out DSNamedType result)
-            || dsonClsName2TypeDic.TryGetValue(clsName, out result)) {
+    public DSNamedType? ResolveCodecTypeName(string clsName) {
+        if (codecAlias2TypeDic.TryGetValue(clsName, out DSNamedType result)
+            || codecTypeName2TypeDic.TryGetValue(clsName, out result)) {
             return result;
         }
         DsonTypeName typeName = DsonTypeName.Parse(clsName);
         DSNamedType namedType = TypeOfName(typeName);
         // 这里不测试是否包含空白字符，因为这里不是运行时，额外的缓存没有太大的影响
-        dsonClsName2TypeDic.Add(clsName, namedType);
+        codecTypeName2TypeDic.Add(clsName, namedType);
         return namedType;
     }
 
@@ -527,7 +527,7 @@ public sealed class DSRepository
         DSNamedType namedType = (DSNamedType)type;
         if (namedType.IsGenericTypeDefinition) {
             // 泛型原型
-            string mainClsName = namedType.DsonAliases[0];
+            string mainClsName = namedType.CodecAliases[0];
             ImmutableList<DSTypeParameter> genericTypeArgs = namedType.TypeParameters;
             List<DsonTypeName> typeArgClassNames = new List<DsonTypeName>(genericTypeArgs.Count);
             foreach (var genericTypeArg in genericTypeArgs) {
@@ -537,7 +537,7 @@ public sealed class DSRepository
         }
         if (namedType.IsGenericType) {
             // 已构造泛型
-            string mainClsName = namedType.OriginNamedType.DsonAliases[0];
+            string mainClsName = namedType.OriginNamedType.CodecAliases[0];
             ImmutableList<DSTypeElement> genericTypeArgs = namedType.TypeArguments; // 真实泛型参数
             List<DsonTypeName> typeArgClassNames = new List<DsonTypeName>(genericTypeArgs.Count);
             foreach (var genericTypeArg in genericTypeArgs) {
@@ -546,14 +546,14 @@ public sealed class DSRepository
             return new DsonTypeName(mainClsName, typeArgClassNames);
         }
         // 非泛型类
-        return new DsonTypeName(namedType.DsonAliases[0]);
+        return new DsonTypeName(namedType.CodecAliases[0]);
     }
 
     /// <summary>
     /// 根据编解码名字计算其真实类型
     /// </summary>
     private DSNamedType TypeOfName(DsonTypeName typeName) {
-        if (!dsonAlias2TypeDic.TryGetValue(typeName.name, out DSNamedType originDefine)) {
+        if (!codecAlias2TypeDic.TryGetValue(typeName.name, out DSNamedType originDefine)) {
             throw new InvalidOperationException("invalid typeName: " + typeName);
         }
         if (!originDefine.IsGenericType) {
@@ -629,10 +629,11 @@ public sealed class DSRepository
         DsonObject<string> options = DSUtil.GetCodecOptions(namedType);
         namedType.DsonStyle = DSUtil.GetObjectStyle(options, namedType.DsonStyle);
         // 用户可能手动指定了别名
-        if (namedType.DsonAliases.Count == 0) {
-            if (options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue dsonValue) && dsonValue.AsArray().Count > 0) {
+        if (namedType.CodecAliases.Count == 0) {
+            if (options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue dsonValue)) {
+                namedType.CodecAliases.EnsureCapacity(dsonValue.AsArray().Count);
                 foreach (DsonValue alias in dsonValue.AsArray()) {
-                    namedType.DsonAliases.Add(alias.AsString());
+                    namedType.CodecAliases.Add(alias.AsString());
                 }
             } else {
                 string prefix = dsFile.GetOption(DSKeywords.CODEC_ALIAS_PREFIX);
@@ -640,16 +641,16 @@ public sealed class DSRepository
                 if (!string.IsNullOrWhiteSpace(prefix)) {
                     alias = prefix + alias;
                 }
-                namedType.DsonAliases.Add(alias);
+                namedType.CodecAliases.Add(alias);
             }
         }
         // 加入缓存 - 冲突可能只是暂时的：目标类型可能不会生成Dson数据
-        foreach (string alias in namedType.DsonAliases) {
-            dsonAlias2TypeDic[alias] = namedType;
-            // dsonAlias2TypeDic.Add(alias, namedType);
+        foreach (string alias in namedType.CodecAliases) {
+            codecAlias2TypeDic[alias] = namedType;
+            // codecAlias2TypeDic.Add(alias, namedType);
         }
         // 此时都是泛型原型，无需延迟处理
-        namedType.DsonTypeName = NameOfType(namedType);
+        namedType.CodecTypeName = NameOfType(namedType);
     }
 
     /// <summary>

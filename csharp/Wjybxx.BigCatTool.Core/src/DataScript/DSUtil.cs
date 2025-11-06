@@ -396,9 +396,9 @@ public static class DSUtil
         }
         if (className.enclosingClassName != null) {
             return ToDisplayString(className.enclosingClassName) + "." + name;
-        } else {
-            return className.ns + "." + name; // ns为文件名
         }
+        // 注意：ns为文件名
+        return className.ns == DSKeywords.GLOBAL ? name : className.ns + "." + name;
     }
 
     #endregion
@@ -409,27 +409,11 @@ public static class DSUtil
         name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
             .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
 
-    private static readonly ImmutableDictionary<string, NumberStyle>
-        name2NumberStyleDic = EnumUtil.GetValues<NumberStyle>()
-            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
-
-    private static readonly ImmutableDictionary<string, StringStyle>
-        name2StringStyleDic = EnumUtil.GetValues<StringStyle>()
-            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
-
     /** 在只读的情况下返回空对象可以避免Null处理 */
     private static readonly DsonObject<string> EMPTY_DSON_OBJECT = new();
 
     public static DsonObject<string> GetOptions(DSElement element, bool isReadonly = true) {
         Annotation? annotation = element.GetAnnotation(DSAnnotations.OPTIONS);
-        if (annotation == null) {
-            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
-        }
-        return annotation.AsObject();
-    }
-
-    public static DsonObject<string> GetRpcOptions(DSElement element, bool isReadonly = true) {
-        Annotation? annotation = element.GetAnnotation(DSAnnotations.RPC);
         if (annotation == null) {
             return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
         }
@@ -449,9 +433,7 @@ public static class DSUtil
             return new List<string>();
         }
         DsonArray<string> dsonArray = value.AsArray();
-        if (dsonArray.Count == 0) return new List<string>();
-        //
-        List<string> result = new List<string>(options.Count);
+        List<string> result = new List<string>(dsonArray.Count);
         foreach (DsonValue dsonValue in dsonArray) {
             result.Add(dsonValue.AsString().Trim());
         }
@@ -467,28 +449,6 @@ public static class DSUtil
         }
         string style = value.AsString().ToLower();
         return name2ObjectStyleDic.TryGetValue(style, out ObjectStyle result) ? result : defaultStyle;
-    }
-
-    public static NumberStyle GetNumberStyle(DsonObject<string> options, NumberStyle defaultStyle = NumberStyle.Simple) {
-        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
-            return defaultStyle;
-        }
-        if (value.IsNumber) {
-            return (NumberStyle)value.AsNumber().IntValue;
-        }
-        string style = value.AsString().ToLower();
-        return name2NumberStyleDic.TryGetValue(style, out NumberStyle result) ? result : defaultStyle;
-    }
-
-    public static StringStyle GetStringStyle(DsonObject<string> options, StringStyle defaultStyle = StringStyle.Auto) {
-        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
-            return defaultStyle;
-        }
-        if (value.IsNumber) {
-            return (StringStyle)value.AsNumber().IntValue;
-        }
-        string style = value.AsString().ToLower();
-        return name2StringStyleDic.TryGetValue(style, out StringStyle result) ? result : defaultStyle;
     }
 
     #endregion

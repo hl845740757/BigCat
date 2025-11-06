@@ -483,7 +483,7 @@ public class DsonGenerator : ISheetProcessor
         // 如果是多态数据，需要从Container中拿到真实的类型名，再拿到真实的类型，再根据真实类型修正数据
         string clsName = GetClsName(container);
         if (clsName != null) {
-            namedType = _dsRepository.ResolveDsonTypeName(clsName) ?? throw new Exception($"invalid serial name: {clsName}");
+            namedType = _dsRepository.ResolveCodecTypeName(clsName) ?? throw new Exception($"invalid serial name: {clsName}");
         }
         List<DSField> fields = GetSerializedFields(namedType);
         if (fields.Count == 0) {

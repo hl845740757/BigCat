@@ -72,42 +72,16 @@ public static class DSAnnotations
     /// <h3>用于类型时</h3>
     /// <code>// @Codec{alias: [xxx, xxx, xxx], style: flow} </code>
     /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写；不会自动追加文件中约定的别名默认前缀
-    /// - style 表示该类型输出为Dson文本时的默认排版
+    /// - style 表示该类型输出为Dson文本时的默认排版 TODO 改为SerializeFeatures
     ///
     /// <h3>用于字段时</h3>
     /// <code>// @Codec{name: xyz, style: flow} </code>
-    /// - name 表示字段序列化的名字，不推荐使用 -- 尽量直接使用字段名
+    /// - name 表示字段序列化的名字，不推荐使用 —— 尽量直接使用字段名
     /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
     ///
     /// 注：style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
     /// </summary>
     public const string CODEC = "Codec";
-
-    /// <summary>
-    /// 服务和方法的Rpc选项
-    ///
-    /// <h3>用于类型时</h3>
-    /// <code>//@Rpc {id: 1, async: true, ctx: true, manual: true}</code>
-    /// - id表示为服务分配的id
-    /// - async 表示服务端接口是否为异步模式；默认值为false
-    /// - ctx 表示是否需要RpcContext参数；默认值为false
-    /// - manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
-    ///
-    /// 注：服务上的async等参数为参数的模式值，避免每个方法重复配置。
-    ///
-    /// <h3>用于方法时</h3>
-    /// <code>//@Rpc {async: true, ctx: true, manual: true}</code>
-    /// - async 表示服务端接口是否为异步模式；默认值为false
-    /// - ctx 表示是否需要RpcContext参数；默认值为false
-    /// - manual 表示是否手动管理返回时机，默认值为false; 如果为true，应当声明tx。
-    ///
-    /// 注：方法上的async等属性用于覆盖service上的默认值。
-    /// </summary>
-    public const string RPC = "Rpc";
-    /// <summary>
-    /// RPC切面数据，与具体的应用相关
-    /// </summary>
-    public const string RPC_CUSTOM = "RpcCustom";
 
     /// <summary>
     /// 类型或字段的编辑器基础选项
@@ -133,6 +107,7 @@ public static class DSAnnotations
     ///
     /// - maxWidth 最大宽度
     /// - maxHeight 最大高度
+    /// - labelMargin label和value的边距
     /// </summary>
     public const string EDITOR_STYLE = "EditorStyle";
 
@@ -141,12 +116,8 @@ public static class DSAnnotations
     ///
     /// 语法：<code>// @NodePort{ side: Right }</code>
     /// - side 端口的显示位置；Left、Right、Bottom，未指定的情况下默认Right。
-    /// - fieldPath 端口关联的字段路径；当配置该属性时，表示该注解不用于将当前字段展示为Port，而是在内部字段展示为Port；
-    /// 注意，不支持导出List/Map元素导出为Port，即途中不能经过List/Map类型节点。
     /// 
-    /// 注：
-    /// 1.当List内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
-    /// 2.如果字段是<see cref="ObjectPath"/>类型，表示导出为引用，否则表示内联。
+    /// 注：当List/Map内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
     /// </summary>
     public const string PORT_FIELD = "PortField";
 
@@ -210,12 +181,6 @@ public static class DSAnnotations
     public const string KEY_ALIAS = "alias";
     public const string KEY_STYLE = "style";
     public const string KEY_NAME = "name";
-
-    // Rpc
-    private const string KEY_ID = "id";
-    private const string KEY_ASYNC = "async";
-    private const string KEY_MANUAL = "manual";
-    private const string KEY_CTX = "ctx";
 
     // Editor
     public const string KEY_DISPLAY_TYPE = "displayType";

@@ -35,8 +35,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
     private TextField _collectionField;
     private TextField _localPathField;
     private LongField _localIdField;
-    private IntegerField _typeField;
-    private Toggle _lockTypeField;
+    private EnumField _typeField;
 
     private Foldout _foldout;
     private Button _selectCollectionButton;
@@ -91,7 +90,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         EnsureInited();
         // Type变化时需要重建Handler
         if (_value.type != newValue.type) {
-            _handler = CreateHandler(newValue.type);
+            _handler = CreateHandler((ObjectPathType)newValue.type);
             _handler.InitView();
             // MarkDirtyRepaint();
         }
@@ -102,7 +101,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         _collectionField.SetValueWithoutNotify(value.collection);
         _localPathField.SetValueWithoutNotify(value.localPath);
         _localIdField.SetValueWithoutNotify(value.localId);
-        _typeField.SetValueWithoutNotify(value.type);
+        _typeField.SetValueWithoutNotify((ObjectPathType)value.type);
     }
 
     /// <summary>
@@ -113,7 +112,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         return new ObjectPath(_collectionField.value,
             _localPathField.value,
             _localIdField.value,
-            _typeField.value);
+            _typeField.value.GetHashCode());
     }
 
     /// <summary>
@@ -144,25 +143,22 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         _collectionField = this.Q<TextField>("collection");
         _localPathField = this.Q<TextField>("local-path");
         _localIdField = this.Q<LongField>("local-id");
-        _typeField = this.Q<IntegerField>("type");
+        _typeField = this.Q<EnumField>("type");
 
         _selectCollectionButton = this.Q<Button>("select-collection");
         _selectLocalPathButton = this.Q<Button>("select-local-path");
         _selectLocalIdButton = this.Q<Button>("select-local-id");
-        _lockTypeField = this.Q<Toggle>("lock-type");
         //
-        _typeField.SetEnabled(!_lockTypeField.value);
-        _handler = CreateHandler(_typeField.value);
+        if (_typeField.value == null) {
+            _typeField.Init(ObjectPathType.Default);
+        }
+        _handler = CreateHandler((ObjectPathType)_typeField.value!);
         _handler.InitView();
         // 数据变化事件
         _collectionField.RegisterValueChangedCallback(OnFieldValueChanged);
         _localPathField.RegisterValueChangedCallback(OnFieldValueChanged);
         _localIdField.RegisterValueChangedCallback(OnFieldValueChanged);
         _typeField.RegisterValueChangedCallback(OnFieldValueChanged);
-        _lockTypeField.RegisterValueChangedCallback(evt => {
-            evt.StopPropagation();
-            _typeField.SetEnabled(!_lockTypeField.value);
-        });
         //
         _collectionField.RegisterCallback<MouseDownEvent>(evt => {
             evt.StopPropagation();
@@ -181,6 +177,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             handler.OnClickSelectLocalId();
         });
         //
+        _foldout.RegisterCallback<ContextClickEvent>(ShowContextMenu);
         RebuildValue(false);
     }
 
@@ -189,13 +186,23 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         RebuildValue();
     }
 
-    private ObjectPathHandler CreateHandler(int type) {
-        ObjectPathType pathType = (ObjectPathType)type;
-        return pathType switch
+    private ObjectPathHandler CreateHandler(ObjectPathType type) {
+        return type switch
         {
             ObjectPathType.SpriteOfGroup => new SpriteOfGroupHandler(this),
             _ => new DefaultPathHandler(this),
         };
+    }
+
+    private void ShowContextMenu(ContextClickEvent evt) {
+        if (evt.localMousePosition.y > 20) return;
+        evt.StopPropagation();
+        GenericMenu menu = new GenericMenu();
+        menu.AddItem(new GUIContent("Reset"), false, _ => {
+            int type = _typeField.value.GetHashCode();
+            value = new ObjectPath() { type = type }; // 保留资产类型
+        }, null);
+        menu.ShowAsContext();
     }
 
     #region handlers

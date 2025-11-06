@@ -20,8 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Wjybxx.BigCatTool.Core;
-using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BigCatTool.Protobuf;
+using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Dson;
 using static Wjybxx.BigCatTool.DataScript.CodeGeneratorHelper;
@@ -76,7 +76,7 @@ public class ServiceGenerator
     }
 
     private void BuildService(PBService service) {
-        Annotation serviceAnnotation = service.GetAnnotation(DSAnnotations.RPC);
+        Annotation serviceAnnotation = service.GetAnnotation(PBAnnations.RPC);
         if (serviceAnnotation == null) {
             return;
         }
@@ -90,7 +90,7 @@ public class ServiceGenerator
             typeBuilder.AddBaseClass(className);
         }
         // service注解
-        DsonObject<string> serviceData = serviceAnnotation.DsonValue.AsObject();
+        DsonObject<string> serviceData = serviceAnnotation.AsObject();
         {
             AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
                 .AddMember(PNAME_SERVICE_ID, GetServiceId(serviceData).ToString());
@@ -98,11 +98,11 @@ public class ServiceGenerator
         }
         // 方法列表
         foreach (PBMethod method in service.GetMethods()) {
-            Annotation methodAnnotation = method.GetAnnotation(DSAnnotations.RPC);
+            Annotation methodAnnotation = method.GetAnnotation(PBAnnations.RPC);
             if (methodAnnotation == null) {
                 continue;
             }
-            DsonObject<string> methodData = methodAnnotation.DsonValue.AsObject();
+            DsonObject<string> methodData = methodAnnotation.AsObject();
             MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
             // method注解
             {
@@ -115,7 +115,7 @@ public class ServiceGenerator
                     annoBuilder.AddMember(PNAME_MANUAL_RETURN, "true");
                 }
                 // 自定义数据-字符串
-                Annotation custom = method.GetAnnotation(DSAnnotations.RPC_CUSTOM);
+                Annotation custom = method.GetAnnotation(PBAnnations.RPC_CUSTOM);
                 if (custom != null) {
                     annoBuilder.AddMember(PNAME_CUSTOM_DATA, "$S", custom.value);
                 }
@@ -233,6 +233,74 @@ public class ServiceGenerator
             throw new InvalidOperationException("namespace is absent");
         }
         return package;
+    }
+
+    #endregion
+
+    #region RPC注解解析
+
+    private static readonly ClassName TYPE_NAME_RPC_SERVICE = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
+    private static readonly ClassName TYPE_NAME_RPC_METHOD = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
+    //
+    private static readonly ClassName TYPE_NAME_RPC_CONTEXT_T = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
+        new List<TypeName> { TypeParameterName.Get("T") });
+    //
+    private static readonly ClassName TYPE_NAME_VALUE_FUTURE = ClassName.Get(typeof(ValueFuture));
+    private static readonly ClassName TYPE_NAME_VALUE_FUTURE_T = ClassName.Get(typeof(ValueFuture<>));
+
+    private const string PNAME_SERVICE_ID = "ServiceId";
+    private const string PNAME_METHOD_ID = "MethodId";
+    private const string PNAME_MANUAL_RETURN = "ManualReturn";
+    private const string PNAME_ARG_SHARABLE = "ArgSharable";
+    private const string PNAME_RESULT_SHARABLE = "ResultSharable";
+    private const string PNAME_CUSTOM_DATA = "CustomData";
+
+    // 服务上的async等用于配置默认值
+    // @Rpc {id: 1, async: true, ctx: true, manual: true}
+    private static int GetServiceId(DsonObject<string> methodData) {
+        // 默认是double类型
+        return methodData["id"].AsNumber().IntValue;
+    }
+
+    // @Rpc {id: 1, async: true, ctx: true, manual: true}
+    private static int GetMethodId(int? number, DsonObject<string> methodData) {
+        // 默认是double类型
+        return number ?? methodData["id"].AsNumber().IntValue;
+    }
+
+    private static bool IsAsyncMethod(DsonObject<string> methodData, DsonObject<string> serviceData) {
+        if (methodData.TryGetValue("async", out DsonValue value)
+            || serviceData.TryGetValue("async", out value)) {
+            return GetBool(value);
+        }
+        return false;
+    }
+
+    private static bool IsManualReturn(DsonObject<string> methodData, DsonObject<string> serviceData) {
+        if (methodData.TryGetValue("manual", out DsonValue value)
+            || serviceData.TryGetValue("manual", out value)) {
+            return GetBool(value);
+        }
+        return false;
+    }
+
+    private static bool IsRequireContext(DsonObject<string> methodData, DsonObject<string> serviceData) {
+        // 手动返回结果时也需要ctx -- 且方法注解的优先级高于服务的默认配置
+        if (methodData.TryGetValue("ctx", out DsonValue value)
+            || methodData.TryGetValue("manual", out value)) {
+            return GetBool(value);
+        }
+        if (serviceData.TryGetValue("ctx", out value)
+            || serviceData.TryGetValue("manual", out value)) {
+            return GetBool(value);
+        }
+        return false;
+    }
+
+    private static bool GetBool(DsonValue value) {
+        if (value.DsonType == DsonType.Bool) return value.AsBool();
+        if (value.IsNumber) return value.AsNumber().IntValue == 1;
+        return false;
     }
 
     #endregion

@@ -111,7 +111,7 @@ public static class DSKeywords
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
     public const string TYPE_POINTER = "ObjectPtr";
-    public const string TYPE_PAIR = "Pair"; // 除了拆分配置Map时，其它时候避免使用Pair
+    public const string TYPE_PAIR = "Pair";
     // 容器类型
     public const string TYPE_LIST = "List";
     public const string TYPE_HASHSET = "HashSet";

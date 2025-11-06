@@ -102,7 +102,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
         duration = 0;
         foreach (var frame in frames) {
             duration += frame.duration;
-            frame.endTime = duration;
         }
     }
 
@@ -111,17 +110,30 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// 
     /// 注意：该方法只能在正确维护帧信息缓存的情况下调用。
     /// </summary>
-    /// <param name="time"></param>
+    /// <param name="time">搜索参数</param>
+    /// <param name="endTime">搜索截止的时间</param>
     /// <returns>如果大于总播放时间，则固定返回最后一帧</returns>
-    public int SearchFrameByTime(float time) {
-        int index = ArrayUtil.BinarySearch(frames, mid => mid.endTime.CompareTo(time));
-        if (index < 0) {
-            index = (index + 1) * -1;
+    public int SearchFrameByTime(float time, out float endTime) {
+        endTime = 0;
+        for (int index = 0; index < frames.Length; index++) {
+            endTime += frames[index].duration;
+            if (time <= endTime) return index;
         }
-        if (index >= frames.Length) {
-            return frames.Length - 1;
+        return frames.Length - 1;
+    }
+
+    /// <summary>
+    /// 获取子区间持续时间
+    /// </summary>
+    /// <param name="startIndex"></param>
+    /// <param name="endIndex"></param>
+    /// <returns></returns>
+    public float GetDuration(int startIndex, int endIndex) {
+        float subDuration = 0;
+        for (int index = startIndex; index <= endIndex; index++) {
+            subDuration += frames[index].duration;
         }
-        return index;
+        return subDuration;
     }
 
     /// <summary>
@@ -133,9 +145,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         if (index == -1 || index == frames.Length) {
             Array.Resize(ref frames, frames.Length + 1);
             frames[frames.Length - 1] = frame;
-            //
             duration += frame.duration;
-            frame.endTime = duration;
         } else {
             ArrayUtil.Insert(ref frames, index, frame);
             RefreshDuration();
@@ -154,9 +164,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         Array.Resize(ref frames, prevLen + targetFrames.Count);
         foreach (var frame in targetFrames) {
             frames[prevLen++] = frame;
-            //
             duration += frame.duration;
-            frame.endTime = duration;
         }
     }
 
@@ -208,9 +216,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         for (int index = 0; index < frames.Length; index++) {
             var frame = frames[index];
             frames[index].duration = frameInterval;
-            //
             duration += frame.duration;
-            frame.endTime = duration;
         }
     }
 
@@ -223,9 +229,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         for (int index = 0; index < frames.Length; index++) {
             var frame = frames[index];
             frames[index].duration += frameInterval;
-            //
             duration += frame.duration;
-            frame.endTime = duration;
         }
     }
 
@@ -240,9 +244,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
         for (int index = 1; index < frames.Length; index++) {
             var frame = frames[index];
             frames[index].duration = baseValue + frameInterval * index;
-            //
             duration += frame.duration;
-            frame.endTime = duration;
         }
     }
 

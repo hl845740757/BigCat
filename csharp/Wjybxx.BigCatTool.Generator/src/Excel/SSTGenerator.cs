@@ -46,9 +46,7 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// 使用说明：
 /// 1.location数据库文件默认永不清理，因为文件增长速率不大，特别情况时可手动清理。
 /// 2.默认情况下不自动清理sst数据库文件中不被使用的数据，只有rebuild模式下才会清理。
-/// 3.Rebuild会导致所有分区文件产生变化，导致用户需要下载所有分区 -- rebuild不保留原始id，因为没有意义，变化1个和所有都变化结果是一样的。
-/// 4.调整分区数时必须使用rebuild模式。
-/// 5.该脚本需要在<see cref="DataScriptGenerator"/>和<see cref="DsonGenerator"/>之前执行。
+/// 3.该脚本需要在<see cref="DataScriptGenerator"/>和<see cref="DsonGenerator"/>之前执行。
 /// </summary>
 public class SstGenerator : ISheetProcessor
 {
@@ -80,7 +78,7 @@ public class SstGenerator : ISheetProcessor
 
     private readonly LinkedDictionary<Location, int> locationMap = new(1000);
     private readonly LinkedDictionary<int, int> indexMap = new(1000);
-    private readonly LinkedDictionary<string, Item> itemMap = new(10000);
+    private readonly LinkedDictionary<string, Item> itemMap = new(1000);
     private readonly StringBuilder _sb = new StringBuilder(64);
 
     /// <summary>

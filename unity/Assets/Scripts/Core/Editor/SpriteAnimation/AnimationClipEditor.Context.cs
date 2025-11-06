@@ -39,7 +39,8 @@ public partial class AnimationClipEditor
         public readonly SerializedProperty serializedFrameArray;
 
         private int _frameIndex; // 当前编辑/播放帧
-        public float playTime; // 播放时间
+        public float playTime; // 总播放时间
+        public float frameTime; // 当前帧播放时间
         public VisualElement clipElement;
         public VisualElement container;
         public VisualElement imageElement;

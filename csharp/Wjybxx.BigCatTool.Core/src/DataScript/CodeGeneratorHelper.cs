@@ -99,6 +99,7 @@ public class CodeGeneratorHelper
             GenerateNestedTypes(namedType, typeBuilder);
         } else {
             GenerateClass(namedType, typeBuilder);
+            GenerateNestedTypes(namedType, typeBuilder);
         }
         typeBuilder.AddDocument(BuildDocument(namedType.Comments));
         return typeBuilder;
@@ -149,7 +150,7 @@ public class CodeGeneratorHelper
 
     #region service
 
-    private void GenerateNormalService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
+    protected virtual void GenerateService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
         if (namedType.IsGenericType) {
             foreach (DSTypeParameter typeParameter in namedType.DeclaredTypeParameters) {
                 typeBuilder.AddTypeParameter(TypeParameterSpec.Get(typeParameter.SimpleName, typeParameter.Constraints));
@@ -166,117 +167,6 @@ public class CodeGeneratorHelper
             methodBuilder.AddDocument(BuildDocument(method.Comments));
             typeBuilder.AddMethod(methodBuilder.Build());
         }
-    }
-
-    protected virtual void GenerateService(DSNamedType namedType, TypeSpec.Builder typeBuilder) {
-        Annotation annotation = namedType.GetAnnotation(DSAnnotations.RPC);
-        if (annotation == null) {
-            GenerateNormalService(namedType, typeBuilder);
-            return;
-        }
-        // RPC服务
-        foreach (string superinterface in generatorCfg.serviceBaseTypes) {
-            ClassName className = ToolUtil.ClassNameOfCanonicalName(superinterface);
-            typeBuilder.AddBaseClass(className);
-        }
-        // service注解
-        DsonObject<string> serviceData = annotation.AsObject();
-        {
-            AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_SERVICE)
-                .AddMember(PNAME_SERVICE_ID, GetServiceId(serviceData).ToString());
-            typeBuilder.AddAttribute(annoBuilder.Build());
-        }
-        //
-        foreach (DSMethod method in namedType.GetMethods(false, _dsMethodListCache.ClearAndReturn())) {
-            DsonObject<string> methodData = DSUtil.GetRpcOptions(method);
-            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
-            // method注解 
-            {
-                AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
-                    .AddMember(PNAME_METHOD_ID, method.Number.ToString());
-                // .addMember("ArgSharable", "false") // ds类型默认也不是不可变的
-                // .addMember("ResultSharable", "false"); 
-                // 是否手动返回结果
-                if (IsManualReturn(methodData, serviceData)) {
-                    annoBuilder.AddMember(PNAME_MANUAL_RETURN, "true");
-                }
-                // 自定义数据-字符串
-                Annotation custom = method.GetAnnotation(DSAnnotations.RPC_CUSTOM);
-                if (custom != null) {
-                    annoBuilder.AddMember(PNAME_CUSTOM_DATA, "$S", custom.value);
-                }
-                methodBuilder.AddAttribute(annoBuilder.Build());
-            }
-            // 处理方法的模式
-            if (IsAsyncMethod(methodData, serviceData)) {
-                BuildWithAsyncMode(method, methodData, serviceData, methodBuilder);
-            } else {
-                BuildWithSyncMode(method, methodData, serviceData, methodBuilder);
-            }
-            // 方法注释
-            methodBuilder.AddDocument(BuildDocument(method.Comments));
-            typeBuilder.AddMethod(methodBuilder.Build());
-        }
-    }
-
-    private void BuildWithSyncMode(DSMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
-                                   MethodSpec.Builder methodBuilder) {
-        // 仅处理void
-        TypeName returnType;
-        if (method.ResultType != null) {
-            returnType = GetTypeName(method.ResultType);
-        } else {
-            returnType = TypeName.VOID;
-        }
-        methodBuilder.Returns(returnType);
-
-        // 是否需要context参数
-        if (IsRequireContext(methodData, serviceData)) {
-            methodBuilder.AddParameter(ParseRpcContextType(method), "rpcContext");
-        }
-        // 正常参数
-        if (method.ParameterType != null) {
-            TypeName argType = GetTypeName(method.ParameterType);
-            string argName = method.ParameterName ?? "request";
-            methodBuilder.AddParameter(argType, argName);
-        }
-    }
-
-    private void BuildWithAsyncMode(DSMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
-                                    MethodSpec.Builder methodBuilder) {
-        // 返回值类型封装为future
-        TypeName returnType;
-        if (method.ResultType != null) {
-            TypeName resultType = GetTypeName(method.ResultType);
-            returnType = TYPE_NAME_VALUE_FUTURE_T.WithTypeArguments(resultType);
-        } else {
-            returnType = TYPE_NAME_VALUE_FUTURE;
-        }
-        methodBuilder.Returns(returnType);
-
-        // 是否需要context参数--插在首位
-        if (IsRequireContext(methodData, serviceData)) {
-            methodBuilder.AddParameter(ParseRpcContextType(method), "rpcCtx");
-        }
-        // 正常参数
-        if (method.ParameterType != null) {
-            TypeName argType = GetTypeName(method.ParameterType);
-            string argName = method.ParameterName ?? "request";
-            methodBuilder.AddParameter(argType, argName);
-        }
-    }
-
-    private TypeName ParseRpcContextType(DSMethod method) {
-        TypeName contextType;
-        if (method.ResultType != null) {
-            TypeName resultType = GetTypeName(method.ResultType);
-            contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(resultType);
-        } else {
-            // void时使用object代替 -- 可临时返回结果
-            contextType = TYPE_NAME_RPC_CONTEXT_T.WithTypeArguments(TypeName.OBJECT);
-        }
-        // c#需要传引用
-        return contextType.MakeByRefType();
     }
 
     #endregion
@@ -377,8 +267,9 @@ public class CodeGeneratorHelper
         _propertyListCache.Clear();
         _copyFieldListCache.Clear();
         // 允许用户在生成内部类之前插入方法
-        BeforeGenerateNestedTypes(namedType, typeBuilder, options);
-        GenerateNestedTypes(namedType, typeBuilder);
+        if (namedType.EnclosedElements.Any(e => e.Kind.IsNamedType())) {
+            BeforeGenerateNestedTypes(namedType, typeBuilder, options);
+        }
     }
 
     #endregion
@@ -1241,10 +1132,10 @@ public class CodeGeneratorHelper
         var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE)
             .AddMember("SkipFields", "new[] { $S }", "*") // 跳过所有字段，由生成的代码编解码
             .AddMember("Style", "$T.$L", TYPE_NAME_OBJECT_STYLE, namedType.DsonStyle.ToString());
-        if (namedType.DsonAliases.Count > 0) {
+        if (namedType.CodecAliases.Count > 0) {
             sb.Append("new[] { ");
-            for (int index = 0; index < namedType.DsonAliases.Count; index++) {
-                string alias = namedType.DsonAliases[index];
+            for (int index = 0; index < namedType.CodecAliases.Count; index++) {
+                string alias = namedType.CodecAliases[index];
                 if (index > 0) sb.Append(", ");
                 sb.Append('"');
                 sb.Append(alias);
@@ -1312,74 +1203,6 @@ public class CodeGeneratorHelper
         if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";
         if (typeName == TYPE_NAME_TIMESTAMP) return "WriteTimestamp";
         return "WriteObject";
-    }
-
-    #endregion
-
-    #region RPC
-
-    public static readonly ClassName TYPE_NAME_RPC_SERVICE = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
-    public static readonly ClassName TYPE_NAME_RPC_METHOD = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
-    //
-    public static readonly ClassName TYPE_NAME_RPC_CONTEXT_T = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
-        new List<TypeName> { TypeParameterName.Get("T") });
-    //
-    public static readonly ClassName TYPE_NAME_VALUE_FUTURE = ClassName.Get(typeof(ValueFuture));
-    public static readonly ClassName TYPE_NAME_VALUE_FUTURE_T = ClassName.Get(typeof(ValueFuture<>));
-
-    public const string PNAME_SERVICE_ID = "ServiceId";
-    public const string PNAME_METHOD_ID = "MethodId";
-    public const string PNAME_MANUAL_RETURN = "ManualReturn";
-    public const string PNAME_ARG_SHARABLE = "ArgSharable";
-    public const string PNAME_RESULT_SHARABLE = "ResultSharable";
-    public const string PNAME_CUSTOM_DATA = "CustomData";
-
-    // 服务上的async等用于配置默认值
-    // @Rpc {id: 1, async: true, ctx: true, manual: true}
-    public static int GetServiceId(DsonObject<string> methodData) {
-        // 默认是double类型
-        return methodData["id"].AsNumber().IntValue;
-    }
-
-    // @Rpc {id: 1, async: true, ctx: true, manual: true}
-    public static int GetMethodId(int? number, DsonObject<string> methodData) {
-        // 默认是double类型
-        return number ?? methodData["id"].AsNumber().IntValue;
-    }
-
-    public static bool IsAsyncMethod(DsonObject<string> methodData, DsonObject<string> serviceData) {
-        if (methodData.TryGetValue("async", out DsonValue value)
-            || serviceData.TryGetValue("async", out value)) {
-            return GetBool(value);
-        }
-        return false;
-    }
-
-    public static bool IsManualReturn(DsonObject<string> methodData, DsonObject<string> serviceData) {
-        if (methodData.TryGetValue("manual", out DsonValue value)
-            || serviceData.TryGetValue("manual", out value)) {
-            return GetBool(value);
-        }
-        return false;
-    }
-
-    public static bool IsRequireContext(DsonObject<string> methodData, DsonObject<string> serviceData) {
-        // 手动返回结果时也需要ctx -- 且方法注解的优先级高于服务的默认配置
-        if (methodData.TryGetValue("ctx", out DsonValue value)
-            || methodData.TryGetValue("manual", out value)) {
-            return GetBool(value);
-        }
-        if (serviceData.TryGetValue("ctx", out value)
-            || serviceData.TryGetValue("manual", out value)) {
-            return GetBool(value);
-        }
-        return false;
-    }
-
-    private static bool GetBool(DsonValue value) {
-        if (value.DsonType == DsonType.Bool) return value.AsBool();
-        if (value.IsNumber) return value.AsNumber().IntValue == 1;
-        return false;
     }
 
     #endregion
