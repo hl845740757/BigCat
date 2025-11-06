@@ -48,7 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Editor\UIToolKitExp.cs" />
-    <Compile Include="Assets\Editor\UnityCodecLinker.cs" />
     <Compile Include="Assets\Editor\ExperimentalMenus.cs" />
     <Compile Include="Assets\Editor\FileSyncMgr.cs" />
     <None Include="Assets\Editor\Resources\level-2.txt" />

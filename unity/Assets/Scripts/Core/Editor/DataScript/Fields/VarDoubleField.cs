@@ -30,7 +30,7 @@ public class VarDoubleField : MDoubleField, IVarField
     }
 
 
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         if (variableCfg.min != null) {

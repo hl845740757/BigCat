@@ -36,7 +36,7 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// </summary>
 public class VarObjectField : Foldout, IVarField
 {
-    private DataGraphEditor _editor;
+    private DataEditor _editor;
     private Variable _variable;
     private EventCallback<ChangeEvent<int>> _onCtrlValueChanged1;
     private EventCallback<ChangeEvent<string>> _onCtrlValueChanged2;
@@ -72,7 +72,7 @@ public class VarObjectField : Foldout, IVarField
                 continue;
             }
             // 刷新标签类字段的可见性
-            var branchCfg = DataEditorUtil.FilterBranchCfg(variable, nestedVar.cfg.branchCfgs);
+            var branchCfg = FilterBranchCfg(variable, nestedVar.cfg.branchCfgs);
             if (branchCfg == null) {
                 fieldView.SetDisplay(false);
                 continue;
@@ -87,32 +87,34 @@ public class VarObjectField : Foldout, IVarField
     /// <summary>
     /// 绑定数据后调用
     /// </summary>
-    public void Bind(DataGraphEditor editor, Variable variable) {
-        this.Unbind(_variable != null && _variable.type != variable.type);
+    public void Bind(DataEditor editor, Variable variable) {
+        bool typeChanged = _variable == null || _variable.type != variable.type;
+        if (typeChanged) {
+            contentContainer.Clear();
+        }
         this._editor = editor;
         this._variable = variable;
-        // 递归创建字段
-        if (contentContainer.childCount == 0) {
+        if (typeChanged) {
             foreach (Variable nestedVar in variable.values) {
-                VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, editor);
+                VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
                 DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
                 contentContainer.Add(fieldView);
             }
+            RegisterCtrlFieldEvents();
         }
-        RegisterCtrlFieldEvents();
         Refresh();
     }
 
     public void Unbind() {
-        Unbind(true);
+        Unbind(false);
     }
 
     private void Unbind(bool clearChildren) {
         Variable variable = _variable;
         if (variable == null) return;
+        UnregisterCtrlFieldEvents();
         _editor = null;
         _variable = null;
-        UnregisterCtrlFieldEvents();
         if (clearChildren) {
             contentContainer.Clear();
         }
@@ -167,6 +169,21 @@ public class VarObjectField : Foldout, IVarField
             }
         }
         return ctrlFields;
+    }
+
+    private static FieldBranchCfg FilterBranchCfg(Variable container, List<FieldBranchCfg> branchCfgs) {
+        for (int index = 0; index < branchCfgs.Count; index++) {
+            FieldBranchCfg branchCfg = branchCfgs[index];
+            Variable ctrlValue = container[branchCfg.ctrlIndex];
+            // Debug.Assert(ctrlValue.defineInfo.SimpleName == branchCfg.ctrl);
+            bool isMatch = ctrlValue.type.SimpleName == DSKeywords.TYPE_STRING
+                ? ctrlValue.stringValue == branchCfg.value
+                : ctrlValue.intValue == branchCfg.intValue;
+            if (isMatch) {
+                return branchCfg;
+            }
+        }
+        return null;
     }
 
     #region context-menu
@@ -244,12 +261,12 @@ public class VarObjectField : Foldout, IVarField
 
     private void OnClickCopy(object _) {
         Variable variable = _variable;
-        DataEditorUtil.DoCopy(variable, _editor.model);
+        DataEditorUtil.DoCopy(variable, _editor);
     }
 
     private void OnClickPaste(object _) {
         Variable variable = _variable;
-        DataEditorUtil.DoPaste(variable, _editor.model);
+        DataEditorUtil.DoPaste(variable, _editor);
         variable.ApplyModifiedProperties();
         Refresh(true);
     }

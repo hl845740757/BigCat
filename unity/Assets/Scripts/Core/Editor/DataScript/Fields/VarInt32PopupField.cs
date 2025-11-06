@@ -30,7 +30,7 @@ public class VarInt32PopupField : PopupField<int>, IVarField
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         if (variable.type.Kind == DSElementKind.Enum) {

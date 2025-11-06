@@ -28,7 +28,9 @@ using Wjybxx.Dson;
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
-/// 
+/// 数据端口视图
+///
+/// 视图需要设计多个状态（颜色）：连接为空、目标对象在同Folder内，目标对象在其它Folder。
 /// </summary>
 public class PortView : Port
 {
@@ -128,7 +130,7 @@ public class PortView : Port
         public void OnDropOutsidePort(Edge edge, Vector2 position) {
         }
 
-        public void OnDrop(GraphView graphView, Edge edge) {
+        public void OnDrop(UnityEditor.Experimental.GraphView.GraphView graphView, Edge edge) {
             this.m_EdgesToCreate.Clear();
             this.m_EdgesToCreate.Add(edge);
             this.m_EdgesToDelete.Clear();

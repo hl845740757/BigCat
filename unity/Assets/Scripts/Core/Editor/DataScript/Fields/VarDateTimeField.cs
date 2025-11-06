@@ -36,7 +36,7 @@ public class VarDateTimeField : BindableElement, IVarField
         set => field.label = value;
     }
 
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         field.SetValueWithoutNotify(variable.dateTimeValue);
     }

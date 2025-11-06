@@ -28,7 +28,7 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// </summary>
 public class VarNullableField : Foldout, IVarField
 {
-    private DataGraphEditor _editor;
+    private DataEditor _editor;
     private Variable _variable;
 
     public VarNullableField() {
@@ -60,19 +60,28 @@ public class VarNullableField : Foldout, IVarField
     /// <summary>
     /// 绑定数据后调用
     /// </summary>
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
+        bool typeChanged = _variable == null || _variable.type != variable.type;
+        if (typeChanged) {
+            contentContainer.Clear();
+        }
         this._editor = editor;
         this._variable = variable;
-        foreach (Variable nestedVar in variable.values) {
-            VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
-            contentContainer.Add(fieldView);
+        if (typeChanged) {
+            foreach (Variable nestedVar in variable.values) {
+                VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
+                contentContainer.Add(fieldView);
+            }
         }
         Refresh();
     }
 
     public void Unbind() {
+        Variable variable = _variable;
+        if (variable == null) return;
         _editor = null;
         _variable = null;
+        contentContainer.Clear();
     }
 
     #region context menu

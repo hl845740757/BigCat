@@ -31,13 +31,12 @@ public class VarEuler32Field : BindableElement, IVarField
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 
-
     public string label {
         get => field.label;
         set => field.label = value;
     }
 
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         field.SetValueWithoutNotify((Euler32)variable.intValue);
     }

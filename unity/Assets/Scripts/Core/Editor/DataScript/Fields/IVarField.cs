@@ -31,11 +31,11 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 internal interface IVarField : IPrefixLabel
 {
     /// <summary>
-    /// 完成数据绑定之后调用
+    /// 绑定数据
     /// </summary>
     /// <param name="editor"></param>
     /// <param name="variable"></param>
-    void Bind(DataGraphEditor editor, Variable variable);
+    void Bind(DataEditor editor, Variable variable);
 
     /// <summary>
     /// 解除绑定

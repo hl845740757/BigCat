@@ -17,19 +17,17 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Reflection;
+using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
-using Wjybxx.BigCat.Core;
-using Wjybxx.BigCat.CoreEditor.UIElements;
 using Wjybxx.Dson;
+using Wjybxx.Dson.IO;
 using Wjybxx.Dson.Text;
-using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
@@ -37,21 +35,10 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 ///
 /// 1.由于Variable和<see cref="SerializedProperty"/>不能很好的对应，因此我们统一不使用BindProperty。
 /// 2.由于我们Variable的Inspector视图是动态创建的，因此我们不设计取消监听逻辑以减少复杂度。
-///
-/// 如果
 /// </summary>
 public static class DataEditorUtil
 {
     #region util
-
-    public static bool IsPrimaryClickEvent(Event evt) {
-        return evt.type == EventType.MouseDown && evt.button == 0;
-
-    }
-
-    public static bool IsContextClickEvent(Event evt, Rect rect) {
-        return evt.type == EventType.ContextClick && rect.Contains(evt.mousePosition);
-    }
 
     /// <summary>
     /// 文本是否可执行粘贴
@@ -81,18 +68,18 @@ public static class DataEditorUtil
     /// <summary>
     /// 拷贝到系统buffer
     /// </summary>
-    public static void DoCopy(Variable variable, DataEditorModel model) {
+    public static void DoCopy(Variable variable, DataEditor editor) {
         if (variable.isNull) {
             return;
         }
-        DsonValue dsonValue = model.Encode(variable);
-        GUIUtility.systemCopyBuffer = dsonValue.ToDson(ObjectStyle.Indent, model.writerSettings);
+        DsonValue dsonValue = editor.model.Encode(variable);
+        GUIUtility.systemCopyBuffer = dsonValue.ToDson(ObjectStyle.Indent, editor.writerSettings);
     }
 
     /// <summary>
     /// 从系统Buffer粘贴
     /// </summary>
-    public static void DoPaste(Variable variable, DataEditorModel model) {
+    public static void DoPaste(Variable variable, DataEditor editor) {
         string copyBuffer = GUIUtility.systemCopyBuffer;
         if (string.IsNullOrWhiteSpace(copyBuffer)) {
             return;
@@ -100,7 +87,7 @@ public static class DataEditorUtil
         // GUIUtility.systemCopyBuffer = "";
         try {
             DsonValue dsonValue = Dsons.FromDson(copyBuffer);
-            model.ResetVariable(variable, dsonValue);
+            editor.model.ResetVariable(variable, dsonValue);
         }
         catch (Exception) {
             Debug.Log("invalid copy buffer: " + copyBuffer);
@@ -115,36 +102,6 @@ public static class DataEditorUtil
             }
         }
         return foldoutDepth;
-    }
-
-    internal static int GetListAndFoldoutDepth(VisualElement element) {
-        int listAndFoldoutDepth = 0;
-        for (VisualElement parent = element.hierarchy.parent; parent != null; parent = parent.hierarchy.parent) {
-            if (parent is Foldout || parent is ListView)
-                ++listAndFoldoutDepth;
-        }
-        return listAndFoldoutDepth;
-    }
-
-    /// <summary>
-    /// 如果返回null则表示当前不可展示
-    /// </summary>
-    /// <param name="container"></param>
-    /// <param name="branchCfgs"></param>
-    /// <returns></returns>
-    public static FieldBranchCfg FilterBranchCfg(Variable container, List<FieldBranchCfg> branchCfgs) {
-        for (int index = 0; index < branchCfgs.Count; index++) {
-            FieldBranchCfg branchCfg = branchCfgs[index];
-            Variable ctrlValue = container[branchCfg.ctrlIndex];
-            // Debug.Assert(ctrlValue.defineInfo.SimpleName == branchCfg.ctrl);
-            bool isMatch = ctrlValue.type.SimpleName == DSKeywords.TYPE_STRING
-                ? ctrlValue.stringValue == branchCfg.value
-                : ctrlValue.intValue == branchCfg.intValue;
-            if (isMatch) {
-                return branchCfg;
-            }
-        }
-        return null;
     }
 
     #endregion
@@ -212,7 +169,7 @@ public static class DataEditorUtil
     /// <param name="variable"></param>
     /// <param name="editor"></param>
     /// <returns></returns>
-    public static VisualElement CreateField(Variable variable, DataGraphEditor editor) {
+    public static VisualElement CreateField(Variable variable, DataEditor editor) {
         DSNamedType varType = variable.type;
         // 集合类型的DisplayType作用与其元素 - Map暂时不处理映射
         if (DSUtil.IsCollectionType(varType)) {
@@ -272,7 +229,7 @@ public static class DataEditorUtil
         return CreateObjectField(variable, editor);
     }
 
-    private static VisualElement CreateField(Variable variable, DisplayType displayType, DataGraphEditor editor) {
+    private static VisualElement CreateField(Variable variable, DisplayType displayType, DataEditor editor) {
         return displayType switch
         {
             DisplayType.List => CreateListField(variable, editor),
@@ -313,69 +270,69 @@ public static class DataEditorUtil
 
     #region atomic
 
-    public static IntegerField CreateInt32Field(Variable variable, DataGraphEditor editor) {
+    public static IntegerField CreateInt32Field(Variable variable, DataEditor editor) {
         VarInt32Field field = new VarInt32Field();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static LongField CreateInt64Field(Variable variable, DataGraphEditor editor) {
+    public static LongField CreateInt64Field(Variable variable, DataEditor editor) {
         VarInt64Field field = new VarInt64Field();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static FloatField CreateFloatField(Variable variable, DataGraphEditor editor) {
+    public static FloatField CreateFloatField(Variable variable, DataEditor editor) {
         VarFloatField field = new VarFloatField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static DoubleField CreateDoubleField(Variable variable, DataGraphEditor editor) {
+    public static DoubleField CreateDoubleField(Variable variable, DataEditor editor) {
         VarDoubleField field = new VarDoubleField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static Toggle CreateBoolField(Variable variable, DataGraphEditor editor) {
+    public static Toggle CreateBoolField(Variable variable, DataEditor editor) {
         VarBoolField field = new VarBoolField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static TextField CreateStringField(Variable variable, DataGraphEditor editor) {
+    public static TextField CreateStringField(Variable variable, DataEditor editor) {
         VarStringField field = new VarStringField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static PopupField<int> CreateInt32PopupField(Variable variable, DataGraphEditor editor) {
+    public static PopupField<int> CreateInt32PopupField(Variable variable, DataEditor editor) {
         VarInt32PopupField field = new VarInt32PopupField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static PopupField<string> CreateStringPopupField(Variable variable, DataGraphEditor editor) {
+    public static PopupField<string> CreateStringPopupField(Variable variable, DataEditor editor) {
         VarStringPopupField field = new VarStringPopupField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static MaskField CreateInt32MaskField(Variable variable, DataGraphEditor editor) {
+    public static MaskField CreateInt32MaskField(Variable variable, DataEditor editor) {
         VarInt32MaskField field = new VarInt32MaskField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static PopupField<int> CreateEnumField(Variable variable, DataGraphEditor editor) {
+    public static PopupField<int> CreateEnumField(Variable variable, DataEditor editor) {
         return CreateInt32PopupField(variable, editor);
     }
 
-    public static MaskField CreateEnumMaskField(Variable variable, DataGraphEditor editor) {
+    public static MaskField CreateEnumMaskField(Variable variable, DataEditor editor) {
         return CreateInt32MaskField(variable, editor);
     }
 
-    public static VarAssetPathField CreateAssetPathField(Variable variable, DataGraphEditor editor) {
+    public static VarAssetPathField CreateAssetPathField(Variable variable, DataEditor editor) {
         VarAssetPathField field = new VarAssetPathField();
         field.Bind(editor, variable);
         return field;
@@ -385,73 +342,73 @@ public static class DataEditorUtil
 
     #region struct
 
-    public static VarVector2Field CreateVector2Field(Variable variable, DataGraphEditor editor) {
+    public static VarVector2Field CreateVector2Field(Variable variable, DataEditor editor) {
         VarVector2Field field = new VarVector2Field();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarVector3Field CreateVector3Field(Variable variable, DataGraphEditor editor) {
+    public static VarVector3Field CreateVector3Field(Variable variable, DataEditor editor) {
         VarVector3Field field = new VarVector3Field();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarVector4Field CreateVector4Field(Variable variable, DataGraphEditor editor) {
+    public static VarVector4Field CreateVector4Field(Variable variable, DataEditor editor) {
         VarVector4Field field = new VarVector4Field();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarVector2IntField CreateVector2IntField(Variable variable, DataGraphEditor editor) {
+    public static VarVector2IntField CreateVector2IntField(Variable variable, DataEditor editor) {
         VarVector2IntField field = new VarVector2IntField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarVector3IntField CreateVector3IntField(Variable variable, DataGraphEditor editor) {
+    public static VarVector3IntField CreateVector3IntField(Variable variable, DataEditor editor) {
         VarVector3IntField field = new VarVector3IntField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarColorField CreateColorField(Variable variable, DataGraphEditor editor) {
+    public static VarColorField CreateColorField(Variable variable, DataEditor editor) {
         VarColorField field = new VarColorField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarColorField CreateColor32Field(Variable variable, DataGraphEditor editor) {
+    public static VarColorField CreateColor32Field(Variable variable, DataEditor editor) {
         VarColorField field = new VarColorField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarDateTimeField CreateDateTimeField(Variable variable, DataGraphEditor editor) {
+    public static VarDateTimeField CreateDateTimeField(Variable variable, DataEditor editor) {
         VarDateTimeField field = new VarDateTimeField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarTimestampField CreateTimestampField(Variable variable, DataGraphEditor editor) {
+    public static VarTimestampField CreateTimestampField(Variable variable, DataEditor editor) {
         VarTimestampField field = new VarTimestampField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarObjectPathField CreateObjectPathField(Variable variable, DataGraphEditor editor) {
+    public static VarObjectPathField CreateObjectPathField(Variable variable, DataEditor editor) {
         VarObjectPathField field = new VarObjectPathField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarAABBField CreateAABBField(Variable variable, DataGraphEditor editor) {
+    public static VarAABBField CreateAABBField(Variable variable, DataEditor editor) {
         VarAABBField field = new VarAABBField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarEuler32Field CreateEuler32Field(Variable variable, DataGraphEditor editor) {
+    public static VarEuler32Field CreateEuler32Field(Variable variable, DataEditor editor) {
         VarEuler32Field field = new VarEuler32Field();
         field.Bind(editor, variable);
         return field;
@@ -465,28 +422,67 @@ public static class DataEditorUtil
     ///
     /// </summary>
     /// <returns></returns>
-    public static VarListField CreateListField(Variable variable, DataGraphEditor editor) {
+    public static VarListField CreateListField(Variable variable, DataEditor editor) {
         VarListField field = new VarListField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarListField CreateMapField(Variable variable, DataGraphEditor editor) {
+    public static VarListField CreateMapField(Variable variable, DataEditor editor) {
         VarListField field = new VarListField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarNullableField CreateNullableField(Variable variable, DataGraphEditor editor) {
+    public static VarNullableField CreateNullableField(Variable variable, DataEditor editor) {
         VarNullableField field = new VarNullableField();
         field.Bind(editor, variable);
         return field;
     }
 
-    public static VarObjectField CreateObjectField(Variable variable, DataGraphEditor editor) {
+    public static VarObjectField CreateObjectField(Variable variable, DataEditor editor) {
         VarObjectField field = new VarObjectField();
         field.Bind(editor, variable);
         return field;
+    }
+
+    #endregion
+
+    #region 资产文件读写
+
+    /// <summary>
+    /// 从资产文件中加载数据图
+    /// </summary>
+    /// <param name="graph"></param>
+    /// <param name="assetPath"></param>
+    public static void Load(this DataGraph graph, string assetPath) {
+        string filePath = Application.dataPath + "/" + assetPath;
+        DsonArray<string> collection = Dsons.FromCollectionDson(File.ReadAllText(filePath));
+        graph.Import(collection);
+    }
+
+    /// <summary>
+    /// 保存数据到资产文件
+    ///
+    /// 注：这里主要处理编辑器下的Style需求，其逻辑与<see cref="Dsons"/>基本相同。
+    /// </summary>
+    public static void Save(this DataGraph graph, string assetPath, DsonTextWriterSettings settings) {
+        string filePath = Application.dataPath + "/" + assetPath;
+        DsonArray<string> collection = graph.Export();
+        File.WriteAllText(filePath, collection.ToCollectionDson(settings),
+            new UTF8Encoding(false));
+        //
+        foreach (DsonValue dsonValue in collection) {
+            if (dsonValue.DsonType == DsonType.Object) {
+                // WriteObject(writer, dsonValue.AsObject(), style);
+            } else if (dsonValue.DsonType == DsonType.Array) {
+                // WriteArray(writer, dsonValue.AsArray(), style);
+            } else if (dsonValue.DsonType == DsonType.Header) {
+                // WriteHeader(writer, dsonValue.AsHeader());
+            } else {
+                throw DsonIOException.InvalidTopDsonType(dsonValue.DsonType);
+            }
+        }
     }
 
     #endregion

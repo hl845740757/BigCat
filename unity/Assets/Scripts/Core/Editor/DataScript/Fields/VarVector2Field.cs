@@ -30,7 +30,7 @@ public class VarVector2Field : MVector2Field, IVarField
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetVectorFieldMargin(this, this.labelElement, variableCfg);

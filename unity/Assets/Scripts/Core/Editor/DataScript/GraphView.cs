@@ -26,13 +26,13 @@ using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
-public class NodeGraphView : GraphView
+public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 {
-    public DataGraphEditor editor;
+    public DataEditor editor;
 
     private int count;
 
-    public NodeGraphView() {
+    public GraphView() {
         this.Insert(0, new GridBackground()); // 网格背景
         this.AddManipulator(new ContentZoomer()); // 缩放
         this.AddManipulator(new ContentDragger()); // 画布拖拽
@@ -102,7 +102,7 @@ public class NodeGraphView : GraphView
 
     #region uxml
 
-    public new class UxmlFactory : UxmlFactory<NodeGraphView, UxmlTraits>
+    public new class UxmlFactory : UxmlFactory<GraphView, UxmlTraits>
     {
     }
 
@@ -110,7 +110,7 @@ public class NodeGraphView : GraphView
     {
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
-            var myView = (NodeGraphView)ve;
+            var myView = (GraphView)ve;
         }
     }
 

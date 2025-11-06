@@ -41,7 +41,7 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 public class VarListField : BindableElement, IVarField
 {
     private readonly ListView _listView;
-    private DataGraphEditor _editor;
+    private DataEditor _editor;
     private Variable _variable;
     private int _movingIndex = -1;
 
@@ -92,12 +92,11 @@ public class VarListField : BindableElement, IVarField
     /// <summary>
     /// 绑定数据后调用
     /// </summary>
-    public void Bind(DataGraphEditor editor, Variable variable) {
+    public void Bind(DataEditor editor, Variable variable) {
         this.Unbind();
         this._editor = editor;
         this._variable = variable;
         _listView.itemsSource = variable.values;
-        _listView.BindProperty(variable.valuesProperty);
         // 刷新UI
         Refresh();
     }
@@ -162,12 +161,12 @@ public class VarListField : BindableElement, IVarField
 
     private void OnClickCopy(object _) {
         Variable variable = _variable;
-        DataEditorUtil.DoCopy(variable, _editor.model);
+        DataEditorUtil.DoCopy(variable, _editor);
     }
 
     private void OnClickPaste(object _) {
         Variable variable = _variable;
-        DataEditorUtil.DoPaste(variable, _editor.model);
+        DataEditorUtil.DoPaste(variable, _editor);
         variable.ApplyModifiedProperties();
         Refresh(true);
     }
@@ -223,7 +222,6 @@ public class VarListField : BindableElement, IVarField
     private void OnItemsAdded(IEnumerable<int> indices) {
         Variable variable = _variable;
         Variable previous = null;
-        int min = 0;
         foreach (int index in indices) {
             if (previous == null) {
                 if (index == 0) {
@@ -238,26 +236,19 @@ public class VarListField : BindableElement, IVarField
                 previous = _editor.model.Duplicate(previous);
             }
             variable[index] = previous;
-            min = Math.Min(min, index);
         }
         variable.ApplyModifiedProperties();
-        variable.RebindValuesProperty(min);
     }
 
     private void OnItemRemoved(IEnumerable<int> indices) {
-        Variable variable = _variable;
-        // variable.ApplyModifiedProperties(); // ListView已执行删除并应用修改
-
-        int min = indices.Min();
-        variable.RebindValuesProperty(min);
+        Variable variable = _variable; // ListView已经执行删除
+        variable.ApplyModifiedProperties();
     }
 
     private void OnItemIndexChanged(int src, int dest) {
         Variable variable = _variable;
-        // variable.MoveTo(src, dest); // ListView已经执行移动并应用修改
-
-        MathCommon.MinMax(src, dest, out int min, out int max);
-        variable.RebindValuesProperty(min, max);
+        // variable.MoveTo(src, dest); // ListView已经执行移动
+        variable.ApplyModifiedProperties();
     }
 
     private void ShowItemContextMenu(ContextClickEvent evt) {

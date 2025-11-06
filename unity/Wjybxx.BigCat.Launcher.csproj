@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Launcher\UI\LoginView.cs" />
     <Compile Include="Assets\Scripts\Launcher\AppContext.cs" />
+    <Compile Include="Assets\Scripts\Launcher\UnityCodecLinker.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\Request.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\TestRpcRouter.cs" />

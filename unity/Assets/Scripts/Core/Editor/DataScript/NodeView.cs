@@ -36,7 +36,7 @@ public class NodeView : Node
     /// <summary>
     /// 关联的数据模型
     /// </summary>
-    public NodeData nodeData { get; set; }
+    public DataNode dataNode { get; set; }
 
     public NodeView() {
         title = "NodeView";
@@ -163,12 +163,12 @@ public class NodeView : Node
 
     public override void OnSelected() {
         base.OnSelected();
-        GetFirstAncestorOfType<NodeGraphView>().OnNodeSelected(this);
+        GetFirstAncestorOfType<GraphView>().OnNodeSelected(this);
     }
 
     public override void OnUnselected() {
         base.OnUnselected();
-        GetFirstAncestorOfType<NodeGraphView>().OnNodeUnselected(this);
+        GetFirstAncestorOfType<GraphView>().OnNodeUnselected(this);
     }
 
     public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
@@ -177,8 +177,8 @@ public class NodeView : Node
 
     public override void SetPosition(Rect newPos) {
         base.SetPosition(newPos);
-        if (nodeData) {
-            nodeData.position = newPos.position;
+        if (dataNode != null) {
+            dataNode.position = newPos.position;
             // dataNode.ApplyModifiedProperties();
         }
     }
