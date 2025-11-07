@@ -36,9 +36,10 @@ public class VarStringField : MTextField, IVarField
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
+        // Text为Null的情况下设置其它属性可能引发NPE
+        this.SetValueWithoutNotify(variable.stringValue ?? "");
         this.isDelayed = variableCfg.isDelayed;
         this.multiline = variableCfg.isMultiline;
-        this.SetValueWithoutNotify(variable.stringValue);
     }
 
     public void Unbind() {
@@ -62,7 +63,7 @@ public class VarStringField : MTextField, IVarField
             textInputBase.text = "value is null"; // 其实再使用一个Label更安全
         } else {
             textInputBase.SetEnabled(true);
-            textInputBase.text = _variable.stringValue;
+            textInputBase.text = _variable.stringValue ?? "";
         }
     }
 

@@ -34,8 +34,8 @@ public class VarVector3Field : MVector3Field, IVarField
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetVectorFieldMargin(this, this.labelElement, variableCfg);
-        this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.vector3Value);
+        this.isDelayed = variableCfg.isDelayed;
     }
 
     public void Unbind() {

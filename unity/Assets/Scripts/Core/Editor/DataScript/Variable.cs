@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Core;
@@ -123,6 +124,8 @@ public sealed class Variable : IDisposable
 
     #region struct
 
+    // Debug窗口默认不展示，以避免异常
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Vector2 vector2Value {
         get {
             float x = values[0].floatValue;
@@ -135,6 +138,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Vector3 vector3Value {
         get {
             float x = values[0].floatValue;
@@ -149,6 +153,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Vector4 vector4Value {
         get {
             float x = values[0].floatValue;
@@ -165,6 +170,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Quaternion quaternionValue {
         get {
             float x = values[0].floatValue;
@@ -181,6 +187,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Vector2Int vector2IntValue {
         get {
             int x = values[0].intValue;
@@ -193,6 +200,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Vector3Int vector3IntValue {
         get {
             int x = values[0].intValue;
@@ -207,6 +215,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Color colorValue {
         get {
             float r = values[0].floatValue;
@@ -223,6 +232,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public DateTime dateTimeValue { // 底层结构：seconds + nanos
         get {
             long seconds = values[0].longValue;
@@ -237,6 +247,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Timestamp timestampValue { // 底层结构：seconds + nanos
         get {
             long seconds = values[0].longValue;
@@ -249,6 +260,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public ObjectPath objectPathValue {
         get {
             string collection = values[0].stringValue;
@@ -265,6 +277,7 @@ public sealed class Variable : IDisposable
         }
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public MinMaxAABB aabbValue {
         get {
             Vector3 min = values[0].vector3Value;
@@ -432,7 +445,7 @@ public sealed class Variable : IDisposable
     /// 变量被添加到Node时应当调用该方法
     /// </summary>
     /// <param name="dataNode"></param>
-    private void SetDataNode(DataNode dataNode) {
+    internal void SetDataNode(DataNode dataNode) {
         this.dataNode = dataNode;
         if (values == null) {
             return;

@@ -56,6 +56,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector4Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarAssetPathField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraphHelper.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarObjectPathField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarTimestampField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataNode.cs" />
@@ -109,17 +110,16 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector3Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarNullableField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarColorField.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraphHelper.cs" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.uxml" />
-    <None Include="Assets\Scripts\Core\Editor\DataScript\NodeGraphView.uss" />
+    <None Include="Assets\Scripts\Core\Editor\DataScript\GraphView.uss" />
     <None Include="Assets\Scripts\Core\Editor\SpriteAnimation\AnimationClipEditor.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\TimestampField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\SpriteAnimation\ClipListItem.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\AABBField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\SpriteAnimation\AnimationClipEditor.uss" />
     <None Include="Assets\Scripts\Core\Editor\Wjybxx.BigCatEditor.Core.asmdef" />
-    <None Include="Assets\Scripts\Core\Editor\DataScript\DataGraphEditor.uxml" />
+    <None Include="Assets\Scripts\Core\Editor\DataScript\DataEditor.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\DateTimeField.uxml" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

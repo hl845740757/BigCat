@@ -250,6 +250,12 @@ public static class DataEditorUtil
         };
     }
 
+    public static void Bind(VisualElement element, Variable variable, DataEditor editor) {
+        if (element is IVarField field) {
+            field.Bind(editor, variable);
+        }
+    }
+
     public static void Refresh(VisualElement element, bool rebuild) {
         if (element is IVarField field) {
             field.Refresh(rebuild);

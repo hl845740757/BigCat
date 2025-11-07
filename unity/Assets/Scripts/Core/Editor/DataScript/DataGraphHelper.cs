@@ -118,10 +118,18 @@ internal class DataGraphHelper
         }
         string typeSymbol = tempValue.AsString();
         node.value = _graph.CreateVariable(_graph.repository.ResolveTypeSymbol(null, typeSymbol));
+        // 需要先纠正字段类型，才能解码
+        _graph.InitOutputFields(node);
         Decode(node.value, dsonValue);
+        //
+        node.graph = _graph;
+        node.value.SetDataNode(node);
         return node;
     }
 
+    /// <summary>
+    /// 注：Decode并不传递DataNode的引用
+    /// </summary>
     public void Decode(Variable variable, DsonValue dsonValue) {
         DSNamedType varType = variable.type;
         if (dsonValue.DsonType == DsonType.Null) {

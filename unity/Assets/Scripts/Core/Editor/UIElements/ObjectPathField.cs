@@ -190,6 +190,8 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         return type switch
         {
             ObjectPathType.SpriteOfGroup => new SpriteOfGroupHandler(this),
+            ObjectPathType.ExcelRow => new ExcelRowHandler(this),
+            ObjectPathType.ExcelValue => new ExcelValueHandler(this),
             _ => new DefaultPathHandler(this),
         };
     }
@@ -235,6 +237,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         public override void InitView() {
             view._localPathField.label = "LocalPath";
             view._localIdField.label = "LocalId";
+            view._localPathField.tooltip = "";
             //
             view._localPathField.SetEnabled(true);
             view._localIdField.SetEnabled(true);
@@ -328,6 +331,61 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             if (spriteGroup) {
                 EditorGUIUtility.PingObject(spriteGroup);
             }
+        }
+    }
+
+    private class ExcelRowHandler : ObjectPathHandler
+    {
+        public ExcelRowHandler(ObjectPathField view) : base(view) {
+        }
+
+        public override void InitView() {
+            view._collectionField.label = "Sheet";
+            view._localIdField.label = "Id";
+            view._localPathField.tooltip = "";
+            //
+            view._localPathField.SetEnabled(false);
+            view._localIdField.SetEnabled(true);
+        }
+
+        public override void OnClickSelectCollection() {
+        }
+
+        public override void OnClickSelectLocalPath() {
+        }
+
+        public override void OnClickSelectLocalId() {
+        }
+
+        public override void PingCollection() {
+        }
+    }
+
+    private class ExcelValueHandler : ObjectPathHandler
+    {
+        public ExcelValueHandler(ObjectPathField view) : base(view) {
+        }
+
+        public override void InitView() {
+            view._collectionField.label = "Sheet";
+            view._localPathField.label = "Column";
+            view._localIdField.label = "Id";
+            view._localPathField.tooltip = "如果数据列为List类型，支持索引器取值，如：names.[0]";
+            //
+            view._localPathField.SetEnabled(true);
+            view._localIdField.SetEnabled(true);
+        }
+
+        public override void OnClickSelectCollection() {
+        }
+
+        public override void OnClickSelectLocalPath() {
+        }
+
+        public override void OnClickSelectLocalId() {
+        }
+
+        public override void PingCollection() {
         }
     }
 

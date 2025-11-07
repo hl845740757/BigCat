@@ -68,7 +68,7 @@ public class VarObjectField : Foldout, IVarField
             VisualElement fieldView = container[index];
             Variable nestedVar = variable[index];
             if (!nestedVar.cfg.HasBranchCfg) {
-                DataEditorUtil.Refresh(fieldView, rebuild);
+                DataEditorUtil.Bind(fieldView, nestedVar, _editor);
                 continue;
             }
             // 刷新标签类字段的可见性
@@ -80,7 +80,7 @@ public class VarObjectField : Foldout, IVarField
             fieldView.SetDisplay(true);
             fieldView.tooltip = branchCfg.tooltip;
             DataEditorUtil.SetFieldLabel(fieldView, branchCfg.displayName);
-            DataEditorUtil.Refresh(fieldView, rebuild);
+            DataEditorUtil.Bind(fieldView, nestedVar, _editor);
         }
     }
 
@@ -90,6 +90,7 @@ public class VarObjectField : Foldout, IVarField
     public void Bind(DataEditor editor, Variable variable) {
         bool typeChanged = _variable == null || _variable.type != variable.type;
         if (typeChanged) {
+            UnregisterCtrlFieldEvents();
             contentContainer.Clear();
         }
         this._editor = editor;
@@ -106,57 +107,57 @@ public class VarObjectField : Foldout, IVarField
     }
 
     public void Unbind() {
-        Unbind(false);
-    }
-
-    private void Unbind(bool clearChildren) {
         Variable variable = _variable;
         if (variable == null) return;
         UnregisterCtrlFieldEvents();
+        contentContainer.Clear();
+        //
         _editor = null;
         _variable = null;
-        if (clearChildren) {
-            contentContainer.Clear();
-        }
     }
 
     private void UnregisterCtrlFieldEvents() {
         HashSet<VisualElement> ctrlFields = CollectCtrlFields();
-        if (ctrlFields != null) {
-            foreach (VisualElement ctrlField in ctrlFields) {
-                if (ctrlField is IntegerField integerField) {
-                    integerField.UnregisterValueChangedCallback(_onCtrlValueChanged1);
-                } else if (ctrlField is PopupField<int> popupIntField) {
-                    popupIntField.UnregisterValueChangedCallback(_onCtrlValueChanged1);
-                } else if (ctrlField is PopupField<string> popupStringField) {
-                    popupStringField.UnregisterValueChangedCallback(_onCtrlValueChanged2);
-                } else if (ctrlField is TextField textField) {
-                    textField.UnregisterValueChangedCallback(_onCtrlValueChanged2);
-                }
+        if (ctrlFields == null) {
+            return;
+        }
+        foreach (VisualElement ctrlField in ctrlFields) {
+            if (ctrlField is IntegerField integerField) {
+                integerField.UnregisterValueChangedCallback(_onCtrlValueChanged1);
+            } else if (ctrlField is PopupField<int> popupIntField) {
+                popupIntField.UnregisterValueChangedCallback(_onCtrlValueChanged1);
+            } else if (ctrlField is PopupField<string> popupStringField) {
+                popupStringField.UnregisterValueChangedCallback(_onCtrlValueChanged2);
+            } else if (ctrlField is TextField textField) {
+                textField.UnregisterValueChangedCallback(_onCtrlValueChanged2);
             }
         }
     }
 
     private void RegisterCtrlFieldEvents() {
         HashSet<VisualElement> ctrlFields = CollectCtrlFields();
-        if (ctrlFields != null) {
-            _onCtrlValueChanged1 ??= _ => Refresh();
-            _onCtrlValueChanged2 ??= _ => Refresh();
-            foreach (VisualElement ctrlField in ctrlFields) {
-                if (ctrlField is IntegerField integerField) {
-                    integerField.RegisterValueChangedCallback(_onCtrlValueChanged1);
-                } else if (ctrlField is PopupField<int> popupIntField) {
-                    popupIntField.RegisterValueChangedCallback(_onCtrlValueChanged1);
-                } else if (ctrlField is PopupField<string> popupStringField) {
-                    popupStringField.RegisterValueChangedCallback(_onCtrlValueChanged2);
-                } else if (ctrlField is TextField textField) {
-                    textField.RegisterValueChangedCallback(_onCtrlValueChanged2);
-                }
+        if (ctrlFields == null) {
+            return;
+        }
+        _onCtrlValueChanged1 ??= _ => Refresh();
+        _onCtrlValueChanged2 ??= _ => Refresh();
+        foreach (VisualElement ctrlField in ctrlFields) {
+            if (ctrlField is IntegerField integerField) {
+                integerField.RegisterValueChangedCallback(_onCtrlValueChanged1);
+            } else if (ctrlField is PopupField<int> popupIntField) {
+                popupIntField.RegisterValueChangedCallback(_onCtrlValueChanged1);
+            } else if (ctrlField is PopupField<string> popupStringField) {
+                popupStringField.RegisterValueChangedCallback(_onCtrlValueChanged2);
+            } else if (ctrlField is TextField textField) {
+                textField.RegisterValueChangedCallback(_onCtrlValueChanged2);
             }
         }
     }
 
     private HashSet<VisualElement> CollectCtrlFields() {
+        if (_variable == null || contentContainer.childCount == 0) {
+            return null;
+        }
         HashSet<VisualElement> ctrlFields = null;
         foreach (Variable nestedVar in _variable.values) {
             if (!nestedVar.cfg.HasBranchCfg) {
@@ -218,8 +219,9 @@ public class VarObjectField : Foldout, IVarField
         menu.AddItem(new GUIContent("Reset"), false, OnClickReset, null);
 
         // 实例选择
+        bool isPairType = DSUtil.IsPairType(variable.type);
         VariableCfg variableCfg = variable.cfg;
-        if (variableCfg.HasSupportedInsts) {
+        if (variableCfg.HasSupportedInsts && !isPairType) {
             GenericMenu.MenuFunction2 callback = OnClickResetWith;
             for (int index = 0; index < variableCfg.supportedInsts.Count; index++) {
                 DSInst inst = variableCfg.supportedInsts[index];
@@ -232,7 +234,7 @@ public class VarObjectField : Foldout, IVarField
             menu.AddDisabledItem(new GUIContent("ResetWith"));
         }
         // 多态类型选择
-        if (variableCfg.HasSupportedTypes) {
+        if (variableCfg.HasSupportedTypes && !isPairType) {
             GenericMenu.MenuFunction2 callback = OnClickChangeType;
             for (int index = 0; index < variableCfg.supportedTypes.Count; index++) {
                 string label = variableCfg.supportedTypes[index];

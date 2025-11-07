@@ -114,11 +114,12 @@ public sealed class DataGraph
     /// <returns></returns>
     public DataNode CreateNode(DSNamedType namedType = null) {
         namedType ??= repository.GetBuiltinType(DSKeywords.TYPE_OBJECT);
-        DataNode nodeData = new DataNode(++_nextLocalId)
+        DataNode node = new DataNode(++_nextLocalId)
         {
             value = CreateVariable(namedType)
         };
-        return nodeData;
+        node.value.SetDataNode(node);
+        return node;
     }
 
     /// <summary>
@@ -146,12 +147,12 @@ public sealed class DataGraph
         if (nodeDic.ContainsKey(node.localId)) {
             throw new ArgumentException("localId: " + node.localId);
         }
-        // 初始化数据端口字段
+        // 初始化数据端口字段 - 字段类型可能变更
         // node.inputFields.Clear();
-        if (node.features.HasFlag(Features.EnablePort)) {
-            InitOutputFields(node);
-        }
+        InitOutputFields(node);
         node.graph = this;
+        node.value.SetDataNode(node);
+        //
         nodeDic.Add(node.localId, node);
         nodeList.Add(node);
         nodeList.Sort(CompareNode);
@@ -171,10 +172,8 @@ public sealed class DataGraph
             return;
         }
         Disconnect(node, disconnectInputs, disconnectOutputs);
-        // 主动备份一次
-        if (node.IsDataChanged()) {
-            CreateUpdateCommand(node);
-        }
+        node.ApplyModifiedProperties(); // 主动备份一次
+        //
         DataNode.NodeMemento prevState = node.currentMemento;
         node.graph = null;
         node.currentMemento = null;
@@ -269,12 +268,11 @@ public sealed class DataGraph
     /// 1.会递归所有的静态路径字段，并将标记有PortField注解的字段转换为ObjectPath类型。
     /// 2.在修改Node的顶层Value的数据类型后，应当调用该方法修正端口数据。
     /// </summary>
-    public void InitOutputFields(DataNode nodeData) {
-        nodeData.outputFields.Clear();
-        if (!nodeData.features.HasFlag(Features.EnablePort)) {
-            return;
+    public void InitOutputFields(DataNode node) {
+        node.outputFields.Clear();
+        if (node.features.HasFlag(Features.EnablePort)) {
+            InitOutputFields(node.value, node.outputFields);
         }
-        InitOutputFields(nodeData.value, nodeData.outputFields);
     }
 
     private void InitOutputFields(Variable variable, List<Variable> outList) {
@@ -282,8 +280,7 @@ public sealed class DataGraph
         if (varType.IsValueType || DSUtil.IsAtomicType(varType)) {
             return;
         }
-        VariableCfg variableCfg = variable.cfg;
-        if (!variableCfg.HasPortCfg) {
+        if (!variable.cfg.HasPortCfg) {
             if (DSUtil.IsCollectionOrMapType(varType)) {
                 return; // 不扫描动态路径字段
             }
@@ -294,7 +291,7 @@ public sealed class DataGraph
         }
         DSNamedType objectPathType = repository.GetType("ObjectPath");
         // 集合类型修改为List<ObjectPath>
-        if (DSUtil.IsCollectionType(varType)) {
+        if (DSUtil.IsCollectionType(varType) || DSUtil.IsNullableType(varType)) {
             if (varType.TypeArguments[0] != objectPathType) {
                 varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(1)
                 {
@@ -306,7 +303,7 @@ public sealed class DataGraph
             return;
         }
         // 字典类型修改为Map<Key,ObjectPath>
-        if (DSUtil.IsMapType(varType)) {
+        if (DSUtil.IsMapType(varType) || DSUtil.IsPairType(varType)) {
             if (varType.TypeArguments[1] != objectPathType) {
                 varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(2)
                 {
@@ -318,7 +315,7 @@ public sealed class DataGraph
             outList.Add(variable);
             return;
         }
-        // 普通Class修改ObjectPath
+        // 普通Class修改为ObjectPath
         {
             if (varType != objectPathType) {
                 ChangeVariableType(variable, objectPathType, false);
@@ -356,7 +353,7 @@ public sealed class DataGraph
             cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
             typeSymbol = DSUtil.ToDisplayString(type.TypeName),
-            isNull = variableCfg.initNull || DSUtil.IsNullableType(type)
+            isNull = DSUtil.IsNullableType(type) || variableCfg.initNull
         };
         CreateValues(variable);
         return variable;
@@ -380,10 +377,21 @@ public sealed class DataGraph
         // Nullable提前创建变量 - 稳定path
         if (DSUtil.IsNullableType(varType)) {
             DSField valueField = variable.type.GetField("value")!;
-            VariableCfg elementCfg = variable.cfg.elementCfg;
-            Variable nestedVar = CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg);
+            VariableCfg elementCfg = variable.cfg?.elementCfg;
+            //
             variable.values = new List<Variable>(1);
-            variable.Add(nestedVar);
+            variable.Add(CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg));
+            return;
+        }
+        // Pair类型字段向下传递配置
+        if (DSUtil.IsPairType(varType)) {
+            DSField keyField = variable.type.GetField("key")!;
+            DSField valueField = variable.type.GetField("value")!;
+            VariableCfg elementCfg = variable.cfg?.elementCfg;
+            //
+            variable.values = new List<Variable>(2);
+            variable.Add(CreateVariable(valueField, (DSNamedType)keyField.Type));
+            variable.Add(CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg));
             return;
         }
         // 递归创建Value
@@ -397,8 +405,12 @@ public sealed class DataGraph
 
     /// <summary>
     /// 切换变量的数据结构类型
-    ///
-    /// 注：如果切换Node顶层变量的数据类型，需要重新初始化Node的输出字段信息<see cref="InitOutputFields"/>。
+    /// 
+    /// 1.如果切换Node变量的数据类型，方法返回后需要重新初始化Node的输出字段信息<see cref="InitOutputFields"/>。
+    /// 为什么不在方法内部自动处理Output字段切换？那样返回的变量类型就和参数不同了。
+    /// 
+    /// 2.如果切换Node变量的数据类型，方法会强制修正defineInfo和cfg属性；
+    /// 那List/Map类型作为顶层节点不就永远只有默认配置了吗？是的，需要额外的类型封装。
     /// </summary>
     /// <param name="variable">目标变量</param>
     /// <param name="newType">新类型</param>
@@ -410,13 +422,22 @@ public sealed class DataGraph
             return false;
         }
         DsonValue dsonValue = inheritData ? Encode(variable) : null;
-        ResetVariable(variable);
-        // 按照新类型再初始化
+        variable.values = null;
         variable.type = newType;
         variable.typeSymbol = DSUtil.ToDisplayString(newType.TypeName);
+        // 修正顶层变量定义
+        DataNode dataNode = variable.dataNode;
+        if (dataNode != null && variable == dataNode.value) {
+            variable.defineInfo = newType;
+            variable.cfg = GetVariableCfg(newType);
+        }
+        // 按照新类型再初始化
         CreateValues(variable);
         if (inheritData) {
             Decode(variable, dsonValue);
+        }
+        if (dataNode != null) {
+            variable.SetDataNode(dataNode);
         }
         return true;
     }
@@ -467,7 +488,8 @@ public sealed class DataGraph
     /// <param name="variable"></param>
     public Variable CreateListItem(Variable variable) {
         DSField valuesField = variable.type.GetField("values")!;
-        return CreateVariable(valuesField, (DSNamedType)valuesField.Type, variable.cfg.elementCfg);
+        VariableCfg elementCfg = variable.cfg?.elementCfg; // 如果List是顶层对象，则可能为null
+        return CreateVariable(valuesField, (DSNamedType)valuesField.Type, elementCfg);
     }
 
     /// <summary>
@@ -476,8 +498,7 @@ public sealed class DataGraph
     /// <param name="variable"></param>
     public Variable CreateMapItem(Variable variable) {
         DSNamedType pairType = GetPairType(variable.type);
-        Variable pairVar = CreateVariable(pairType);
-        pairVar[1].cfg = variable.cfg.elementCfg; // 修正value的配置
+        Variable pairVar = CreateVariable(pairType, variable.cfg);
         return pairVar;
     }
 
@@ -573,7 +594,7 @@ public sealed class DataGraph
     public DsonArray<string> Export() {
         DsonArray<string> result = new DsonArray<string>(nodeList.Count);
         foreach (DataNode dataNode in nodeList) {
-            result.Add(EncodeNode(dataNode));
+            result.Add(_helper.EncodeNode(dataNode));
         }
         return result;
     }
@@ -591,20 +612,11 @@ public sealed class DataGraph
         ClearUndoQueue();
         //
         foreach (DsonValue dsonValue in collection) {
-            DataNode dataNode = DecodeNode(dsonValue);
-            RepairNode(dataNode);
+            DataNode dataNode = _helper.DecodeNode(dsonValue);
             nodeDic.Add(dataNode.localId, dataNode);
             nodeList.Add(dataNode);
         }
         RepairGraph(new List<DataNode>(nodeList), null, null);
-    }
-
-    private DsonValue EncodeNode(DataNode node) {
-        return _helper.EncodeNode(node);
-    }
-
-    private DataNode DecodeNode(DsonValue dsonValue) {
-        return _helper.DecodeNode(dsonValue);
     }
 
     /// <summary>
@@ -785,10 +797,16 @@ public sealed class DataGraph
     /// </summary>
     /// <param name="node"></param>
     private void RepairNode(DataNode node) {
-        node.graph = this;
-        Debug.Assert(node.value != null, "node.value == null"); // 我们已默认为Object类型
-        RepairVariable(node.value);
+        Variable variable = node.value;
+        Debug.Assert(variable != null, "node.value == null");
+        variable.type ??= (DSNamedType)repository.ResolveTypeSymbol(null, variable.typeSymbol);
+        variable.defineInfo = variable.type;
+        variable.cfg = GetVariableCfg(variable.type);
         InitOutputFields(node);
+        RepairVariable(variable);
+        //
+        node.graph = this;
+        variable.SetDataNode(node);
     }
 
     private void RepairVariable(Variable variable) {
@@ -796,9 +814,18 @@ public sealed class DataGraph
             throw new InvalidOperationException();
         }
         variable.type ??= (DSNamedType)repository.ResolveTypeSymbol(null, variable.typeSymbol);
-        variable.cfg ??= GetVariableCfg(variable.type);
+        variable.cfg ??= GetVariableCfg(variable.defineInfo);
         if (variable.values == null) {
             return;
+        }
+        // 修正Nullable和Pair的Value配置
+        if (DSUtil.IsNullableType(variable.type)) {
+            variable[0].cfg = variable.cfg.elementCfg;
+            goto repairFields;
+        }
+        if (DSUtil.IsPairType(variable.type)) {
+            variable[1].cfg = variable.cfg.elementCfg;
+            goto repairFields;
         }
         // 修正集合元素
         if (DSUtil.IsCollectionType(variable.type)) {
@@ -820,16 +847,17 @@ public sealed class DataGraph
             for (int index = 0; index < variable.values.Count; index++) {
                 Variable pairVar = variable.values[index];
                 if (pairVar == null) { // ListView会先行修改数组长度
-                    pairVar = CreateVariable(pairType);
+                    pairVar = CreateVariable(pairType, variable.cfg);
                     variable[index] = pairVar;
                 }
-                pairVar.defineInfo = pairType;
                 pairVar.type = pairType;
+                pairVar.defineInfo = pairType;
+                pairVar.cfg = variable.cfg; // Pair会自动向下传递给Value
                 RepairVariable(pairVar);
-                pairVar[1].cfg = variable.cfg.elementCfg; // 修正value的配置
             }
             return;
         }
+        repairFields:
         // 修正潜在的List/Map字段
         List<DSField> fields = variable.type.GetFields(true, _fieldListPool.Acquire());
         for (int index = 0; index < variable.values.Count; index++) {

@@ -41,8 +41,8 @@ public class VarFloatField : MFloatField, IVarField
             max = variableCfg.max.AsNumber().FloatValue;
         }
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
-        this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.floatValue);
+        this.isDelayed = variableCfg.isDelayed;
     }
 
     public void Unbind() {

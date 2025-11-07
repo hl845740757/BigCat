@@ -18,27 +18,36 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// </summary>
 public class DataEditor : EditorWindow
 {
-    private GraphView _graphView;
-    private VisualElement _inspectorView;
-    private VisualElement _nodeInfoView;
-    private VisualElement _nodeValueView;
-    private VisualElement _portValueView; // port详细信息展示，用于排序
-    
+    protected GraphView graphView;
+    protected VisualElement inspectorView;
+    protected VisualElement nodeInfoView;
+    protected VisualElement nodeValueView;
+    // protected VisualElement portValueView; // port详细信息展示
+
+    protected LongField localIdField;
+    protected TextField nameField;
+    protected TextField folderField;
+    protected TextField commentField;
+
     public DataGraph model { get; private set; }
     public DsonTextWriterSettings writerSettings { get; set; }
+
     /// <summary>
     /// Key为菜单路径，Value为创建Node的模板元素
     /// TODO 增加NodeView绑定配置，从而实现不同样式。
     /// </summary>
     public readonly LinkedDictionary<string, DSNamedType> templates = new();
+    /// <summary>
+    /// 当前选中的节点 
+    /// </summary>
+    public NodeView selectedNode { get; set; }
 
-    public NodeView selectedNode { get; private set; }
     private DataNode _dataNode;
 
-    [MenuItem("Window/UI Toolkit/DataGraphEditor")]
+    [MenuItem("Window/UI Toolkit/DataEditor")]
     private static void OpenWindow() {
         DataEditor wnd = GetWindow<DataEditor>();
-        wnd.titleContent = new GUIContent("DataGraphEditor");
+        wnd.titleContent = new GUIContent("DataEditor");
     }
 
     /// <summary>
@@ -72,53 +81,102 @@ public class DataEditor : EditorWindow
         model.redoPerformed -= OnUndoRedoPerformed;
     }
 
-    protected void Update() {
-        model.Update();
+    protected virtual void OnUndoRedoPerformed(List<DataNode> insertNodes,
+                                               List<DataNode> deleteNodes,
+                                               List<DataNode> updateNodes) {
+        // Undo/Redo以后引用可能变更
+        if (model.nodeDic.TryGetValue(_dataNode.localId, out DataNode existNode)) {
+            _dataNode = existNode;
+            if (nodeValueView.childCount <= 0) {
+                return;
+            }
+            VisualElement element = nodeValueView[0];
+            if (element is IVarField field) {
+                field.Bind(this, _dataNode.value);
+            }
+            element.SetEnabled(true);
+        } else {
+            if (nodeValueView.childCount > 0) {
+                nodeValueView[0].SetEnabled(false);
+            }
+        }
     }
 
-    protected virtual void OnUndoRedoPerformed(List<DataNode> insertNodes, List<DataNode> deleteNodes,
-                                               List<DataNode> updateNodes) {
-        if (_nodeValueView.childCount > 0) {
-            DataEditorUtil.Refresh(_nodeValueView[0], true);
-        }
+    protected void Update() {
+        model.Update();
     }
 
     public void CreateGUI() {
         // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
-
         // Import UXML
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
-            "Assets/Scripts/Core/Editor/DataScript/DataGraphEditor.uxml");
+            "Assets/Scripts/Core/Editor/DataScript/DataEditor.uxml");
         VisualElement labelFromUXML = visualTree.Instantiate();
         root.Add(labelFromUXML);
 
         //
-        _graphView = root.Q<GraphView>();
-        _inspectorView = root.Q<VisualElement>("inspector-div");
-        _nodeInfoView = root.Q<VisualElement>("node-info");
-        _nodeValueView = root.Q<VisualElement>("node-value");
-
+        graphView = root.Q<GraphView>();
+        inspectorView = root.Q<VisualElement>("inspector-div");
+        nodeInfoView = root.Q<VisualElement>("node-info");
+        nodeValueView = root.Q<VisualElement>("node-value");
+        graphView.editor = this;
         //
-        _nodeValueView.Add(DataEditorUtil.CreateField(_dataNode.value, this));
-
-        // 长生命周期字段初始化
-        TextField nameField = _nodeInfoView.Q<MTextField>("name");
+        localIdField = nodeInfoView.Q<LongField>("local-id");
+        nameField = nodeInfoView.Q<TextField>("name");
+        folderField = nodeInfoView.Q<TextField>("folder");
+        commentField = nodeInfoView.Q<TextField>("comment");
+        localIdField.isReadOnly = true;
+        nameField.isDelayed = true;
+        folderField.isDelayed = true;
+        commentField.isDelayed = true;
         nameField.RegisterValueChangedCallback(OnNameFieldChanged);
-        //
-        TextField folderField = _nodeInfoView.Q<MTextField>("folder");
         folderField.RegisterValueChangedCallback(OnFolderFieldChanged);
+        commentField.RegisterValueChangedCallback(OnCommentFieldChanged);
+
+        // 
+        root.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
+
+        // DEBUG
+        nodeValueView.Add(DataEditorUtil.CreateField(_dataNode.value, this));
+    }
+
+    /// <summary>
+    /// 主要处理控制事件，不建议停止事件传播
+    /// </summary>
+    /// <param name="evt"></param>
+    protected virtual void OnKeyDownEvent(KeyDownEvent evt) {
+        if (!evt.ctrlKey || evt.shiftKey) return;
+        if (evt.keyCode == KeyCode.Z) {
+            model.Undo();
+        } else if (evt.keyCode == KeyCode.Y) {
+            model.Redo();
+        } else if (evt.keyCode == KeyCode.S) {
+            // TODO 保存
+        }
+    }
+
+    private void OnCommentFieldChanged(ChangeEvent<string> evt) {
+        evt.StopPropagation();
+        if (selectedNode == null) return;
+        selectedNode.dataNode.comment = evt.newValue;
+        selectedNode.dataNode.ApplyModifiedProperties();
     }
 
     private void OnFolderFieldChanged(ChangeEvent<string> evt) {
         evt.StopPropagation();
+        if (selectedNode == null) return;
+        selectedNode.dataNode.folder = evt.newValue;
+        selectedNode.dataNode.ApplyModifiedProperties();
         // TODO 刷新View
     }
 
     private void OnNameFieldChanged(ChangeEvent<string> evt) {
-        evt.StopImmediatePropagation();
+        evt.StopPropagation();
         if (selectedNode == null) return;
         selectedNode.dataNode.name = evt.newValue;
+        selectedNode.dataNode.ApplyModifiedProperties();
+        //
         selectedNode.title = evt.newValue;
     }
 
@@ -131,29 +189,23 @@ public class DataEditor : EditorWindow
             return;
         }
         selectedNode = nodeView;
-        _nodeInfoView.SetEnabled(true);
-
-        DataNode nodeData = nodeView.dataNode;
-        // _nodeInfoView.Q<TextField>("folder")
-        //     .BindProperty(nodeData.serializedObject.FindProperty("_folder"));
-        // _nodeInfoView.Q<TextField>("local-id")
-        //     .BindProperty(nodeData.serializedObject.FindProperty("_localId"));
-        // _nodeInfoView.Q<TextField>("comment")
-        //     .BindProperty(nodeData.serializedObject.FindProperty("_comment"));
-        // _nodeInfoView.Q<MVector2Field>("position")
-        //     .BindProperty(nodeData.positionProperty);
-
-        // name和folder有特殊逻辑
-        _nodeInfoView.Q<MTextField>("name").value = nodeData.name;
-        _nodeInfoView.Q<TextField>("folder").value = nodeData.folder;
+        nodeInfoView.SetEnabled(true);
+        // 测试代码
+        nodeView.dataNode = _dataNode;
+        //
+        DataNode dataNode = selectedNode.dataNode;
+        localIdField.value = dataNode.localId;
+        nameField.value = dataNode.name;
+        folderField.value = dataNode.folder;
+        commentField.value = dataNode.comment;
         //
         BuildNodeValueView();
     }
 
     private void BuildNodeValueView() {
         DataNode nodeData = selectedNode.dataNode;
-        _nodeValueView.SetEnabled(true);
-        _nodeValueView.Add(DataEditorUtil.CreateField(nodeData.value, this));
+        nodeValueView.SetEnabled(true);
+        nodeValueView.Add(DataEditorUtil.CreateField(nodeData.value, this));
     }
 
     public void OnNodeUnselected(NodeView nodeView) {
@@ -161,12 +213,12 @@ public class DataEditor : EditorWindow
             return;
         }
         selectedNode = null;
-        _nodeInfoView.SetEnabled(false);
-        _nodeValueView.SetEnabled(false);
+        nodeInfoView.SetEnabled(false);
+        nodeValueView.SetEnabled(false);
 
         // 解除所有属性绑定
-        _nodeInfoView.Query<BindableElement>().ForEach(e => e.Unbind());
-        _nodeValueView.Clear();
+        nodeInfoView.Query<BindableElement>().ForEach(e => e.Unbind());
+        nodeValueView.Clear();
     }
 }
 }

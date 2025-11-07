@@ -47,6 +47,10 @@ public enum ObjectPathType
     SoundOfGroup = 3,
 
     /// <summary>
+    /// Excel表的行，即配置对象引用（SheetName + id）
+    /// </summary>
+    ExcelRow = 8,
+    /// <summary>
     /// Excel表单元格，通常是I18N字符串坐标
     /// </summary>
     ExcelValue = 9,

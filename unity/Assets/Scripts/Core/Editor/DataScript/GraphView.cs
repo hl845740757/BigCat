@@ -28,7 +28,7 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 {
-    public DataEditor editor;
+    public DataEditor editor { get; internal set; }
 
     private int count;
 
@@ -39,7 +39,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         this.AddManipulator(new SelectionDragger()); // 节点拖拽
         this.AddManipulator(new RectangleSelector()); // 框选
         //
-        var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Scripts/Core/Editor/DataScript/NodeGraphView.uss");
+        var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Scripts/Core/Editor/DataScript/GraphView.uss");
         this.styleSheets.Add(styleSheet);
 
         // 视图和逻辑同步

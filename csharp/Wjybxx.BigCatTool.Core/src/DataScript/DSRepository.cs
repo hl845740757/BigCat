@@ -72,8 +72,8 @@ public sealed class DSRepository
     private readonly Dictionary<string, DSNamedType> codecTypeName2TypeDic = new();
 
     public DSRepository() {
-        InitBuiltinTypes();
         AddFile(globalFile);
+        InitBuiltinTypes();
     }
 
     /// <summary>

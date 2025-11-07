@@ -32,6 +32,8 @@ internal interface IVarField : IPrefixLabel
 {
     /// <summary>
     /// 绑定数据
+    ///
+    /// 注：执行Bind前不一定会调用Unbind以尽量复用对象，内部需要自行处理Unbind逻辑。
     /// </summary>
     /// <param name="editor"></param>
     /// <param name="variable"></param>

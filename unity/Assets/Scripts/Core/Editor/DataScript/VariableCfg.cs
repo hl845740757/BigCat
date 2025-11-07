@@ -216,8 +216,9 @@ public sealed class VariableCfg
             ParseEnumPops(cfg, (DSNamedType)element);
         }
         // 拷贝List的配置到元素
-        if (element is DSField field
-            && (DSUtil.IsCollectionOrMapType(field.Type) || DSUtil.IsNullableType(field.Type))) {
+        if (element is DSField field && (DSUtil.IsCollectionOrMapType(field.Type)
+                                         || DSUtil.IsNullableType(field.Type)
+                                         || DSUtil.IsPairType(field.Type))) {
             VariableCfg elementCfg = new VariableCfg();
             CopyListCfg(elementCfg, cfg);
             cfg.elementCfg = elementCfg;

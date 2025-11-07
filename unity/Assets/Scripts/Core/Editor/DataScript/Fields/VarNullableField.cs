@@ -54,7 +54,7 @@ public class VarNullableField : Foldout, IVarField
         }
         contentContainer.SetEnabled(true);
         VisualElement fieldView = contentContainer[0];
-        DataEditorUtil.Refresh(fieldView, rebuild);
+        DataEditorUtil.Bind(fieldView, variable[0], _editor);
     }
 
     /// <summary>
