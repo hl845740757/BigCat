@@ -86,7 +86,7 @@ public class DsonGenerator : ISheetProcessor
         _textWriterSettings = new DsonTextWriterSettings.Builder
             {
                 SoftLineLength = 500, // 尽量一行
-                NumberStyle = NumberStyles.Simple // 不打印数字类型以方便阅读 -- 会导致反序列化后的DsonObject不再相等
+                NumberStyle = NumberStyle.Simple // 不打印数字类型以方便阅读 -- 会导致反序列化后的DsonObject不再相等
             }
             .Build();
     }

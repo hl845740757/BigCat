@@ -294,7 +294,7 @@ public class VarObjectField : Foldout, IVarField
         Variable variable = _variable;
         string typeSymbol = variable.cfg.supportedTypes[index];
         //
-        DSNamedType namedType = _editor.model.repository.ResolveTypeSymbol(null, typeSymbol) as DSNamedType;
+        DSNamedType namedType = (DSNamedType)_editor.model.repository.ResolveTypeSymbol(null, typeSymbol);
         _editor.model.ChangeVariableType(variable, namedType);
         variable.ApplyModifiedProperties();
         Refresh(true);

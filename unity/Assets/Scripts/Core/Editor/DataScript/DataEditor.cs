@@ -57,7 +57,7 @@ public class DataEditor : EditorWindow
         this.model = new DataGraph(new DSRepository());
         this.writerSettings = (DsonTextWriterSettings)new DsonTextWriterSettings.Builder()
         {
-            NumberStyle = NumberStyles.Simple,
+            NumberStyle = NumberStyle.Simple,
         }.Build();
         //
         model.undoPerformed += OnUndoRedoPerformed;

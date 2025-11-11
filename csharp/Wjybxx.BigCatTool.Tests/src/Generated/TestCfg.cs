@@ -1,7 +1,6 @@
 using Wjybxx.Commons.Attributes;
-using Wjybxx.BigCat.Util;
 using Wjybxx.Dson.Codec.Attributes;
-using Wjybxx.Dson.Text;
+using Wjybxx.BigCat.Util;
 using Wjybxx.Commons.Collections;
 using System;
 using Wjybxx.BigCat.Fx;
@@ -12,8 +11,8 @@ namespace Wjybxx.BigCat.Demo
 /// @SheetInfo {name: "Test", type: 0}
 /// </summary>
 [Generated("Wjybxx.BigCatTool.Generator.Excel.ClassGenerator")]
-[SerialVersion(502238137)]
-[DsonSerializable(SkipFields = new[] { "*" }, Style = ObjectStyle.Indent, Names = new[] { "TestCfg" })]
+[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "TestCfg" })]
+[SerialVersion(-1073192390)]
 public class TestCfg
 {
     #nullable disable
@@ -21,7 +20,7 @@ public class TestCfg
     /// <summary>
     /// 物品id
     /// </summary>
-    private readonly int _itemId;
+    private int _itemId;
     /// <summary>
     /// 概率
     /// </summary>
@@ -71,18 +70,38 @@ public class TestCfg
 
     public ImmutableList<string> list1 => _list1Cache ??= SstMgr.GetStringList(_list1);
     public ImmutableList<string> list2 => _list2Cache ??= SstMgr.GetStringList(_list2);
+    public virtual void ClearSstiCache() {
+        this._list1Cache = null;
+        this._list2Cache = null;
+    }
+
     #region codec
 
     public TestCfg(IDsonObjectReader reader) {
-        this._itemId = reader.ReadInt("itemId");
-        if (reader.ReadName("rate")) this._rate = reader.ReadDouble(null);
-        if (reader.ReadName("rate2")) this._rate2 = reader.ReadDouble(null);
-        if (reader.ReadName("v3orV4")) this._v3orV4 = reader.ReadObject<object>(null);
-        if (reader.ReadName("list1")) this._list1 = reader.ReadObject<ImmutableList<int>>(null);
-        if (reader.ReadName("list2")) this._list2 = reader.ReadObject<ImmutableList<int>>(null);
     }
 
-    public virtual void WriteObject(IDsonObjectWriter writer) {
+    public virtual void ReadFields(IDsonObjectReader reader) {
+        this._itemId = reader.ReadInt();
+        this._rate = reader.ReadDouble();
+        this._rate2 = reader.ReadDouble();
+        this._v3orV4 = reader.ReadObject<object>(default);
+        this._list1 = reader.ReadObject<ImmutableList<int>>(default);
+        this._list2 = reader.ReadObject<ImmutableList<int>>(default);
+    }
+
+    public virtual bool ReadField(IDsonObjectReader reader, string name) {
+        switch (name) {
+            case "itemId": this._itemId = reader.ReadInt(); return true;
+            case "rate": this._rate = reader.ReadDouble(); return true;
+            case "rate2": this._rate2 = reader.ReadDouble(); return true;
+            case "v3orV4": this._v3orV4 = reader.ReadObject<object>(default); return true;
+            case "list1": this._list1 = reader.ReadObject<ImmutableList<int>>(default); return true;
+            case "list2": this._list2 = reader.ReadObject<ImmutableList<int>>(default); return true;
+            default: return false;
+        }
+    }
+
+    public virtual void WriteFields(IDsonObjectWriter writer) {
         writer.WriteInt("itemId", this._itemId);
         writer.WriteDouble("rate", this._rate);
         writer.WriteDouble("rate2", this._rate2);

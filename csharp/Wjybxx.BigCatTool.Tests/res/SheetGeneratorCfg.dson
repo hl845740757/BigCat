@@ -1,49 +1,50 @@
-﻿// excel工具配置
-{
-    // ds文件生成配置 -- DataScriptGeneratorCfg
-    dsGenerator: {
-        // outPath: "", 
-        // templateFile = "",
-        items: [
-            {
-                 name: ItemCfg,
-                 extraFields: [
-                    {name: cacheLv, type: int32, comment: "额外缓存字段"}
-                 ]
-            }
-        ]
-    },
-    // dson文本生成器配置 -- DsonGeneratorCfg
-    dsonGenerator: {
-        // outPath: "", 
-        enableText: true,
-        enableBinary: true,
-    },
-    
-    // class生成配置 -- CodeGeneratorCfg
-    classGenerator: {
-        // outPath: "", 
-        codecProxyNs: "Wjybxx.BigCat.Demo",
-        codecCfgs: [
-            {
-                name: ItemCfg,
-                proxy: ItemCodecProxy,
-                fieldProxies: [
-                    {name: level, readProxy: ReadLevel, writeProxy: WriteLevel}   
-                ],
-                hooks: {
-                    AfterDecode: AfterDecode
-                }
-            }
-        ]
-    },
-    // 常量类生成配置 -- ConstGeneratorCfg
-    constGenerator: {
-        // outPath: "",
-        ns: "Wjybxx.BigCat.Demo",
-        items: [
-            {clsName: SkillConst, sheetName: SkillParam}, 
-            {clsName: ItemConst, sheetName: Item, nameCol: enumName, valueCol: itemId, commentCol: desc}
-        ],
+﻿// excel工具配置 - 注意赋值localId，否则批量解码时会被覆盖
+
+// ds文件生成配置
+{@{clsName: DataScriptGeneratorCfg, localId: 1}
+  // outPath: "", 
+  // templateFile = "",
+  items: [
+    {
+      name: ItemCfg,
+      extraFields: [
+        {name: cacheLv, type: int32, comment: "额外缓存字段"}
+      ]
     }
+  ]
+}
+  
+// dson文本生成器配置
+{@{clsName: DsonGeneratorCfg, localId: 2}
+  // outPath: "", 
+  enableText: true,
+  enableBinary: true,
+}
+  
+// class生成配置
+{@{clsName: CodeGeneratorCfg, localId: 3}
+  // outPath: "", 
+  codecProxyNs: "Wjybxx.BigCat.Demo",
+  codecCfgs: [
+    {
+      name: ItemCfg,
+      proxy: ItemCodecProxy,
+      fieldProxies: [
+          {name: level, readProxy: ReadLevel, writeProxy: WriteLevel}   
+      ],
+      hooks: {
+          AfterDecode: AfterDecode
+      }
+    }
+  ]
+}
+  
+// 常量类生成配置
+{@{clsName: ConstGeneratorCfg, localId: 4}
+  // outPath: "",
+  ns: "Wjybxx.BigCat.Demo",
+  items: [
+    {clsName: SkillConst, sheetName: SkillParam}, 
+    {clsName: ItemConst, sheetName: Item, nameCol: enumName, valueCol: itemId, commentCol: desc}
+  ],
 }

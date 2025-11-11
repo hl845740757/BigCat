@@ -45,6 +45,9 @@ public class SheetReaderTest
         // core包的codec
         codecTypeList.AddRange(typeof(CodeGeneratorCfg).Assembly.GetTypes()
             .Where(type => type.Name.EndsWith("Codec") && type.GetInterface(interfaceName!) != null));
+        // excel包
+        codecTypeList.AddRange(typeof(DataScriptGeneratorCfg).Assembly.GetTypes()
+            .Where(type => type.Name.EndsWith("Codec") && type.GetInterface(interfaceName!) != null));
 
         DsonConverterBuilder builder = new DsonConverterBuilder();
         foreach (Type codecType in codecTypeList) {
@@ -52,9 +55,9 @@ public class SheetReaderTest
             // 添加Codec
             if (codecType.IsGenericType) {
                 builder.AddGenericCodec(encoderType, codecType);
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectStyle.Indent, encoderType.GetGenericTypeDefinition().Name));
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.GetGenericTypeDefinition().Name));
             } else {
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectStyle.Indent, encoderType.Name));
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
                 builder.AddCodec((IDsonCodec)Activator.CreateInstance(codecType)!);
             }
         }
@@ -93,9 +96,9 @@ public class SheetReaderTest
         string sstDir = outDir + "/sst";
         new SstGenerator(repository, sstDir).Execute();
 
-        DsonObject<string> cfgObject = Dsons.FromDson(File.ReadAllText(resDir + "/SheetGeneratorCfg.dson")).AsObject();
+        List<object> cfgList = converter.ReadCollectionFromDson<object>(File.ReadAllText(resDir + "/SheetGeneratorCfg.dson"));
         // 生成ds文件 -- 先由Dson初始化，再覆盖部分数据
-        DataScriptGeneratorCfg dsGeneratorCfg = converter.ReadFromDsonValue<DataScriptGeneratorCfg>(cfgObject["dsGenerator"]);
+        DataScriptGeneratorCfg dsGeneratorCfg = GetConfig<DataScriptGeneratorCfg>(cfgList);
         dsGeneratorCfg.outPath = outDir + "/tables.ds";
         dsGeneratorCfg.templateFile = resDir + "/SheetCfg.tt";
         new DataScriptGenerator(repository, dsGeneratorCfg, RequireMode.All).Execute();
@@ -107,17 +110,17 @@ public class SheetReaderTest
         }
         dsRepository.Build();
         // 导出Dson
-        DsonGeneratorCfg dsonGeneratorCfg = converter.ReadFromDsonValue<DsonGeneratorCfg>(cfgObject["dsonGenerator"]);
+        DsonGeneratorCfg dsonGeneratorCfg = GetConfig<DsonGeneratorCfg>(cfgList);
         dsonGeneratorCfg.outPath = outDir;
         new DsonGenerator(repository, dsRepository, dsonGeneratorCfg, RequireMode.All).Execute();
 
         // 生成常量类 -- 先由Dson初始化，再覆盖部分数据
-        ConstGeneratorCfg constGeneratorCfg = converter.ReadFromDsonValue<ConstGeneratorCfg>(cfgObject["constGenerator"]);
+        ConstGeneratorCfg constGeneratorCfg = GetConfig<ConstGeneratorCfg>(cfgList);
         constGeneratorCfg.outPath = outDir;
         new ConstGenerator(repository, constGeneratorCfg).Execute();
 
         // 生成Class -- 先由Dson初始化，再覆盖部分数据
-        CodeGeneratorCfg classGeneratorCfg = converter.ReadFromDsonValue<CodeGeneratorCfg>(cfgObject["classGenerator"]);
+        CodeGeneratorCfg classGeneratorCfg = GetConfig<CodeGeneratorCfg>(cfgList);
         classGeneratorCfg.outPath = outDir;
         new ClassGenerator(dsRepository, classGeneratorCfg, new List<string>() { "tables.ds" }).Execute();
 
@@ -136,6 +139,10 @@ public class SheetReaderTest
 
         // Console.WriteLine(SstMgr.GetString(11)); // 预加载的字符串
         // Console.WriteLine(SstMgr.GetString(201)); // 延迟加载的字符串
+    }
+
+    private static T GetConfig<T>(List<object> list) where T : class {
+        return list.Where(e => e is T).Cast<T>().Single();
     }
 
     /// <summary>

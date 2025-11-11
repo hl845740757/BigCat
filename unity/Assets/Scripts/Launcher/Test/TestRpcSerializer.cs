@@ -37,9 +37,9 @@ public class TestRpcSerializer : RpcSerializer
             // 添加Codec
             if (codecType.IsGenericType) {
                 builder.AddGenericCodec(encoderType, codecType);
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectStyle.Indent, encoderType.GetGenericTypeDefinition().Name));
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.GetGenericTypeDefinition().Name));
             } else {
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectStyle.Indent, encoderType.Name));
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
                 builder.AddCodec((IDsonCodec)Activator.CreateInstance(codecType)!);
             }
         }

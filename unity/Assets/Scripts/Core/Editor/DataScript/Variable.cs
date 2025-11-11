@@ -374,6 +374,10 @@ public sealed class Variable : IDisposable
     /// </summary>
     public bool isNullableType => DSUtil.IsNullableType(type);
     /// <summary>
+    /// 是否的Pair类型
+    /// </summary>
+    public bool isPariType => DSUtil.IsPairType(type);
+    /// <summary>
     /// 是否是集合类型(List/HashSet)
     /// </summary>
     public bool isCollectionType => DSUtil.IsCollectionType(type);
@@ -387,7 +391,7 @@ public sealed class Variable : IDisposable
     /// <summary>
     /// 是否已销毁(方便它处判断Variable的有效性)
     /// </summary>
-    public bool isDisposed => dataNode == null;
+    public bool isDisposed => defineInfo == null;
 
     /// <summary>
     /// 销毁对象

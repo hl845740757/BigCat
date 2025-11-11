@@ -52,24 +52,8 @@ public enum Features : uint
     MemoryOnly = 0x08,
 
     /// <summary>
-    /// 编辑器数据(更建议folder命名区分)
-    /// </summary>
-    EditorData = 0x10,
-    /// <summary>
-    /// 场景内数据(更建议folder命名区分)
-    /// </summary>
-    SceneData = 0x20,
-
-    /// <summary>
-    /// 没有<see cref="NodeView"/>，即不显示在GraphView中
-    ///
-    /// 注：不显示在GraphView中，但仍可以显示Inspector视图，由程序打开。
-    /// </summary>
-    WithoutNodeView = 0x100,
-
-    /// <summary>
     /// 默认值集合
     /// </summary>
-    Defaults = EnablePort,
+    Defaults = 0,
 }
 }

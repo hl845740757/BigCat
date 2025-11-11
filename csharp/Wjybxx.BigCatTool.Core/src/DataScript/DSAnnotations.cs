@@ -18,14 +18,16 @@
 
 using System;
 using Wjybxx.Commons;
-using Wjybxx.Dson.Text;
+using Wjybxx.Dson.Codec;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
 /// <summary>
 /// 数据脚本内置的注解类型
 ///
-/// 注意：如果要扩展注解的Key，建议采用特殊的命名前缀，以避免和内置的Key冲突。
+/// 注意：
+/// 1.如果要扩展注解的Key，建议采用特殊的命名前缀，以避免和内置的Key冲突。
+/// 2.如何支持超长内容注解？两种方式：将一个注解拆为多个注解；通过id指向<see cref="DSInst"/>。
 /// </summary>
 public static class DSAnnotations
 {
@@ -46,42 +48,47 @@ public static class DSAnnotations
 
     /// <summary>
     /// 用于定义类型、字段、枚举值的可选项
-    /// (主要服务于代码生成)
     ///
     /// <h3>用于类型时</h3>
-    /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true}</code>
-    /// - isFlags 用于标识枚举类型是否是Flags类型
-    /// - dataClass 用于标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
-    /// - nonGenerate 表示生成代码时跳过
+    /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true, encodeFeatures: [ObjectIndent]}</code>
+    /// - isFlags 标识枚举类型是否是Flags类型
+    /// - dataClass 标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
+    /// - nonGenerate 表示生成代码时跳过，即类型是外部库类型的镜像
+    /// -
+    /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写；单值模式可不声明为数组；
+    /// - encodeFeatures 序列化特征值，使用枚举名配置，忽略大小写 - <see cref="SerializeFeatures"/>
+    /// - decodeFeatures 反序列化特征值，使用枚举名配置，忽略大小写 - <see cref="DeserializeFeatures"/>
     ///
     /// <h3>用于字段时</h3>
-    /// <code>// @Options{nonSerialized: true, nonEqual: true, ssti: true}</code>
-    /// - nonSerialized 用于标识字段无需支持序列化
+    /// <code>// @Options{ nonSerialized: true, nonEqual: true, ssti: true, encodeFeatures: [NumberHex] }</code>
+    /// - nonSerialized 标识字段无需支持序列化
     /// - nonEqual 是否不执行equals测试(不参与equals测试也就不会参与hash计算)
-    /// - ssti 用于标识int字段或List{int}字段的值是共享字符串的索引
+    /// - ssti 标识int字段或List{int}字段的值是共享字符串的索引
+    /// -
+    /// - encodeFeatures 序列化特征值
+    /// - decodeFeatures 反序列化特征值
     ///
     /// 注：
     /// 1.DS脚本中的类型默认都是可序列化的。
     /// 2.用于服务和方法时，由用户自行约定。
+    /// 3.特征值支持字符串和数组两种模式，字符串格式使用竖线分割；忽略大小写。
     /// </summary>
     public const string OPTIONS = "Options";
 
     /// <summary>
-    /// 类型的序列化配置
-    ///
-    /// <h3>用于类型时</h3>
-    /// <code>// @Codec{alias: [xxx, xxx, xxx], style: flow} </code>
-    /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写；不会自动追加文件中约定的别名默认前缀
-    /// - style 表示该类型输出为Dson文本时的默认排版 TODO 改为SerializeFeatures
-    ///
-    /// <h3>用于字段时</h3>
-    /// <code>// @Codec{name: xyz, style: flow} </code>
-    /// - name 表示字段序列化的名字，不推荐使用 —— 尽量直接使用字段名
-    /// - style 表示该类型输出为Dson文本时的默认排版；非必需功能，可能不会生效。
-    ///
-    /// 注：style的值见<see cref="ObjectStyle"/>和<see cref="NumberStyle"/>和<see cref="StringStyle"/>，不区分大小写，不认识的值将被忽略。
+    /// 字段序列化为引用，内容部分保持为空
+    /// <code>// @SerializeReference{} </code>
+    /// 
+    /// 注：虽然通过特征值也可以指定字段序列化引用，但不符合大家日常编程习惯，因此支持通过注解指定。
     /// </summary>
-    public const string CODEC = "Codec";
+    public const string SERIALIZE_REFERENCE = "SerializeReference";
+    /// <summary>
+    /// 字段不需要序列化，内容部分保持为空
+    ///  <code>// @NonSerialized{} </code>
+    ///
+    /// 注：等效Options中的nonSerialized属性。
+    /// </summary>
+    public const string NON_SERIALIZED = "NonSerialized";
 
     /// <summary>
     /// 类型或字段的编辑器基础选项
@@ -180,6 +187,8 @@ public static class DSAnnotations
     // Codec
     public const string KEY_ALIAS = "alias";
     public const string KEY_STYLE = "style";
+    public const string KEY_ENCODE_FEATURES = "encodeFeatures";
+    public const string KEY_DECODE_FEATURES = "decodeFeatures";
     public const string KEY_NAME = "name";
 
     // Editor

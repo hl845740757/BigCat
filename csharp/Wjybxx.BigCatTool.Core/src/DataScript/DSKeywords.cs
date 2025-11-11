@@ -66,8 +66,11 @@ public static class DSKeywords
     public const string CSHARP_NAMESPACE = "csharp_namespace";
     /** 用于指示文件内的数据结构都是数据类 -- value为bool类型，true或false */
     public const string DATA_CLASS = "data_class";
-    /** codec别名的前缀 -- value为字符串类型，需要加双引号 */
+    /** codec别名的前缀 -- value为字符串类型，需要加双引号；如果为'${fileName}'，则表示自动填充文件名 */
     public const string CODEC_ALIAS_PREFIX = "codec_alias_prefix";
+
+    /** 表示引用文件名 */
+    internal const string VARIABLE_FILENAME = "${fileName}";
 
     #endregion
 

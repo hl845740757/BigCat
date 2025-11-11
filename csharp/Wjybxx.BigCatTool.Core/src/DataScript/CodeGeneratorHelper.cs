@@ -23,13 +23,11 @@ using System.Text;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
-using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
-using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
 using static Wjybxx.BigCatTool.DataScript.DSUtil;
@@ -44,6 +42,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 3.如果是数据类，则会生成Equals、GetHashCode、ToString三个方法。
 /// 4.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
 /// 5.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
+/// 6.已改用private/internal模拟字段的readonly，可以简化反序列化逻辑。
 ///
 /// <h3>关于集合</h3>
 /// 1.用户果需要使用不可变集合，请将不可变集合注册到<see cref="DSRepository"/>，默认为Commons库中的不可变集合。
@@ -61,6 +60,7 @@ public class CodeGeneratorHelper
     private readonly List<FieldSpec> _fieldListCache = new(20);
     private readonly List<PropertySpec> _propertyListCache = new(20);
     private readonly List<FieldSpec> _copyFieldListCache = new(20);
+    private readonly List<FieldSpec> _sstiFieldListCache = new(20);
 
     private readonly List<DSField> _dsFieldListCache = new(20);
     private readonly List<DSMethod> _dsMethodListCache = new(20);
@@ -187,19 +187,17 @@ public class CodeGeneratorHelper
         }
         // 注解
         InitAttributes(namedType, options, typeBuilder);
-        if (NeedCodecMethod(namedType, options)) {
-            typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
-        }
         // 禁用nullable提示
         typeBuilder.AddSpec(MacroSpec.Get("nullable", "disable"));
         typeBuilder.AddSpec(new CodeBlockSpec(CodeBlock.Of("ReSharper disable All"), CodeBlockSpec.Kind.Comment));
 
-        List<FieldSpec> fieldSpecs = _fieldListCache;
-        List<PropertySpec> propertySpecs = _propertyListCache;
-        List<FieldSpec> copyFieldList = _copyFieldListCache;
+        List<FieldSpec> fieldSpecs = _fieldListCache.ClearAndReturn();
+        List<PropertySpec> propertySpecs = _propertyListCache.ClearAndReturn();
+        List<FieldSpec> copyFieldList = _copyFieldListCache.ClearAndReturn();
+        List<FieldSpec> sstiFieldList = _sstiFieldListCache.ClearAndReturn();
         // 原生字段
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
+            DsonObject<string> fieldOptions = GetOptions(field);
             BuildFieldAndProperty(field, fieldOptions, out FieldSpec fieldSpec, out PropertySpec propertySpec);
             fieldSpecs.Add(fieldSpec);
             propertySpecs.Add(propertySpec);
@@ -213,6 +211,7 @@ public class CodeGeneratorHelper
                 if (sstiFiledSpec != null) {
                     fieldSpecs.Add(sstiFiledSpec);
                     copyFieldList.Add(sstiFiledSpec);
+                    sstiFieldList.Add(sstiFiledSpec);
                 }
                 // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
                 if (sstiPropertySpec.name == propertySpec.name) {
@@ -226,7 +225,10 @@ public class CodeGeneratorHelper
         typeBuilder.AddSpec(BuildExplicitConstructor(namedType));
         // 属性在构造函数后面
         typeBuilder.AddSpecs(propertySpecs);
-
+        //
+        if (NeedClearSstiMethod(namedType, options)) {
+            typeBuilder.AddSpec(BuildClearSstiCacheMethod(namedType, options, sstiFieldList));
+        }
         // 编解码钩子在属性后
         // 所有字段都在reader构造函数中解码，可以降低生成代码的复杂度 -- 尤其是有字段读写代理的时候
         // 为保证代码的正确性，所有的类都生成BeforeEncode和AfterDecode方法，否则子类无法确定超类是否包含该方法
@@ -234,9 +236,9 @@ public class CodeGeneratorHelper
             typeBuilder.AddSpec(MacroSpec.Get("region", "codec"));
             CodeGeneratorCfg.ClassCodecCfg? classCfg = GetClassCfg(namedType);
             typeBuilder.AddSpec(BuildReaderConstructor(namedType, classCfg));
-            typeBuilder.AddSpec(BuildReaderObjectMethod(namedType, classCfg));
+            typeBuilder.AddSpec(BuildReadFieldsMethod(namedType, classCfg));
             typeBuilder.AddSpec(BuildReadFieldMethod(namedType, classCfg));
-            typeBuilder.AddSpec(BuildWriteObjectMethod(namedType, classCfg));
+            typeBuilder.AddSpec(BuildWriteFieldsMethod(namedType, classCfg));
             BuildCodecHookMethods(namedType, classCfg, typeBuilder);
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
@@ -263,9 +265,6 @@ public class CodeGeneratorHelper
             BuildToStringMethod(namedType, typeBuilder);
             typeBuilder.AddSpec(MacroSpec.Get("endregion"));
         }
-        _fieldListCache.Clear();
-        _propertyListCache.Clear();
-        _copyFieldListCache.Clear();
         // 允许用户在生成内部类之前插入方法
         if (namedType.EnclosedElements.Any(e => e.Kind.IsNamedType())) {
             BeforeGenerateNestedTypes(namedType, typeBuilder, options);
@@ -277,7 +276,9 @@ public class CodeGeneratorHelper
     #region 扩展钩子
 
     protected virtual void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
-
+        if (NeedCodecMethod(namedType, options)) {
+            typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
+        }
     }
 
     /// <summary>
@@ -290,11 +291,11 @@ public class CodeGeneratorHelper
     }
 
     /// <summary>
-    /// 是否生成CopyFrom方法
+    /// 是否需要清理ssti缓存数据的方法
     /// </summary>
     /// <returns></returns>
-    protected virtual bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
-        return !namedType.IsValueType && namedType.GetMethod("CopyFrom") != null;
+    protected virtual bool NeedClearSstiMethod(DSNamedType namedType, DsonObject<string> options) {
+        return false;
     }
 
     /// <summary>
@@ -302,6 +303,14 @@ public class CodeGeneratorHelper
     /// </summary>
     protected virtual bool NeedCodecMethod(DSNamedType namedType, DsonObject<string> options) {
         return true;
+    }
+
+    /// <summary>
+    /// 是否生成CopyFrom方法
+    /// </summary>
+    /// <returns></returns>
+    protected virtual bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
+        return !namedType.IsValueType && namedType.GetMethod("CopyFrom") != null;
     }
 
     /// <summary>
@@ -342,8 +351,14 @@ public class CodeGeneratorHelper
         TypeName fieldTypeName = GetTypeName(field.Type);
         FieldSpec.Builder fieldBuilder = FieldSpec.NewBuilder(GetTypeName(field.Type), GetFieldName(field.SimpleName), fieldModifiers)
             .AddDocument(BuildDocument(field.Comments));
-        if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+        // 序列化注解
+        if (IsNonSerializedField(field, fieldOptions)) {
             fieldBuilder.AddAttribute(ATTRIBUTE_NON_SERIALIZED);
+        } else {
+            if (fieldOptions.ContainsKey(DSAnnotations.KEY_ENCODE_FEATURES)
+                || fieldOptions.ContainsKey(DSAnnotations.KEY_DECODE_FEATURES)) {
+                fieldBuilder.AddAttribute(BuildCodecAttribute(field));
+            }
         }
         CodeBlock initializer = GetFieldInitializer(field, fieldOptions, fieldTypeName);
         if (initializer != null) {
@@ -367,7 +382,6 @@ public class CodeGeneratorHelper
 
     /// <summary>
     /// 构建sst字符串字段和属性
-    /// TODO ClearCache方法
     /// </summary>
     private void BuildSstiFieldAndProperty(DSField field, string fieldName, string propertyName,
                                            out FieldSpec? sstiFieldSpec, out PropertySpec sstiPropertySpec) {
@@ -390,6 +404,13 @@ public class CodeGeneratorHelper
                 .RemoveSetter()
                 .Build();
         }
+    }
+
+    /// <summary>
+    /// 是否是不需要序列化的字段
+    /// </summary>
+    private static bool IsNonSerializedField(DSField field, DsonObject<string> fieldOptions) {
+        return Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED);
     }
 
     /// <summary>
@@ -438,6 +459,25 @@ public class CodeGeneratorHelper
                                                        out string sstiFieldName, out string sstiPropertyName) {
         sstiFieldName = fieldName + "Cache";
         sstiPropertyName = propertyName;
+    }
+
+    #endregion
+
+    #region clear-cache
+
+    private MethodSpec BuildClearSstiCacheMethod(DSNamedType namedType, DsonObject<string> options, List<FieldSpec> sstiFieldList) {
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("ClearSstiCache")
+            .AddModifiers(Modifiers.Public);
+        if (namedType.BaseType != null) {
+            methodBuilder.AddModifiers(Modifiers.Override);
+            methodBuilder.codeBuilder.AddStatement("base.ClearSstiCache()");
+        } else {
+            methodBuilder.AddModifiers(Modifiers.Virtual);
+        }
+        foreach (FieldSpec fieldSpec in sstiFieldList) {
+            methodBuilder.codeBuilder.AddStatement("this.$L = null", fieldSpec.name);
+        }
+        return methodBuilder.Build(true);
     }
 
     #endregion
@@ -514,21 +554,21 @@ public class CodeGeneratorHelper
     ///
     /// 这里的Writer就不像APT那般还支持Style了，非必须功能，避免增加维护工作量...
     /// </summary>
-    private MethodSpec BuildWriteObjectMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_WRITE_OBJECT)
+    private MethodSpec BuildWriteFieldsMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_WRITE_FIELDS)
             .AddModifiers(Modifiers.Public)
             .AddParameter(TYPE_NAME_WRITER, "writer");
         if (namedType.BaseType != null) {
             methodBuilder.AddModifiers(Modifiers.Override);
-            methodBuilder.codeBuilder.AddStatement("base.WriteObject(writer)");
+            methodBuilder.codeBuilder.AddStatement("base.$L(writer)", methodBuilder.name);
         } else if (!namedType.IsValueType) {
             methodBuilder.AddModifiers(Modifiers.Virtual);
         }
         //
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+            DsonObject<string> fieldOptions = GetOptions(field);
+            if (IsNonSerializedField(field, fieldOptions)) {
                 continue;
             }
             CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
@@ -553,7 +593,7 @@ public class CodeGeneratorHelper
         return methodBuilder.Build();
     }
 
-    private MethodSpec BuildReaderConstructor(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
+    private MethodSpec BuildReaderConstructor(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? _) {
         MethodSpec.Builder constructorBuilder = MethodSpec.NewConstructorBuilder()
             .AddModifiers(Modifiers.Public)
             .AddParameter(TYPE_NAME_READER, "reader");
@@ -565,30 +605,28 @@ public class CodeGeneratorHelper
         return constructorBuilder.Build();
     }
 
-    private MethodSpec BuildReaderObjectMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_READ_OBJECT)
+    private MethodSpec BuildReadFieldsMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_READ_FIELDS)
             .AddModifiers(Modifiers.Public)
             .AddParameter(TYPE_NAME_READER, "reader");
         if (namedType.BaseType != null) {
             methodBuilder.AddModifiers(Modifiers.Override);
-            methodBuilder.codeBuilder.AddStatement("base.ReadObject(reader)");
+            methodBuilder.codeBuilder.AddStatement("base.$L(reader)", methodBuilder.name);
         } else if (!namedType.IsValueType) {
             methodBuilder.AddModifiers(Modifiers.Virtual);
         }
-
-        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
-        // Array格式顺序解码 - 读取所有字段
-        codeBuilder.BeginControlFlow("if (reader.ContextType == $T.Array)", TYPE_NAME_CONTEXT_TYPE);
+        // Array格式顺序解码 - 由APT负责调用该方法
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
+        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+            DsonObject<string> fieldOptions = GetOptions(field);
+            if (IsNonSerializedField(field, fieldOptions)) {
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);
             TypeName fieldTypeName = GetTypeName(field.Type);
             string readMethodName = GetReadMethodName(fieldTypeName);
-
+            //
             CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.SimpleName);
             if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
                 codeBuilder.AddStatement("$T.$L(this, reader, $S)", codecProxy, fieldCodecCfg.readProxy, field.SimpleName);
@@ -596,46 +634,34 @@ public class CodeGeneratorHelper
             }
             if (readMethodName == METHOD_NAME_READ_OBJECT) {
                 // ReadObject需要传声明类型
-                codeBuilder.AddStatement("this.$L = reader.$L<$T>(null)", fieldName, readMethodName, fieldTypeName);
+                codeBuilder.AddStatement("this.$L = reader.$L<$T>(default)", fieldName, readMethodName, fieldTypeName);
             } else {
-                codeBuilder.AddStatement("this.$L = reader.$L(null)", fieldName, readMethodName);
+                codeBuilder.AddStatement("this.$L = reader.$L()", fieldName, readMethodName);
             }
-        }
-        if (namedType.BaseType == null) {
-            codeBuilder.AddStatement("return"); // 减少缩进
-        }
-        codeBuilder.EndControlFlow();
-
-        // Object格式 - 由基类读取整个输入流；构造函数调用虚方法虽然不好，但目前最合适
-        if (namedType.BaseType == null) {
-            codeBuilder.BeginControlFlow("while (reader.ReadDsonType() != DsonType.EndOfObject)");
-            codeBuilder.AddStatement("ReadField(reader, reader.ReadName())");
-            codeBuilder.EndControlFlow();
         }
         return methodBuilder.Build();
     }
 
     private MethodSpec BuildReadFieldMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("ReadField")
+        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_READ_FIELD)
+            .AddModifiers(Modifiers.Public)
             .Returns(TypeName.BOOL)
             .AddParameter(TYPE_NAME_READER, "reader")
             .AddParameter(TypeName.STRING, "name");
 
         CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
         if (namedType.BaseType != null) {
-            methodBuilder.AddModifiers(Modifiers.Protected | Modifiers.Override);
-            codeBuilder.AddStatement("if (base.ReadField(reader, name)) return true");
+            methodBuilder.AddModifiers(Modifiers.Override);
+            codeBuilder.AddStatement("if (base.$L(reader, name)) return true", methodBuilder.name);
         } else if (!namedType.IsValueType) {
-            methodBuilder.AddModifiers(Modifiers.Protected | Modifiers.Virtual);
-        } else {
-            methodBuilder.AddModifiers(Modifiers.Private);
+            methodBuilder.AddModifiers(Modifiers.Virtual);
         }
         codeBuilder.BeginControlFlow("switch (name)");
 
         ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = DSUtil.GetOptions(field);
-            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED)) {
+            DsonObject<string> fieldOptions = GetOptions(field);
+            if (IsNonSerializedField(field, fieldOptions)) {
                 continue;
             }
             string fieldName = GetFieldName(field.SimpleName);
@@ -651,9 +677,9 @@ public class CodeGeneratorHelper
             }
             if (readMethodName == METHOD_NAME_READ_OBJECT) {
                 // ReadObject需要传声明类型
-                codeBuilder.AddStatement("this.$L = reader.$L<$T>(null); return true", fieldName, readMethodName, fieldTypeName);
+                codeBuilder.AddStatement("this.$L = reader.$L<$T>(default); return true", fieldName, readMethodName, fieldTypeName);
             } else {
-                codeBuilder.AddStatement("this.$L = reader.$L(null); return true", fieldName, readMethodName);
+                codeBuilder.AddStatement("this.$L = reader.$L(); return true", fieldName, readMethodName);
             }
         }
         codeBuilder.AddStatement("default: return false");
@@ -966,7 +992,7 @@ public class CodeGeneratorHelper
 
     #region 类型名解析
 
-    private static readonly ArrayTypeName TYPE_NAME_BYTE_ARRAY = ArrayTypeName.BYTE_ARRAY;
+    public static readonly ArrayTypeName TYPE_NAME_BYTE_ARRAY = ArrayTypeName.BYTE_ARRAY;
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(typeof(KeyValuePair<,>));
 
@@ -1105,8 +1131,12 @@ public class CodeGeneratorHelper
     #region Dson-Codec
 
     public static readonly ClassName TYPE_NAME_SERIALIZABLE = ClassName.Get(typeof(DsonSerializableAttribute));
-    public static readonly ClassName TYPE_NAME_OBJECT_STYLE = ClassName.Get(typeof(ObjectStyle));
     public static readonly ClassName TYPE_NAME_STRING_BUILDER = ClassName.Get(typeof(StringBuilder));
+    public static readonly ClassName TYPE_NAME_DSON_PROPERTY = ClassName.Get(typeof(DsonPropertyAttribute));
+
+    public static readonly ClassName TYPE_NAME_SERIALIZE_REFERENCE = ClassName.Get(typeof(SerializeReference));
+    public static readonly ClassName TYPE_NAME_SERIALIZE_FEATURES = ClassName.Get(typeof(SerializeFeatures));
+    public static readonly ClassName TYPE_NAME_DESERIALIZE_FEATURES = ClassName.Get(typeof(DeserializeFeatures));
 
     public static readonly ClassName TYPE_NAME_IEQUATABLE = ClassName.Get(typeof(IEquatable<>));
     public static readonly ClassName TYPE_NAME_COLLECTION_UTIL = ClassName.Get(typeof(CollectionUtil));
@@ -1114,7 +1144,6 @@ public class CodeGeneratorHelper
     public static readonly ClassName TYPE_NAME_WRITER = ClassName.Get(typeof(IDsonObjectWriter));
     public static readonly ClassName TYPE_NAME_READER = ClassName.Get(typeof(IDsonObjectReader));
     public static readonly ClassName TYPE_NAME_CONVERTER_OPTIONS = ClassName.Get(typeof(ConverterOptions));
-    public static readonly ClassName TYPE_NAME_CONTEXT_TYPE = ClassName.Get(typeof(DsonContextType));
     // ssti
     private static readonly ClassName TYPE_NAME_SST_MGR = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.SstMgr");
     private static readonly ClassName TYPE_NAME_IMMUTABLE_LIST_STRING = ClassName.Get(typeof(ImmutableList<string>));
@@ -1125,13 +1154,15 @@ public class CodeGeneratorHelper
     public static readonly AttributeSpec ATTRIBUTE_SERIALIZABLE = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE).Build();
     /** 注解：字段不需要序列化 */
     public static readonly AttributeSpec ATTRIBUTE_NON_SERIALIZED = AttributeSpec.NewBuilder(ClassName.NON_SERIALIZED).Build();
+    /** 注解：序列化为引用 */
+    public static readonly AttributeSpec ATTRIBUTE_SERIALIZE_REFERENCE = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZE_REFERENCE).Build();
     /** 用于在文件中插入换行符 */
     private static readonly CodeBlockSpec CODE_NEW_LINE = new CodeBlockSpec(CodeBlock.Of("\n"));
 
     public static AttributeSpec BuildCodecAttribute(DSNamedType namedType, StringBuilder sb) {
         var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE)
-            .AddMember("SkipFields", "new[] { $S }", "*") // 跳过所有字段，由生成的代码编解码
-            .AddMember("Style", "$T.$L", TYPE_NAME_OBJECT_STYLE, namedType.DsonStyle.ToString());
+            .AddMember("SkipFields", "new[] { $S }", "*"); // 跳过所有字段，由生成的代码编解码
+        //
         if (namedType.CodecAliases.Count > 0) {
             sb.Append("new[] { ");
             for (int index = 0; index < namedType.CodecAliases.Count; index++) {
@@ -1144,6 +1175,29 @@ public class CodeGeneratorHelper
             sb.Append(" }");
             attributeBuilder.AddMember("Names", sb.ToString());
         }
+        DsonObject<string> codecOptions = GetOptions(namedType);
+        SerializeFeatures encodeFeatures = GetEncodeFeatures(codecOptions);
+        if (encodeFeatures != 0) {
+            attributeBuilder.AddMember("EncodeFeatures", "($T)$L", TYPE_NAME_SERIALIZE_FEATURES, (int)encodeFeatures);
+        }
+        DeserializeFeatures decodeFeatures = GetDecodeFeatures(codecOptions);
+        if (decodeFeatures != 0) {
+            attributeBuilder.AddMember("DecodeFeatures", "($T)$L", TYPE_NAME_DESERIALIZE_FEATURES, (int)decodeFeatures);
+        }
+        return attributeBuilder.Build();
+    }
+
+    public static AttributeSpec BuildCodecAttribute(DSField field) {
+        var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_DSON_PROPERTY);
+        DsonObject<string> codecOptions = GetOptions(field);
+        SerializeFeatures encodeFeatures = GetEncodeFeatures(codecOptions);
+        if (encodeFeatures != 0) {
+            attributeBuilder.AddMember("EncodeFeatures", "($T)$L", TYPE_NAME_SERIALIZE_FEATURES, (int)encodeFeatures);
+        }
+        DeserializeFeatures decodeFeatures = GetDecodeFeatures(codecOptions);
+        if (decodeFeatures != 0) {
+            attributeBuilder.AddMember("DecodeFeatures", "($T)$L", TYPE_NAME_DESERIALIZE_FEATURES, (int)decodeFeatures);
+        }
         return attributeBuilder.Build();
     }
 
@@ -1153,7 +1207,10 @@ public class CodeGeneratorHelper
     private const string METHOD_AFTER_DECODE = "AfterDecode";
     private const string METHOD_BEFORE_ENCODE = "BeforeEncode";
     private const string METHOD_NAME_WRITE_OBJECT = "WriteObject";
+    private const string METHOD_NAME_WRITE_FIELDS = "WriteFields";
     private const string METHOD_NAME_READ_OBJECT = "ReadObject";
+    private const string METHOD_NAME_READ_FIELDS = "ReadFields";
+    private const string METHOD_NAME_READ_FIELD = "ReadField";
 
     /** 获取read字段的方法名 */
     private static string GetReadMethodName(TypeName typeName) {

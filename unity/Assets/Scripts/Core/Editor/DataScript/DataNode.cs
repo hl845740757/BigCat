@@ -25,7 +25,9 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// <summary>
 /// 数据节点
 ///
-/// 注：Node的主要作用是提供localId和localPath，以支持互相引用（对象图/数据图/数据集）。
+/// 注：
+/// 1.Node的主要作用是提供localId和localPath，以支持互相引用（对象图/数据图/数据集）。
+/// 2.Node实际充当的是Value的对象头。
 /// </summary>
 public sealed class DataNode
 {
@@ -81,7 +83,7 @@ public sealed class DataNode
     ///
     /// 注意：
     /// 1.如果是Node是List/Map类型，Undo以后Variable的引用可能产生变更，需要手动修复。
-    /// 2.逻辑层不记录Input信息，目前来说并无必要 —— 因为无特殊数据需要保存，我们特不需要对Inputs排。
+    /// 2.逻辑层不记录Input信息，目前来说并无必要 —— 因为无特殊数据需要保存，我们也不需要对Inputs排序。
     /// 3.逻辑层会提供获取Inputs的方法，实时查询代替缓存 —— 可以有效降低复杂度。
     /// </summary>
     public readonly List<Variable> outputFields = new List<Variable>();
@@ -126,7 +128,7 @@ public sealed class DataNode
     /// 注：不含备份的情况总是返回false。
     /// </summary>
     /// <returns></returns>
-    internal bool IsDataChanged() {
+    private bool IsDataChanged() {
         NodeMemento memento = this.currentMemento;
         if (memento == null) return false;
         if (memento.version != version) return true;

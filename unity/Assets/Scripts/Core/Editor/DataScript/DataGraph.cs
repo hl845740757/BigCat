@@ -18,7 +18,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
@@ -27,7 +27,8 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
-using Wjybxx.Dson.Types;
+using Wjybxx.Dson.IO;
+using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
@@ -86,6 +87,7 @@ public sealed class DataGraph
     private readonly ObjectPool<List<DSField>> _fieldListPool = ObjectPoolUtil.NewListPool<DSField>(8);
     private readonly ObjectPool<List<DSTypeElement>> _typeListPool = ObjectPoolUtil.NewListPool<DSTypeElement>(2);
 
+    private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly DataGraphHelper _helper;
 
     public DataGraph(DSRepository repository) {
@@ -207,11 +209,7 @@ public sealed class DataGraph
         if (disconnectOutputs && node.outputFields.Count > 0) {
             int count = 0;
             foreach (Variable variable in node.outputFields) {
-                if (variable.objectPathValue.IsEmpty) {
-                    continue;
-                }
-                count++;
-                Disconnect(variable, false);
+                if (Disconnect(variable, false)) count++;
             }
             if (count > 0) {
                 modifiedNodes.Add(node);
@@ -228,10 +226,10 @@ public sealed class DataGraph
     /// </summary>
     /// <param name="variable">output字段</param>
     /// <param name="applyModifiers">是否应用修改</param>
-    public void Disconnect(Variable variable, bool applyModifiers = true) {
+    public bool Disconnect(Variable variable, bool applyModifiers = true) {
         ObjectPath objectPath = variable.objectPathValue;
         if (objectPath.IsEmpty) { // Empty不测试Type
-            return;
+            return false;
         }
         int assetType = objectPath.type; // 保留assetType
         objectPath = default;
@@ -240,6 +238,7 @@ public sealed class DataGraph
         if (applyModifiers) {
             variable.ApplyModifiedProperties();
         }
+        return true;
     }
 
     /// <summary>
@@ -390,7 +389,7 @@ public sealed class DataGraph
             VariableCfg elementCfg = variable.cfg?.elementCfg;
             //
             variable.values = new List<Variable>(2);
-            variable.Add(CreateVariable(valueField, (DSNamedType)keyField.Type));
+            variable.Add(CreateVariable(keyField, (DSNamedType)keyField.Type));
             variable.Add(CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg));
             return;
         }
@@ -498,11 +497,14 @@ public sealed class DataGraph
     /// <param name="variable"></param>
     public Variable CreateMapItem(Variable variable) {
         DSNamedType pairType = GetPairType(variable.type);
-        Variable pairVar = CreateVariable(pairType, variable.cfg);
+        Variable pairVar = CreateVariable(pairType, variable.cfg); // 由Pair传递给Value
         return pairVar;
     }
 
     private DSNamedType GetPairType(DSNamedType mapType) {
+        if (_pairTypeCache.TryGetValue(mapType, out DSNamedType pairType)) {
+            return pairType;
+        }
         DSField keysField = mapType.GetField("keys")!;
         DSField valuesField = mapType.GetField("values")!;
 
@@ -510,8 +512,9 @@ public sealed class DataGraph
         list.Add(keysField.Type);
         list.Add(valuesField.Type);
 
-        DSNamedType pairType = repository.GetBuiltinType(DSKeywords.TYPE_PAIR);
+        pairType = repository.GetBuiltinType(DSKeywords.TYPE_PAIR);
         pairType = repository.MakeGenericType(pairType, list);
+        _pairTypeCache[mapType] = pairType;
         _typeListPool.Release(list);
         return pairType;
     }
@@ -566,7 +569,7 @@ public sealed class DataGraph
         string typeName = namedType.SimpleName;
         if (instName == typeName) return true;
         // inst MyClass/A {}
-        // inst MyClass:10001  冒号的常见作用之一就是表作用域，更双冒号可能更常见
+        // inst MyClass:10001 {} 冒号的常见作用之一就是表作用域，更双冒号可能更常见
         return instName.StartsWith(typeName)
                && (instName[typeName.Length] == '/' || instName[typeName.Length] == ':');
     }
@@ -620,11 +623,8 @@ public sealed class DataGraph
     }
 
     /// <summary>
-    /// 将DsonValue赋值给当前变量（反序列化）
-    ///
-    /// 1.对于集合类型字段，默认会清空当前所有数据，再填充数据。
-    /// 2.对于自定义结构，只赋值（覆盖）DsonValue中存在的字段。
-    /// 3.该接口通常只应该在反序列化、切换Node或多态字段绑定的数据类型时调用（将既有数据赋值给新对象）。
+    /// 将DsonValue赋值给当前变量
+    /// （主要用于支持复制粘贴）
     /// </summary>
     public void Decode(Variable variable, DsonValue dsonValue) {
         _helper.Decode(variable, dsonValue);
@@ -632,9 +632,6 @@ public sealed class DataGraph
 
     /// <summary>
     /// 将内存中的对象导出为Dson对象（序列化）
-    ///
-    /// 1.如果是Nullable类型，导出时会进行拆箱。
-    /// 2.对于字典，如果是标准字典类型，则导出为DsonObject，否则导出为DsonArray。
     /// </summary>
     public DsonValue Encode(Variable variable) {
         return _helper.Encode(variable);
@@ -660,13 +657,13 @@ public sealed class DataGraph
     /// </summary>
     /// <returns></returns>
     public bool Undo() {
-        if (!undoQueue.TryPeekLast(out Command lastCommand)) {
+        if (!undoQueue.TryPeekLast(out Command tailCommand)) {
             return false;
         }
         List<DataNode> insetNodes = null;
         List<DataNode> deleteNodes = null;
         List<DataNode> updateNodes = null;
-        double tickTime = lastCommand.time;
+        double tickTime = tailCommand.time;
         do {
             Command command = undoQueue.RemoveLast();
             redoQueue.TryAddFirst(command);
@@ -691,8 +688,8 @@ public sealed class DataGraph
                 }
                 default: throw new AssertionError();
             }
-        } while (undoQueue.TryPeekLast(out lastCommand)
-                 && Math.Abs(lastCommand.time - tickTime) < 0.001f);
+        } while (undoQueue.TryPeekLast(out tailCommand)
+                 && Math.Abs(tailCommand.time - tickTime) < 0.001f);
         //
         RepairGraph(insetNodes, deleteNodes, updateNodes);
         try {
@@ -705,13 +702,13 @@ public sealed class DataGraph
     }
 
     public bool Redo() {
-        if (!redoQueue.TryPeekFirst(out Command lastCommand)) {
+        if (!redoQueue.TryPeekFirst(out Command headCommand)) {
             return false;
         }
         List<DataNode> insetNodes = null;
         List<DataNode> deleteNodes = null;
         List<DataNode> updateNodes = null;
-        double tickTime = lastCommand.time;
+        double tickTime = headCommand.time;
         do {
             Command command = redoQueue.RemoveFirst();
             undoQueue.AddLast(command);
@@ -736,8 +733,8 @@ public sealed class DataGraph
                 }
                 default: throw new AssertionError();
             }
-        } while (redoQueue.TryPeekFirst(out lastCommand)
-                 && Math.Abs(lastCommand.time - tickTime) < 0.001f);
+        } while (redoQueue.TryPeekFirst(out headCommand)
+                 && Math.Abs(headCommand.time - tickTime) < 0.001f);
         //
         RepairGraph(insetNodes, deleteNodes, updateNodes);
         try {
@@ -797,14 +794,14 @@ public sealed class DataGraph
     /// </summary>
     /// <param name="node"></param>
     private void RepairNode(DataNode node) {
+        // 需等效创建Node再加入到Graph的过程
         Variable variable = node.value;
-        Debug.Assert(variable != null, "node.value == null");
         variable.type ??= (DSNamedType)repository.ResolveTypeSymbol(null, variable.typeSymbol);
         variable.defineInfo = variable.type;
         variable.cfg = GetVariableCfg(variable.type);
+        //
         InitOutputFields(node);
         RepairVariable(variable);
-        //
         node.graph = this;
         variable.SetDataNode(node);
     }
@@ -910,47 +907,24 @@ public sealed class DataGraph
         }
     }
 
-
     /// <summary>
     /// 更新Undo队列（压缩数据）
-    ///
-    /// 注：由于短期可能创建大量的备份点，因此我们不按照数量决定上限，而是按照时间。
     /// </summary>
-    /// <param name="timeout">备份的超时时间，单位秒</param>
-    private void UpdateUndoQueue(double timeout = 300) {
-        // 先合并短时间内创建的Undo记录
-        // if (undoQueue.Count > 30) {
-        //     buffer.Clear();
-        //     buffer.EnsureCapacity(undoQueue.Count);
-        //     //
-        //     using var enumerator = undoQueue.GetEnumerator();
-        //     enumerator.MoveNext();
-        //     GraphMemento previous = enumerator.Current!;
-        //     buffer.Add(previous);
-        //     //
-        //     while (enumerator.MoveNext()) {
-        //         GraphMemento current = enumerator.Current!;
-        //         if (current.backupTime - previous.backupTime < 0.5f) {
-        //             mementoPool.Release(current);
-        //         } else {
-        //             buffer.Add(current);
-        //             previous = current;
-        //         }
-        //     }
-        //     undoQueue.Clear();
-        //     foreach (GraphMemento memento in buffer) {
-        //         undoQueue.AddLast(memento);
-        //     }
-        //     buffer.Clear();
-        // }
-        // // 再删除超时的记录
-        // double currentTime = _tickTime;
-        // while (undoQueue.Count > 20) {
-        //     GraphMemento memento = undoQueue.PeekFirst();
-        //     if (currentTime - memento.backupTime >= timeout) {
-        //         undoQueue.RemoveFirst();
-        //     }
-        // }
+    private void UpdateUndoQueue() {
+        // TODO 由于短期可能创建大量的备份点，因此更好的方式是按照时间决定上限
+        if (undoQueue.Count < 50) {
+            return;
+        }
+        // 同一批的操作同时删除以保证原子性
+        Command headCommand = undoQueue.PeekFirst();
+        double tickTime = headCommand.time;
+        do {
+            Command command = undoQueue.RemoveFirst();
+            if (command.prevState != null) {
+                mementoPool.Release(command.prevState);
+            }
+        } while (undoQueue.TryPeekFirst(out headCommand)
+                 && Math.Abs(headCommand.time - tickTime) < 0.001f);
     }
 
     private void CreateInsertCommand(DataNode node) {

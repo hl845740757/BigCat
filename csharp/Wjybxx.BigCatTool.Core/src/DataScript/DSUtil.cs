@@ -26,7 +26,9 @@ using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
+using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Text;
+using TypeName = Wjybxx.Commons.Poet.TypeName;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -405,10 +407,6 @@ public static class DSUtil
 
     #region 注解处理
 
-    private static readonly ImmutableDictionary<string, ObjectStyle>
-        name2ObjectStyleDic = EnumUtil.GetValues<ObjectStyle>()
-            .ToImmutableDictionary2(style => style.ToString().ToLower(), style => style);
-
     /** 在只读的情况下返回空对象可以避免Null处理 */
     private static readonly DsonObject<string> EMPTY_DSON_OBJECT = new();
 
@@ -420,35 +418,61 @@ public static class DSUtil
         return annotation.AsObject();
     }
 
-    public static DsonObject<string> GetCodecOptions(DSElement element, bool isReadonly = true) {
-        Annotation? annotation = element.GetAnnotation(DSAnnotations.CODEC);
-        if (annotation == null) {
-            return isReadonly ? EMPTY_DSON_OBJECT : new DsonObject<string>();
-        }
-        return annotation.AsObject();
-    }
-
+    // CodecAliases支持单值和数组值
     public static List<string> GetCodecAliases(DsonObject<string> options) {
-        if (options.Count == 0 || !options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue value)) {
+        if (!options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue dsonValue)) {
             return new List<string>();
         }
-        DsonArray<string> dsonArray = value.AsArray();
+        if (dsonValue.DsonType == DsonType.String) {
+            return new List<string>(1) { dsonValue.AsString() };
+        }
+        DsonArray<string> dsonArray = dsonValue.AsArray();
         List<string> result = new List<string>(dsonArray.Count);
-        foreach (DsonValue dsonValue in dsonArray) {
-            result.Add(dsonValue.AsString().Trim());
+        foreach (DsonValue element in dsonArray) {
+            result.Add(element.AsString());
         }
         return result;
     }
 
-    public static ObjectStyle GetObjectStyle(DsonObject<string> options, ObjectStyle defaultStyle = ObjectStyle.Indent) {
-        if (!options.TryGetValue(DSAnnotations.KEY_STYLE, out DsonValue value)) {
-            return defaultStyle;
+    // Features支持字符串和数组值
+    public static SerializeFeatures GetEncodeFeatures(DsonObject<string> options) {
+        SerializeFeatures features = 0;
+        if (options.TryGetValue(DSAnnotations.KEY_ENCODE_FEATURES, out DsonValue dsonValue)) {
+            features = ParseFlags<SerializeFeatures>(dsonValue);
         }
-        if (value.IsNumber) {
-            return (ObjectStyle)value.AsNumber().IntValue;
+        if (options.TryGetValue(DSAnnotations.KEY_STYLE, out dsonValue)
+            && Enum.TryParse(dsonValue.AsString(), true, out ObjectStyle style)
+            && style == ObjectStyle.Flow) {
+            features |= SerializeFeatures.ObjectFlow;
         }
-        string style = value.AsString().ToLower();
-        return name2ObjectStyleDic.TryGetValue(style, out ObjectStyle result) ? result : defaultStyle;
+        return features;
+    }
+
+    public static DeserializeFeatures GetDecodeFeatures(DsonObject<string> options) {
+        DeserializeFeatures features = 0;
+        if (options.TryGetValue(DSAnnotations.KEY_DECODE_FEATURES, out DsonValue dsonValue)) {
+            features = ParseFlags<DeserializeFeatures>(dsonValue);
+        }
+        return features;
+    }
+
+    private static T ParseFlags<T>(DsonValue dsonValue) where T : struct {
+        int value = 0;
+        if (dsonValue.DsonType == DsonType.Array) {
+            DsonArray<string> dsonArray = dsonValue.AsArray();
+            foreach (DsonValue element in dsonArray) {
+                value |= Enum.Parse<T>(element.AsString(), true).GetHashCode();
+            }
+        } else {
+            string str = ObjectUtil.DeleteWhitespace(dsonValue.AsString());
+            if (!str.Contains('|')) {
+                return Enum.Parse<T>(str, true);
+            }
+            foreach (string e in str.Split('|')) {
+                value |= Enum.Parse<T>(e, true).GetHashCode();
+            }
+        }
+        return (T)Enum.ToObject(typeof(T), value);
     }
 
     #endregion

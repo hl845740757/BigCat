@@ -116,16 +116,12 @@ public sealed class DSNamedType : DSTypeElement
     /// <summary>
     /// Dson序列化时的类型别名
     /// 
-    /// 1.<see cref="DSAnnotations.CODEC"/>注解的缓存数据，避免频繁创建List。
+    /// 1.注解缓存数据，避免频繁创建List。
     /// 2.如果未显式指定，将被初始化为文件内的路径，<code>FileName.A.B.C => A.B.C</code>。
     /// 3.可通过<see cref="DSKeywords.CODEC_ALIAS_PREFIX"/>指定默认别名的前缀。
     /// 4.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
     /// </summary>
     private readonly List<string> _codecAliases = new();
-    /// <summary>
-    /// Dson序列化时的文本样式
-    /// </summary>
-    private ObjectStyle _dsonStyle = ObjectStyle.Indent;
 #nullable restore
 
     /// <summary>
@@ -486,10 +482,6 @@ public sealed class DSNamedType : DSTypeElement
         set => _codecTypeName = value ?? throw new ArgumentNullException(nameof(value));
     }
     public List<string> CodecAliases => _codecAliases;
-    public ObjectStyle DsonStyle {
-        get => _dsonStyle;
-        set => _dsonStyle = value;
-    }
     public List<Range> ReservedNumbers => reservedNumbers;
     public List<string> ReservedNames => reservedNames;
 

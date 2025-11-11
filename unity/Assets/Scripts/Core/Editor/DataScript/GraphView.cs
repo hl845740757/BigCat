@@ -72,7 +72,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 
 
     public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
-        if (evt.target is not UnityEditor.Experimental.GraphView.Node) {
+        if (evt.target is not Node) {
             base.BuildContextualMenu(evt);
         }
         // TODO 提供搜索栏

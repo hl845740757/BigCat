@@ -141,6 +141,14 @@ public class ClassGenerator : ISheetProcessor
             return false;
         }
 
+        protected override bool NeedClearSstiMethod(DSNamedType namedType, DsonObject<string> options) {
+            return true;
+        }
+
+        protected override bool NeedCodecMethod(DSNamedType namedType, DsonObject<string> options) {
+            return true;
+        }
+
         protected override bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
             return true;
         }

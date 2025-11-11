@@ -50,7 +50,7 @@ public class DSCodecTest
                 builder.AddCodec(encoderType, (IDsonCodec)Activator.CreateInstance(codecType));
             }
 
-            TypeMeta typeMeta = TypeMeta.Of(encoderType, ObjectStyle.Indent, RemoveGenericInfo(encoderType.Name));
+            TypeMeta typeMeta = TypeMeta.Of(encoderType, RemoveGenericInfo(encoderType.Name));
             builder.AddTypeMeta(typeMeta);
         }
         converter = builder.Build();
@@ -59,6 +59,18 @@ public class DSCodecTest
     private static string RemoveGenericInfo(string clsName) {
         int index = clsName.IndexOf('`');
         return index > 0 ? clsName.Substring(0, index) : clsName;
+    }
+
+    [Test]
+    public void TestSimpleBean() {
+        SimpleBean simpleBean = new SimpleBean(31, "wjybxx")
+        {
+            dt = DateTime.Today,
+            list = new List<int>() { 1, 2, 3 },
+            hashset = new HashSet<int>() { 5, 6, 7 }
+        };
+        SimpleBean cloned = converter.CloneObject(simpleBean);
+        Assert.AreEqual(simpleBean, cloned);
     }
 
     [Test]

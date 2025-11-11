@@ -8,14 +8,14 @@ enum ItemType {
     Quest = 3;
 }
 
-//@Codec{alias:[DV3, DVector3], style: flow}
+//@Options{alias:[DV3, DVector3], encodeFeatures: ObjectFlow}
 struct DVector3 {
     readonly float x = 1;
     readonly float y = 2;
     readonly float z = 3;
 }
 
-//@Codec{alias:[DV4, DVector4], style: flow}
+//@Options{alias:[DV4, DVector4], encodeFeatures: ObjectFlow}
 struct DVector4 {
     readonly float x = 1;
     readonly float y = 2;

@@ -26,6 +26,7 @@ namespace Wjybxx.BigCatTool.Core
 /// <summary>
 /// 注解数据，
 /// 格式：<code>//@Type{}</code>
+/// 
 /// 注意：注解暂不支持换行，注解换行会导致复杂的token解析。
 /// </summary>
 public sealed class Annotation

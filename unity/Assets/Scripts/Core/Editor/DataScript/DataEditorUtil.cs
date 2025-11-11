@@ -262,7 +262,7 @@ public static class DataEditorUtil
         }
     }
 
-    public static bool IsCacheable(VisualElement element) {
+    internal static bool IsCacheable(VisualElement element) {
         return element is IVarField;
         // return element switch
         // {
@@ -450,45 +450,6 @@ public static class DataEditorUtil
         VarObjectField field = new VarObjectField();
         field.Bind(editor, variable);
         return field;
-    }
-
-    #endregion
-
-    #region 资产文件读写
-
-    /// <summary>
-    /// 从资产文件中加载数据图
-    /// </summary>
-    /// <param name="graph"></param>
-    /// <param name="assetPath"></param>
-    public static void Load(this DataGraph graph, string assetPath) {
-        string filePath = Application.dataPath + "/" + assetPath;
-        DsonArray<string> collection = Dsons.FromCollectionDson(File.ReadAllText(filePath));
-        graph.Import(collection);
-    }
-
-    /// <summary>
-    /// 保存数据到资产文件
-    ///
-    /// 注：这里主要处理编辑器下的Style需求，其逻辑与<see cref="Dsons"/>基本相同。
-    /// </summary>
-    public static void Save(this DataGraph graph, string assetPath, DsonTextWriterSettings settings) {
-        string filePath = Application.dataPath + "/" + assetPath;
-        DsonArray<string> collection = graph.Export();
-        File.WriteAllText(filePath, collection.ToCollectionDson(settings),
-            new UTF8Encoding(false));
-        //
-        foreach (DsonValue dsonValue in collection) {
-            if (dsonValue.DsonType == DsonType.Object) {
-                // WriteObject(writer, dsonValue.AsObject(), style);
-            } else if (dsonValue.DsonType == DsonType.Array) {
-                // WriteArray(writer, dsonValue.AsArray(), style);
-            } else if (dsonValue.DsonType == DsonType.Header) {
-                // WriteHeader(writer, dsonValue.AsHeader());
-            } else {
-                throw DsonIOException.InvalidTopDsonType(dsonValue.DsonType);
-            }
-        }
     }
 
     #endregion

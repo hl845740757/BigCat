@@ -626,17 +626,18 @@ public sealed class DSRepository
     }
 
     private void InitCodecInfo(DSFile dsFile, DSNamedType namedType) {
-        DsonObject<string> options = DSUtil.GetCodecOptions(namedType);
-        namedType.DsonStyle = DSUtil.GetObjectStyle(options, namedType.DsonStyle);
+        DsonObject<string> options = DSUtil.GetOptions(namedType);
         // 用户可能手动指定了别名
         if (namedType.CodecAliases.Count == 0) {
-            if (options.TryGetValue(DSAnnotations.KEY_ALIAS, out DsonValue dsonValue)) {
-                namedType.CodecAliases.EnsureCapacity(dsonValue.AsArray().Count);
-                foreach (DsonValue alias in dsonValue.AsArray()) {
-                    namedType.CodecAliases.Add(alias.AsString());
-                }
+            string prefix = dsFile.GetOption(DSKeywords.CODEC_ALIAS_PREFIX);
+            if (prefix == DSKeywords.VARIABLE_FILENAME) {
+                prefix = dsFile.SimpleName;
+            }
+            // 是否为手动指定的别名添加前缀?
+            if (options.ContainsKey(DSAnnotations.KEY_ALIAS)) {
+                List<string> codecAliases = DSUtil.GetCodecAliases(options);
+                namedType.CodecAliases.AddRange(codecAliases);
             } else {
-                string prefix = dsFile.GetOption(DSKeywords.CODEC_ALIAS_PREFIX);
                 string alias = DSUtil.RemoveFirstName(namedType.FullName);
                 if (!string.IsNullOrWhiteSpace(prefix)) {
                     alias = prefix + alias;

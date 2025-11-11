@@ -24,6 +24,7 @@ using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Dson;
+using Wjybxx.Dson.Codec;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
@@ -145,6 +146,10 @@ public sealed class VariableCfg
     /// </summary>
     public string menuPath;
     /// <summary>
+    /// 序列化特征值（缓存，以避免频繁解析）
+    /// </summary>
+    public SerializeFeatures encodeFeatures;
+    /// <summary>
     /// List/Map/Nullable元素的展示配置
     /// </summary>
     public VariableCfg elementCfg;
@@ -180,6 +185,8 @@ public sealed class VariableCfg
             throw new Exception("element must be OriginDefine");
         }
         VariableCfg cfg = new VariableCfg();
+        cfg.encodeFeatures = DSUtil.GetEncodeFeatures(DSUtil.GetOptions(element));
+        //
         Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
         if (annotation != null) {
             ParseBaseOptions(annotation.AsObject(), cfg);
@@ -241,6 +248,8 @@ public sealed class VariableCfg
         varCfg.stringPopValues = listCfg.stringPopValues;
         varCfg.maskNames = listCfg.maskNames;
         varCfg.supportedTypes = listCfg.supportedTypes;
+        //
+        varCfg.encodeFeatures = listCfg.encodeFeatures.GetElementFeatures();
     }
 
     private static void ParseEnumPops(VariableCfg cfg, DSNamedType element) {

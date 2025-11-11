@@ -15,9 +15,9 @@ class SimpleBean {
     Map<int32, string> dic = 8; // 测试Map
     List<List<int32>> listX = 9; // 测试二维List    
     
-    // @Options {ssti: true}
+    // @Options {ssti: true, encodeFeatures: NumberHex}
     int32 strLink = 10; // 测试ssti
-    // @Options {ssti: true}    
+    // @Options {ssti: true, encodeFeatures: NumberHex}
     List<int32> strLinkList = 11; // 测试sstiList
 }
 
@@ -27,7 +27,7 @@ class SimpleChildBean : SimpleBean {
 }
 
 // 测试结构体，顺便测试codec注解解析
-// @Codec{ alias: [Vector3, V3], style: flow }
+// @Options{ alias: [Vector3, V3], encodeFeatures: ObjectFlow }
 // @Editor{ displayType: Vector3 }
 struct Vector3 {
     readonly float x = 1;
