@@ -36,7 +36,7 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// 数据图
 ///
 /// 1.数据图通常对应一个文件，是DataNode的集合，其对应的Dson结构为Collection。
-/// 2.数据图是分文件夹（folder）的，但folder是显示层的，仍可通过localId直接引用；但显示层不应该绘制跨folder节点之间的连线。
+/// 2.数据图是分文件夹（folder）的，但folder是显示层的，不同folder的Node仍可通过localId直接引用；但显示层不应该绘制跨folder节点之间的连线。
 /// 3.逻辑层是没有边的概念的，因为引用记录在输出端口上；如果需要为连接配置额外数据，可通过桥接Node实现。
 /// 4.即所有的数据都通过Node存储，边只是显示层概念的。
 /// 5.虽然框架支持自定义结构Map的Key，但推荐仅使用int32、int64、enum、string类型。
@@ -51,14 +51,14 @@ public sealed class DataGraph
     /// NodeList
     ///
     /// 1.部分Node是不保存到资产的，Node也不全存在于GraphView。
-    /// 2.避免直接修改List，请通过封装的数组相关方法操作。
+    /// 2.避免直接修改List，请通过封装的方法操作。
     /// 3.避免对List的元素位置产生依赖，考虑在表现层维护额外的缓存List用于排序等逻辑。
     /// </summary>
     public readonly List<DataNode> nodeList = new List<DataNode>();
     /// <summary>
     /// 当前的所有Node
     /// </summary>
-    public readonly Dictionary<long, DataNode> nodeDic = new();
+    public readonly LinkedDictionary<long, DataNode> nodeDic = new();
 
     /// <summary>
     /// 数据图展示对象(缓存)
@@ -68,6 +68,13 @@ public sealed class DataGraph
     /// 用户自定义数据(缓存)
     /// </summary>
     public object userData { get; set; }
+
+    /// <summary>
+    /// 资产文件路径
+    /// </summary>
+    public string assetPath { get; set; }
+    public DsonTextWriterSettings writerSettings { get; set; } = DsonTextWriterSettings.Default;
+    public DsonTextReaderSettings readerSettings { get; set; } = DsonTextReaderSettings.Default;
 
     /// <summary>
     /// 用于分配LocalId（需要和已存在的Node去重）
@@ -85,7 +92,7 @@ public sealed class DataGraph
     private readonly ObjectPool<HashSet<DataNode>> _nodeSetPool = ObjectPoolUtil.NewHashSetPool<DataNode>(4);
     private readonly ObjectPool<List<Variable>> _variableListPool = ObjectPoolUtil.NewListPool<Variable>(4);
     private readonly ObjectPool<List<DSField>> _fieldListPool = ObjectPoolUtil.NewListPool<DSField>(8);
-    private readonly ObjectPool<List<DSTypeElement>> _typeListPool = ObjectPoolUtil.NewListPool<DSTypeElement>(2);
+    private readonly StringBuilder _sbCache = new(1024);
 
     private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly DataGraphHelper _helper;
@@ -96,6 +103,9 @@ public sealed class DataGraph
         _helper = new DataGraphHelper(this);
     }
 
+    /// <summary>
+    /// 编辑器需要驱动该方法以正确维护Undo队列
+    /// </summary>
     public void Update() {
         float realtime = Time.realtimeSinceStartup;
         if (realtime - _tickTime < 0.1f) {
@@ -351,7 +361,6 @@ public sealed class DataGraph
             defineInfo = defineInfo,
             cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
-            typeSymbol = DSUtil.ToDisplayString(type.TypeName),
             isNull = DSUtil.IsNullableType(type) || variableCfg.initNull
         };
         CreateValues(variable);
@@ -369,7 +378,8 @@ public sealed class DataGraph
         if (DSUtil.IsAtomicType(varType)) {
             return;
         }
-        if (DSUtil.IsCollectionOrMapType(varType)) {
+        // Object视作空集合 - 以保证空对象的正确性
+        if (DSUtil.IsCollectionOrMapType(varType) || DSUtil.IsObjectType(varType)) {
             variable.values = new List<Variable>();
             return;
         }
@@ -420,10 +430,9 @@ public sealed class DataGraph
         if (Equals(variable.type, newType)) {
             return false;
         }
-        DsonValue dsonValue = inheritData ? Encode(variable) : null;
+        string dson = inheritData ? DoCopy(variable) : null;
         variable.values = null;
         variable.type = newType;
-        variable.typeSymbol = DSUtil.ToDisplayString(newType.TypeName);
         // 修正顶层变量定义
         DataNode dataNode = variable.dataNode;
         if (dataNode != null && variable == dataNode.value) {
@@ -433,7 +442,7 @@ public sealed class DataGraph
         // 按照新类型再初始化
         CreateValues(variable);
         if (inheritData) {
-            Decode(variable, dsonValue);
+            DoPaste(variable, dson);
         }
         if (dataNode != null) {
             variable.SetDataNode(dataNode);
@@ -457,7 +466,7 @@ public sealed class DataGraph
         if (values == null || values.Count == 0) {
             return;
         }
-        // List和字典直接清空 - 需要记录调用电
+        // List和字典直接清空
         if (DSUtil.IsCollectionOrMapType(variable.type)) {
             variable.ClearArray();
             return;
@@ -473,12 +482,12 @@ public sealed class DataGraph
 
     /// <summary>
     /// 重置变量为指定值
+    ///
+    /// 注：只继承数据，不继承类型（不安全）。
     /// </summary>
-    /// <param name="variable"></param>
-    /// <param name="dsonValue"></param>
     public void ResetVariable(Variable variable, DsonValue dsonValue) {
         ResetVariable(variable);
-        Decode(variable, dsonValue);
+        _helper.Decode(variable, dsonValue);
     }
 
     /// <summary>
@@ -508,14 +517,13 @@ public sealed class DataGraph
         DSField keysField = mapType.GetField("keys")!;
         DSField valuesField = mapType.GetField("values")!;
 
-        List<DSTypeElement> list = _typeListPool.Acquire();
+        List<DSTypeElement> list = new List<DSTypeElement>(2);
         list.Add(keysField.Type);
         list.Add(valuesField.Type);
 
         pairType = repository.GetBuiltinType(DSKeywords.TYPE_PAIR);
         pairType = repository.MakeGenericType(pairType, list);
         _pairTypeCache[mapType] = pairType;
-        _typeListPool.Release(list);
         return pairType;
     }
 
@@ -527,7 +535,7 @@ public sealed class DataGraph
     public Variable Duplicate(Variable variable) {
         // 新模式下不再需要先导出Dson，直接拷贝内存
         Variable result = new Variable();
-        result.Restore(variable, false);
+        result.Restore(variable);
         return result;
     }
 
@@ -577,8 +585,6 @@ public sealed class DataGraph
     /// <summary>
     /// 获取元素（字段）的声明类型
     /// </summary>
-    /// <param name="element"></param>
-    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static DSNamedType GetDeclaredType(DSElement element) {
         return element is DSField field ? (DSNamedType)field.Type : (DSNamedType)element;
@@ -589,26 +595,46 @@ public sealed class DataGraph
     #region 序列化
 
     /// <summary>
-    /// 导出数据，用户负责写入文件（硬盘）
+    /// 保存数据到资产文件
     ///
-    /// 注：导出的数据可直接用于反序列化。
+    /// 注：这里主要处理编辑器下的Style需求，其逻辑与<see cref="Dsons"/>基本相同。
     /// </summary>
-    /// <returns></returns>
-    public DsonArray<string> Export() {
-        DsonArray<string> result = new DsonArray<string>(nodeList.Count);
-        foreach (DataNode dataNode in nodeList) {
-            result.Add(_helper.EncodeNode(dataNode));
+    public void Save() {
+        if (string.IsNullOrWhiteSpace(assetPath)) {
+            Debug.LogWarning("assetPath is null or empty");
+            return;
         }
-        return result;
+        string filePath = Application.dataPath + "/" + assetPath;
+        using StreamWriter streamWriter = new StreamWriter(File.OpenWrite(filePath), new UTF8Encoding(false));
+        using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, streamWriter, true);
+        //
+        foreach (DataNode dataNode in nodeList) {
+            if ((dataNode.features & Features.MemoryOnly) != 0) {
+                continue;
+            }
+            _helper.Write(textWriter, dataNode);
+        }
     }
 
     /// <summary>
-    /// 导入数据
+    /// 从资产文件中加载数据图
     ///
-    /// 注：该方法仅适用于初始化阶段。
+    /// 注意：该方法通常只应该在初始化阶段调用，否则可能导致错误。
     /// </summary>
-    /// <param name="collection"></param>
-    public void Import(DsonArray<string> collection) {
+    public void Load() {
+        if (string.IsNullOrWhiteSpace(assetPath)) {
+            Debug.LogWarning("assetPath is null or empty");
+            return;
+        }
+        string filePath = Application.dataPath + "/" + assetPath;
+        using StreamReader streamReader = new StreamReader(filePath, new UTF8Encoding(false));
+        using DsonTextReader textReader = new DsonTextReader(readerSettings, streamReader);
+        //
+        DsonArray<string> collection = Dsons.ReadCollection(textReader);
+        Import(collection);
+    }
+
+    private void Import(DsonArray<string> collection) {
         nodeList.Clear();
         nodeDic.Clear();
         ClearRedoQueue();
@@ -618,23 +644,35 @@ public sealed class DataGraph
             DataNode dataNode = _helper.DecodeNode(dsonValue);
             nodeDic.Add(dataNode.localId, dataNode);
             nodeList.Add(dataNode);
+            _nextLocalId = Math.Max(_nextLocalId, dataNode.localId);
         }
         RepairGraph(new List<DataNode>(nodeList), null, null);
     }
 
     /// <summary>
-    /// 将DsonValue赋值给当前变量
-    /// （主要用于支持复制粘贴）
+    /// 将内存中的对象导出为Dson文本
     /// </summary>
-    public void Decode(Variable variable, DsonValue dsonValue) {
+    public string DoCopy(Variable variable) {
+        StringBuilder sb = _sbCache.Clear();
+        using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, new StringWriter(sb));
+        _helper.Write(textWriter, variable, null);
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 将文本赋值给当前变量
+    /// </summary>
+    public void DoPaste(Variable variable, string dson) {
+        using DsonTextReader textReader = new DsonTextReader(readerSettings, dson);
+        DsonValue dsonValue = Dsons.ReadTopDsonValue(textReader);
         _helper.Decode(variable, dsonValue);
     }
 
     /// <summary>
-    /// 将内存中的对象导出为Dson对象（序列化）
+    /// 解析类型符号(暂时不应用作用域)
     /// </summary>
-    public DsonValue Encode(Variable variable) {
-        return _helper.Encode(variable);
+    public DSNamedType ResolveTypeSymbol(string typeSymbol) {
+        return _helper.ResolveTypeSymbol(typeSymbol);
     }
 
     #endregion
@@ -788,84 +826,12 @@ public sealed class DataGraph
     }
 
     /// <summary>
-    /// 修复Node的缓存数据
-    /// 
-    /// 注意：只能修复逻辑层数据，不能修复显示层数据，需要重新构建GraphView。
+    /// 修复Node缓存数据
     /// </summary>
     /// <param name="node"></param>
     private void RepairNode(DataNode node) {
-        // 需等效创建Node再加入到Graph的过程
-        Variable variable = node.value;
-        variable.type ??= (DSNamedType)repository.ResolveTypeSymbol(null, variable.typeSymbol);
-        variable.defineInfo = variable.type;
-        variable.cfg = GetVariableCfg(variable.type);
-        //
-        InitOutputFields(node);
-        RepairVariable(variable);
         node.graph = this;
-        variable.SetDataNode(node);
-    }
-
-    private void RepairVariable(Variable variable) {
-        if (variable.defineInfo == null) {
-            throw new InvalidOperationException();
-        }
-        variable.type ??= (DSNamedType)repository.ResolveTypeSymbol(null, variable.typeSymbol);
-        variable.cfg ??= GetVariableCfg(variable.defineInfo);
-        if (variable.values == null) {
-            return;
-        }
-        // 修正Nullable和Pair的Value配置
-        if (DSUtil.IsNullableType(variable.type)) {
-            variable[0].cfg = variable.cfg.elementCfg;
-            goto repairFields;
-        }
-        if (DSUtil.IsPairType(variable.type)) {
-            variable[1].cfg = variable.cfg.elementCfg;
-            goto repairFields;
-        }
-        // 修正集合元素
-        if (DSUtil.IsCollectionType(variable.type)) {
-            DSField valuesField = variable.type.GetField("values")!;
-            for (int index = 0; index < variable.values.Count; index++) {
-                Variable nestedVar = variable.values[index];
-                if (nestedVar == null) { // ListView会先行修改数组长度
-                    nestedVar = CreateVariable(valuesField);
-                    variable[index] = nestedVar;
-                }
-                nestedVar.defineInfo = valuesField;
-                nestedVar.cfg = variable.cfg.elementCfg;
-                RepairVariable(nestedVar);
-            }
-            return;
-        }
-        if (DSUtil.IsMapType(variable.type)) {
-            DSNamedType pairType = GetPairType(variable.type);
-            for (int index = 0; index < variable.values.Count; index++) {
-                Variable pairVar = variable.values[index];
-                if (pairVar == null) { // ListView会先行修改数组长度
-                    pairVar = CreateVariable(pairType, variable.cfg);
-                    variable[index] = pairVar;
-                }
-                pairVar.type = pairType;
-                pairVar.defineInfo = pairType;
-                pairVar.cfg = variable.cfg; // Pair会自动向下传递给Value
-                RepairVariable(pairVar);
-            }
-            return;
-        }
-        repairFields:
-        // 修正潜在的List/Map字段
-        List<DSField> fields = variable.type.GetFields(true, _fieldListPool.Acquire());
-        for (int index = 0; index < variable.values.Count; index++) {
-            Variable nestedVar = variable.values[index];
-            if (nestedVar == null) {
-                throw new AssertionError();
-            }
-            nestedVar.defineInfo = fields[index];
-            RepairVariable(nestedVar);
-        }
-        _fieldListPool.Release(fields);
+        node.value.SetDataNode(node);
     }
 
     /// <summary>

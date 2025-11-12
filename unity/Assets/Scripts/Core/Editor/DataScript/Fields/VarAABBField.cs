@@ -28,6 +28,7 @@ public class VarAABBField : BindableElement, IVarField
     private Variable _variable;
 
     public VarAABBField() {
+        Add(field);
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

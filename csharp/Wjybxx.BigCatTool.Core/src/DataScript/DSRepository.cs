@@ -103,7 +103,7 @@ public sealed class DSRepository
             .AddEnclosedElement(new DSField("localPath", "string", 2))
             .AddEnclosedElement(new DSField("localId", "int64", 3))
             .AddEnclosedElement(new DSField("type", "int32", 4))
-            .AddCodecAliases("ptr", "ObjectPtr"));
+            .AddCodecAliases("ObjectPtr"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR)
             .AddEnclosedElement(new DSField("key", "K", 1))
             .AddEnclosedElement(new DSField("value", "V", 2))

@@ -153,7 +153,7 @@ public sealed class DataNode
         backup.features = features;
         if (value != null) {
             backup.value ??= new Variable();
-            backup.value.Restore(value, false); // 反向恢复即备份
+            backup.value.Restore(value); // 反向恢复即备份
         } else {
             backup.value = null;
         }
@@ -175,8 +175,8 @@ public sealed class DataNode
         //
         if (backup.value != null) {
             value ??= new Variable();
-            value.dataNode = this; // 修整node引用
-            value.Restore(backup.value, true);
+            value.Restore(backup.value);
+            value.SetDataNode(this);
         } else {
             value = null;
         }

@@ -28,6 +28,7 @@ public class VarTimestampField : BindableElement, IVarField
     private Variable _variable;
 
     public VarTimestampField() {
+        Add(field);
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

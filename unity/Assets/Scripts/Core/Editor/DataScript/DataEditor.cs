@@ -24,13 +24,12 @@ public class DataEditor : EditorWindow
     protected VisualElement nodeValueView;
     // protected VisualElement portValueView; // port详细信息展示
 
-    protected LongField localIdField;
+    protected LongField localIdField; // 其实Node也可以通过一个Variable绑定UI
     protected TextField nameField;
     protected TextField folderField;
     protected TextField commentField;
 
     public DataGraph model { get; private set; }
-    public DsonTextWriterSettings writerSettings { get; set; }
 
     /// <summary>
     /// Key为菜单路径，Value为创建Node的模板元素
@@ -55,10 +54,7 @@ public class DataEditor : EditorWindow
     /// </summary>
     protected virtual void OnEnable() {
         this.model = new DataGraph(new DSRepository());
-        this.writerSettings = (DsonTextWriterSettings)new DsonTextWriterSettings.Builder()
-        {
-            NumberStyle = NumberStyle.Simple,
-        }.Build();
+        this.model.assetPath = "Resources/DataScript/bree.dson";
         //
         model.undoPerformed += OnUndoRedoPerformed;
         model.redoPerformed += OnUndoRedoPerformed;
@@ -70,6 +66,7 @@ public class DataEditor : EditorWindow
 
         DSNamedType namedType = model.repository.GetType("OuterClass");
         _dataNode = model.CreateNode(namedType);
+        _dataNode.features |= Features.EnablePort;
         model.AddNode(_dataNode);
     }
 
@@ -133,7 +130,6 @@ public class DataEditor : EditorWindow
         nameField.RegisterValueChangedCallback(OnNameFieldChanged);
         folderField.RegisterValueChangedCallback(OnFolderFieldChanged);
         commentField.RegisterValueChangedCallback(OnCommentFieldChanged);
-
         // 
         root.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
 
@@ -152,7 +148,15 @@ public class DataEditor : EditorWindow
         } else if (evt.keyCode == KeyCode.Y) {
             model.Redo();
         } else if (evt.keyCode == KeyCode.S) {
-            // TODO 保存
+            model.Save();
+        } else if (evt.keyCode == KeyCode.L) {
+            // Debug
+            model.Load();
+            if (model.nodeDic.TryPeekFirst(out var pair)) {
+                _dataNode = pair.Value;
+                nodeValueView.Clear();
+                BuildNodeValueView(_dataNode);
+            }
         }
     }
 
@@ -199,13 +203,12 @@ public class DataEditor : EditorWindow
         folderField.value = dataNode.folder;
         commentField.value = dataNode.comment;
         //
-        BuildNodeValueView();
+        BuildNodeValueView(selectedNode.dataNode);
     }
 
-    private void BuildNodeValueView() {
-        DataNode nodeData = selectedNode.dataNode;
+    private void BuildNodeValueView(DataNode dataNode) {
         nodeValueView.SetEnabled(true);
-        nodeValueView.Add(DataEditorUtil.CreateField(nodeData.value, this));
+        nodeValueView.Add(DataEditorUtil.CreateField(dataNode.value, this));
     }
 
     public void OnNodeUnselected(NodeView nodeView) {

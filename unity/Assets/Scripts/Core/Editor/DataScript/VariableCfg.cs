@@ -167,6 +167,10 @@ public sealed class VariableCfg
         return index < 0 ? value : popNames[index]; // 可能是失效值
     };
 
+    public bool ContainsTypeSymbol(string typeSymbol) {
+        return supportedTypes != null && supportedTypes.Contains(typeSymbol);
+    }
+
     public bool HasPopNames => popNames != null;
     public bool HasMaskNames => maskNames != null;
     public bool HasBranchCfg => branchCfgs != null;

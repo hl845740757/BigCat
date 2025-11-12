@@ -1,0 +1,208 @@
+// 生成代码的命名空间
+option csharp_namespace = "Wjybxx.BigCatTool.Tests.Generated";
+// 将所有类型默认声明为数据类 -- 生成equals和hashcode
+option data_class = true;
+
+// 测试普通类
+class SimpleBean {
+    readonly int32 age = 1;
+    readonly string name = 2;
+    int32? opt = 3; // 测试nullable
+    DateTime dt = 4; // 测试时间类型
+    bytes bin = 5; // 测试字节数组    
+    List<int32> list = 6; // 测试List
+    HashSet<int32> hashset = 7; // 测试HashSet
+    Map<int32, string> dic = 8; // 测试Map
+    List<List<int32>> listX = 9; // 测试二维List    
+    
+    // 测试ssti
+    // @Options {ssti: true, encodeFeatures: [NumberHex]}
+    int32 strLink = 10;
+    
+    // 测试sstiList
+    // @Options {ssti: true, encodeFeatures: [NumberHex]}    
+    List<int32> strLinkList = 11;
+}
+
+// 测试普通类继承
+class SimpleChildBean : SimpleBean {
+    List<string> addresses = 1;
+}
+
+// 测试结构体，顺便测试codec注解解析
+// @Options{ alias: [Vector3, V3], style: flow }
+// @Editor{ displayType: Vector3 }
+struct Vector3 {
+    readonly float x = 1;
+    readonly float y = 2;
+    readonly float z = 3;
+}
+
+// @Options{ alias: [Vector2, V2], style: flow }
+// @Editor{ displayType: Vector2 }
+struct Vector2 {
+    readonly float x = 1;
+    readonly float y = 2;
+}
+
+// 测试枚举
+enum EColor {
+    White = 0;
+    Red = 1;
+    Green = 2;
+}
+
+// 测试泛型类
+class GenericBean<T, U>
+    where T: struct 
+    where U: class {
+    T? key = 1;
+    U value = 2;
+}
+
+// 测试泛型继承
+class GenericChildBean<T, U> : GenericBean<T, U>
+    where T: struct 
+    where U: class {
+    List<string> addresses = 1;
+}
+
+// 测试泛型继承2
+class GenericChildBean2<T, U> : GenericBean<T, List<string>>
+    where T: struct
+    where U: class {
+    List<string> addresses = 1;
+}
+
+// @Editor { displayType : ObjectPath, dsonType: Pointer }
+struct ObjectPath {
+	string colletion = 1;
+	string localPath = 2;
+	int64 localId = 3;
+	int32 type = 4;
+}
+
+// @Editor { displayType : Color }
+struct Color {
+	float r = 1;
+	float g = 2;
+	float b = 3;
+	float a = 4;
+}
+
+// 测试内部类 
+// 测试内部类定义
+class OuterClass {
+    float x = 1;
+    float y = 2;
+    Request request = 3;
+    Result result = 4;
+	
+	List<Vector3> vecList = 5;
+	// 枚举输出为字符串
+	// @Options{encodeFeatures: [EnumAsString]}
+	Map<int32, EColor> colorMap = 6;
+	Map<int32, Vector3> posMap = 7;
+
+	DateTime date = 8;
+	Timestamp timestamp = 9;
+	ObjectPath objPath = 10;
+	
+	string textArea = 11;
+	bytes bin = 12;
+
+	// @PopField{ value: 0, displayName: zero }	
+	// @PopField{ value: 1, displayName: one }
+	// @PopField{ value: 2, displayName: two }
+	// @PopField{ value: 3, displayName: three }	
+	int32 popInt = 13;
+	
+	// @PopField{ value: "x0" }	
+	// @PopField{ value: "x1" }
+	// @PopField{ value: "x2" }
+	// @PopField{ value: "x3" }	
+	string popString = 14;
+	
+	bool isSuccess = 15;
+	
+	// @Editor{ min: 0, max: 1 }
+	double time = 16;
+	Color color = 17;
+	
+	// @BranchField { ctrl: popInt, value: 1, displayName: radius, tooltip: "半径"}
+	// @BranchField { ctrl: popInt, value: 2, displayName: width, tooltip: "宽度"}
+	float fv = 18;
+	
+    // @Options {encodeFeatures: [NumberHex]}    	
+	// @MaskField["Layer0", "Layer1", "Layer2"]
+	int32 maskInt = 19;
+	
+	// 可空null
+	Vector3? optInt = 20;
+    // 测试对象引用 - 会被转换为ObjectPath
+    // @PortField {}
+    SimpleBean link = 21;
+
+    class Request {
+		int32 a = 1;
+        int64 b = 2;
+		string str = 3;
+    }
+    class Result {
+		int32 a = 1;
+        int64 b = 2;
+		string str = 3;
+    }
+}
+
+// 默认实例
+inst OuterClass {
+	x: 1,
+	y: 1
+}
+
+inst OuterClass/A {
+	x: 2,
+	y: 2
+}
+
+inst OuterClass/B {
+	x: 3,
+	y: 3
+}
+
+
+// 测试访问其它类型的内部类
+class PeerClass { 
+    OuterClass.Request request = 1;
+    OuterClass.Result result = 2;
+}
+
+// 测试实例 -- {}和[]暂时需要严格缩进
+// 大写名字表示关联类型的默认值
+inst Vector3 {
+    x: 0,
+    y: 1,
+    z: 0
+}
+// 测试实例从另一个模板初始化
+inst Vector4 from Vector3 {
+    w: 0
+}
+// 测试数组实例
+inst vector3_array [
+    {x: 1, y: 0, z: 0},
+    {x: 0, y: 1, z: 0},
+    {x: 0, y: 0, z: 1}    
+]
+
+// 测试不换行缩进
+inst v1 { x: 0, y: 0, z: 0}
+inst v2 [0, 0, 0]
+
+// 测试rpc服务
+//@Rpc{ id: 1 }
+service FirstService {
+    func Echo(Vector3 v3) : (Vector3) = 1;
+    func Echo(List<Vector3> list) : (List<Vector3>) = 2;
+}

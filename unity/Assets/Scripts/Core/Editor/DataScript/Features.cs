@@ -40,6 +40,7 @@ public enum Features : uint
     ///
     /// 1.代替边为输出端口和输入端口提供额外的配置数据。
     /// 2.桥接Node应当给予特殊的展示。
+    /// 3.尽量避免多个输出节点共用一个桥接节点，这使得我们有机会在运行前进行内联。
     /// </summary>
     OutputBridge = 0x02,
     /// <summary>

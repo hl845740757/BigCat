@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
@@ -47,29 +48,85 @@ internal class DataGraphHelper
     private readonly DataGraph _graph;
     private readonly StringBuilder _sbCache = new StringBuilder();
 
+    private readonly Dictionary<DSNamedType, string> typeSymbolCache = new();
+    private readonly Dictionary<string, DSNamedType> typeSymbolResolveCache = new();
+
     public DataGraphHelper(DataGraph graph) {
         _graph = graph;
+    }
+
+    private string GetTypeSymbol(DSNamedType type) {
+        if (typeSymbolCache.TryGetValue(type, out string symbol)) {
+            return symbol;
+        }
+        symbol = DSUtil.ToDisplayString(type.TypeName);
+        typeSymbolCache[type] = symbol;
+        return symbol;
+    }
+
+    public DSNamedType ResolveTypeSymbol(string symbol) {
+        if (typeSymbolResolveCache.TryGetValue(symbol, out DSNamedType type)) {
+            return type;
+        }
+        type = (DSNamedType)_graph.repository.ResolveTypeSymbol(null, symbol);
+        typeSymbolResolveCache[symbol] = type;
+        return type;
+    }
+
+    private static DsonHeader<string> GetHeader(DsonValue dsonValue) {
+        return dsonValue.DsonType switch
+        {
+            DsonType.Object => dsonValue.AsObject().Header,
+            DsonType.Array => dsonValue.AsArray().Header,
+            DsonType.Header => throw new InvalidOperationException("unexpected method call"),
+            _ => null
+        };
     }
 
     #region variable
 
     /// <summary>
     /// 将DsonValue赋值给当前变量（反序列化）
-    ///
+    /// 
     /// 1.对于集合类型字段，默认会清空当前所有数据，再填充数据。
     /// 2.对于自定义结构，只赋值（覆盖）DsonValue中存在的字段。
     /// 3.该接口通常只应该在反序列化、切换Node或多态字段绑定的数据类型时调用（将既有数据赋值给新对象）。
     /// 4.应当在初始化OutputField后再解码数据，否则可能因类型不匹配导致数据丢失。
     /// 5.Decode并不传递Node的引用，外部需要在Decode之后刷新子节点的Node引用。
+    ///
+    /// <h3>类型恢复</h3>
+    /// 该功能主要用于从资产文件中加载数据节点时，恢复变量的多态类型；
+    /// 当变量类型和写入的类型一致时，意味着变量可以完整接收写入的数据，因此其子变量会启动启用数据类型纠正；
+    /// 当变量类型和写入的类型不同时，则由用户决定是否应用写入的类型；
+    /// 通常来说用户不应该指定该变量，顶层变量的复制不需要纠正类型，因为用户可以在接收数据前手动修改变量类型。
+    ///
+    /// 注：复制粘贴文本同理。
     /// </summary>
-    public void Decode(Variable variable, DsonValue dsonValue) {
-        DSNamedType varType = variable.type;
+    /// <param name="dsonValue"></param>
+    /// <param name="variable"></param>
+    /// <param name="applySerializedType">是否应用于序列化中的类型数据</param>
+    public void Decode(Variable variable, DsonValue dsonValue, bool applySerializedType = false) {
+        // 处理类型变更
+        DsonHeader<string> header = GetHeader(dsonValue);
+        if (header != null && header.TryGetValue(KEY_TYPE_SYMBOL, out DsonValue boxedTypeSymbol)) {
+            string typeSymbol = boxedTypeSymbol.AsString();
+            if (GetTypeSymbol(variable.type) == typeSymbol) {
+                applySerializedType = true;
+            }
+            // 需要进行类型兼容测试
+            else if (applySerializedType && variable.cfg.ContainsTypeSymbol(typeSymbol)) {
+                DSNamedType newType = ResolveTypeSymbol(typeSymbol);
+                _graph.ChangeVariableType(variable, newType);
+            }
+        }
+        // Null
         if (dsonValue.DsonType == DsonType.Null) {
             _graph.ResetVariable(variable);
             variable.isNull = true;
             return;
         }
         variable.isNull = false;
+        DSNamedType varType = variable.type;
         // 原子值
         switch (varType.SimpleName) {
             case DSKeywords.TYPE_INT32:
@@ -162,7 +219,7 @@ internal class DataGraphHelper
         // Nullable
         if (DSUtil.IsNullableType(varType)) {
             // ResetVariable(variable); // 强制清理，确保正确覆盖 - Nullable的路径是稳定的，可不清理
-            Decode(variable[0], dsonValue);
+            Decode(variable[0], dsonValue, applySerializedType);
             return;
         }
         // 集合 - 不支持导入Object，无法为key创建定义
@@ -175,7 +232,7 @@ internal class DataGraphHelper
             variable.values.EnsureCapacity(dsonArray.Count);
             foreach (DsonValue nestValue in dsonArray) {
                 Variable nestedVar = _graph.CreateListItem(variable);
-                Decode(nestedVar, nestValue);
+                Decode(nestedVar, nestValue, applySerializedType);
                 variable.Add(nestedVar);
             }
             return;
@@ -191,7 +248,7 @@ internal class DataGraphHelper
             foreach (var pair in dsonObject) {
                 Variable varPair = _graph.CreateMapItem(variable);
                 Decode(varPair[0], new DsonString(pair.Key));
-                Decode(varPair[1], pair.Value);
+                Decode(varPair[1], pair.Value, applySerializedType);
                 variable.Add(varPair);
             }
             return;
@@ -204,209 +261,24 @@ internal class DataGraphHelper
                 if (!dsonObject.TryGetValue(fieldName, out DsonValue fieldValue)) {
                     continue;
                 }
-                Decode(nestedVar, fieldValue);
+                Decode(nestedVar, fieldValue, applySerializedType);
             }
         }
-    }
-
-    /// <summary>
-    /// 将内存中的对象导出为Dson对象（序列化）
-    /// </summary>
-    public DsonValue Encode(Variable variable) {
-        DSNamedType varType = variable.type;
-        if (variable.isNull) {
-            return DsonNull.NULL;
-        }
-        // 原子值
-        switch (varType.SimpleName) {
-            case DSKeywords.TYPE_INT32: return new DsonInt32(variable.intValue);
-            case DSKeywords.TYPE_INT64: return new DsonInt64(variable.longValue);
-            case DSKeywords.TYPE_FLOAT: return new DsonFloat(variable.floatValue);
-            case DSKeywords.TYPE_DOUBLE: return new DsonDouble(variable.doubleValue);
-            case DSKeywords.TYPE_BOOL: return new DsonBool(variable.boolValue);
-            case DSKeywords.TYPE_STRING: {
-                string stringValue = variable.stringValue;
-                if (string.IsNullOrEmpty(stringValue)) {
-                    return DsonString.EMPTY;
-                }
-                return new DsonString(stringValue);
-            }
-            case DSKeywords.TYPE_BYTES: {
-                string stringValue = variable.stringValue;
-                if (string.IsNullOrWhiteSpace(stringValue)) {
-                    return DsonBinary.EMPTY;
-                }
-                stringValue = ObjectUtil.DeleteWhitespace(stringValue);
-                return new DsonBinary(Binary.FromHexString(stringValue));
-            }
-        }
-        // Enum 固定导出为数字
-        if (varType.Kind == DSElementKind.Enum) {
-            return new DsonInt32(variable.intValue);
-        }
-        // 测试类型的投影类型
-        // DateTime
-        VariableCfg variableCfg = _graph.GetVariableCfg(varType);
-        if (variableCfg.dsonType == DsonType.DateTime || DSUtil.IsDateTimeType(varType)) {
-            Timestamp timestamp = variable.timestampValue;
-            return new DsonDateTime(new ExtDateTime(timestamp.Seconds, timestamp.Nanos));
-        }
-        if (variableCfg.dsonType == DsonType.Timestamp || DSUtil.IsTimestampType(varType)) {
-            return new DsonTimestamp(variable.timestampValue);
-        }
-        // ObjectPtr
-        if (variableCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
-            return new DsonPointer(variable.objectPathValue);
-        }
-        // Nullable - 导出时拆箱
-        if (DSUtil.IsNullableType(varType)) {
-            return Encode(variable[0]);
-        }
-        // 普通集合
-        if (DSUtil.IsCollectionType(varType)) {
-            return EncodeCollectionAsDsonArray(variable);
-        }
-        // Map
-        if (DSUtil.IsMapType(varType)) {
-            return EncodeMapAsDsonObject(variable);
-        }
-        // 普通结构，导出为DsonObject
-        return EncodeAsDsonObject(variable);
-    }
-
-    private DsonValue EncodeAsDsonObject(Variable variable) {
-        DsonObject<string> dsonObject = new DsonObject<string>(variable.Count);
-        foreach (Variable nestedVar in variable.values) {
-            DsonValue dsonValue = Encode(nestedVar);
-            if (dsonValue.DsonType == DsonType.Null) {
-                continue;
-            }
-            DSNamedType fieldDeclaredType = DataGraph.GetDeclaredType(nestedVar.defineInfo);
-            WriteTypeInfo(nestedVar, fieldDeclaredType, dsonValue);
-            //
-            string fieldName = nestedVar.defineInfo.SimpleName;
-            dsonObject[fieldName] = dsonValue;
-        }
-        return dsonObject;
-    }
-
-    private DsonValue EncodeCollectionAsDsonArray(Variable variable) {
-        DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[0];
-        DsonArray<string> dsonArray = new DsonArray<string>(variable.Count);
-        foreach (Variable nestedVar in variable.values) {
-            DsonValue dsonValue = Encode(nestedVar);
-            WriteTypeInfo(nestedVar, valueDeclaredType, dsonValue);
-            dsonArray.Add(dsonValue);
-        }
-        return dsonArray;
-    }
-
-    private DsonObject<string> EncodeMapAsDsonObject(Variable variable) {
-        DSTypeElement keyType = variable.type.TypeArguments[0];
-        DSNamedType valueDeclaredType = (DSNamedType)variable.type.TypeArguments[1];
-        bool isStringKey = keyType.SimpleName == DSKeywords.TYPE_STRING;
-        //
-        DsonObject<string> dsonObject = new DsonObject<string>(variable.Count / 2);
-        foreach (Variable varPair in variable.values) {
-            Variable varKey = varPair[0];
-            Variable varValue = varPair[1];
-            //
-            DsonValue dsonValue = Encode(varValue);
-            WriteTypeInfo(varValue, valueDeclaredType, dsonValue);
-            if (isStringKey) {
-                Debug.Assert(varKey.stringValue != null, "key.stringValue == null");
-                dsonObject[varKey.stringValue] = dsonValue; // key不能是null
-            } else {
-                dsonObject[varKey.longValue.ToString()] = dsonValue;
-            }
-        }
-        return dsonObject;
-    }
-
-    /// <summary>
-    /// 注：顶层对象不仅要写clsName还需要写localId和localPath
-    /// </summary>
-    private void WriteTypeInfo(Variable variable, DSNamedType declaredType, DsonValue dsonValue) {
-        if (!dsonValue.DsonType.IsContainer()) {
-            return;
-        }
-        if (declaredType.IsValueType || Equals(variable.type, declaredType)) {
-            return;
-        }
-        // 编辑器数据恢复时，需要根据TypeSymbol进行，不能依赖反序列化别名
-        string clsName = GetCodecName(variable.type);
-        if (dsonValue is DsonObject<string> dsonObject) {
-            dsonObject.Header[DsonHeader.Names_ClassName] = new DsonString(clsName);
-            dsonObject.Header[KEY_TYPE_SYMBOL] = new DsonString(variable.typeSymbol);
-        } else {
-            DsonArray<string> dsonArray = dsonValue.AsArray();
-            dsonArray.Header[DsonHeader.Names_ClassName] = new DsonString(clsName);
-            dsonArray.Header[KEY_TYPE_SYMBOL] = new DsonString(variable.typeSymbol);
-        }
-    }
-
-    private string GetCodecName(DSNamedType namedType) {
-        return namedType.CodecTypeName.ToString(_sbCache.Clear()).ToString();
     }
 
     #endregion
 
     #region node
 
-    public DsonValue EncodeNode(DataNode node) {
-        DsonValue dsonValue = Encode(node.value);
-        if (dsonValue.DsonType == DsonType.Null) {
-            throw new InvalidOperationException("root value cant be null");
-        }
-        DsonHeader<string> header;
-        if (dsonValue is DsonObject<string> dsonObject) {
-            header = dsonObject.Header;
-        } else {
-            header = dsonValue.AsArray().Header;
-        }
-        // 写入各项对象头
-        string clsName = GetCodecName(node.value.type);
-        header[DsonHeader.Names_ClassName] = new DsonString(clsName);
-        header[DsonHeader.Names_LocalId] = new DsonInt64(node.localId);
-        // localPath只在name有效的情况下才导出
-        if (!string.IsNullOrWhiteSpace(node.name)) {
-            string localPath = !string.IsNullOrWhiteSpace(node.folder)
-                ? node.folder + "/" + node.name
-                : node.name;
-            header[DsonHeader.Names_LocalPath] = new DsonString(localPath);
-        }
-        // 这部分数据直接存储在Node上，虽然可能导致不必要的运行时数据，但可以大幅降低维护难度 - 有洁癖的话可以在打包的时候删除
-        if (!string.IsNullOrWhiteSpace(node.name)) {
-            header[KEY_NAME] = new DsonString(node.name);
-        }
-        if (!string.IsNullOrWhiteSpace(node.folder)) {
-            header[KEY_FOLDER] = new DsonString(node.folder);
-        }
-        if (!string.IsNullOrWhiteSpace(node.comment)) {
-            header[KEY_COMMENT] = new DsonString(node.comment);
-        }
-        header[KEY_FEATURES] = new DsonInt32((int)node.features); // 打印时应转16进制
-        header[KEY_POSITION] = new DsonObject<string>()
-        {
-            { "x", new DsonFloat(node.position.x) },
-            { "y", new DsonFloat(node.position.y) },
-        };
-        // clsName是运行时需要的数据，typeSymbol是编译期需要的数据
-        header[KEY_TYPE_SYMBOL] = new DsonString(node.value.typeSymbol);
-        return dsonValue;
-    }
-
     public DataNode DecodeNode(DsonValue dsonValue) {
-        DsonHeader<string> header;
-        if (dsonValue is DsonObject<string> dsonObject) {
-            header = dsonObject.Header;
-        } else {
-            header = dsonValue.AsArray().Header;
+        DsonHeader<string> header = GetHeader(dsonValue);
+        if (header == null) {
+            throw new InvalidDataException();
         }
         // 要支持编辑器解析的数据，header至少需要包含localId和typeSymbol
         DsonValue tempValue;
         if (!header.TryGetValue(DsonHeader.Names_LocalId, out tempValue)) {
-            throw new InvalidOperationException("localId is absent");
+            throw new InvalidDataException("localId is absent");
         }
         long localId = tempValue.AsNumber().LongValue;
         DataNode node = new DataNode(localId);
@@ -430,13 +302,13 @@ internal class DataGraphHelper
         }
         // 要支持编辑器解析的数据，必须包含typeSymbol属性
         if (!header.TryGetValue(KEY_TYPE_SYMBOL, out tempValue)) {
-            throw new InvalidOperationException("typeSymbol is absent");
+            throw new InvalidDataException("typeSymbol is absent");
         }
         string typeSymbol = tempValue.AsString();
-        node.value = _graph.CreateVariable(_graph.repository.ResolveTypeSymbol(null, typeSymbol));
+        node.value = _graph.CreateVariable(ResolveTypeSymbol(typeSymbol));
         // 需要先纠正字段类型，才能解码
         _graph.InitOutputFields(node);
-        Decode(node.value, dsonValue);
+        Decode(node.value, dsonValue, true);
         //
         node.graph = _graph;
         node.value.SetDataNode(node);
@@ -445,24 +317,21 @@ internal class DataGraphHelper
 
     /// <summary>
     /// 输出到文件
-    ///
-    /// 如果想输出非常优美的Dson文本，就需要自根据变量的注解和类型执行输出样式，也就是说我们需要再写一便<see cref="Encode"/>方法。
-    /// 而如果只是做到执行数据类型的Flow样式，那就简单；我们可以在Encode方法内部将Style记录在对象头上，在Save时读取对象头信息即可；
     /// </summary>
-    public void WriteNodes(DsonTextWriter textWriter, IEnumerable<DataNode> nodeList) {
-        foreach (DataNode node in nodeList) {
-            if ((node.features & Features.MemoryOnly) != 0) {
-                throw new InvalidOperationException("memoryOnly");
-            }
-            DsonValue dsonValue = Encode(node.value);
-            if (dsonValue.DsonType == DsonType.Null) {
-                throw new InvalidOperationException("root value cant be null");
-            }
-            Write(textWriter, node.value, null);
+    public void Write(DsonTextWriter textWriter, DataNode node) {
+        if ((node.features & Features.MemoryOnly) != 0) {
+            throw new InvalidOperationException("memoryOnly");
         }
+        if (node.value.isNull) {
+            throw new InvalidOperationException("root value cant be null");
+        }
+        Write(textWriter, node.value, null);
     }
 
-    private void Write(IDsonWriter<string> writer, Variable variable, string name) {
+    /// <summary>
+    /// 写入变量到Writer
+    /// </summary>
+    internal void Write(IDsonWriter<string> writer, Variable variable, string name) {
         // 我们暂时只执行Null跳过，0值仍然输出，否则可能产生维护性问题(字段缺失容易让人产生疑惑)
         if (variable.isNull) {
             if (!writer.IsAtName || IsWriteNullValue(variable)) {
@@ -517,10 +386,18 @@ internal class DataGraphHelper
                 return;
             }
         }
-        // Enum 固定导出为数字，flags则导出为16进制
+        // Enum
         if (varType.Kind == DSElementKind.Enum) {
-            NumberStyle style = DSUtil.IsFlagEnum(varType) ? NumberStyle.UnsignedHex : NumberStyle.Simple;
-            writer.WriteInt32(variable.intValue, style);
+            if ((features & SerializeFeatures.EnumAsString) != 0) {
+                DSEnumValue enumValue = varType.GetEnumValue(variable.intValue);
+                if (enumValue == null) {
+                    throw new InvalidOperationException($"enumValue {variable.intValue} is absent");
+                }
+                writer.WriteString(enumValue.SimpleName);
+            } else {
+                NumberStyle style = DSUtil.IsFlagEnum(varType) ? NumberStyle.UnsignedHex : NumberStyle.Simple;
+                writer.WriteInt32(variable.intValue, style);
+            }
             return;
         }
         // 测试类型的投影类型
@@ -616,15 +493,12 @@ internal class DataGraphHelper
             if (!string.IsNullOrWhiteSpace(node.folder)) {
                 writer.WriteString(KEY_FOLDER, node.folder);
             }
-            // 编辑器相关数据也存储在Header中，这虽然可能导致不必要的运行时数据，但可以大幅降低维护难度
             if (!string.IsNullOrWhiteSpace(node.comment)) {
-                Println(writer);
                 writer.WriteString(KEY_COMMENT, node.comment);
             }
-            {
-                Println(writer);
-                writer.WriteString(KEY_TYPE_SYMBOL, node.value.typeSymbol);
-            }
+            // 编辑器相关数据也存储在Header中，虽然可能导致不必要的运行时数据，但可以大幅降低维护难度
+            string typeSymbol = GetTypeSymbol(node.value.type);
+            writer.WriteString(KEY_TYPE_SYMBOL, typeSymbol, StringStyle.Quote);
             writer.WriteInt32(KEY_FEATURES, (int)node.features, NumberStyle.UnsignedHex);
             {
                 writer.WriteStartObject(KEY_POSITION, ObjectStyle.Flow);
@@ -640,21 +514,16 @@ internal class DataGraphHelper
                 return;
             }
             string clsName = GetCodecName(variable.type);
+            string typeSymbol = GetTypeSymbol(variable.type);
             writer.WriteStartHeader();
             writer.WriteString(DsonHeader.Names_ClassName, clsName);
-            writer.WriteString(KEY_TYPE_SYMBOL, variable.typeSymbol);
+            writer.WriteString(KEY_TYPE_SYMBOL, typeSymbol, StringStyle.Quote);
             writer.WriteEndHeader();
         }
     }
 
     private string GetCodecName(DSNamedType namedType) {
         return namedType.CodecTypeName.ToString(_sbCache.Clear()).ToString();
-    }
-
-    private static void Println(IDsonWriter<string> writer) {
-        if (writer is DsonTextWriter textWriter) {
-            textWriter.Println();
-        }
     }
 
     private ObjectStyle GetObjectStyle(Variable variable) {

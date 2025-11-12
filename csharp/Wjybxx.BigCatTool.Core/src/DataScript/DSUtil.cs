@@ -161,9 +161,6 @@ public static class DSUtil
 
     /// <summary>
     /// 是否是数字类型
-    ///
-    /// 数字类型支持Dson文本支持的所有格式，此外还支持Flags格式<code>A|B|C</code>；
-    /// 如果其它类型也期望使用支持Flags类型，需要自定义<see cref="DSTypeHandler"/>。
     /// </summary>
     public static bool IsNumberType(DSElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
@@ -227,6 +224,13 @@ public static class DSUtil
     /// </summary>
     public static bool IsNullableType(DSElement typeElement) {
         return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_NULLABLE;
+    }
+
+    /// <summary>
+    /// 是否是Object类型
+    /// </summary>
+    public static bool IsObjectType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_OBJECT;
     }
 
     /// <summary>
@@ -367,7 +371,7 @@ public static class DSUtil
     }
 
     /// <summary>
-    /// 将ClassName转换为我们在源码中使用的字符串符号
+    /// 将ClassName转换为我们在源文件中使用的字符串符号
     ///
     /// <![CDATA[
     ///    Map<int32, Vector3>

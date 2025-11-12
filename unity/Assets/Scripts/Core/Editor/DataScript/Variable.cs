@@ -36,8 +36,12 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// Q：为什么不再使用Unity的<see cref="SerializedProperty"/>处理Undo和Redo？
 /// A：代码维护成本高，性能也不好。
 /// 
-/// 注：REDO无法保证List/Map元素引用的稳定性，只能保证可序列化数据的相等性；
+/// 注：
+/// 1.REDO无法保证List/Map元素引用的稳定性，只能保证可序列化数据的相等性；
 /// 因此在执行Undo以后需要自顶向下修正和数组元素的缓存字段，而部分缓存将无法恢复。
+///
+/// 2.由于我们已修改Undo/Redo实现，因此中字段的类型修复不依赖TypeSymbol；
+/// 而从文件中读取数据时，需要根据TypeSymbol修正类型。
 /// </summary>
 public sealed class Variable : IDisposable
 {
@@ -58,14 +62,10 @@ public sealed class Variable : IDisposable
     /// <summary>
     /// 变量的类型
     ///
-    /// 注：对于多态字段，该属性会变更；因此需要在Undo之后通过typeSymbol进行恢复。
+    /// 注：对于多态字段，该属性会变更；内存Undo/Redo会备份该数据。
     /// </summary>
     public DSNamedType type { get; internal set; }
 
-    /// <summary>
-    /// 变量的类型，类型需要和值一起进行undo和redo
-    /// </summary>
-    public string typeSymbol { get; internal set; }
     /// <summary>
     /// 当前是否是null值
     ///
@@ -416,15 +416,41 @@ public sealed class Variable : IDisposable
     /// 注：
     /// 1.一对方括号内加数字表示通过下标取值，如"[0]"表示取values的第一个元素，否则表示通过name取值。
     /// 2.List/HastSet/Map 应当使用索引符号定位元素；普通对象虽然也可以通过下标取值，但要记住字段的下标较为困难。
-    /// 3.普通对象
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
     public Variable FindValue(string path) {
         if (values == null) return null;
-        // TODO 支持路径表达式
+        if (string.IsNullOrWhiteSpace(path)) {
+            return null;
+        }
+        if (!path.Contains('.')) {
+            return FindValueHelper(path.Trim());
+        }
+        Variable current = this;
+        foreach (string part in ObjectUtil.SplitAndTrim(path, '.')) {
+            if (string.IsNullOrWhiteSpace(part)) {
+                throw new ArgumentException("invalid path: " + path);
+            }
+            current = current.FindValueHelper(part);
+            if (current == null) {
+                return null;
+            }
+        }
+        return current;
+    }
+
+    private Variable FindValueHelper(string path) {
+        if (values == null) {
+            return null;
+        }
+        int length = path.Length;
+        if (path[0] == '[' && path[length - 1] == ']') {
+            string indexString = path.Substring(0, length - 1).Trim();
+            int index = int.Parse(indexString);
+            return values[index];
+        }
         foreach (Variable nestedVar in values) {
-            if (nestedVar == null) continue;
             if (nestedVar.defineInfo.SimpleName == path) {
                 return nestedVar;
             }
@@ -468,15 +494,13 @@ public sealed class Variable : IDisposable
     /// 1.Restore只恢复需要保存的数据，默认不清理缓存字段。
     /// 2.当数组的长度发生变化时，自动创建的数组元素的缓存字段皆为null。
     /// 3.当数组的长度不发生改变，缓存也可能与实际的上下文不匹配 —— 无法保证动态路径下缓存数据的有效性。
-    /// 4.当<see cref="typeSymbol"/>发生变化时，将自动清理<see cref="type"/>字段，以暴露错误。
-    /// 5.在执行Restore以后应当自上而下修正缓存数据。
+    /// 4.在执行Restore以后应当自上而下修正缓存数据。
     /// </summary>
-    internal void Restore(Variable backup, bool realRestore) {
+    internal void Restore(Variable backup) {
         defineInfo = backup.defineInfo;
         cfg = backup.cfg;
         type = backup.type;
         //
-        typeSymbol = backup.typeSymbol;
         isNull = backup.isNull;
         longValue = backup.longValue;
         doubleValue = backup.doubleValue;
@@ -494,17 +518,15 @@ public sealed class Variable : IDisposable
         // 修正交叠元素
         for (int index = 0; index < count; index++) {
             if (index >= values.Count) {
-                values.Add(new Variable()
-                {
-                    dataNode = realRestore ? dataNode : null
-                });
+                values.Add(null);
             }
             Variable nestedVar = backupValues[index];
             if (nestedVar == null) {
                 values[index] = null;
-            } else {
-                values[index].Restore(nestedVar, realRestore);
+                continue;
             }
+            values[index] ??= new Variable();
+            values[index].Restore(nestedVar);
         }
         // 删除多于元素
         if (values.Count > count) {
@@ -516,7 +538,7 @@ public sealed class Variable : IDisposable
         if (left == null && right == null) return true;
         if (left == null || right == null) return false;
         //
-        if (left.typeSymbol != right.typeSymbol) return false;
+        if (!ReferenceEquals(left.type, right.type)) return false;
         if (left.isNull != right.isNull) return true;
         if (left.longValue != right.longValue) return false;
         if (!left.doubleValue.Equals(right.doubleValue)) return false;

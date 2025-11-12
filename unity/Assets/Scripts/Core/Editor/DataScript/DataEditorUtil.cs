@@ -41,39 +41,13 @@ public static class DataEditorUtil
     #region util
 
     /// <summary>
-    /// 文本是否可执行粘贴
-    /// 
-    /// 注：由于要执行
-    /// </summary>
-    /// <param name="text"></param>
-    /// <param name="expectedType"></param>
-    /// <returns></returns>
-    public static bool IsPastable(string text, DsonType expectedType) {
-        if (string.IsNullOrWhiteSpace(text)) {
-            return false;
-        }
-        try {
-            return Dsons.FromDson(text).DsonType == expectedType;
-        }
-        catch (Exception) {
-            return false;
-        }
-        // text = text.Trim();
-        // if (string.IsNullOrWhiteSpace(text)) {
-        //     return false;
-        // }
-        // return text[0] == '{' && text[text.Length - 1] == '}';
-    }
-
-    /// <summary>
     /// 拷贝到系统buffer
     /// </summary>
     public static void DoCopy(Variable variable, DataEditor editor) {
-        if (variable.isNull) {
+        if (DSUtil.IsAtomicType(variable.type)) {
             return;
         }
-        DsonValue dsonValue = editor.model.Encode(variable);
-        GUIUtility.systemCopyBuffer = dsonValue.ToDson(ObjectStyle.Indent, editor.writerSettings);
+        GUIUtility.systemCopyBuffer = editor.model.DoCopy(variable);
     }
 
     /// <summary>
@@ -86,11 +60,25 @@ public static class DataEditorUtil
         }
         // GUIUtility.systemCopyBuffer = "";
         try {
-            DsonValue dsonValue = Dsons.FromDson(copyBuffer);
-            editor.model.ResetVariable(variable, dsonValue);
+            editor.model.DoPaste(variable, copyBuffer);
         }
         catch (Exception) {
             Debug.Log("invalid copy buffer: " + copyBuffer);
+        }
+    }
+
+    /// <summary>
+    /// 文本是否可执行粘贴
+    /// </summary>
+    public static bool IsPastable(string text, DsonType expectedType) {
+        if (string.IsNullOrWhiteSpace(text)) {
+            return false;
+        }
+        try {
+            return Dsons.FromDson(text).DsonType == expectedType;
+        }
+        catch (Exception) {
+            return false;
         }
     }
 

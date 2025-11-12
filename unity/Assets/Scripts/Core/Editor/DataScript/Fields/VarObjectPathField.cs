@@ -28,6 +28,7 @@ public class VarObjectPathField : BindableElement, IVarField
     private Variable _variable;
 
     public VarObjectPathField() {
+        Add(field);
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

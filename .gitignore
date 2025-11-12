@@ -471,4 +471,5 @@ unity/Assets/Plugins/graph-visualizer-2.2.meta
 # 忽略资源
 unity/Assets/Resources/*/
 !unity/Assets/Resources/Animations/
+!unity/Assets/Resources/DataScript/
 unity/UIElementsSchema/

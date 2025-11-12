@@ -28,6 +28,7 @@ public class VarEuler32Field : BindableElement, IVarField
     private Variable _variable;
 
     public VarEuler32Field() {
+        Add(field);
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

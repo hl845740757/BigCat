@@ -52,6 +52,7 @@ public static class DSAnnotations
     /// <h3>用于类型时</h3>
     /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true, encodeFeatures: [ObjectIndent]}</code>
     /// - isFlags 标识枚举类型是否是Flags类型
+    /// - style 序列化样式，如果只想配置文本样式，可以通过style代替序列化特征值
     /// - dataClass 标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
     /// - nonGenerate 表示生成代码时跳过，即类型是外部库类型的镜像
     /// -
@@ -121,7 +122,7 @@ public static class DSAnnotations
     /// <summary>
     /// 端口字段
     ///
-    /// 语法：<code>// @NodePort{ side: Right }</code>
+    /// 语法：<code>// @PortField{ side: Right }</code>
     /// - side 端口的显示位置；Left、Right、Bottom，未指定的情况下默认Right。
     /// 
     /// 注：当List/Map内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
