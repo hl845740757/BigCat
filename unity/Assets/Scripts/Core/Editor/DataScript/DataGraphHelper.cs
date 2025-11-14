@@ -41,7 +41,7 @@ internal class DataGraphHelper
     private const string KEY_TYPE_SYMBOL = "typeSymbol";
     private const string KEY_NAME = "name";
     private const string KEY_FOLDER = "folder";
-    private const string KEY_COMMENT = "comment";
+    private const string KEY_TITLE = "title";
     private const string KEY_FEATURES = "features";
     private const string KEY_POSITION = "position";
 
@@ -288,8 +288,8 @@ internal class DataGraphHelper
         if (header.TryGetValue(KEY_FOLDER, out tempValue)) {
             node.folder = tempValue.AsString();
         }
-        if (header.TryGetValue(KEY_COMMENT, out tempValue)) {
-            node.comment = tempValue.AsString();
+        if (header.TryGetValue(KEY_TITLE, out tempValue)) {
+            node.title = tempValue.AsString();
         }
         if (header.TryGetValue(KEY_FEATURES, out tempValue)) { // 16进制
             node.features = (Features)tempValue.AsNumber().IntValue;
@@ -493,8 +493,8 @@ internal class DataGraphHelper
             if (!string.IsNullOrWhiteSpace(node.folder)) {
                 writer.WriteString(KEY_FOLDER, node.folder);
             }
-            if (!string.IsNullOrWhiteSpace(node.comment)) {
-                writer.WriteString(KEY_COMMENT, node.comment);
+            if (!string.IsNullOrWhiteSpace(node.title)) {
+                writer.WriteString(KEY_TITLE, node.title);
             }
             // 编辑器相关数据也存储在Header中，虽然可能导致不必要的运行时数据，但可以大幅降低维护难度
             string typeSymbol = GetTypeSymbol(node.value.type);

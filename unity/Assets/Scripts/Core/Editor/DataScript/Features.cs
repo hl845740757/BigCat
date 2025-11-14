@@ -27,14 +27,16 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 public enum Features : uint
 {
     /// <summary>
-    /// 是否启用数据端口（场景中数据通常不启用）
+    /// 纯编辑器数据
     ///
-    /// 注：
-    /// 1.该属性在添加到对象图以后不应该再变更，否则可能导致错误。
-    /// 2.启用该属性的Node在添加到Graph后，所有的Port字段将转换为ObjectPath类型。
-    /// 3.该属性需要持久化，才能正确从文件中恢复数据。
+    /// 注：枚举值不可变更，其它工具会有依赖。
     /// </summary>
-    EnablePort = 0x01,
+    EditorOnly = 0x01,
+    /// <summary>
+    /// 纯粹的内存节点（不需要序列化保存）
+    /// </summary>
+    MemoryOnly = 0x02,
+
     /// <summary>
     /// 输出节点的桥接Node
     ///
@@ -42,15 +44,21 @@ public enum Features : uint
     /// 2.桥接Node应当给予特殊的展示。
     /// 3.尽量避免多个输出节点共用一个桥接节点，这使得我们有机会在运行前进行内联。
     /// </summary>
-    OutputBridge = 0x02,
+    OutputBridge = 0x10,
     /// <summary>
     /// 输入节点的桥接Node(预留)
     /// </summary>
-    InputBridge = 0x04,
+    InputBridge = 0x20,
     /// <summary>
-    /// 是否是纯粹的内存节点（不需要序列化保存）
+    /// 是否启用数据端口（场景中数据通常不启用）
+    ///
+    /// 注：
+    /// 1.该属性在添加到对象图以后不应该再变更，否则可能导致数据丢失。
+    /// 2.启用该属性的Node在添加到Graph后，所有的Port字段将转换为ObjectPath类型。
+    /// 3.作用于Pair类型时，表示将Value转换为Port类型 —— Pair类型支持动态启用。
+    /// 4.该属性需要持久化，才能正确从文件中恢复数据。
     /// </summary>
-    MemoryOnly = 0x08,
+    EnablePort = 0x40,
 
     /// <summary>
     /// 默认值集合

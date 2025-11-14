@@ -97,6 +97,7 @@ public class VarListField : BindableElement, IVarField
         this._editor = editor;
         this._variable = variable;
         _listView.itemsSource = variable.values;
+        DataEditorUtil.SetMaxHeight(_listView, variable.cfg);
         // 刷新UI
         Refresh();
     }

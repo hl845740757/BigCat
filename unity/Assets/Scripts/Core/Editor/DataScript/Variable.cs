@@ -314,6 +314,33 @@ public sealed class Variable : IDisposable
     }
 
     /// <summary>
+    /// 获取指定下标变量
+    /// </summary>
+    public Variable TryGet(int index) {
+        if (values != null && index < values.Count) {
+            return values[index];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 获取最后一个变量
+    /// </summary>
+    public Variable TryPeekLast() {
+        if (values != null && values.Count > 0) {
+            return values[values.Count - 1];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 查询嵌套变量的索引
+    /// </summary>
+    public int IndexOf(Variable nestedVar) {
+        return values == null ? -1 : values.IndexOf(nestedVar);
+    }
+
+    /// <summary>
     /// 添加元素
     /// </summary>
     /// <param name="nestedVar"></param>

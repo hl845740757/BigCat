@@ -354,7 +354,6 @@ public static class UnityEditorUtil
         content.text = text;
         return content;
     }
-    
 
     #endregion
 
@@ -458,6 +457,13 @@ public static class UnityEditorUtil
         element.style.borderRightWidth = width;
         element.style.borderTopWidth = width;
         element.style.borderBottomWidth = width;
+    }
+
+    internal static void SetBorderColor(this VisualElement element, Color color) {
+        element.style.borderLeftColor = color;
+        element.style.borderRightColor = color;
+        element.style.borderTopColor = color;
+        element.style.borderBottomColor = color;
     }
 
     #endregion

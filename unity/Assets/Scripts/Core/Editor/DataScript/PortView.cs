@@ -18,45 +18,182 @@
 
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
-using Wjybxx.Dson;
+using Wjybxx.Commons.Collections;
+using UnityGraphView = UnityEditor.Experimental.GraphView.GraphView;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 /// 数据端口视图
 ///
-/// 视图需要设计多个状态（颜色）：连接为空、目标对象在同Folder内，目标对象在其它Folder。
+/// 注意：Port不能尝试更新数据模型，因为建立连接和断开连接涉及多个对象，因此不属于它们任意一方的职责。
+/// TODO :视图需要设计多个状态（颜色）：连接为空、目标对象在同Folder内，目标对象在其它Folder。
 /// </summary>
 public class PortView : Port
 {
     /// <summary>
     /// 关联的字段
+    ///
+    /// 注；Input不绑定变量
     /// </summary>
-    public Variable field { get; set; }
+    public Variable variable { get; set; }
+    /// <summary>
+    /// 是否是List类型端口（缓存值）
+    /// </summary>
+    public bool isListPort => capacity == Capacity.Multi;
+    /// <summary>
+    /// List类型端口是否处于展开状态
+    /// </summary>
+    public bool isExpanded { get; set; }
+
+    /// <summary>
+    /// 是否是动态端口
+    /// </summary>
+    public bool isDynamicPort { get; internal set; }
+    /// <summary>
+    /// 动态端口关联的List端口
+    /// </summary>
+    public PortView listPort { get; set; }
+    /// <summary>
+    /// 用于保证顺序
+    ///
+    /// 1.List端口展开的情况下，连接列表为空；因为Unity不支持Output到Output，Input到Input的连接。
+    /// 2.大多数情况下连接数量都较少，使用普通List即可。
+    /// </summary>
+    public readonly List<Edge> connectionList = new List<Edge>();
 
     private PortView(Orientation portOrientation,
                      Direction portDirection,
                      Capacity portCapacity,
                      Type type)
         : base(portOrientation, portDirection, portCapacity, type) {
+        RegisterCallback<MouseDownEvent>(ShowContextMenu, TrickleDown.TrickleDown);
+    }
+
+    private void ShowContextMenu(MouseDownEvent evt) {
+        // 同ListView的问题，GraphView拦截了ContextClickEvent...
+        if (evt.button != (int)MouseButton.RightMouse) return;
+        evt.StopPropagation();
+        GenericMenu menu = new GenericMenu();
+        menu.AddDisabledItem(new GUIContent("Port:" + portName));
+        menu.AddSeparator("");
+        //
+        int connectionCount = GetRealDisconnectionCount();
+        if (connectionCount > 0) {
+            menu.AddItem(new GUIContent("DisconnectAll: " + connectionCount), false, OnClickDisconnectAll);
+        } else {
+            menu.AddDisabledItem(new GUIContent("DisconnectAll"), false);
+        }
+        // List展开/折叠
+        if (isListPort) {
+            if (isExpanded) {
+                menu.AddItem(new GUIContent("Collapse"), false, () => {
+                    NodeView nodeView = (NodeView)node;
+                    nodeView.CollapseListPort(this);
+                });
+                menu.AddDisabledItem(new GUIContent("Expand"), true);
+            } else {
+                menu.AddDisabledItem(new GUIContent("Collapse"), true);
+                menu.AddItem(new GUIContent("Expand"), false, () => {
+                    NodeView nodeView = (NodeView)node;
+                    nodeView.ExpandListPort(this);
+                });
+            }
+        }
+        menu.ShowAsContext();
+    }
+
+    private int GetRealDisconnectionCount() {
+        if (isListPort && isExpanded) {
+            NodeView nodeView = (NodeView)node;
+            Side side = nodeView.GetSide(this);
+            VisualElement container = nodeView.GetDynamicPortContainer(side);
+            return container.childCount;
+        }
+        return connectionList.Count;
+    }
+
+    private void OnClickDisconnectAll() {
+        if (isExpanded) {
+            NodeView nodeView = (NodeView)node;
+            Side side = nodeView.GetSide(this);
+            //
+            VisualElement container = nodeView.GetDynamicPortContainer(side);
+            List<Edge> connections = new List<Edge>(container.childCount);
+            for (int i = 0; i < container.childCount; i++) {
+                PortView dynamicPort = (PortView)container[i];
+                connections.Add(dynamicPort.connectionList[0]);
+            }
+            GetFirstAncestorOfType<GraphView>().DeleteElements(connections);
+        } else {
+            List<Edge> connections = new List<Edge>(this.connectionList);
+            GetFirstAncestorOfType<GraphView>().DeleteElements(connections);
+        }
     }
 
     /// <summary>
-    /// 
+    /// 通过右键菜单移动实在麻烦，因此我们在连接的时候进行移动
     /// </summary>
-    /// <param name="prevValue">旧值</param>
-    /// <param name="newValue">新值</param>
-    /// <param name="index">如果是List或Map，则需要传入index</param>
-    public void OnValueChanged(ObjectPath prevValue, ObjectPath newValue, int index = -1) {
-
+    private void MoveTo(Port destPort) {
+        if (destPort == this) {
+            return;
+        }
+        VisualElement container = hierarchy.parent;
+        int srcIndex = -1;
+        int destIndex = -1;
+        for (int index = 0; index < container.childCount; index++) {
+            PortView portView = (PortView)container[index];
+            if (destIndex < 0 && portView == destPort) {
+                destIndex = index;
+            }
+            if (srcIndex < 0 && portView == this) {
+                srcIndex = index;
+            }
+            if (srcIndex >= 0 && destIndex >= 0) {
+                break;
+            }
+        }
+        if (destIndex < 0) {
+            return;
+        }
+        Variable listVariable = listPort.variable;
+        if (listVariable != null) {
+            listVariable.MoveTo(srcIndex, destIndex);
+            listVariable.ApplyModifiedProperties();
+        }
+        container.RemoveAt(srcIndex);
+        container.Insert(destIndex, this);
+        // 需要重新绑定数据
+        NodeView nodeView = (NodeView)node;
+        Side side = nodeView.GetSide(this);
+        int min = Math.Min(srcIndex, destIndex);
+        int max = Math.Max(srcIndex, destIndex);
+        nodeView.RefreshDynamicPorts(side, min, max);
     }
 
     #region internal
+
+    public override void Connect(Edge edge) {
+        base.Connect(edge);
+        if (!connectionList.Contains(edge)) {
+            connectionList.Add(edge);
+        }
+    }
+
+    public override void Disconnect(Edge edge) {
+        base.Disconnect(edge);
+        connectionList.Remove(edge);
+    }
+
+    public override void DisconnectAll() {
+        base.DisconnectAll();
+        connectionList.Clear();
+    }
 
     public override bool ContainsPoint(Vector2 localPoint) {
         Rect portLayout = this.layout;
@@ -98,20 +235,17 @@ public class PortView : Port
         return rect.Contains(localPoint);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
     public new static PortView Create<TEdge>(Orientation orientation,
                                              Direction direction,
                                              Capacity capacity,
-                                             Type type) where TEdge : Edge, new() {
+                                             Type type = null) where TEdge : Edge, new() {
         DefaultEdgeConnectorListener listener = new DefaultEdgeConnectorListener();
         PortView ele = new PortView(orientation, direction, capacity, type)
         {
             m_EdgeConnector = new EdgeConnector<TEdge>(listener)
         };
         ele.AddManipulator(ele.m_EdgeConnector);
+        listener.m_PortView = ele;
         return ele;
     }
 
@@ -120,6 +254,7 @@ public class PortView : Port
         private GraphViewChange m_GraphViewChange;
         private List<Edge> m_EdgesToCreate;
         private List<GraphElement> m_EdgesToDelete;
+        public PortView m_PortView;
 
         public DefaultEdgeConnectorListener() {
             this.m_EdgesToCreate = new List<Edge>();
@@ -130,7 +265,21 @@ public class PortView : Port
         public void OnDropOutsidePort(Edge edge, Vector2 position) {
         }
 
-        public void OnDrop(UnityEditor.Experimental.GraphView.GraphView graphView, Edge edge) {
+        public void OnDrop(UnityGraphView graphView, Edge edge) {
+            // 动态端口连线已被修改为移动 - 在连线的过程中会不断切换Input/Output
+            if (m_PortView.isDynamicPort) {
+                if (m_PortView.direction == Direction.Input) {
+                    if (edge.input is PortView input && input.isDynamicPort) {
+                        m_PortView.MoveTo(input);
+                    }
+                } else {
+                    if (edge.output is PortView output && output.isDynamicPort) {
+                        m_PortView.MoveTo(output);
+                    }
+                }
+                return;
+            }
+            // 原始代码
             this.m_EdgesToCreate.Clear();
             this.m_EdgesToCreate.Add(edge);
             this.m_EdgesToDelete.Clear();

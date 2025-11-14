@@ -25,6 +25,7 @@ using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 using Wjybxx.Dson.IO;
@@ -115,6 +116,17 @@ public sealed class DataGraph
         UpdateUndoQueue();
     }
 
+    /// <summary>
+    /// 由于需要和手动分配的LocalId去除，因此不能简单的基于当前最大值进行++
+    /// </summary>
+    /// <returns></returns>
+    private long NextLocalId() {
+        do {
+            _nextLocalId++;
+        } while (nodeDic.ContainsKey(_nextLocalId));
+        return _nextLocalId;
+    }
+
     #region node
 
     /// <summary>
@@ -126,7 +138,7 @@ public sealed class DataGraph
     /// <returns></returns>
     public DataNode CreateNode(DSNamedType namedType = null) {
         namedType ??= repository.GetBuiltinType(DSKeywords.TYPE_OBJECT);
-        DataNode node = new DataNode(++_nextLocalId)
+        DataNode node = new DataNode(NextLocalId())
         {
             value = CreateVariable(namedType)
         };
@@ -154,8 +166,6 @@ public sealed class DataGraph
     /// </summary>
     /// <param name="node"></param>
     public void AddNode(DataNode node) {
-        // localId可能来自反序列化数据
-        _nextLocalId = Math.Max(_nextLocalId, node.localId);
         if (nodeDic.ContainsKey(node.localId)) {
             throw new ArgumentException("localId: " + node.localId);
         }
@@ -192,6 +202,20 @@ public sealed class DataGraph
         nodeDic.Remove(node.localId);
         nodeList.Remove(node);
         CreateDeleteCommand(prevState);
+    }
+
+    /// <summary>
+    /// 批量删除Node
+    ///
+    /// 注：保留以方便未来优化删除命令。
+    /// </summary>
+    /// <param name="nodes">要删除的节点</param>
+    /// <param name="disconnectInputs">是否断开数据层的输入数据</param>
+    /// <param name="disconnectOutputs">是否断开数据层的输出数据</param>
+    public void DeleteNodes(IEnumerable<DataNode> nodes, bool disconnectInputs = false, bool disconnectOutputs = false) {
+        foreach (DataNode dataNode in nodes) {
+            DeleteNode(dataNode, disconnectInputs, disconnectOutputs);
+        }
     }
 
     /// <summary>
@@ -232,23 +256,87 @@ public sealed class DataGraph
     }
 
     /// <summary>
+    /// 批量断开连接
+    /// </summary>
+    /// <param name="list"></param>
+    public void Disconnect(List<Variable> list) {
+        if (list.Count == 0) {
+            return;
+        }
+        HashSet<DataNode> modifiedNodes = _nodeSetPool.Acquire();
+        foreach (Variable variable in list) {
+            if (Disconnect(variable, false) && variable.dataNode != null) {
+                modifiedNodes.Add(variable.dataNode);
+            }
+        }
+        foreach (DataNode dataNode in modifiedNodes) {
+            dataNode.ApplyModifiedProperties();
+        }
+        _nodeSetPool.Release(modifiedNodes);
+    }
+
+    /// <summary>
     /// 断开连接
     /// </summary>
-    /// <param name="variable">output字段</param>
+    /// <param name="variable">output字段，可能是List的元素</param>
     /// <param name="applyModifiers">是否应用修改</param>
-    public bool Disconnect(Variable variable, bool applyModifiers = true) {
-        ObjectPath objectPath = variable.objectPathValue;
-        if (objectPath.IsEmpty) { // Empty不测试Type
-            return false;
+    private static bool Disconnect(Variable variable, bool applyModifiers = true) {
+        // List删除所有连接 - Map端口会转为List
+        if (variable.isCollectionType) {
+            if (variable.Count == 0) {
+                return false;
+            }
+            variable.ClearArray();
+            if (applyModifiers) {
+                variable.ApplyModifiedProperties();
+            }
+            return true;
         }
-        int assetType = objectPath.type; // 保留assetType
-        objectPath = default;
-        objectPath.type = assetType;
-        variable.objectPathValue = objectPath;
-        if (applyModifiers) {
-            variable.ApplyModifiedProperties();
+        // 需要判断是否是动态端口（List的元素）
+        DataNode dataNode = variable.dataNode;
+        if (dataNode.outputFields.Contains(variable)) {
+            ObjectPath objectPath = variable.objectPathValue;
+            if (objectPath.IsEmpty) { // Empty不测试Type
+                return false;
+            }
+            variable.objectPathValue = default;
+            if (applyModifiers) {
+                variable.ApplyModifiedProperties();
+            }
+            return true;
         }
-        return true;
+        // 查找归属的List容器
+        foreach (Variable outputField in dataNode.outputFields) {
+            int index = outputField.IndexOf(variable);
+            if (index < 0) {
+                continue;
+            }
+            outputField.RemoveAt(index);
+            if (applyModifiers) {
+                variable.ApplyModifiedProperties();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 连接连接
+    /// </summary>
+    /// <param name="variable">port变量/输出字段</param>
+    /// <param name="targetNode">目标节点</param>
+    public void Connect(Variable variable, DataNode targetNode) {
+        if (targetNode == null) {
+            throw new ArgumentNullException(nameof(targetNode));
+        }
+        DSNamedType varType = variable.type;
+        if (DSUtil.IsCollectionType(varType)) {
+            Variable nestedVar = CreateListItem(variable);
+            nestedVar.objectPathValue = new ObjectPath(targetNode.localId);
+            variable.Add(nestedVar);
+            return;
+        }
+        variable.objectPathValue = new ObjectPath(targetNode.localId);
     }
 
     /// <summary>
@@ -259,15 +347,33 @@ public sealed class DataGraph
     public void GetInputs(DataNode targetNode, List<Variable> result) {
         // 由于Node数量通常不多，因此实时查询的效率足够
         foreach (DataNode dataNode in nodeList) {
-            if (dataNode.outputFields.Count == 0) continue;
+            if (dataNode.outputFields.Count == 0) {
+                continue;
+            }
             foreach (Variable outputField in dataNode.outputFields) {
-                ObjectPath objectPath = outputField.objectPathValue;
-                if (objectPath.HasCollection || objectPath.localId != targetNode.localId) {
+                if (!outputField.isCollectionType) {
+                    ObjectPath objectPath = outputField.objectPathValue;
+                    if (objectPath.HasCollection || objectPath.localId != targetNode.localId) {
+                        continue;
+                    }
+                    result.Add(outputField);
                     continue;
                 }
-                result.Add(outputField);
+                // List类型需要扫描子节点
+                foreach (Variable nestedVar in outputField.values) {
+                    ObjectPath objectPath = nestedVar.objectPathValue;
+                    if (objectPath.HasCollection || objectPath.localId != targetNode.localId) {
+                        continue;
+                    }
+                    result.Add(nestedVar);
+                }
             }
         }
+    }
+
+    private DSNamedType GetObjectPathType() {
+        return repository.GetType("ObjectPath")
+               ?? throw new InvalidOperationException("ObjectPath not found");
     }
 
     /// <summary>
@@ -276,12 +382,30 @@ public sealed class DataGraph
     /// 注：
     /// 1.会递归所有的静态路径字段，并将标记有PortField注解的字段转换为ObjectPath类型。
     /// 2.在修改Node的顶层Value的数据类型后，应当调用该方法修正端口数据。
+    /// 3.Pair类型启用Port特征值后需要调用该方法初始化端口数据。
     /// </summary>
     public void InitOutputFields(DataNode node) {
         node.outputFields.Clear();
-        if (node.features.HasFlag(Features.EnablePort)) {
-            InitOutputFields(node.value, node.outputFields);
+        if (!node.features.HasFlag(Features.EnablePort)) {
+            return;
         }
+        // Pair<K, V>修改为Pair<K, ObjectPath> -- 顶层Pair节点支持动态启用Port，主要用于支持字典
+        DSNamedType varType = node.value.type;
+        if (DSUtil.IsPairType(varType)) {
+            DSNamedType objectPathType = GetObjectPathType();
+            if (varType.TypeArguments[1] != objectPathType) {
+                varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(2)
+                {
+                    varType.TypeArguments[0],
+                    objectPathType
+                });
+                ChangeVariableType(node.value, varType, false);
+                ChangeVariableType(node.value[1], objectPathType, false);
+            }
+            node.outputFields.Add(node.value[1]); // value字段
+            return;
+        }
+        InitOutputFields(node.value, node.outputFields);
     }
 
     private void InitOutputFields(Variable variable, List<Variable> outList) {
@@ -298,9 +422,9 @@ public sealed class DataGraph
             }
             return;
         }
-        DSNamedType objectPathType = repository.GetType("ObjectPath");
+        DSNamedType objectPathType = GetObjectPathType();
         // 集合类型修改为List<ObjectPath>
-        if (DSUtil.IsCollectionType(varType) || DSUtil.IsNullableType(varType)) {
+        if (DSUtil.IsCollectionType(varType)) {
             if (varType.TypeArguments[0] != objectPathType) {
                 varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(1)
                 {
@@ -311,16 +435,14 @@ public sealed class DataGraph
             outList.Add(variable);
             return;
         }
-        // 字典类型修改为Map<Key,ObjectPath>
-        if (DSUtil.IsMapType(varType) || DSUtil.IsPairType(varType)) {
-            if (varType.TypeArguments[1] != objectPathType) {
-                varType = repository.MakeGenericType(varType.OriginNamedType, new List<DSTypeElement>(2)
-                {
-                    varType.TypeArguments[0],
-                    objectPathType
-                });
-                ChangeVariableType(variable, varType, false);
-            }
+        // Map类型也修改为List<ObjectPath> -- 通过Pair节点赋值Key和连接Value
+        if (DSUtil.IsMapType(varType)) {
+            DSNamedType listType = repository.GetType(DSKeywords.TYPE_LIST);
+            varType = repository.MakeGenericType(listType, new List<DSTypeElement>(1)
+            {
+                objectPathType
+            });
+            ChangeVariableType(variable, varType, false);
             outList.Add(variable);
             return;
         }
@@ -514,15 +636,12 @@ public sealed class DataGraph
         if (_pairTypeCache.TryGetValue(mapType, out DSNamedType pairType)) {
             return pairType;
         }
-        DSField keysField = mapType.GetField("keys")!;
-        DSField valuesField = mapType.GetField("values")!;
-
-        List<DSTypeElement> list = new List<DSTypeElement>(2);
-        list.Add(keysField.Type);
-        list.Add(valuesField.Type);
-
         pairType = repository.GetBuiltinType(DSKeywords.TYPE_PAIR);
-        pairType = repository.MakeGenericType(pairType, list);
+        pairType = repository.MakeGenericType(pairType, new List<DSTypeElement>(2)
+        {
+            mapType.TypeArguments[0],
+            mapType.TypeArguments[1],
+        });
         _pairTypeCache[mapType] = pairType;
         return pairType;
     }
@@ -640,11 +759,11 @@ public sealed class DataGraph
         ClearRedoQueue();
         ClearUndoQueue();
         //
+        _nextLocalId = 0;
         foreach (DsonValue dsonValue in collection) {
             DataNode dataNode = _helper.DecodeNode(dsonValue);
             nodeDic.Add(dataNode.localId, dataNode);
             nodeList.Add(dataNode);
-            _nextLocalId = Math.Max(_nextLocalId, dataNode.localId);
         }
         RepairGraph(new List<DataNode>(nodeList), null, null);
     }
@@ -707,7 +826,7 @@ public sealed class DataGraph
             redoQueue.TryAddFirst(command);
             switch (command.type) {
                 case CommandType.Update: {
-                    DataNode dataNode = RedoUpdateNode(command.prevState);
+                    DataNode dataNode = RedoUpdateNode(command.prevState, command.nextState);
                     updateNodes ??= new List<DataNode>();
                     updateNodes.Add(dataNode);
                     break;
@@ -752,7 +871,7 @@ public sealed class DataGraph
             undoQueue.AddLast(command);
             switch (command.type) {
                 case CommandType.Update: {
-                    DataNode dataNode = RedoUpdateNode(command.nextState);
+                    DataNode dataNode = RedoUpdateNode(command.nextState, command.prevState);
                     updateNodes ??= new List<DataNode>();
                     updateNodes.Add(dataNode);
                     break;
@@ -784,14 +903,13 @@ public sealed class DataGraph
         return true;
     }
 
-    private DataNode RedoUpdateNode(DataNode.NodeMemento backup) {
-        long localId = backup.localId;
-        if (!nodeDic.ContainsKey(localId)) {
-            throw new IllegalStateException("localId: " + localId);
+    private DataNode RedoUpdateNode(DataNode.NodeMemento nextState, DataNode.NodeMemento prevState) {
+        DataNode dataNode = nodeDic[prevState.localId];
+        if (nextState.localId != prevState.localId) {
+            FixPointer(dataNode, prevState.localId, nextState.localId);
         }
-        DataNode dataNode = nodeDic[localId];
-        dataNode.Restore(backup);
-        dataNode.currentMemento = backup;
+        dataNode.Restore(nextState);
+        dataNode.currentMemento = nextState;
         //
         RepairNode(dataNode);
         return dataNode;
@@ -877,20 +995,23 @@ public sealed class DataGraph
     /// 更新Undo队列（压缩数据）
     /// </summary>
     private void UpdateUndoQueue() {
-        // TODO 由于短期可能创建大量的备份点，因此更好的方式是按照时间决定上限
         if (undoQueue.Count < 50) {
             return;
         }
-        // 同一批的操作同时删除以保证原子性
         Command headCommand = undoQueue.PeekFirst();
-        double tickTime = headCommand.time;
+        double backupTime = headCommand.time;
+        // 强制保留2分钟内的操作记录
+        if (_tickTime - backupTime < 120) {
+            return;
+        }
+        // 同一批的操作同时删除以保证原子性
         do {
             Command command = undoQueue.RemoveFirst();
             if (command.prevState != null) {
                 mementoPool.Release(command.prevState);
             }
         } while (undoQueue.TryPeekFirst(out headCommand)
-                 && Math.Abs(headCommand.time - tickTime) < 0.001f);
+                 && Math.Abs(headCommand.time - backupTime) < 0.001f);
     }
 
     private void CreateInsertCommand(DataNode node) {
@@ -937,6 +1058,10 @@ public sealed class DataGraph
             nextState = mementoPool.Acquire();
             node.Backup(nextState);
             node.currentMemento = nextState;
+            // 如果ID变化，需要纠正引用
+            if (prevState.localId != nextState.localId) {
+                FixPointer(node, prevState.localId, nextState.localId);
+            }
         }
         //
         Command command = new Command()
@@ -948,6 +1073,19 @@ public sealed class DataGraph
         };
         ClearRedoQueue();
         undoQueue.TryAddLast(command);
+    }
+
+    private void FixPointer(DataNode node, long prevLocalId, long nextLocalId) {
+        node.localId = prevLocalId;
+        List<Variable> list = _variableListPool.Acquire();
+        GetInputs(node, list);
+        foreach (Variable variable in list) {
+            ObjectPath objectPath = variable.objectPathValue;
+            objectPath.localId = nextLocalId;
+            variable.objectPathValue = objectPath;
+        }
+        _variableListPool.Release(list);
+        node.localId = nextLocalId;
     }
 
     private struct Command

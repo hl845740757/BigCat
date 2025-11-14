@@ -147,6 +147,13 @@ public static class DataEditorUtil
         return intField.labelElement;
     }
 
+    public static void SetMaxHeight(VisualElement element, VariableCfg variableCfg) {
+        FieldStyleCfg styleCfg = variableCfg.styleCfg;
+        if (styleCfg != null && styleCfg.maxHeight != null) {
+            element.style.maxHeight = styleCfg.maxHeight.FloatValue;
+        }
+    }
+
     #endregion
 
     #region create

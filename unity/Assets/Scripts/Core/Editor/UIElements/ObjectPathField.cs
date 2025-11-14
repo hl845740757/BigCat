@@ -32,6 +32,7 @@ namespace Wjybxx.BigCat.CoreEditor.UIElements
 /// </summary>
 public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>, IPrefixLabel
 {
+    // TODO 增加ObjectField用于选择对象和展示Icon
     private TextField _collectionField;
     private TextField _localPathField;
     private LongField _localIdField;
@@ -44,10 +45,27 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
 
     private ObjectPath _value;
     private bool _rebuildingValue;
+
+    private bool _isReadOnly; // 主要用于支持编辑器
     private ObjectPathHandler _handler; // 请通过属性访问
 
     public ObjectPathField() {
 
+    }
+
+    public bool isReadOnly {
+        get => _isReadOnly;
+        set {
+            _isReadOnly = value;
+            RefreshReadonly();
+        }
+    }
+
+    private void RefreshReadonly() {
+        if (_collectionField == null) return;
+        _collectionField.isReadOnly = _isReadOnly;
+        _localPathField.isReadOnly = _isReadOnly;
+        _localIdField.isReadOnly = _isReadOnly;
     }
 
     public string label {
@@ -178,6 +196,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         });
         //
         _foldout.RegisterCallback<ContextClickEvent>(ShowContextMenu);
+        RefreshReadonly();
         RebuildValue(false);
     }
 
@@ -408,11 +427,18 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
 
     public new class UxmlTraits : BindableElement.UxmlTraits
     {
+        private readonly UxmlBoolAttributeDescription isReadonly = new()
+        {
+            name = "isReadonly",
+            defaultValue = false
+        };
+
         // 初始化方法：将 UXML 属性值赋给元素实例
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
             // 这里有大坑：现在还不能访问到子节点，因此发布的对象可能是未完全构造的，不能提供服务
             var myView = (ObjectPathField)ve;
+            myView.isReadOnly = isReadonly.GetValueFromBag(bag, cc);
             ve.schedule.Execute(() => { myView.EnsureInited(); }).StartingIn(0);
         }
     }

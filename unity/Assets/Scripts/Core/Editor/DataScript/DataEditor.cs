@@ -15,6 +15,8 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 /// 该类是一个模板基类，其它编辑器可以基于此进行即可
+///
+/// TODO 提起NodeInspector 
 /// </summary>
 public class DataEditor : EditorWindow
 {
@@ -25,9 +27,10 @@ public class DataEditor : EditorWindow
     // protected VisualElement portValueView; // port详细信息展示
 
     protected LongField localIdField; // 其实Node也可以通过一个Variable绑定UI
-    protected TextField nameField;
     protected TextField folderField;
-    protected TextField commentField;
+    protected TextField nameField;
+    protected TextField titleField;
+    protected Toggle enablePortToggle; // Pair类型启用端口
 
     public DataGraph model { get; private set; }
 
@@ -37,7 +40,7 @@ public class DataEditor : EditorWindow
     /// </summary>
     public readonly LinkedDictionary<string, DSNamedType> templates = new();
     /// <summary>
-    /// 当前选中的节点 
+    /// 当前选中的节点
     /// </summary>
     public NodeView selectedNode { get; set; }
 
@@ -118,18 +121,20 @@ public class DataEditor : EditorWindow
         nodeInfoView = root.Q<VisualElement>("node-info");
         nodeValueView = root.Q<VisualElement>("node-value");
         graphView.editor = this;
+        graphView.dataGraph = model;
         //
         localIdField = nodeInfoView.Q<LongField>("local-id");
         nameField = nodeInfoView.Q<TextField>("name");
         folderField = nodeInfoView.Q<TextField>("folder");
-        commentField = nodeInfoView.Q<TextField>("comment");
-        localIdField.isReadOnly = true;
+        titleField = nodeInfoView.Q<TextField>("title");
+        localIdField.isDelayed = true;
         nameField.isDelayed = true;
         folderField.isDelayed = true;
-        commentField.isDelayed = true;
+        titleField.isDelayed = true;
+        localIdField.RegisterValueChangedCallback(OnLocalIdFieldChanged);
         nameField.RegisterValueChangedCallback(OnNameFieldChanged);
         folderField.RegisterValueChangedCallback(OnFolderFieldChanged);
-        commentField.RegisterValueChangedCallback(OnCommentFieldChanged);
+        titleField.RegisterValueChangedCallback(OnTitleFieldChanged);
         // 
         root.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
 
@@ -160,10 +165,10 @@ public class DataEditor : EditorWindow
         }
     }
 
-    private void OnCommentFieldChanged(ChangeEvent<string> evt) {
+    private void OnTitleFieldChanged(ChangeEvent<string> evt) {
         evt.StopPropagation();
         if (selectedNode == null) return;
-        selectedNode.dataNode.comment = evt.newValue;
+        selectedNode.dataNode.title = evt.newValue;
         selectedNode.dataNode.ApplyModifiedProperties();
     }
 
@@ -184,11 +189,21 @@ public class DataEditor : EditorWindow
         selectedNode.title = evt.newValue;
     }
 
+    private void OnLocalIdFieldChanged(ChangeEvent<long> evt) {
+        if (model.nodeDic.ContainsKey(evt.newValue)) {
+            Debug.Log("localId is duplicated: " + evt.newValue);
+            localIdField.SetValueWithoutNotify(evt.previousValue);
+            return;
+        }
+        selectedNode.dataNode.localId = evt.newValue;
+        selectedNode.dataNode.ApplyModifiedProperties();
+    }
+
     /// <summary>
     /// 由于GraphView是支持框选的，但Inspector我们只展示其中一个
     /// </summary>
     /// <param name="nodeView"></param>
-    public void OnNodeSelected(NodeView nodeView) {
+    public virtual void OnNodeSelected(NodeView nodeView) {
         if (selectedNode != null) {
             return;
         }
@@ -198,10 +213,10 @@ public class DataEditor : EditorWindow
         nodeView.dataNode = _dataNode;
         //
         DataNode dataNode = selectedNode.dataNode;
-        localIdField.value = dataNode.localId;
-        nameField.value = dataNode.name;
-        folderField.value = dataNode.folder;
-        commentField.value = dataNode.comment;
+        localIdField.SetValueWithoutNotify(dataNode.localId);
+        nameField.SetValueWithoutNotify(dataNode.name);
+        folderField.SetValueWithoutNotify(dataNode.folder);
+        titleField.SetValueWithoutNotify(dataNode.title);
         //
         BuildNodeValueView(selectedNode.dataNode);
     }
@@ -211,7 +226,7 @@ public class DataEditor : EditorWindow
         nodeValueView.Add(DataEditorUtil.CreateField(dataNode.value, this));
     }
 
-    public void OnNodeUnselected(NodeView nodeView) {
+    public virtual void OnNodeUnselected(NodeView nodeView) {
         if (selectedNode != nodeView) {
             return;
         }
@@ -222,6 +237,19 @@ public class DataEditor : EditorWindow
         // 解除所有属性绑定
         nodeInfoView.Query<BindableElement>().ForEach(e => e.Unbind());
         nodeValueView.Clear();
+    }
+
+    public virtual void RefreshNodeInfo() {
+        // TODO 主要刷新Position信息
+    }
+
+    /// <summary>
+    /// 创建NodeView
+    ///
+    /// 注：主要要为不同类型的Node分配不同的主题样式。
+    /// </summary>
+    public virtual NodeView CreateNode(DataNode dataNode) {
+        return new NodeView() { dataNode = dataNode };
     }
 }
 }

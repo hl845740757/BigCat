@@ -98,25 +98,6 @@ public partial class AnimationClipEditor : EditorWindow
         this.rootVisualElement.schedule.Execute(_ => RefreshPreviewArea(true));
     }
 
-    private void OnGUI() {
-        if (_frameAreaElement == null) return;
-        if (Event.current.type != EventType.KeyDown) return;
-        switch (Event.current.keyCode) {
-            case KeyCode.Q: {
-                _imageEditModeToggle.SetValueWithoutNotify(EditMode.View);
-                break;
-            }
-            case KeyCode.W: {
-                _imageEditModeToggle.SetValueWithoutNotify(EditMode.Move);
-                break;
-            }
-            case KeyCode.E: {
-                _imageEditModeToggle.SetValueWithoutNotify(EditMode.Rotation);
-                break;
-            }
-        }
-    }
-
     private ClipContext GetMasterContext() {
         return _clipContextList.Count > 0 ? _clipContextList[0] : null;
     }
@@ -140,6 +121,7 @@ public partial class AnimationClipEditor : EditorWindow
         if (root.childCount == 0) {
             return;
         }
+        root.RegisterCallback<KeyDownEvent>(OnWindowKeyDownEvent);
         root.Q<ToolbarButton>("toolbar0").RegisterCallback<ClickEvent>(OnClickToolbar0);
         root.Q<ToolbarButton>("toolbar1").RegisterCallback<ClickEvent>(OnClickToolbar1);
         _pickClipButton = root.Q<Button>("pick-clip");
@@ -169,6 +151,24 @@ public partial class AnimationClipEditor : EditorWindow
 
         // 初始化展示
         OnMasterClipChanged();
+    }
+
+    private void OnWindowKeyDownEvent(KeyDownEvent evt) {
+        if (evt.modifiers != 0) return;
+        switch (evt.keyCode) {
+            case KeyCode.Q: {
+                _imageEditModeToggle.SetValueWithoutNotify(EditMode.View);
+                break;
+            }
+            case KeyCode.W: {
+                _imageEditModeToggle.SetValueWithoutNotify(EditMode.Move);
+                break;
+            }
+            case KeyCode.E: {
+                _imageEditModeToggle.SetValueWithoutNotify(EditMode.Rotation);
+                break;
+            }
+        }
     }
 
     private void InitClipInfoArea(VisualElement root) {

@@ -36,7 +36,7 @@ public sealed class DataNode
     ///
     /// 注：当外部引用Node时，应当优先使用name进行引用，更具有稳定性。
     /// </summary>
-    public long localId { get; }
+    public long localId { get; set; }
     /// <summary>
     /// 节点的名字
     /// </summary>
@@ -47,12 +47,13 @@ public sealed class DataNode
     /// 注：如果folder不为空，外部通过name引用node时，应当通过<code>folder/name</code>的方式引用。
     /// </summary>
     public string folder { get; internal set; }
+
     /// <summary>
-    /// 节点注释
+    /// 节点的title(兼注释)
     ///
-    /// 注：避免过长的注释，顶层节点的注释会写入输出数据。
+    /// 注：未赋值的情况下，Node显示为类型名
     /// </summary>
-    public string comment;
+    public string title;
     /// <summary>
     /// 数据的值
     /// 
@@ -131,10 +132,11 @@ public sealed class DataNode
     private bool IsDataChanged() {
         NodeMemento memento = this.currentMemento;
         if (memento == null) return false;
+        if (memento.localId != localId) return true;
         if (memento.version != version) return true;
         if (memento.name != name) return true;
         if (memento.folder != folder) return true;
-        if (memento.comment != comment) return true;
+        if (memento.title != title) return true;
         if (memento.position != position) return true;
         if (memento.features != features) return true;
         return !Variable.BackupEquals(memento.value, value);
@@ -148,7 +150,7 @@ public sealed class DataNode
         backup.version = version;
         backup.name = name;
         backup.folder = folder;
-        backup.comment = comment;
+        backup.title = title;
         backup.position = position;
         backup.features = features;
         if (value != null) {
@@ -163,13 +165,11 @@ public sealed class DataNode
     /// 数据恢复
     /// </summary>
     internal void Restore(NodeMemento backup) {
-        if (localId != backup.localId) {
-            throw new InvalidOperationException("localId != memento.localId");
-        }
+        localId = backup.localId; // 已允许修改LocalId
         version = backup.version;
         name = backup.name;
         folder = backup.folder;
-        comment = backup.comment;
+        title = backup.title;
         position = backup.position;
         features = backup.features;
         //
@@ -190,7 +190,7 @@ public sealed class DataNode
         if (left.version != right.version) return false;
         if (left.name != right.name) return false;
         if (left.folder != right.folder) return false;
-        if (left.comment != right.comment) return false;
+        if (left.title != right.title) return false;
         if (left.position != right.position) return false;
         if (left.features != right.features) return false;
         return Variable.BackupEquals(left.value, right.value);
@@ -209,7 +209,7 @@ public sealed class DataNode
         public int version;
         public string name;
         public string folder;
-        public string comment;
+        public string title;
         public Variable value;
         public Vector2 position;
         public Features features;
@@ -220,7 +220,7 @@ public sealed class DataNode
             version = 0;
             name = null;
             folder = null;
-            comment = null;
+            title = null;
             position = default;
             features = default;
         }

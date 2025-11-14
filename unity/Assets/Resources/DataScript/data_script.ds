@@ -82,6 +82,7 @@ struct ObjectPath {
 	int32 type = 4;
 }
 
+// @Options{ style: flow }
 // @Editor { displayType : Color }
 struct Color {
 	float r = 1;
@@ -101,6 +102,7 @@ class OuterClass {
 	List<Vector3> vecList = 5;
 	// 枚举输出为字符串
 	// @Options{encodeFeatures: [EnumAsString]}
+	// @EditorStyle{maxHeight : 300}
 	Map<int32, EColor> colorMap = 6;
 	Map<int32, Vector3> posMap = 7;
 

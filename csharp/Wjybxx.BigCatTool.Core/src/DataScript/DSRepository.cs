@@ -245,15 +245,6 @@ public sealed class DSRepository
     /// 获取内建类型
     /// </summary>
     public DSNamedType GetBuiltinType(string typeName) {
-        // 该方法可能在Build之前调用以修正内建结构数据
-        if (globalFile.TypeMap.IsEmpty) {
-            foreach (DSElement enclosedElement in globalFile.EnclosedElements) {
-                if (enclosedElement.Kind.IsNamedType() && enclosedElement.SimpleName == typeName) {
-                    return (DSNamedType)enclosedElement;
-                }
-            }
-            throw new ArgumentException("invalid typeName: " + typeName);
-        }
         DSNamedType result = globalFile.GetType(typeName);
         if (result == null) {
             throw new ArgumentException("invalid typeName: " + typeName);
