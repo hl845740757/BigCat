@@ -22,8 +22,6 @@ using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
 using UnityGraphView = UnityEditor.Experimental.GraphView.GraphView;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
@@ -39,9 +37,9 @@ public class PortView : Port
     /// <summary>
     /// 关联的字段
     ///
-    /// 注；Input不绑定变量
+    /// 注；Input端口不绑定变量
     /// </summary>
-    public Variable variable { get; set; }
+    public Variable variable { get; private set; }
     /// <summary>
     /// 是否是List类型端口（缓存值）
     /// </summary>
@@ -62,8 +60,9 @@ public class PortView : Port
     /// <summary>
     /// 用于保证顺序
     ///
-    /// 1.List端口展开的情况下，连接列表为空；因为Unity不支持Output到Output，Input到Input的连接。
-    /// 2.大多数情况下连接数量都较少，使用普通List即可。
+    /// 注：虽然Unity不支持Output到Output，Input到Input的连接；
+    /// 但Port的<see cref="Connect"/>并没有特殊逻辑，仅仅是维护Edge的集合；
+    /// 因此可以多个Port对同一个Edge调用Connect，因此List端口展开的情况下和动态端口共享连接。
     /// </summary>
     public readonly List<Edge> connectionList = new List<Edge>();
 
@@ -75,6 +74,15 @@ public class PortView : Port
         RegisterCallback<MouseDownEvent>(ShowContextMenu, TrickleDown.TrickleDown);
     }
 
+    public void Bind(Variable variable) {
+        Unbind();
+        this.variable = variable;
+    }
+
+    public void Unbind() {
+        this.variable = null;
+    }
+
     private void ShowContextMenu(MouseDownEvent evt) {
         // 同ListView的问题，GraphView拦截了ContextClickEvent...
         if (evt.button != (int)MouseButton.RightMouse) return;
@@ -83,7 +91,7 @@ public class PortView : Port
         menu.AddDisabledItem(new GUIContent("Port:" + portName));
         menu.AddSeparator("");
         //
-        int connectionCount = GetRealDisconnectionCount();
+        int connectionCount = connectionList.Count;
         if (connectionCount > 0) {
             menu.AddItem(new GUIContent("DisconnectAll: " + connectionCount), false, OnClickDisconnectAll);
         } else {
@@ -108,32 +116,8 @@ public class PortView : Port
         menu.ShowAsContext();
     }
 
-    private int GetRealDisconnectionCount() {
-        if (isListPort && isExpanded) {
-            NodeView nodeView = (NodeView)node;
-            Side side = nodeView.GetSide(this);
-            VisualElement container = nodeView.GetDynamicPortContainer(side);
-            return container.childCount;
-        }
-        return connectionList.Count;
-    }
-
     private void OnClickDisconnectAll() {
-        if (isExpanded) {
-            NodeView nodeView = (NodeView)node;
-            Side side = nodeView.GetSide(this);
-            //
-            VisualElement container = nodeView.GetDynamicPortContainer(side);
-            List<Edge> connections = new List<Edge>(container.childCount);
-            for (int i = 0; i < container.childCount; i++) {
-                PortView dynamicPort = (PortView)container[i];
-                connections.Add(dynamicPort.connectionList[0]);
-            }
-            GetFirstAncestorOfType<GraphView>().DeleteElements(connections);
-        } else {
-            List<Edge> connections = new List<Edge>(this.connectionList);
-            GetFirstAncestorOfType<GraphView>().DeleteElements(connections);
-        }
+        GetFirstAncestorOfType<GraphView>().DeleteElements(connections);
     }
 
     /// <summary>
@@ -164,16 +148,11 @@ public class PortView : Port
         Variable listVariable = listPort.variable;
         if (listVariable != null) {
             listVariable.MoveTo(srcIndex, destIndex);
-            listVariable.ApplyModifiedProperties();
+            listVariable.ApplyModifiedProperties(); // 回调时刷新
+        } else {
+            container.RemoveAt(srcIndex);
+            container.Insert(destIndex, this);
         }
-        container.RemoveAt(srcIndex);
-        container.Insert(destIndex, this);
-        // 需要重新绑定数据
-        NodeView nodeView = (NodeView)node;
-        Side side = nodeView.GetSide(this);
-        int min = Math.Min(srcIndex, destIndex);
-        int max = Math.Max(srcIndex, destIndex);
-        nodeView.RefreshDynamicPorts(side, min, max);
     }
 
     #region internal

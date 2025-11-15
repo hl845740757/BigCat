@@ -97,10 +97,6 @@ public sealed class Variable : IDisposable
     /// </summary>
     public DataNode dataNode { get; internal set; }
     /// <summary>
-    /// 关联的数据端口(缓存)
-    /// </summary>
-    public PortView portView { get; set; }
-    /// <summary>
     /// 用户自定义数据(缓存)
     /// </summary>
     public object userData { get; set; }
@@ -364,10 +360,11 @@ public sealed class Variable : IDisposable
     /// 删除指定位置的元素
     /// </summary>
     /// <param name="index"></param>
+    /// <param name="detach">是否解除对dataNode的引用</param>
     /// <returns></returns>
-    public Variable RemoveAt(int index) {
+    public Variable RemoveAt(int index, bool detach = false) {
         Variable nestedVar = values[index];
-        if (nestedVar != null && dataNode != null) {
+        if (nestedVar != null && detach) {
             nestedVar.SetDataNode(null);
         }
         values.RemoveAt(index);

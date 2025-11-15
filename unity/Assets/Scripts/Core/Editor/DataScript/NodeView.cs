@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 public class NodeView : Node
 {
     private readonly VisualElement leftAndRightOutputs;
-    public readonly VisualElement topInputs;
+    public readonly VisualElement topInputs; // 正式版只有一个元素
     public readonly VisualElement leftOutputs;
     public readonly VisualElement rightOutputs;
     public readonly VisualElement bottomOutputs;
@@ -43,9 +43,6 @@ public class NodeView : Node
     private VisualElement rightDynamicOutputs;
     private VisualElement bottomDynamicOutputs;
 
-    /// <summary>
-    /// 关联的数据模型
-    /// </summary>
     public DataNode dataNode { get; set; }
 
     public NodeView() {
@@ -76,49 +73,83 @@ public class NodeView : Node
         outputContainer.Add(leftAndRightOutputs);
         outputContainer.Add(bottomOutputs);
         InitPortContainerStyle();
-        //
-        {
-            for (int i = 0; i < 3; i++) {
-                PortView inputPort = CreateInputPort();
-                inputPort.portName = "H_Input" + i;
-                AddPort(inputPort, Side.Top);
-
-                PortView outputPort = CreateOutputPort(Side.Left, true);
-                outputPort.portName = "L_Output" + i;
-                AddPort(outputPort, Side.Left);
-            }
-        }
-        {
-            for (int i = 0; i < 3; i++) {
-                PortView outputPort = CreateOutputPort(Side.Right, true);
-                outputPort.portName = "R_Output" + i;
-                AddPort(outputPort, Side.Right);
-            }
-        }
-        {
-            for (int i = 0; i < 3; i++) {
-                PortView outputPort = CreateOutputPort(Side.Bottom, true);
-                outputPort.portName = "B_Output" + i;
-                AddPort(outputPort, Side.Bottom);
-            }
-        }
-        title = "NodeView";
     }
 
+    #region 数据绑定
+
+    /// <summary>
+    /// 绑定数据
+    /// 
+    /// 1.不支持重复绑定 —— 涉及逻辑太多，不易处理。
+    /// 2.端口之间的连接需要由GraphView恢复，动态端口也由GraphView处理。
+    /// 3.避免修改顶层Node的数据类型，会导致NodeView的关联的端口信息失效。
+    /// </summary>
+    /// <param name="dataNode"></param>
+    public void Bind(DataNode dataNode) {
+        if (this.dataNode != null) {
+            throw new InvalidOperationException("already bound");
+        }
+        // this.name = dataNode.value.type.SimpleName; // 视图对象name设置为类型名，用于筛选
+        this.dataNode = dataNode;
+        {
+            PortView inputPort = CreateInputPort();
+            inputPort.portName = "inputs";
+            AddPort(inputPort, Side.Top);
+        }
+        foreach (Variable outputField in dataNode.outputFields) {
+            Side side = GetSide(outputField.cfg);
+            PortView portView = CreateOutputPort(side, outputField.isCollectionType);
+            portView.portName = outputField.defineInfo.SimpleName;
+            portView.Bind(outputField);
+            AddPort(portView, side);
+        }
+        Refresh();
+    }
+
+    /// <summary>
+    /// 刷新显示，子类可以重写该方法扩展逻辑
+    /// </summary>
+    public virtual void Refresh() {
+        title = dataNode.title ?? dataNode.value.type.SimpleName;
+        // 见Node.SetPosition
+        style.left = dataNode.position.x;
+        style.top = dataNode.position.y;
+    }
+
+    /// <summary>
+    /// 清理所有动态端口
+    /// </summary>
+    public void ClearDynamicPorts() {
+        topDynamicInputs?.Clear();
+        leftDynamicOutputs?.Clear();
+        rightDynamicOutputs?.Clear();
+        bottomDynamicOutputs?.Clear();
+    }
+
+    #endregion
+
     #region port增删
+
+    /// <summary>
+    /// 获取变量所属的边
+    /// </summary>
+    public static Side GetSide(VariableCfg cfg) {
+        // Pair类型的PortCfg可能为null
+        return cfg.portCfg != null ? cfg.portCfg.side : Side.Right;
+    }
 
     /// <summary>
     /// 创建一个输入端口
     /// </summary>
     /// <returns></returns>
-    public PortView CreateInputPort() {
+    public static PortView CreateInputPort() {
         return PortView.Create<Edge>(Orientation.Vertical, Direction.Input, Port.Capacity.Multi);
     }
 
     /// <summary>
     /// 创建一个输出端口
     /// </summary>
-    public PortView CreateOutputPort(Side side, bool isListPort = false) {
+    public static PortView CreateOutputPort(Side side, bool isListPort = false) {
         Port.Capacity capacity = isListPort ? Port.Capacity.Multi : Port.Capacity.Single;
         return PortView.Create<Edge>(GetPortOrientation(side), Direction.Output, capacity);
     }
@@ -126,7 +157,7 @@ public class NodeView : Node
     /// <summary>
     /// 创建一个动态端口
     /// </summary>
-    public PortView CreateDynamicPort(Side side) {
+    public static PortView CreateDynamicPort(Side side) {
         Port.Capacity capacity = Port.Capacity.Single;
         PortView port = PortView.Create<Edge>(GetPortOrientation(side), GetPortType(side), capacity);
         port.style.flexDirection = GetPortFlexDirection(side);
@@ -157,19 +188,17 @@ public class NodeView : Node
         if (!port.isDynamicPort) {
             throw new ArgumentException("port.isDynamicPort != true");
         }
-        VisualElement container = EnsureDynamicPortContainer(side);
-        port.style.flexDirection = GetPortFlexDirection(side);
-        container.Add(port);
+        EnsureDynamicPortContainer(side).Add(port);
     }
 
-    /// <summary>
-    /// 获取某侧动态端口数量
-    /// </summary>
-    /// <param name="side"></param>
-    /// <returns></returns>
-    public int GetDynamicPortCount(Side side) {
+    internal PortView GetPort(Side side, int index) {
+        VisualElement container = GetPortContainer(side);
+        return (PortView)container[index];
+    }
+
+    internal PortView GetDynamicPort(Side side, int index) {
         VisualElement container = GetDynamicPortContainer(side);
-        return container == null ? 0 : container.childCount;
+        return (PortView)container[index];
     }
 
     private VisualElement EnsureDynamicPortContainer(Side side) {
@@ -177,9 +206,9 @@ public class NodeView : Node
             case Side.Top: {
                 VisualElement container = topDynamicInputs;
                 if (container == null) {
-                    container = topDynamicInputs = CreateDynamicPortContainer("topDynamicInputs", topInputs);
+                    container = CreateDynamicPortContainer("topDynamicInputs", topInputs);
+                    topDynamicInputs = container;
                     inputContainer.Insert(0, container); // 添加到顶部
-                    // container.style.marginLeft = 7; // 错开以防连线重叠
                 } else if (!inputContainer.Contains(container)) {
                     inputContainer.Insert(0, container);
                 }
@@ -188,9 +217,9 @@ public class NodeView : Node
             case Side.Left: {
                 VisualElement container = leftDynamicOutputs;
                 if (container == null) {
-                    container = leftDynamicOutputs = CreateDynamicPortContainer("leftDynamicOutputs", leftOutputs);
+                    container = CreateDynamicPortContainer("leftDynamicOutputs", leftOutputs);
+                    leftDynamicOutputs = container;
                     leftAndRightOutputs.Insert(0, container); // 添加到左侧
-                    // container.style.marginTop = 7; // 错开以防连线重叠
                 } else if (!leftAndRightOutputs.Contains(container)) {
                     leftAndRightOutputs.Insert(0, container);
                 }
@@ -199,9 +228,9 @@ public class NodeView : Node
             case Side.Right: {
                 VisualElement container = rightDynamicOutputs;
                 if (container == null) {
-                    container = rightDynamicOutputs = CreateDynamicPortContainer("rightDynamicOutputs", rightOutputs);
+                    container = CreateDynamicPortContainer("rightDynamicOutputs", rightOutputs);
+                    rightDynamicOutputs = container;
                     leftAndRightOutputs.Add(container); // 添加到右侧
-                    // container.style.marginTop = 7; // 错开以防连线重叠
                 } else if (!leftAndRightOutputs.Contains(container)) {
                     leftAndRightOutputs.Add(container);
                 }
@@ -210,7 +239,8 @@ public class NodeView : Node
             case Side.Bottom: {
                 VisualElement container = bottomDynamicOutputs;
                 if (container == null) {
-                    container = bottomDynamicOutputs = CreateDynamicPortContainer("bottomDynamicOutputs", bottomOutputs);
+                    container = CreateDynamicPortContainer("bottomDynamicOutputs", bottomOutputs);
+                    bottomDynamicOutputs = container;
                     outputContainer.Add(container); // 添加到底部
                     // container.style.marginLeft = 7; // 错开以防连线重叠
                 } else if (!outputContainer.Contains(container)) {
@@ -278,7 +308,7 @@ public class NodeView : Node
         };
     }
 
-    private VisualElement GetPortContainer(Side side) {
+    internal VisualElement GetPortContainer(Side side) {
         return side switch
         {
             Side.Top => topInputs,
@@ -293,71 +323,34 @@ public class NodeView : Node
 
     #region list端口展开
 
-    private static readonly ObjectPool<List<Edge>> _connectListPool = ObjectPoolUtil.NewListPool<Edge>(4);
-
-    /// <summary>
-    /// 刷新动态端口(重新绑定数据)
-    /// </summary>
-    /// <param name="side"></param>
-    public void RefreshDynamicPorts(Side side) {
-        RefreshDynamicPorts(side, 0);
-    }
-
-    /// <summary>
-    /// 刷新动态端口(重新绑定数据)
-    /// </summary>
-    /// <param name="side"></param>
-    /// <param name="startIndex">inclusive</param>
-    /// <param name="endIndex">inclusive</param>
-    public void RefreshDynamicPorts(Side side, int startIndex, int endIndex = -1) {
-        VisualElement container = GetDynamicPortContainer(side);
-        if (container == null) return;
-        if (endIndex == -1) {
-            endIndex = container.childCount - 1;
-        } else {
-            endIndex = Math.Min(endIndex, container.childCount - 1);
-        }
-        for (int index = startIndex; index <= endIndex; index++) {
-            PortView dynamicPort = (PortView)container[index];
-            PortView listPort = dynamicPort.listPort;
-            // 是否分配一个数字name？
-            if (listPort.direction == Direction.Output) {
-                dynamicPort.variable = listPort.variable?.TryGet(index);
-            }
-        }
-    }
-
     /// <summary>
     /// 展开动态端口
+    /// 注：force参数用于Refresh时。
     /// </summary>
     public void ExpandListPort(PortView port) {
         if (!port.isListPort || port.isExpanded) return;
         Side side = GetSide(port);
-        CollapseListPort(side, false); // 折叠当前展开窗口
+        CollapseListPort(side, false);
         //
         port.isExpanded = true;
         port.SetBorderWidth(1);
         port.SetBorderColor(Color.yellow);
         //
+        int connectionCount = port.connectionList.Count;
         VisualElement dynamicPortContainer = EnsureDynamicPortContainer(side);
-        List<Edge> connectList = _connectListPool.Acquire();
-        connectList.AddRange(port.connectionList);
-        for (int index = 0; index < connectList.Count; index++) {
-            Edge edge = connectList[index];
+        for (int index = 0; index < connectionCount; index++) {
+            Edge edge = port.connectionList[index];
             PortView dynamicPort = CreateDynamicPort(side);
-            dynamicPort.listPort = port;
-            dynamicPortContainer.Add(dynamicPort);
-            //
-            port.Disconnect(edge);
-            dynamicPort.Connect(edge);
-            if (port.direction == Direction.Input) {
-                edge.input = dynamicPort;
-            } else {
+            if (port.direction == Direction.Output) {
+                dynamicPort.Bind(port.variable[index]);
                 edge.output = dynamicPort;
-                dynamicPort.variable = port.variable?.TryGet(index);
+            } else {
+                edge.input = dynamicPort;
             }
+            dynamicPort.listPort = port;
+            dynamicPort.Connect(edge); // 共享连接
+            dynamicPortContainer.Add(dynamicPort);
         }
-        _connectListPool.Release(connectList);
     }
 
     /// <summary>
@@ -371,14 +364,12 @@ public class NodeView : Node
     /// 收起指定侧List端口
     /// </summary>
     private void CollapseListPort(Side side, bool removeFromHierarchy) {
-        VisualElement container = GetPortContainer(side);
-        for (int index = 0, count = container.childCount; index < count; index++) {
-            PortView portView = (PortView)container[index];
-            if (portView.isListPort && portView.isExpanded) {
-                CollapseListPort(portView, removeFromHierarchy);
-                break;
-            }
+        VisualElement container = GetDynamicPortContainer(side);
+        if (container == null || container.childCount == 0) {
+            return;
         }
+        PortView dynamicPort = (PortView)container[0];
+        CollapseListPort(dynamicPort.listPort, removeFromHierarchy);
     }
 
     private void CollapseListPort(PortView port, bool removeFromHierarchy) {
@@ -388,21 +379,20 @@ public class NodeView : Node
         //
         Side side = GetSide(port);
         VisualElement container = GetDynamicPortContainer(side);
-        if (container == null) {
+        if (container == null || container.childCount == 0) {
             return;
         }
-        // 修正Edge的输出端口为当前Port
-        for (int index = 0, count = container.childCount; index < count; index++) {
+        for (int index = 0; index < container.childCount; index++) {
             PortView dynamicPort = (PortView)container[index];
             Edge edge = dynamicPort.connectionList[0];
-            //
-            dynamicPort.Disconnect(edge);
-            port.Connect(edge);
-            if (port.direction == Direction.Input) {
-                edge.input = port;
-            } else {
+            if (port.direction == Direction.Output) {
+                dynamicPort.Unbind();
                 edge.output = port;
+            } else {
+                edge.input = port;
             }
+            dynamicPort.listPort = null; // 解除绑定
+            dynamicPort.DisconnectAll(); // 效率更好
         }
         container.Clear();
         if (removeFromHierarchy) {
@@ -514,6 +504,7 @@ public class NodeView : Node
 
     public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
         base.BuildContextualMenu(evt);
+        evt.StopImmediatePropagation(); // 禁用全局菜单栏
     }
 
     #endregion

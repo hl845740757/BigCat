@@ -18,7 +18,6 @@ class SimpleBean {
     // 测试ssti
     // @Options {ssti: true, encodeFeatures: [NumberHex]}
     int32 strLink = 10;
-    
     // 测试sstiList
     // @Options {ssti: true, encodeFeatures: [NumberHex]}    
     List<int32> strLinkList = 11;
@@ -137,13 +136,17 @@ class OuterClass {
 	
     // @Options {encodeFeatures: [NumberHex]}    	
 	// @MaskField["Layer0", "Layer1", "Layer2"]
-	int32 maskInt = 19;
-	
+	int32 maskInt = 19;	
 	// 可空null
 	Vector3? optInt = 20;
+	
     // 测试对象引用 - 会被转换为ObjectPath
-    // @PortField {}
+    // @PortField {side: left}
     SimpleBean link = 21;
+    // @PortField {side: bottom}
+    List<SimpleBean> linkList = 22;
+    // @PortField {side: right}
+    Map<int32,SimpleBean> linkDic = 23;    
 
     class Request {
 		int32 a = 1;
@@ -201,10 +204,3 @@ inst vector3_array [
 // 测试不换行缩进
 inst v1 { x: 0, y: 0, z: 0}
 inst v2 [0, 0, 0]
-
-// 测试rpc服务
-//@Rpc{ id: 1 }
-service FirstService {
-    func Echo(Vector3 v3) : (Vector3) = 1;
-    func Echo(List<Vector3> list) : (List<Vector3>) = 2;
-}

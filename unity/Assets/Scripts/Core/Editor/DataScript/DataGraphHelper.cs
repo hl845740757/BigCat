@@ -196,11 +196,12 @@ internal class DataGraphHelper
             return;
         }
 
+        // 测试类型的投影类型
         // DateTime
-        VariableCfg variableCfg = variable.cfg;
+        VariableCfg typeCfg = _graph.GetVariableCfg(varType);
         if (DSUtil.IsDateTimeType(varType) || DSUtil.IsTimestampType(varType)
-                                           || variableCfg.dsonType == DsonType.DateTime
-                                           || variableCfg.dsonType == DsonType.Timestamp) {
+                                           || typeCfg.dsonType == DsonType.DateTime
+                                           || typeCfg.dsonType == DsonType.Timestamp) {
             if (dsonValue.DsonType == DsonType.Timestamp) {
                 variable.timestampValue = dsonValue.AsTimestamp();
             } else if (dsonValue.DsonType == DsonType.DateTime) {
@@ -210,7 +211,7 @@ internal class DataGraphHelper
             return;
         }
         // ObjectPtr/ObjectPath
-        if (variableCfg.dsonType == DsonType.Pointer) {
+        if (typeCfg.dsonType == DsonType.Pointer) {
             if (dsonValue.DsonType == DsonType.Pointer) {
                 variable.objectPathValue = dsonValue.AsPointer();
             }
@@ -253,7 +254,7 @@ internal class DataGraphHelper
             }
             return;
         }
-        // 自定义结构，按照字段名进行匹配，选择性覆盖
+        // 自定义结构：如果输入是Object，则按照字段名进行匹配，选择性覆盖；如果输入是Array，则顺序解码
         if (dsonValue.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = dsonValue.AsObject();
             foreach (Variable nestedVar in variable.values) {
@@ -261,6 +262,16 @@ internal class DataGraphHelper
                 if (!dsonObject.TryGetValue(fieldName, out DsonValue fieldValue)) {
                     continue;
                 }
+                Decode(nestedVar, fieldValue, applySerializedType);
+            }
+        } else if (dsonValue.DsonType == DsonType.Array) {
+            DsonArray<string> dsonArray = dsonValue.AsArray();
+            for (int index = 0; index < variable.values.Count; index++) {
+                Variable nestedVar = variable.values[index];
+                if (index >= dsonArray.Count) {
+                    break;
+                }
+                DsonValue fieldValue = dsonArray[index];
                 Decode(nestedVar, fieldValue, applySerializedType);
             }
         }
@@ -309,9 +320,6 @@ internal class DataGraphHelper
         // 需要先纠正字段类型，才能解码
         _graph.InitOutputFields(node);
         Decode(node.value, dsonValue, true);
-        //
-        node.graph = _graph;
-        node.value.SetDataNode(node);
         return node;
     }
 
@@ -402,18 +410,18 @@ internal class DataGraphHelper
         }
         // 测试类型的投影类型
         // DateTime
-        VariableCfg variableCfg = _graph.GetVariableCfg(varType);
-        if (variableCfg.dsonType == DsonType.DateTime || DSUtil.IsDateTimeType(varType)) {
+        VariableCfg typeCfg = _graph.GetVariableCfg(varType);
+        if (typeCfg.dsonType == DsonType.DateTime || DSUtil.IsDateTimeType(varType)) {
             Timestamp timestamp = variable.timestampValue;
             writer.WriteDateTime(new ExtDateTime(timestamp.Seconds, timestamp.Nanos));
             return;
         }
-        if (variableCfg.dsonType == DsonType.Timestamp || DSUtil.IsTimestampType(varType)) {
+        if (typeCfg.dsonType == DsonType.Timestamp || DSUtil.IsTimestampType(varType)) {
             writer.WriteTimestamp(variable.timestampValue);
             return;
         }
         // ObjectPtr
-        if (variableCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
+        if (typeCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
             writer.WritePtr(variable.objectPathValue);
             return;
         }
@@ -498,6 +506,9 @@ internal class DataGraphHelper
             }
             // 编辑器相关数据也存储在Header中，虽然可能导致不必要的运行时数据，但可以大幅降低维护难度
             string typeSymbol = GetTypeSymbol(node.value.type);
+            if (writer is DsonTextWriter textWriter) {
+                textWriter.PrintBeforeName("\n  ");
+            }
             writer.WriteString(KEY_TYPE_SYMBOL, typeSymbol, StringStyle.Quote);
             writer.WriteInt32(KEY_FEATURES, (int)node.features, NumberStyle.UnsignedHex);
             {

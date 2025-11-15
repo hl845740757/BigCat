@@ -25,7 +25,6 @@ using UnityEngine;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
-using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
 using Wjybxx.Dson.IO;
@@ -41,6 +40,8 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 /// 3.逻辑层是没有边的概念的，因为引用记录在输出端口上；如果需要为连接配置额外数据，可通过桥接Node实现。
 /// 4.即所有的数据都通过Node存储，边只是显示层概念的。
 /// 5.虽然框架支持自定义结构Map的Key，但推荐仅使用int32、int64、enum、string类型。
+///
+/// TODO 标记DataGraph是否为脏
 /// </summary>
 public sealed class DataGraph
 {
@@ -60,11 +61,6 @@ public sealed class DataGraph
     /// 当前的所有Node
     /// </summary>
     public readonly LinkedDictionary<long, DataNode> nodeDic = new();
-
-    /// <summary>
-    /// 数据图展示对象(缓存)
-    /// </summary>
-    public GraphView graphView { get; set; }
     /// <summary>
     /// 用户自定义数据(缓存)
     /// </summary>
@@ -95,6 +91,12 @@ public sealed class DataGraph
     private readonly ObjectPool<List<DSField>> _fieldListPool = ObjectPoolUtil.NewListPool<DSField>(8);
     private readonly StringBuilder _sbCache = new(1024);
 
+    // 由于派发事件期间可能再次触发变化，因此不能使用单个缓存对象
+    private int _stackDepth;
+    private DataGraphChange _graphChange;
+    private readonly ObjectPool<DataGraphChange> _graphChangePool = new ObjectPool<DataGraphChange>(
+        DataGraphChange.Create, e => e.Clear());
+
     private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly DataGraphHelper _helper;
 
@@ -105,9 +107,48 @@ public sealed class DataGraph
     }
 
     /// <summary>
+    /// 数据图发生变化时调用
+    ///
+    /// 注：Undo/Redo不会执行该方法，如需处理Undo/Redo，需监听<see cref="undoPerformed"/>和<see cref="redoPerformed"/>。
+    /// </summary>
+    public event Action<DataGraphChange> onGraphChanged;
+
+    /// <summary>
+    /// 开始数据修改
+    /// </summary>
+    public void BeginModify() {
+        // 通过栈延迟事件派发，实际上并不是个好主意
+        _stackDepth++;
+        _graphChange ??= _graphChangePool.Acquire();
+    }
+
+    /// <summary>
+    /// 结束数据修改
+    /// </summary>
+    public void EndModify() {
+        if (_stackDepth == 0) {
+            throw new IllegalStateException();
+        }
+        _stackDepth--;
+        if (_stackDepth == 0) {
+            DataGraphChange graphChange = _graphChange;
+            _graphChange = null;
+            if (!graphChange.IsEmpty) {
+                onGraphChanged?.Invoke(graphChange);
+            }
+            _graphChangePool.Release(graphChange);
+        }
+    }
+
+    /// <summary>
     /// 编辑器需要驱动该方法以正确维护Undo队列
     /// </summary>
     public void Update() {
+        // 避免卡死 —— 只是简单的丢弃堆栈，因为无法安全恢复
+        if (_graphChange != null) {
+            _stackDepth = 0;
+            _graphChange = null;
+        }
         float realtime = Time.realtimeSinceStartup;
         if (realtime - _tickTime < 0.1f) {
             return;
@@ -147,16 +188,16 @@ public sealed class DataGraph
     }
 
     /// <summary>
-    /// 获取指定folder下的所有节点
+    /// 是否包含目标Node（引用测试）
     /// </summary>
-    /// <param name="folder"></param>
-    /// <param name="outList"></param>
-    public void GetNodes(string folder, List<DataNode> outList) {
-        foreach (DataNode dataNode in nodeList) {
-            if (dataNode.folder == folder) {
-                outList.Add(dataNode);
-            }
+    /// <param name="dataNode"></param>
+    /// <returns></returns>
+    public bool Contains(DataNode dataNode) {
+        if (dataNode == null) return false;
+        if (nodeDic.TryGetValue(dataNode.localId, out DataNode tempNode)) {
+            return tempNode == dataNode;
         }
+        return false;
     }
 
     /// <summary>
@@ -177,8 +218,20 @@ public sealed class DataGraph
         //
         nodeDic.Add(node.localId, node);
         nodeList.Add(node);
-        nodeList.Sort(CompareNode);
         CreateInsertCommand(node);
+        nodeList.Sort(CompareNode);
+
+        if (_graphChange != null) {
+            _graphChange.insetNodes.Add(node);
+            // _graphChange.deleteNodes.Remove(node);
+            // _graphChange.updateNodes.Remove(node);
+            // _graphChange.prevLocalIds.Remove(node.localId);
+        } else if (onGraphChanged != null) {
+            DataGraphChange graphChange = _graphChangePool.Acquire();
+            graphChange.insetNodes.Add(node);
+            onGraphChanged.Invoke(graphChange);
+            _graphChangePool.Release(graphChange);
+        }
     }
 
     /// <summary>
@@ -202,6 +255,18 @@ public sealed class DataGraph
         nodeDic.Remove(node.localId);
         nodeList.Remove(node);
         CreateDeleteCommand(prevState);
+        //
+        if (_graphChange != null) {
+            _graphChange.deleteNodes.Add(node);
+            // _graphChange.insetNodes.Remove(node);
+            // _graphChange.updateNodes.Remove(node);
+            // _graphChange.prevLocalIds.Remove(node.localId);
+        } else if (onGraphChanged != null) {
+            DataGraphChange graphChange = _graphChangePool.Acquire();
+            graphChange.deleteNodes.Add(node);
+            onGraphChanged.Invoke(graphChange);
+            _graphChangePool.Release(graphChange);
+        }
     }
 
     /// <summary>
@@ -213,9 +278,32 @@ public sealed class DataGraph
     /// <param name="disconnectInputs">是否断开数据层的输入数据</param>
     /// <param name="disconnectOutputs">是否断开数据层的输出数据</param>
     public void DeleteNodes(IEnumerable<DataNode> nodes, bool disconnectInputs = false, bool disconnectOutputs = false) {
-        foreach (DataNode dataNode in nodes) {
-            DeleteNode(dataNode, disconnectInputs, disconnectOutputs);
+        BeginModify();
+        try {
+            foreach (DataNode dataNode in nodes) {
+                DeleteNode(dataNode, disconnectInputs, disconnectOutputs);
+            }
         }
+        finally {
+            EndModify();
+        }
+    }
+
+    /// <summary>
+    /// 获取被引用的对象
+    ///
+    /// 注：该接口只支持不指定集合名的引用，即图内引用查询。
+    /// </summary>
+    public bool GetReferenceNode(ObjectPath objectPath, out DataNode dataNode) {
+        if (objectPath.IsEmpty) {
+            dataNode = null;
+            return false;
+        }
+        if (objectPath.HasCollection) {
+            dataNode = null;
+            return false;
+        }
+        return nodeDic.TryGetValue(objectPath.localId, out dataNode);
     }
 
     /// <summary>
@@ -265,7 +353,7 @@ public sealed class DataGraph
         }
         HashSet<DataNode> modifiedNodes = _nodeSetPool.Acquire();
         foreach (Variable variable in list) {
-            if (Disconnect(variable, false) && variable.dataNode != null) {
+            if (Disconnect(variable, false)) {
                 modifiedNodes.Add(variable.dataNode);
             }
         }
@@ -280,7 +368,11 @@ public sealed class DataGraph
     /// </summary>
     /// <param name="variable">output字段，可能是List的元素</param>
     /// <param name="applyModifiers">是否应用修改</param>
-    private static bool Disconnect(Variable variable, bool applyModifiers = true) {
+    /// <returns>数据是否发生改变</returns>
+    private bool Disconnect(Variable variable, bool applyModifiers = true) {
+        if (variable.dataNode == null) { // 已被删除的变量
+            return false;
+        }
         // List删除所有连接 - Map端口会转为List
         if (variable.isCollectionType) {
             if (variable.Count == 0) {
@@ -325,7 +417,8 @@ public sealed class DataGraph
     /// </summary>
     /// <param name="variable">port变量/输出字段</param>
     /// <param name="targetNode">目标节点</param>
-    public void Connect(Variable variable, DataNode targetNode) {
+    /// <param name="applyModifiers">是否应用修改</param>
+    public void Connect(Variable variable, DataNode targetNode, bool applyModifiers = true) {
         if (targetNode == null) {
             throw new ArgumentNullException(nameof(targetNode));
         }
@@ -334,18 +427,25 @@ public sealed class DataGraph
             Variable nestedVar = CreateListItem(variable);
             nestedVar.objectPathValue = new ObjectPath(targetNode.localId);
             variable.Add(nestedVar);
+            if (applyModifiers) {
+                variable.ApplyModifiedProperties();
+            }
             return;
         }
         variable.objectPathValue = new ObjectPath(targetNode.localId);
+        if (applyModifiers) {
+            variable.ApplyModifiedProperties();
+        }
     }
 
     /// <summary>
-    /// 获取指向Node的所有输入
+    /// 获取指向Node的所有输入（实时查询）
     /// 
-    /// 注：只会返回collection为空且localId等于目标Node的引用，会返回跨虚拟文件夹的引用。
+    /// 注：
+    /// 1.只会返回collection为空且localId等于目标Node的引用，会返回跨虚拟文件夹的引用。
+    /// 2.由于UI刷新频率较高，因此UI应该使用Node上的缓存数据
     /// </summary>
-    public void GetInputs(DataNode targetNode, List<Variable> result) {
-        // 由于Node数量通常不多，因此实时查询的效率足够
+    private void GetInputs(DataNode targetNode, List<Variable> result) {
         foreach (DataNode dataNode in nodeList) {
             if (dataNode.outputFields.Count == 0) {
                 continue;
@@ -410,7 +510,7 @@ public sealed class DataGraph
 
     private void InitOutputFields(Variable variable, List<Variable> outList) {
         DSNamedType varType = variable.type;
-        if (varType.IsValueType || DSUtil.IsAtomicType(varType)) {
+        if (DSUtil.IsAtomicType(varType)) { // 这里不能拦截值类型，否则会拦截转换后的ObjectPath
             return;
         }
         if (!variable.cfg.HasPortCfg) {
@@ -714,6 +814,20 @@ public sealed class DataGraph
     #region 序列化
 
     /// <summary>
+    /// 关闭文件
+    /// </summary>
+    public void Close() {
+        if (string.IsNullOrWhiteSpace(assetPath)) {
+            return;
+        }
+        nodeList.Clear();
+        nodeDic.Clear();
+        ClearRedoQueue();
+        ClearUndoQueue();
+        _nextLocalId = 0;
+    }
+
+    /// <summary>
     /// 保存数据到资产文件
     ///
     /// 注：这里主要处理编辑器下的Style需求，其逻辑与<see cref="Dsons"/>基本相同。
@@ -723,8 +837,8 @@ public sealed class DataGraph
             Debug.LogWarning("assetPath is null or empty");
             return;
         }
-        string filePath = Application.dataPath + "/" + assetPath;
-        using StreamWriter streamWriter = new StreamWriter(File.OpenWrite(filePath), new UTF8Encoding(false));
+        string filePath = UnityEditorUtil.ConvertToFilePath(assetPath);
+        using StreamWriter streamWriter = new StreamWriter(File.Create(filePath), new UTF8Encoding(false));
         using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, streamWriter, true);
         //
         foreach (DataNode dataNode in nodeList) {
@@ -733,6 +847,7 @@ public sealed class DataGraph
             }
             _helper.Write(textWriter, dataNode);
         }
+        Debug.Log("Saved: " + assetPath);
     }
 
     /// <summary>
@@ -745,27 +860,27 @@ public sealed class DataGraph
             Debug.LogWarning("assetPath is null or empty");
             return;
         }
-        string filePath = Application.dataPath + "/" + assetPath;
+        string filePath = UnityEditorUtil.ConvertToFilePath(assetPath);
         using StreamReader streamReader = new StreamReader(filePath, new UTF8Encoding(false));
         using DsonTextReader textReader = new DsonTextReader(readerSettings, streamReader);
         //
         DsonArray<string> collection = Dsons.ReadCollection(textReader);
+        Close();
         Import(collection);
     }
 
     private void Import(DsonArray<string> collection) {
-        nodeList.Clear();
-        nodeDic.Clear();
-        ClearRedoQueue();
-        ClearUndoQueue();
-        //
-        _nextLocalId = 0;
         foreach (DsonValue dsonValue in collection) {
             DataNode dataNode = _helper.DecodeNode(dsonValue);
+            RepairNode(dataNode, false);
             nodeDic.Add(dataNode.localId, dataNode);
             nodeList.Add(dataNode);
+            CreateInsertCommand(dataNode); // 否则无法回滚到初始状态
         }
-        RepairGraph(new List<DataNode>(nodeList), null, null);
+        DataGraphChange graphChange = _graphChangePool.Acquire();
+        graphChange.insetNodes.AddRange(nodeList);
+        RepairGraph(graphChange);
+        _graphChangePool.Release(graphChange);
     }
 
     /// <summary>
@@ -801,8 +916,7 @@ public sealed class DataGraph
     /// <summary>
     /// List可能为null，外部应当尽量避免持有List的引用
     /// </summary>
-    public delegate void UndoRedoCallback(List<DataNode> insetNodes, List<DataNode> deleteNodes,
-                                          List<DataNode> updateNodes);
+    public delegate void UndoRedoCallback(DataGraphChange graphChange);
 
     public event UndoRedoCallback undoPerformed;
     public event UndoRedoCallback redoPerformed;
@@ -817,9 +931,7 @@ public sealed class DataGraph
         if (!undoQueue.TryPeekLast(out Command tailCommand)) {
             return false;
         }
-        List<DataNode> insetNodes = null;
-        List<DataNode> deleteNodes = null;
-        List<DataNode> updateNodes = null;
+        DataGraphChange graphChange = _graphChangePool.Acquire();
         double tickTime = tailCommand.time;
         do {
             Command command = undoQueue.RemoveLast();
@@ -827,20 +939,22 @@ public sealed class DataGraph
             switch (command.type) {
                 case CommandType.Update: {
                     DataNode dataNode = RedoUpdateNode(command.prevState, command.nextState);
-                    updateNodes ??= new List<DataNode>();
-                    updateNodes.Add(dataNode);
+                    graphChange.updateNodes.Add(dataNode);
+                    //
+                    long prevLocalId = command.nextState.localId;
+                    if (dataNode.localId != prevLocalId) {
+                        graphChange.prevLocalIds[dataNode.localId] = prevLocalId;
+                    }
                     break;
                 }
                 case CommandType.Insert: {
                     DataNode dataNode = RedoDeleteNode(command.nextState);
-                    deleteNodes ??= new List<DataNode>();
-                    deleteNodes.Add(dataNode);
+                    graphChange.deleteNodes.Add(dataNode);
                     break;
                 }
                 case CommandType.Delete: {
                     DataNode dataNode = RedoAddNode(command.prevState);
-                    insetNodes ??= new List<DataNode>();
-                    insetNodes.Add(dataNode);
+                    graphChange.insetNodes.Add(dataNode);
                     break;
                 }
                 default: throw new AssertionError();
@@ -848,13 +962,14 @@ public sealed class DataGraph
         } while (undoQueue.TryPeekLast(out tailCommand)
                  && Math.Abs(tailCommand.time - tickTime) < 0.001f);
         //
-        RepairGraph(insetNodes, deleteNodes, updateNodes);
+        RepairGraph(graphChange);
         try {
-            undoPerformed?.Invoke(insetNodes, deleteNodes, updateNodes);
+            undoPerformed?.Invoke(graphChange);
         }
         catch (Exception ex) {
             Debug.LogException(ex);
         }
+        _graphChangePool.Release(graphChange);
         return true;
     }
 
@@ -862,9 +977,7 @@ public sealed class DataGraph
         if (!redoQueue.TryPeekFirst(out Command headCommand)) {
             return false;
         }
-        List<DataNode> insetNodes = null;
-        List<DataNode> deleteNodes = null;
-        List<DataNode> updateNodes = null;
+        DataGraphChange graphChange = _graphChangePool.Acquire();
         double tickTime = headCommand.time;
         do {
             Command command = redoQueue.RemoveFirst();
@@ -872,20 +985,22 @@ public sealed class DataGraph
             switch (command.type) {
                 case CommandType.Update: {
                     DataNode dataNode = RedoUpdateNode(command.nextState, command.prevState);
-                    updateNodes ??= new List<DataNode>();
-                    updateNodes.Add(dataNode);
+                    graphChange.updateNodes.Add(dataNode);
+                    //
+                    long prevLocalId = command.prevState.localId;
+                    if (dataNode.localId != prevLocalId) {
+                        graphChange.prevLocalIds[dataNode.localId] = prevLocalId;
+                    }
                     break;
                 }
                 case CommandType.Insert: {
                     DataNode dataNode = RedoAddNode(command.nextState);
-                    insetNodes ??= new List<DataNode>();
-                    insetNodes.Add(dataNode);
+                    graphChange.insetNodes.Add(dataNode);
                     break;
                 }
                 case CommandType.Delete: {
                     DataNode dataNode = RedoDeleteNode(command.prevState);
-                    deleteNodes ??= new List<DataNode>();
-                    deleteNodes.Add(dataNode);
+                    graphChange.deleteNodes.Add(dataNode);
                     break;
                 }
                 default: throw new AssertionError();
@@ -893,25 +1008,28 @@ public sealed class DataGraph
         } while (redoQueue.TryPeekFirst(out headCommand)
                  && Math.Abs(headCommand.time - tickTime) < 0.001f);
         //
-        RepairGraph(insetNodes, deleteNodes, updateNodes);
+        RepairGraph(graphChange);
         try {
-            redoPerformed?.Invoke(insetNodes, deleteNodes, updateNodes);
+            redoPerformed?.Invoke(graphChange);
         }
         catch (Exception ex) {
             Debug.LogException(ex);
         }
+        _graphChangePool.Release(graphChange);
         return true;
     }
 
     private DataNode RedoUpdateNode(DataNode.NodeMemento nextState, DataNode.NodeMemento prevState) {
         DataNode dataNode = nodeDic[prevState.localId];
-        if (nextState.localId != prevState.localId) {
-            FixPointer(dataNode, prevState.localId, nextState.localId);
-        }
         dataNode.Restore(nextState);
         dataNode.currentMemento = nextState;
-        //
-        RepairNode(dataNode);
+        // 同一批次的Undo自动恢复
+        if (nextState.localId != prevState.localId) {
+            FixPointer(dataNode, prevState.localId, nextState.localId, false);
+            nodeDic.Remove(prevState.localId);
+            nodeDic[nextState.localId] = dataNode;
+        }
+        RepairNode(dataNode, false);
         return dataNode;
     }
 
@@ -924,7 +1042,7 @@ public sealed class DataGraph
         dataNode.Restore(backup);
         dataNode.currentMemento = backup;
         //
-        RepairNode(dataNode);
+        RepairNode(dataNode, true);
         nodeDic.Add(backup.localId, dataNode);
         nodeList.Add(dataNode);
         return dataNode;
@@ -946,18 +1064,19 @@ public sealed class DataGraph
     /// <summary>
     /// 修复Node缓存数据
     /// </summary>
-    /// <param name="node"></param>
-    private void RepairNode(DataNode node) {
+    private void RepairNode(DataNode node, bool initOutputFields) {
         node.graph = this;
         node.value.SetDataNode(node);
+        if (initOutputFields) {
+            InitOutputFields(node);
+        }
     }
 
     /// <summary>
     /// 修正对象图数据
     /// (数据层好像暂时没什么特殊逻辑，因为我们并不会直接清理无效引用)
     /// </summary>
-    private void RepairGraph(List<DataNode> insetNodes, List<DataNode> deleteNodes,
-                             List<DataNode> updateNodes) {
+    private void RepairGraph(DataGraphChange graphChange) {
         nodeList.Sort(CompareNode);
     }
 
@@ -1042,6 +1161,7 @@ public sealed class DataGraph
     }
 
     internal void CreateUpdateCommand(DataNode node) {
+        BeginModify();
         DataNode.NodeMemento prevState;
         DataNode.NodeMemento nextState;
         if (undoQueue.TryPeekLast(out Command prevCommand)
@@ -1058,12 +1178,7 @@ public sealed class DataGraph
             nextState = mementoPool.Acquire();
             node.Backup(nextState);
             node.currentMemento = nextState;
-            // 如果ID变化，需要纠正引用
-            if (prevState.localId != nextState.localId) {
-                FixPointer(node, prevState.localId, nextState.localId);
-            }
         }
-        //
         Command command = new Command()
         {
             time = _tickTime,
@@ -1073,9 +1188,18 @@ public sealed class DataGraph
         };
         ClearRedoQueue();
         undoQueue.TryAddLast(command);
+        // 如果ID变化，需要纠正引用；也正因此，需要压制递归抛出的事件
+        _graphChange.updateNodes.Add(node);
+        if (prevState.localId != nextState.localId) {
+            FixPointer(node, prevState.localId, nextState.localId, true);
+            nodeDic.Remove(prevState.localId);
+            nodeDic[nextState.localId] = node;
+            _graphChange.prevLocalIds[node.localId] = prevState.localId;
+        }
+        EndModify();
     }
 
-    private void FixPointer(DataNode node, long prevLocalId, long nextLocalId) {
+    private void FixPointer(DataNode node, long prevLocalId, long nextLocalId, bool applyModifiers) {
         node.localId = prevLocalId;
         List<Variable> list = _variableListPool.Acquire();
         GetInputs(node, list);
@@ -1083,6 +1207,9 @@ public sealed class DataGraph
             ObjectPath objectPath = variable.objectPathValue;
             objectPath.localId = nextLocalId;
             variable.objectPathValue = objectPath;
+            if (applyModifiers) {
+                variable.ApplyModifiedProperties();
+            }
         }
         _variableListPool.Release(list);
         node.localId = nextLocalId;

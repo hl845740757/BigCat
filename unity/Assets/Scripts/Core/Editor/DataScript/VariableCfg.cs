@@ -463,6 +463,10 @@ public enum Side
 public sealed class FieldStyleCfg
 {
     /// <summary>
+    /// 主题
+    /// </summary>
+    public string theme;
+    /// <summary>
     /// 视图的最大宽高
     /// </summary>
     public DsonNumber maxWidth;

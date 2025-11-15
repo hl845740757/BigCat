@@ -70,16 +70,6 @@ public sealed class DataNode
     /// </summary>
     public DataGraph graph { get; internal set; }
     /// <summary>
-    /// 关联的视图
-    ///
-    /// 注：如果不在Graph视图展示，则可能为null。
-    /// </summary>
-    public NodeView nodeView;
-    /// <summary>
-    /// GraphView下的坐标
-    /// </summary>
-    public Vector2 position;
-    /// <summary>
     /// Node上的output字段
     ///
     /// 注意：
@@ -88,6 +78,12 @@ public sealed class DataNode
     /// 3.逻辑层会提供获取Inputs的方法，实时查询代替缓存 —— 可以有效降低复杂度。
     /// </summary>
     public readonly List<Variable> outputFields = new List<Variable>();
+    /// <summary>
+    /// GraphView下的坐标
+    ///
+    /// 注：需要持久化，其它显示层数据大多无需持久化，但坐标还是需要的。
+    /// </summary>
+    public Vector2 position;
     /// <summary>
     /// 用户自定义数据(缓存)
     /// </summary>

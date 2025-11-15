@@ -47,6 +47,7 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraphChange.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\MaskFieldPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DisplayType.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector2IntField.cs" />
