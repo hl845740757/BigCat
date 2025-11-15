@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
@@ -15,8 +16,6 @@ namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
 /// <summary>
 /// 该类是一个模板基类，其它编辑器可以基于此进行即可
-///
-/// TODO 提起NodeInspector 
 /// </summary>
 public class DataEditor : EditorWindow
 {
@@ -25,7 +24,6 @@ public class DataEditor : EditorWindow
     protected VisualElement inspectorView;
     protected VisualElement nodeHeaderView;
     protected VisualElement nodeValueView;
-    // protected VisualElement portValueView; // port详细信息展示
 
     protected LongField localIdField; // 其实Node也可以通过一个Variable绑定UI
     protected TextField folderField;
@@ -37,11 +35,15 @@ public class DataEditor : EditorWindow
     /// <summary>
     /// 需要主动构建<see cref="DSRepository"/>
     /// </summary>
-    public DataGraph model { get; set; }
+    public DataGraph dataGraph { get; private set; }
     /// <summary>
     /// 当前选中的节点
     /// </summary>
     public NodeView selectedNode { get; set; }
+    /// <summary>
+    /// 类型搜索实现
+    /// </summary>
+    private TypeSearchWindowProvider typeSearchWindowProvider;
 
     /// <summary>
     /// 用户应该在自己的静态方法中初始化该Window的依赖，主要是初始化DataScript文件
@@ -56,24 +58,27 @@ public class DataEditor : EditorWindow
     /// 
     /// </summary>
     protected virtual void OnEnable() {
-        model = new DataGraph(new DSRepository());
-        model.undoPerformed += OnUndoRedoPerformed;
-        model.redoPerformed += OnUndoRedoPerformed;
-        model.onGraphChanged += OnDataGraphChanged;
-        // TODO 
+        dataGraph = new DataGraph(new DSRepository());
+        dataGraph.undoPerformed += OnUndoRedoPerformed;
+        dataGraph.redoPerformed += OnUndoRedoPerformed;
+        dataGraph.onGraphChanged += OnDataGraphChanged;
+        //
+        typeSearchWindowProvider = CreateInstance<TypeSearchWindowProvider>();
+        typeSearchWindowProvider.editor = this;
+        // TODO 通过配置文件加载关联的ds文件，并集中实例化泛型 -- 可以通过一个type来初始化泛型
         string filePath = Application.dataPath + "/Resources/DataScript/data_script.ds";
         DSFile dsFile = DSFileParser.Parse(new FileInfo(filePath));
-        model.repository.AddFile(dsFile);
-        model.repository.Build();
+        dataGraph.repository.AddFile(dsFile);
+        dataGraph.repository.Build();
     }
 
     /// <summary>
     /// 
     /// </summary>
     protected virtual void OnDisable() {
-        model.undoPerformed -= OnUndoRedoPerformed;
-        model.redoPerformed -= OnUndoRedoPerformed;
-        model.onGraphChanged -= OnDataGraphChanged;
+        dataGraph.undoPerformed -= OnUndoRedoPerformed;
+        dataGraph.redoPerformed -= OnUndoRedoPerformed;
+        dataGraph.onGraphChanged -= OnDataGraphChanged;
     }
 
     protected virtual void OnUndoRedoPerformed(DataGraphChange _) {
@@ -86,8 +91,8 @@ public class DataEditor : EditorWindow
         RefreshNodeInspector();
     }
 
-    protected void Update() {
-        model.Update();
+    protected virtual void Update() {
+        dataGraph.Update();
     }
 
     public void CreateGUI() {
@@ -122,8 +127,10 @@ public class DataEditor : EditorWindow
         root.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
         toolbar.Q<Button>("open-file").RegisterCallback<ClickEvent>(OnClickOpenFile);
         toolbar.Q<Button>("close-file").RegisterCallback<ClickEvent>(OnClickCloseFile);
+        toolbar.Q<Button>("save-file-as").RegisterCallback<ClickEvent>(OnClickSaveFileAs);
         // 
-        graphView.Bind(model);
+        graphView.nodeCreationRequest = OnNodeCreationRequest;
+        graphView.Bind(dataGraph);
     }
 
     /// <summary>
@@ -133,22 +140,37 @@ public class DataEditor : EditorWindow
     protected virtual void OnKeyDownEvent(KeyDownEvent evt) {
         if (!evt.ctrlKey || evt.shiftKey) return;
         if (evt.keyCode == KeyCode.Z) {
-            model.Undo();
+            dataGraph.Undo();
         } else if (evt.keyCode == KeyCode.Y) {
-            model.Redo();
+            dataGraph.Redo();
         } else if (evt.keyCode == KeyCode.S) {
-            model.Save();
+            dataGraph.Save();
         }
     }
 
     private void OnClickCloseFile(ClickEvent evt) {
         evt.StopPropagation();
-        model.Close();
-        model.assetPath = null;
+        dataGraph.Close();
+        dataGraph.assetPath = null;
         //
         selectedNode = null;
-        graphView.Bind(model);
+        graphView.Bind(dataGraph);
         RefreshNodeInspector();
+    }
+
+    private void OnClickSaveFileAs(ClickEvent evt) {
+        evt.StopPropagation();
+        string filePath = EditorUtility.SaveFilePanel("选择文件路径", UnityEditorUtil.lastOpenFolder,
+            "NewDataGraph", "dson");
+        if (string.IsNullOrEmpty(filePath)) {
+            return;
+        }
+        string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
+        UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
+        toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify(assetPath);
+        //
+        dataGraph.assetPath = assetPath;
+        dataGraph.Save();
     }
 
     private void OnClickOpenFile(ClickEvent evt) {
@@ -161,11 +183,11 @@ public class DataEditor : EditorWindow
         UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
         toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify(assetPath);
         //
-        model.assetPath = assetPath;
-        model.Load();
+        dataGraph.assetPath = assetPath;
+        dataGraph.Load();
         //
         selectedNode = null;
-        graphView.Bind(model);
+        graphView.Bind(dataGraph);
         RefreshNodeInspector();
     }
 
@@ -190,9 +212,9 @@ public class DataEditor : EditorWindow
         if (selectedNode == null) return;
         DataNode dataNode = selectedNode.dataNode;
         if ((dataNode.features & Features.EnablePort) != 0) return;
-        if (!dataNode.value.isPariType) return; // 该功能为Pair类型设计的
-        dataNode.features |= Features.EnablePort;
-        model.InitOutputFields(dataNode);
+        dataNode.features |= Features.EnablePort; // 该功能其实是为Pair类型设计的
+        dataGraph.InitOutputFields(dataNode);
+        selectedNode.RebuildPorts();
         dataNode.ApplyModifiedProperties();
     }
 
@@ -213,7 +235,7 @@ public class DataEditor : EditorWindow
 
     private void OnLocalIdFieldChanged(ChangeEvent<long> evt) {
         if (selectedNode == null) return;
-        if (model.nodeDic.ContainsKey(evt.newValue)) {
+        if (dataGraph.nodeDic.ContainsKey(evt.newValue)) {
             Debug.LogWarning("localId is duplicated: " + evt.newValue);
             localIdField.SetValueWithoutNotify(evt.previousValue);
             return;
@@ -223,6 +245,8 @@ public class DataEditor : EditorWindow
     }
 
     #endregion
+
+    #region view事件
 
     /// <summary>
     /// 由于GraphView是支持框选的，但Inspector我们只展示其中一个
@@ -247,11 +271,55 @@ public class DataEditor : EditorWindow
     }
 
     /// <summary>
+    /// 创建Node搜索窗口
+    /// </summary>
+    /// <param name="nodeCreationContext"></param>
+    public virtual void OnNodeCreationRequest(NodeCreationContext nodeCreationContext) {
+        SearchWindowContext context = new SearchWindowContext(nodeCreationContext.screenMousePosition);
+        SearchWindow.Open(context, typeSearchWindowProvider);
+    }
+
+    /// <summary>
+    /// 创建类型搜索树
+    /// </summary>
+    protected internal virtual List<SearchTreeEntry> CreateTypeSearchTree(SearchWindowContext context) {
+        List<SearchTreeEntry> entries = new List<SearchTreeEntry>();
+        // 按文件创建搜索栏
+        foreach (DSFile file in dataGraph.repository.GetSortedFiles()) {
+            // 至少需要1个SearchTreeGroupEntry
+            entries.Add(new SearchTreeGroupEntry(new GUIContent(file.SimpleName)));
+            foreach (DSElement element in file.EnclosedElements) {
+                if (element is DSNamedType namedType && namedType.Kind != DSElementKind.Enum
+                                                     && !namedType.IsGenericTypeDefinition) {
+                    entries.Add(new SearchTreeEntry(new GUIContent(namedType.SimpleName))
+                    {
+                        level = 1,
+                        userData = namedType
+                    });
+                }
+            }
+        }
+        return entries;
+    }
+
+    protected internal virtual bool OnSelectTypeEntry(SearchTreeEntry entry,
+                                                      SearchWindowContext context) {
+        if (entry.userData is DSNamedType namedType) {
+            DataNode dataNode = dataGraph.CreateNode(namedType);
+            dataNode.features |= Features.EnablePort;
+            dataNode.position = context.screenMousePosition;
+            dataGraph.AddNode(dataNode);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// 创建NodeView
     ///
     /// 注：主要要为不同类型的Node分配不同的主题样式。
     /// </summary>
-    public virtual NodeView CreateNode(DataNode dataNode) {
+    public virtual NodeView CreateNodeView(DataNode dataNode) {
         return new NodeView();
     }
 
@@ -279,5 +347,7 @@ public class DataEditor : EditorWindow
             DataEditorUtil.Bind(nodeValueView[0], dataNode.value, this);
         }
     }
+
+    #endregion
 }
 }

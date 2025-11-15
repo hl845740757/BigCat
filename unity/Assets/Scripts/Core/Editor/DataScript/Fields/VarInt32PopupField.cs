@@ -34,7 +34,7 @@ public class VarInt32PopupField : PopupField<int>, IVarField
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         if (variable.type.Kind == DSElementKind.Enum) {
-            VariableCfg typeCfg = editor.model.GetVariableCfg(variable.type);
+            VariableCfg typeCfg = editor.dataGraph.GetVariableCfg(variable.type);
             choices = typeCfg.intPopValues;
             formatListItemCallback = typeCfg.intPopNameFunc;
             formatSelectedValueCallback = typeCfg.intPopNameFunc;

@@ -174,7 +174,7 @@ public class VarListField : BindableElement, IVarField
 
     private void OnClickReset(object _) {
         Variable variable = _variable;
-        _editor.model.ResetVariable(variable);
+        _editor.dataGraph.ResetVariable(variable);
         variable.ApplyModifiedProperties();
         Refresh(true);
     }
@@ -227,14 +227,14 @@ public class VarListField : BindableElement, IVarField
             if (previous == null) {
                 if (index == 0) {
                     previous = DSUtil.IsMapType(variable.type)
-                        ? _editor.model.CreateMapItem(variable)
-                        : _editor.model.CreateListItem(variable);
+                        ? _editor.dataGraph.CreateMapItem(variable)
+                        : _editor.dataGraph.CreateListItem(variable);
                 } else {
                     previous = variable[index - 1];
-                    previous = _editor.model.Duplicate(previous);
+                    previous = _editor.dataGraph.Duplicate(previous);
                 }
             } else {
-                previous = _editor.model.Duplicate(previous);
+                previous = _editor.dataGraph.Duplicate(previous);
             }
             variable[index] = previous;
         }
@@ -345,7 +345,7 @@ public class VarListField : BindableElement, IVarField
         int index = (int)obj;
 
         Variable previous = variable[index];
-        previous = _editor.model.Duplicate(previous);
+        previous = _editor.dataGraph.Duplicate(previous);
         variable.Insert(index, previous);
         Refresh();
     }

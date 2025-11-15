@@ -141,7 +141,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
                 continue;
             }
             if (!_nodeViewDic.ContainsKey(dataNode.localId)) {
-                NodeView nodeView = editor.CreateNode(dataNode);
+                NodeView nodeView = editor.CreateNodeView(dataNode);
                 nodeView.Bind(dataNode);
                 _nodeViewDic[dataNode.localId] = nodeView;
                 AddElement(nodeView);
@@ -251,7 +251,8 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
             for (int index = 0; index < outputField.Count; index++) {
                 Variable nestedVar = outputField[index];
                 Edge edge = portView.connectionList[index];
-                // 可能由于重排序导致端口顺序变更
+                // 可能由于重排序导致端口顺序变更，Edge则被复用
+                deleteEdges.Remove(edge);
                 if (portView.isExpanded) {
                     PortView dynamicPort = nodeView.GetDynamicPort(side, index);
                     dynamicPort.Bind(nestedVar);
@@ -448,19 +449,15 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
             .ToList();
     }
 
-    public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
-        base.BuildContextualMenu(evt);
-        // TODO 提供搜索栏
-        Vector2 mousePos = evt.localMousePosition;
-        evt.menu.AppendSeparator();
-        evt.menu.AppendAction("CreateNode", _ => {
-            DSNamedType namedType = dataGraph.repository.GetType("OuterClass")!;
-            DataNode dataNode = dataGraph.CreateNode(namedType);
-            dataNode.features |= Features.EnablePort;
-            dataNode.position = mousePos;
-            dataGraph.AddNode(dataNode); // 事件回来再创建Node
-        });
-    }
+    // public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
+    // base.BuildContextualMenu(evt);
+    // }
+
+    // 单个Node的拷贝倒是容易，对象图的复制粘贴可没那么容易
+    protected override bool canCopySelection => false;
+    protected override bool canCutSelection => false;
+    protected override bool canPaste => false;
+    protected override bool canDuplicateSelection => false;
 
     #region node事件
 

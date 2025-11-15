@@ -91,6 +91,26 @@ public class NodeView : Node
         }
         // this.name = dataNode.value.type.SimpleName; // 视图对象name设置为类型名，用于筛选
         this.dataNode = dataNode;
+        RebuildPorts();
+        Refresh();
+    }
+
+    /// <summary>
+    /// 刷新显示，子类可以重写该方法扩展逻辑
+    /// </summary>
+    public virtual void Refresh() {
+        title = dataNode.title ?? dataNode.value.type.SimpleName;
+        // 见Node.SetPosition
+        style.left = dataNode.position.x;
+        style.top = dataNode.position.y;
+    }
+
+    /// <summary>
+    /// 重建固定端口
+    /// (运行时只应该Pair类型调用，且需要在建立连接前调用)
+    /// </summary>
+    public void RebuildPorts() {
+        ClearFixedPorts();
         {
             PortView inputPort = CreateInputPort();
             inputPort.portName = "inputs";
@@ -103,17 +123,16 @@ public class NodeView : Node
             portView.Bind(outputField);
             AddPort(portView, side);
         }
-        Refresh();
     }
 
     /// <summary>
-    /// 刷新显示，子类可以重写该方法扩展逻辑
+    /// 清理所有固定端口
     /// </summary>
-    public virtual void Refresh() {
-        title = dataNode.title ?? dataNode.value.type.SimpleName;
-        // 见Node.SetPosition
-        style.left = dataNode.position.x;
-        style.top = dataNode.position.y;
+    public void ClearFixedPorts() {
+        topInputs.Clear();
+        leftOutputs.Clear();
+        rightOutputs.Clear();
+        bottomOutputs.Clear();
     }
 
     /// <summary>
@@ -143,7 +162,9 @@ public class NodeView : Node
     /// </summary>
     /// <returns></returns>
     public static PortView CreateInputPort() {
-        return PortView.Create<Edge>(Orientation.Vertical, Direction.Input, Port.Capacity.Multi);
+        PortView port = PortView.Create<Edge>(Orientation.Vertical, Direction.Input, Port.Capacity.Multi);
+        port.style.flexDirection = GetPortFlexDirection(Side.Top);
+        return port;
     }
 
     /// <summary>
@@ -151,7 +172,9 @@ public class NodeView : Node
     /// </summary>
     public static PortView CreateOutputPort(Side side, bool isListPort = false) {
         Port.Capacity capacity = isListPort ? Port.Capacity.Multi : Port.Capacity.Single;
-        return PortView.Create<Edge>(GetPortOrientation(side), Direction.Output, capacity);
+        PortView port = PortView.Create<Edge>(GetPortOrientation(side), Direction.Output, capacity);
+        port.style.flexDirection = GetPortFlexDirection(side);
+        return port;
     }
 
     /// <summary>
@@ -160,7 +183,7 @@ public class NodeView : Node
     public static PortView CreateDynamicPort(Side side) {
         Port.Capacity capacity = Port.Capacity.Single;
         PortView port = PortView.Create<Edge>(GetPortOrientation(side), GetPortType(side), capacity);
-        port.style.flexDirection = GetPortFlexDirection(side);
+        port.style.flexDirection = GetPortFlexDirection(side); // 需要Connect之前绑定样式，否则Edge坐标异常
         port.style.width = 33; // 错开身位
         port.isDynamicPort = true;
         port.portName = "";
@@ -175,9 +198,7 @@ public class NodeView : Node
         if (port.isDynamicPort) {
             throw new ArgumentException("port.isDynamicPort == true");
         }
-        VisualElement container = GetPortContainer(side);
-        port.style.flexDirection = GetPortFlexDirection(side);
-        container.Add(port);
+        GetPortContainer(side).Add(port);
     }
 
     /// <summary>
@@ -503,6 +524,9 @@ public class NodeView : Node
     }
 
     public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
+        if (evt.target is not Node) {
+            return;
+        }
         base.BuildContextualMenu(evt);
         evt.StopImmediatePropagation(); // 禁用全局菜单栏
     }

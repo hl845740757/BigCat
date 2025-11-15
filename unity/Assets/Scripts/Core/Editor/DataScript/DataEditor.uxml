@@ -2,9 +2,10 @@
     <Style src="project://database/Assets/Scripts/Core/Editor/DataScript/GraphView.uss?fileID=7433441132597879392&amp;guid=21f364aa189b437188ee624f81e3f407&amp;type=3#GraphView" />
     <ui:VisualElement style="min-width: 800px; min-height: 600px; flex-direction: column; flex-grow: 1;">
         <uie:Toolbar>
-            <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="资产路径：" label-margin="-80" text="Assets/Resources/DataScripts/BTree.dson" password="false" readonly="true" name="asset-path" style="width: 350px; flex-grow: 0;" />
-            <ui:Button text="选择" display-tooltip-when-elided="true" name="open-file" />
+            <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="资产路径：" label-margin="-80" password="false" name="asset-path" style="width: 350px; flex-grow: 0;" />
+            <ui:Button text="打开" display-tooltip-when-elided="true" name="open-file" />
             <ui:Button text="关闭" display-tooltip-when-elided="true" name="close-file" />
+            <ui:Button text="另存为" display-tooltip-when-elided="true" name="save-file-as" />
         </uie:Toolbar>
         <ui:VisualElement style="flex-direction: row; flex-grow: 1;">
             <Wjybxx.BigCat.CoreEditor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; min-width: 60%; min-height: 100%;" />

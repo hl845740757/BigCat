@@ -47,7 +47,7 @@ public static class DataEditorUtil
         if (DSUtil.IsAtomicType(variable.type)) {
             return;
         }
-        GUIUtility.systemCopyBuffer = editor.model.DoCopy(variable);
+        GUIUtility.systemCopyBuffer = editor.dataGraph.DoCopy(variable);
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ public static class DataEditorUtil
         }
         // GUIUtility.systemCopyBuffer = "";
         try {
-            editor.model.DoPaste(variable, copyBuffer);
+            editor.dataGraph.DoPaste(variable, copyBuffer);
         }
         catch (Exception) {
             Debug.Log("invalid copy buffer: " + copyBuffer);
@@ -182,7 +182,7 @@ public static class DataEditorUtil
             return CreateField(variable, variableCfg.displayType, editor);
         }
         // 如果类型指定了展示类型，则使用类型自动的展示类型
-        VariableCfg typeCfg = editor.model.GetVariableCfg(varType);
+        VariableCfg typeCfg = editor.dataGraph.GetVariableCfg(varType);
         if (typeCfg.displayType != DisplayType.Default) {
             return CreateField(variable, typeCfg.displayType, editor);
         }

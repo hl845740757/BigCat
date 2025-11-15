@@ -275,7 +275,7 @@ public class VarObjectField : Foldout, IVarField
 
     private void OnClickReset(object _) {
         Variable variable = _variable;
-        _editor.model.ResetVariable(variable);
+        _editor.dataGraph.ResetVariable(variable);
         variable.ApplyModifiedProperties();
         Refresh(true);
     }
@@ -284,7 +284,7 @@ public class VarObjectField : Foldout, IVarField
         int index = (int)obj;
         Variable variable = _variable;
         DSInst inst = variable.cfg.supportedInsts[index];
-        _editor.model.ResetVariable(variable, inst.DsonValue);
+        _editor.dataGraph.ResetVariable(variable, inst.DsonValue);
         variable.ApplyModifiedProperties();
         Refresh(true);
     }
@@ -294,8 +294,8 @@ public class VarObjectField : Foldout, IVarField
         Variable variable = _variable;
         string typeSymbol = variable.cfg.supportedTypes[index];
         //
-        DSNamedType namedType = _editor.model.ResolveTypeSymbol(typeSymbol);
-        _editor.model.ChangeVariableType(variable, namedType);
+        DSNamedType namedType = _editor.dataGraph.ResolveTypeSymbol(typeSymbol);
+        _editor.dataGraph.ChangeVariableType(variable, namedType);
         variable.ApplyModifiedProperties();
         Refresh(true);
     }
