@@ -121,7 +121,9 @@ public partial class AnimationClipEditor : EditorWindow
         if (root.childCount == 0) {
             return;
         }
-        root.RegisterCallback<KeyDownEvent>(OnWindowKeyDownEvent);
+        this.rootVisualElement.focusable = true;
+        this.rootVisualElement.RegisterCallback<KeyDownEvent>(OnWindowKeyDownEvent);
+        
         root.Q<ToolbarButton>("toolbar0").RegisterCallback<ClickEvent>(OnClickToolbar0);
         root.Q<ToolbarButton>("toolbar1").RegisterCallback<ClickEvent>(OnClickToolbar1);
         _pickClipButton = root.Q<Button>("pick-clip");
