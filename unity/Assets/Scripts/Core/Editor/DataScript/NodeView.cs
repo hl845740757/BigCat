@@ -212,6 +212,17 @@ public class NodeView : Node
         EnsureDynamicPortContainer(side).Add(port);
     }
 
+    /// <summary>
+    /// 插入一个动态端口
+    /// </summary>
+    public void InsertDynamicPort(PortView port, Side side, int index) {
+        CheckPortType(port, side);
+        if (!port.isDynamicPort) {
+            throw new ArgumentException("port.isDynamicPort != true");
+        }
+        EnsureDynamicPortContainer(side).Insert(index, port);
+    }
+
     internal PortView GetPort(Side side, int index) {
         VisualElement container = GetPortContainer(side);
         return (PortView)container[index];

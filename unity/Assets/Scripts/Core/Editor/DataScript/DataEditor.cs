@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -10,6 +11,7 @@ using Wjybxx.BigCat.CoreEditor;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Pool;
 using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
@@ -32,6 +34,7 @@ public class DataEditor : EditorWindow
     protected Vector2Field positionField;
     protected Toggle enablePortToggle; // Pair类型启用端口
 
+    public DSRepository repository { get; private set; }
     /// <summary>
     /// 需要主动构建<see cref="DSRepository"/>
     /// </summary>
@@ -52,29 +55,26 @@ public class DataEditor : EditorWindow
     private static void OpenWindow() {
         DataEditor wnd = GetWindow<DataEditor>();
         wnd.titleContent = new GUIContent("DataGraphEditor");
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    protected virtual void OnEnable() {
-        dataGraph = new DataGraph(new DSRepository());
-        dataGraph.undoPerformed += OnUndoRedoPerformed;
-        dataGraph.redoPerformed += OnUndoRedoPerformed;
-        dataGraph.onGraphChanged += OnDataGraphChanged;
-        //
-        typeSearchWindowProvider = CreateInstance<TypeSearchWindowProvider>();
-        typeSearchWindowProvider.editor = this;
-        // TODO 通过配置文件加载关联的ds文件，并集中实例化泛型 -- 可以通过一个type来初始化泛型
+        // TODO 通过配置文件加载关联的ds文件
         string filePath = Application.dataPath + "/Resources/DataScript/data_script.ds";
         DSFile dsFile = DSFileParser.Parse(new FileInfo(filePath));
-        dataGraph.repository.AddFile(dsFile);
-        dataGraph.repository.Build();
+        DSRepository repository = wnd.repository;
+        repository.AddFile(dsFile);
+        repository.Build();
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
+    protected virtual void OnEnable() {
+        if (repository == null) {
+            repository = new DSRepository();
+            dataGraph = new DataGraph(repository);
+            dataGraph.undoPerformed += OnUndoRedoPerformed;
+            dataGraph.redoPerformed += OnUndoRedoPerformed;
+            dataGraph.onGraphChanged += OnDataGraphChanged;
+        }
+        typeSearchWindowProvider = CreateInstance<TypeSearchWindowProvider>();
+        typeSearchWindowProvider.editor = this;
+    }
+
     protected virtual void OnDisable() {
         dataGraph.undoPerformed -= OnUndoRedoPerformed;
         dataGraph.redoPerformed -= OnUndoRedoPerformed;
@@ -129,8 +129,8 @@ public class DataEditor : EditorWindow
         toolbar.Q<Button>("close-file").RegisterCallback<ClickEvent>(OnClickCloseFile);
         toolbar.Q<Button>("save-file-as").RegisterCallback<ClickEvent>(OnClickSaveFileAs);
         // 
-        graphView.nodeCreationRequest = OnNodeCreationRequest;
         graphView.Bind(dataGraph);
+        graphView.nodeCreationRequest = OnNodeCreationRequest;
     }
 
     /// <summary>
@@ -270,31 +270,31 @@ public class DataEditor : EditorWindow
         nodeValueView.Clear();
     }
 
+    private static readonly List<DSField> _filedListCache = new List<DSField>();
+
     /// <summary>
-    /// 创建Node搜索窗口
+    /// 请求创建Node
     /// </summary>
-    /// <param name="nodeCreationContext"></param>
     public virtual void OnNodeCreationRequest(NodeCreationContext nodeCreationContext) {
-        SearchWindowContext context = new SearchWindowContext(nodeCreationContext.screenMousePosition);
+        SearchWindowContext context = new SearchWindowContext(nodeCreationContext.screenMousePosition, 400f);
         SearchWindow.Open(context, typeSearchWindowProvider);
     }
 
-    /// <summary>
-    /// 创建类型搜索树
-    /// </summary>
-    protected internal virtual List<SearchTreeEntry> CreateTypeSearchTree(SearchWindowContext context) {
+    internal List<SearchTreeEntry> CreateTypeSearchTree(SearchWindowContext context) {
         List<SearchTreeEntry> entries = new List<SearchTreeEntry>();
         // 按文件创建搜索栏
         foreach (DSFile file in dataGraph.repository.GetSortedFiles()) {
-            // 至少需要1个SearchTreeGroupEntry
-            entries.Add(new SearchTreeGroupEntry(new GUIContent(file.SimpleName)));
             foreach (DSElement element in file.EnclosedElements) {
-                if (element is DSNamedType namedType && namedType.Kind != DSElementKind.Enum
-                                                     && !namedType.IsGenericTypeDefinition) {
-                    entries.Add(new SearchTreeEntry(new GUIContent(namedType.SimpleName))
+                if (element is not DSNamedType groupType || groupType.GetAnnotation("SearchTreeGroupEntry") == null) {
+                    continue;
+                }
+                entries.Add(new SearchTreeGroupEntry(new GUIContent(groupType.SimpleName)));
+                foreach (DSField field in groupType.GetFields(true, _filedListCache.ClearAndReturn())) {
+                    DSNamedType filedType = (DSNamedType)field.Type;
+                    entries.Add(new SearchTreeEntry(new GUIContent(DSUtil.ToDisplayString(filedType.TypeName)))
                     {
                         level = 1,
-                        userData = namedType
+                        userData = filedType
                     });
                 }
             }
@@ -302,12 +302,11 @@ public class DataEditor : EditorWindow
         return entries;
     }
 
-    protected internal virtual bool OnSelectTypeEntry(SearchTreeEntry entry,
-                                                      SearchWindowContext context) {
+    internal bool OnSelectTypeEntry(SearchTreeEntry entry, SearchWindowContext context) {
         if (entry.userData is DSNamedType namedType) {
             DataNode dataNode = dataGraph.CreateNode(namedType);
             dataNode.features |= Features.EnablePort;
-            dataNode.position = context.screenMousePosition;
+            dataNode.position = graphView.contentContainer.WorldToLocal(context.screenMousePosition);
             dataGraph.AddNode(dataNode);
             return true;
         }

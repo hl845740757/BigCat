@@ -310,16 +310,6 @@ public sealed class Variable : IDisposable
     }
 
     /// <summary>
-    /// 获取指定下标变量
-    /// </summary>
-    public Variable TryGet(int index) {
-        if (values != null && index < values.Count) {
-            return values[index];
-        }
-        return null;
-    }
-
-    /// <summary>
     /// 获取最后一个变量
     /// </summary>
     public Variable TryPeekLast() {
@@ -411,6 +401,8 @@ public sealed class Variable : IDisposable
     public bool isMapType => DSUtil.IsMapType(type);
 
     #endregion
+
+    public bool isRoot => dataNode != null && dataNode.value == this;
 
     /// <summary>
     /// 是否已销毁(方便它处判断Variable的有效性)

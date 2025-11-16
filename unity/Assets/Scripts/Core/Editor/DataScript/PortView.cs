@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -74,14 +75,18 @@ public class PortView : Port
         RegisterCallback<MouseDownEvent>(ShowContextMenu, TrickleDown.TrickleDown);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Bind(Variable variable) {
         Unbind();
         this.variable = variable;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Unbind() {
         this.variable = null;
     }
+
+    public int connectionCount => connectionList.Count;
 
     private void ShowContextMenu(MouseDownEvent evt) {
         // 同ListView的问题，GraphView拦截了ContextClickEvent...
@@ -150,6 +155,10 @@ public class PortView : Port
             listVariable.MoveTo(srcIndex, destIndex);
             listVariable.ApplyModifiedProperties(); // 回调时刷新
         } else {
+            Edge edge = listPort.connectionList[srcIndex];
+            listPort.connectionList.RemoveAt(srcIndex);
+            listPort.connectionList.Insert(destIndex, edge);
+            //
             container.RemoveAt(srcIndex);
             container.Insert(destIndex, this);
         }

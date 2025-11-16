@@ -204,3 +204,12 @@ inst vector3_array [
 // 测试不换行缩进
 inst v1 { x: 0, y: 0, z: 0}
 inst v2 [0, 0, 0]
+
+// 该注解表示搜索入口
+// @SearchTreeGroupEntry{}
+class SearchTreeGroupEntry {
+    OuterClass _a = 1;
+    SimpleBean _b = 2;
+    GenericBean<int32, Vector3> _c =3;
+    Vector3 _d = 4;
+}

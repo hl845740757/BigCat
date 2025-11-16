@@ -23,7 +23,6 @@ using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
@@ -48,6 +47,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
     /// </summary>
     private readonly LinkedDictionary<long, NodeView> _nodeViewDic = new LinkedDictionary<long, NodeView>();
 
+    private IVisualElementScheduledItem refreshTask;
     private int _refreshStack;
     private readonly ObjectPool<HashSet<Edge>> _edgeSetPool = ObjectPoolUtil.NewHashSetPool<Edge>(4);
 
@@ -64,29 +64,27 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 
     public void Bind(DataGraph dataGraph) {
         graphViewChanged -= this.OnGraphViewChanged;
+        DeleteElements(graphElements);
         graphViewChanged += this.OnGraphViewChanged;
-        _refreshStack++;
-        try {
-            DeleteElements(graphElements); // 在回调中解除数据层绑定
-        }
-        finally {
-            _refreshStack--;
-        }
+        //
         this.dataGraph = dataGraph;
         dataGraph.onGraphChanged -= this.OnDataGraphChanged;
         dataGraph.onGraphChanged += this.OnDataGraphChanged;
         this._nodeViewDic.Clear();
-        Refresh();
+        this.refreshTask ??= schedule.Execute(Refresh);
+        this.refreshTask.Resume();
     }
 
     private void OnDataGraphChanged(DataGraphChange _) {
-        Refresh();
+        // 不能立即刷新，OnViewChanged修改数据层，此时View还有部分逻辑没有执行完...
+        refreshTask.Resume();
     }
 
     /// <summary>
     /// 刷新视图
     /// </summary>
     public void Refresh() {
+        refreshTask.Pause();
         _refreshStack++;
         try {
             RefreshNodes();
@@ -150,28 +148,32 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
     }
 
     private void RefreshEdges() {
+        // 通过Output统计无效边
+        foreach (NodeView nodeView in _nodeViewDic.Values) {
+            RefreshOutputPorts(nodeView, Side.Left);
+            RefreshOutputPorts(nodeView, Side.Right);
+            RefreshOutputPorts(nodeView, Side.Bottom);
+        }
+        // output为null为无效边
         HashSet<Edge> deleteEdges = _edgeSetPool.Acquire();
         foreach (Edge edge in edges) {
-            if (edge.input == null || edge.output == null) {
+            if (edge.output == null) {
+                edge.input = null;
                 deleteEdges.Add(edge);
                 continue;
             }
             NodeView inputNode = (NodeView)edge.input.node;
             NodeView outputNode = (NodeView)edge.output.node;
             if (inputNode.dataNode == null || outputNode.dataNode == null) {
-                deleteEdges.Add(edge); // 已被删除的Node
+                edge.output = null;
+                edge.input = null;
+                deleteEdges.Add(edge);
             }
-        }
-        // 通过Output或Input都可统计出无效边，基于Output可保证与数据的一致性
-        foreach (NodeView nodeView in _nodeViewDic.Values) {
-            RefreshOutputPorts(nodeView, Side.Left, deleteEdges);
-            RefreshOutputPorts(nodeView, Side.Right, deleteEdges);
-            RefreshOutputPorts(nodeView, Side.Bottom, deleteEdges);
         }
         if (deleteEdges.Count > 0) {
             DeleteElements(deleteEdges);
         }
-        // 删除无效边以后才能更新输入端口
+        // 由于显示层可能提前解除了Input的引用，导致我们必须迭代输入端口
         foreach (NodeView nodeView in _nodeViewDic.Values) {
             RefreshInputPorts(nodeView);
         }
@@ -179,30 +181,46 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
     }
 
     private void RefreshInputPorts(NodeView nodeView) {
-        VisualElement container = nodeView.GetDynamicPortContainer(Side.Top);
-        if (container == null) {
-            return;
-        }
-        int count = container.childCount;
-        for (int portIndex = count - 1; portIndex >= 0; portIndex--) {
-            PortView portView = (PortView)container[portIndex];
-            if (!portView.connected) {
-                portView.RemoveFromHierarchy();
+        PortView inputPort = (PortView)nodeView.topInputs[0];
+        VisualElement dynamicPortContainer = nodeView.GetDynamicPortContainer(Side.Top);
+        for (int index = inputPort.connectionCount - 1; index >= 0; index--) {
+            Edge edge = inputPort.connectionList[index];
+            // output为null，表示不可达无效边，或拖拽导致的无效边
+            if (inputPort.isExpanded) {
+                PortView dynamicPort = (PortView)dynamicPortContainer[index];
+                if (edge.output != null && edge.input == dynamicPort) {
+                    continue;
+                }
+                inputPort.Disconnect(edge);
+                dynamicPort.DisconnectAll();
+                dynamicPort.Unbind();
+                dynamicPort.listPort = null;
+                dynamicPortContainer.RemoveAt(index);
+            } else {
+                if (edge.output != null && edge.input == inputPort) {
+                    continue;
+                }
+                inputPort.Disconnect(edge);
             }
         }
     }
 
-    private void RefreshOutputPorts(NodeView nodeView, Side side, HashSet<Edge> deleteEdges) {
+    /// <summary>
+    /// 刷新输出端口
+    ///
+    /// 注：将无效边的Output置为null（断开连接）
+    /// </summary>
+    private void RefreshOutputPorts(NodeView nodeView, Side side) {
         VisualElement container = nodeView.GetPortContainer(side);
-        int count = container.childCount;
-        for (int portIndex = 0; portIndex < count; portIndex++) {
+        int portCount = container.childCount;
+        for (int portIndex = 0; portIndex < portCount; portIndex++) {
             PortView portView = (PortView)container[portIndex];
             Variable outputField = portView.variable;
             if (!portView.isListPort) {
                 ObjectPath objectPath = outputField.objectPathValue;
                 if (!CheckConnection(objectPath, out DataNode inputNode)) {
-                    if (portView.connectionList.Count > 0) {
-                        deleteEdges.Add(portView.connectionList[0]);
+                    if (portView.connectionCount > 0) {
+                        DisconnectOutput(portView.connectionList[0]);
                     }
                     continue;
                 }
@@ -212,61 +230,43 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
                     continue;
                 }
                 Edge edge = portView.connectionList[0];
-                if (edge.input.node != inputNodeView) {
+                FixOutputPort(edge, portView);
+                if (edge.input == null || edge.input.node != inputNodeView) {
                     ConnectTo(portView, inputNodeView, edge); // 纠正连接
                 }
                 continue;
             }
-            // List端口 - 删除多出的连接和动态端口，需要按索引迭代
-            int conCount = portView.connectionList.Count;
-            for (int index = conCount - 1; index >= outputField.Count; index--) {
-                Edge edge = portView.connectionList[index];
-                portView.Disconnect(edge);
-                if (portView.isExpanded) {
-                    PortView dynamicPort = (PortView)edge.output;
-                    dynamicPort.DisconnectAll();
-                    dynamicPort.Unbind();
-                    dynamicPort.RemoveFromHierarchy();
-                    dynamicPort.listPort = null;
-                }
-                deleteEdges.Add(edge);
-            }
-            // 补全连接数 - 数组对齐，多一次for循环，代码更清晰点
-            for (int index = conCount; index < outputField.Count; index++) {
-                Edge edge = new Edge();
-                portView.Connect(edge);
-                if (portView.isExpanded) {
-                    PortView dynamicPort = NodeView.CreateDynamicPort(side);
-                    dynamicPort.Connect(edge);
-                    dynamicPort.listPort = portView;
-                    // dynamicPort.Bind(outputField[index]); // 后面统一绑定数据
-                    edge.output = dynamicPort;
-                    nodeView.AddDynamicPort(dynamicPort, side);
-                } else {
-                    edge.output = portView;
-                }
-                AddElement(edge);
-            }
-            // 纠正连接
+            VisualElement dynamicPortContainer = nodeView.GetDynamicPortContainer(side);
             for (int index = 0; index < outputField.Count; index++) {
-                Variable nestedVar = outputField[index];
-                Edge edge = portView.connectionList[index];
-                // 可能由于重排序导致端口顺序变更，Edge则被复用
-                deleteEdges.Remove(edge);
-                if (portView.isExpanded) {
-                    PortView dynamicPort = nodeView.GetDynamicPort(side, index);
-                    dynamicPort.Bind(nestedVar);
-                    if (edge.output != dynamicPort) {
+                Edge edge;
+                if (index >= portView.connectionCount) {
+                    edge = new Edge();
+                    if (portView.isExpanded) {
+                        PortView dynamicPort = NodeView.CreateDynamicPort(side);
                         edge.output = dynamicPort;
-                    }
-                } else {
-                    if (edge.output != portView) {
+                        dynamicPort.Connect(edge);
+                        portView.Connect(edge); // 共享连接
+                        dynamicPort.listPort = portView;
+                        dynamicPortContainer.Add(dynamicPort);
+                    } else {
                         edge.output = portView;
+                        portView.Connect(edge);
                     }
+                    AddElement(edge);
+                } else {
+                    edge = portView.connectionList[index];
+                }
+                Variable nestedVar = outputField[index];
+                if (portView.isExpanded) {
+                    PortView dynamicPort = (PortView)dynamicPortContainer[index];
+                    dynamicPort.Bind(nestedVar);
+                    FixOutputPort(edge, dynamicPort);
+                } else {
+                    FixOutputPort(edge, portView);
                 }
                 ObjectPath objectPath = nestedVar.objectPathValue;
                 if (!CheckConnection(objectPath, out DataNode inputNode)) {
-                    DisconnectInput(edge); // 不删除边，需要保持数组对齐
+                    DisconnectInput(edge); // 不能删除边，需要保持数组长度一致
                     continue;
                 }
                 NodeView inputNodeView = GetNodeView(inputNode);
@@ -275,11 +275,22 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
                     continue;
                 }
                 if (portView.isExpanded) {
-                    PortView dynamicPort = nodeView.GetDynamicPort(side, index);
+                    PortView dynamicPort = (PortView)dynamicPortContainer[index];
                     ConnectTo(dynamicPort, inputNodeView, edge);
                 } else {
                     ConnectTo(portView, inputNodeView, edge);
                 }
+            }
+            // 删除多于的连接和动态端口
+            for (int index = portView.connectionCount - 1; index >= outputField.Count; index--) {
+                Edge edge = portView.connectionList[index];
+                if (portView.isExpanded) {
+                    PortView dynamicPort = (PortView)dynamicPortContainer[index];
+                    FixOutputPort(edge, dynamicPort);
+                } else {
+                    FixOutputPort(edge, portView);
+                }
+                DisconnectOutput(edge);
             }
         }
     }
@@ -296,18 +307,37 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         return false;
     }
 
-    private void DisconnectInput(Edge edge) {
-        if (edge.input is PortView inputPort) {
-            if (inputPort.isDynamicPort) {
-                inputPort.DisconnectAll();
-                inputPort.Unbind();
-                inputPort.RemoveFromHierarchy();
-                //
-                inputPort.listPort.Disconnect(edge);
-                inputPort.listPort = null;
-            } else {
-                inputPort.Disconnect(edge);
-            }
+    private static void DisconnectInput(Edge edge) {
+        if (edge.input is PortView portView) {
+            Disconnect(edge, portView);
+            edge.input = null;
+        }
+    }
+
+    private static void DisconnectOutput(Edge edge) {
+        if (edge.output is PortView portView) {
+            Disconnect(edge, portView);
+            edge.output = null;
+        }
+    }
+
+    private static void Disconnect(Edge edge, PortView port) {
+        if (port.isDynamicPort) {
+            port.DisconnectAll();
+            port.Unbind();
+            port.RemoveFromHierarchy();
+            //
+            port.listPort.Disconnect(edge);
+            port.listPort = null;
+        } else {
+            port.Disconnect(edge);
+        }
+    }
+
+    private static void FixOutputPort(Edge edge, PortView outputPort) {
+        // 动态端口拖拽删除情况下，会出现Edge的Output/Input都为Null的情况，是因为显示层先于逻辑层进行了更改...
+        if (edge.output == null) {
+            edge.output = outputPort;
         }
     }
 
@@ -318,10 +348,9 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         if (inputPort.isExpanded) {
             PortView dynamicPort = NodeView.CreateDynamicPort(Side.Top);
             edge.input = dynamicPort;
-
+            dynamicPort.Connect(edge);
+            inputPort.Connect(edge); // 共享连接
             dynamicPort.listPort = inputPort;
-            dynamicPort.Connect(edge); // 共享连接
-            inputPort.Connect(edge);
             inputNode.AddDynamicPort(dynamicPort, Side.Top);
         } else {
             edge.input = inputPort;
@@ -334,10 +363,9 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         Edge edge;
         if (inputPort.isExpanded) {
             PortView dynamicPort = NodeView.CreateDynamicPort(Side.Top);
-            dynamicPort.listPort = inputPort;
             edge = outputPort.ConnectTo<Edge>(dynamicPort);
             inputPort.Connect(edge); // 共享连接
-            //
+            dynamicPort.listPort = inputPort;
             inputNode.AddDynamicPort(dynamicPort, Side.Top);
         } else {
             edge = outputPort.ConnectTo<Edge>(inputPort);
@@ -348,9 +376,10 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 
     /// <summary>
     /// 注：
-    /// 1.此时尚未执行删除，可以在这里剔除不该删除的元素。
+    /// 1.此时尚未执行删除，可以在这里剔除不该删除的元素
     /// 2.此时Edge也尚未真正添加到Graph，因此可以在这里纠正数据
     /// 3.更改连接目标先触发旧连接断开，下一次回调再触发新连接建立
+    /// 4.拖拽断开边的情况下，即使清理了要删除的元素，回调方法返回后，仍会被清理掉Output和Input的引用...
     /// </summary>
     /// <param name="viewChange"></param>
     /// <returns></returns>
@@ -370,8 +399,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
             List<Variable> disconnectedPorts = null;
             List<DataNode> deletedNodes = null;
             foreach (GraphElement graphElement in viewChange.elementsToRemove) {
-                if (graphElement is Edge edge && edge.output is PortView output
-                                              && output.variable != null) {
+                if (graphElement is Edge edge && edge.output is PortView output) {
                     disconnectedPorts ??= new List<Variable>();
                     if (output.isListPort) {
                         int index = output.connectionList.IndexOf(edge);
@@ -445,13 +473,14 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         }
         // 允许连接到自身 - FSM常见
         return this.ports.ToList()
-            .Where(endPort => endPort.direction != startPort.direction)
+            .Where(endPort => {
+                if (endPort is PortView portView && portView.isDynamicPort) {
+                    return false;
+                }
+                return endPort.direction != startPort.direction;
+            })
             .ToList();
     }
-
-    // public override void BuildContextualMenu(ContextualMenuPopulateEvent evt) {
-    // base.BuildContextualMenu(evt);
-    // }
 
     // 单个Node的拷贝倒是容易，对象图的复制粘贴可没那么容易
     protected override bool canCopySelection => false;

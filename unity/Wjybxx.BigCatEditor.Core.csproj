@@ -106,12 +106,12 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\NodeView.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MIntegerField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\TypeSearchWindowProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Variable.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector3Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarNullableField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarColorField.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\DataScript\TypeSearchWindowProvider.cs" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.uxml" />
     <None Include="Assets\Scripts\Core\Editor\DataScript\GraphView.uss" />

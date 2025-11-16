@@ -445,12 +445,19 @@ internal class DataGraphHelper
     }
 
     private void WriteObject(IDsonWriter<string> writer, Variable variable) {
-        writer.WriteStartObject(GetObjectStyle(variable));
+        ObjectStyle objectStyle = GetObjectStyle(variable);
+        DsonTextWriter textWriter = null;
+        if (variable.isRoot && objectStyle == ObjectStyle.Flow) {
+            textWriter = writer as DsonTextWriter;
+        }
+        writer.WriteStartObject(objectStyle);
         WriteHeader(writer, variable);
+        textWriter?.PrintBeforeName("\n  ");
         foreach (Variable nestedVar in variable.values) {
             string fieldName = nestedVar.defineInfo.SimpleName;
             Write(writer, nestedVar, fieldName);
         }
+        textWriter?.Println();
         writer.WriteEndObject();
     }
 
@@ -481,8 +488,8 @@ internal class DataGraphHelper
     }
 
     private void WriteHeader(IDsonWriter<string> writer, Variable variable) {
-        DataNode node = variable.dataNode;
-        if (node != null && variable == node.value) {
+        if (variable.isRoot) {
+            DataNode node = variable.dataNode;
             writer.WriteStartHeader();
             //
             string clsName = GetCodecName(node.value.type);
