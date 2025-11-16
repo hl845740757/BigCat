@@ -723,6 +723,10 @@ public class DSFileParser
             return;
         }
         string[] tpNames = ObjectUtil.SplitAndTrim(name.Substring2(tpStart + 1, name.Length - 1), ',');
+        foreach (string tpName in tpNames) {
+            typeParameterNames.Add(TypeParameterName.Get(tpName));
+            typeParameters.Add(new DSTypeParameter(tpName, TypeParameterConstraints.None));
+        }
         // 解析泛型变量约束 -- 从1开始，跳过name
         for (int tokenIdx = 1; tokenIdx < tokens.Length; tokenIdx++) {
             string token = tokens[tokenIdx];
@@ -730,12 +734,11 @@ public class DSFileParser
             if (spIdx < 0) throw new IOException(content);
 
             string tpName = token.Substring2(0, spIdx).Trim();
-            int tpIdx = ArrayUtil.IndexOf(tpNames, tpName);
+            int tpIdx = typeParameters.FindIndex(e => e.SimpleName == tpName);
             if (tpIdx < 0) throw new IOException(content);
 
             TypeParameterConstraints tpConstraints = ParseConstraints(token.Substring2(spIdx + 1));
-            typeParameterNames.Add(TypeParameterName.Get(tpName));
-            typeParameters.Add(new DSTypeParameter(tpName, tpConstraints));
+            typeParameters[tpIdx] = new DSTypeParameter(tpName, tpConstraints);
         }
         name = name.Substring2(0, tpStart);
         className = GetClassName(dsFile, enclosingType, name, typeParameterNames);
@@ -776,9 +779,12 @@ public class DSFileParser
                 element.AddAnnotation(annotation);
             }
         }
-        // 行尾注释不包含注解
         if (trailingComment != null) {
             element.AddComment(trailingComment);
+            Annotation? annotation = Annotation.TryParseAnnotation(trailingComment);
+            if (annotation != null) {
+                element.AddAnnotation(annotation);
+            }
         }
     }
 

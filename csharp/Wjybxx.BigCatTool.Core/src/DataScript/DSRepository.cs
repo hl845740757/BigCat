@@ -367,8 +367,8 @@ public sealed class DSRepository
             DSTypeElement typeArgument = ResolveTypeSymbol(scopeEntry, typeArgumentSymbol);
             typeArguments.Add(typeArgument);
         }
-        DSNamedType namedType = (DSNamedType)typeElement;
-        return MakeGenericType(namedType, typeArguments);
+        DSNamedType namedType = (DSNamedType)typeElement; // 当前类可能是有泛型参数的已构造泛型
+        return MakeGenericType(namedType.OriginNamedType, typeArguments);
     }
 
     /// <summary>
@@ -394,7 +394,9 @@ public sealed class DSRepository
         }
         DSFile enclosingFile;
         if (scopeEntry is DSNamedType namedType) {
-            enclosingFile = namedType.GetEnclosingFile();
+            if (typeName == namedType.SimpleName) {
+                return namedType;
+            }
             // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
             ImmutableList<DSTypeParameter> typeParameters = namedType.OriginNamedType.TypeParameters;
             for (int idx = 0; idx < typeParameters.Count; idx++) {
@@ -411,6 +413,7 @@ public sealed class DSRepository
             if (r != null) {
                 return spIndex < 0 ? r : FindEnclosedType(r, typeName.Substring2(spIndex + 1));
             }
+            enclosingFile = namedType.GetEnclosingFile();
         } else {
             enclosingFile = (DSFile)scopeEntry;
             r = enclosingFile.GetType(typeName);
@@ -420,7 +423,8 @@ public sealed class DSRepository
         }
         // 从导入的文件中查询 -- 提前缓存了import，因此不是递归调用FindType
         foreach (string resolvedImport in enclosingFile.ResolvedImports) {
-            if (!logicFileMap.TryGetValue(resolvedImport, out DSFile importFile)) {
+            string key = resolvedImport.Substring(0, resolvedImport.LastIndexOf('.'));
+            if (!logicFileMap.TryGetValue(key, out DSFile importFile)) {
                 continue;
             }
             DSNamedType? typeElement = importFile.GetType(typeName);

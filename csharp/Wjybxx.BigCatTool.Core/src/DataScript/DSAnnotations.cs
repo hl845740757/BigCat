@@ -107,7 +107,7 @@ public static class DSAnnotations
     /// - isInteger 是否是整数类型AABB
     /// 
     /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr，Pointer。
-    /// - menuPath 字符串类型，节点菜单路径，用于配置脚本
+    /// - nodeFeatures node的特征值，是否启用Port端口等
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
@@ -198,7 +198,7 @@ public static class DSAnnotations
     public const string KEY_TOOLTIP = "tooltip";
 
     public const string KEY_DSON_TYPE = "dsonType";
-    public const string KEY_MENU_PATH = "menuPath";
+    public const string KEY_NODE_FEATURES = "nodeFeatures";
 
     public const string KEY_MIN = "min";
     public const string KEY_MAX = "max";

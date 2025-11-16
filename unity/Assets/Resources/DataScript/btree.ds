@@ -1,0 +1,45 @@
+﻿import public "data_script.ds";
+
+// 行为树编辑器配置文件，行为树实现模块见BTree.Core
+// 行为树基类
+class Task<T> {
+  string name = 1;
+  // @PortField{side: left}
+  Task<T> guard = 2; // 条件节点
+  int32 flags = 3; // 自定义特征值
+} 
+// 装饰器基类
+class Decorator<T> : Task<T> {
+  // @PortField{side: bottom}
+  Task<T> child = 1;
+}
+// 子树引用
+class SubtreeRef<T> : Decorator<T> {
+  // @PortField{side: right}
+  ObjectPath path = 1; // 可直接连线
+}
+
+// 分支节点基类
+class BranchTask<T> : Task<T> {
+  // @PortField{side: bottom}
+  List<Task<T>> children = 1;
+}
+// 选择器
+class Selector<T> : BranchTask<T> {
+}
+class Sequence<T> : BranchTask<T> {
+}
+class Switch<T> : BranchTask<T> {
+}
+
+// 这里将所有类型引用进来，通过子类实例化泛型
+class BTreeSearchTreeGroupEntry0<T> {
+  SubtreeRef<T> _f1 = 1;
+  Selector<T> _f11 = 11;
+  Sequence<T> _f12 = 12;
+  Switch<T> _f13 = 13;
+}
+// 通过子类直接实例化所有泛型
+// @SearchTreeGroupEntry {}
+class BTreeSearchTreeGroupEntry : BTreeSearchTreeGroupEntry0<Object> {
+}

@@ -460,13 +460,15 @@ public static class DSUtil
         return features;
     }
 
-    private static T ParseFlags<T>(DsonValue dsonValue) where T : struct {
+    public static T ParseFlags<T>(DsonValue dsonValue) where T : struct {
         int value = 0;
         if (dsonValue.DsonType == DsonType.Array) {
             DsonArray<string> dsonArray = dsonValue.AsArray();
             foreach (DsonValue element in dsonArray) {
                 value |= Enum.Parse<T>(element.AsString(), true).GetHashCode();
             }
+        } else if (dsonValue.DsonType.IsNumber()) {
+            value = dsonValue.AsNumber().IntValue;
         } else {
             string str = ObjectUtil.DeleteWhitespace(dsonValue.AsString());
             if (!str.Contains('|')) {

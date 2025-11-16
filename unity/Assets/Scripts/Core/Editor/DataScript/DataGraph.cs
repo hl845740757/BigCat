@@ -92,13 +92,14 @@ public sealed class DataGraph
     private readonly StringBuilder _sbCache = new(1024);
 
     // 由于派发事件期间可能再次触发变化，因此不能使用单个缓存对象
-    private int _stackDepth;
+    private int _modifyStack;
     private DataGraphChange _graphChange;
     private readonly ObjectPool<DataGraphChange> _graphChangePool = new ObjectPool<DataGraphChange>(
         DataGraphChange.Create, e => e.Clear());
 
     private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly DataGraphHelper _helper;
+    private readonly HashSet<DSNamedType> _typeCreateStack = new HashSet<DSNamedType>(8);
 
     public DataGraph(DSRepository repository) {
         this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -118,7 +119,7 @@ public sealed class DataGraph
     /// </summary>
     public void BeginModify() {
         // 通过栈延迟事件派发，实际上并不是个好主意
-        _stackDepth++;
+        _modifyStack++;
         _graphChange ??= _graphChangePool.Acquire();
     }
 
@@ -126,11 +127,11 @@ public sealed class DataGraph
     /// 结束数据修改
     /// </summary>
     public void EndModify() {
-        if (_stackDepth == 0) {
+        if (_modifyStack == 0) {
             throw new IllegalStateException();
         }
-        _stackDepth--;
-        if (_stackDepth == 0) {
+        _modifyStack--;
+        if (_modifyStack == 0) {
             DataGraphChange graphChange = _graphChange;
             _graphChange = null;
             if (!graphChange.IsEmpty) {
@@ -146,7 +147,7 @@ public sealed class DataGraph
     public void Update() {
         // 避免卡死 —— 只是简单的丢弃堆栈，因为无法安全恢复
         if (_graphChange != null) {
-            _stackDepth = 0;
+            _modifyStack = 0;
             _graphChange = null;
         }
         float realtime = Time.realtimeSinceStartup;
@@ -591,10 +592,9 @@ public sealed class DataGraph
 
     /// <summary>
     /// 创建变量的Values
-    ///
+    /// 
     /// 注：创建变量的Values意味着变量不再为null。
     /// </summary>
-    /// <param name="variable"></param>
     private void CreateValues(Variable variable) {
         DSNamedType varType = variable.type;
         if (DSUtil.IsAtomicType(varType)) {
@@ -625,13 +625,24 @@ public sealed class DataGraph
             variable.Add(CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg));
             return;
         }
+        // 如果引用出现递归，需要延迟创建 - ObjectField需要做一下支持
+        if (!_typeCreateStack.Add(varType)) {
+            variable.values = new List<Variable>();
+            Debug.LogWarning("Reference type recursion, manual init required");
+            return;
+        }
         // 递归创建Value
         List<DSField> fields = varType.GetFields(true, _fieldListPool.Acquire());
-        variable.values = new List<Variable>(fields.Count);
-        foreach (DSField field in fields) {
-            variable.Add(CreateVariable(field));
+        try {
+            variable.values = new List<Variable>(fields.Count);
+            foreach (DSField field in fields) {
+                variable.Add(CreateVariable(field));
+            }
         }
-        _fieldListPool.Release(fields);
+        finally {
+            _typeCreateStack.Remove(varType);
+            _fieldListPool.Release(fields);
+        }
     }
 
     /// <summary>

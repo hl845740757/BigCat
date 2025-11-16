@@ -142,9 +142,9 @@ public sealed class VariableCfg
     /// </summary>
     public DsonType dsonType = DsonType.EndOfObject;
     /// <summary>
-    /// 类型的菜单路径
+    /// 数据节点的特征值，用于搜索栏字段
     /// </summary>
-    public string menuPath;
+    public Features nodeFeatures = Features.EnablePort;
     /// <summary>
     /// 序列化特征值（缓存，以避免频繁解析）
     /// </summary>
@@ -406,8 +406,8 @@ public sealed class VariableCfg
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DSON_TYPE, out dsonValue)) {
             cfg.dsonType = Enum.Parse<DsonType>(dsonValue.AsString(), true);
         }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_MENU_PATH, out dsonValue)) {
-            cfg.menuPath = dsonValue.AsString();
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_NODE_FEATURES, out dsonValue)) {
+            cfg.nodeFeatures = DSUtil.ParseFlags<Features>(dsonValue);
         }
         //
         if (dsonObject.TryGetValue(DSAnnotations.KEY_MIN, out dsonValue)) {

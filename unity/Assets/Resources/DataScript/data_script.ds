@@ -146,7 +146,7 @@ class OuterClass {
     // @PortField {side: bottom}
     List<SimpleBean> linkList = 22;
     // @PortField {side: right}
-    Map<int32,SimpleBean> linkDic = 23;    
+    Map<int32,Vector3> linkDic = 23;    
 
     class Request {
 		int32 a = 1;
@@ -212,4 +212,6 @@ class SearchTreeGroupEntry {
     SimpleBean _b = 2;
     GenericBean<int32, Vector3> _c =3;
     Vector3 _d = 4;
+    Pair<int32,Vector3> _f1 = 5;
+    Pair<int32,Vector3> _f2 = 6; //@Editor{nodeFeatures: 0}
 }

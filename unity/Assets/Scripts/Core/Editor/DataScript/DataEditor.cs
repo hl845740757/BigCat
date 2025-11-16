@@ -55,11 +55,13 @@ public class DataEditor : EditorWindow
     private static void OpenWindow() {
         DataEditor wnd = GetWindow<DataEditor>();
         wnd.titleContent = new GUIContent("DataGraphEditor");
-        // TODO 通过配置文件加载关联的ds文件
-        string filePath = Application.dataPath + "/Resources/DataScript/data_script.ds";
-        DSFile dsFile = DSFileParser.Parse(new FileInfo(filePath));
         DSRepository repository = wnd.repository;
-        repository.AddFile(dsFile);
+        // TODO 通过配置文件加载关联的ds文件
+        string scriptDir = Application.dataPath + "/Resources/DataScript";
+        foreach (string filePath in Directory.GetFiles(scriptDir, "*.ds", SearchOption.AllDirectories)) {
+            DSFile dsFile = DSFileParser.Parse(new FileInfo(filePath));
+            repository.AddFile(dsFile);
+        }
         repository.Build();
     }
 
@@ -270,7 +272,16 @@ public class DataEditor : EditorWindow
         nodeValueView.Clear();
     }
 
-    private static readonly List<DSField> _filedListCache = new List<DSField>();
+    private readonly List<DSField> _filedListCache = new List<DSField>();
+    private readonly Dictionary<DSNamedType, string> displayNameCache = new Dictionary<DSNamedType, string>();
+
+    private string GetDisplayName(DSNamedType namedType) {
+        if (!displayNameCache.TryGetValue(namedType, out string displayName)) {
+            displayName = DSUtil.ToDisplayString(namedType.TypeName);
+            displayNameCache[namedType] = displayName;
+        }
+        return displayName;
+    }
 
     /// <summary>
     /// 请求创建Node
@@ -291,11 +302,8 @@ public class DataEditor : EditorWindow
                 entries.Add(new SearchTreeGroupEntry(new GUIContent(groupType.SimpleName)));
                 foreach (DSField field in groupType.GetFields(true, _filedListCache.ClearAndReturn())) {
                     DSNamedType filedType = (DSNamedType)field.Type;
-                    entries.Add(new SearchTreeEntry(new GUIContent(DSUtil.ToDisplayString(filedType.TypeName)))
-                    {
-                        level = 1,
-                        userData = filedType
-                    });
+                    GUIContent content = new GUIContent(GetDisplayName(filedType) + ":" + field.SimpleName);
+                    entries.Add(new SearchTreeEntry(content) { level = 1, userData = field });
                 }
             }
         }
@@ -303,9 +311,12 @@ public class DataEditor : EditorWindow
     }
 
     internal bool OnSelectTypeEntry(SearchTreeEntry entry, SearchWindowContext context) {
-        if (entry.userData is DSNamedType namedType) {
+        if (entry.userData is DSField field) {
+            DSNamedType namedType = (DSNamedType)field.Type;
             DataNode dataNode = dataGraph.CreateNode(namedType);
-            dataNode.features |= Features.EnablePort;
+            // 特征值在字段上
+            VariableCfg variableCfg = dataGraph.GetVariableCfg(field);
+            dataNode.features = variableCfg.nodeFeatures;
             dataNode.position = graphView.contentContainer.WorldToLocal(context.screenMousePosition);
             dataGraph.AddNode(dataNode);
             return true;
@@ -340,6 +351,7 @@ public class DataEditor : EditorWindow
         folderField.SetValueWithoutNotify(dataNode.folder);
         titleField.SetValueWithoutNotify(dataNode.title);
         positionField.SetValueWithoutNotify(dataNode.position);
+        enablePortToggle.SetValueWithoutNotify((dataNode.features & Features.EnablePort) != 0);
         if (nodeValueView.childCount == 0) {
             nodeValueView.Add(DataEditorUtil.CreateField(dataNode.value, this));
         } else {
