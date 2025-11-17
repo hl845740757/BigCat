@@ -32,6 +32,7 @@ public class DataEditor : EditorWindow
     protected TextField nameField;
     protected TextField titleField;
     protected Vector2Field positionField;
+    protected TextField typeSymbolField;
     protected Toggle enablePortToggle; // Pair类型启用端口
 
     public DSRepository repository { get; private set; }
@@ -47,6 +48,10 @@ public class DataEditor : EditorWindow
     /// 类型搜索实现
     /// </summary>
     private TypeSearchWindowProvider typeSearchWindowProvider;
+
+    private readonly List<DSField> _filedListCache = new List<DSField>();
+    private readonly Dictionary<DSNamedType, string> displayNameCache = new Dictionary<DSNamedType, string>();
+    private readonly Dictionary<DSNamedType, VarObjectField> objectFieldCache = new Dictionary<DSNamedType, VarObjectField>();
 
     /// <summary>
     /// 用户应该在自己的静态方法中初始化该Window的依赖，主要是初始化DataScript文件
@@ -118,6 +123,7 @@ public class DataEditor : EditorWindow
         folderField = nodeHeaderView.Q<TextField>("folder");
         titleField = nodeHeaderView.Q<TextField>("title");
         positionField = nodeHeaderView.Q<Vector2Field>("position");
+        typeSymbolField = nodeHeaderView.Q<TextField>("type-symbol");
         enablePortToggle = nodeHeaderView.Q<Toggle>("enable-port");
         localIdField.RegisterValueChangedCallback(OnLocalIdFieldChanged);
         nameField.RegisterValueChangedCallback(OnNameFieldChanged);
@@ -272,9 +278,6 @@ public class DataEditor : EditorWindow
         nodeValueView.Clear();
     }
 
-    private readonly List<DSField> _filedListCache = new List<DSField>();
-    private readonly Dictionary<DSNamedType, string> displayNameCache = new Dictionary<DSNamedType, string>();
-
     private string GetDisplayName(DSNamedType namedType) {
         if (!displayNameCache.TryGetValue(namedType, out string displayName)) {
             displayName = DSUtil.ToDisplayString(namedType.TypeName);
@@ -347,17 +350,41 @@ public class DataEditor : EditorWindow
         nodeValueView.SetEnabled(true);
 
         DataNode dataNode = selectedNode.dataNode;
+        DSNamedType valueType = dataNode.value.type;
+        //
         localIdField.SetValueWithoutNotify(dataNode.localId);
         nameField.SetValueWithoutNotify(dataNode.name);
         folderField.SetValueWithoutNotify(dataNode.folder);
         titleField.SetValueWithoutNotify(dataNode.title);
         positionField.SetValueWithoutNotify(dataNode.position);
+        typeSymbolField.SetValueWithoutNotify(GetDisplayName(valueType));
         enablePortToggle.SetValueWithoutNotify((dataNode.features & Features.EnablePort) != 0);
+        //
         if (nodeValueView.childCount == 0) {
-            nodeValueView.Add(DataEditorUtil.CreateField(dataNode.value, this));
+            VarObjectField objectField = GetObjectField(valueType);
+            objectField.Bind(this, dataNode.value);
+            nodeValueView.Add(objectField);
         } else {
-            DataEditorUtil.Bind(nodeValueView[0], dataNode.value, this);
+            VarObjectField objectField = (VarObjectField)nodeValueView[0];
+            if (objectField.buildType != valueType) {
+                nodeValueView.RemoveAt(0);
+                objectField.Unbind();
+                //
+                objectField = GetObjectField(valueType);
+                objectField.Bind(this, dataNode.value);
+                nodeValueView.Add(objectField);
+            } else {
+                objectField.Bind(this, dataNode.value);
+            }
         }
+    }
+
+    private VarObjectField GetObjectField(DSNamedType valueType) {
+        if (!objectFieldCache.TryGetValue(valueType, out VarObjectField objectField)) {
+            objectField = new VarObjectField();
+            objectFieldCache.Add(valueType, objectField);
+        }
+        return objectField;
     }
 
     #endregion

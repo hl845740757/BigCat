@@ -38,6 +38,7 @@ public class VarObjectField : Foldout, IVarField
 {
     private DataEditor _editor;
     private Variable _variable;
+    private DSNamedType _buildType;
     private EventCallback<ChangeEvent<int>> _onCtrlValueChanged1;
     private EventCallback<ChangeEvent<string>> _onCtrlValueChanged2;
 
@@ -45,6 +46,11 @@ public class VarObjectField : Foldout, IVarField
         style.flexShrink = 0;
         RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
+
+    /// <summary>
+    /// 不会因解绑而清理
+    /// </summary>
+    public DSNamedType buildType => _buildType;
 
     public string label {
         get => text;
@@ -63,7 +69,11 @@ public class VarObjectField : Foldout, IVarField
             return;
         }
         contentContainer.SetEnabled(true);
+        // 延迟初始化
         VisualElement container = contentContainer;
+        if (container.childCount == 0) {
+            RebuildFieldViews();
+        }
         for (int index = 0; index < container.childCount; index++) {
             VisualElement fieldView = container[index];
             Variable nestedVar = variable[index];
@@ -88,15 +98,14 @@ public class VarObjectField : Foldout, IVarField
     /// 绑定数据后调用
     /// </summary>
     public void Bind(DataEditor editor, Variable variable) {
-        bool typeChanged = _variable == null || _variable.type != variable.type;
+        bool typeChanged = _buildType != variable.type;
         if (typeChanged) {
             UnregisterCtrlFieldEvents();
-            contentContainer.Clear();
         }
         this._editor = editor;
         this._variable = variable;
         if (typeChanged) {
-            InitFieldViews();
+            RebuildFieldViews();
         }
         Refresh();
     }
@@ -105,13 +114,18 @@ public class VarObjectField : Foldout, IVarField
         Variable variable = _variable;
         if (variable == null) return;
         UnregisterCtrlFieldEvents();
-        contentContainer.Clear();
-        //
+        // 递归解绑
+        for (int i = 0, count = contentContainer.childCount; i < count; i++) {
+            IVarField fieldView = (IVarField)contentContainer[i];
+            fieldView.Unbind();
+        }
         _editor = null;
         _variable = null;
     }
 
-    private void InitFieldViews() {
+    private void RebuildFieldViews() {
+        _buildType = _variable.type;
+        contentContainer.Clear();
         foreach (Variable nestedVar in _variable.values) {
             VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
             DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
@@ -261,10 +275,6 @@ public class VarObjectField : Foldout, IVarField
     private void OnClickSetNotNull(object _) {
         Variable variable = _variable;
         variable.isNull = false;
-        if (variable.Count == 0) { // 延迟初始化
-            _editor.dataGraph.CreateValues(variable);
-            InitFieldViews();
-        }
         variable.ApplyModifiedProperties();
         Refresh();
     }

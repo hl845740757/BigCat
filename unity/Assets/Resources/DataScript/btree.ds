@@ -23,6 +23,12 @@ class BranchTask<T> : Task<T> {
   List<Task<T>> children = 1;
 }
 
+// FSM
+class StateMachineTask<T> : Decorator<T> {
+  // @PortField{side: right}
+  List<Task<T>> stateList = 1; // 状态列表
+}
+
 // 子树引用
 class SubtreeRef<T> : Decorator<T> {
   // @PortField{side: right}
@@ -40,6 +46,8 @@ class Switch<T> : BranchTask<T> {
 // 这里将所有类型引用进来，通过子类实例化泛型
 class BTreeSearchTreeGroupEntry0<T> {
   SubtreeRef<T> _f1 = 1;
+  StateMachineTask<T> _f2 = 2;
+  
   Selector<T> _f11 = 11;
   Sequence<T> _f12 = 12;
   Switch<T> _f13 = 13;

@@ -75,6 +75,11 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         this.refreshTask.Resume();
     }
 
+    public void Unbind() {
+        if (dataGraph == null) return;
+        dataGraph.onGraphChanged -= this.OnDataGraphChanged;
+    }
+
     private void OnDataGraphChanged(DataGraphChange _) {
         // 不能立即刷新，OnViewChanged修改数据层，此时View还有部分逻辑没有执行完...
         refreshTask.Resume();
@@ -218,9 +223,12 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
             Variable outputField = portView.variable;
             if (!portView.isListPort) {
                 ObjectPath objectPath = outputField.objectPathValue;
+                Edge edge;
                 if (!CheckConnection(objectPath, out DataNode inputNode)) {
                     if (portView.connectionCount > 0) {
-                        DisconnectOutput(portView.connectionList[0]);
+                        edge = portView.connectionList[0];
+                        FixOutputPort(edge, portView);
+                        DisconnectOutput(edge);
                     }
                     continue;
                 }
@@ -229,7 +237,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
                     ConnectTo(portView, inputNodeView); // 创建连接
                     continue;
                 }
-                Edge edge = portView.connectionList[0];
+                edge = portView.connectionList[0];
                 FixOutputPort(edge, portView);
                 if (edge.input == null || edge.input.node != inputNodeView) {
                     ConnectTo(portView, inputNodeView, edge); // 纠正连接
@@ -335,7 +343,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
     }
 
     private static void FixOutputPort(Edge edge, PortView outputPort) {
-        // 动态端口拖拽删除情况下，会出现Edge的Output/Input都为Null的情况，是因为显示层先于逻辑层进行了更改...
+        // 端口拖拽删除情况下，显示层会将Output/Input置为null
         if (edge.output == null) {
             edge.output = outputPort;
         }

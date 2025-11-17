@@ -20,6 +20,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Wjybxx.BigCatTool.DataScript;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
@@ -30,11 +31,17 @@ public class VarNullableField : Foldout, IVarField
 {
     private DataEditor _editor;
     private Variable _variable;
+    private DSNamedType _buildType;
 
     public VarNullableField() {
         style.flexShrink = 0;
         this.RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
+
+    /// <summary>
+    /// 不会因解绑而清理
+    /// </summary>
+    public DSNamedType buildType => _buildType;
 
     public string label {
         get => text;
@@ -61,17 +68,11 @@ public class VarNullableField : Foldout, IVarField
     /// 绑定数据后调用
     /// </summary>
     public void Bind(DataEditor editor, Variable variable) {
-        bool typeChanged = _variable == null || _variable.type != variable.type;
-        if (typeChanged) {
-            contentContainer.Clear();
-        }
+        bool typeChanged = _buildType != variable.type;
         this._editor = editor;
         this._variable = variable;
         if (typeChanged) {
-            foreach (Variable nestedVar in variable.values) {
-                VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
-                contentContainer.Add(fieldView);
-            }
+            RebuildFieldViews();
         }
         Refresh();
     }
@@ -79,9 +80,23 @@ public class VarNullableField : Foldout, IVarField
     public void Unbind() {
         Variable variable = _variable;
         if (variable == null) return;
+        // 递归解绑
+        for (int i = 0, count = contentContainer.childCount; i < count; i++) {
+            IVarField fieldView = (IVarField)contentContainer[i];
+            fieldView.Unbind();
+        }
         _editor = null;
         _variable = null;
+    }
+
+    private void RebuildFieldViews() {
+        _buildType = _variable.type;
         contentContainer.Clear();
+        foreach (Variable nestedVar in _variable.values) {
+            VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
+            DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
+            contentContainer.Add(fieldView);
+        }
     }
 
     #region context menu

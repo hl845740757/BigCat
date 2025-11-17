@@ -11,6 +11,7 @@
             <Wjybxx.BigCat.CoreEditor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; min-width: 60%; min-height: 100%;" />
             <ui:ScrollView name="inspector-div" style="flex-grow: 1; min-height: 100%; max-width: 30%;">
                 <ui:VisualElement name="node-header" tooltip="node基础信息">
+                    <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="TypeSymbol" name="type-symbol" tooltip="类型信息" label-margin="-60" readonly="true" />
                     <Wjybxx.BigCat.CoreEditor.UIElements.MLongField name="local-id" label="LocalId" hasMin="true" readonly="false" is-delayed="true" tooltip="程序分配的局部Id，允许手动修改" />
                     <Wjybxx.BigCat.CoreEditor.UIElements.MToggle name="enable-port" label="EnablePort" tooltip="用于Pair类型启用数据端口" />
                     <Wjybxx.BigCat.CoreEditor.UIElements.MTextField name="folder" label="Folder" tooltip="Node归属的文件夹（逻辑分组）" is-delayed="true" />

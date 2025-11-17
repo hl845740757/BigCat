@@ -18,13 +18,13 @@ enum ElementType {
 }
 
 // 执行伤害 - T为黑板类型，末尾统一指定
-class ActioDamage<T> : LeafTask<T> {
+class ActionDamage<T> : LeafTask<T> {
   DamageType dmgType = 1;
   ElementType eleType = 2;
   float attck = 3; // 攻击力系数
   List<MinMaxAABB> hitBoxes = 4; // 攻击盒
 }
-
+// 添加Buff
 class ActionBuff<T> : LeafTask<T> {
   int32 buffId = 1;
   int32 buffLV = 2; // buff等级
@@ -34,7 +34,7 @@ class ActionBuff<T> : LeafTask<T> {
 
 // 这里将所有类型引用进来，通过子类实例化泛型
 class SkillGroupEntry0<T> : BTreeSearchTreeGroupEntry0<T> {
-  ActioDamage<T> _f1 = 1;
+  ActionDamage<T> _f1 = 1;
   ActionBuff<T> _f2 = 2;
 }
 // 通过子类直接实例化所有泛型
