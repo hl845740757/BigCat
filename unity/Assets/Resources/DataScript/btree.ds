@@ -22,11 +22,32 @@ class BranchTask<T> : Task<T> {
   // @PortField{side: bottom}
   List<Task<T>> children = 1;
 }
+// 非并行分支基类
+class SingleRunningChildBranch<T> : BranchTask<T> {
+}
+// 并行分支基类
+class ParallelBranch<T> : BranchTask<T> {
+}
 
 // FSM
 class StateMachineTask<T> : Decorator<T> {
   // @PortField{side: right}
   List<Task<T>> stateList = 1; // 状态列表
+}
+// 切换状态
+class ChangeStateTask<T> : LeafTask<T> {
+  // @PortField{side: right}
+  Task<T> nextState = 1; // 下一个状态
+  // @PortField{side: right}
+  Object stateProps = 2; // 状态附加数据
+  
+  string machineName = 3; // 目标状态机名，可空
+  int32 delayMode = 4; // 延迟模式，建议保持0
+  
+  // @PopField {value: 2, displayName: "Success"}
+  // @PopField {value: 3, displayName: "Cancelled"}
+  // @PopField {value: 4, displayName: "Failed"}
+  int32 delayArg = 5; // 延迟参数；不延迟时，表示FSM当前状态的执行结果
 }
 
 // 子树引用
@@ -36,21 +57,25 @@ class SubtreeRef<T> : Decorator<T> {
 }
 
 // 基础分支节点
-class Selector<T> : BranchTask<T> {
+class Selector<T> : SingleRunningChildBranch<T> {
 }
-class Sequence<T> : BranchTask<T> {
+class Sequence<T> : SingleRunningChildBranch<T> {
 }
-class Switch<T> : BranchTask<T> {
+class Switch<T> : SingleRunningChildBranch<T> {
+}
+class Foreach<T> : SingleRunningChildBranch<T> {
 }
 
 // 这里将所有类型引用进来，通过子类实例化泛型
 class BTreeSearchTreeGroupEntry0<T> {
   SubtreeRef<T> _f1 = 1;
   StateMachineTask<T> _f2 = 2;
+  ChangeStateTask<T> _f3 = 3;
   
   Selector<T> _f11 = 11;
   Sequence<T> _f12 = 12;
   Switch<T> _f13 = 13;
+  Foreach<T> _f14 = 14;
 }
 // 通过子类直接实例化所有泛型
 // @SearchTreeGroupEntry {}

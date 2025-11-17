@@ -226,15 +226,19 @@ public sealed class VariableCfg
         if (element.Kind == DSElementKind.Enum) {
             ParseEnumPops(cfg, (DSNamedType)element);
         }
-        // 拷贝List的配置到元素
-        if (element is DSField field && (DSUtil.IsCollectionOrMapType(field.Type)
-                                         || DSUtil.IsNullableType(field.Type)
-                                         || DSUtil.IsPairType(field.Type))) {
-            VariableCfg elementCfg = new VariableCfg();
-            CopyListCfg(elementCfg, cfg);
-            cfg.elementCfg = elementCfg;
+        if (element is DSField field) {
+            if (cfg.tooltip == null && field.OriginDefine.Comments.Count > 0) {
+                cfg.tooltip = field.OriginDefine.Comments.PeekLast();
+            }
+            // 拷贝List的配置到元素
+            if ((DSUtil.IsCollectionOrMapType(field.Type)
+                 || DSUtil.IsNullableType(field.Type)
+                 || DSUtil.IsPairType(field.Type))) {
+                VariableCfg elementCfg = new VariableCfg();
+                CopyListCfg(elementCfg, cfg);
+                cfg.elementCfg = elementCfg;
+            }
         }
-        // 暂不缓存Codec中的编码样式，意义不大 
         return cfg;
     }
 
@@ -401,8 +405,6 @@ public sealed class VariableCfg
         }
         if (dsonObject.TryGetValue(DSAnnotations.KEY_TOOLTIP, out dsonValue)) {
             cfg.tooltip = dsonValue.AsString();
-        } else if (element is DSField field && field.Comments.Count > 0) {
-            cfg.tooltip = field.Comments.PeekLast();
         }
         //
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DSON_TYPE, out dsonValue)) {

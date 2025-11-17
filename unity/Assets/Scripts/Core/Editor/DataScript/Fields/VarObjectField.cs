@@ -129,6 +129,7 @@ public class VarObjectField : Foldout, IVarField
         foreach (Variable nestedVar in _variable.values) {
             VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
             DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
+            fieldView.tooltip = nestedVar.cfg.tooltip;
             contentContainer.Add(fieldView);
         }
         RegisterCtrlFieldEvents();
@@ -314,6 +315,9 @@ public class VarObjectField : Foldout, IVarField
         //
         DSNamedType namedType = _editor.dataGraph.ResolveTypeSymbol(typeSymbol);
         _editor.dataGraph.ChangeVariableType(variable, namedType);
+        if (variable.isRoot) {
+            _editor.dataGraph.InitOutputFields(variable.dataNode);
+        }
         variable.ApplyModifiedProperties();
         Refresh(true);
     }

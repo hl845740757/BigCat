@@ -19,7 +19,7 @@
                     <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="Title" tooltip="标题" name="title" />
                     <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="position" label="Position" tooltip="UI坐标" isReadonly="true" isDelayed="false" />
                 </ui:VisualElement>
-                <ui:VisualElement name="node-value" tooltip="node值信息" style="border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(141, 141, 141); border-right-color: rgb(141, 141, 141); border-top-color: rgb(141, 141, 141); border-bottom-color: rgb(141, 141, 141); min-height: 200px;" />
+                <ui:VisualElement name="node-value" style="border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(141, 141, 141); border-right-color: rgb(141, 141, 141); border-top-color: rgb(141, 141, 141); border-bottom-color: rgb(141, 141, 141); min-height: 200px;" />
             </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>

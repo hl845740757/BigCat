@@ -99,7 +99,9 @@ public class NodeView : Node
     /// 刷新显示，子类可以重写该方法扩展逻辑
     /// </summary>
     public virtual void Refresh() {
-        title = dataNode.title ?? dataNode.value.type.SimpleName;
+        title = !string.IsNullOrWhiteSpace(dataNode.title)
+            ? dataNode.title
+            : dataNode.value.type.SimpleName;
         // 见Node.SetPosition
         style.left = dataNode.position.x;
         style.top = dataNode.position.y;

@@ -94,6 +94,7 @@ public class VarNullableField : Foldout, IVarField
         contentContainer.Clear();
         foreach (Variable nestedVar in _variable.values) {
             VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
+            fieldView.tooltip = nestedVar.cfg.tooltip;
             DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
             contentContainer.Add(fieldView);
         }

@@ -779,7 +779,7 @@ public class DSFileParser
                 element.AddAnnotation(annotation);
             }
         }
-        if (trailingComment != null) {
+        if (!string.IsNullOrWhiteSpace(trailingComment)) {
             element.AddComment(trailingComment);
             Annotation? annotation = Annotation.TryParseAnnotation(trailingComment);
             if (annotation != null) {
