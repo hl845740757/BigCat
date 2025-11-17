@@ -1,0 +1,72 @@
+﻿// 公共类型定义
+
+// @Options{ alias: [Vector2, V2], style: flow }
+// @Editor{ displayType: Vector2 }
+struct Vector2 {
+    float x = 1;
+    float y = 2;
+}
+
+// @Options{ alias: [Vector3, V3], style: flow }
+// @Editor{ displayType: Vector3 }
+struct Vector3 {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+// @Options{ alias: [Vector4, V4], style: flow }
+// @Editor{ displayType: Vector4 }
+struct Vector4 {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    float w = 4;
+}
+
+// @Options{ style: flow }
+// @Editor { displayType : ObjectPath, dsonType: Pointer }
+struct ObjectPath {
+	string colletion = 1;
+	string localPath = 2;
+	int64 localId = 3;
+	int32 type = 4;
+}
+
+// @Options{ style: flow }
+// @Editor { displayType : MinMaxAABB }
+struct MinMaxAABB {
+  Vector3 min = 1;
+  Vector3 max = 2;
+}
+
+// @Options{ style: flow }
+// @Editor { displayType : Color }
+struct Color {
+	float r = 1;
+	float g = 2;
+	float b = 3;
+	float a = 4;
+}
+
+// 测试实例 -- {}和[]暂时需要严格缩进
+// 大写名字表示关联类型的默认值
+inst Vector3 {
+    x: 0,
+    y: 1,
+    z: 0
+}
+// 测试实例从另一个模板初始化
+inst Vector4 from Vector3 {
+    w: 0
+}
+// 测试数组实例
+inst vector3_array [
+    {x: 1, y: 0, z: 0},
+    {x: 0, y: 1, z: 0},
+    {x: 0, y: 0, z: 1}    
+]
+
+// 测试不换行缩进
+inst Vector3/1 { x: 0, y: 0, z: 0}
+inst Vector3/2 [0, 0, 0]

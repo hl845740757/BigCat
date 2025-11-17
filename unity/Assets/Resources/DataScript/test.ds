@@ -1,3 +1,5 @@
+import public "common.ds";
+
 // 生成代码的命名空间
 option csharp_namespace = "Wjybxx.BigCatTool.Tests.Generated";
 // 将所有类型默认声明为数据类 -- 生成equals和hashcode
@@ -28,22 +30,6 @@ class SimpleChildBean : SimpleBean {
     List<string> addresses = 1;
 }
 
-// 测试结构体，顺便测试codec注解解析
-// @Options{ alias: [Vector3, V3], style: flow }
-// @Editor{ displayType: Vector3 }
-struct Vector3 {
-    readonly float x = 1;
-    readonly float y = 2;
-    readonly float z = 3;
-}
-
-// @Options{ alias: [Vector2, V2], style: flow }
-// @Editor{ displayType: Vector2 }
-struct Vector2 {
-    readonly float x = 1;
-    readonly float y = 2;
-}
-
 // 测试枚举
 enum EColor {
     White = 0;
@@ -71,23 +57,6 @@ class GenericChildBean2<T, U> : GenericBean<T, List<string>>
     where T: struct
     where U: class {
     List<string> addresses = 1;
-}
-
-// @Editor { displayType : ObjectPath, dsonType: Pointer }
-struct ObjectPath {
-	string colletion = 1;
-	string localPath = 2;
-	int64 localId = 3;
-	int32 type = 4;
-}
-
-// @Options{ style: flow }
-// @Editor { displayType : Color }
-struct Color {
-	float r = 1;
-	float g = 2;
-	float b = 3;
-	float a = 4;
 }
 
 // 测试内部类 
@@ -176,38 +145,15 @@ inst OuterClass/B {
 	y: 3
 }
 
-
 // 测试访问其它类型的内部类
 class PeerClass { 
     OuterClass.Request request = 1;
     OuterClass.Result result = 2;
 }
 
-// 测试实例 -- {}和[]暂时需要严格缩进
-// 大写名字表示关联类型的默认值
-inst Vector3 {
-    x: 0,
-    y: 1,
-    z: 0
-}
-// 测试实例从另一个模板初始化
-inst Vector4 from Vector3 {
-    w: 0
-}
-// 测试数组实例
-inst vector3_array [
-    {x: 1, y: 0, z: 0},
-    {x: 0, y: 1, z: 0},
-    {x: 0, y: 0, z: 1}    
-]
-
-// 测试不换行缩进
-inst v1 { x: 0, y: 0, z: 0}
-inst v2 [0, 0, 0]
-
 // 该注解表示搜索入口
 // @SearchTreeGroupEntry{}
-class SearchTreeGroupEntry {
+class TestGroupEntry {
     OuterClass _a = 1;
     SimpleBean _b = 2;
     GenericBean<int32, Vector3> _c =3;

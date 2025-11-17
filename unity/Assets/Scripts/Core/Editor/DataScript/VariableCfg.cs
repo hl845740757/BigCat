@@ -193,7 +193,7 @@ public sealed class VariableCfg
         //
         Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
         if (annotation != null) {
-            ParseBaseOptions(annotation.AsObject(), cfg);
+            ParseBaseOptions(annotation.AsObject(), cfg, element);
         }
         annotation = element.GetAnnotation(DSAnnotations.EDITOR_STYLE);
         if (annotation != null) {
@@ -391,7 +391,7 @@ public sealed class VariableCfg
         cfg.styleCfg = styleCfg;
     }
 
-    private static void ParseBaseOptions(DsonObject<string> dsonObject, VariableCfg cfg) {
+    private static void ParseBaseOptions(DsonObject<string> dsonObject, VariableCfg cfg, DSElement element) {
         DsonValue dsonValue;
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DISPLAY_TYPE, out dsonValue)) {
             cfg.displayType = Enum.Parse<DisplayType>(dsonValue.AsString(), true);
@@ -401,6 +401,8 @@ public sealed class VariableCfg
         }
         if (dsonObject.TryGetValue(DSAnnotations.KEY_TOOLTIP, out dsonValue)) {
             cfg.tooltip = dsonValue.AsString();
+        } else if (element is DSField field && field.Comments.Count > 0) {
+            cfg.tooltip = field.Comments.PeekLast();
         }
         //
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DSON_TYPE, out dsonValue)) {

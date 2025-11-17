@@ -96,12 +96,7 @@ public class VarObjectField : Foldout, IVarField
         this._editor = editor;
         this._variable = variable;
         if (typeChanged) {
-            foreach (Variable nestedVar in variable.values) {
-                VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
-                DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
-                contentContainer.Add(fieldView);
-            }
-            RegisterCtrlFieldEvents();
+            InitFieldViews();
         }
         Refresh();
     }
@@ -114,6 +109,15 @@ public class VarObjectField : Foldout, IVarField
         //
         _editor = null;
         _variable = null;
+    }
+
+    private void InitFieldViews() {
+        foreach (Variable nestedVar in _variable.values) {
+            VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
+            DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
+            contentContainer.Add(fieldView);
+        }
+        RegisterCtrlFieldEvents();
     }
 
     private void UnregisterCtrlFieldEvents() {
@@ -257,6 +261,10 @@ public class VarObjectField : Foldout, IVarField
     private void OnClickSetNotNull(object _) {
         Variable variable = _variable;
         variable.isNull = false;
+        if (variable.Count == 0) { // 延迟初始化
+            _editor.dataGraph.CreateValues(variable);
+            InitFieldViews();
+        }
         variable.ApplyModifiedProperties();
         Refresh();
     }

@@ -23,7 +23,7 @@ using UnityEngine;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
-internal class TypeSearchWindowProvider : ScriptableObject, ISearchWindowProvider
+public class TypeSearchWindowProvider : ScriptableObject, ISearchWindowProvider
 {
     public DataEditor editor;
 

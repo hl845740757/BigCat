@@ -302,7 +302,8 @@ public class DataEditor : EditorWindow
                 entries.Add(new SearchTreeGroupEntry(new GUIContent(groupType.SimpleName)));
                 foreach (DSField field in groupType.GetFields(true, _filedListCache.ClearAndReturn())) {
                     DSNamedType filedType = (DSNamedType)field.Type;
-                    GUIContent content = new GUIContent(GetDisplayName(filedType) + ":" + field.SimpleName);
+                    VariableCfg variableCfg = dataGraph.GetVariableCfg(field);
+                    GUIContent content = new GUIContent(GetDisplayName(filedType) + " : " + variableCfg.nodeFeatures);
                     entries.Add(new SearchTreeEntry(content) { level = 1, userData = field });
                 }
             }

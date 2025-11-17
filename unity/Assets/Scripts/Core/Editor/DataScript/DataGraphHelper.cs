@@ -255,6 +255,9 @@ internal class DataGraphHelper
             return;
         }
         // 自定义结构：如果输入是Object，则按照字段名进行匹配，选择性覆盖；如果输入是Array，则顺序解码
+        if (variable.Count == 0) {
+            _graph.CreateValues(variable);
+        }
         if (dsonValue.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = dsonValue.AsObject();
             foreach (Variable nestedVar in variable.values) {

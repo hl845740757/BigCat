@@ -584,9 +584,14 @@ public sealed class DataGraph
             defineInfo = defineInfo,
             cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
-            isNull = DSUtil.IsNullableType(type) || variableCfg.initNull
+            isNull = DSUtil.IsNullableType(type)
         };
-        CreateValues(variable);
+        if (variableCfg.initNull) {
+            variable.isNull = true;
+            variable.values = new List<Variable>();
+        } else {
+            CreateValues(variable);
+        }
         return variable;
     }
 
@@ -595,7 +600,7 @@ public sealed class DataGraph
     /// 
     /// 注：创建变量的Values意味着变量不再为null。
     /// </summary>
-    private void CreateValues(Variable variable) {
+    internal void CreateValues(Variable variable) {
         DSNamedType varType = variable.type;
         if (DSUtil.IsAtomicType(varType)) {
             return;
@@ -625,10 +630,11 @@ public sealed class DataGraph
             variable.Add(CreateVariable(valueField, (DSNamedType)valueField.Type, elementCfg));
             return;
         }
-        // 如果引用出现递归，需要延迟创建 - ObjectField需要做一下支持
+        // 如果引用出现类型递归，强制延迟创建 - ObjectField需要做一下支持
         if (!_typeCreateStack.Add(varType)) {
-            variable.values = new List<Variable>();
             Debug.LogWarning("Reference type recursion, manual init required");
+            variable.isNull = true;
+            variable.values = new List<Variable>();
             return;
         }
         // 递归创建Value
