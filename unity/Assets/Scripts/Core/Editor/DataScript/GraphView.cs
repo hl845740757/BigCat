@@ -68,6 +68,7 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
         graphViewChanged += this.OnGraphViewChanged;
         //
         this.dataGraph = dataGraph;
+        this.currentFolder = null;
         dataGraph.onGraphChanged -= this.OnDataGraphChanged;
         dataGraph.onGraphChanged += this.OnDataGraphChanged;
         this._nodeViewDic.Clear();

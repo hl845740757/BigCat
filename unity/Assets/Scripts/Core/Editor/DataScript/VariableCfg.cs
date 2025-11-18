@@ -213,14 +213,14 @@ public sealed class VariableCfg
             ParseBranchInfo(annotations, cfg, (DSField)element);
         }
         // Mask字段
-        annotation = element.GetAnnotation(DSAnnotations.MASK_FIELD);
-        if (annotation != null) {
-            ParseMaskInfo(annotation.AsArray(), cfg);
+        annotations = element.GetAnnotations(DSAnnotations.MASK_FIELD);
+        if (annotations.Count > 0) {
+            ParseMaskInfo(annotations, cfg);
         }
         // 多态字段
-        annotation = element.GetAnnotation(DSAnnotations.PLOY_FIELD);
-        if (annotation != null) {
-            ParsePolyInfo(annotation.AsArray(), cfg);
+        annotations = element.GetAnnotations(DSAnnotations.PLOY_FIELD);
+        if (annotations.Count > 0) {
+            ParsePolyInfo(annotations, cfg);
         }
         // 如果是枚举类型，提前缓存PopNames
         if (element.Kind == DSElementKind.Enum) {
@@ -323,11 +323,11 @@ public sealed class VariableCfg
             DsonObject<string> dsonObject = annotation.AsObject();
             string ctrlName = dsonObject[DSAnnotations.KEY_CTRL].AsString();
             if (ctrlName == element.SimpleName) {
-                throw new InvalidOperationException("ctrl == element.SimpleName");
+                throw new InvalidOperationException("ctrl == self");
             }
             FieldBranchCfg branchCfg = new FieldBranchCfg();
             branchCfg.ctrl = ctrlName;
-            branchCfg.ctrlIndex = CollectionUtil.IndexOfCustom(allFields, e => e.SimpleName == ctrlName);
+            branchCfg.ctrlIndex = allFields.FindIndex(e => e.SimpleName == ctrlName);
             // 
             DsonValue dsonValue = dsonObject[DSAnnotations.KEY_VALUE];
             if (dsonValue.IsNumber) {
@@ -344,20 +344,26 @@ public sealed class VariableCfg
         }
     }
 
-    private static void ParseMaskInfo(DsonArray<string> dsonArray, VariableCfg cfg) {
-        cfg.maskNames = new List<string>(dsonArray.Count);
-        for (int index = 0; index < dsonArray.Count; index++) {
-            DsonValue dsonValue = dsonArray[index];
-            cfg.maskNames.Add(dsonValue.AsString());
+    private static void ParseMaskInfo(List<Annotation> annotations, VariableCfg cfg) {
+        cfg.maskNames = new List<string>();
+        foreach (Annotation annotation in annotations) {
+            DsonArray<string> dsonArray = annotation.AsArray();
+            foreach (DsonValue dsonValue in dsonArray) {
+                cfg.maskNames.Add(dsonValue.AsString());
+            }
         }
+        cfg.maskNames.TrimExcess();
     }
 
-    private static void ParsePolyInfo(DsonArray<string> dsonArray, VariableCfg cfg) {
-        cfg.supportedTypes = new List<string>(dsonArray.Count);
-        for (int index = 0; index < dsonArray.Count; index++) {
-            DsonValue dsonValue = dsonArray[index];
-            cfg.supportedTypes.Add(dsonValue.AsString());
+    private static void ParsePolyInfo(List<Annotation> annotations, VariableCfg cfg) {
+        cfg.supportedTypes = new List<string>();
+        foreach (Annotation annotation in annotations) {
+            DsonArray<string> dsonArray = annotation.AsArray();
+            foreach (DsonValue dsonValue in dsonArray) {
+                cfg.supportedTypes.Add(dsonValue.AsString());
+            }
         }
+        cfg.supportedTypes.TrimExcess();
     }
 
     private static void ParsePortInfo(DsonObject<string> dsonObject, VariableCfg cfg) {

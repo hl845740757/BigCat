@@ -65,6 +65,33 @@ class Switch<T> : SingleRunningChildBranch<T> {
 }
 class Foreach<T> : SingleRunningChildBranch<T> {
 }
+class ActiveSelector<T> : SingleRunningChildBranch<T> {
+}
+class SelectorN<T> : SingleRunningChildBranch<T> {
+  int32 required = 1; // 需要成功的数量
+  bool failFast = 2; // 是否快速失败，不等执行完毕
+}
+
+class SimpleParallel<T> : ParallelBranch<T> {
+}
+class Join<T> : ParallelBranch<T> {
+  // @PloyField["JoinMain<T>", "JoinSelector<T>", "JoinSequence<T>", "JoinAnyOf<T>", "JoinWaitAll<T>"]
+  JoinPolicy<T> policy = 1; // 调度策略，多态字段
+}
+
+// 调度策略接口
+class JoinPolicy<T> {
+}
+class JoinMain<T> : JoinPolicy<T> {
+}
+class JoinSelector<T> : JoinPolicy<T> {
+}
+class JoinSequence<T> : JoinPolicy<T> {
+}
+class JoinAnyOf<T> : JoinPolicy<T> {
+}
+class JoinWaitAll<T> : JoinPolicy<T> {
+}
 
 // 这里将所有类型引用进来，通过子类实例化泛型
 class BTreeSearchTreeGroupEntry0<T> {
@@ -76,6 +103,11 @@ class BTreeSearchTreeGroupEntry0<T> {
   Sequence<T> _f12 = 12;
   Switch<T> _f13 = 13;
   Foreach<T> _f14 = 14;
+  ActiveSelector<T> _f15 =15;
+  SelectorN<T> _f16 = 16;
+  
+  SimpleParallel<T> _f21 = 21;
+  Join<T> _f22 = 22;
 }
 // 通过子类直接实例化所有泛型
 // @SearchTreeGroupEntry {}

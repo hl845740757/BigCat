@@ -934,13 +934,6 @@ public sealed class DataGraph
         _helper.Decode(variable, dsonValue);
     }
 
-    /// <summary>
-    /// 解析类型符号(暂时不应用作用域)
-    /// </summary>
-    public DSNamedType ResolveTypeSymbol(string typeSymbol) {
-        return _helper.ResolveTypeSymbol(typeSymbol);
-    }
-
     #endregion
 
     #region undo/redo

@@ -71,7 +71,7 @@ public class VarObjectField : Foldout, IVarField
         contentContainer.SetEnabled(true);
         // 延迟初始化
         VisualElement container = contentContainer;
-        if (container.childCount == 0) {
+        if (container.childCount == 0 && !ReferenceEquals(_buildType, variable.type)) {
             RebuildFieldViews();
         }
         for (int index = 0; index < container.childCount; index++) {
@@ -254,6 +254,10 @@ public class VarObjectField : Foldout, IVarField
         }
         // 多态类型选择
         if (variableCfg.HasSupportedTypes && !isPairType) {
+            string curTypeSymbol = _editor.GetDisplayName(variable.type);
+            menu.AddDisabledItem(new GUIContent("ChangeType/" + curTypeSymbol));
+            menu.AddSeparator("ChangeType/");
+            //
             GenericMenu.MenuFunction2 callback = OnClickChangeType;
             for (int index = 0; index < variableCfg.supportedTypes.Count; index++) {
                 string label = variableCfg.supportedTypes[index];
@@ -313,7 +317,8 @@ public class VarObjectField : Foldout, IVarField
         Variable variable = _variable;
         string typeSymbol = variable.cfg.supportedTypes[index];
         //
-        DSNamedType namedType = _editor.dataGraph.ResolveTypeSymbol(typeSymbol);
+        DSNamedType enclosingType = (DSNamedType)variable.defineInfo.EnclosingElement;
+        DSNamedType namedType = (DSNamedType)_editor.repository.ResolveTypeSymbol(enclosingType, typeSymbol);
         _editor.dataGraph.ChangeVariableType(variable, namedType);
         if (variable.isRoot) {
             _editor.dataGraph.InitOutputFields(variable.dataNode);

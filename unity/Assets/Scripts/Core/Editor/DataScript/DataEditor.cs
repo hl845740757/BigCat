@@ -9,6 +9,7 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 using Wjybxx.BigCatTool.DataScript;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson.Text;
@@ -138,6 +139,7 @@ public class DataEditor : EditorWindow
         toolbar.Q<Button>("open-file").RegisterCallback<ClickEvent>(OnClickOpenFile);
         toolbar.Q<Button>("close-file").RegisterCallback<ClickEvent>(OnClickCloseFile);
         toolbar.Q<Button>("save-file-as").RegisterCallback<ClickEvent>(OnClickSaveFileAs);
+        toolbar.Q<Button>("change-folder").RegisterCallback<ClickEvent>(OnClickChangeFolder);
         // 
         graphView.Bind(dataGraph);
         graphView.nodeCreationRequest = OnNodeCreationRequest;
@@ -158,10 +160,22 @@ public class DataEditor : EditorWindow
         }
     }
 
+    private void OnClickChangeFolder(ClickEvent evt) {
+        evt.StopPropagation();
+        string folder = toolbar.Q<MTextField>("folder").value;
+        if (string.IsNullOrEmpty(folder)) {
+            folder = null;
+        }
+        graphView.currentFolder = folder;
+        graphView.Refresh();
+        Debug.Log("切换成功，CurrentFolder: " + folder);
+    }
+
     private void OnClickCloseFile(ClickEvent evt) {
         evt.StopPropagation();
         dataGraph.Close();
         dataGraph.assetPath = null;
+        graphView.currentFolder = null;
         toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify("");
         //
         selectedNode = null;
@@ -193,6 +207,7 @@ public class DataEditor : EditorWindow
         string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
         UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
         toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify(assetPath);
+        toolbar.Q<MTextField>("folder").SetValueWithoutNotify("");
         //
         dataGraph.assetPath = assetPath;
         dataGraph.Load();
@@ -203,20 +218,6 @@ public class DataEditor : EditorWindow
     }
 
     #region node-info
-
-    private void OnPositionFiledChanged(ChangeEvent<Vector2> evt) {
-        evt.StopPropagation();
-        if (selectedNode == null) return;
-        selectedNode.dataNode.position = evt.newValue;
-        selectedNode.dataNode.ApplyModifiedProperties();
-    }
-
-    private void OnTitleFieldChanged(ChangeEvent<string> evt) {
-        evt.StopPropagation();
-        if (selectedNode == null) return;
-        selectedNode.dataNode.title = evt.newValue;
-        selectedNode.dataNode.ApplyModifiedProperties();
-    }
 
     private void OnEnablePortChanged(ChangeEvent<bool> evt) {
         evt.StopPropagation();
@@ -229,23 +230,41 @@ public class DataEditor : EditorWindow
         dataNode.ApplyModifiedProperties();
     }
 
+    private void OnPositionFiledChanged(ChangeEvent<Vector2> evt) {
+        evt.StopPropagation();
+        if (selectedNode == null) return;
+        selectedNode.dataNode.position = evt.newValue;
+        selectedNode.dataNode.ApplyModifiedProperties();
+    }
+
+    private void OnTitleFieldChanged(ChangeEvent<string> evt) {
+        evt.StopPropagation();
+        if (selectedNode == null) return;
+        selectedNode.dataNode.title = ObjectUtil.EmptyToDef(evt.newValue, null);
+        selectedNode.dataNode.ApplyModifiedProperties();
+    }
+
     private void OnFolderFieldChanged(ChangeEvent<string> evt) {
         evt.StopPropagation();
         if (selectedNode == null) return;
-        selectedNode.dataNode.folder = evt.newValue;
+        selectedNode.dataNode.folder = ObjectUtil.EmptyToDef(evt.newValue, null);
         selectedNode.dataNode.ApplyModifiedProperties();
-        // TODO 刷新View
     }
 
     private void OnNameFieldChanged(ChangeEvent<string> evt) {
         evt.StopPropagation();
         if (selectedNode == null) return;
-        selectedNode.dataNode.name = evt.newValue;
+        selectedNode.dataNode.name = ObjectUtil.EmptyToDef(evt.newValue, null);
         selectedNode.dataNode.ApplyModifiedProperties();
     }
 
     private void OnLocalIdFieldChanged(ChangeEvent<long> evt) {
         if (selectedNode == null) return;
+        if (evt.newValue <= 0) {
+            Debug.LogWarning("localId is invalid: " + evt.newValue);
+            localIdField.SetValueWithoutNotify(evt.previousValue);
+            return;
+        }
         if (dataGraph.nodeDic.ContainsKey(evt.newValue)) {
             Debug.LogWarning("localId is duplicated: " + evt.newValue);
             localIdField.SetValueWithoutNotify(evt.previousValue);
@@ -281,7 +300,7 @@ public class DataEditor : EditorWindow
         nodeValueView.Clear();
     }
 
-    private string GetDisplayName(DSNamedType namedType) {
+    internal string GetDisplayName(DSNamedType namedType) {
         if (!displayNameCache.TryGetValue(namedType, out string displayName)) {
             displayName = DSUtil.ToDisplayString(namedType.TypeName);
             displayNameCache[namedType] = displayName;
@@ -323,6 +342,7 @@ public class DataEditor : EditorWindow
             DataNode dataNode = dataGraph.CreateNode(namedType);
             // 特征值在字段上
             VariableCfg variableCfg = dataGraph.GetVariableCfg(field);
+            dataNode.folder = graphView.currentFolder;
             dataNode.features = variableCfg.nodeFeatures;
             dataNode.position = graphView.contentViewContainer.WorldToLocal(context.screenMousePosition);
             dataGraph.AddNode(dataNode);

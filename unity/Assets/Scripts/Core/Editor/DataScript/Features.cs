@@ -36,6 +36,10 @@ public enum Features : uint
     /// 纯粹的内存节点（不需要序列化保存）
     /// </summary>
     MemoryOnly = 0x02,
+    /// <summary>
+    /// 运行时可内联（虚拟节点，或是值类型节点）
+    /// </summary>
+    Inlinable = 0x04,
 
     /// <summary>
     /// 输出节点的桥接Node

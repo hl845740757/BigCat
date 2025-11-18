@@ -6,6 +6,8 @@
             <ui:Button text="打开" display-tooltip-when-elided="true" name="open-file" />
             <ui:Button text="关闭" display-tooltip-when-elided="true" name="close-file" />
             <ui:Button text="另存为" display-tooltip-when-elided="true" name="save-file-as" />
+            <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="Folder：" label-margin="-100" name="folder" tooltip="虚拟子文件夹" style="width: 200px;" />
+            <ui:Button text="切换" display-tooltip-when-elided="true" name="change-folder" />
         </uie:Toolbar>
         <ui:VisualElement style="flex-direction: row; flex-grow: 1;">
             <Wjybxx.BigCat.CoreEditor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; min-width: 60%; min-height: 100%;" />

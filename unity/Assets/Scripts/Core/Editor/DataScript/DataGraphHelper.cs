@@ -64,7 +64,7 @@ internal class DataGraphHelper
         return symbol;
     }
 
-    public DSNamedType ResolveTypeSymbol(string symbol) {
+    private DSNamedType ResolveTypeSymbol(string symbol) {
         if (typeSymbolResolveCache.TryGetValue(symbol, out DSNamedType type)) {
             return type;
         }
