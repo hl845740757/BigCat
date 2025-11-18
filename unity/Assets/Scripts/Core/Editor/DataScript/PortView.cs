@@ -117,6 +117,7 @@ public class PortView : Port
                     nodeView.ExpandListPort(this);
                 });
             }
+            // TODO 增加按照X/Y坐标排序功能
         }
         menu.ShowAsContext();
     }

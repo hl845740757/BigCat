@@ -220,7 +220,6 @@ public sealed class DataGraph
         nodeDic.Add(node.localId, node);
         nodeList.Add(node);
         CreateInsertCommand(node);
-        nodeList.Sort(CompareNode);
 
         if (_graphChange != null) {
             _graphChange.insetNodes.Add(node);
@@ -424,19 +423,35 @@ public sealed class DataGraph
             throw new ArgumentNullException(nameof(targetNode));
         }
         DSNamedType varType = variable.type;
+        ObjectPath objectPath = new ObjectPath(targetNode.localId);
         if (DSUtil.IsCollectionType(varType)) {
+            FieldPortCfg portCfg = variable.cfg.portCfg;
+            if (portCfg != null && portCfg.distinct && ContainsConnection(variable, objectPath)) {
+                return;
+            }
             Variable nestedVar = CreateListItem(variable);
-            nestedVar.objectPathValue = new ObjectPath(targetNode.localId);
+            nestedVar.objectPathValue = objectPath;
             variable.Add(nestedVar);
             if (applyModifiers) {
                 variable.ApplyModifiedProperties();
             }
             return;
         }
-        variable.objectPathValue = new ObjectPath(targetNode.localId);
+        variable.objectPathValue = objectPath;
         if (applyModifiers) {
             variable.ApplyModifiedProperties();
         }
+    }
+
+    private static bool ContainsConnection(Variable variable, ObjectPath connection) {
+        foreach (Variable nestedVar in variable.values) {
+            ObjectPath objectPath = nestedVar.objectPathValue;
+            if (objectPath.collection == connection.collection
+                && objectPath.localId == connection.localId) {
+                return true; // 需要忽略Type比较，因此不能直接使用'=='
+            }
+        }
+        return false;
     }
 
     /// <summary>
@@ -1094,7 +1109,7 @@ public sealed class DataGraph
     /// (数据层好像暂时没什么特殊逻辑，因为我们并不会直接清理无效引用)
     /// </summary>
     private void RepairGraph(DataGraphChange graphChange) {
-        nodeList.Sort(CompareNode);
+        // nodeList.Sort(CompareNode); // Sort会导致资产文件不必要的变动
     }
 
     private static int CompareNode(DataNode a, DataNode b) {

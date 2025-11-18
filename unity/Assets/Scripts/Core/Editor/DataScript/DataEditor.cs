@@ -7,7 +7,6 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
-using Wjybxx.BigCat.CoreEditor;
 using Wjybxx.BigCat.CoreEditor.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons.Collections;
@@ -35,9 +34,12 @@ public class DataEditor : EditorWindow
     protected TextField typeSymbolField;
     protected Toggle enablePortToggle; // Pair类型启用端口
 
+    /// <summary>
+    /// 由外部构建<see cref="DSRepository"/>
+    /// </summary>
     public DSRepository repository { get; private set; }
     /// <summary>
-    /// 需要主动构建<see cref="DSRepository"/>
+    /// 对象图，所有的数据都保存在这里，包括场景中的数据
     /// </summary>
     public DataGraph dataGraph { get; private set; }
     /// <summary>
@@ -160,6 +162,7 @@ public class DataEditor : EditorWindow
         evt.StopPropagation();
         dataGraph.Close();
         dataGraph.assetPath = null;
+        toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify("");
         //
         selectedNode = null;
         graphView.Bind(dataGraph);
@@ -321,7 +324,7 @@ public class DataEditor : EditorWindow
             // 特征值在字段上
             VariableCfg variableCfg = dataGraph.GetVariableCfg(field);
             dataNode.features = variableCfg.nodeFeatures;
-            dataNode.position = graphView.contentContainer.WorldToLocal(context.screenMousePosition);
+            dataNode.position = graphView.contentViewContainer.WorldToLocal(context.screenMousePosition);
             dataGraph.AddNode(dataNode);
             return true;
         }

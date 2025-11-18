@@ -367,6 +367,8 @@ public sealed class VariableCfg
             portCfg.side = Enum.Parse<Side>(dsonValue.AsString(), true);
             Debug.Assert(portCfg.side != Side.Top, "side == top");
         }
+        portCfg.distinct = Annotation.GetBool(dsonObject, DSAnnotations.KEY_DISTINCT);
+        portCfg.expanded = Annotation.GetBool(dsonObject, DSAnnotations.KEY_EXPANDED);
         cfg.portCfg = portCfg;
     }
 
@@ -448,6 +450,8 @@ public sealed class FieldBranchCfg
 public sealed class FieldPortCfg
 {
     public Side side = Side.Right; // 端口的显示位置
+    public bool distinct; // 是否去重
+    public bool expanded; // 是否默认展开 - 同侧只能出现一个默认展开端口
 }
 
 /// <summary>

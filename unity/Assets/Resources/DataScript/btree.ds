@@ -19,7 +19,7 @@ class Decorator<T> : Task<T> {
 }
 // 分支节点基类
 class BranchTask<T> : Task<T> {
-  // @PortField{side: bottom}
+  // @PortField{side: bottom, distinct : true, expanded: true}
   List<Task<T>> children = 1;
 }
 // 非并行分支基类
@@ -31,7 +31,7 @@ class ParallelBranch<T> : BranchTask<T> {
 
 // FSM
 class StateMachineTask<T> : Decorator<T> {
-  // @PortField{side: right}
+  // @PortField{side: right, distinct : true}
   List<Task<T>> stateList = 1; // 状态列表
 }
 // 切换状态

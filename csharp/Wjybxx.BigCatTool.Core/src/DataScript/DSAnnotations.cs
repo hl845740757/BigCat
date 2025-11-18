@@ -77,21 +77,6 @@ public static class DSAnnotations
     public const string OPTIONS = "Options";
 
     /// <summary>
-    /// 字段序列化为引用，内容部分保持为空
-    /// <code>// @SerializeReference{} </code>
-    /// 
-    /// 注：虽然通过特征值也可以指定字段序列化引用，但不符合大家日常编程习惯，因此支持通过注解指定。
-    /// </summary>
-    public const string SERIALIZE_REFERENCE = "SerializeReference";
-    /// <summary>
-    /// 字段不需要序列化，内容部分保持为空
-    ///  <code>// @NonSerialized{} </code>
-    ///
-    /// 注：等效Options中的nonSerialized属性。
-    /// </summary>
-    public const string NON_SERIALIZED = "NonSerialized";
-
-    /// <summary>
     /// 类型或字段的编辑器基础选项
     /// 
     /// 语法：<code>// @Editor{ displayType: Vector3, displayName: Vector3, tooltip: "Tip", dsonType: Pointer }</code>
@@ -124,6 +109,8 @@ public static class DSAnnotations
     ///
     /// 语法：<code>// @PortField{ side: Right }</code>
     /// - side 端口的显示位置；Left、Right、Bottom，未指定的情况下默认Right。
+    /// - distinct 端口去重：禁止List/Map类型端口连接至同一对象
+    /// - expanded 是否默认展开；同侧只能出现一个默认展开端口
     /// 
     /// 注：当List/Map内的元素也需要定义数据接口时，必须将List字段自身标记为PortField。
     /// </summary>
@@ -210,7 +197,8 @@ public static class DSAnnotations
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";
     public const string KEY_SIDE = "side";
-    public const string KEY_FIELD_PATH = "fieldPath";
+    public const string KEY_DISTINCT = "distinct";
+    public const string KEY_EXPANDED = "expanded";
 
     public const string KEY_MAX_WIDTH = "maxWidth";
     public const string KEY_MAX_HEIGHT = "maxHeight";

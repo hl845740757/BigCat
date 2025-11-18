@@ -17,12 +17,10 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Pool;
 
 namespace Wjybxx.BigCat.CoreEditor.DataScript
 {
@@ -124,6 +122,11 @@ public class NodeView : Node
             portView.portName = outputField.defineInfo.SimpleName;
             portView.Bind(outputField);
             AddPort(portView, side);
+            // 默认展开
+            FieldPortCfg portCfg = outputField.cfg.portCfg;
+            if (portCfg != null && portCfg.expanded) {
+                ExpandListPort(portView);
+            }
         }
     }
 
