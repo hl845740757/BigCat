@@ -128,7 +128,7 @@ public sealed class WindowMgr
     public WindowMgr(WorkerHolder workerHolder, WindowMgrCfg cfg) {
         this.coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
             enableFrameQueue: cfg.enableFrameQueue);
-        this._canvas = cfg.GetComponent<Canvas>() ?? throw new Exception("Canvas not found");
+        this._canvas = cfg.canvas ?? throw new Exception("Canvas not found");
         this._windowLoader = cfg.windowLoader; // 非必须
         this._aggregationModel = cfg.aggregationModel;
         this._dataModelResolver = cfg.dataModelResolver;

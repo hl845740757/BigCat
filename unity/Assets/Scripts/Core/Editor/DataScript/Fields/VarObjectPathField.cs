@@ -29,6 +29,7 @@ public class VarObjectPathField : BindableElement, IVarField
 
     public VarObjectPathField() {
         Add(field);
+        field.isExpanded = false; // 默认折叠
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

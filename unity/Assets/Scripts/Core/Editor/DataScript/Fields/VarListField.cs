@@ -60,6 +60,7 @@ public class VarListField : BindableElement, IVarField
         _listView.itemsAdded += OnItemsAdded;
         _listView.itemsRemoved += OnItemRemoved;
         _listView.itemIndexChanged += OnItemIndexChanged;
+        _listView.SetFoldout(false);
         this.Add(_listView);
         // 直接监听ContextClickEvent将无法拦截事件，因此监听原始的鼠标事件
         this.RegisterCallback<MouseDownEvent>(ShowListContextMenu);

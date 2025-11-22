@@ -41,8 +41,8 @@ public partial class AnimationClipEditor
         private int _frameIndex; // 当前编辑/播放帧
         public float playTime; // 总播放时间
         public float frameTime; // 当前帧播放时间
-        public VisualElement clipElement;
-        public VisualElement container;
+        public VisualElement clipElement; // List元素
+        public VisualElement container; // 帧图和攻击盒的容器
         public VisualElement imageElement;
         public readonly List<VisualElement> damageBoxElements = new List<VisualElement>();
         public readonly List<VisualElement> hurtBoxElements = new List<VisualElement>();

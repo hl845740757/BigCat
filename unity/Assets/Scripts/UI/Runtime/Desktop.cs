@@ -204,7 +204,8 @@ public sealed class Desktop
     }
 
     private bool IsOverlapped(Window window, int index) {
-        // 完整测试的话会比较复杂，开销也比较大，先只做简单测试，即要求必须某个单一界面完整覆盖 -- 理论上可能被多个界面组合覆盖
+        // 完整测试的话会比较复杂，开销也比较大，先只做简单测试，即要求必须某个单一界面完整覆盖
+        // 理论上可能被多个界面组合覆盖
         Rect winTransRect = window.transform.rect;
         for (int i = index + 1; i < _stack.Count; i++) {
             if (_stack[i].DisplayMode == WindowDisplayMode.Fullscreen) {

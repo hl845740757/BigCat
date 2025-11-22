@@ -61,6 +61,11 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         }
     }
 
+    public bool isExpanded {
+        get => _foldout.value;
+        set => _foldout.value = value;
+    }
+
     private void RefreshReadonly() {
         if (_collectionField == null) return;
         _collectionField.isReadOnly = _isReadOnly;

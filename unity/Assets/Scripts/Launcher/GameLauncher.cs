@@ -102,9 +102,12 @@ public class GameLauncher : MonoBehaviour
         sceneMgr = worker.Injector.GetInstance<SceneMgr>();
         SceneMgr.Inst = sceneMgr;
 
-        // 初始化UI管理器
+        // 初始化UI管理器 - 配置类以后需要集中管理
         uiRoot = gameObject.scene.GetRootGameObjects().First(e => e.name == "UIRoot");
-        WindowMgrCfg windowMgrCfg = uiRoot.GetComponent<WindowMgrCfg>();
+        WindowMgrCfg windowMgrCfg = new WindowMgrCfg
+        {
+            canvas = uiRoot.GetComponent<Canvas>()
+        };
         windowMgr = new WindowMgr(workerHolder, windowMgrCfg);
         WindowMgr.Inst = windowMgr;
     }

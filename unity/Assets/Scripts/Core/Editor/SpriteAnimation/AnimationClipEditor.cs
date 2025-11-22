@@ -123,7 +123,7 @@ public partial class AnimationClipEditor : EditorWindow
         }
         this.rootVisualElement.focusable = true;
         this.rootVisualElement.RegisterCallback<KeyDownEvent>(OnWindowKeyDownEvent);
-        
+
         root.Q<ToolbarButton>("toolbar0").RegisterCallback<ClickEvent>(OnClickToolbar0);
         root.Q<ToolbarButton>("toolbar1").RegisterCallback<ClickEvent>(OnClickToolbar1);
         _pickClipButton = root.Q<Button>("pick-clip");
@@ -581,14 +581,15 @@ public partial class AnimationClipEditor : EditorWindow
                     context.frameTime = 0;
                 }
             }
-            if (frameIndex != context.frameIndex) {
-                needRefreshPreviewArea = true;
-                BindBoxElements(context, true);
-                BindBoxElements(context, false);
-                if (clipIndex == 0) {
-                    _frameIndexField.SetValueWithoutNotify(context.frameIndex);
-                    BindFrameInfoElements();
-                }
+            if (frameIndex == context.frameIndex) {
+                continue;
+            }
+            needRefreshPreviewArea = true;
+            BindBoxElements(context, true);
+            BindBoxElements(context, false);
+            if (clipIndex == 0) {
+                _frameIndexField.SetValueWithoutNotify(context.frameIndex);
+                BindFrameInfoElements();
             }
         }
         if (needRefreshPreviewArea) {
@@ -1050,7 +1051,7 @@ public partial class AnimationClipEditor : EditorWindow
     #region frame-context-menu
 
     private void ReleaseMouse(MouseUpEvent evt) {
-        if (evt.button != 0) return;
+        if (evt.button == (int)MouseButton.RightMouse) return;
         _selectedElement?.ReleaseMouse();
     }
 
@@ -1081,7 +1082,7 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void OnFrameAreaMouseDown(MouseDownEvent evt) {
-        if (evt.button != 0) return;
+        if (evt.button == (int)MouseButton.RightMouse) return;
         evt.StopPropagation();
         CancelImageSelectEffect();
         _selectedElement = _frameAreaElement;

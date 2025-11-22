@@ -26,7 +26,6 @@ namespace Wjybxx.BigCat.Animator
 ///
 /// 注：如果使用Unity内置的序列化，需要使用ScriptableObject才能实现多态，我们并不想将事件数据存储在外部。
 /// </summary>
-[Serializable]
 public sealed class AnimationEvent
 {
     public bool enabled = true; // 是否启用
@@ -37,8 +36,7 @@ public sealed class AnimationEvent
     public AnimationEventType type; // 事件类型
     public double numberParameter; // int, float, long, double, bool
     public string stringParameter; // 字符串参数
-    public object objectParameter; // 目标对象（内联对象）
-    public ObjectPath objectPath; // 目标对象路径
+    public object objectParameter; // 对象参数
 }
 
 /// <summary>

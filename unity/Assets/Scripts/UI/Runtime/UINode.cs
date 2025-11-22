@@ -74,9 +74,9 @@ public class UINode : MonoBehaviour
     /// <summary>
     /// 外部控制器（事件处理器）
     ///
-    /// 注：可能为null，要么没有事件逻辑，要么被自己处理了。
+    /// 注：可能为null，可能没有显式的controller；允许编辑器指定。
     /// </summary>
-    [NonSerialized] protected Controller controller;
+    public Controller controller;
 
     /// <summary>
     /// 控制标记，避免过多的bool字段
@@ -118,8 +118,8 @@ public class UINode : MonoBehaviour
         if (blackboard == null) {
             blackboard = _parent ? _parent.Blackboard : _window.Blackboard;
         }
-        if (!controller && (controller = UIInternal.FindController(this))) {
-            controller.Init(this);
+        if (!controller) {
+            controller.Inject(this);
         }
         ResetDisplayElements();
         gameObject.SetActive(true);
@@ -400,17 +400,11 @@ public class UINode : MonoBehaviour
     public Window Window => _window;
     public UINode Parent => _parent;
     public object DataModel => _dataModel;
-
     public int ReentryId => _reentryId;
 
     public Blackboard Blackboard {
         get => blackboard;
         set => blackboard = value;
-    }
-
-    public Controller Controller {
-        get => controller;
-        set => controller = value;
     }
 
     #endregion

@@ -195,7 +195,7 @@ public sealed class VariableCfg
         if (annotation != null) {
             ParseBaseOptions(annotation.AsObject(), cfg, element);
         }
-        annotation = element.GetAnnotation(DSAnnotations.EDITOR_STYLE);
+        annotation = element.GetAnnotation(DSAnnotations.FIELD_STYLE);
         if (annotation != null) {
             ParseStyleOptions(annotation.AsObject(), cfg);
         }
@@ -225,10 +225,9 @@ public sealed class VariableCfg
         // 如果是枚举类型，提前缓存PopNames
         if (element.Kind == DSElementKind.Enum) {
             ParseEnumPops(cfg, (DSNamedType)element);
-        }
-        if (element is DSField field) {
-            if (cfg.tooltip == null && field.OriginDefine.Comments.Count > 0) {
-                cfg.tooltip = field.OriginDefine.Comments.PeekLast();
+        } else if (element is DSField field) {
+            if (cfg.tooltip == null && field.Comments.Count > 0) {
+                cfg.tooltip = field.Comments.PeekLast();
             }
             // 拷贝List的配置到元素
             if ((DSUtil.IsCollectionOrMapType(field.Type)
@@ -381,9 +380,10 @@ public sealed class VariableCfg
     private static void ParseStyleOptions(DsonObject<string> dsonObject, VariableCfg cfg) {
         FieldStyleCfg styleCfg = new FieldStyleCfg();
         DsonValue dsonValue;
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_WIDTH, out dsonValue)) styleCfg.maxWidth = dsonValue.AsNumber();
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_HEIGHT, out dsonValue)) styleCfg.maxHeight = dsonValue.AsNumber();
-        //
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_HEIGHT, out dsonValue)) {
+            styleCfg.maxHeight = dsonValue.AsNumber();
+        }
+        // 边距
         if (dsonObject.TryGetValue(DSAnnotations.KEY_LABEL_MARGIN, out dsonValue)) {
             styleCfg.labelMargin = dsonValue.AsNumber();
         }
@@ -399,7 +399,7 @@ public sealed class VariableCfg
         if (dsonObject.TryGetValue(DSAnnotations.KEY_W_LABEL_MARGIN, out dsonValue)) {
             styleCfg.wLabelMargin = dsonValue.AsNumber();
         }
-        // TODO
+        styleCfg.expanded = Annotation.GetBool(dsonObject, DSAnnotations.KEY_EXPANDED, true);
         cfg.styleCfg = styleCfg;
     }
 
@@ -450,8 +450,6 @@ public sealed class FieldBranchCfg
 
 /// <summary>
 /// Port端口设置
-///
-/// 注意：字段路径不能经过List/Map字段，即不支持动态路径绑定。
 /// </summary>
 public sealed class FieldPortCfg
 {
@@ -476,17 +474,10 @@ public enum Side
 /// </summary>
 public sealed class FieldStyleCfg
 {
-    /// <summary>
-    /// 主题
-    /// </summary>
-    public string theme;
-    /// <summary>
-    /// 视图的最大宽高
-    /// </summary>
-    public DsonNumber maxWidth;
-    public DsonNumber maxHeight;
+    public bool expanded; // 是否默认展开
+    public DsonNumber maxHeight; // 最大高度
 
-    public DsonNumber labelMargin;
+    public DsonNumber labelMargin; // 标签边距
     public DsonNumber xLabelMargin;
     public DsonNumber yLabelMargin;
     public DsonNumber zLabelMargin;

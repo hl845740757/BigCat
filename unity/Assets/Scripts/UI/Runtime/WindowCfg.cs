@@ -114,19 +114,6 @@ public class WindowCfg : MonoBehaviour
     /// </summary>
     [Tooltip("如果UI存在按帧Update的逻辑，则需要启用该选项")]
     public bool enableFrameQueue;
-
-    /// <summary>
-    /// 窗口的打开位置
-    /// (Unity下好像可以通过锚点解决？)
-    /// </summary>
-    [Tooltip("窗口打开的位置")]
-    public WindowLocation location = WindowLocation.Custom;
-    /// <summary>
-    /// 窗口的位置偏移
-    /// </summary>
-    [Tooltip("窗口打开的位置偏移")]
-    public Vector3 offset = Vector3.zero;
-
     /// <summary>
     /// 窗口的最大空闲时间
     ///
@@ -134,13 +121,6 @@ public class WindowCfg : MonoBehaviour
     /// </summary>
     [Tooltip("窗口关闭后的保留时间；单位秒，'-1'表示不销毁")]
     public float maxIdleTime = 30;
-    /// <summary>
-    /// 窗口的互斥方式
-    ///
-    /// 1.其实不建议使用互斥逻辑，窗口都打开也没什么问题 -- 因此不设计复杂的互斥规则。
-    /// 2.在不使用互斥逻辑的情况下，用户可以在打开窗口前通过Close方法关闭掉具有指定Tags的窗口。
-    /// </summary>
-    public WindowMutexMode mutexMode = WindowMutexMode.None;
 
     /// <summary>
     /// 关联的Window实例
@@ -195,6 +175,8 @@ public enum WindowDisplayMode
 
 /// <summary>
 /// 窗口的打开位置
+///
+/// Unity下可以通过锚点解决
 /// </summary>
 public enum WindowLocation
 {
@@ -214,7 +196,10 @@ public enum WindowLocation
 }
 
 /// <summary>
-/// 窗口互斥模式
+/// 窗口的互斥方式
+///
+/// 1.其实不建议使用互斥逻辑，窗口都打开也没什么问题 -- 因此不设计复杂的互斥规则。
+/// 2.在不使用互斥逻辑的情况下，用户可以在打开窗口前通过Close方法关闭掉具有指定Tags的窗口。
 /// </summary>
 public enum WindowMutexMode
 {

@@ -96,14 +96,19 @@ public static class DSAnnotations
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
-    /// 编辑器风格字段
-    ///
+    /// 字段编辑器风格(Inspector视图)
+    /// - expanded 是否默认展开
     /// - maxWidth 最大宽度
     /// - maxHeight 最大高度
     /// - labelMargin label和value的边距
     /// </summary>
-    public const string EDITOR_STYLE = "EditorStyle";
-
+    public const string FIELD_STYLE = "FieldStyle";
+    /// <summary>
+    /// 节点编辑器风格(GraphView视图)
+    /// 
+    /// </summary>
+    public const string NODE_STYLE = "NodeStyle";
+    
     /// <summary>
     /// 端口字段
     ///

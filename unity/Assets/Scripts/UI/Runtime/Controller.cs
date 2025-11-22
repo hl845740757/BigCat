@@ -47,12 +47,12 @@ public abstract class Controller : MonoBehaviour
     [NonSerialized] protected UINode node;
 
     /// <summary>
-    /// 执行初始化
+    /// 注入View实例
     ///
     /// 1.该方法在Node激活后，展示前调用。
     /// 2.Controller的初始化不可以依赖Node的数据。
     /// </summary>
-    public virtual void Init(UINode node) {
+    public virtual void Inject(UINode node) {
         this.node = node;
     }
 

@@ -1144,8 +1144,7 @@ public sealed class DataGraph
         }
         Command headCommand = undoQueue.PeekFirst();
         double backupTime = headCommand.time;
-        // 强制保留2分钟内的操作记录
-        if (_tickTime - backupTime < 120) {
+        if (_tickTime - backupTime < 60) {
             return;
         }
         // 同一批的操作同时删除以保证原子性
@@ -1228,6 +1227,8 @@ public sealed class DataGraph
         node.localId = prevLocalId;
         List<Variable> list = _variableListPool.Acquire();
         GetInputs(node, list);
+        node.localId = nextLocalId;
+        //
         foreach (Variable variable in list) {
             ObjectPath objectPath = variable.objectPathValue;
             objectPath.localId = nextLocalId;
@@ -1237,7 +1238,6 @@ public sealed class DataGraph
             }
         }
         _variableListPool.Release(list);
-        node.localId = nextLocalId;
     }
 
     private struct Command

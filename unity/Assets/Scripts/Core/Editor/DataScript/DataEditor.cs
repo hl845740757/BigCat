@@ -140,6 +140,7 @@ public class DataEditor : EditorWindow
         toolbar.Q<Button>("close-file").RegisterCallback<ClickEvent>(OnClickCloseFile);
         toolbar.Q<Button>("save-file-as").RegisterCallback<ClickEvent>(OnClickSaveFileAs);
         toolbar.Q<Button>("change-folder").RegisterCallback<ClickEvent>(OnClickChangeFolder);
+        toolbar.Q<ToolbarMenu>("folder-menu").RegisterCallback<ClickEvent>(OnClickFolderMenu);
         // 
         graphView.Bind(dataGraph);
         graphView.nodeCreationRequest = OnNodeCreationRequest;
@@ -162,13 +163,28 @@ public class DataEditor : EditorWindow
 
     private void OnClickChangeFolder(ClickEvent evt) {
         evt.StopPropagation();
-        string folder = toolbar.Q<MTextField>("folder").value;
-        if (string.IsNullOrEmpty(folder)) {
+        string folder = toolbar.Q<MTextField>("folder").value?.Trim();
+        ChangeFolder(folder);
+    }
+
+    private void ChangeFolder(string folder) {
+        if (string.IsNullOrEmpty(folder) || folder == "root") {
             folder = null;
         }
         graphView.currentFolder = folder;
         graphView.Refresh();
         Debug.Log("切换成功，CurrentFolder: " + folder);
+    }
+
+    private void OnClickFolderMenu(ClickEvent evt) {
+        evt.StopPropagation();
+        ToolbarMenu toolbarMenu = (ToolbarMenu)evt.currentTarget;
+        toolbarMenu.menu.MenuItems().Clear();
+        //
+        foreach (string folder in dataGraph.nodeList.Select(e => e.folder).Distinct()) {
+            string folderName = folder == null ? "root" : folder;
+            toolbarMenu.menu.AppendAction(folderName, menuAction => ChangeFolder(menuAction.name));
+        }
     }
 
     private void OnClickCloseFile(ClickEvent evt) {
@@ -177,6 +193,7 @@ public class DataEditor : EditorWindow
         dataGraph.assetPath = null;
         graphView.currentFolder = null;
         toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify("");
+        toolbar.Q<MTextField>("folder").SetValueWithoutNotify("");
         //
         selectedNode = null;
         graphView.Bind(dataGraph);

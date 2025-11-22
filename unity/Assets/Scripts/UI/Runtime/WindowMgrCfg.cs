@@ -25,14 +25,10 @@ namespace Wjybxx.BigCat.UI
 /// <summary>
 /// 窗口管理器的配置类
 ///
-/// 注：
-/// 1.在Unity下继承MonoBehavior，允许在编辑器中配置。
-/// 2.建议绑定实例到容器中
+/// 注：建议绑定实例到容器中
 /// </summary>
-[RequireComponent(typeof(RectTransform))]
-[RequireComponent(typeof(Canvas))]
-[DisallowMultipleComponent]
-public sealed class WindowMgrCfg : MonoBehaviour
+[Serializable]
+public sealed class WindowMgrCfg
 {
     /// <summary>
     /// 窗口加载器
@@ -46,6 +42,10 @@ public sealed class WindowMgrCfg : MonoBehaviour
     /// 数据模型解析器
     /// </summary>
     [NonSerialized] public IDataModelResolver dataModelResolver = new DataModelResolver();
+    /// <summary>
+    /// 关联的画布
+    /// </summary>
+    public Canvas canvas;
 
     /// <summary>
     /// 定时器的最小间隔

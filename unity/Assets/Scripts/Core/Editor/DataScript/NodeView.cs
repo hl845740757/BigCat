@@ -124,7 +124,7 @@ public class NodeView : Node
             AddPort(portView, side);
             // 默认展开
             FieldPortCfg portCfg = outputField.cfg.portCfg;
-            if (portCfg != null && portCfg.expanded) {
+            if (portCfg != null && portCfg.expanded && outputField.Count > 0) {
                 ExpandListPort(portView);
             }
         }
