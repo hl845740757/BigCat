@@ -473,3 +473,5 @@ unity/Assets/Resources/*/
 !unity/Assets/Resources/Animations/
 !unity/Assets/Resources/DataScript/
 unity/UIElementsSchema/
+unity/Assets/Samples/
+unity/Assets/Samples.meta
