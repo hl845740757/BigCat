@@ -428,10 +428,8 @@ public sealed class Variable : IDisposable
 
     /// <summary>
     /// 查找指定变量
-    ///
-    /// 注：
-    /// 1.一对方括号内加数字表示通过下标取值，如"[0]"表示取values的第一个元素，否则表示通过name取值。
-    /// 2.List/HastSet/Map 应当使用索引符号定位元素；普通对象虽然也可以通过下标取值，但要记住字段的下标较为困难。
+    /// 
+    /// 注：List/HastSet/Map 应当使用索引符号定位元素；普通对象虽然也可以通过下标取值，但要记住字段的下标较为困难。
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
@@ -461,7 +459,7 @@ public sealed class Variable : IDisposable
             return null;
         }
         int length = path.Length;
-        if (path[0] == '[' && path[length - 1] == ']') {
+        if (path[0] == '{' && path[length - 1] == '}') {
             string indexString = path.Substring(0, length - 1).Trim();
             int index = int.Parse(indexString);
             return values[index];

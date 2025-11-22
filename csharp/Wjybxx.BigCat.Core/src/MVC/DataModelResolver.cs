@@ -29,14 +29,24 @@ namespace Wjybxx.BigCat.MVC
 /// 默认的基于反射的数据模型解析器
 ///
 /// <h3>规则</h3>
-/// 1.斜杠'/'开头表示绝对路径，从聚合数模开始访问；非斜杠开头表示相对路径，从父节点数据开始访问。<br></br>
-/// 2.<code>/logic/xxx</code>表示访问逻辑层数据模型；<code>/view/xxx</code>表示访问视图层数据模型。<br></br>
-/// 3.<code>{name}</code>大括号表示变量，括号内为变量名；变量名是约定的，有限的。<br></br>
-/// 4.<code>{uiIndex}</code>表示取ui节点的下标；一个dataAddress中只能出现一次{uiIndex}。<br></br>
-/// 3.字典类型仅支持Int32、Int64、string三种键。
+/// 1.<code>{name}</code>表示变量，括号内为变量名<br></br>
+/// 2.变量是约定的，有限的；每一个变量都有其特殊含义
+/// 3.大括号内为数字时表示值，用于提高可读性和可维护性
+/// 4.地址不包含logic或view变量时，表示从父节点的数据模型开始计算
+/// 5.字典类型仅支持Int32、Int64、string三种键。
+///
+/// <h3>内置变量</h3>
+/// 1.<code>{logic}</code>表示访问逻辑层数据模型<br></br>
+/// 2.<code>{view}</code>表示访问视图层数据模型<br></br>
+/// 3.<code>{uiIndex}</code>表示取ui节点的下标；一个dataAddress中只能出现一次{uiIndex}。<br></br>
+///
+/// <![CDATA[
+///  {view}.bag.{uiIndex}.items.{0}
+/// ]]>
+/// 1. {0} 的可读性和可维护性强于直接写0，因此建议总是将index包起来
+/// 2. 当字典的key为数字类型时，也推荐如此使用{}将key包起来，提高辨识度
 /// 
 /// PS：非线程安全，应该不会在主线程之外访问。
-/// TODO 改为点号分隔符，规范化
 /// </summary>
 [NotThreadSafe]
 public class DataModelResolver : IDataModelResolver
@@ -62,15 +72,29 @@ public class DataModelResolver : IDataModelResolver
         if (string.IsNullOrWhiteSpace(dataAddress)) {
             return parentModel ?? aggregationModel;
         }
-
+        // 初始化entry
         object dataModel;
-        if (dataAddress[0] == '/' || parentModel == null) {
-            dataModel = aggregationModel;
-        } else {
-            dataModel = parentModel;
-        }
+        int index = 0;
         List<Item> itemList = SplitAddr(dataAddress);
-        foreach (Item item in itemList) {
+        if (itemList[0].IsVariable) {
+            Item firstItem = itemList[0];
+            if (firstItem.name == NAME_LOGIC) {
+                dataModel = aggregationModel.LogicModel;
+                index = 1;
+            } else if (firstItem.name == NAME_VIEW) {
+                dataModel = aggregationModel.ViewModel;
+                index = 1;
+            } else {
+                dataModel = parentModel ?? aggregationModel;
+                index = 0;
+            }
+        } else {
+            dataModel = parentModel ?? aggregationModel;
+            index = 0;
+        }
+        // 递归解析
+        for (; index < itemList.Count; index++) {
+            Item item = itemList[index];
             dataModel = Resolve(aggregationModel, dataModel, item, uiIndex);
             if (dataModel == null) {
                 throw new Exception("Could not resolve data model, addr: " + dataAddress);
@@ -90,7 +114,7 @@ public class DataModelResolver : IDataModelResolver
         // 测试是否是List类型 - TODO 测试接口类型是否范围过广？
         if (type.GetInterface(CNAME_ILIST) != null) {
             PropertyInfo propertyInfo = GetIndexer(type);
-            int index = item.IsUiIndex ? uiIndex : (int)item.number;
+            int index = item.IsUiIndex ? uiIndex : item.number;
             return propertyInfo.GetValue(dataModel, new object[] { index });
         }
         // 测试是否是字典类型
@@ -98,12 +122,12 @@ public class DataModelResolver : IDataModelResolver
             PropertyInfo propertyInfo = GetIndexer(type);
             ParameterInfo indexParameter = propertyInfo.GetIndexParameters()[0]; // 这里会创建数组，但字典使用频率不高
             if (indexParameter.ParameterType == typeof(int)) {
-                int index = (int)item.number;
+                int index = item.IsUiIndex ? uiIndex : item.number;
                 _arrayCache[0] = index;
                 return propertyInfo.GetValue(dataModel, _arrayCache);
             }
             if (indexParameter.ParameterType == typeof(long)) {
-                long index = item.number;
+                int index = item.IsUiIndex ? uiIndex : item.number;
                 _arrayCache[0] = index;
                 return propertyInfo.GetValue(dataModel, _arrayCache);
             }
@@ -162,15 +186,11 @@ public class DataModelResolver : IDataModelResolver
         if (itemCache.TryGetValue(addr, out List<Item> result)) {
             return result;
         }
-        string[] splitArray = ObjectUtil.SplitAndTrim(addr, '/');
+        string[] splitArray = ObjectUtil.SplitAndTrim(addr, '.');
         result = new List<Item>(splitArray.Length);
 
         int uiIndexCount = 0;
-        for (int index = 0; index < splitArray.Length; index++) {
-            string str = splitArray[index];
-            if (index == 0 && addr[0] == '/') { // 去除首字符斜杠的空白字符
-                continue;
-            }
+        foreach (string str in splitArray) {
             Item item = ParseItem(addr, str);
             if (item.IsUiIndex) {
                 uiIndexCount++;
@@ -189,21 +209,24 @@ public class DataModelResolver : IDataModelResolver
             throw new Exception("empty, addr: " + addr);
         }
         string name = itemStr;
+        int number = 0;
         int flags = 0;
-        if (itemStr[0] == '{') {
-            if (itemStr[itemStr.Length - 1] != '}') {
-                throw new Exception("missing brace, addr: " + addr);
+        if (itemStr[0] == '{' && itemStr[itemStr.Length - 1] == '}') {
+            // 允许为index套壳提高显示差异{0} -- 也适用字典的key
+            name = itemStr.Substring(1, itemStr.Length - 2);
+            if (int.TryParse(name, out number)) {
+                goto end;
             }
-            name = itemStr.Substring2(1, itemStr.Length - 1).Trim();
             flags |= MASK_VARIABLE;
-
             if (name == NAME_UI_INDEX) {
                 flags |= MASK_UI_INDEX;
             }
+        } else {
+            if (!int.TryParse(itemStr, out number)) {
+                number = -1; // 尽量保持无意义
+            }
         }
-        if (!long.TryParse(itemStr, out long number)) {
-            number = -1; // 尽量保持无意义
-        }
+        end:
         return new Item(name, number, flags);
     }
 
@@ -213,6 +236,7 @@ public class DataModelResolver : IDataModelResolver
     private const string NAME_UI_INDEX = "uiIndex";
     private const string NAME_VIEW = "view";
     private const string NAME_LOGIC = "logic";
+    private const string NAME_PARENT = "parent";
 
     private const int MASK_VARIABLE = 0x01;
     private const int MASK_UI_INDEX = 0x02; // UI索引变量
@@ -224,15 +248,15 @@ public class DataModelResolver : IDataModelResolver
         /// </summary>
         public readonly string name;
         /// <summary>
-        /// 
+        /// name的数字解析缓存
         /// </summary>
-        public readonly long number;
+        public readonly int number;
         /// <summary>
         /// 特征值，避免大量bool
         /// </summary>
         public readonly int flags;
 
-        public Item(string name, long number, int flags) {
+        public Item(string name, int number, int flags) {
             this.name = name;
             this.flags = flags;
             this.number = number;
@@ -240,6 +264,10 @@ public class DataModelResolver : IDataModelResolver
 
         public bool IsVariable => (flags & MASK_VARIABLE) != 0;
         public bool IsUiIndex => (flags & MASK_UI_INDEX) != 0;
+
+        public override string ToString() {
+            return $"{nameof(name)}: {name}, {nameof(number)}: {number}, {nameof(flags)}: {flags}";
+        }
     }
 
     private readonly struct MemberKey : IEquatable<MemberKey>

@@ -55,14 +55,14 @@ public class DataModelResolverTest
         Assert.AreSame(parentModel, dataModel);
 
         // 测试List
-        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemList/0");
+        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemList.{0}");
         {
             Item item = dataModel as Item;
             Assert.IsNotNull(item);
             Assert.AreEqual(1001, item.cid);
         }
         // 测试List带uiIndex
-        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemList/{uiIndex}", 0);
+        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemList.{uiIndex}", 0);
         {
             Item item = dataModel as Item;
             Assert.IsNotNull(item);
@@ -70,21 +70,21 @@ public class DataModelResolverTest
         }
 
         // 测试字典
-        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemDic/1001");
+        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemDic.1001");
         {
             Item item = dataModel as Item;
             Assert.IsNotNull(item);
             Assert.AreEqual(1001, item.cid);
         }
         // 测试失败情况
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "/root/bagModel/itemList/-1"));
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/item_list/0"));
-        
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemList/-1"));
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemList/1001"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemList.{-1}"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.item_list.0"));
 
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemDic/-1"));
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "/logic/bagModel/itemDic/0"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemList.-1"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.{itemList}.1001"));
+
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemDic.-1"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "{logic}.bagModel.itemDic.0"));
     }
 
     [Test]
@@ -94,14 +94,14 @@ public class DataModelResolverTest
         Assert.AreSame(parentModel, dataModel);
 
         // 测试List
-        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "itemList/0");
+        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "itemList.{0}");
         {
             Item item = dataModel as Item;
             Assert.IsNotNull(item);
             Assert.AreEqual(1001, item.cid);
         }
         // 测试List带uiIndex
-        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "itemList/{uiIndex}", 0);
+        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "itemList.{uiIndex}", 0);
         {
             Item item = dataModel as Item;
             Assert.IsNotNull(item);
@@ -109,20 +109,20 @@ public class DataModelResolverTest
         }
 
         // 测试字典
-        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "itemDic/1001");
+        dataModel = dataModelResolver.Resolve(aggregationModel, parentModel, "itemDic.{1001}");
         {
             Item item = dataModel as Item;
             Assert.IsNotNull(item);
             Assert.AreEqual(1001, item.cid);
         }
         // 测试失败情况
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "item_list/0"));
-        
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemList/-1"));
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemList/1001"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "item_list.{0}"));
 
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemDic/-1"));
-        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemDic/0"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemList.{-1}"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemList.{1001}"));
+
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemDic.{-1}"));
+        Assert.Catch<Exception>(() => dataModelResolver.Resolve(aggregationModel, parentModel, "itemDic.{0}"));
     }
 
     private class Player
