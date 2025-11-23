@@ -70,6 +70,15 @@ public interface SceneAgent
 
     }
 
+    /// <summary>
+    /// 场景销毁时调用
+    ///
+    /// 注：可用于销毁/卸载场景资源。
+    /// </summary>
+    void OnDestroy() {
+
+    }
+
     #endregion
 
     /// <summary>

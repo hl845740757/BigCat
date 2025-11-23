@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Wjybxx.Commons.Collections;
-using Wjybxx.Commons.Fx;
 
 namespace Wjybxx.BigCat.UI
 {

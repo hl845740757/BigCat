@@ -47,6 +47,7 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowFeatures.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\WindowMgr.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\Desktop.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\WindowAgent.cs" />
@@ -61,6 +62,7 @@
     <Compile Include="Assets\Scripts\UI\Runtime\Window.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\WIndexes.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\UINodeCfg.cs" />
+    <Compile Include="Assets\Scripts\UI\Runtime\WindowAgentHolder.cs" />
     <None Include="Assets\Scripts\UI\Runtime\Wjybxx.BigCat.UI.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

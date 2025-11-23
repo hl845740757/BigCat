@@ -80,17 +80,11 @@ public class WindowCfg : MonoBehaviour
     /// UI根节点
     /// </summary>
     public UINode rootNode;
+    /// <summary>
+    /// 窗口特征值
+    /// </summary>
+    public WindowFeatures features;
 
-    /// <summary>
-    /// 是否禁止关闭
-    /// </summary>
-    [Tooltip("是否是常驻UI -- 常驻UI不会被模糊关闭，只能强制关闭")]
-    public bool unclosable;
-    /// <summary>
-    /// 是否是跨桌面UI
-    /// </summary>
-    [Tooltip("是否是跨桌面UI -- 跨桌面UI在切换桌面时，自动切换到新桌面，常用于主界面UI")]
-    public bool isCrossDesktop;
     /// <summary>
     /// 是否是遮罩UI
     /// </summary>
@@ -102,18 +96,6 @@ public class WindowCfg : MonoBehaviour
     /// 注：其实理想的类型是long类型，64个Tag应当是够游戏窗口用的。
     /// </summary>
     public HashSet<int> tags = new HashSet<int>();
-
-    /// <summary>
-    /// 是否启用非缩放时间定时器
-    /// (虽然多数UI是不需要的，但还是默认启用)
-    /// </summary>
-    [Tooltip("如果确定不需要非缩放时间定时器，可以关闭该选项以减少开销")]
-    public bool enableUnscaledQueue = true;
-    /// <summary>
-    /// 是否启用帧定时器
-    /// </summary>
-    [Tooltip("如果UI存在按帧Update的逻辑，则需要启用该选项")]
-    public bool enableFrameQueue;
     /// <summary>
     /// 窗口的最大空闲时间
     ///
@@ -130,6 +112,15 @@ public class WindowCfg : MonoBehaviour
 
     #region Window
 
+    /// <summary>
+    /// 是否禁止关闭
+    /// </summary>
+    public bool unclosable => (features & WindowFeatures.Unclosable) != 0;
+    /// <summary>
+    /// 是否是跨桌面UI
+    /// </summary>
+    public bool isCrossDesktop => (features & WindowFeatures.CrossDesktop) != 0;
+    
     public Window GetWindow() {
         return _window;
     }
@@ -171,28 +162,6 @@ public enum WindowDisplayMode
     Fullscreen = 1, // 全屏模式 - 需要获取屏幕大小
     Floating = 2, // 浮动窗口 - 小窗模式
     Minimized = 3, // 最小化 - 即隐藏模式
-}
-
-/// <summary>
-/// 窗口的打开位置
-///
-/// Unity下可以通过锚点解决
-/// </summary>
-public enum WindowLocation
-{
-    Custom = 0, // 自定义位置 -- 非标准位置
-
-    BottomLeft = 1, // 从左下到右上，方便处理
-    Bottom = 2,
-    BottomRight = 3,
-
-    MiddleLeft = 4,
-    Middle = 5,
-    MiddleRight = 6,
-
-    TopLeft = 7,
-    Top = 8,
-    TopRight = 9,
 }
 
 /// <summary>

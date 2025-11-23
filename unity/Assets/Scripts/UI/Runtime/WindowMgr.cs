@@ -229,9 +229,11 @@ public sealed class WindowMgr
     }
 
     /// <summary>
-    /// 销毁Window
+    /// 关闭Window
+    ///
+    /// 注：窗口关闭后，在销毁之前可以重新打开。
     /// </summary>
-    public void Destroy(Window window) {
+    public void Close(Window window) {
         if (window.Status == ComponentStatus.Destroyed) return;
         try {
             window.Stop();
@@ -246,10 +248,10 @@ public sealed class WindowMgr
     }
 
     /// <summary>
-    /// 立即销毁Window
+    /// 销毁Window
     /// </summary>
     /// <param name="window"></param>
-    public void DestroyImmediately(Window window) {
+    private void Destroy(Window window) {
         if (window.Status == ComponentStatus.Destroyed) return;
         try {
             window.Stop();
@@ -390,7 +392,7 @@ public sealed class WindowMgr
         if (window.windowCfg.unclosable && !force) { // 常驻UI需要显式强制关闭
             return;
         }
-        Destroy(window);
+        Close(window);
     }
 
     /// <summary>
@@ -597,12 +599,12 @@ public sealed class WindowMgr
     public void EndOfFrame() {
         // 处理延迟销毁
         BetterIndexedPriorityQueue<Window> closedWindowList = _closedWindowList;
-        while (closedWindowList.TryDequeue(out Window window)) {
+        while (closedWindowList.TryPeekHead(out Window window)) {
             if (window.destroyTime < time.UnscaledTime) {
                 break;
             }
             closedWindowList.Dequeue();
-            DestroyImmediately(window);
+            Destroy(window);
         }
         coroutineMgr.Update(GameLoopPhase.EndOfFrame);
     }
@@ -646,7 +648,7 @@ public sealed class WindowMgr
                 || tempWindow.Nohup) {
                 continue;
             }
-            Destroy(tempWindow);
+            Close(tempWindow);
         }
         windowList.EndItr();
     }

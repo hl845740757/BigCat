@@ -75,15 +75,12 @@ public sealed class Window
     /// </summary>
     [NonSerialized] private int _reentryId;
     /// <summary>
-    /// 场景应当销毁的时间
+    /// 窗口应当销毁的时间
     /// </summary>
     internal double destroyTime;
 
     /// <summary>
-    /// 窗口的代理
-    /// 
-    /// 1.通常是<see cref="MonoBehaviour"/>类型。
-    /// 2.运行时不为null，如果未绑定Agent，则会创建默认的Agent实现。
+    /// 窗口代理
     /// </summary>
     private WindowAgent _agent;
     /// <summary>
@@ -159,21 +156,21 @@ public sealed class Window
         this._instId = windowCfg.GetInstanceID();
         this._transform = (RectTransform)windowCfg.transform;
         this._coroutineMgr = CoroutineMgr.CreateFrom(windowMgr.CoroutineMgr, _time,
-            windowCfg.enableUnscaledQueue, windowCfg.enableFrameQueue);
+            (windowCfg.features & WindowFeatures.EnableUnscaledTimeQueue) != 0,
+            (windowCfg.features & WindowFeatures.EnableFrameQueue) != 0);
 
-        this._agent = windowCfg.GetComponent<WindowAgent>() ?? new UIInternal.SimpleWindowAgent();
         this._canvas = windowCfg.GetComponent<Canvas>();
         // 初始化逻辑组件
         foreach (WComponentCfg componentCfg in windowCfg.GetComponents<WComponentCfg>()) {
-            AddComponent(componentCfg.GetComponent());
+            if (componentCfg is WindowAgentHolder agentHolder) {
+                _agent = agentHolder.Agent;
+            } else {
+                AddComponent(componentCfg.GetComponent());
+            }
         }
     }
 
     public GTime Time => _time;
-
-    /// <summary>
-    /// 窗口关联的协程管理器
-    /// </summary>
     public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
     #region 生命周期
@@ -185,7 +182,8 @@ public sealed class Window
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
-        _agent.Inject(this);
+        _agent ??= (_components.Find(e => e is WindowAgentHolder) as WindowAgentHolder)?.Agent;
+        _agent?.Inject(this);
         _status = ComponentStatus.Initialized;
         // 初始化模块
         foreach (WComponent component in _components) {
@@ -248,14 +246,12 @@ public sealed class Window
         _coroutineMgr.Shutdown();
 
         _status = ComponentStatus.Terminated;
-        if (windowMgr != null) {
-            windowMgr.OnTerminated(this);
-        }
+        windowMgr?.OnTerminated(this);
     }
 
     private void StartComponents() {
         // Start -- 顺序启动，出现任何异常直接退出
-        _agent.OnStart();
+        _agent?.OnStart();
         foreach (WComponent component in _components) {
             if (!component.Cid.IsPrivateScript) {
                 continue;
@@ -292,7 +288,7 @@ public sealed class Window
             }
         }
         try {
-            _agent.OnStop();
+            _agent?.OnStop();
         }
         catch (Exception ex) {
             logger.Warn(ex, "agent stop caught exception");
@@ -313,18 +309,19 @@ public sealed class Window
             if (component.Status == ComponentStatus.New) continue;
             component.Reset();
         }
-        ClearUpdateList();
+        _agent?.Reset();
         _coroutineMgr.Reset();
+        ClearUpdateList();
 
         if (_status > ComponentStatus.Initialized) {
             _status = ComponentStatus.Initialized;
         }
         _ctl = 0;
-        _agent.Reset();
         // 这些数据启动时重新赋值
         _displayMode = WindowDisplayMode.Normal;
         _dataModel = null;
         _rootNode = null;
+        _openArgs = null;
 
         _time.Restart();
         _blackboard.Clear();
@@ -337,14 +334,6 @@ public sealed class Window
         if (_status == ComponentStatus.Destroyed) return;
         Stop();
         _status = ComponentStatus.Destroyed;
-        _agent = null;
-        _canvas = null;
-        desktop = null;
-
-        _dataModel = null;
-        _rootNode = null;
-        UnityEngine.Object.Destroy(gameObject);
-        //
         foreach (WComponent component in _components) {
             if (component.Cid.shared) continue;
             if (component.Status == ComponentStatus.New) continue;
@@ -355,8 +344,25 @@ public sealed class Window
                 logger.Warn(ex, "component destroy caught exception");
             }
         }
-        indexes.Clear();
+        try {
+            _agent?.OnDestroy();
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "agent destroy caught exception");
+        }
+        _agent = null;
+        _canvas = null;
+        desktop = null;
+        _dataModel = null;
+        _rootNode = null;
+        _openArgs = null;
         _blackboard.Clear();
+        //
+        _components.Clear();
+        _indexedComponents.Clear();
+        ClearUpdateList();
+        //
+        UnityEngine.Object.Destroy(gameObject);
     }
 
     /// <summary>
@@ -367,7 +373,7 @@ public sealed class Window
         if (_status == ComponentStatus.Running) {
             _status = ComponentStatus.Suspended;
             windowMgr.OnPause(this);
-            _agent.OnPaused(extraInfo);
+            _agent?.OnPaused(extraInfo);
             // 从Mgr调度队列中删除？影响不大
         }
     }
@@ -380,7 +386,7 @@ public sealed class Window
         if (_status == ComponentStatus.Suspended) {
             _status = ComponentStatus.Running;
             windowMgr.OnResume(this);
-            _agent.OnResume(extraInfo);
+            _agent?.OnResume(extraInfo);
             Repaint();
         }
     }
@@ -542,6 +548,13 @@ public sealed class Window
     }
 
     /// <summary>
+    /// 关闭窗口
+    /// </summary>
+    public void Close() {
+        windowMgr.Close(this);
+    }
+
+    /// <summary>
     /// 切换窗口的展示模式
     /// (该方法由Agent或Root节点的Controller调用)
     /// </summary>
@@ -552,14 +565,14 @@ public sealed class Window
             return;
         }
         _displayMode = mode;
-        _agent.OnDisplayModeChanged(currentMode);
+        _agent?.OnDisplayModeChanged(currentMode);
     }
 
     /// <summary>
     /// 窗口绑定的桌面切换
     /// </summary>
     internal void OnDesktopChanged() {
-        _agent.OnDesktopChanged();
+        _agent?.OnDesktopChanged();
     }
 
     /// <summary>

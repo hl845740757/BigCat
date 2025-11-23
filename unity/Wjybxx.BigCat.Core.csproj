@@ -47,6 +47,9 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneFeatures.cs">
+      <Link>src\Gameplay\SceneFeatures.cs</Link>
+    </Compile>
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcRequest.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\GTime.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\DefaultRpcProxyRegistry.cs" />
@@ -150,6 +153,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\WorkerControlData.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\LongPair.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SComponent.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneAgentHolder.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Wjybxx.BigCat.Core.asmdef" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\package.json" />
     <Reference Include="UnityEngine">

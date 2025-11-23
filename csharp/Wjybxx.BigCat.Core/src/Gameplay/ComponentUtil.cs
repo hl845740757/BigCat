@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Wjybxx.BigCat.Gameplay
 {
@@ -50,6 +51,7 @@ internal static class ComponentUtil
     /// </summary>
     private static readonly ConcurrentDictionary<Type, ScriptMethods> overridesCache = new();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsIntersect(this ScriptMethods self, ScriptMethods other) {
         return (self & other) != 0;
     }

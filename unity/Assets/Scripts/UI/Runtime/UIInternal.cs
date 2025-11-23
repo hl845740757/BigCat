@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.Commons.Collections;
@@ -64,6 +65,10 @@ internal static class UIInternal
     /// (理论上其实等价于ActiveInHierarchy)
     /// </summary>
     public const int MASK_SHOWING = 1 << 6;
+    /// <summary>
+    /// 立即销毁
+    /// </summary>
+    public const int MASK_DESTROY_IMMEDIATELY = 1 << 7;
 
     /// <summary>
     /// 组件的方法重写信息
@@ -71,6 +76,12 @@ internal static class UIInternal
     /// </summary>
     private static readonly ConcurrentDictionary<Type, ScriptMethods> overridesCache = new();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsIntersect(this WindowFeatures self, WindowFeatures other) {
+        return (self & other) != 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsIntersect(this ScriptMethods self, ScriptMethods other) {
         return (self & other) != 0;
     }

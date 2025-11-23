@@ -171,7 +171,7 @@ public sealed class SceneMgr
     /// </summary>
     /// <param name="configId"></param>
     /// <returns></returns>
-    public List<Scene> Find(int configId) {
+    public List<Scene> FindAll(int configId) {
         IList<SceneSortKey> keys = _sortedSceneList.Keys;
         int index = CollectionUtil.BinarySearch(keys, new SceneSortKey(configId, 0), SceneSortKey.Comparer);
         if (index >= 0) { // 不应该存在instId为0的对象
@@ -212,9 +212,9 @@ public sealed class SceneMgr
     }
 
     /// <summary>
-    /// 销毁Scene
+    /// 关闭Scene
     /// </summary>
-    public void Destroy(Scene scene) {
+    public void Close(Scene scene) {
         if (scene.Status == ComponentStatus.Destroyed) return;
         try {
             scene.Stop();
@@ -229,10 +229,10 @@ public sealed class SceneMgr
     }
 
     /// <summary>
-    /// 立即销毁Scene
+    /// 销毁Scene
     /// </summary>
     /// <param name="scene"></param>
-    public void DestroyImmediately(Scene scene) {
+    private void Destroy(Scene scene) {
         if (scene.Status == ComponentStatus.Destroyed) return;
         try {
             scene.Stop();
@@ -386,7 +386,7 @@ public sealed class SceneMgr
             if (scene == null || scene.Status == ComponentStatus.Destroyed) {
                 continue;
             }
-            DestroyImmediately(scene);
+            Destroy(scene);
         }
         closedSceneList.EndItr();
 

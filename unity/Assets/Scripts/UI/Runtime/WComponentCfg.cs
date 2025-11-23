@@ -25,7 +25,9 @@ namespace Wjybxx.BigCat.UI
 /// <summary>
 /// 组件配置类
 ///
-/// 注：为方便策划在编辑器中编辑Window，建议每个组件类型设计一个配置类。
+/// 注：
+/// 1.为方便策划在编辑器中编辑Window，建议每个组件类型设计一个配置类。
+/// 2.该配置类可以实现<see cref="WindowAgentHolder"/>。
 /// </summary>
 public class WComponentCfg : MonoBehaviour
 {
@@ -34,7 +36,9 @@ public class WComponentCfg : MonoBehaviour
     /// <summary>
     /// 组件的类型名
     ///
-    /// 注：默认反射创建，若不能反射创建，请重写<see cref="CreateComponent"/>方法。
+    /// 注：
+    /// 1.格式：<code>typeName, assemblyName</code>
+    /// 2.默认反射创建，若不能反射创建，请重写<see cref="CreateComponent"/>方法。
     /// </summary>
     public string compTypeName;
     /// <summary>

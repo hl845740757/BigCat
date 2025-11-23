@@ -20,6 +20,8 @@ namespace Wjybxx.BigCat.UI
 {
 /// <summary>
 /// 窗口代理
+///
+/// 注：不建议实现为MonoBehavior。
 /// </summary>
 public interface WindowAgent
 {
@@ -29,11 +31,6 @@ public interface WindowAgent
     /// </summary>
     /// <param name="window"></param>
     void Inject(Window window);
-
-    /// <summary>
-    /// 获取绑定的Window
-    /// </summary>
-    Window Window { get; }
 
     #region 生命周期
 
@@ -67,6 +64,13 @@ public interface WindowAgent
     /// 清理运行过程中产生的临时数据
     /// </summary>
     void Reset() {
+
+    }
+
+    /// <summary>
+    /// Window销毁时调用
+    /// </summary>
+    void OnDestroy() {
 
     }
 

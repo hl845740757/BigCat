@@ -56,7 +56,7 @@ public sealed class Scene
     /// </summary>
     private int _configId;
     /// <summary>
-    ///实例id
+    /// 实例id
     /// </summary>
     [NonSerialized] private long _instId;
     /// <summary>
@@ -67,6 +67,10 @@ public sealed class Scene
     /// 激活状态（前后台状态）
     /// </summary>
     [NonSerialized] private bool _active = true;
+    /// <summary>
+    /// 场景特征值
+    /// </summary>
+    private SceneFeatures _features;
 
     /// <summary>
     /// 场景关联的管理器
@@ -125,6 +129,7 @@ public sealed class Scene
 
     public Scene(IDsonObjectReader reader) : this() {
         _configId = reader.ReadInt("configId");
+        _features = (SceneFeatures)reader.ReadInt("features");
         // 组件
         List<SComponent> components = reader.ReadObject<List<SComponent>>("components");
         _components.EnsureCapacity(components.Count);
@@ -137,6 +142,7 @@ public sealed class Scene
 
     public void WriteObject(IDsonObjectWriter writer) {
         writer.WriteInt("configId", _configId);
+        writer.WriteInt("features", (int)_features);
         writer.WriteObject("components", _components);
     }
 
@@ -155,6 +161,10 @@ public sealed class Scene
             CheckStatus();
             _instId = value;
         }
+    }
+    public SceneFeatures Features {
+        get => _features;
+        set => _features = value;
     }
 
     public ComponentStatus Status => _status;
@@ -317,8 +327,12 @@ public sealed class Scene
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
-        _coroutineMgr = CoroutineMgr.CreateFrom(_sceneMgr.CoroutineMgr, _time);
-        _agent?.Inject(this); // 双向绑定
+        _coroutineMgr = CoroutineMgr.CreateFrom(_sceneMgr.CoroutineMgr, _time,
+            (_features & SceneFeatures.EnableUnscaledTimeQueue) != 0,
+            (_features & SceneFeatures.EnableFrameQueue) != 0);
+        //
+        _agent ??= (_components.Find(e => e is SceneAgentHolder) as SceneAgentHolder)?.Agent;
+        _agent?.Inject(this);
         _status = ComponentStatus.Initialized;
         // 初始化模块
         foreach (SComponent component in _components) {
@@ -396,12 +410,10 @@ public sealed class Scene
         catch (Exception ex) {
             logger.Warn(ex, "agent stop caught exception");
         }
-        _coroutineMgr.Shutdown();
+        _coroutineMgr?.Shutdown();
 
         _status = ComponentStatus.Terminated;
-        if (_sceneMgr != null) {
-            _sceneMgr.OnTerminated(this);
-        }
+        _sceneMgr?.OnTerminated(this);
     }
 
     /// <summary>
@@ -418,14 +430,14 @@ public sealed class Scene
             if (component.Status == ComponentStatus.New) continue;
             component.Reset();
         }
+        _agent?.Reset();
+        _coroutineMgr?.Reset();
         ClearUpdateList();
-        _coroutineMgr.Reset();
 
         if (_status > ComponentStatus.Initialized) {
             _status = ComponentStatus.Initialized;
         }
         _active = true;
-        _agent?.Reset();
         _time.Restart();
     }
 
@@ -449,6 +461,12 @@ public sealed class Scene
             catch (Exception ex) {
                 logger.Warn(ex, "component destroy caught exception");
             }
+        }
+        try {
+            _agent?.OnDestroy();
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "agent destroy caught exception");
         }
         _components.Clear();
         _indexedComponents.Clear();

@@ -121,7 +121,7 @@ public class CoroutineMgr : ICoroutineMgr
     /// <param name="minPeriod">周期性任务的最小间隔(秒)</param>
     /// <param name="unscaledMinPeriod">周期性任务的最小间隔(秒)</param>
     /// <param name="enableUnscaledQueue">是否启用非缩放时间队列</param>
-    /// <param name="enableFrameQueue">是否启用帧等待</param>
+    /// <param name="enableFrameQueue">是否启用帧时间队列</param>
     public CoroutineMgr(IEventLoop eventLoop, GTime time,
                         double minPeriod = 0.01, double unscaledMinPeriod = 0.01,
                         bool enableUnscaledQueue = true, bool enableFrameQueue = false) {
@@ -511,7 +511,9 @@ public class CoroutineMgr : ICoroutineMgr
         long timerId = task.id;
         task.Cancel(cancelCode);
         if (id2ObjectDict.Remove(timerId)) {
-            GetQueue(task.queueId).Remove(task);
+            if (task.queueId >= 0) { // 当前可能正在执行
+                GetQueue(task.queueId).Remove(task);
+            }
             taskPool.Release(task);
         }
     }
@@ -629,7 +631,7 @@ public class CoroutineMgr : ICoroutineMgr
             26 => frameQueue6,
             27 => frameQueue7,
             28 => frameQueue8,
-            _ => throw new ArgumentOutOfRangeException(nameof(queueId), queueId, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(queueId), null, queueId.ToString())
         };
     }
 #nullable restore
