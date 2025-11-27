@@ -217,7 +217,7 @@ public class DataEditor : EditorWindow
 
     private void OnClickOpenFile(ClickEvent evt) {
         evt.StopPropagation();
-        string filePath = EditorUtility.OpenFilePanel("选择资产文件", UnityEditorUtil.lastOpenFolder, "dson");
+        string filePath = UnityEditorUtil.OpenFilePanel("选择资产文件", UnityEditorUtil.lastOpenFolder, "dson");
         if (string.IsNullOrEmpty(filePath)) {
             return;
         }

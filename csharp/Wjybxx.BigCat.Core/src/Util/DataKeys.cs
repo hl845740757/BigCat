@@ -267,11 +267,11 @@ public static class DataKeys
         }
 
         public override float Unbox(in UnionValue boxedValue) {
-            return (float)boxedValue.d1;
+            return (float)boxedValue.dv1;
         }
 
         public override UnionValue Box(float value) {
-            return new UnionValue(TYPE_FLOAT) { d1 = value };
+            return new UnionValue(TYPE_FLOAT) { dv1 = value };
         }
     }
 
@@ -281,11 +281,11 @@ public static class DataKeys
         }
 
         public override double Unbox(in UnionValue boxedValue) {
-            return boxedValue.d1;
+            return boxedValue.dv1;
         }
 
         public override UnionValue Box(double value) {
-            return new UnionValue(TYPE_DOUBLE) { d1 = value };
+            return new UnionValue(TYPE_DOUBLE) { dv1 = value };
         }
     }
 
@@ -375,17 +375,17 @@ public static class DataKeys
 
         public override Vector3 Unbox(in UnionValue boxedValue) {
             return new Vector3(
-                (float)boxedValue.d1,
-                (float)boxedValue.d2,
-                (float)boxedValue.d3);
+                (float)boxedValue.dv1,
+                (float)boxedValue.dv2,
+                (float)boxedValue.dv3);
         }
 
         public override UnionValue Box(Vector3 value) {
             return new UnionValue(TYPE_VECTOR3)
             {
-                d1 = value.x,
-                d2 = value.y,
-                d3 = value.z
+                dv1 = value.x,
+                dv2 = value.y,
+                dv3 = value.z
             };
         }
     }
@@ -398,20 +398,20 @@ public static class DataKeys
         public override Vector4 Unbox(in UnionValue boxedValue) {
             return new Vector4()
             {
-                x = (float)boxedValue.d1,
-                y = (float)boxedValue.d2,
-                z = (float)boxedValue.d3,
-                w = BitConverter.Int32BitsToSingle(boxedValue.val)
+                x = (float)boxedValue.dv1,
+                y = (float)boxedValue.dv2,
+                z = (float)boxedValue.dv3,
+                w = boxedValue.fVal
             };
         }
 
         public override UnionValue Box(Vector4 value) {
             return new UnionValue(TYPE_VECTOR4)
             {
-                d1 = value.x,
-                d2 = value.y,
-                d3 = value.z,
-                val = BitConverter.SingleToInt32Bits(value.w)
+                dv1 = value.x,
+                dv2 = value.y,
+                dv3 = value.z,
+                fVal = value.w
             };
         }
     }
@@ -424,20 +424,20 @@ public static class DataKeys
         public override Quaternion Unbox(in UnionValue boxedValue) {
             return new Quaternion()
             {
-                x = (float)boxedValue.d1,
-                y = (float)boxedValue.d2,
-                z = (float)boxedValue.d3,
-                w = BitConverter.Int32BitsToSingle(boxedValue.val)
+                x = (float)boxedValue.dv1,
+                y = (float)boxedValue.dv2,
+                z = (float)boxedValue.dv3,
+                w = boxedValue.fVal
             };
         }
 
         public override UnionValue Box(Quaternion value) {
             return new UnionValue(TYPE_QUATERNION)
             {
-                d1 = value.x,
-                d2 = value.y,
-                d3 = value.z,
-                val = BitConverter.SingleToInt32Bits(value.w)
+                dv1 = value.x,
+                dv2 = value.y,
+                dv3 = value.z,
+                fVal = value.w
             };
         }
     }
@@ -450,16 +450,16 @@ public static class DataKeys
         public override Vector2 Unbox(in UnionValue boxedValue) {
             return new Vector2()
             {
-                x = (float)boxedValue.d1,
-                y = (float)boxedValue.d2,
+                x = (float)boxedValue.dv1,
+                y = (float)boxedValue.dv2,
             };
         }
 
         public override UnionValue Box(Vector2 value) {
             return new UnionValue(TYPE_VECTOR2)
             {
-                d1 = value.x,
-                d2 = value.y,
+                dv1 = value.x,
+                dv2 = value.y,
             };
         }
     }
@@ -518,20 +518,20 @@ public static class DataKeys
         public override Color Unbox(in UnionValue boxedValue) {
             return new Color()
             {
-                r = (float)boxedValue.d1,
-                g = (float)boxedValue.d2,
-                b = (float)boxedValue.d3,
-                a = BitConverter.Int32BitsToSingle(boxedValue.val)
+                r = (float)boxedValue.dv1,
+                g = (float)boxedValue.dv2,
+                b = (float)boxedValue.dv3,
+                a = boxedValue.fVal
             };
         }
 
         public override UnionValue Box(Color value) {
             return new UnionValue(TYPE_COLOR)
             {
-                d1 = value.r,
-                d2 = value.g,
-                d3 = value.b,
-                val = BitConverter.SingleToInt32Bits(value.a)
+                dv1 = value.r,
+                dv2 = value.g,
+                dv3 = value.b,
+                fVal = value.a
             };
         }
     }
@@ -542,23 +542,17 @@ public static class DataKeys
         }
 
         public override Color32 Unbox(in UnionValue boxedValue) {
-            return new Color32()
-            {
-                r = boxedValue.b1,
-                g = boxedValue.b2,
-                b = boxedValue.b3,
-                a = (byte)boxedValue.val
-            };
+            int rgba = boxedValue.val;
+            byte r = (byte)(rgba & 0xff);
+            byte g = (byte)(rgba >> 8);
+            byte b = (byte)(rgba >> 16);
+            byte a = (byte)(rgba >> 24);
+            return new Color32(r, g, b, a);
         }
 
-        public override UnionValue Box(Color32 value) {
-            return new UnionValue(TYPE_COLOR32)
-            {
-                b1 = value.r,
-                b2 = value.g,
-                b3 = value.b,
-                val = value.a
-            };
+        public override UnionValue Box(Color32 color) {
+            int rgba = color.r | color.g << 8 | color.b << 16 | color.a << 24;
+            return new UnionValue(TYPE_COLOR32) { val = rgba };
         }
     }
 
@@ -570,20 +564,20 @@ public static class DataKeys
         public override Rect Unbox(in UnionValue boxedValue) {
             return new Rect()
             {
-                x = (float)boxedValue.d1,
-                y = (float)boxedValue.d2,
-                width = (float)boxedValue.d3,
-                height = BitConverter.Int32BitsToSingle(boxedValue.val)
+                x = (float)boxedValue.dv1,
+                y = (float)boxedValue.dv2,
+                width = (float)boxedValue.dv3,
+                height = boxedValue.fVal
             };
         }
 
         public override UnionValue Box(Rect value) {
             return new UnionValue(TYPE_RECT)
             {
-                d1 = value.x,
-                d2 = value.y,
-                d3 = value.width,
-                val = BitConverter.SingleToInt32Bits(value.height)
+                dv1 = value.x,
+                dv2 = value.y,
+                dv3 = value.width,
+                fVal = value.height
             };
         }
     }

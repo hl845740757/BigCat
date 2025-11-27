@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using System.IO;
 
 namespace Wjybxx.BigCatTool.Tests;
@@ -23,11 +24,29 @@ namespace Wjybxx.BigCatTool.Tests;
 internal static class TestUtil
 {
     /// <summary>
+    /// 从工作目录向上查找指定目录
+    /// </summary>
+    /// <param name="dirName"></param>
+    /// <returns></returns>
+    public static string GetDirectory(string dirName) {
+        DirectoryInfo directoryInfo = new DirectoryInfo(Environment.CurrentDirectory);
+        while (true) {
+            if (directoryInfo.Name == dirName) {
+                return directoryInfo.FullName;
+            }
+            directoryInfo = directoryInfo.Parent;
+            if (directoryInfo == null) {
+                throw new IOException($"dic {dirName} not found");
+            }
+        }
+    }
+
+    /// <summary>
     /// 获取Res文件目录
     /// </summary>
     /// <returns></returns>
     public static string GetResDirectory() {
-        string binPath = ToolUtil.GetDirectory("bin");
+        string binPath = GetDirectory("bin");
         return new DirectoryInfo(binPath).Parent!.FullName + "/res";
     }
 
@@ -36,7 +55,7 @@ internal static class TestUtil
     /// </summary>
     /// <returns></returns>
     public static string GetTempDirectory() {
-        string binPath = ToolUtil.GetDirectory("bin");
+        string binPath = GetDirectory("bin");
         return new DirectoryInfo(binPath).Parent!.FullName + "/temp";
     }
 
@@ -45,7 +64,7 @@ internal static class TestUtil
     /// </summary>
     /// <returns></returns>
     public static string GetGeneratedDirectory() {
-        string binPath = ToolUtil.GetDirectory("bin");
+        string binPath = GetDirectory("bin");
         return new DirectoryInfo(binPath).Parent!.FullName + "/src/Generated";
     }
 }

@@ -17,7 +17,10 @@
 #endregion
 
 using System;
+
+#if UNITY_2021_3_OR_NEWER
 using UnityEngine;
+#endif
 
 namespace Wjybxx.BigCat.Gameplay
 {
@@ -30,12 +33,16 @@ public enum SceneFeatures
     /// <summary>
     /// 启用是缩放时间队列
     /// </summary>
+#if UNITY_2021_3_OR_NEWER
     [Tooltip("是否启用非缩放时间任务队列；如果确定不需要非缩放时间定时器，可以关闭该选项以减少开销")]
+#endif
     EnableUnscaledTimeQueue = 0x01,
     /// <summary>
     /// 启用帧数队列
     /// </summary>
+#if UNITY_2021_3_OR_NEWER
     [Tooltip("是否启用帧数时间任务队列；如果存在按帧Update的逻辑，则需要启用该选项")]
+#endif
     EnableFrameQueue = 0x02,
 
     /// <summary>

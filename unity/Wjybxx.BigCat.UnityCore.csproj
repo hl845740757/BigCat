@@ -47,23 +47,23 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\AssetReferenceAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationFrame.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MinMaxAABB.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationMixCfg.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
@@ -319,37 +319,37 @@
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\PlaybackEngines\WindowsStandaloneSupport\UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Plastic.Newtonsoft.Json">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDataReader">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Plastic.Antlr3.Runtime">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.YamlDotNet">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.IonicZip">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Commons.Poet">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Commons.Poet.dll</HintPath>
     </Reference>
     <Reference Include="log4netPlastic">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\log4netPlastic.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\log4netPlastic.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="unityplastic">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\unityplastic.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\unityplastic.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Google.Protobuf.dll</HintPath>

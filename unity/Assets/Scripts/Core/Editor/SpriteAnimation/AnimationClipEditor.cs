@@ -227,7 +227,7 @@ public partial class AnimationClipEditor : EditorWindow
         _damageBoxListView.itemsAdded += _ => RebindDamageBoxElements();
         _damageBoxListView.itemsRemoved += _ => RebindDamageBoxElements();
         // 帧数据变化刷新UI和图片
-        ObjectPathField spritePathField = _frameInfoElement.QueryObjectPathField("sprite-path");
+        ObjectPathField spritePathField = _frameInfoElement.Q<ObjectPathField>();
         spritePathField.label = "SpritePath";
         spritePathField.RegisterValueChangedCallback(OnFrameSpritePathChanged);
         _frameInfoElement.Q<FloatField>("duration").RegisterValueChangedCallback(OnFrameDurationChanged);
@@ -263,7 +263,7 @@ public partial class AnimationClipEditor : EditorWindow
         _playToggle = previewArea.Q<Toggle>("play-toggle");
         _playTimeSlider = previewArea.Q<Slider>("play-time-slider");
         _playTimeField = previewArea.Q<FloatField>("play-time-field");
-        _aabbField = previewArea.QueryAABBField("AABBField");
+        _aabbField = previewArea.Q<AABBField>();
         _imageEditModeToggle.Init(EditMode.Move);
         _showDmgBoxToggle.Init(RangeMode.Master);
         _showHurtBoxToggle.Init(RangeMode.Master);
@@ -326,7 +326,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void ShowPickClipWindow(ClickEvent evt) {
         evt.StopPropagation();
-        string filePath = EditorUtility.OpenFilePanel("选择动画资产", UnityEditorUtil.lastOpenFolder, "asset");
+        string filePath = UnityEditorUtil.OpenFilePanel("选择动画资产", UnityEditorUtil.lastOpenFolder, "asset");
         if (string.IsNullOrEmpty(filePath)) return;
         string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
         UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
@@ -1088,9 +1088,11 @@ public partial class AnimationClipEditor : EditorWindow
         _selectedElement = _frameAreaElement;
         _aabbField.SetEnabled(false);
 
-        _dragStartMousePosition = evt.mousePosition;
-        _dragStartItemPosition = _frameAreaElement.transform.position;
-        _selectedElement.CaptureMouse(); // 拖拽期间不丢失鼠标事件
+        if (evt.button == (int)MouseButton.MiddleMouse) {
+            _dragStartMousePosition = evt.mousePosition;
+            _dragStartItemPosition = _frameAreaElement.transform.position;
+            _selectedElement.CaptureMouse(); // 拖拽期间不丢失鼠标事件
+        }
     }
 
     #endregion
@@ -1114,7 +1116,7 @@ public partial class AnimationClipEditor : EditorWindow
         // BindProperty不支持绑定到自定义字段，手动维护同步
         SpriteAnimationFrame frame = context.frame;
         SerializedProperty serializedFrame = context.serializedFrame;
-        _frameInfoElement.QueryObjectPathField("sprite-path").value = frame.spritePath;
+        _frameInfoElement.Q<ObjectPathField>().value = frame.spritePath;
         _frameInfoElement.Q<Vector2Field>("position").BindProperty(serializedFrame.FindPropertyRelative("position"));
         _frameInfoElement.Q<Vector2Field>("scale").BindProperty(serializedFrame.FindPropertyRelative("scale"));
         _frameInfoElement.Q<FloatField>("rotation").BindProperty(serializedFrame.FindPropertyRelative("rotation"));

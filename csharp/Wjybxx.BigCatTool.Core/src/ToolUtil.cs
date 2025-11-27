@@ -29,7 +29,7 @@ using Wjybxx.Commons.Pool;
 namespace Wjybxx.BigCatTool
 {
 /// <summary>
-/// 
+///
 /// </summary>
 public class ToolUtil
 {
@@ -161,7 +161,7 @@ public class ToolUtil
         StringBuilder sb = new StringBuilder(str.Length);
         bool nextUpperCase = true;
         foreach (char c in str) {
-            if (c == '_') {
+            if (c == '_' || c == ' ') {
                 nextUpperCase = true;
                 continue;
             }
@@ -191,101 +191,6 @@ public class ToolUtil
             sb.Append(c2);
         }
         return sb.ToString();
-    }
-
-    #endregion
-
-    #region 文件
-
-    /// <summary>
-    /// 从工作目录向上查找指定目录
-    /// </summary>
-    /// <param name="dirName"></param>
-    /// <returns></returns>
-    public static string GetDirectory(string dirName) {
-        DirectoryInfo directoryInfo = new DirectoryInfo(Environment.CurrentDirectory);
-        while (true) {
-            if (directoryInfo.Name == dirName) {
-                return directoryInfo.FullName;
-            }
-            directoryInfo = directoryInfo.Parent;
-            if (directoryInfo == null) {
-                throw new IOException($"dic {dirName} not found");
-            }
-        }
-    }
-
-    /// <summary>
-    /// 拷贝文件夹
-    /// </summary>
-    /// <param name="sourceDir">原目录</param>
-    /// <param name="destinationDir">目标目录</param>
-    /// <param name="overwrite">是否覆盖已存在的文件</param>
-    /// <param name="recursive">是否递归</param>
-    /// <exception cref="DirectoryNotFoundException">如果原文件夹不存在</exception>
-    public static void CopyDirectory(string sourceDir, string destinationDir, bool overwrite, bool recursive = true) {
-        DirectoryInfo? srcDirInfo = new DirectoryInfo(sourceDir);
-        if (!srcDirInfo.Exists) {
-            throw new DirectoryNotFoundException($"Source directory not found: {srcDirInfo.FullName}");
-        }
-        DirectoryInfo destDirInfo = new DirectoryInfo(destinationDir);
-        if (!destDirInfo.Exists) {
-            destDirInfo.Create();
-        }
-        // 先拷贝直接文件
-        foreach (FileInfo file in srcDirInfo.GetFiles()) {
-            string targetFilePath = Path.Combine(destinationDir, file.Name);
-            file.CopyTo(targetFilePath, overwrite);
-        }
-        // 如果递归，则拷贝子目录
-        if (recursive) {
-            foreach (DirectoryInfo subDir in srcDirInfo.GetDirectories()) {
-                string destinationSubDir = Path.Combine(destinationDir, subDir.Name);
-                CopyDirectory(subDir.FullName, destinationSubDir, overwrite);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 清理文件夹（保留空文件夹）
-    /// </summary>
-    /// <param name="dirName">要清理的文件夹</param>
-    /// <param name="retainSubDir">是否保留子文件夹</param>
-    public static void CleanDirectory(string dirName, bool retainSubDir = false) {
-        DirectoryInfo directoryInfo = new DirectoryInfo(dirName);
-        if (directoryInfo.Exists) {
-            foreach (FileInfo file in directoryInfo.GetFiles()) {
-                file.Delete();
-            }
-            foreach (DirectoryInfo subDir in directoryInfo.GetDirectories()) {
-                if (retainSubDir) {
-                    CleanDirectory(subDir.FullName, true);
-                } else {
-                    subDir.Delete(true);
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 删除文件夹
-    /// </summary>
-    /// <param name="dirName"></param>
-    public static void DelectDirectory(string dirName) {
-        DirectoryInfo directoryInfo = new DirectoryInfo(dirName);
-        if (directoryInfo.Exists) {
-            directoryInfo.Delete(true);
-        }
-    }
-
-    /// <summary>
-    /// 创建文件夹
-    /// </summary>
-    /// <param name="dirName"></param>
-    public static void CreateDirectory(string dirName) {
-        if (!Directory.Exists(dirName)) {
-            Directory.CreateDirectory(dirName);
-        }
     }
 
     #endregion

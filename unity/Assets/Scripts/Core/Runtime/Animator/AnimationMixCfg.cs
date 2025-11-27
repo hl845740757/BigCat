@@ -49,6 +49,7 @@ public sealed class AnimationMixCfg
         this.weightA = src.weightA;
         this.weightB = src.weightB;
         this.fadeTimeA = src.fadeTimeA;
+        this.fadeTimeB = src.fadeTimeB;
     }
 }
 }

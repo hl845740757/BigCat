@@ -47,43 +47,43 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\DropdownOptionListDrawer.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\MenuOptions.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\FontDataDrawer.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\EventSystem\Physics2DRaycasterEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\InputFieldEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\EventSystem\EventSystemEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\CanvasScalerEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PrefabLayoutRebuilder.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\SelectableEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ImageEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\SliderEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\LayoutElementEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\DropdownEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ButtonEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\EventSystem\PhysicsRaycasterEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\TextEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\AnimationTriggersDrawer.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\EventSystem\EventTriggerEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\HorizontalOrVerticalLayoutGroupEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\RawImageEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\RectMask2DEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\InterceptedEventsPreview.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\AspectRatioFitterEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ScrollbarEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ToggleEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\SpriteStateDrawer.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\NavigationDrawer.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\DropdownOptionListDrawer.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\MenuOptions.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\FontDataDrawer.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\EventSystem\Physics2DRaycasterEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\EventSystem\EventSystemEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PrefabLayoutRebuilder.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\SelectableEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\SliderEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\AnimationTriggersDrawer.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\HorizontalOrVerticalLayoutGroupEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ContentSizeFitterEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\SelfControllerEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\MaskEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\ColorBlockDrawer.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\InterceptedEventsPreview.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\Properties\AssemblyInfo.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\LayoutPropertiesPreview.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\SpriteDrawUtility.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\GraphicEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\GridLayoutGroupEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\AspectRatioFitterEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ScrollbarEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ToggleEditor.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\ScrollRectEditor.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\SpriteStateDrawer.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UI\PropertyDrawers\NavigationDrawer.cs" />
     <None Include="Library\PackageCache\com.unity.ugui@1.0.0\Editor\UnityEditor.UI.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -341,37 +341,37 @@
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\PlaybackEngines\WindowsStandaloneSupport\UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Plastic.Newtonsoft.Json">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDataReader">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Plastic.Antlr3.Runtime">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.YamlDotNet">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.IonicZip">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Commons.Poet">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Commons.Poet.dll</HintPath>
     </Reference>
     <Reference Include="log4netPlastic">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\log4netPlastic.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\log4netPlastic.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="unityplastic">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\unityplastic.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\unityplastic.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Google.Protobuf.dll</HintPath>

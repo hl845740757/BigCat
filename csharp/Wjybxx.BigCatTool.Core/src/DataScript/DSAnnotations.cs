@@ -108,7 +108,7 @@ public static class DSAnnotations
     /// 
     /// </summary>
     public const string NODE_STYLE = "NodeStyle";
-    
+
     /// <summary>
     /// 端口字段
     ///

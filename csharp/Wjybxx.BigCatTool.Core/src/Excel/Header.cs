@@ -56,6 +56,15 @@ public sealed class Header
 
     public Header WithType(string type) => new Header(options, type, name, comment, rowIndex, colIndex);
 
+    // 方便建立索引
+    public override int GetHashCode() {
+        return rowIndex.GetHashCode() ^ colIndex.GetHashCode();
+    }
+
+    public override bool Equals(object? obj) {
+        return ReferenceEquals(this, obj);
+    }
+
     public override string ToString() {
         return $"{nameof(options)}: {options}," +
                $" {nameof(name)}: {name}," +

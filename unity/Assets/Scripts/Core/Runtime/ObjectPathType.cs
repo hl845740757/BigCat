@@ -44,7 +44,7 @@ public enum ObjectPathType
     /// <summary>
     /// 音效组中的音效，GroupPath + index
     /// </summary>
-    SoundOfGroup = 3,
+    AudioOfGroup = 3,
 
     /// <summary>
     /// Excel表的行，即配置对象引用（SheetName + id）
@@ -54,5 +54,28 @@ public enum ObjectPathType
     /// Excel表单元格，通常是I18N字符串坐标
     /// </summary>
     ExcelValue = 9,
+
+    // 自定义资产
+    // SpriteGroup = 11,
+    // SpriteAnimation,
+    // AudioGroup,
+
+    // Unity原生资产
+    // AnimationClip = 21,
+    // AudioClip,
+    // AudioMixer,
+    // Font,
+    // Material,
+    // Mesh,
+    // Model,
+    // PhysicMaterial,
+    // Prefab,
+    // Scene,
+    // Script,
+    // Shader,
+    // Sprite,
+    // Texture,
+    // RenderTexture,
+    // VideoClip,
 }
 }

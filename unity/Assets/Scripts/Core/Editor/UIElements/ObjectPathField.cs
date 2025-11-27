@@ -270,13 +270,14 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         }
 
         public override void OnClickSelectCollection() {
-            string filePath = EditorUtility.OpenFilePanel("选择资产", UnityEditorUtil.lastOpenFolder, "");
+            string filePath = UnityEditorUtil.OpenFilePanel("选择资产", UnityEditorUtil.lastOpenFolder, "");
             if (string.IsNullOrEmpty(filePath)) {
                 return;
             }
             string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-            view._collectionField.value = assetPath;
             UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
+            //
+            view._collectionField.value = UnityEditorUtil.NormalizeAssetPath(assetPath);
         }
 
         public override void OnClickSelectLocalPath() {
@@ -309,13 +310,14 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             string groupPtah = view._collectionField.value;
             SpriteGroup spriteGroup = UnityEditorUtil.LoadSpriteGroup(groupPtah);
             string groupAssetFolder = spriteGroup ? UnityEditorUtil.GetAssetFolderPath(spriteGroup) : UnityEditorUtil.spriteSearchFolders[0];
-            string filePath = EditorUtility.OpenFilePanel("选择SpriteGroup", groupAssetFolder, "asset");
+            string filePath = UnityEditorUtil.OpenFilePanel("选择SpriteGroup", groupAssetFolder, "asset");
             if (string.IsNullOrEmpty(filePath)) {
                 return;
             }
             string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
             UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
-
+            //
+            assetPath = UnityEditorUtil.NormalizeAssetPath(assetPath);
             spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
             if (spriteGroup) {
                 groupPtah = spriteGroup.preferName ? spriteGroup.name : assetPath;
@@ -336,7 +338,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
                 return;
             }
             string groupAssetFolder = UnityEditorUtil.GetAssetFolderPath(spriteGroup);
-            string filePath = EditorUtility.OpenFilePanel("选择图片", groupAssetFolder, "png");
+            string filePath = UnityEditorUtil.OpenFilePanel("选择图片", groupAssetFolder, "png");
             if (string.IsNullOrEmpty(filePath)) {
                 return;
             }

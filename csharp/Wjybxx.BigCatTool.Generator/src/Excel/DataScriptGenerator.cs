@@ -190,13 +190,6 @@ public class DataScriptGenerator : ISheetProcessor
     }
 
     private static void GetOptions(Header header, out bool isIntern, out bool isReadonly, out bool nonSerialized) {
-        if (!header.options.Contains(KEY_I18N) && !header.options.Contains(KEY_INTERN)
-                                               && !header.options.Contains(KEY_IS_READONLY)) {
-            isIntern = false;
-            isReadonly = false;
-            nonSerialized = false;
-            return;
-        }
         DsonObject<string> options = ParseOptions(header.options);
         isIntern = GetBool(options, KEY_I18N) || GetBool(options, KEY_INTERN);
         isReadonly = GetBool(options, KEY_IS_READONLY);

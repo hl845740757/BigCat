@@ -29,7 +29,7 @@ namespace Wjybxx.BigCat.Animator
 /// 注：运行时需要指定图集（贴图），否则没有表现。
 /// </summary>
 [CreateAssetMenu(menuName = "BigCat/SpriteModel", fileName = "NewSpriteModel")]
-public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiver
+public sealed class SpriteModel : ScriptableObject
 {
     /// <summary>
     /// 模型部件id
@@ -126,13 +126,14 @@ public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiv
 
     #region 序列化
 
-    public void OnBeforeSerialize() {
-        // 如何保存由用户决定
+    private void OnEnable() {
+        RebuildCache();
     }
 
-    public void OnAfterDeserialize() {
-        // 编辑器模式下会频繁的序列化和反序列化，因此不池化字符串
-#if !UNITY_EDITOR
+    /// <summary>
+    /// 构建缓存信息，允许运行时调用
+    /// </summary>
+    public void RebuildCache() {
         if (!string.IsNullOrWhiteSpace(partId)) {
             partId = string.Intern(partId);
         }
@@ -145,6 +146,7 @@ public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiv
             }
             // name池化
             motionRedir.name = string.Intern(motionRedir.name);
+            motionList[index] = motionRedir;
             motionDic.Add(motionRedir.name, motionRedir.clip);
         }
         // MixCfg
@@ -157,10 +159,9 @@ public sealed class SpriteModel : ScriptableObject, ISerializationCallbackReceiv
             }
             mixCfg.motionA = string.Intern(mixCfg.motionA);
             mixCfg.motionB = string.Intern(mixCfg.motionB);
-            motionMixCfgList[index] = mixCfg; // 兼容值类型
+            motionMixCfgList[index] = mixCfg;
             motionMixCfgDic[(mixCfg.motionA, mixCfg.motionB)] = mixCfg;
         }
-#endif
     }
 
     #endregion

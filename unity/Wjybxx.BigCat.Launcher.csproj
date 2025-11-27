@@ -49,14 +49,14 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Launcher\UI\LoginView.cs" />
     <Compile Include="Assets\Scripts\Launcher\AppContext.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\TestRpcSerializer.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Test\Response.cs" />
     <Compile Include="Assets\Scripts\Launcher\UnityCodecLinker.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\Request.cs" />
-    <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\TestRpcRouter.cs" />
-    <Compile Include="Assets\Scripts\Launcher\Test\TestRpcSerializer.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\RpcServiceExample.cs" />
     <Compile Include="Assets\Scripts\Launcher\GameLauncher.cs" />
-    <Compile Include="Assets\Scripts\Launcher\Test\Response.cs" />
     <None Include="Assets\Scripts\Launcher\Wjybxx.BigCat.Launcher.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

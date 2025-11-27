@@ -48,39 +48,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBEnumValue.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBElement.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBMessage.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBService.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBKeywords.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSKeywords.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\CodeGeneratorCfg.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBField.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\ToolUtil.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSTypeSymbol.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBMethod.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSAnnotations.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSInst.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\IValueProvider.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSTypeParameter.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSContextType.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSUtil.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBContextType.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSTypeKind.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBRepository.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\Header.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\CodeGeneratorHelper.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSEnumValue.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBElementKind.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSElement.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Core\StringPair.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Core\LineInfo.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\SheetConstants.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSField.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\SheetRepository.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\Sheet.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Core\LineEnumerator.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\SheetType.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFile.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Core\Annotation.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Core\Range.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\CodeGenerator.cs" />
@@ -88,48 +73,64 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSTypeElement.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSRepository.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSFile.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSNamedType.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBEnum.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSMethod.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSFileParser.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFileParser.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBOneof.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\SheetRow.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSElementKind.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBElement.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBKeywords.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBField.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSAnnotations.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSContextType.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSUtil.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBContextType.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSTypeKind.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBRepository.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\CodeGeneratorHelper.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSElement.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\SheetConstants.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Excel\Sheet.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Core\LineEnumerator.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFile.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSNamedType.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSFileParser.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFileParser.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\FileUtil.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\package.json" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Wjybxx.BigCatTool.Core.asmdef" />
     <Reference Include="Unity.Plastic.Newtonsoft.Json">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDataReader">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\ExcelDataReader.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Plastic.Antlr3.Runtime">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.YamlDotNet">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\Dependencies\YamlDotNet\Unity.VisualScripting.YamlDotNet.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.TextureAssets">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\EditorAssetResources\Unity.VisualScripting.TextureAssets.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.IonicZip">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Editor\VisualScripting.Core\Dependencies\DotNetZip\Unity.VisualScripting.IonicZip.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.Commons.Poet">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Editor\Wjybxx.Commons.Poet.dll</HintPath>
     </Reference>
     <Reference Include="log4netPlastic">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\log4netPlastic.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\log4netPlastic.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.4\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.visualscripting@1.9.9\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="unityplastic">
-      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.2\Lib\Editor\unityplastic.dll</HintPath>
+      <HintPath>D:\github-mine\BigCat\unity\Library\PackageCache\com.unity.collab-proxy@2.9.3\Lib\Editor\unityplastic.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf">
       <HintPath>D:\github-mine\BigCat\unity\Assets\Plugins\Google.Protobuf.dll</HintPath>

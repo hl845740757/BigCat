@@ -67,7 +67,9 @@ public class DsonGenerator : ISheetProcessor
     private readonly ObjectPool<List<DSField>> fieldListPool = ObjectPoolUtil.NewListPool<DSField>(8);
     private readonly ObjectPool<LinkedDictionary<string, DsonValue>> dictionaryPool = ObjectPoolUtil.NewLinkedDictionaryPool<string, DsonValue>(8);
     private readonly DsonTextWriterSettings _textWriterSettings;
+
     private Sheet? _curSheet; // 用于打印日志
+    private Dictionary<Header, DsonObject<string>> _headerOptionsDic = new();
 
     /// <summary>
     /// 
@@ -175,6 +177,7 @@ public class DsonGenerator : ISheetProcessor
         LinkedDictionary<string, DsonValue> valueMap = new();
         foreach (Sheet sheet in sheets) {
             _curSheet = sheet;
+            _headerOptionsDic.Clear();
             foreach (Header header in sheet.headers.Values) {
                 if (header.name.Contains('#') || !IsRequired(header.options, _requireMode)) {
                     continue;
@@ -220,6 +223,7 @@ public class DsonGenerator : ISheetProcessor
         DsonArray<string> collection = new DsonArray<string>(expectedCount);
         foreach (Sheet sheet in sheets) {
             _curSheet = sheet;
+            _headerOptionsDic.Clear();
             string mergedSheetName = GetMergedSheetName(sheet.sheetName);
             string className = DataScriptGenerator.GetClassName(mergedSheetName);
             DSNamedType namedType = _dsRepository.GetType(className);
@@ -279,21 +283,28 @@ public class DsonGenerator : ISheetProcessor
         return collection;
     }
 
-    private static string? GetRawValue(IValueProvider valueProvider, Header fieldHeader) {
+    private string? GetRawValue(IValueProvider valueProvider, Header fieldHeader) {
         string rawValue = valueProvider.GetValue(fieldHeader.name);
-        if (!fieldHeader.options.Contains(KEY_TRIM)) {
+        if (string.IsNullOrEmpty(rawValue)) {
             return rawValue;
         }
-        DsonObject<string> options = ParseOptions(fieldHeader.options);
-        if (!string.IsNullOrEmpty(rawValue) && GetBool(options, KEY_TRIM)) {
-            return rawValue.Trim();
+        DsonObject<string> options = GetOptions(fieldHeader);
+        if (GetBool(options, KEY_IS_ASSET_PATH)) {
+            rawValue = FileUtil.NormalizeAssetPath(rawValue);
+        } else {
+            if (GetBool(options, KEY_TRIM)) {
+                rawValue = rawValue.Trim();
+            }
+            if (GetBool(options, KEY_TO_LOWER)) {
+                rawValue = rawValue.ToLower();
+            }
         }
         return rawValue;
     }
 
     private DsonValue MergeCellValue(IValueProvider valueProvider, Header fieldHeader, DSNamedType fieldType, List<Header> elemHeaders) {
         string fieldName = fieldHeader.name;
-        DsonObject<string> options = ParseOptions(fieldHeader.options);
+        DsonObject<string> options = GetOptions(fieldHeader);
         CheckOriginalCell(options, fieldName, valueProvider.GetValue(fieldName));
 
         DSTypeElement elementType = GetElementType(fieldType);
@@ -337,6 +348,14 @@ public class DsonGenerator : ISheetProcessor
             throw new Exception($"invalid pair value: {pair}");
         }
         return dsonObject;
+    }
+
+    private DsonObject<string> GetOptions(Header header) {
+        if (!_headerOptionsDic.TryGetValue(header, out DsonObject<string> options)) {
+            options = ParseOptions(header.options);
+            _headerOptionsDic[header] = options;
+        }
+        return options;
     }
 
     private static void CheckOriginalCell(DsonObject<string> options, string fieldName, string? value) {

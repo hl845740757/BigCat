@@ -22,11 +22,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
-using Wjybxx.BigCat.CoreEditor.UIElements;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
@@ -81,7 +79,7 @@ public static class UnityEditorUtil
         return obj;
     }
 
-    public static readonly ImmutableList<string> imageFileExtensions = new string[] { "png", "jpg", "psd" }.ToImmutableList2();
+    public static readonly ImmutableList<string> imageFileExtensions = new string[] { "png", "jpg", "tif", "psd" }.ToImmutableList2();
     public static readonly ImmutableList<string> audioFileExtensions = new string[] { "ogg", "wav", "mp3" }.ToImmutableList2();
 
     /// <summary>
@@ -110,24 +108,119 @@ public static class UnityEditorUtil
         return false;
     }
 
+    /// <summary>
+    /// Ping一下目标资产对象
+    /// </summary>
+    /// <param name="assetPath"></param>
+    public static void PingObject(string assetPath) {
+        if (string.IsNullOrWhiteSpace(assetPath)) {
+            return;
+        }
+        UnityEngine.Object someObj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+        if (someObj) {
+            EditorGUIUtility.PingObject(someObj);
+        }
+    }
+
+    /// <summary>
+    /// 显示进度条
+    /// </summary>
+    public static void DisplayProgressBar(string tips, int progressValue, int totalValue) {
+        EditorUtility.DisplayProgressBar("进度", $"{tips} : {progressValue} / {totalValue}", (float)progressValue / totalValue);
+    }
+
+    #region focus-window
+
+    public static void FocusUnitySceneWindow() {
+        EditorWindow.FocusWindowIfItsOpen<SceneView>();
+    }
+
+    public static void CloseUnityGameWindow() {
+        Type type = Assembly.Load("UnityEditor").GetType("UnityEditor.GameView");
+        EditorWindow.FocusWindowIfItsOpen(type);
+    }
+
+    public static void FocusUnityGameWindow() {
+        Type type = Assembly.Load("UnityEditor").GetType("UnityEditor.GameView");
+        EditorWindow.FocusWindowIfItsOpen(type);
+    }
+
+    public static void FocusUnityProjectWindow() {
+        Type type = Assembly.Load("UnityEditor").GetType("UnityEditor.ProjectBrowser");
+        EditorWindow.FocusWindowIfItsOpen(type);
+    }
+
+    public static void FocusUnityHierarchyWindow() {
+        Type type = Assembly.Load("UnityEditor").GetType("UnityEditor.SceneHierarchyWindow");
+        EditorWindow.FocusWindowIfItsOpen(type);
+    }
+
+    public static void FocusUnityInspectorWindow() {
+        Type type = Assembly.Load("UnityEditor").GetType("UnityEditor.InspectorWindow");
+        EditorWindow.FocusWindowIfItsOpen(type);
+    }
+
+    public static void FocusUnityConsoleWindow() {
+        Type type = Assembly.Load("UnityEditor").GetType("UnityEditor.ConsoleWindow");
+        EditorWindow.FocusWindowIfItsOpen(type);
+    }
+
+    #endregion
+
     #region asset-path
+
+    public static string OpenFolderPanel(string title, string defaultPath, string defaultName = "") {
+        string openPath = EditorUtility.OpenFolderPanel(title, defaultPath, defaultName);
+        if (string.IsNullOrEmpty(openPath)) {
+            return null;
+        }
+        if (!openPath.Contains("/Assets")) {
+            Debug.LogWarning("Please select unity assets folder.");
+            return null;
+        }
+        return openPath;
+    }
+
+    public static string OpenFilePanel(string title, string defaultPath, string extension = "") {
+        string openPath = EditorUtility.OpenFilePanel(title, defaultPath, extension);
+        if (string.IsNullOrEmpty(openPath)) {
+            return null;
+        }
+        if (!openPath.Contains("/Assets")) {
+            Debug.LogWarning("Please select unity assets file.");
+            return null;
+        }
+        return openPath;
+    }
+
+    /// <summary>
+    /// 规格化资产路径
+    ///
+    /// 1.文件扩展名之前的部分转小写，扩展名不转小写。
+    /// 2.运行时可通过缓存StringBuilder优化开销。
+    /// </summary>
+    /// <param name="assetPath"></param>
+    /// <returns></returns>
+    public static string NormalizeAssetPath(string assetPath) {
+        return BigCatTool.FileUtil.NormalizeAssetPath(assetPath);
+    }
 
     /// <summary>
     /// 将文件路径转换为资产路径
     /// </summary>
-    /// <param name="filePath"></param>
+    /// <param name="filePath">文件路径</param>
     public static string ConvertToAssetPath(string filePath) {
         if (string.IsNullOrWhiteSpace(filePath)) {
             return filePath;
         }
-        if (filePath.StartsWith("Assets")) {
-            return filePath.Replace('\\', '/');
+        if (!filePath.StartsWith("Assets")) {
+            filePath = filePath.Replace(Application.dataPath, "Assets");
         }
-        return filePath.Replace(Application.dataPath, "Assets").Replace('\\', '/');
+        return filePath.Replace('\\', '/');
     }
 
     /// <summary>
-    /// 将资产路径转换为文件路径
+    /// 将资产路径转换为文件路径 - 可能会丢失大小写
     /// </summary>
     /// <param name="assetPath"></param>
     /// <returns></returns>
@@ -154,101 +247,6 @@ public static class UnityEditorUtil
         string assetPath = AssetDatabase.GetAssetPath(obj);
         int idx = assetPath.LastIndexOf('.');
         return idx > 0 ? assetPath.Substring(0, assetPath.LastIndexOf('/')) : assetPath;
-    }
-
-    #endregion
-
-    #region draw
-
-    /** 单行绘制Vector2 */
-    public static Vector2 DrawVector2(string label, Vector2 value) {
-        bool wideMode = EditorGUIUtility.wideMode;
-        EditorGUIUtility.wideMode = true; // 强制单行显示
-        value = EditorGUILayout.Vector2Field(label, value);
-        EditorGUIUtility.wideMode = wideMode;
-        return value;
-    }
-
-    /** 单行绘制Vector3 */
-    public static Vector3 DrawVector3(string label, Vector3 value) {
-        bool wideMode = EditorGUIUtility.wideMode;
-        EditorGUIUtility.wideMode = true; // 强制单行显示
-        value = EditorGUILayout.Vector3Field(label, value);
-        EditorGUIUtility.wideMode = wideMode;
-        return value;
-    }
-
-    /** 绘制分割线 */
-    public static void DrawSeparator() {
-        Rect rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, Color.gray);
-    }
-
-    /** 绘制分割线 */
-    public static void DrawSeparator(Color color) {
-        Rect rect = EditorGUILayout.GetControlRect(false, 1);
-        EditorGUI.DrawRect(rect, color);
-    }
-
-    #endregion
-
-    #region check-event
-
-    /// <summary>
-    /// 鼠标左键事件
-    /// </summary>
-    public static bool IsPrimaryClickEvent(Event evt) {
-        return evt.type == EventType.MouseDown && evt.button == 0;
-    }
-
-    /// <summary>
-    /// 鼠标左键事件
-    /// </summary>
-    public static bool IsPrimaryClickEvent(Event evt, Rect rect) {
-        return evt.type == EventType.MouseDown
-               && evt.button == 0 && rect.Contains(evt.mousePosition);
-    }
-
-    /// <summary>
-    /// 鼠标右键事件
-    /// </summary>
-    public static bool IsContextClickEvent(Event evt, Rect rect) {
-        return evt.type == EventType.ContextClick && rect.Contains(evt.mousePosition);
-    }
-
-    /// <summary>
-    /// 回车键事件
-    /// </summary>
-    public static bool IsClickEnterEvent(Event evt) {
-        return evt.type == EventType.KeyDown
-               && (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter);
-    }
-
-    /// <summary>
-    /// Ping一下目标资产对象
-    /// </summary>
-    public static void CheckPingObjectEvent(string assetPath, Event evt, Rect controlRect) {
-        if (string.IsNullOrWhiteSpace(assetPath) || !IsPrimaryClickEvent(evt, controlRect)) {
-            return;
-        }
-        UnityEngine.Object someObj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-        if (someObj) {
-            EditorGUIUtility.PingObject(someObj);
-        }
-    }
-
-    /// <summary>
-    /// Ping一下目标资产对象
-    /// </summary>
-    /// <param name="assetPath"></param>
-    public static void PingObject(string assetPath) {
-        if (string.IsNullOrWhiteSpace(assetPath)) {
-            return;
-        }
-        UnityEngine.Object someObj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-        if (someObj) {
-            EditorGUIUtility.PingObject(someObj);
-        }
     }
 
     #endregion
@@ -339,24 +337,6 @@ public static class UnityEditorUtil
 
     #endregion
 
-    #region GUIContent
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GUIContent Reset(this GUIContent content) {
-        content.text = "";
-        content.tooltip = "";
-        content.image = null;
-        return content;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GUIContent WithText(this GUIContent content, string text) {
-        content.text = text;
-        return content;
-    }
-
-    #endregion
-
     #region uitoolkit
 
     private static PropertyInfo _listFoldoutProperty;
@@ -417,25 +397,6 @@ public static class UnityEditorUtil
         }
     }
 
-    internal static void SetVectorFieldLabel(VisualElement field, IList<string> labels) {
-        VisualElement values = field.childCount == 1 ? field[0] : field[1];
-        for (int i = 0; i < values.childCount; i++) {
-            if (values[i] is FloatField floatField) {
-                floatField.label = labels[i];
-            } else if (values[i] is IntegerField integerField) {
-                integerField.label = labels[i];
-            }
-        }
-    }
-
-    internal static ObjectPathField QueryObjectPathField(this VisualElement container, string name) {
-        return (ObjectPathField)container.Q(name)[0];
-    }
-
-    internal static AABBField QueryAABBField(this VisualElement container, string name) {
-        return (AABBField)container.Q(name)[0];
-    }
-
     internal static T FindUserContextInParent<T>(this VisualElement element) where T : class {
         for (int i = 0; i < 5; i++) {
             element = element.parent;
@@ -468,7 +429,7 @@ public static class UnityEditorUtil
 
     #endregion
 
-    #region MyRegion
+    #region convert
 
     public static int AsInt32(Color32 color) {
         return color.r | color.g << 8 | color.b << 16 | color.a << 24;
@@ -501,6 +462,10 @@ public static class UnityEditorUtil
         vector.z = (int)vector.z;
     }
 
+    #endregion
+
+    #region SerializedProperty
+
     public static void WriteProperty(this MinMaxAABB box, SerializedProperty property) {
         using SerializedProperty pValue = property.Copy();
         pValue.Next(true);
@@ -510,7 +475,7 @@ public static class UnityEditorUtil
         pValue.vector3Value = box.max;
     }
 
-    public static void ReadProperty(this MinMaxAABB box, SerializedProperty property) {
+    public static void ReadProperty(ref MinMaxAABB box, SerializedProperty property) {
         using SerializedProperty pValue = property.Copy();
         pValue.Next(true);
         box.min = pValue.vector3Value;
@@ -534,7 +499,7 @@ public static class UnityEditorUtil
         pValue.intValue = path.type;
     }
 
-    public static void ReadProperty(this ObjectPath path, SerializedProperty property) {
+    public static void ReadProperty(ref ObjectPath path, SerializedProperty property) {
         using var pValue = property.Copy();
         pValue.Next(true);
         path.collection = pValue.stringValue;

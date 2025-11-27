@@ -101,7 +101,7 @@ public class SpriteGroupEditor : Editor
     }
 
     private void SyncFromOther() {
-        string filePath = EditorUtility.OpenFilePanel("选择资产", UnityEditorUtil.lastOpenFolder, "asset");
+        string filePath = UnityEditorUtil.OpenFilePanel("选择资产", UnityEditorUtil.lastOpenFolder, "asset");
         if (string.IsNullOrEmpty(filePath)) {
             return;
         }

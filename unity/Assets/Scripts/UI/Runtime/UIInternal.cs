@@ -111,6 +111,7 @@ internal static class UIInternal
     }
 
     public static bool IsIntersect(HashSet<int> lhs, HashSet<int> rhs) {
+        if (lhs == null || rhs == null) return false;
         HashSet<int> min, max;
         if (lhs.Count < rhs.Count) {
             min = lhs;

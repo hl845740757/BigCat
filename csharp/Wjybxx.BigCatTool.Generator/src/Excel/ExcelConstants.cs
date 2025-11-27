@@ -75,10 +75,13 @@ public static class ExcelConstants
     /// 格式：<code>isFlags: true</code>
     /// 示例：<code>A | B | C</code>
     ///
-    /// 如果期望A,B,C为下标，那么应该新建一个BitArray类型，然后通过<see cref="DSTypeHandler"/>进行转换。
     /// 对于BitArray类型，其实建议配置为数组类型；可以在导表时转换，也可以在解码时转换。
     /// </summary>
     public const string KEY_IS_FLAGS = "isFlags";
+    /// <summary>
+    /// 是否是资产路径
+    /// </summary>
+    public const string KEY_IS_ASSET_PATH = "isAssetPath";
     /// <summary>
     /// 标记number和string类型是否是常量值
     /// 
@@ -99,6 +102,10 @@ public static class ExcelConstants
     /// 字符串数据在导出时执行Trim
     /// </summary>
     public const string KEY_TRIM = "trim";
+    /// <summary>
+    /// 字符串数据在导出时转小写
+    /// </summary>
+    public const string KEY_TO_LOWER = "toLower";
 
     /// <summary>
     /// value禁止重复
@@ -147,7 +154,7 @@ public static class ExcelConstants
         if (string.IsNullOrWhiteSpace(options)) {
             return false;
         }
-        int spIndex = options.LastIndexOf('{');
+        int spIndex = options.IndexOf('{');
         return spIndex < 0
             ? options.IndexOf('C') >= 0
             : options.IndexOf('C', 0, spIndex) >= 0;
@@ -188,7 +195,7 @@ public static class ExcelConstants
             }
             return result;
         }
-        int spIndex = options.LastIndexOf('{');
+        int spIndex = options.IndexOf('{');
         if (spIndex < 0) {
             DsonObject<string> result = new DsonObject<string>(1);
             string mode = ToolUtil.DeleteWhitespace(options);
