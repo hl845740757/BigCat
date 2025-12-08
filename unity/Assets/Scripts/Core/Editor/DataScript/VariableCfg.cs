@@ -26,7 +26,7 @@ using Wjybxx.Commons.Collections;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 变量编辑器相关配置

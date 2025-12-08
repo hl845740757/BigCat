@@ -1,9 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <Wjybxx.BigCat.CoreEditor.UIElements.TimestampField name="object-content" style="flex-grow: 0; justify-content: flex-start; align-items: stretch; height: auto; max-height: none; flex-direction: row;">
+    <Wjybxx.BigCat.Editor.UIElements.TimestampField name="object-content" style="flex-grow: 0; justify-content: flex-start; align-items: stretch; height: auto; max-height: none; flex-direction: row;">
         <ui:Label text="Timestamp" display-tooltip-when-elided="true" name="label" />
-        <Wjybxx.BigCat.CoreEditor.UIElements.MLongField name="seconds" labelMargin="0" value="0" is-delayed="true" style="width: 120px; justify-content: flex-start; align-items: stretch; flex-grow: 1;" />
+        <Wjybxx.BigCat.Editor.UIElements.MLongField name="seconds" labelMargin="0" value="0" is-delayed="true" style="width: 120px; justify-content: flex-start; align-items: stretch; flex-grow: 1;" />
         <ui:Label text="(s)" display-tooltip-when-elided="true" style="margin-left: 3px; margin-right: 3px; margin-top: 1px; margin-bottom: 1px;" />
-        <Wjybxx.BigCat.CoreEditor.UIElements.MIntegerField name="millis" value="0" labelMargin="0" hasMin="true" hasMax="true" max="999" is-delayed="true" style="width: auto; flex-grow: 1; max-width: 80px; min-width: 40px;" />
+        <Wjybxx.BigCat.Editor.UIElements.MIntegerField name="millis" value="0" labelMargin="0" hasMin="true" hasMax="true" max="999" is-delayed="true" style="width: auto; flex-grow: 1; max-width: 80px; min-width: 40px;" />
         <ui:Label text="(ms)" display-tooltip-when-elided="true" style="margin-top: 1px; margin-right: 3px; margin-bottom: 1px; margin-left: 3px;" />
-    </Wjybxx.BigCat.CoreEditor.UIElements.TimestampField>
+    </Wjybxx.BigCat.Editor.UIElements.TimestampField>
 </ui:UXML>

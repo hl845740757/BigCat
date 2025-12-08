@@ -18,7 +18,7 @@
 
 using System.Collections.Generic;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 由于后续的场景编辑器也依赖数据图，为保持场景数据和GraphView的数据同步，还是需要简单的MVC架子

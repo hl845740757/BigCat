@@ -22,7 +22,7 @@
             <ui:VisualElement style="display: flex; flex-shrink: 0; border-top-width: 0; border-left-color: rgb(140, 140, 140); border-right-color: rgb(140, 140, 140); border-top-color: rgb(140, 140, 140); border-bottom-color: rgb(140, 140, 140);">
                 <ui:VisualElement name="batch-div" style="flex-shrink: 0; border-top-color: rgb(161, 161, 161); border-bottom-color: rgb(134, 134, 134); border-top-width: 0; border-bottom-width: 1px;">
                     <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: flex-end; flex-wrap: nowrap;">
-                        <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="batch-position" label="批量·坐标" label-margin="0" xyz-flex-basis="60" style="flex-shrink: 1; flex-grow: 1;" />
+                        <Wjybxx.BigCat.Editor.UIElements.MVector2Field name="batch-position" label="批量·坐标" label-margin="0" xyz-flex-basis="60" style="flex-shrink: 1; flex-grow: 1;" />
                         <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0; flex-shrink: 0;">
                             <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-position-add" tooltip="所有帧的坐标加上指定值" />
                             <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-position-set" tooltip="设置所有帧的坐标" />
@@ -30,7 +30,7 @@
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: flex-end; flex-wrap: nowrap;">
-                        <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="batch-scale" label="批量·缩放" label-margin="0" xyz-flex-basis="60" style="flex-shrink: 1; flex-grow: 1;" />
+                        <Wjybxx.BigCat.Editor.UIElements.MVector2Field name="batch-scale" label="批量·缩放" label-margin="0" xyz-flex-basis="60" style="flex-shrink: 1; flex-grow: 1;" />
                         <ui:VisualElement name="VisualElement" style="flex-direction: row; margin-left: 0; flex-shrink: 0;">
                             <ui:Button text="Add" display-tooltip-when-elided="true" name="batch-scale-add" tooltip="所有帧的缩放加上指定值" />
                             <ui:Button text="Set" display-tooltip-when-elided="true" name="batch-scale-set" tooltip="设置所有帧的缩放" />
@@ -114,7 +114,7 @@
                     <uie:ColorField label="背景色" value="#353535FF" name="bg-color" style="flex-direction: column; width: 60px;" />
                 </ui:VisualElement>
                 <ui:VisualElement style="flex-direction: row; margin-top: 10px; margin-bottom: 10px; flex-shrink: 0;">
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MToggle name="play-toggle" tooltip="由动画时长最长的动画确定" label="循环播放：" label-margin="-90" />
+                    <Wjybxx.BigCat.Editor.UIElements.MToggle name="play-toggle" tooltip="由动画时长最长的动画确定" label="循环播放：" label-margin="-90" />
                     <ui:Slider picking-mode="Ignore" value="0" high-value="1" name="play-time-slider" style="width: 250px; margin-left: 15px;" />
                     <uie:FloatField value="0" name="play-time-field" readonly="true" style="width: 40px;" />
                 </ui:VisualElement>

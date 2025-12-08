@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 数据节点

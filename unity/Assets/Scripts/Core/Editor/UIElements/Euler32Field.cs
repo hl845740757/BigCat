@@ -22,7 +22,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 public class Euler32Field : BindableElement, INotifyValueChanged<Euler32>, IPrefixLabel
 {

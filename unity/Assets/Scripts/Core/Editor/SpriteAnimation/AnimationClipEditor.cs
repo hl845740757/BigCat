@@ -7,11 +7,11 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using Wjybxx.BigCat.Animator;
 using Wjybxx.BigCat.Core;
-using Wjybxx.BigCat.CoreEditor.UIElements;
+using Wjybxx.BigCat.Editor.UIElements;
 using Wjybxx.Commons;
 using Object = UnityEngine.Object;
 
-namespace Wjybxx.BigCat.CoreEditor.SpriteAnimation
+namespace Wjybxx.BigCat.Editor.SpriteAnimation
 {
 /// <summary>
 /// 

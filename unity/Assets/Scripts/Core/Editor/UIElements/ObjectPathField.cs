@@ -25,7 +25,7 @@ using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 using Wjybxx.Commons;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 /// <summary>
 /// 

@@ -20,7 +20,7 @@ using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 public class MVector2Field : Vector2Field, IPrefixLabel
 {

@@ -20,7 +20,7 @@ using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 public class VarInt32PopupField : PopupField<int>, IVarField
 {

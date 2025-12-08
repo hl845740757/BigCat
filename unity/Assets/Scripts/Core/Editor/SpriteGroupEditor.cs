@@ -23,10 +23,10 @@ using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Core;
 
-namespace Wjybxx.BigCat.CoreEditor
+namespace Wjybxx.BigCat.Editor
 {
 [CustomEditor(typeof(SpriteGroup))]
-public class SpriteGroupEditor : Editor
+public class SpriteGroupEditor : UnityEditor.Editor
 {
     private SpriteGroup _group;
     private Vector2 scrollPos;

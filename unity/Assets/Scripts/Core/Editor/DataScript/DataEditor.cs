@@ -7,14 +7,14 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
-using Wjybxx.BigCat.CoreEditor.UIElements;
+using Wjybxx.BigCat.Editor.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson.Text;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 该类是一个模板基类，其它编辑器可以基于此进行即可

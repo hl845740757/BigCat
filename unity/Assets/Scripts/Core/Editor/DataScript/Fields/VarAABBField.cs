@@ -18,9 +18,9 @@
 
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
-using Wjybxx.BigCat.CoreEditor.UIElements;
+using Wjybxx.BigCat.Editor.UIElements;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 public class VarAABBField : BindableElement, IVarField
 {

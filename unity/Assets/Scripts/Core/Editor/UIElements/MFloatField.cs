@@ -19,7 +19,7 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 public class MFloatField : FloatField, IPrefixLabel
 {

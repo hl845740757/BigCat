@@ -28,7 +28,7 @@ using Wjybxx.Commons.Collections;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Types;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 变量（值）

@@ -22,7 +22,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.Commons;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 ///

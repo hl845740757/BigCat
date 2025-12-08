@@ -20,7 +20,7 @@ using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Core;
 
-namespace Wjybxx.BigCat.CoreEditor
+namespace Wjybxx.BigCat.Editor
 {
 [CustomPropertyDrawer(typeof(EnumFlagsAttribute))]
 public class EnumFlagsPropertyDrawer : PropertyDrawer

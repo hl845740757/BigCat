@@ -18,7 +18,7 @@
 
 using UnityEngine.UIElements;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 public class MTextField : TextField, IPrefixLabel
 {

@@ -1,5 +1,5 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" uibigcat="Wjybxx.BigCat.CoreEditor.UIElements" editor-extension-mode="True">
-    <Wjybxx.BigCat.CoreEditor.UIElements.ObjectPathField name="object-content" style="justify-content: flex-start; align-items: stretch; min-width: auto; flex-direction: column; flex-wrap: nowrap; flex-shrink: 0;">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" uibigcat="Wjybxx.BigCat.Editor.UIElements" editor-extension-mode="True">
+    <Wjybxx.BigCat.Editor.UIElements.ObjectPathField name="object-content" style="justify-content: flex-start; align-items: stretch; min-width: auto; flex-direction: column; flex-wrap: nowrap; flex-shrink: 0;">
         <ui:Foldout text="ObjectPath" value="true" name="foldout" style="flex-shrink: 0; flex-grow: 1;">
             <ui:VisualElement style="justify-content: space-between; flex-shrink: 0; flex-direction: row;">
                 <ui:TextField picking-mode="Ignore" label="AssetPath" tooltip="资产文件路径" name="collection" multiline="false" style="min-width: 300px; flex-grow: 1;" />
@@ -15,5 +15,5 @@
             </ui:VisualElement>
             <uie:EnumField label="AssetType" value="Default" name="type" type="Wjybxx.BigCat.Core.ObjectPathType, Wjybxx.BigCat.UnityCore" tooltip="资产or对象类型" />
         </ui:Foldout>
-    </Wjybxx.BigCat.CoreEditor.UIElements.ObjectPathField>
+    </Wjybxx.BigCat.Editor.UIElements.ObjectPathField>
 </ui:UXML>

@@ -27,7 +27,7 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 {

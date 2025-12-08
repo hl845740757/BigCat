@@ -2,25 +2,25 @@
     <Style src="project://database/Assets/Scripts/Core/Editor/DataScript/GraphView.uss?fileID=7433441132597879392&amp;guid=21f364aa189b437188ee624f81e3f407&amp;type=3#GraphView" />
     <ui:VisualElement style="min-width: 800px; min-height: 600px; flex-direction: column; flex-grow: 1;">
         <uie:Toolbar>
-            <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="资产路径：" label-margin="-80" password="false" name="asset-path" style="width: 350px; flex-grow: 0;" />
+            <Wjybxx.BigCat.Editor.UIElements.MTextField label="资产路径：" label-margin="-80" password="false" name="asset-path" style="width: 350px; flex-grow: 0;" />
             <ui:Button text="打开" display-tooltip-when-elided="true" name="open-file" />
             <ui:Button text="关闭" display-tooltip-when-elided="true" name="close-file" />
             <ui:Button text="另存为" display-tooltip-when-elided="true" name="save-file-as" />
-            <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="Folder：" label-margin="-100" name="folder" tooltip="虚拟子文件夹" style="width: 200px;" />
+            <Wjybxx.BigCat.Editor.UIElements.MTextField label="Folder：" label-margin="-100" name="folder" tooltip="虚拟子文件夹" style="width: 200px;" />
             <uie:ToolbarMenu display-tooltip-when-elided="true" name="folder-menu" />
             <ui:Button text="切换" display-tooltip-when-elided="true" name="change-folder" />
         </uie:Toolbar>
         <ui:VisualElement style="flex-direction: row; flex-grow: 1;">
-            <Wjybxx.BigCat.CoreEditor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; min-width: 60%; min-height: 100%;" />
+            <Wjybxx.BigCat.Editor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; min-width: 60%; min-height: 100%;" />
             <ui:ScrollView name="inspector-div" style="flex-grow: 1; min-height: 100%; max-width: 30%;">
                 <ui:VisualElement name="node-header" tooltip="node基础信息">
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="TypeSymbol" name="type-symbol" tooltip="类型信息" label-margin="-60" readonly="true" />
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MLongField name="local-id" label="LocalId" hasMin="true" readonly="false" is-delayed="true" tooltip="程序分配的局部Id，允许手动修改" />
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MToggle name="enable-port" label="EnablePort" tooltip="用于Pair类型启用数据端口" />
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MTextField name="folder" label="Folder" tooltip="Node归属的文件夹（逻辑分组）" is-delayed="true" />
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MTextField name="name" label="Name" is-delayed="true" tooltip="Node的名字，用于外部引用" />
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MTextField label="Title" tooltip="标题" name="title" />
-                    <Wjybxx.BigCat.CoreEditor.UIElements.MVector2Field name="position" label="Position" tooltip="UI坐标" isReadonly="true" isDelayed="false" />
+                    <Wjybxx.BigCat.Editor.UIElements.MTextField label="TypeSymbol" name="type-symbol" tooltip="类型信息" label-margin="-60" readonly="true" />
+                    <Wjybxx.BigCat.Editor.UIElements.MLongField name="local-id" label="LocalId" hasMin="true" readonly="false" is-delayed="true" tooltip="程序分配的局部Id，允许手动修改" />
+                    <Wjybxx.BigCat.Editor.UIElements.MToggle name="enable-port" label="EnablePort" tooltip="用于Pair类型启用数据端口" />
+                    <Wjybxx.BigCat.Editor.UIElements.MTextField name="folder" label="Folder" tooltip="Node归属的文件夹（逻辑分组）" is-delayed="true" />
+                    <Wjybxx.BigCat.Editor.UIElements.MTextField name="name" label="Name" is-delayed="true" tooltip="Node的名字，用于外部引用" />
+                    <Wjybxx.BigCat.Editor.UIElements.MTextField label="Title" tooltip="标题" name="title" />
+                    <Wjybxx.BigCat.Editor.UIElements.MVector2Field name="position" label="Position" tooltip="UI坐标" isReadonly="true" isDelayed="false" />
                 </ui:VisualElement>
                 <ui:VisualElement name="node-value" style="border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgb(141, 141, 141); border-right-color: rgb(141, 141, 141); border-top-color: rgb(141, 141, 141); border-bottom-color: rgb(141, 141, 141); min-height: 200px;" />
             </ui:ScrollView>

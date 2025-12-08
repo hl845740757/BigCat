@@ -23,7 +23,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.Dson.Types;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 /// <summary>
 /// TODO 预览功能

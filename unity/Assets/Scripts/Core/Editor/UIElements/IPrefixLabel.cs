@@ -16,7 +16,7 @@
 
 #endregion
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 /// <summary>
 /// 为字段类定义Label读写方法

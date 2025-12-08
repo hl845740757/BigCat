@@ -18,7 +18,7 @@
 
 using System;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 数据节点的特征值

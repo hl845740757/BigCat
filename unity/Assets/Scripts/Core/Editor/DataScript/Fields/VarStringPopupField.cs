@@ -19,7 +19,7 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 public class VarStringPopupField : PopupField<string>, IVarField
 {

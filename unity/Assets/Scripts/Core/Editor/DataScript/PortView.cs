@@ -25,7 +25,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UnityGraphView = UnityEditor.Experimental.GraphView.GraphView;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 数据端口视图

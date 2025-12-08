@@ -18,7 +18,7 @@
 
 using System;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 数据(字段)的展示类型

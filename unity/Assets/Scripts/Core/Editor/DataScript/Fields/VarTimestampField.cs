@@ -17,10 +17,10 @@
 #endregion
 
 using UnityEngine.UIElements;
-using Wjybxx.BigCat.CoreEditor.UIElements;
+using Wjybxx.BigCat.Editor.UIElements;
 using Wjybxx.Dson.Types;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 public class VarTimestampField : BindableElement, IVarField
 {

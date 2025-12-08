@@ -17,10 +17,10 @@
 #endregion
 
 using UnityEngine.UIElements;
-using Wjybxx.BigCat.CoreEditor.UIElements;
+using Wjybxx.BigCat.Editor.UIElements;
 using Wjybxx.Commons;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 public class VarObjectPathField : BindableElement, IVarField
 {

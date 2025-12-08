@@ -24,7 +24,7 @@ using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 using Wjybxx.Commons;
 
-namespace Wjybxx.BigCat.CoreEditor.UIElements
+namespace Wjybxx.BigCat.Editor.UIElements
 {
 /// <summary>
 /// 注意：不要手动修改xml中变量的label

@@ -31,7 +31,7 @@ using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 该类主要负责数据的编解码逻辑，这部分逻辑相对独立，但代码量较大。

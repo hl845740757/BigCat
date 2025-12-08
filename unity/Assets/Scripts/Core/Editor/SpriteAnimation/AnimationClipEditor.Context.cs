@@ -25,7 +25,7 @@ using UnityEngine.UIElements;
 using Wjybxx.BigCat.Animator;
 using Wjybxx.BigCat.Core;
 
-namespace Wjybxx.BigCat.CoreEditor.SpriteAnimation
+namespace Wjybxx.BigCat.Editor.SpriteAnimation
 {
 public partial class AnimationClipEditor
 {

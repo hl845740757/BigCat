@@ -30,7 +30,7 @@ using Wjybxx.Dson;
 using Wjybxx.Dson.IO;
 using Wjybxx.Dson.Text;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 数据图

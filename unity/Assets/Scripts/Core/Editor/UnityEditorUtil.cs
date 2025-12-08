@@ -28,7 +28,7 @@ using Wjybxx.BigCat.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
-namespace Wjybxx.BigCat.CoreEditor
+namespace Wjybxx.BigCat.Editor
 {
 /// <summary>
 /// Unity工具类

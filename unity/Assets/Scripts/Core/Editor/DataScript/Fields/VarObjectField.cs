@@ -26,7 +26,7 @@ using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
 
-namespace Wjybxx.BigCat.CoreEditor.DataScript
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
 /// 通用Object字段布局
