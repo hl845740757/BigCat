@@ -1,0 +1,184 @@
+﻿#region LICENSE
+
+// Copyright 2025 wjybxx(845740757@qq.com)
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Wjybxx.Commons.Collections;
+
+namespace Wjybxx.BigCat.Assetor
+{
+/// <summary>
+/// 资产查询支持(索引)
+/// </summary>
+public sealed class AssetQuery
+{
+    /// <summary>
+    /// 所有资源包
+    /// </summary>
+    public readonly List<AssetManifest> packages = new List<AssetManifest>();
+    /// <summary>
+    /// 资产索引到资产的映射
+    /// 注：
+    /// 1.<code>folderName/fileName</code>一定不和fileName索引重复，因此一个字典即可。
+    /// 2.资产路径到资产的映射也在这里，这样查询资产时只需要查询一次。
+    /// </summary>
+    public readonly LinkedDictionary<string, AssetFileInfo> assetIndex2AssetDic = new();
+    /// <summary>
+    /// 场景名到资产文件的映射
+    /// 注：由于我们需要根据Scene的名字精准查询关联的资产，因此使用额外的索引以避免冲突。
+    /// </summary>
+    public readonly LinkedDictionary<string, AssetFileInfo> sceneName2AssetDic = new();
+
+    /// <summary>
+    /// 清理缓存
+    /// </summary>
+    /// <returns></returns>
+    public void ClearCache() {
+        assetIndex2AssetDic.Clear();
+        sceneName2AssetDic.Clear();
+    }
+
+    /// <summary>
+    /// 构建缓存内容
+    /// 
+    /// 1.该方法假设打包工具已对资产路径执行了规格化。
+    /// 2.Unity资产Bundle自动追加无扩展名索引。
+    /// </summary>
+    public void BuildCache() {
+        ClearCache();
+        // 确保Package已构建缓存
+        foreach (AssetManifest package in packages) {
+            if (package.id2BundleDic.IsEmpty) {
+                package.BuildCache();
+            }
+        }
+        List<AssetBundleInfo> bundleList = GetSortedBundles(); // 保证索引稳定性
+        Dictionary<string, string> folderNameCache = new(100); // 减少字符串切割
+        //
+        int fileCount = GetMainAssetsCount();
+        assetIndex2AssetDic.EnsureCapacity(fileCount * 3);
+        sceneName2AssetDic.EnsureCapacity(50);
+        foreach (AssetBundleInfo bundleInfo in bundleList) {
+            bool hasFileName = (bundleInfo.assetIndexes & EAssetIndexes.FileName) != 0;
+            bool hasFolderName = (bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileName) != 0;
+            //
+            foreach (AssetFileInfo fileInfo in bundleInfo.mainAssets) {
+                assetIndex2AssetDic.Add(fileInfo.assetPath, fileInfo);
+                // 场景文件需要独立的索引
+                if (fileInfo.assetPath.EndsWith(".unity")) {
+                    string sceneName = Path.GetFileNameWithoutExtension(fileInfo.assetPath);
+                    sceneName2AssetDic.Add(sceneName, fileInfo);
+                }
+                if (bundleInfo.assetIndexes == EAssetIndexes.None) {
+                    continue;
+                }
+                string fileName = Path.GetFileName(fileInfo.assetPath);
+                string fileNameNoExt = Path.GetFileNameWithoutExtension(fileName);
+                // 剔除无意义name索引，主要针对图片资源：1.png
+                if (hasFileName && !int.TryParse(fileNameNoExt, out int _)) {
+                    assetIndex2AssetDic[fileName] = fileInfo;
+                    if (bundleInfo.bundleType == EBundleType.AssetBundle) {
+                        assetIndex2AssetDic[fileNameNoExt] = fileInfo;
+                    }
+                }
+                // 允许图片资源同文件夹建立索引：sm_8001/1.png
+                if (hasFolderName) {
+                    string directoryName = Path.GetDirectoryName(fileInfo.assetPath)!;
+                    if (!folderNameCache.TryGetValue(directoryName, out string folderName)) {
+                        folderName = Path.GetFileName(directoryName);
+                        folderNameCache[directoryName] = folderName;
+                    }
+                    assetIndex2AssetDic[folderName + "/" + fileName] = fileInfo;
+                    if (bundleInfo.bundleType == EBundleType.AssetBundle) {
+                        assetIndex2AssetDic[folderName + "/" + fileNameNoExt] = fileInfo;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 将Bundle按照打包路径排序
+    /// 作用：索引的结果就具有稳定性。
+    /// </summary>
+    /// <returns></returns>
+    private List<AssetBundleInfo> GetSortedBundles() {
+        List<AssetBundleInfo> result = new(GetBundleCount());
+        foreach (AssetBundleInfo bundleInfo in packages.SelectMany(e => e.bundleList)) {
+            result.Add(bundleInfo);
+        }
+        result.Sort((a, b) => string.Compare(a.assetPath, b.assetPath, StringComparison.Ordinal));
+        return result;
+    }
+
+    internal bool HasCache => assetIndex2AssetDic.Count > 0;
+
+    /// <summary>
+    /// 获取Package数量
+    /// </summary>
+    /// <returns></returns>
+    public int GetPackageCount() => packages.Count;
+
+    /// <summary>
+    /// 获取总Bundle数量
+    /// </summary>
+    /// <returns></returns>
+    public int GetBundleCount() {
+        int count = 0;
+        foreach (AssetManifest package in packages) {
+            count += package.bundleList.Count;
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// 获取主资产文件数量
+    /// </summary>
+    /// <returns></returns>
+    public int GetMainAssetsCount() {
+        int count = 0;
+        foreach (AssetManifest package in packages) {
+            count += package.mainAssetsCount;
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// 查找指定包裹
+    /// </summary>
+    public AssetManifest FindPackage(string packageName) {
+        // Package通常数量较少，迭代查询效率足够
+        for (int index = 0; index < packages.Count; index++) {
+            AssetManifest package = packages[index];
+            if (package.packageName == packageName) return package;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 查找指定Bundle
+    /// </summary>
+    public AssetBundleInfo FindBundle(string packageName, int bundleId) {
+        AssetManifest package = FindPackage(packageName);
+        package.id2BundleDic.TryGetValue(bundleId, out AssetBundleInfo bundleInfo);
+        return bundleInfo;
+    }
+}
+}

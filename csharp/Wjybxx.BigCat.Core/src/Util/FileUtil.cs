@@ -19,7 +19,7 @@
 using System;
 using System.IO;
 
-namespace Wjybxx.BigCatTool
+namespace Wjybxx.BigCat.Util
 {
 public static class FileUtil
 {
@@ -211,6 +211,15 @@ public static class FileUtil
     }
 
     /// <summary>
+    /// 获取最后一级文件夹的名字
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string GetLastDirectoryName(string path) {
+        return Path.GetFileName(Path.GetDirectoryName(path));
+    }
+
+    /// <summary>
     /// 规格化资产路径(并非适用于任意场景)
     ///
     /// 1.文件扩展名之前的部分转小写，扩展名不转小写。
@@ -223,7 +232,12 @@ public static class FileUtil
             return assetPath;
         }
         assetPath = assetPath.Replace('\\', '/');
-        int spIndex = assetPath.IndexOf('.'); // 注意：不可改用LastIndexOf
+        int spIndex = assetPath.LastIndexOf('/');
+        if (spIndex >= 0) {
+            spIndex = assetPath.IndexOf('.', spIndex);
+        } else {
+            spIndex = assetPath.IndexOf('.'); // 注意：不可改用LastIndexOf，以支持多级文件扩展名
+        }
         if (spIndex < 0) {
             assetPath = assetPath.ToLower();
         } else {

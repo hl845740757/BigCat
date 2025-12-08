@@ -48,23 +48,54 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadMethod.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProviderBase.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EAssetIndexes.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourcePromise.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ProviderId.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\TaskScheduler.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BundleProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadPhase.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\AssetReferenceAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceErrorCode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationFrame.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetQuery.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EBundleType.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\DownloadTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MinMaxAABB.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\InstanceProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\BinaryAsset.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetFileInfo.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ErrorProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationMixCfg.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BinaryAssetProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\IPackageManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetManifest.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StopManagerTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\MonoScheduler.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -732,11 +763,21 @@
     <Reference Include="Wjybxx.Commons.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Wjybxx.Commons.Concurrent">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Concurrent.dll</HintPath>
+    </Reference>
     <Reference Include="Wjybxx.Dson.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Wjybxx.BTree.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
+      <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
+      <Name>Wjybxx.BigCat.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>
       <Name>UnityEditor.UI</Name>

@@ -5,6 +5,7 @@
         "Wjybxx.Commons.Core",
         "Wjybxx.Dson.Core",
         "Wjybxx.Dson.Codec",
+        "Wjybxx.BigCat.Core",
         "Wjybxx.BigCatTool.Core",
         "Wjybxx.BigCat.UnityCore"
     ],

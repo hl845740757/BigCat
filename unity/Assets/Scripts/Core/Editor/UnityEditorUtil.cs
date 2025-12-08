@@ -202,7 +202,7 @@ public static class UnityEditorUtil
     /// <param name="assetPath"></param>
     /// <returns></returns>
     public static string NormalizeAssetPath(string assetPath) {
-        return BigCatTool.FileUtil.NormalizeAssetPath(assetPath);
+        return Util.FileUtil.NormalizeAssetPath(assetPath);
     }
 
     /// <summary>

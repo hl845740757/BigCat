@@ -96,7 +96,6 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSNamedType.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSFileParser.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFileParser.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\FileUtil.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\package.json" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Wjybxx.BigCatTool.Core.asmdef" />
     <Reference Include="Unity.Plastic.Newtonsoft.Json">

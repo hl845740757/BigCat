@@ -808,6 +808,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
+      <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
+      <Name>Wjybxx.BigCat.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="Wjybxx.BigCatTool.Core.csproj">
       <Project>{17f05252-00fc-5af4-329a-8e14725841f9}</Project>
       <Name>Wjybxx.BigCatTool.Core</Name>

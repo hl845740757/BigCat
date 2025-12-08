@@ -3,7 +3,10 @@
     "rootNamespace": "Wjybxx.BigCat.Core",
     "references": [
         "Wjybxx.Commons.Core",
-        "Wjybxx.Dson.Core"
+        "Wjybxx.Commons.Concurrent",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.BTree.Core",
+        "Wjybxx.BigCat.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
