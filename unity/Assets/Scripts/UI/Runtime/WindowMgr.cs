@@ -41,7 +41,7 @@ namespace Wjybxx.BigCat.UI
 /// 2.该管理器不可直接实现<see cref="WindowCmdMgr"/>，而是为<see cref="WindowCmdMgr"/>提供服务。
 /// 3.暂不支持同一个地址的窗口打开多个，游戏应当是不需要的；可通过addr曲线救国实现。
 /// </summary>
-public sealed class WindowMgr
+public class WindowMgr
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<WindowMgr>();
     /// <summary>
@@ -411,7 +411,7 @@ public sealed class WindowMgr
     /// </summary>
     /// <param name="tags">需要关闭的窗口类型</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
-    public void CloseTagged(HashSet<int> tags, bool force = false) {
+    public void CloseTagged(List<string> tags, bool force = false) {
         foreach (Window window in new List<Window>(_curDesktop.Stack)) {
             if (UIInternal.IsIntersect(window.windowCfg.tags, tags)) {
                 Close(window.windowAddr, force);

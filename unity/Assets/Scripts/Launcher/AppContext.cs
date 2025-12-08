@@ -56,9 +56,8 @@ public static class AppContext
     /// <summary>
     /// 心跳方法
     /// </summary>
-    /// <param name="frame">当前帧号</param>
-    public static void Update(int frame) {
-        taskEntry.UpdateInlined(frame);
+    public static void Update() {
+        taskEntry.UpdateInlined();
     }
 
     /// <summary>

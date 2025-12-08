@@ -39,7 +39,7 @@ public class VarEuler32Field : BindableElement, IVarField
 
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
-        field.SetValueWithoutNotify((Euler32)variable.intValue);
+        this.Refresh();
     }
 
     public void Unbind() {
@@ -48,14 +48,14 @@ public class VarEuler32Field : BindableElement, IVarField
 
     private void OnValueChanged(ChangeEvent<Euler32> evt) {
         if (_variable != null) {
-            _variable.intValue = evt.newValue;
+            _variable[0].intValue = evt.newValue;
             _variable.ApplyModifiedProperties();
         }
     }
 
     public void Refresh(bool rebuild = false) {
         if (_variable != null) {
-            field.SetValueWithoutNotify((Euler32)_variable.intValue);
+            field.SetValueWithoutNotify((Euler32)_variable[0].intValue);
         }
     }
 }

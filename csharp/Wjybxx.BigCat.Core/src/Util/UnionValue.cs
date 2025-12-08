@@ -24,7 +24,7 @@ namespace Wjybxx.BigCat.Util
 /// <summary>
 /// 黑板的Value，最大支持3个Double值，即Vector3
 ///
-/// 1.内存消耗：40个字节。
+/// 1.不算对象头，内存消耗：40个字节。
 /// 2.double和long值的内存是重叠的，使用时需小心。
 /// 3.对于普通数字类型，建议总是使用double而非细分类型。
 /// </summary>

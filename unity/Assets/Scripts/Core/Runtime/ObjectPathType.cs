@@ -61,7 +61,8 @@ public enum ObjectPathType
     // AudioGroup,
 
     // Unity原生资产
-    // AnimationClip = 21,
+    // AnimatorController = 21,
+    // AnimationClip,
     // AudioClip,
     // AudioMixer,
     // Font,

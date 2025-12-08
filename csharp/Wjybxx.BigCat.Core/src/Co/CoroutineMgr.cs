@@ -162,6 +162,7 @@ public class CoroutineMgr : ICoroutineMgr
     public static CoroutineMgr CreateFrom(CoroutineMgr coroutineMgr, GTime time,
                                           bool? enableUnscaledQueue = null, bool? enableFrameQueue = null) {
         return new CoroutineMgr(coroutineMgr.EventLoop, time,
+            coroutineMgr.MinPeriod, coroutineMgr.UnscaledMinPeriod,
             enableUnscaledQueue: enableUnscaledQueue ?? coroutineMgr.UnscaledTimerMgr != null,
             enableFrameQueue: enableFrameQueue ?? coroutineMgr.FrameTimerMgr != null);
     }

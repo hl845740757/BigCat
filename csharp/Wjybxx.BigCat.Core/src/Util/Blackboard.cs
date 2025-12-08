@@ -24,8 +24,9 @@ namespace Wjybxx.BigCat.Util
 /// <summary>
 /// 基础的的黑板实现
 /// </summary>
-public sealed class Blackboard
+public class Blackboard
 {
+    private Blackboard shared; // 共享内存区 TODO
     private readonly Dictionary<DataKey, UnionValue> dataMap;
 
     public Blackboard() {
@@ -41,6 +42,11 @@ public sealed class Blackboard
     public bool ContainsKey(DataKey key) => dataMap.ContainsKey(key);
 
     public void Clear() => dataMap.Clear();
+
+    public Blackboard Shared {
+        get => shared;
+        set => shared = value;
+    }
 
     #region 泛型key
 

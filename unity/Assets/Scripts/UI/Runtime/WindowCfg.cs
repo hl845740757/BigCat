@@ -95,7 +95,7 @@ public class WindowCfg : MonoBehaviour
     ///
     /// 注：其实理想的类型是long类型，64个Tag应当是够游戏窗口用的。
     /// </summary>
-    public HashSet<int> tags = new HashSet<int>();
+    public List<string> tags = new List<string>();
     /// <summary>
     /// 窗口的最大空闲时间
     ///

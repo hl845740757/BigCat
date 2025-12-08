@@ -56,7 +56,7 @@ public interface WindowCmdMgr
     /// </summary>
     /// <param name="tags">需要关闭的窗口类型</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
-    void CloseTagged(HashSet<int> tags, bool force = false);
+    void CloseTagged(List<string> tags, bool force = false);
 
     /// <summary>
     /// 关闭当前桌面所有普通窗口(非常驻窗口)

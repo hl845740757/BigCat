@@ -45,8 +45,8 @@ public class VarColorField : MColorField, IVarField
         if (_variable == null) {
             return;
         }
-        if (_variable.values == null) { // Color32
-            _variable.intValue = UnityEditorUtil.AsInt32(evt.newValue);
+        if (_variable.Count == 1) { // Color32
+            _variable[0].intValue = UnityEditorUtil.AsInt32(evt.newValue);
         } else {
             _variable.colorValue = evt.newValue;
         }
@@ -57,8 +57,8 @@ public class VarColorField : MColorField, IVarField
         if (_variable == null) {
             return;
         }
-        if (_variable.values == null) { // Color32
-            Color32 color32 = UnityEditorUtil.AsColor32(_variable.intValue);
+        if (_variable.Count == 1) { // Color32
+            Color32 color32 = UnityEditorUtil.AsColor32(_variable[0].intValue);
             this.SetValueWithoutNotify(color32);
         } else {
             SetValueWithoutNotify(_variable.colorValue);

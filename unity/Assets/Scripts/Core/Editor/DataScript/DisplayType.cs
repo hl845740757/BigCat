@@ -44,8 +44,8 @@ public enum DisplayType
     Vector2Int,
     Vector3Int,
     Color, // float(r,g,b,a)
-    Color32, // int32类型特殊样式
-    Euler32, // int32类型特殊样式，xyz限制在[0, 360]
+    Color32, // 单int值结构体
+    Euler32, // 单int值结构体，xyz限制在[0, 360]
     MinMaxAABB, // 包围盒
 }
 }

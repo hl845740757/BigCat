@@ -110,9 +110,9 @@ internal static class UIInternal
         return declaringType != abstractType;
     }
 
-    public static bool IsIntersect(HashSet<int> lhs, HashSet<int> rhs) {
+    public static bool IsIntersect<T>(List<T> lhs, List<T> rhs) {
         if (lhs == null || rhs == null) return false;
-        HashSet<int> min, max;
+        List<T> min, max;
         if (lhs.Count < rhs.Count) {
             min = lhs;
             max = rhs;
@@ -120,7 +120,8 @@ internal static class UIInternal
             min = rhs;
             max = lhs;
         }
-        foreach (int key in min) {
+        for (int index = 0; index < min.Count; index++) {
+            T key = min[index];
             if (max.Contains(key)) return true;
         }
         return false;

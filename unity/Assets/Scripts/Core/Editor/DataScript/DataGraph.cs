@@ -99,7 +99,7 @@ public sealed class DataGraph
 
     private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly DataGraphHelper _helper;
-    private readonly HashSet<DSNamedType> _typeCreateStack = new HashSet<DSNamedType>(8);
+    private readonly LinkedHashSet<DSNamedType> _typeCreateStack = new(8);
 
     public DataGraph(DSRepository repository) {
         this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -647,7 +647,7 @@ public sealed class DataGraph
         }
         // 如果引用出现类型递归，强制延迟创建 - ObjectField需要做一下支持
         if (!_typeCreateStack.Add(varType)) {
-            Debug.LogWarning("Reference type recursion, manual init required");
+            Debug.LogWarning($"Reference type recursion, root: {_typeCreateStack.PeekFirst().FullName}, manual init required");
             variable.isNull = true;
             variable.values = new List<Variable>();
             return;

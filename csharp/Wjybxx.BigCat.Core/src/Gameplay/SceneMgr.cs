@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// Scene管理器
 /// </summary>
-public sealed class SceneMgr
+public class SceneMgr
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<SceneMgr>();
 #if UNITY_2021_3_OR_NEWER || CLIENT_PROJECT

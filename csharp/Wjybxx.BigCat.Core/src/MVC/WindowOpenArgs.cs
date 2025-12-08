@@ -30,6 +30,11 @@ public sealed class WindowOpenArgs
     /// </summary>
     public object? dataModel;
     /// <summary>
+    /// 用户自定义数据
+    /// </summary>
+    public object? userData;
+
+    /// <summary>
     /// 如果目标窗口已打开，是否执行重新打开流程
     ///
     /// 注：默认值为true，即顶掉旧窗口。

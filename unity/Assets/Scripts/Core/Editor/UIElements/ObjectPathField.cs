@@ -396,7 +396,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             view._collectionField.label = "Sheet";
             view._localPathField.label = "Column";
             view._localIdField.label = "Id";
-            view._localPathField.tooltip = "如果数据列为List类型，支持索引器取值，如：names.[0]";
+            view._localPathField.tooltip = "如果数据列为List类型，支持索引器取值，如：names.{0}";
             //
             view._localPathField.SetEnabled(true);
             view._localIdField.SetEnabled(true);
