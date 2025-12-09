@@ -75,9 +75,11 @@ public class UINodeCfg
     public List<UINode> children = new List<UINode>();
     /// <summary>
     /// child模板
+    ///
+    /// 注：多数情况下为空数组，数组开销更低
     /// </summary>
     [Tooltip("子节点模板，用于动态创建子节点的情况，如ListView")]
-    public UINode templateChild;
+    public UINode[] templates = Array.Empty<UINode>();
 
     #region util
 
@@ -93,19 +95,22 @@ public class UINodeCfg
     /// <summary>
     /// 查找子视图
     /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
     public UINode FindNode(string name) {
         return UIInternal.FindNode(children, name);
     }
 
     /// <summary>
-    /// 查询指定name的所有子节点
+    /// 查找指定name的所有子节点
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="outList"></param>
     public void FindNodes(string name, List<UINode> outList) {
         UIInternal.FindNodes(children, name, outList);
+    }
+
+    /// <summary>
+    /// 查找指定name的模板节点
+    /// </summary>
+    public UINode FindTemplate(string name) {
+        return UIInternal.FindNode(templates, name);
     }
 
     #endregion

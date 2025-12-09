@@ -25,6 +25,7 @@ namespace Wjybxx.BigCat.Assetor
 ///
 /// 1.该管理器为独立服务，可以不依赖其它服务运行。
 /// 2.更新程序只负责下载和解压等基础逻辑，如果Bundle是加密文件，需要由<see cref="IBundleManager"/>处理。
+/// 3.尽量避免依赖<see cref="IBundleManager"/>，只依赖Bundle加载目录。
 /// </summary>
 public interface IPackageManager
 {

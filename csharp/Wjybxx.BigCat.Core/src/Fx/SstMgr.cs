@@ -40,7 +40,12 @@ public static class SstMgr
     /// <summary>
     /// 单个文本的缓存(正常也就几十个字符，多的时候200左右，200个中文最多600字节)
     /// </summary>
-    private const int BUFFER_LENGTH = 2048;
+    private const int BUFFER_LENGTH = 4096;
+
+    /// <summary>
+    /// 关联的文件流
+    /// </summary>
+    private static Stream sstStream;
     /// <summary>
     /// 字段id到字符串的映射
     /// (注意：不是共享字符串的id到字符串的索引)
@@ -131,24 +136,45 @@ public static class SstMgr
     }
 
     /// <summary>
+    /// 销毁文件流
+    /// </summary>
+    public static void Dispose() {
+        sstStream?.Dispose();
+    }
+
+    /// <summary>
     /// 初始化共享字符串表，必须在游戏初始化流程时调用
-    /// 由于版本更新机制，SST文件可能不在同一个物理目录，所以由用户收集所有文件后传入该方法。
     /// </summary>e
-    /// <param name="sstFiles">共享字符串表文件</param>
-    /// <param name="indexFile">索引文件</param>
-    public static void Init(IEnumerable<string> sstFiles, string indexFile) {
+    /// <param name="sstFilePath">共享字符串表文件</param>
+    /// <param name="indexFilePath">索引文件</param>
+    public static void Init(string sstFilePath, string indexFilePath) {
+        Init(File.OpenRead(sstFilePath), File.OpenRead(indexFilePath));
+    }
+
+    /// <summary>
+    /// 初始化共享字符串表，必须在游戏初始化流程时调用。
+    /// 
+    /// 注：
+    /// 1.管理器会保存sst文件流的引用，直到用户显式调用<see cref="Dispose"/>销毁。
+    /// 2.Bundle模式下sst和index文件可能在压缩包中，需要由用户封装为Stream传入。
+    /// </summary>
+    /// <param name="sstStream">共享字符串表文件流</param>
+    /// <param name="indexStream">索引文件流</param>
+    public static void Init(Stream sstStream, Stream indexStream) {
+        SstMgr.sstStream = sstStream;
         // 读取sst.db文件
         Dictionary<int, Item> sstStringMap = new Dictionary<int, Item>(1000);
-        foreach (string file in sstFiles) {
-            ReadSstMetaInfo(sstStringMap, file);
-        }
+        ReadSstMetaInfo(sstStringMap, sstStream);
+
         // 读取索引文件 -- 对索引文件进行排序，让相同ssti的字段集中在一起
-        KeyValuePair<int, int>[] sortedIndexMap = ReadIndexMap(indexFile).ToArray();
-        Array.Sort(sortedIndexMap, (a, b) => {
-            int r = a.Value.CompareTo(b.Value);
-            return r != 0 ? r : a.Key.CompareTo(b.Key);
-        });
-        // 
+        KeyValuePair<int, int>[] sortedIndexMap;
+        using (indexStream) {
+            sortedIndexMap = ReadIndexMap(indexStream).ToArray();
+            Array.Sort(sortedIndexMap, (a, b) => {
+                int r = a.Value.CompareTo(b.Value);
+                return r != 0 ? r : a.Key.CompareTo(b.Key);
+            });
+        }
         locationId2ItemMap.Clear();
         locationId2ItemMap.EnsureCapacity(sortedIndexMap.Length);
         foreach (var pair in sortedIndexMap) {
@@ -160,23 +186,20 @@ public static class SstMgr
         }
     }
 
-    private static Dictionary<int, int> ReadIndexMap(string filePath) {
+    private static Dictionary<int, int> ReadIndexMap(Stream fileStream) {
         Dictionary<int, int> indexMap = new Dictionary<int, int>();
         byte[] buffer = new byte[8];
-        using (FileStream fileStream = File.OpenRead(filePath)) {
-            while (fileStream.Position < fileStream.Length) {
-                _ = fileStream.Read(buffer, 0, buffer.Length);
-                int locationId = ByteBufferUtil.GetInt32LE(buffer, 0);
-                int ssti = ByteBufferUtil.GetInt32LE(buffer, 4);
-                indexMap.Add(locationId, ssti);
-            }
+        while (fileStream.Position < fileStream.Length) {
+            _ = fileStream.Read(buffer, 0, buffer.Length);
+            int locationId = ByteBufferUtil.GetInt32LE(buffer, 0);
+            int ssti = ByteBufferUtil.GetInt32LE(buffer, 4);
+            indexMap.Add(locationId, ssti);
         }
         return indexMap;
     }
 
-    private static void ReadSstMetaInfo(Dictionary<int, Item> sstStringMap, string filePath) {
-        FileStream fileStream = File.OpenRead(filePath);
-        byte[] buffer = new byte[BUFFER_LENGTH];
+    private static void ReadSstMetaInfo(Dictionary<int, Item> sstStringMap, Stream fileStream) {
+        byte[] buffer = IArrayPool<byte>.Shared.Acquire(BUFFER_LENGTH);
         while (fileStream.Position < fileStream.Length) {
             int offset = (int)fileStream.Position;
             // [id, preload, len, data]
@@ -198,6 +221,7 @@ public static class SstMgr
             }
             sstStringMap.Add(ssti, new Item(ssti, offset, streamOrValue));
         }
+        IArrayPool<byte>.Shared.Release(buffer);
     }
 
     /// <summary>

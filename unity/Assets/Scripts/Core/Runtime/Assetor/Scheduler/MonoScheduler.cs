@@ -25,7 +25,7 @@ namespace Wjybxx.BigCat.Assetor
 /// <summary>
 /// 用于驱动<see cref="TaskScheduler"/>
 ///
-/// 用户项目中可以不使用该MonoBehavior，仿照实现即可。
+/// 注：用户项目中可以不使用该MonoBehavior，仿照实现即可。
 /// </summary>
 [ExecuteInEditMode]
 public sealed class MonoScheduler : MonoBehaviour
@@ -44,15 +44,18 @@ public sealed class MonoScheduler : MonoBehaviour
         {
             RootTask = _scheduler
         };
-    }
-
-    private void Start() {
         TaskScheduler.Current ??= _scheduler;
-        _taskEntry.Update(); // start
+        _taskEntry.Update(); // 不可延迟到Start方法启动
     }
 
     private void Update() {
         _taskEntry.Template_Execute(false);
+    }
+
+    private void OnDestroy() {
+        if (TaskScheduler.Current == _scheduler) {
+            TaskScheduler.Current = null;
+        }
     }
 }
 }

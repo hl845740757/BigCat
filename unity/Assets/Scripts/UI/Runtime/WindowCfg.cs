@@ -120,7 +120,7 @@ public class WindowCfg : MonoBehaviour
     /// 是否是跨桌面UI
     /// </summary>
     public bool isCrossDesktop => (features & WindowFeatures.CrossDesktop) != 0;
-    
+
     public Window GetWindow() {
         return _window;
     }
@@ -148,7 +148,6 @@ public class WindowCfg : MonoBehaviour
             sortLayer = MAX_LAYER;
             sortOrder = MAX_SORT_ORDER;
         }
-
     }
 #endif
 }

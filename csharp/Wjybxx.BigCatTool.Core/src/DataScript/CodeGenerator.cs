@@ -31,7 +31,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// </summary>
 public class CodeGenerator
 {
-    private static readonly AttributeSpec processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(CodeGenerator));
+    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(CodeGenerator));
 
     private readonly DSRepository _repository;
     private readonly CodeGeneratorCfg _cfg;
@@ -86,7 +86,7 @@ public class CodeGenerator
                         throw new Exception($"file: {fileName}, type: {namedType.FullName}", ex);
                     }
                 }
-                ToolUtil.WriteToFile(_cfg.outPath, CsharpFile.NewBuilder(ToolUtil.ToUpperCamel(fileSimpleName))
+                GeneratorUtil.WriteToFile(_cfg.outPath, CsharpFile.NewBuilder(ToolUtil.ToUpperCamel(fileSimpleName))
                     .AddSpec(nsBuilder.Build())
                     .Build());
             } else {
@@ -99,7 +99,7 @@ public class CodeGenerator
                     }
                     try {
                         TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
-                        ToolUtil.WriteToFile(_cfg.outPath, csharpNamespace, typeBuilder.Build());
+                        GeneratorUtil.WriteToFile(_cfg.outPath, csharpNamespace, typeBuilder.Build());
                     }
                     catch (Exception ex) {
                         throw new Exception($"file: {fileName}, type: {namedType.FullName}", ex);

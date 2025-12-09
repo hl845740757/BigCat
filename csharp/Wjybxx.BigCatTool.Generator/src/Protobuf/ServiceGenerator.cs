@@ -54,7 +54,7 @@ public class ServiceGenerator
         this.repository = repository;
         this.outDir = outDir;
         this.superInterfaces = superInterfaces ?? new List<string>();
-        this.processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(ServiceGenerator));
+        this.processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ServiceGenerator));
     }
 
     public void Execute() {
@@ -86,7 +86,7 @@ public class ServiceGenerator
             .AddDocument(BuildDocument(service.Comments));
         // 继承的接口
         foreach (string superinterface in superInterfaces) {
-            ClassName className = ToolUtil.ClassNameOfCanonicalName(superinterface);
+            ClassName className = GeneratorUtil.ClassNameOfCanonicalName(superinterface);
             typeBuilder.AddBaseClass(className);
         }
         // service注解
@@ -132,7 +132,7 @@ public class ServiceGenerator
             typeBuilder.AddMethod(methodBuilder.Build());
         }
         ClassName serviceTypeName = ClassNameOfType(service.SimpleName);
-        ToolUtil.WriteToFile(outDir, serviceTypeName.ns, typeBuilder.Build());
+        GeneratorUtil.WriteToFile(outDir, serviceTypeName.ns, typeBuilder.Build());
     }
 
     private void BuildWithSyncMode(PBMethod method, DsonObject<string> methodData, DsonObject<string> serviceData,
@@ -239,8 +239,8 @@ public class ServiceGenerator
 
     #region RPC注解解析
 
-    private static readonly ClassName TYPE_NAME_RPC_SERVICE = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
-    private static readonly ClassName TYPE_NAME_RPC_METHOD = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
+    private static readonly ClassName TYPE_NAME_RPC_SERVICE = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcServiceAttribute");
+    private static readonly ClassName TYPE_NAME_RPC_METHOD = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.RpcMethodAttribute");
     //
     private static readonly ClassName TYPE_NAME_RPC_CONTEXT_T = ClassName.Get("Wjybxx.BigCat.Fx", "RpcContext",
         new List<TypeName> { TypeParameterName.Get("T") });

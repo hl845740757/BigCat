@@ -247,15 +247,19 @@ internal static class UIInternal
         return null;
     }
 
-    public static UINode FindNode(List<UINode> nodes, string name) {
-        foreach (UINode node in nodes) {
+    public static UINode FindNode(IReadOnlyList<UINode> nodes, string name) {
+        if (nodes == null) return null;
+        for (int index = 0; index < nodes.Count; index++) {
+            UINode node = nodes[index];
             if (node.nodeCfg.name == name) return node;
         }
         return null;
     }
 
-    public static void FindNodes(List<UINode> nodes, string name, List<UINode> outList) {
-        foreach (UINode node in nodes) {
+    public static void FindNodes(IReadOnlyList<UINode> nodes, string name, List<UINode> outList) {
+        if (nodes == null) return;
+        for (int index = 0; index < nodes.Count; index++) {
+            UINode node = nodes[index];
             if (node.nodeCfg.name == name) outList.Add(node);
         }
     }

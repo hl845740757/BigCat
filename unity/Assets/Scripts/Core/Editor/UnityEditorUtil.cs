@@ -25,6 +25,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
+using Wjybxx.BigCatTool;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
@@ -109,7 +110,7 @@ public static class UnityEditorUtil
     }
 
     /// <summary>
-    /// Ping一下目标资产对象
+    /// Ping一下目标资产对象（或文件夹）
     /// </summary>
     /// <param name="assetPath"></param>
     public static void PingObject(string assetPath) {
@@ -202,7 +203,7 @@ public static class UnityEditorUtil
     /// <param name="assetPath"></param>
     /// <returns></returns>
     public static string NormalizeAssetPath(string assetPath) {
-        return Util.FileUtil.NormalizeAssetPath(assetPath);
+        return ToolUtil.NormalizeAssetPath(assetPath);
     }
 
     /// <summary>

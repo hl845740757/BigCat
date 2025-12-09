@@ -40,7 +40,7 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// </summary>
 public class ConstGenerator : ISheetProcessor
 {
-    private static readonly AttributeSpec processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(ConstGenerator));
+    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ConstGenerator));
 
     private readonly SheetRepository _repository;
     private readonly ConstGeneratorCfg _cfg;
@@ -136,7 +136,7 @@ public class ConstGenerator : ISheetProcessor
                 fileBuilder.AddSpec(new CodeBlockSpec(_fileHeader));
             }
             fileBuilder.AddSpec(NamespaceSpec.Of(_cfg.ns, typeBuilder.Build()));
-            ToolUtil.WriteToFile(_cfg.outPath, fileBuilder.Build());
+            GeneratorUtil.WriteToFile(_cfg.outPath, fileBuilder.Build());
         }
     }
 

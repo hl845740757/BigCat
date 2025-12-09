@@ -10,9 +10,7 @@ using UnityEditor.UIElements;
 using Wjybxx.BigCat.Editor.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
-using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
@@ -111,9 +109,8 @@ public class DataEditor : EditorWindow
         // Import UXML
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
             "Assets/Scripts/Core/Editor/DataScript/DataEditor.uxml");
-        VisualElement labelFromUXML = visualTree.Instantiate();
-        root.Add(labelFromUXML);
-        //
+        root.Add(visualTree.Instantiate());
+
         toolbar = root.Q<Toolbar>();
         graphView = root.Q<GraphView>();
         inspectorView = root.Q<VisualElement>("inspector-div");

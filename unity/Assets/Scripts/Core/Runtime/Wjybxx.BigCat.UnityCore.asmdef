@@ -5,8 +5,7 @@
         "Wjybxx.Commons.Core",
         "Wjybxx.Commons.Concurrent",
         "Wjybxx.Dson.Core",
-        "Wjybxx.BTree.Core",
-        "Wjybxx.BigCat.Core"
+        "Wjybxx.BTree.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

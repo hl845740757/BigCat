@@ -240,6 +240,7 @@ public class ResourceManager
     #region internal
 
     private AssetHandle LoadAssetAsync(string location, Type assetType, int priority, ELoadMethod loadMethod) {
+        assetType ??= typeof(Object);
         if (string.IsNullOrEmpty(location)) {
             throw new ArgumentNullException(nameof(location));
         }

@@ -34,6 +34,19 @@ public sealed class AssetQuery
     /// </summary>
     public readonly List<AssetManifest> packages = new List<AssetManifest>();
     /// <summary>
+    /// 支持索引的文件类型
+    ///
+    /// 1.当一类资产支持多种文件类型时，才需要添加；json/xml这类非Unity对象资产无需添加。
+    /// 2.大小写严格，文件扩展名不会被规格化。
+    /// </summary>
+    public readonly HashSet<string> indexableExtensions = new HashSet<string>(16)
+    {
+        "fbx",
+        "png", "jpg", "tif", "psd",
+        "ogg", "wav", "mp3"
+    };
+
+    /// <summary>
     /// 资产索引到资产的映射
     /// 注：
     /// 1.<code>folderName/fileName</code>一定不和fileName索引重复，因此一个字典即可。
@@ -59,7 +72,7 @@ public sealed class AssetQuery
     /// 构建缓存内容
     /// 
     /// 1.该方法假设打包工具已对资产路径执行了规格化。
-    /// 2.Unity资产Bundle自动追加无扩展名索引。
+    /// 2.只有特定类型的文件才会添加无扩展名索引。
     /// </summary>
     public void BuildCache() {
         ClearCache();
@@ -90,11 +103,11 @@ public sealed class AssetQuery
                     continue;
                 }
                 string fileName = Path.GetFileName(fileInfo.assetPath);
-                string fileNameNoExt = Path.GetFileNameWithoutExtension(fileName);
+                GetExtension(fileName, out string fileNameNoExt, out string extension);
                 // 剔除无意义name索引，主要针对图片资源：1.png
                 if (hasFileName && !int.TryParse(fileNameNoExt, out int _)) {
                     assetIndex2AssetDic[fileName] = fileInfo;
-                    if (bundleInfo.bundleType == EBundleType.AssetBundle) {
+                    if (indexableExtensions.Contains(extension)) {
                         assetIndex2AssetDic[fileNameNoExt] = fileInfo;
                     }
                 }
@@ -106,11 +119,22 @@ public sealed class AssetQuery
                         folderNameCache[directoryName] = folderName;
                     }
                     assetIndex2AssetDic[folderName + "/" + fileName] = fileInfo;
-                    if (bundleInfo.bundleType == EBundleType.AssetBundle) {
+                    if (indexableExtensions.Contains(extension)) {
                         assetIndex2AssetDic[folderName + "/" + fileNameNoExt] = fileInfo;
                     }
                 }
             }
+        }
+    }
+
+    private static void GetExtension(string fileName, out string fileNameNoExt, out string extension) {
+        int index = fileName.LastIndexOf('.');
+        if (index < 0) {
+            fileNameNoExt = fileName;
+            extension = "";
+        } else {
+            fileNameNoExt = fileName.Substring(0, index);
+            extension = fileName.Substring(index + 1);
         }
     }
 

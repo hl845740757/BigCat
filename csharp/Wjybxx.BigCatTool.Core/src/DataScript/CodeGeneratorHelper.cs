@@ -1145,7 +1145,7 @@ public class CodeGeneratorHelper
     public static readonly ClassName TYPE_NAME_READER = ClassName.Get(typeof(IDsonObjectReader));
     public static readonly ClassName TYPE_NAME_CONVERTER_OPTIONS = ClassName.Get(typeof(ConverterOptions));
     // ssti
-    private static readonly ClassName TYPE_NAME_SST_MGR = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.SstMgr");
+    private static readonly ClassName TYPE_NAME_SST_MGR = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.SstMgr");
     private static readonly ClassName TYPE_NAME_IMMUTABLE_LIST_STRING = ClassName.Get(typeof(ImmutableList<string>));
 
     /** 注解：Flags枚举 */

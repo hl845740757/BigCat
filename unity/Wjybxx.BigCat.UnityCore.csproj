@@ -64,18 +64,22 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\TaskScheduler.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BundleProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetManifest.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadPhase.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceErrorCode.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\MonoScheduler.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationFrame.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetQuery.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StopManagerTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
@@ -88,14 +92,15 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetFileInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ErrorProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationMixCfg.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\IPackageManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BinaryAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\IPackageManager.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetManifest.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StopManagerTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\MonoScheduler.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AsyncOperationAdaptor.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AssetLoadTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\MultiFileBundle.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\AssetBundleAdaptor.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\EditorAssetBundle.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -774,10 +779,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Wjybxx.BigCat.Core.csproj">
-      <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
-      <Name>Wjybxx.BigCat.Core</Name>
-    </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>
       <Name>UnityEditor.UI</Name>

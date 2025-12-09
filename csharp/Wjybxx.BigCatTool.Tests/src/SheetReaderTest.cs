@@ -128,8 +128,8 @@ public class SheetReaderTest
         if (!Directory.Exists(sstDir)) {
             Directory.CreateDirectory(sstDir);
         }
-        string indexFile = sstDir + "/" + SstGenerator.FILE_LSST_INDEX;
-        SstMgr.Init(Directory.GetFiles(sstDir, SstGenerator.FILE_SST_DB + ".*"), indexFile);
+        SstMgr.Init(sstDir + "/" + SstGenerator.FILE_SST_DB,
+            sstDir + "/" + SstGenerator.FILE_LSST_INDEX);
 
         string str1 = SstMgr.GetString(21);
         string str2 = SstMgr.GetString(22);

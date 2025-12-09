@@ -53,8 +53,8 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// </summary>
 public class ClassGenerator : ISheetProcessor
 {
-    private static readonly ClassName TYPE_NAME_SERIAL_VERSION = ToolUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Util.SerialVersionAttribute");
-    private static readonly AttributeSpec processorInfo = ToolUtil.NewProcessorInfoAnnotation(typeof(ClassGenerator));
+    private static readonly ClassName TYPE_NAME_SERIAL_VERSION = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Util.SerialVersionAttribute");
+    private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ClassGenerator));
 
     private readonly DSRepository _dsRepository;
     private readonly CodeGeneratorCfg _cfg;
@@ -98,7 +98,7 @@ public class ClassGenerator : ISheetProcessor
                 DSNamedType namedType = (DSNamedType)element;
                 try {
                     TypeSpec.Builder builder = _helper.Generate(namedType);
-                    ToolUtil.WriteToFile(_cfg.outPath, csharpNamespace, builder.Build());
+                    GeneratorUtil.WriteToFile(_cfg.outPath, csharpNamespace, builder.Build());
                 }
                 catch (Exception ex) {
                     throw new Exception($"file: {fileName}, type: {namedType.FullName}", ex);

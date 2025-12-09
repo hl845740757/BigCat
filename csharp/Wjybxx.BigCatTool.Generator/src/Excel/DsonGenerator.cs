@@ -34,7 +34,6 @@ using Wjybxx.Dson.IO;
 using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using static Wjybxx.BigCatTool.Generator.Excel.ExcelConstants;
-using NumberStyles = Wjybxx.Dson.Text.NumberStyles;
 
 namespace Wjybxx.BigCatTool.Generator.Excel
 {
@@ -290,7 +289,7 @@ public class DsonGenerator : ISheetProcessor
         }
         DsonObject<string> options = GetOptions(fieldHeader);
         if (GetBool(options, KEY_IS_ASSET_PATH)) {
-            rawValue = FileUtil.NormalizeAssetPath(rawValue);
+            rawValue = ToolUtil.NormalizeAssetPath(rawValue);
         } else {
             if (GetBool(options, KEY_TRIM)) {
                 rawValue = rawValue.Trim();

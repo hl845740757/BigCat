@@ -1,6 +1,6 @@
 {
     "name": "Wjybxx.BigCatEditor.Core",
-    "rootNamespace": "Wjybxx.BigCat.CoreEditor",
+    "rootNamespace": "Wjybxx.BigCat.Editor",
     "references": [
         "Wjybxx.Commons.Core",
         "Wjybxx.Dson.Core",

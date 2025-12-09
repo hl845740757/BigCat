@@ -211,9 +211,9 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
             blackboard.stopwatch = null;
             blackboard.deadline = 0;
         }
-        // 如果没有抛出超时异常，也没有进入完成状态，则实现有误
+        // 如果没有抛出超时异常，也没有进入完成状态，则证明不支持同步完成
         if (!task.IsCompleted) {
-            throw new Exception($"The impl of {task.GetType()}.Execute does not meet expectations");
+            throw new BlockingOperationException($"Task {task.GetType()} does not support synchronous completion");
         }
     }
 

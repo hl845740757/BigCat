@@ -53,8 +53,8 @@ public class AssetProvider : AssetProviderBase
                 return;
             }
         }
-        ResourceTask loadAssetOp = _loadAssetTask;
-        if (loadAssetOp == null) {
+        ResourceTask loadAssetTask = _loadAssetTask;
+        if (loadAssetTask == null) {
             // 检测Bundle加载结果
             if (IsBundleLoadFailed()) {
                 SetFailed((int)ResourceErrorCode.BundleLoadFailed);
@@ -62,7 +62,7 @@ public class AssetProvider : AssetProviderBase
             }
             // 发起加载请求
             IAssetBundle assetBundle = bundleProvider.assetBundle;
-            loadAssetOp = _loadAssetTask = pid.loadMethod switch
+            loadAssetTask = _loadAssetTask = pid.loadMethod switch
             {
                 ELoadMethod.LoadAsset => assetBundle.LoadAssetAsync(assetPath, assetType),
                 ELoadMethod.LoadAssetWithSubAssets => assetBundle.LoadAssetWithSubAssetsAsync(assetPath, assetType),
@@ -70,19 +70,19 @@ public class AssetProvider : AssetProviderBase
                 _ => throw new AssertionError(pid.ToString())
             };
             // 资源类型不匹配 -- LoadAll可能返回空数组
-            if (loadAssetOp == null) {
+            if (loadAssetTask == null) {
                 promise.result = null;
                 SetSuccess();
                 return;
             }
         }
         if (blackboard.isWaitForCompletion) {
-            Scheduler.WaitForCompletion(loadAssetOp, blackboard.stopwatch, blackboard.deadline);
+            Scheduler.WaitForCompletion(loadAssetTask, blackboard.stopwatch, blackboard.deadline);
         } else {
-            promise.SyncProgressFrom(loadAssetOp.promise);
+            promise.SyncProgressFrom(loadAssetTask.promise);
         }
         //
-        if (loadAssetOp.IsCompleted) {
+        if (loadAssetTask.IsCompleted) {
             promise.result = _loadAssetTask.promise.result;
             SetCompleted(_loadAssetTask.Status, true);
         }

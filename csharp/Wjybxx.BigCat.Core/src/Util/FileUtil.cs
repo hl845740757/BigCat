@@ -209,41 +209,5 @@ public static class FileUtil
         }
         return length;
     }
-
-    /// <summary>
-    /// 获取最后一级文件夹的名字
-    /// </summary>
-    /// <param name="path"></param>
-    /// <returns></returns>
-    public static string GetLastDirectoryName(string path) {
-        return Path.GetFileName(Path.GetDirectoryName(path));
-    }
-
-    /// <summary>
-    /// 规格化资产路径(并非适用于任意场景)
-    ///
-    /// 1.文件扩展名之前的部分转小写，扩展名不转小写。
-    /// 2.编辑器数据不应执行规格化，编辑器下可能需要打开目录，规格化以后不可逆。
-    /// </summary>
-    /// <param name="assetPath"></param>
-    /// <returns></returns>
-    public static string NormalizeAssetPath(string assetPath) {
-        if (string.IsNullOrEmpty(assetPath)) {
-            return assetPath;
-        }
-        assetPath = assetPath.Replace('\\', '/');
-        int spIndex = assetPath.LastIndexOf('/');
-        if (spIndex >= 0) {
-            spIndex = assetPath.IndexOf('.', spIndex);
-        } else {
-            spIndex = assetPath.IndexOf('.'); // 注意：不可改用LastIndexOf，以支持多级文件扩展名
-        }
-        if (spIndex < 0) {
-            assetPath = assetPath.ToLower();
-        } else {
-            assetPath = assetPath.Substring(0, spIndex).ToLower() + assetPath.Substring(spIndex);
-        }
-        return assetPath;
-    }
 }
 }
