@@ -80,6 +80,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSElementKind.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBElement.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBKeywords.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\GeneratorUtil.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBField.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSAnnotations.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSContextType.cs" />
@@ -96,7 +97,6 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSNamedType.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\DataScript\DSFileParser.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Protobuf\PBFileParser.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\GeneratorUtil.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\package.json" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCatTool.Core\src\Wjybxx.BigCatTool.Core.asmdef" />
     <Reference Include="Unity.Plastic.Newtonsoft.Json">

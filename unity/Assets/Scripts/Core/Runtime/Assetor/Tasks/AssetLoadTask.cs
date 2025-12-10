@@ -33,7 +33,7 @@ public class AssetLoadTask : ResourceTask
     public AssetLoadTask(AssetBundle bundle, string assetPath, Type assetType, ELoadMethod loadMethod) {
         _bundle = bundle;
         _assetPath = assetPath;
-        _assetType = assetType ?? typeof(UnityEngine.Object);
+        _assetType = assetType;
         _loadMethod = loadMethod;
     }
 
@@ -52,9 +52,10 @@ public class AssetLoadTask : ResourceTask
             SetSuccess();
             return;
         }
-        if (_request == null) {
+        AssetBundleRequest request = _request;
+        if (request == null) {
             promise.phase = ELoadPhase.Loading;
-            _request = _loadMethod switch
+            request = _request = _loadMethod switch
             {
                 ELoadMethod.LoadAsset => _bundle.LoadAssetAsync(_assetPath, _assetType),
                 ELoadMethod.LoadAssetWithSubAssets => _bundle.LoadAssetWithSubAssetsAsync(_assetPath, _assetType),
@@ -62,12 +63,12 @@ public class AssetLoadTask : ResourceTask
                 _ => throw new AssertionError()
             };
         }
-        promise.progress = _request.progress;
-        if (_request.isDone) {
+        promise.progress = request.progress;
+        if (request.isDone) {
             promise.progress = 1f;
             promise.result = _loadMethod == ELoadMethod.LoadAsset
-                ? _request.asset
-                : _request.allAssets;
+                ? request.asset
+                : request.allAssets;
             SetSuccess();
         }
     }

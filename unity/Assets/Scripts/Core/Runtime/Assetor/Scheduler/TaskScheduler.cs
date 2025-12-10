@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Wjybxx.BTree;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Logger;
@@ -42,7 +43,6 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
     private readonly List<ResourceTask> _delayedNotifyTasks = new List<ResourceTask>();
     //
     private long _frameTime;
-    private long _frameElapsed;
     private long _maxTimeSlice = 100;
     private bool _needSort;
 
@@ -57,7 +57,17 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
     /// <summary>
     /// 当前帧时间
     /// </summary>
-    public long FrameTime => _frameTime;
+    public long FrameTime {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _frameTime;
+    }
+    /// <summary>
+    /// 真实时间
+    /// </summary>
+    public long RealTime {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _stopwatch.ElapsedMilliseconds;
+    }
 
     /// <summary>
     /// 重置数据
@@ -70,7 +80,6 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
         _stopwatch.Reset();
         _delayedNotifyTasks.Clear();
         _frameTime = 0;
-        _frameElapsed = 0;
         _needSort = false;
     }
 
@@ -82,7 +91,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
     /// 调度所有任务
     /// </summary>
     protected override void Execute() {
-        _frameTime = _stopwatch.ElapsedMilliseconds;
+        _frameTime = RealTime;
         // 暂时忽略回调任务的耗时
         CheckNotifyTasks();
         if (_needSort) {
@@ -108,8 +117,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
                 children.RemoveAt(index--);
             }
             // 检测超时
-            _frameElapsed = _stopwatch.ElapsedMilliseconds - _frameTime;
-            if (_frameElapsed >= _maxTimeSlice) {
+            if (RealTime - _frameTime >= _maxTimeSlice) {
                 break;
             }
         }

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.IO;
 
 namespace Wjybxx.BigCat.Assetor
@@ -40,8 +41,8 @@ public class MultiFileBundle : IAssetBundle
 {
     private readonly AssetBundleInfo _bundleInfo;
     private readonly Stream _stream;
-    private readonly List<FileItem> _fileItemList = new List<FileItem>(10);
-    private readonly Dictionary<string, FileItem> _fileItemDic = new(20);
+    private readonly List<FileItem> _fileItemList = new List<FileItem>();
+    private readonly LinkedDictionary<string, FileItem> _fileItemDic = new();
     private Action<MultiFileBundle> _unloadCallback;
 
     /// <summary>
@@ -53,6 +54,8 @@ public class MultiFileBundle : IAssetBundle
     public MultiFileBundle(AssetBundleInfo bundleInfo, Stream stream, byte[] sharedBuffer = null) {
         _bundleInfo = bundleInfo;
         _stream = stream;
+        _fileItemList.EnsureCapacity(bundleInfo.mainAssets.Count);
+        _fileItemDic.EnsureCapacity(bundleInfo.mainAssets.Count * 2);
         //
         byte[] buffer = sharedBuffer ?? new byte[256];
         while (stream.Position < stream.Length) {

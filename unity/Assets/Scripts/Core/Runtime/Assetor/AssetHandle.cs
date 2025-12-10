@@ -69,6 +69,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     public string AssetPath => _provider.pid.assetPath;
     /// <summary>
     /// 关联的资产类型
+    /// 注：如果是原始文件资产，参数为<see cref="BinaryAsset"/>。
     /// </summary>
     public Type AssetType => _provider.pid.assetType;
 

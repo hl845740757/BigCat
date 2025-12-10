@@ -144,7 +144,7 @@ public static class SstMgr
 
     /// <summary>
     /// 初始化共享字符串表，必须在游戏初始化流程时调用
-    /// </summary>e
+    /// </summary>
     /// <param name="sstFilePath">共享字符串表文件</param>
     /// <param name="indexFilePath">索引文件</param>
     public static void Init(string sstFilePath, string indexFilePath) {
@@ -153,8 +153,16 @@ public static class SstMgr
 
     /// <summary>
     /// 初始化共享字符串表，必须在游戏初始化流程时调用。
+    /// </summary>
+    /// <param name="sstFileData">共享字符串表数据</param>
+    /// <param name="indexFileData">索引文件数据</param>
+    public static void Init(byte[] sstFileData, byte[] indexFileData) {
+        Init(new MemoryStream(sstFileData), new MemoryStream(indexFileData));
+    }
+
+    /// <summary>
+    /// 初始化共享字符串表，必须在游戏初始化流程时调用。
     /// 
-    /// 注：
     /// 1.管理器会保存sst文件流的引用，直到用户显式调用<see cref="Dispose"/>销毁。
     /// 2.Bundle模式下sst和index文件可能在压缩包中，需要由用户封装为Stream传入。
     /// </summary>

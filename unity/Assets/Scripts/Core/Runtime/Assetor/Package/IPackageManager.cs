@@ -35,7 +35,7 @@ public interface IPackageManager
     string PackageName { get; }
     /// <summary>
     /// 本地资源包版本
-    /// 注；启动时初始化，<see cref="LoadManifestAsync"/>后纠正。
+    /// 注；启动时初始化，<see cref="LoadPackageInfoAsync"/>后纠正。
     /// </summary>
     string LocalVersion { get; }
     /// <summary>
@@ -44,10 +44,10 @@ public interface IPackageManager
     /// </summary>
     string RemoteVersion { get; }
     /// <summary>
-    /// 该资源包的清单
-    /// 注：<see cref="LoadManifestAsync"/>成功执行以后可访问。
+    /// 资源包信息
+    /// 注：<see cref="LoadPackageInfoAsync"/>成功执行以后可访问。
     /// </summary>
-    AssetManifest Manifest { get; }
+    AssetPackageInfo PackageInfo { get; }
 
     /// <summary>
     /// 启用程序
@@ -67,21 +67,21 @@ public interface IPackageManager
     ResourceTask DownloadVersionFileAsync();
 
     /// <summary>
-    /// 下载资源清单文件
+    /// 下载资源包信息
     /// </summary>
     /// <returns></returns>
-    ResourceTask DownloadManifestAsync();
+    ResourceTask DownloadPackageInfoAsync();
 
     /// <summary>
-    /// 加载最新的Manifest文件
+    /// 加载最新的包裹信息文件
     ///
     /// 注：需要支持重复调用，重复调用时覆盖旧结果。
     /// </summary>
     /// <returns></returns>
-    ResourceTask LoadManifestAsync();
+    ResourceTask LoadPackageInfoAsync();
 
     /// <summary>
-    /// 根据最新的Manifest构建Bundle缓存信息
+    /// 根据最新的包信息构建Bundle缓存信息
     ///
     /// 注：需要支持重复调用，重复调用时覆盖旧结果。
     /// </summary>

@@ -68,8 +68,10 @@ public abstract class BinaryAsset
     /// </summary>
     public virtual byte[] bytes {
         get {
-            _bytes ??= new byte[dataLength];
-            GetData(_bytes, 0);
+            if (_bytes == null) {
+                _bytes = new byte[dataLength];
+                GetData(_bytes, 0);
+            }
             return _bytes;
         }
         protected set => _bytes = value;

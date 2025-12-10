@@ -32,7 +32,7 @@ public sealed class AssetQuery
     /// <summary>
     /// 所有资源包
     /// </summary>
-    public readonly List<AssetManifest> packages = new List<AssetManifest>();
+    public readonly List<AssetPackageInfo> packages = new List<AssetPackageInfo>();
     /// <summary>
     /// 支持索引的文件类型
     ///
@@ -77,7 +77,7 @@ public sealed class AssetQuery
     public void BuildCache() {
         ClearCache();
         // 确保Package已构建缓存
-        foreach (AssetManifest package in packages) {
+        foreach (AssetPackageInfo package in packages) {
             if (package.id2BundleDic.IsEmpty) {
                 package.BuildCache();
             }
@@ -140,7 +140,6 @@ public sealed class AssetQuery
 
     /// <summary>
     /// 将Bundle按照打包路径排序
-    /// 作用：索引的结果就具有稳定性。
     /// </summary>
     /// <returns></returns>
     private List<AssetBundleInfo> GetSortedBundles() {
@@ -166,7 +165,7 @@ public sealed class AssetQuery
     /// <returns></returns>
     public int GetBundleCount() {
         int count = 0;
-        foreach (AssetManifest package in packages) {
+        foreach (AssetPackageInfo package in packages) {
             count += package.bundleList.Count;
         }
         return count;
@@ -178,7 +177,7 @@ public sealed class AssetQuery
     /// <returns></returns>
     public int GetMainAssetsCount() {
         int count = 0;
-        foreach (AssetManifest package in packages) {
+        foreach (AssetPackageInfo package in packages) {
             count += package.mainAssetsCount;
         }
         return count;
@@ -187,10 +186,10 @@ public sealed class AssetQuery
     /// <summary>
     /// 查找指定包裹
     /// </summary>
-    public AssetManifest FindPackage(string packageName) {
+    public AssetPackageInfo FindPackage(string packageName) {
         // Package通常数量较少，迭代查询效率足够
         for (int index = 0; index < packages.Count; index++) {
-            AssetManifest package = packages[index];
+            AssetPackageInfo package = packages[index];
             if (package.packageName == packageName) return package;
         }
         return null;
@@ -200,7 +199,7 @@ public sealed class AssetQuery
     /// 查找指定Bundle
     /// </summary>
     public AssetBundleInfo FindBundle(string packageName, int bundleId) {
-        AssetManifest package = FindPackage(packageName);
+        AssetPackageInfo package = FindPackage(packageName);
         package.id2BundleDic.TryGetValue(bundleId, out AssetBundleInfo bundleInfo);
         return bundleInfo;
     }

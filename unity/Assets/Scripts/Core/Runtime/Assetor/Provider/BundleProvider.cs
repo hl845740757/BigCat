@@ -45,7 +45,7 @@ public class BundleProvider : Provider
     /// 关联的Bundle
     /// </summary>
     public IAssetBundle assetBundle => (IAssetBundle)promise.result;
-    private IPackageManager packageManager => resourceMgr.GetPackageManager(bundleInfo.packageName);
+    private IPackageManager packageManager => resourceMgr.GetPackageManager(bundleInfo.packageInfo.packageName);
 
     public override bool CanDestroy() {
         // 这里未测试下游BundleProvider是否可销毁，因为引用计数为0就意味着不存在下游引用

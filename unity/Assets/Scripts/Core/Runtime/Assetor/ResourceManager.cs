@@ -275,9 +275,9 @@ public class ResourceManager
         AssetFileInfo assetInfo = GetAssetInfo(location);
         Provider provider;
         if (assetInfo == null) {
-            provider = GetErrorProvider(null, loadMethod);
+            provider = GetErrorProvider(typeof(BinaryAsset), loadMethod);
         } else {
-            ProviderId providerId = new ProviderId(assetInfo.assetPath, typeof(Object), loadMethod);
+            ProviderId providerId = new ProviderId(assetInfo.assetPath, typeof(BinaryAsset), loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
                 provider = CreateBinaryAssetProvider(assetInfo, providerId, priority);
                 _scheduler.AddChild(provider);
@@ -325,7 +325,6 @@ public class ResourceManager
     }
 
     private Provider GetErrorProvider(Type assetType, ELoadMethod loadMethod) {
-        assetType ??= typeof(UnityEngine.Object);
         ProviderId providerId = new ProviderId("Error", assetType, loadMethod);
         if (!_providers.TryGetValue(providerId, out Provider provider)) {
             provider = new ErrorProvider(this, providerId);
@@ -343,17 +342,17 @@ public class ResourceManager
                                    out BundleProvider mainBundle,
                                    out List<BundleProvider> upstreamBundles) {
         // 先加载上游Bundle - 更高优先级
-        if (assetInfo.upstreamBundles.Count > 0) {
-            upstreamBundles = new List<BundleProvider>(assetInfo.upstreamBundles.Count);
+        if (assetInfo.upstreamBundles.Length > 0) {
+            AssetPackageInfo packageInfo = assetInfo.bundleInfo.packageInfo;
+            upstreamBundles = new List<BundleProvider>(assetInfo.upstreamBundles.Length);
             foreach (int bundleId in assetInfo.upstreamBundles) {
-                AssetBundleInfo upstreamBundle = Query.FindBundle(assetInfo.packageName, bundleId);
+                AssetBundleInfo upstreamBundle = packageInfo.id2BundleDic[bundleId];
                 upstreamBundles.Add(LoadBundleAsync(upstreamBundle, priority));
             }
         } else {
             upstreamBundles = null;
         }
-        AssetBundleInfo bundleInfo = Query.FindBundle(assetInfo.packageName, assetInfo.bundleId);
-        mainBundle = LoadBundleAsync(bundleInfo, priority);
+        mainBundle = LoadBundleAsync(assetInfo.bundleInfo, priority);
     }
 
     /// <summary>
@@ -477,9 +476,6 @@ public class ResourceManager
             if (c == '\\') {
                 throw new ArgumentException(path);
             }
-            if (c == '.' && path.IndexOf('/', index) < 0) {
-                break;
-            }
             if (char.IsUpper(c)) {
                 upIndex = index;
                 break;
@@ -495,10 +491,6 @@ public class ResourceManager
             char c = path[index];
             if (c == '\\') {
                 throw new ArgumentException(path);
-            }
-            if (c == '.' && path.IndexOf('/', index) < 0) {
-                sb.Append(path, index, path.Length - index);
-                break;
             }
             sb.Append(_culture.ToLower(c));
         }

@@ -16,15 +16,13 @@
 
 #endregion
 
-#if UNITY_EDITOR
-
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.IO;
 using Object = UnityEngine.Object;
 
@@ -41,8 +39,8 @@ public class EditorAssetBundle : IAssetBundle
 {
     private readonly AssetBundleInfo _bundleInfo;
     private readonly TaskScheduler _scheduler;
-    private readonly List<FileItem> _fileItemList = new List<FileItem>(10);
-    private readonly Dictionary<string, FileItem> _fileItemDic = new(20);
+    private readonly List<FileItem> _fileItemList = new List<FileItem>();
+    private readonly LinkedDictionary<string, FileItem> _fileItemDic = new();
     private Action<EditorAssetBundle> _unloadCallback;
 
     /// <summary>
@@ -54,6 +52,8 @@ public class EditorAssetBundle : IAssetBundle
         _bundleInfo = bundleInfo;
         _scheduler = scheduler;
         if (bundleInfo.bundleType == EBundleType.RawFileBundle) {
+            _fileItemList.EnsureCapacity(bundleInfo.mainAssets.Count);
+            _fileItemDic.EnsureCapacity(bundleInfo.mainAssets.Count * 2);
             foreach (AssetFileInfo assetInfo in bundleInfo.mainAssets) {
                 string filePath = Application.dataPath + assetInfo.assetPath.Substring(6);
                 FileInfo fileInfo = new FileInfo(filePath);
@@ -167,7 +167,7 @@ public class EditorAssetBundle : IAssetBundle
         public AssetLoadTask(EditorAssetBundle bundle, string assetPath,
                              Type assetType, ELoadMethod loadMethod) {
             _bundle = bundle;
-            _assetType = assetType ?? typeof(UnityEngine.Object);
+            _assetType = assetType ?? typeof(Object);
             _loadMethod = loadMethod;
             _assetPath = assetPath;
         }
@@ -205,5 +205,4 @@ public class EditorAssetBundle : IAssetBundle
         }
     }
 }
-#endif
 }
