@@ -38,8 +38,6 @@ namespace Wjybxx.BigCat.Assetor
 /// </summary>
 public abstract class AssetProviderBase : Provider
 {
-    private static readonly List<BundleProvider> emptyList = new List<BundleProvider>();
-
     /// <summary>
     /// 关联的资产文件信息
     /// </summary>
@@ -49,21 +47,13 @@ public abstract class AssetProviderBase : Provider
     /// 注：外部先创建BundleProvider，可确保优先级相同时排前面。
     /// </summary>
     public readonly BundleProvider bundleProvider;
-    /// <summary>
-    /// 依赖的上游Bundle
-    /// 注：不可修改。
-    /// </summary>
-    public readonly List<BundleProvider> upstreamBundles;
 
     protected AssetProviderBase(ResourceManager resourceMgr, ProviderId pid,
-                                AssetFileInfo assetInfo,
-                                BundleProvider bundleProvider,
-                                List<BundleProvider> upstreamBundles)
+                                AssetFileInfo assetInfo, BundleProvider bundleProvider)
         : base(resourceMgr, pid) {
         this.assetInfo = assetInfo;
         this.bundleProvider = bundleProvider;
-        this.upstreamBundles = upstreamBundles ?? emptyList;
-        RetainBundles();
+        bundleProvider.Retain();
     }
 
     /// <summary>
@@ -79,70 +69,19 @@ public abstract class AssetProviderBase : Provider
     /// </summary>
     public ELoadMethod loadMethod => pid.loadMethod;
 
-    #region update
-
-    /// <summary>
-    /// Bundle加载是否已全部结束
-    /// </summary>
-    /// <returns></returns>
-    public bool IsBundleLoadCompleted() {
-        if ((flags & MASK_BUNDLE_LOADED) != 0) {
-            return true;
-        }
-        if (!bundleProvider.IsCompleted) return false;
-        for (int index = 0; index < upstreamBundles.Count; index++) {
-            if (!upstreamBundles[index].IsCompleted) return false;
-        }
-        flags |= MASK_BUNDLE_LOADED;
-        return true;
-    }
-
-    /// <summary>
-    /// bundle加载是否已失败
-    /// </summary>
-    /// <returns></returns>
-    public bool IsBundleLoadFailed() {
-        if (bundleProvider.IsFailedOrCancelled) return true;
-        for (int index = 0; index < upstreamBundles.Count; index++) {
-            if (upstreamBundles[index].IsFailedOrCancelled) return true;
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// 阻塞等待Bundle加载完成
-    /// </summary>
-    public void WaitForBundleCompletion() {
-        TaskScheduler scheduler = Scheduler;
-        Blackboard blackboard = this.blackboard;
-        scheduler.WaitForCompletion(bundleProvider, blackboard.stopwatch, blackboard.deadline);
-        foreach (BundleProvider upstreamBundle in upstreamBundles) {
-            scheduler.WaitForCompletion(upstreamBundle, blackboard.stopwatch, blackboard.deadline);
-        }
-    }
-
     protected override void OnPriorityChanged(int prevValue) {
         base.OnPriorityChanged(prevValue);
-        EnsureBundleProviderPriority();
-    }
-
-    /// <summary>
-    /// 确保Bundle加载器的任务处于较高的优先级
-    /// </summary>
-    private void EnsureBundleProviderPriority() {
-        int priority = Priority;
-        if (bundleProvider.Priority > priority) {
-            bundleProvider.Priority = priority;
-        }
-        for (int index = 0; index < upstreamBundles.Count; index++) {
-            BundleProvider upstreamBundle = upstreamBundles[index];
-            if (upstreamBundle.Priority > priority) {
-                upstreamBundle.Priority = priority;
-            }
+        // 确保Bundle加载器的任务处于较高的优先级
+        if (bundleProvider.Priority > Priority) {
+            bundleProvider.Priority = Priority;
         }
     }
 
-    #endregion
+    protected override void Enter(int reentryId) {
+        if (bundleProvider.Priority > Priority) {
+            bundleProvider.Priority = Priority;
+        }
+    }
 
     #region 引用计数
 
@@ -182,24 +121,10 @@ public abstract class AssetProviderBase : Provider
         }
     }
 
-    private void RetainBundles() {
-        foreach (BundleProvider upstreamBundle in upstreamBundles) {
-            upstreamBundle.Retain();
-        }
-        bundleProvider.Retain();
-    }
-
-    private void ReleaseBundles() {
-        bundleProvider.Release();
-        foreach (BundleProvider upstreamBundle in upstreamBundles) {
-            upstreamBundle.Release();
-        }
-    }
-
     public override void Destroy() {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        ReleaseBundles();
+        bundleProvider.Release();
     }
 
     #endregion

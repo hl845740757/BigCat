@@ -45,12 +45,6 @@ public sealed class AssetFileInfo
     /// </summary>
     [NonSerialized]
     public AssetBundleInfo bundleInfo;
-    /// <summary>
-    /// 依赖的bundle
-    ///
-    /// 注：用于细化加载粒度，加载文件时只加载必要的bundle -- 收益待评估。
-    /// </summary>
-    public int[] upstreamBundles = Array.Empty<int>();
 
     #region 序列化
 
@@ -68,13 +62,6 @@ public sealed class AssetFileInfo
             writer.WriteStartArray(nameof(assetTags), ObjectStyle.Flow);
             foreach (string assetTag in assetTags) {
                 writer.WriteString(assetTag);
-            }
-            writer.WriteEndArray();
-        }
-        {
-            writer.WriteStartArray(nameof(upstreamBundles), ObjectStyle.Flow);
-            foreach (int upstreamBundle in upstreamBundles) {
-                writer.WriteInt32(upstreamBundle, NumberStyle.Simple);
             }
             writer.WriteEndArray();
         }
@@ -100,16 +87,6 @@ public sealed class AssetFileInfo
                     this.assetTags = assetTags.ToArray();
                     break;
                 }
-                case nameof(upstreamBundles): {
-                    List<int> upstreamBundles = new List<int>();
-                    reader.ReadStartArray();
-                    while (reader.ReadDsonType() != DsonType.EndOfObject) {
-                        upstreamBundles.Add(reader.ReadInt32());
-                    }
-                    reader.ReadEndArray();
-                    this.upstreamBundles = upstreamBundles.ToArray();
-                    break;
-                }
                 default: {
                     reader.SkipValue();
                     break;
@@ -128,14 +105,6 @@ public sealed class AssetFileInfo
             writer.WriteStartArray(KEY_TAGS);
             foreach (string assetTag in assetTags) {
                 writer.WriteString(assetTag);
-            }
-            writer.WriteEndArray();
-        }
-        writer.WriteInt32(KEY_UPSTREAMS_COUNT, upstreamBundles.Length);
-        if (upstreamBundles.Length > 0) {
-            writer.WriteStartArray(KEY_UPSTREAMS);
-            foreach (int upstreamBundle in upstreamBundles) {
-                writer.WriteInt32(upstreamBundle);
             }
             writer.WriteEndArray();
         }
@@ -161,20 +130,6 @@ public sealed class AssetFileInfo
                     reader.ReadStartArray(KEY_TAGS); // 需校验name
                     for (int idx = 0; idx < count; idx++) {
                         assetTags[idx] = reader.ReadString();
-                    }
-                    reader.ReadEndArray();
-                    break;
-                }
-                case KEY_UPSTREAMS_COUNT: {
-                    upstreamBundles = Array.Empty<int>();
-                    int count = reader.ReadInt32();
-                    if (count == 0) {
-                        break;
-                    }
-                    upstreamBundles = new int[count];
-                    reader.ReadStartArray(KEY_UPSTREAMS);
-                    for (int idx = 0; idx < count; idx++) {
-                        upstreamBundles[idx] = reader.ReadInt32();
                     }
                     reader.ReadEndArray();
                     break;

@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Assetor
@@ -30,10 +29,8 @@ public class AssetProvider : AssetProviderBase
     private ResourceTask _loadAssetTask;
 
     public AssetProvider(ResourceManager resourceMgr, ProviderId pid,
-                         AssetFileInfo assetInfo,
-                         BundleProvider bundleProvider,
-                         List<BundleProvider> upstreamBundles)
-        : base(resourceMgr, pid, assetInfo, bundleProvider, upstreamBundles) {
+                         AssetFileInfo assetInfo, BundleProvider bundleProvider)
+        : base(resourceMgr, pid, assetInfo, bundleProvider) {
     }
 
     public override bool CanDestroy() {
@@ -47,16 +44,16 @@ public class AssetProvider : AssetProviderBase
 
     protected override void Execute() {
         if (blackboard.isWaitForCompletion) {
-            WaitForBundleCompletion();
+            Scheduler.WaitForCompletion(bundleProvider, blackboard.stopwatch, blackboard.deadline);
         } else {
-            if (!IsBundleLoadCompleted()) {
+            if (!bundleProvider.IsCompleted) {
                 return;
             }
         }
         ResourceTask loadAssetTask = _loadAssetTask;
         if (loadAssetTask == null) {
             // 检测Bundle加载结果
-            if (IsBundleLoadFailed()) {
+            if (bundleProvider.IsFailedOrCancelled) {
                 SetFailed((int)ResourceErrorCode.BundleLoadFailed);
                 return;
             }

@@ -262,8 +262,8 @@ public class ResourceManager
     }
 
     private AssetProvider CreateAssetProvider(AssetFileInfo assetInfo, ProviderId providerId, int priority) {
-        LoadDependBundles(assetInfo, priority, out BundleProvider mainBundle, out List<BundleProvider> upstreamBundles);
-        AssetProvider provider = new AssetProvider(this, providerId, assetInfo, mainBundle, upstreamBundles);
+        BundleProvider bundleProvider = LoadBundleAsync(assetInfo.bundleInfo, priority);
+        AssetProvider provider = new AssetProvider(this, providerId, assetInfo, bundleProvider);
         provider.Priority = priority;
         return provider;
     }
@@ -290,8 +290,8 @@ public class ResourceManager
     }
 
     private BinaryAssetProvider CreateBinaryAssetProvider(AssetFileInfo assetInfo, ProviderId providerId, int priority) {
-        LoadDependBundles(assetInfo, priority, out BundleProvider mainBundle, out List<BundleProvider> upstreamBundles);
-        BinaryAssetProvider provider = new BinaryAssetProvider(this, providerId, assetInfo, mainBundle, upstreamBundles);
+        BundleProvider bundleProvider = LoadBundleAsync(assetInfo.bundleInfo, priority);
+        BinaryAssetProvider provider = new BinaryAssetProvider(this, providerId, assetInfo, bundleProvider);
         provider.Priority = priority;
         return provider;
     }
@@ -318,41 +318,10 @@ public class ResourceManager
     }
 
     private SceneAssetProvider CreateSceneAssetProvider(AssetFileInfo assetInfo, ProviderId providerId, int priority) {
-        LoadDependBundles(assetInfo, priority, out BundleProvider mainBundle, out List<BundleProvider> upstreamBundles);
-        SceneAssetProvider provider = new SceneAssetProvider(this, providerId, assetInfo, mainBundle, upstreamBundles);
+        BundleProvider bundleProvider = LoadBundleAsync(assetInfo.bundleInfo, priority);
+        SceneAssetProvider provider = new SceneAssetProvider(this, providerId, assetInfo, bundleProvider);
         provider.Priority = priority;
         return provider;
-    }
-
-    private Provider GetErrorProvider(Type assetType, ELoadMethod loadMethod) {
-        ProviderId providerId = new ProviderId("Error", assetType, loadMethod);
-        if (!_providers.TryGetValue(providerId, out Provider provider)) {
-            provider = new ErrorProvider(this, providerId);
-            _scheduler.WaitForCompletion(provider, null, 0); // 立即完成且不需要添加为子节点
-            _providers[providerId] = provider;
-        }
-        return provider;
-    }
-
-    /// <summary>
-    /// 加载资产依赖的Bundle
-    /// 注：上游bundles可能为null，由<see cref="AssetProviderBase"/>转为空List
-    /// </summary>
-    private void LoadDependBundles(AssetFileInfo assetInfo, int priority,
-                                   out BundleProvider mainBundle,
-                                   out List<BundleProvider> upstreamBundles) {
-        // 先加载上游Bundle - 更高优先级
-        if (assetInfo.upstreamBundles.Length > 0) {
-            AssetPackageInfo packageInfo = assetInfo.bundleInfo.packageInfo;
-            upstreamBundles = new List<BundleProvider>(assetInfo.upstreamBundles.Length);
-            foreach (int bundleId in assetInfo.upstreamBundles) {
-                AssetBundleInfo upstreamBundle = packageInfo.id2BundleDic[bundleId];
-                upstreamBundles.Add(LoadBundleAsync(upstreamBundle, priority));
-            }
-        } else {
-            upstreamBundles = null;
-        }
-        mainBundle = LoadBundleAsync(assetInfo.bundleInfo, priority);
     }
 
     /// <summary>
@@ -362,7 +331,7 @@ public class ResourceManager
     private BundleProvider LoadBundleAsync(AssetBundleInfo bundleInfo, int priority) {
         ProviderId providerId = new ProviderId(bundleInfo.assetPath, null, ELoadMethod.LoadBundle);
         if (!_providers.TryGetValue(providerId, out Provider provider)) {
-            provider = new BundleProvider(this, providerId, bundleInfo);
+            provider = CreateBundleProvider(bundleInfo, providerId, priority);
             provider.Priority = priority;
             _scheduler.AddChild(provider);
             _providers[providerId] = provider;
@@ -374,10 +343,23 @@ public class ResourceManager
         return (BundleProvider)provider;
     }
 
-    private BundleProvider GetBundleProvider(AssetBundleInfo bundleInfo) {
-        ProviderId providerId = new ProviderId(bundleInfo.assetPath, null, ELoadMethod.LoadBundle);
-        _providers.TryGetValue(providerId, out Provider provider);
-        return (BundleProvider)provider;
+    private BundleProvider CreateBundleProvider(AssetBundleInfo bundleInfo, ProviderId providerId, int priority) {
+        List<BundleProvider> upstreamBundles = new List<BundleProvider>(bundleInfo.upstreamBundles.Count);
+        foreach (int bundleId in bundleInfo.upstreamBundles) {
+            AssetBundleInfo upstreamBundle = bundleInfo.packageInfo.id2BundleDic[bundleId];
+            upstreamBundles.Add(LoadBundleAsync(upstreamBundle, priority));
+        }
+        return new BundleProvider(this, providerId, bundleInfo, upstreamBundles);
+    }
+
+    private Provider GetErrorProvider(Type assetType, ELoadMethod loadMethod) {
+        ProviderId providerId = new ProviderId("Error", assetType, loadMethod);
+        if (!_providers.TryGetValue(providerId, out Provider provider)) {
+            provider = new ErrorProvider(this, providerId);
+            _scheduler.WaitForCompletion(provider, null, 0); // 立即完成且不需要添加为子节点
+            _providers[providerId] = provider;
+        }
+        return provider;
     }
 
     #endregion

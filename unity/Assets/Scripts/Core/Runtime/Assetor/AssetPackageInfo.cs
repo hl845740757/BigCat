@@ -84,9 +84,11 @@ public sealed class AssetPackageInfo
         mainAssetsCount = 0;
         id2BundleDic.Clear();
         name2BundleDic.Clear();
+#if DEBUG
         foreach (AssetBundleInfo bundleInfo in bundleList) {
             bundleInfo.downstreamBundles.Clear();
         }
+#endif
     }
 
     /// <summary>
@@ -107,6 +109,7 @@ public sealed class AssetPackageInfo
                 fileInfo.bundleInfo = bundleInfo;
             }
         }
+#if DEBUG
         // 构建依赖图缓存
         foreach (AssetBundleInfo bundleInfo in bundleList) {
             foreach (int upstreamBundle in bundleInfo.upstreamBundles) {
@@ -116,6 +119,7 @@ public sealed class AssetPackageInfo
                 upstreamBundleInfo.downstreamBundles.Add(bundleInfo.bundleId);
             }
         }
+#endif
     }
 
     #region 序列化

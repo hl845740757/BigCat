@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -31,10 +30,8 @@ namespace Wjybxx.BigCat.Assetor
 public class SceneAssetProvider : AssetProviderBase
 {
     public SceneAssetProvider(ResourceManager resourceMgr, ProviderId pid,
-                              AssetFileInfo assetInfo,
-                              BundleProvider bundleProvider,
-                              List<BundleProvider> upstreamBundles)
-        : base(resourceMgr, pid, assetInfo, bundleProvider, upstreamBundles) {
+                              AssetFileInfo assetInfo, BundleProvider bundleProvider)
+        : base(resourceMgr, pid, assetInfo, bundleProvider) {
     }
 
     protected override void Enter(int reentryId) {
@@ -43,13 +40,13 @@ public class SceneAssetProvider : AssetProviderBase
 
     protected override void Execute() {
         if (blackboard.isWaitForCompletion) {
-            WaitForBundleCompletion();
+            Scheduler.WaitForCompletion(bundleProvider, blackboard.stopwatch, blackboard.deadline);
         } else {
-            if (!IsBundleLoadCompleted()) {
+            if (!bundleProvider.IsCompleted) {
                 return;
             }
         }
-        if (IsBundleLoadFailed()) {
+        if (bundleProvider.IsFailedOrCancelled) {
             SetFailed((int)ResourceErrorCode.BundleLoadFailed);
         } else {
             SetSuccess();

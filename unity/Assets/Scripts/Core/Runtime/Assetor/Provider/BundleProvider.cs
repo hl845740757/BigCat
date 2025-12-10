@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCat.Assetor
@@ -31,14 +32,18 @@ namespace Wjybxx.BigCat.Assetor
 public class BundleProvider : Provider
 {
     public readonly AssetBundleInfo bundleInfo;
+    public readonly List<BundleProvider> upstreamBundles;
     private DownloadTask _downloadTask;
     private ResourceTask _importTask;
     private ResourceTask _loadTask;
 
     public BundleProvider(ResourceManager resourceMgr, ProviderId pid,
-                          AssetBundleInfo bundleInfo)
+                          AssetBundleInfo bundleInfo,
+                          List<BundleProvider> upstreamBundles)
         : base(resourceMgr, pid) {
         this.bundleInfo = bundleInfo;
+        this.upstreamBundles = upstreamBundles;
+        RetainsUpstreamBundles();
     }
 
     /// <summary>
@@ -47,8 +52,33 @@ public class BundleProvider : Provider
     public IAssetBundle assetBundle => (IAssetBundle)promise.result;
     private IPackageManager packageManager => resourceMgr.GetPackageManager(bundleInfo.packageInfo.packageName);
 
+    protected override void OnPriorityChanged(int prevValue) {
+        base.OnPriorityChanged(prevValue);
+        EnsureUpstreamBundlesPriority();
+    }
+
+    private void EnsureUpstreamBundlesPriority() {
+        for (int index = 0; index < upstreamBundles.Count; index++) {
+            BundleProvider upstreamBundle = upstreamBundles[index];
+            if (upstreamBundle.Priority > Priority) {
+                upstreamBundle.Priority = Priority;
+            }
+        }
+    }
+
+    private void RetainsUpstreamBundles() {
+        foreach (BundleProvider upstreamBundle in upstreamBundles) {
+            upstreamBundle.Retain();
+        }
+    }
+
+    private void ReleaseUpstreamBundles() {
+        foreach (BundleProvider upstreamBundle in upstreamBundles) {
+            upstreamBundle.Release();
+        }
+    }
+
     public override bool CanDestroy() {
-        // 这里未测试下游BundleProvider是否可销毁，因为引用计数为0就意味着不存在下游引用
         return base.CanDestroy()
                && (_loadTask == null || _loadTask.IsCompleted);
     }
@@ -56,10 +86,15 @@ public class BundleProvider : Provider
     public override void Destroy() {
         if (IsDestroyed) return;
         IsDestroyed = true;
+        ReleaseUpstreamBundles();
         assetBundle?.UnloadBundle(true);
         // 取消下载任务
         _downloadTask?.CancelToken.Cancel();
         _importTask?.CancelToken.Cancel();
+    }
+
+    protected override void Enter(int reentryId) {
+        EnsureUpstreamBundlesPriority();
     }
 
     protected override void Execute() {
@@ -108,18 +143,26 @@ public class BundleProvider : Provider
             }
             promise.phase = ELoadPhase.Loading;
             promise.ClearProgress();
-            foreach (IBundleManager bundleManager in resourceMgr.BundleManagers) {
-                if ((_loadTask = bundleManager.LoadBundleAsync(bundleInfo)) != null) {
-                    break;
-                }
-            }
-            if (_loadTask == null) {
-                SetFailed((int)ResourceErrorCode.BundleFileNotFound);
-                return;
-            }
         }
         //
         ResourceTask loadTask = _loadTask;
+        if (loadTask == null) {
+            foreach (BundleProvider upstreamBundle in upstreamBundles) {
+                if (!upstreamBundle.IsCompleted) {
+                    return;
+                }
+            }
+            foreach (IBundleManager bundleManager in resourceMgr.BundleManagers) {
+                if ((loadTask = bundleManager.LoadBundleAsync(bundleInfo)) != null) {
+                    break;
+                }
+            }
+            if (loadTask == null) {
+                SetFailed((int)ResourceErrorCode.BundleFileNotFound);
+                return;
+            }
+            _loadTask = loadTask;
+        }
         promise.SyncProgressFrom(loadTask.promise);
         if (loadTask.IsCompleted) {
             promise.result = loadTask.promise.result;
@@ -141,6 +184,10 @@ public class BundleProvider : Provider
             promise.result = loadTask.promise.result;
             SetCompleted(loadTask.Status, true);
             return;
+        }
+        // 等待上游Bundle加载
+        foreach (BundleProvider upstreamBundle in upstreamBundles) {
+            Scheduler.WaitForCompletion(upstreamBundle, blackboard.stopwatch, blackboard.deadline);
         }
         // 同步加载
         IAssetBundle assetBundle = null;
