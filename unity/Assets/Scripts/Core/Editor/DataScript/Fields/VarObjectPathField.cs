@@ -41,7 +41,7 @@ public class VarObjectPathField : BindableElement, IVarField
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         field.SetValueWithoutNotify(variable.objectPathValue);
-        field.isReadOnly = variable.cfg.HasPortCfg;
+        // field.isReadOnly = variable.cfg.HasPortCfg;
     }
 
     public void Unbind() {

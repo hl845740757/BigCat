@@ -154,6 +154,8 @@ internal class DataGraphHelper
                     variable.boolValue = dsonValue.AsString() == "true"; // 不测试0和1
                 } else if (dsonValue.IsNumber) {
                     variable.boolValue = dsonValue.AsNumber().IntValue != 0;
+                } else if (dsonValue.DsonType == DsonType.Bool) {
+                    variable.boolValue = dsonValue.AsBool();
                 }
                 return;
             }

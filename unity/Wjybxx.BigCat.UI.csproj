@@ -742,6 +742,10 @@
       <Project>{9be371b1-2c4e-8363-9645-67270e169afa}</Project>
       <Name>Wjybxx.BigCat.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.UnityCore.csproj">
+      <Project>{93bef834-af94-2596-e608-4f5ae4a01788}</Project>
+      <Name>Wjybxx.BigCat.UnityCore</Name>
+    </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>
       <Name>UnityEditor.UI</Name>

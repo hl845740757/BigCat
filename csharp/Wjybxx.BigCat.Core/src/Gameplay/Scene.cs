@@ -45,6 +45,9 @@ namespace Wjybxx.BigCat.Gameplay
 /// 4.Scene暂时限制最多128类组件。
 /// 5.数据组件不支持重复，需要提前将元素转换为List类型。
 /// 6.反序列化创建场景后，还需要额外的初始化才能运行。
+///
+/// <h3>资源管理</h3>
+/// 由于该程序集不能依赖下游的资源管理程序集，因此需要通过额外组件来寄存所有需要跟随Scene销毁的资源句柄。
 /// </summary>
 [DsonSerializable(SkipFields = new[] { "*" })]
 public sealed class Scene
@@ -227,96 +230,6 @@ public sealed class Scene
     }
 
     #endregion
-
-#nullable disable
-
-    #region 组件模式
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="comp">套添加的组件</param>
-    /// <param name="addFirst">是否添加到首部，通常用于插入基础组件</param>
-    public void AddComponent(SComponent comp, bool addFirst = false) {
-        if (_status != ComponentStatus.New) throw new InvalidOperationException();
-        if (_indexedComponents.Count(comp.Cid) >= comp.Cid.maxCount) {
-            throw new InvalidOperationException($"countLimit: {comp.Cid.maxCount}");
-        }
-        if (addFirst) {
-            _components.Insert(0, comp);
-        } else {
-            _components.Add(comp);
-        }
-        _indexedComponents.Add(comp, addFirst);
-    }
-
-    /// <summary>
-    /// 是否包含目标组件
-    /// </summary>
-    public bool ContainsComponent(SComponent comp) {
-        return _indexedComponents.Contains(comp);
-    }
-
-    /// <summary>
-    /// 当前组件数量
-    /// </summary>
-    public int ComponentsCount => _components.Count;
-
-    /// <summary>
-    /// 组件的掩码，用户快速测试场景包含的组件
-    /// </summary>
-    public GBitSet ComponentsMask => _indexedComponents.Mask;
-
-    /// <summary>
-    /// 获取原始的组件List
-    /// 注：不可直接修改List
-    /// </summary>
-    public List<SComponent> Components => _components;
-
-    // 泛型
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T GetComponent<T>(ComponentId<T> cid) where T : class {
-        return _indexedComponents.Get(cid);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public T GetLastComponent<T>(ComponentId<T> cid) where T : class {
-        return _indexedComponents.GetLast(cid);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<T> GetComponents<T>(ComponentId<T> cid, List<T>? outList = null) where T : class {
-        outList ??= new List<T>();
-        _indexedComponents.Get(cid, outList);
-        return outList;
-    }
-
-    // 非泛型
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int CountComponent(ComponentId cid) {
-        return _indexedComponents.Count(cid);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SComponent? GetComponent(ComponentId cid) {
-        return _indexedComponents.Get(cid);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SComponent? GetLastComponent(ComponentId cid) {
-        return _indexedComponents.GetLast(cid);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public List<SComponent> GetComponents(ComponentId cid, List<SComponent>? outList = null) {
-        outList ??= new List<SComponent>();
-        _indexedComponents.Get(cid, outList);
-        return outList;
-    }
-
-    #endregion
-
-#nullable restore
 
     #region 生命周期
 
@@ -636,6 +549,96 @@ public sealed class Scene
     }
 
     #endregion
+
+#nullable disable
+
+    #region 组件模式
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="comp">套添加的组件</param>
+    /// <param name="addFirst">是否添加到首部，通常用于插入基础组件</param>
+    public void AddComponent(SComponent comp, bool addFirst = false) {
+        if (_status != ComponentStatus.New) throw new InvalidOperationException();
+        if (_indexedComponents.Count(comp.Cid) >= comp.Cid.maxCount) {
+            throw new InvalidOperationException($"countLimit: {comp.Cid.maxCount}");
+        }
+        if (addFirst) {
+            _components.Insert(0, comp);
+        } else {
+            _components.Add(comp);
+        }
+        _indexedComponents.Add(comp, addFirst);
+    }
+
+    /// <summary>
+    /// 是否包含目标组件
+    /// </summary>
+    public bool ContainsComponent(SComponent comp) {
+        return _indexedComponents.Contains(comp);
+    }
+
+    /// <summary>
+    /// 当前组件数量
+    /// </summary>
+    public int ComponentsCount => _components.Count;
+
+    /// <summary>
+    /// 组件的掩码，用户快速测试场景包含的组件
+    /// </summary>
+    public GBitSet ComponentsMask => _indexedComponents.Mask;
+
+    /// <summary>
+    /// 获取原始的组件List
+    /// 注：不可直接修改List
+    /// </summary>
+    public List<SComponent> Components => _components;
+
+    // 泛型
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T GetComponent<T>(ComponentId<T> cid) where T : class {
+        return _indexedComponents.Get(cid);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T GetLastComponent<T>(ComponentId<T> cid) where T : class {
+        return _indexedComponents.GetLast(cid);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public List<T> GetComponents<T>(ComponentId<T> cid, List<T>? outList = null) where T : class {
+        outList ??= new List<T>();
+        _indexedComponents.Get(cid, outList);
+        return outList;
+    }
+
+    // 非泛型
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int CountComponent(ComponentId cid) {
+        return _indexedComponents.Count(cid);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SComponent? GetComponent(ComponentId cid) {
+        return _indexedComponents.Get(cid);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SComponent? GetLastComponent(ComponentId cid) {
+        return _indexedComponents.GetLast(cid);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public List<SComponent> GetComponents(ComponentId cid, List<SComponent>? outList = null) {
+        outList ??= new List<SComponent>();
+        _indexedComponents.Get(cid, outList);
+        return outList;
+    }
+
+    #endregion
+
+#nullable restore
 
     #region equals
 

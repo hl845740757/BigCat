@@ -83,50 +83,10 @@ public abstract class AssetProviderBase : Provider
         }
     }
 
-    #region 引用计数
-
-    /// <summary>
-    /// 尚未释放的资源句柄id
-    /// </summary>
-    private static readonly Dictionary<uint, int> retainHandles = new(1000);
-
-    /// <summary>
-    /// 注册资源句柄
-    /// </summary>
-    public void Retain(AssetHandle handle, int count = 1) {
-        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
-        if (count == 0) return;
-        if (retainHandles.TryGetValue(handle.HandleId, out int prevCount)) {
-            retainHandles[handle.HandleId] = prevCount + count;
-        } else {
-            retainHandles[handle.HandleId] = count;
-            Retain();
-        }
-    }
-
-    /// <summary>
-    /// 释放资源句柄
-    /// </summary>
-    public void Release(AssetHandle handle, int count = 1) {
-        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
-        if (count == 0) return;
-        if (!retainHandles.TryGetValue(handle.HandleId, out int prevCount) || count > prevCount) {
-            throw new ArgumentOutOfRangeException(nameof(count), $"prev: {prevCount}, count: {count}");
-        }
-        if (count < prevCount) {
-            retainHandles[handle.HandleId] = prevCount - count;
-        } else {
-            retainHandles.Remove(handle.HandleId);
-            Release();
-        }
-    }
-
     public override void Destroy() {
         if (IsDestroyed) return;
         IsDestroyed = true;
         bundleProvider.Release();
     }
-
-    #endregion
 }
 }

@@ -5,7 +5,8 @@
         "Wjybxx.Commons.Core",
         "Wjybxx.Commons.Concurrent",
         "Wjybxx.Commons.Inject",
-        "Wjybxx.BigCat.Core"
+        "Wjybxx.BigCat.Core",
+        "Wjybxx.BigCat.UnityCore"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

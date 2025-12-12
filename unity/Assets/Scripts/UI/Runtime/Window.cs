@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Wjybxx.BigCat.Assetor;
 using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.Util;
@@ -28,6 +29,7 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Logger;
+using Blackboard = Wjybxx.BigCat.Util.Blackboard;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
 
 #if UNITY_EDITOR
@@ -148,6 +150,11 @@ public sealed class Window
     /// Window黑板
     /// </summary>
     [NonSerialized] private readonly Blackboard _blackboard = new Blackboard();
+    /// <summary>
+    /// 动态加载的资源句柄
+    /// 注；跟随界面一起卸载的资源放在这里。
+    /// </summary>
+    [NonSerialized] public readonly List<AssetHandle> assetHandles = new(20);
 
     internal Window(WindowCfg windowCfg, string windowAddr, WindowMgr windowMgr) {
         this.windowCfg = windowCfg;
@@ -244,9 +251,18 @@ public sealed class Window
         ClearUpdateList();
         StopComponents();
         _coroutineMgr.Shutdown();
+        ReleaseAssets();
 
         _status = ComponentStatus.Terminated;
         windowMgr?.OnTerminated(this);
+    }
+
+    private void ReleaseAssets() {
+        for (int index = assetHandles.Count - 1; index >= 0; index--) {
+            AssetHandle assetHandle = assetHandles[index];
+            assetHandle.Release(assetHandle.ReferenceCount);
+        }
+        assetHandles.Clear();
     }
 
     private void StartComponents() {

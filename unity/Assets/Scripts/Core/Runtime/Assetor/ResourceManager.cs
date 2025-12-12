@@ -326,7 +326,10 @@ public class ResourceManager
 
     /// <summary>
     /// 创建异步Bundle加载任务
-    /// 注：Bundle任务不立即启动，以允许外部调用阻塞接口转同步。
+    /// 
+    /// 注：
+    /// 1.Bundle任务不立即启动，以允许外部调用阻塞接口转同步。
+    /// 2.Bundle之间不可存在编译时循环依赖，否则会导致死循环。
     /// </summary>
     private BundleProvider LoadBundleAsync(AssetBundleInfo bundleInfo, int priority) {
         ProviderId providerId = new ProviderId(bundleInfo.assetPath, null, ELoadMethod.LoadBundle);

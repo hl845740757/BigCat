@@ -95,6 +95,52 @@ public abstract class Provider : ResourceTask
     }
 
     /// <summary>
+    /// 尚未释放的资源句柄id
+    /// </summary>
+    private static readonly Dictionary<uint, int> retainHandles = new(1000);
+
+    /// <summary>
+    /// 获取Handle自身的引用计数
+    /// </summary>
+    /// <param name="handle"></param>
+    /// <returns></returns>
+    public int GetRefCount(AssetHandle handle) {
+        retainHandles.TryGetValue(handle.HandleId, out int count);
+        return count;
+    }
+
+    /// <summary>
+    /// 增加资源句柄
+    /// </summary>
+    public void Retain(AssetHandle handle, int count = 1) {
+        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+        if (count == 0) return;
+        if (retainHandles.TryGetValue(handle.HandleId, out int prevCount)) {
+            retainHandles[handle.HandleId] = prevCount + count;
+        } else {
+            retainHandles[handle.HandleId] = count;
+            Retain();
+        }
+    }
+
+    /// <summary>
+    /// 释放资源句柄
+    /// </summary>
+    public void Release(AssetHandle handle, int count = 1) {
+        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+        if (count == 0) return;
+        if (!retainHandles.TryGetValue(handle.HandleId, out int prevCount) || count > prevCount) {
+            throw new ArgumentOutOfRangeException(nameof(count), $"prev: {prevCount}, count: {count}");
+        }
+        if (count < prevCount) {
+            retainHandles[handle.HandleId] = prevCount - count;
+        } else {
+            retainHandles.Remove(handle.HandleId);
+            Release();
+        }
+    }
+
+    /// <summary>
     /// 更新Provider的访问时间
     ///
     /// 注：该方法不传播到关联的资产（如Bundle），以减少开销。

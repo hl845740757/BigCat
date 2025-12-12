@@ -207,6 +207,18 @@ public static class UnityEditorUtil
     }
 
     /// <summary>
+    /// 是否是给定
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="subPath"></param>
+    /// <returns></returns>
+    public static bool IsSubPath(string path, string subPath) {
+        return subPath.Length > path.Length
+               && subPath[path.Length] == '/'
+               && subPath.StartsWith(path, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// 将文件路径转换为资产路径
     /// </summary>
     /// <param name="filePath">文件路径</param>

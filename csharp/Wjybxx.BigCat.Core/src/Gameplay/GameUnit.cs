@@ -51,6 +51,9 @@ namespace Wjybxx.BigCat.Gameplay
 /// 3.重用对象时需要更改<see cref="InstId"/>，使得旧id引用无法从GameUnitMgr查询到对象。
 /// 4.完全由手工创建的对象，如子弹，可以进行单独的池化管理。
 ///
+/// <h3>资源管理</h3>
+/// 由于该程序集不能依赖下游的资源管理程序集，因此需要通过额外组件来寄存所有需要跟随GameUnit销毁的资源句柄。
+/// 
 /// 注：
 /// 1.为避免和引擎的GameObject命名冲突，我们命名为GameUnit。
 /// 2.没有实现<see cref="IEntity"/>接口，因为没必要。
@@ -188,6 +191,89 @@ public sealed class GameUnit
 
     #endregion
 
+    #region 生命周期
+
+    /// <summary>
+    /// 将游戏对象标记为已初始化完成
+    /// 注：应当在加入场景前调用。
+    /// </summary>
+    public void SetInitialized() {
+        if (_status == ComponentStatus.Destroyed) {
+            throw new InvalidOperationException("already destroyed");
+        }
+        _status = ComponentStatus.Initialized;
+        // 初始化模块
+        foreach (GComponent component in _components) {
+            if (component.Cid.shared) {
+                continue;
+            }
+            if (component.Status == ComponentStatus.New) {
+                component.SetEntity(this);
+            }
+        }
+        // 解决模块之间的依赖
+        foreach (GComponent component in _components) {
+            if (component.Cid.shared) {
+                continue;
+            }
+            component.ResolveDependence();
+        }
+    }
+
+    /// <summary>
+    /// 重置对象
+    /// 注：建议调用该方法后更新instId
+    /// </summary>
+    public void Reset() {
+        if (_status == ComponentStatus.Destroyed) {
+            throw new InvalidOperationException("already destroyed");
+        }
+        foreach (GComponent component in _components) {
+            if (component.Cid.shared) continue;
+            if (component.Status == ComponentStatus.New) continue;
+            component.Reset();
+        }
+        indexes.Clear();
+        aoiIndexes.Clear();
+
+        if (_status > ComponentStatus.Initialized) {
+            _status = ComponentStatus.Initialized;
+        }
+        _active = true;
+        // 清理init后产生的数据
+        _scene = null;
+        _agent = null;
+        _userData = null;
+    }
+
+    /// <summary>
+    /// 销毁对象
+    /// 注：Unity对象需要手动销毁。
+    /// </summary>
+    public void Destroy() {
+        if (_status == ComponentStatus.Destroyed) {
+            return;
+        }
+        _status = ComponentStatus.Destroyed;
+        foreach (GComponent component in _components) {
+            if (component.Cid.shared) continue;
+            if (component.Status == ComponentStatus.New) continue;
+            try {
+                component.InvokeDestroy();
+            }
+            catch (Exception ex) {
+                logger.Warn(ex, "component.Destroy caught exception");
+            }
+        }
+        _scene = null;
+        _agent = null;
+        _userData = null;
+        _components.Clear();
+        _indexedComponents.Clear();
+    }
+
+    #endregion
+
 #nullable disable
 
     #region 组件模式
@@ -277,89 +363,6 @@ public sealed class GameUnit
     #endregion
 
 #nullable restore
-
-    #region internal
-
-    /// <summary>
-    /// 将游戏对象标记为已初始化完成
-    /// 注：应当在加入场景前调用。
-    /// </summary>
-    public void SetInitialized() {
-        if (_status == ComponentStatus.Destroyed) {
-            throw new InvalidOperationException("already destroyed");
-        }
-        _status = ComponentStatus.Initialized;
-        // 初始化模块
-        foreach (GComponent component in _components) {
-            if (component.Cid.shared) {
-                continue;
-            }
-            if (component.Status == ComponentStatus.New) {
-                component.SetEntity(this);
-            }
-        }
-        // 解决模块之间的依赖
-        foreach (GComponent component in _components) {
-            if (component.Cid.shared) {
-                continue;
-            }
-            component.ResolveDependence();
-        }
-    }
-
-    /// <summary>
-    /// 重置对象
-    /// 注：建议调用该方法后更新instId
-    /// </summary>
-    public void Reset() {
-        if (_status == ComponentStatus.Destroyed) {
-            throw new InvalidOperationException("already destroyed");
-        }
-        foreach (GComponent component in _components) {
-            if (component.Cid.shared) continue;
-            if (component.Status == ComponentStatus.New) continue;
-            component.Reset();
-        }
-        indexes.Clear();
-        aoiIndexes.Clear();
-
-        if (_status > ComponentStatus.Initialized) {
-            _status = ComponentStatus.Initialized;
-        }
-        _active = true;
-        // 清理init后产生的数据
-        _scene = null;
-        _agent = null;
-        _userData = null;
-    }
-
-    /// <summary>
-    /// 销毁对象
-    /// 注：Unity对象需要手动销毁。
-    /// </summary>
-    public void Destroy() {
-        if (_status == ComponentStatus.Destroyed) {
-            return;
-        }
-        _status = ComponentStatus.Destroyed;
-        foreach (GComponent component in _components) {
-            if (component.Cid.shared) continue;
-            if (component.Status == ComponentStatus.New) continue;
-            try {
-                component.InvokeDestroy();
-            }
-            catch (Exception ex) {
-                logger.Warn(ex, "component.Destroy caught exception");
-            }
-        }
-        _scene = null;
-        _agent = null;
-        _userData = null;
-        _components.Clear();
-        _indexedComponents.Clear();
-    }
-
-    #endregion
 
     #region equals
 

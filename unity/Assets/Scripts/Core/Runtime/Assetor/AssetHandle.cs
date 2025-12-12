@@ -241,7 +241,6 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// <param name="timeout">超时时间，毫秒</param>
     /// <exception cref="BlockingOperationException">如果当前不支持阻塞完成</exception>
     public void WaitForCompletion(long timeout = 5000) {
-        _provider.UpdateAccessTime();
         if (_provider.IsCompleted) return;
         if (timeout <= 0) {
             _provider.Scheduler.WaitForCompletion(_provider, null, 0);
@@ -257,8 +256,10 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
 
     /// <summary>
     /// 当前引用计数
+    ///
+    /// 注：Handle的引用计数和资源的引用计数是分离的，用户不可以通过当前Handle释放其它Handle增加的引用计数。
     /// </summary>
-    public int ReferenceCount => _provider.RefCount;
+    public int ReferenceCount => _provider.GetRefCount(this);
 
     /// <summary>
     /// 保持资源（增加引用计数）
@@ -266,18 +267,14 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// <param name="count"></param>
     public void Retain(int count = 1) {
         _provider.UpdateAccessTime();
-        if (_provider is AssetProviderBase provider) {
-            provider.Retain(this, count);
-        }
+        _provider.Retain(this, count);
     }
 
     /// <summary>
     /// 释放资源（减少引用计数）
     /// </summary>
     public void Release(int count = 1) {
-        if (_provider is AssetProviderBase provider) {
-            provider.Release(this, count);
-        }
+        _provider.Release(this, count);
     }
 
     /// <summary>
@@ -298,6 +295,21 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// <returns></returns>
     public long GetAccessTime() {
         return _provider.TimeAccessed;
+    }
+
+    /// <summary>
+    /// 获取标记值
+    /// 
+    /// 注：用户可用8Bit，其逻辑用用户自行约定。
+    /// </summary>
+    /// <param name="index">范围0~7</param>
+    /// <returns></returns>
+    public bool GetFlag(int index) {
+        return _provider.GetFlag(index);
+    }
+
+    public void SetFlag(int index, bool value) {
+        _provider.SetFlag(index, value);
     }
 
     #endregion

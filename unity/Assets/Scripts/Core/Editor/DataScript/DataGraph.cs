@@ -185,6 +185,12 @@ public sealed class DataGraph
             value = CreateVariable(namedType)
         };
         node.value.SetDataNode(node);
+        // 初始值 - 为避免冲突，只尝试从类型的归属文件读默认值
+        DSFile enclosingFile = namedType.GetEnclosingFile();
+        DSInst inst;
+        if (!namedType.IsGenericType && (inst = enclosingFile.GetInst(namedType.SimpleName)) != null) {
+            ResetVariable(node.value, inst.DsonValue);
+        }
         return node;
     }
 

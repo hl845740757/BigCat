@@ -19,6 +19,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Wjybxx.BTree;
+using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -87,6 +88,19 @@ public abstract class ResourceTask : Decorator<Blackboard>
     }
 
     /// <summary>
+    /// 用户自定义Flags
+    /// </summary>
+    public bool GetFlag(int index) {
+        if (index < 0 || index > 8) throw new ArgumentOutOfRangeException(nameof(index));
+        return BitFlags.GetAt(flags, index + USER_FLAGS_OFFSET);
+    }
+
+    public void SetFlag(int index, bool value) {
+        if (index < 0 || index > 8) throw new ArgumentOutOfRangeException(nameof(index));
+        flags = BitFlags.SetAt(flags, index + USER_FLAGS_OFFSET, value);
+    }
+
+    /// <summary>
     /// 任务的优先级发生变更
     /// 注：可能需要同步到关联的加载任务；由于Bundle加载任务可能被共享，因此通常只应该提升优先级。
     /// </summary>
@@ -146,6 +160,8 @@ public abstract class ResourceTask : Decorator<Blackboard>
 
     /// <summary>
     /// 是否已销毁
+    ///
+    /// 注：高8位是Task控制流标识，次高8位开放给用户，所以Task只可使用低16位。
     /// </summary>
     private const int MASK_DESTROYED = 0x01;
     /// <summary>
@@ -153,9 +169,9 @@ public abstract class ResourceTask : Decorator<Blackboard>
     /// </summary>
     protected const int MASK_NOTIFYING = 0x02;
     /// <summary>
-    /// Bundle已加载
+    /// 用户标记位偏移
     /// </summary>
-    protected const int MASK_BUNDLE_LOADED = 0x04;
+    private const int USER_FLAGS_OFFSET = 16;
 
     #endregion
 }

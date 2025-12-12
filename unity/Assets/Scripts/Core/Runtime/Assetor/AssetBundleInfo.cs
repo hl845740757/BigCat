@@ -30,6 +30,10 @@ namespace Wjybxx.BigCat.Assetor
 public sealed class AssetBundleInfo
 {
     /// <summary>
+    /// bundle打包的起始文件夹路径
+    /// </summary>
+    public string assetPath;
+    /// <summary>
     /// bundle文件名
     ///
     /// 注：至少保证包级别唯一。
@@ -61,14 +65,6 @@ public sealed class AssetBundleInfo
     /// </summary>
     public int encrypted;
 
-    /// <summary>
-    /// bundle打包的起始文件夹路径
-    ///
-    /// 注：
-    /// 1.同一个资产目录可以打出多个Bundle（Unity资产Bundle + 原始文件Bundle）。
-    /// 2.由打包工具执行规格化。
-    /// </summary>
-    public string assetPath;
     /// <summary>
     /// Bundle标签
     ///
@@ -113,15 +109,15 @@ public sealed class AssetBundleInfo
 
     #region 序列化
 
-    private const int KEY_BUNDLE_NAME = 1;
-    private const int KEY_BUNDLE_TYPE = 2;
-    private const int KEY_BUNDLE_UNITY_CRC = 3;
-    private const int KEY_FILE_HASH = 4;
-    private const int KEY_FILE_CRC = 5;
-    private const int KEY_FILE_SIZE = 6;
-    private const int KEY_ENCRYPTED = 7;
+    private const int KEY_ASSET_PATH = 1;
+    private const int KEY_BUNDLE_NAME = 2;
+    private const int KEY_BUNDLE_TYPE = 3;
+    private const int KEY_BUNDLE_UNITY_CRC = 4;
+    private const int KEY_FILE_HASH = 5;
+    private const int KEY_FILE_CRC = 6;
+    private const int KEY_FILE_SIZE = 7;
+    private const int KEY_ENCRYPTED = 8;
 
-    private const int KEY_ASSET_PATH = 8;
     private const int KEY_BUNDLE_TAGS = 9;
     private const int KEY_BUNDLE_TAGS_COUNT = 10;
     private const int KEY_MAIN_ASSETS = 11;
@@ -133,6 +129,7 @@ public sealed class AssetBundleInfo
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
+        writer.WriteString(nameof(assetPath), assetPath);
         writer.WriteString(nameof(bundleName), bundleName);
         writer.WriteInt32(nameof(bundleType), (int)bundleType, NumberStyle.Simple);
         //
@@ -142,7 +139,6 @@ public sealed class AssetBundleInfo
         writer.WriteInt32(nameof(fileSize), fileSize, NumberStyle.Simple);
         writer.WriteInt32(nameof(encrypted), encrypted, NumberStyle.Simple);
         //
-        writer.WriteString(nameof(assetPath), assetPath);
         {
             writer.WriteStartArray(nameof(bundleTags), ObjectStyle.Flow);
             foreach (string bundleTag in bundleTags) {
@@ -174,6 +170,10 @@ public sealed class AssetBundleInfo
         while (reader.ReadDsonType() != DsonType.EndOfObject) {
             string name = reader.ReadName();
             switch (name) {
+                case nameof(assetPath): {
+                    assetPath = reader.ReadString();
+                    break;
+                }
                 case nameof(bundleName): {
                     bundleName = reader.ReadString();
                     break;
@@ -200,10 +200,6 @@ public sealed class AssetBundleInfo
                 }
                 case nameof(encrypted): {
                     encrypted = reader.ReadInt32();
-                    break;
-                }
-                case nameof(assetPath): {
-                    assetPath = reader.ReadString();
                     break;
                 }
                 case nameof(bundleTags): {
@@ -254,6 +250,7 @@ public sealed class AssetBundleInfo
 
     public void Serialize(IDsonWriter<int> writer) {
         writer.WriteStartObject();
+        writer.WriteString(KEY_ASSET_PATH, assetPath);
         writer.WriteString(KEY_BUNDLE_NAME, bundleName);
         writer.WriteInt32(KEY_BUNDLE_TYPE, (int)bundleType);
         writer.WriteInt32(KEY_BUNDLE_UNITY_CRC, (int)unityCRC);
@@ -262,7 +259,6 @@ public sealed class AssetBundleInfo
         writer.WriteInt32(KEY_FILE_SIZE, fileSize);
         writer.WriteInt32(KEY_ENCRYPTED, encrypted);
         //
-        writer.WriteString(KEY_ASSET_PATH, assetPath);
         writer.WriteInt32(KEY_BUNDLE_TAGS_COUNT, bundleTags.Count);
         if (bundleTags.Count > 0) {
             writer.WriteStartArray(KEY_BUNDLE_TAGS);
@@ -297,6 +293,10 @@ public sealed class AssetBundleInfo
         while (reader.ReadDsonType() != DsonType.EndOfObject) {
             int name = reader.ReadName();
             switch (name) {
+                case KEY_ASSET_PATH: {
+                    assetPath = reader.ReadString();
+                    break;
+                }
                 case KEY_BUNDLE_NAME: {
                     bundleName = reader.ReadString();
                     break;
@@ -323,10 +323,6 @@ public sealed class AssetBundleInfo
                 }
                 case KEY_ENCRYPTED: {
                     encrypted = reader.ReadInt32();
-                    break;
-                }
-                case KEY_ASSET_PATH: {
-                    assetPath = reader.ReadString();
                     break;
                 }
                 case KEY_BUNDLE_TAGS_COUNT: {

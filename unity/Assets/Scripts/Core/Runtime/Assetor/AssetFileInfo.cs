@@ -55,7 +55,7 @@ public sealed class AssetFileInfo
     private const int KEY_UPSTREAMS_COUNT = 5;
 
     public void Serialize(IDsonWriter<string> writer) {
-        writer.WriteStartObject(ObjectStyle.Flow);
+        writer.WriteStartObject();
         writer.WriteString(nameof(assetPath), assetPath);
         // 文本格式不写入Count，且空数组也写入，提高可读性
         {
