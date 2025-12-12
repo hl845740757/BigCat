@@ -40,7 +40,7 @@ public class SceneAssetProvider : AssetProviderBase
 
     protected override void Execute() {
         if (blackboard.isWaitForCompletion) {
-            Scheduler.WaitForCompletion(bundleProvider, blackboard.stopwatch, blackboard.deadline);
+            Scheduler.WaitForCompletion(bundleProvider, blackboard.deadline);
         } else {
             if (!bundleProvider.IsCompleted) {
                 return;

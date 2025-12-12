@@ -29,8 +29,17 @@ namespace Wjybxx.BigCat.Assetor
 public class Blackboard
 {
     public bool isWaitForCompletion;
-    public Stopwatch stopwatch;
-    public long deadline;
+    internal Stopwatch stopwatch;
+    internal long deadline;
+
+    /// <summary>
+    /// 当前是否已超时
+    /// </summary>
+    /// <returns></returns>
+    public bool IsTimeout() {
+        return deadline > 0 && stopwatch != null
+                            && stopwatch.ElapsedMilliseconds >= deadline;
+    }
 
     /// <summary>
     /// 检查是否超时

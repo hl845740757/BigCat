@@ -187,7 +187,7 @@ public class BundleProvider : Provider
         }
         // 等待上游Bundle加载
         foreach (BundleProvider upstreamBundle in upstreamBundles) {
-            Scheduler.WaitForCompletion(upstreamBundle, blackboard.stopwatch, blackboard.deadline);
+            Scheduler.WaitForCompletion(upstreamBundle, blackboard.deadline);
         }
         // 同步加载
         IAssetBundle assetBundle = null;

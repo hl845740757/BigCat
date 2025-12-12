@@ -18,6 +18,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Wjybxx.BigCat.Assetor.Tasks;
+using Wjybxx.Dson;
+using Wjybxx.Dson.IO;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -38,7 +42,7 @@ public class EditorPackageManager : IPackageManager
     public string PackageName => _packageName;
     public string LocalVersion => "0.0.0";
     public string RemoteVersion => "0.0.0";
-    public AssetPackageInfo PackageInfo { get; }
+    public AssetPackageInfo PackageInfo { get; private set; }
 
     public ResourceTask Start() {
         throw new System.NotImplementedException();
@@ -57,11 +61,21 @@ public class EditorPackageManager : IPackageManager
     }
 
     public ResourceTask LoadPackageInfoAsync() {
-        throw new System.NotImplementedException();
+        // 编辑器下直接同步加载
+        byte[] bytes = File.ReadAllBytes(_packagePath);
+        using DsonBinaryReader<int> reader = new DsonBinaryReader<int>(DsonReaderSettings.Default, DsonInputs.NewInstance(bytes));
+        PackageInfo = new AssetPackageInfo();
+        PackageInfo.Deserialize(reader);
+        //
+        CompletedTask task = new CompletedTask();
+        _scheduler.AddChild(task);
+        return task;
     }
 
     public ResourceTask BuildCacheInfoAsync() {
-        throw new System.NotImplementedException();
+        CompletedTask task = new CompletedTask();
+        _scheduler.AddChild(task);
+        return task;
     }
 
     public List<AssetBundleInfo> GetNeedDownloadBundles(List<AssetBundleInfo> result = null) {
@@ -69,7 +83,9 @@ public class EditorPackageManager : IPackageManager
     }
 
     public ResourceTask ClearCacheFilesAsync() {
-        return new CompletedTask();
+        CompletedTask task = new CompletedTask();
+        _scheduler.AddChild(task);
+        return task;
     }
 
     public bool HasImported(AssetBundleInfo bundleInfo) {
@@ -98,13 +114,6 @@ public class EditorPackageManager : IPackageManager
 
     public IReadOnlyList<ResourceTask> GetImportTasks() {
         return Array.Empty<ResourceTask>();
-    }
-
-    private class CompletedTask : ResourceTask
-    {
-        protected override void Execute() {
-            SetSuccess();
-        }
     }
 }
 }

@@ -184,7 +184,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
             ELoadMethod.InstHandle);
         //
         InstanceProvider instProvider = new InstanceProvider(provider.resourceMgr, pid, this, inst);
-        _provider.Scheduler.WaitForCompletion(instProvider, null, 0); // 立即完成且不需要添加为子节点
+        _provider.Scheduler.WaitForCompletion(instProvider, 0); // 立即完成且不需要添加为子节点
         AssetHandle handle = new AssetHandle(_location, instProvider);
         handle.Retain();
         //
@@ -242,11 +242,12 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// <exception cref="BlockingOperationException">如果当前不支持阻塞完成</exception>
     public void WaitForCompletion(long timeout = 5000) {
         if (_provider.IsCompleted) return;
+        TaskScheduler scheduler = _provider.Scheduler;
         if (timeout <= 0) {
-            _provider.Scheduler.WaitForCompletion(_provider, null, 0);
+            scheduler.WaitForCompletion(_provider, 0);
         } else {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            _provider.Scheduler.WaitForCompletion(_provider, stopwatch, timeout);
+            long deadline = scheduler.RealTime + timeout;
+            scheduler.WaitForCompletion(_provider, deadline);
         }
     }
 

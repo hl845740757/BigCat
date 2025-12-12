@@ -4,6 +4,7 @@
 // 行为树基类
 class Task<T> {
   string name = 1;
+  // @Editor{initNull: true}
   // @PortField{side: left}
   Task<T> guard = 2; // 条件节点
   int32 flags = 3; // 自定义特征值
@@ -14,6 +15,7 @@ class LeafTask<T> : Task<T> {
 }
 // 装饰器基类
 class Decorator<T> : Task<T> {
+  // @Editor{initNull: true}
   // @PortField{side: bottom}
   Task<T> child = 1;
 }

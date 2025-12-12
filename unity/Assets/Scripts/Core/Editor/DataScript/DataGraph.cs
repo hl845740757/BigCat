@@ -709,7 +709,10 @@ public sealed class DataGraph
         }
         // 如果引用出现类型递归，强制延迟创建 - ObjectField需要做一下支持
         if (!_typeCreateStack.Add(varType)) {
-            Debug.LogWarning($"Reference type recursion, root: {_typeCreateStack.PeekFirst().FullName}, manual init required");
+            Debug.LogWarning("Reference type recursion"
+                             + $", root: {_typeCreateStack.PeekFirst().FullName}"
+                             + $", filed: {varType.SimpleName}.{variable.defineInfo.SimpleName}"
+                             + ", manual init required");
             variable.isNull = true;
             variable.values = new List<Variable>();
             return;

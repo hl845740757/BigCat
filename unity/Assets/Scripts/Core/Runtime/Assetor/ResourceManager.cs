@@ -359,7 +359,7 @@ public class ResourceManager
         ProviderId providerId = new ProviderId("Error", assetType, loadMethod);
         if (!_providers.TryGetValue(providerId, out Provider provider)) {
             provider = new ErrorProvider(this, providerId);
-            _scheduler.WaitForCompletion(provider, null, 0); // 立即完成且不需要添加为子节点
+            _scheduler.WaitForCompletion(provider, 0); // 立即完成且不需要添加为子节点
             _providers[providerId] = provider;
         }
         return provider;

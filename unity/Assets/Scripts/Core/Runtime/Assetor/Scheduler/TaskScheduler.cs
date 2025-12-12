@@ -185,11 +185,10 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
     /// 阻塞等待任务完成
     /// </summary>
     /// <param name="task">要等待的任务</param>
-    /// <param name="stopwatch">计时器，可以为null</param>
     /// <param name="deadline">截止时间</param>
     /// <exception cref="TimeoutException">执行超时</exception>
     /// <exception cref="BlockingOperationException">当前不支持同步等待</exception>
-    public void WaitForCompletion(Task<Blackboard> task, Stopwatch stopwatch, long deadline) {
+    public void WaitForCompletion(Task<Blackboard> task, long deadline) {
         if (task.IsCompleted) return;
         //
         Blackboard blackboard = task.Blackboard;
@@ -197,7 +196,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
             throw new Exception("Recursively call WaitForComplete");
         }
         blackboard.isWaitForCompletion = true;
-        blackboard.stopwatch = stopwatch;
+        blackboard.stopwatch = _stopwatch;
         blackboard.deadline = deadline;
         try {
             if (task.Status == TaskStatus.NEW) {

@@ -44,7 +44,7 @@ public class AssetProvider : AssetProviderBase
 
     protected override void Execute() {
         if (blackboard.isWaitForCompletion) {
-            Scheduler.WaitForCompletion(bundleProvider, blackboard.stopwatch, blackboard.deadline);
+            Scheduler.WaitForCompletion(bundleProvider, blackboard.deadline);
         } else {
             if (!bundleProvider.IsCompleted) {
                 return;
@@ -74,7 +74,7 @@ public class AssetProvider : AssetProviderBase
             }
         }
         if (blackboard.isWaitForCompletion) {
-            Scheduler.WaitForCompletion(loadAssetTask, blackboard.stopwatch, blackboard.deadline);
+            Scheduler.WaitForCompletion(loadAssetTask, blackboard.deadline);
         } else {
             promise.SyncProgressFrom(loadAssetTask.promise);
         }
