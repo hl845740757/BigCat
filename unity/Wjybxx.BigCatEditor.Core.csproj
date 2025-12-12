@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MTextField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector3Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarInt32Field.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\GraphPasteHelper.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarListField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\StringPopPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\PortView.cs" />
@@ -799,6 +800,9 @@
     </Reference>
     <Reference Include="Wjybxx.Dson.Codec">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.BTree.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TestRunner">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>

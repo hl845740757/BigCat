@@ -491,11 +491,21 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
             .ToList();
     }
 
-    // 单个Node的拷贝倒是容易，对象图的复制粘贴可没那么容易
-    protected override bool canCopySelection => false;
-    protected override bool canCutSelection => false;
-    protected override bool canPaste => false;
-    protected override bool canDuplicateSelection => false;
+    protected override bool canCopySelection => SelectionContainsNode();
+    protected override bool canCutSelection => SelectionContainsNode();
+    protected override bool canDuplicateSelection => SelectionContainsNode();
+
+    private bool SelectionContainsNode() {
+        return selection.Any(e => e is NodeView);
+    }
+
+    public void RefreshSelection(IEnumerable<DataNode> dataNodes) {
+        ClearSelection();
+        foreach (DataNode dataNode in dataNodes) {
+            NodeView nodeView = GetNodeView(dataNode);
+            if (nodeView != null) AddToSelection(nodeView);
+        }
+    }
 
     #region node事件
 
@@ -505,6 +515,16 @@ public class GraphView : UnityEditor.Experimental.GraphView.GraphView
 
     public void OnNodeUnselected(NodeView nodeView) {
         if (editor) editor.OnNodeUnselected(nodeView);
+    }
+
+    public void OnNodeExecuteRequest(NodeView nodeView) {
+        if (editor) editor.OnNodeExecuteRequest(nodeView);
+    }
+
+    public DropdownMenuAction.Status GetExecuteActionStatus(NodeView nodeView) {
+        return editor && editor.IsExecutable(nodeView)
+            ? DropdownMenuAction.Status.Normal
+            : DropdownMenuAction.Status.Disabled;
     }
 
     #endregion

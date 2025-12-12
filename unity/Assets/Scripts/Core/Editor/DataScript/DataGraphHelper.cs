@@ -330,9 +330,6 @@ internal class DataGraphHelper
     /// 输出到文件
     /// </summary>
     public void Write(DsonTextWriter textWriter, DataNode node) {
-        if ((node.features & Features.MemoryOnly) != 0) {
-            throw new InvalidOperationException("memoryOnly");
-        }
         if (node.value.isNull) {
             throw new InvalidOperationException("root value cant be null");
         }

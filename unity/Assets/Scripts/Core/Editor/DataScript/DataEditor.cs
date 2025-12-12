@@ -141,6 +141,24 @@ public class DataEditor : EditorWindow
         // 
         graphView.Bind(dataGraph);
         graphView.nodeCreationRequest = OnNodeCreationRequest;
+        graphView.serializeGraphElements = SerializeNodes;
+        graphView.unserializeAndPaste = UnserializeAndPasteNodes;
+    }
+
+    private string SerializeNodes(IEnumerable<GraphElement> elements) {
+        List<DataNode> dataNodes = new List<DataNode>();
+        foreach (NodeView nodeView in elements.Where(e => e is NodeView).Cast<NodeView>()) {
+            dataNodes.Add(nodeView.dataNode);
+        }
+        if (dataNodes.Count == 0) return "";
+        return dataGraph.SerializeNodes(dataNodes);
+    }
+
+    private void UnserializeAndPasteNodes(string operation, string data) {
+        // operation有两个值：Paste Duplicate 目前行为一致
+        List<DataNode> dataNodes = dataGraph.UnserializeAndPasteNodes(data);
+        graphView.Refresh(); // 立即刷新并更新选中区域
+        graphView.RefreshSelection(dataNodes);
     }
 
     /// <summary>
@@ -314,6 +332,21 @@ public class DataEditor : EditorWindow
         nodeValueView.Clear();
     }
 
+    /// <summary>
+    /// 请求执行选中的Node
+    /// </summary>
+    /// <param name="nodeView"></param>
+    public virtual void OnNodeExecuteRequest(NodeView nodeView) {
+
+    }
+
+    /// <summary>
+    /// 目标Node是否可执行
+    /// </summary>
+    public virtual bool IsExecutable(NodeView nodeView) {
+        return false;
+    }
+
     internal string GetDisplayName(DSNamedType namedType) {
         if (!displayNameCache.TryGetValue(namedType, out string displayName)) {
             displayName = DSUtil.ToDisplayString(namedType.TypeName);
@@ -401,6 +434,7 @@ public class DataEditor : EditorWindow
             VarObjectField objectField = GetObjectField(valueType);
             objectField.Bind(this, dataNode.value);
             nodeValueView.Add(objectField);
+            objectField.label = "Node Value";
         } else {
             VarObjectField objectField = (VarObjectField)nodeValueView[0];
             if (objectField.buildType != valueType) {
@@ -413,6 +447,7 @@ public class DataEditor : EditorWindow
             } else {
                 objectField.Bind(this, dataNode.value);
             }
+            objectField.label = "Node Value";
         }
     }
 

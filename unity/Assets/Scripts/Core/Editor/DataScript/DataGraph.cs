@@ -162,7 +162,7 @@ public sealed class DataGraph
     /// 由于需要和手动分配的LocalId去除，因此不能简单的基于当前最大值进行++
     /// </summary>
     /// <returns></returns>
-    private long NextLocalId() {
+    internal long NextLocalId() {
         do {
             _nextLocalId++;
         } while (nodeDic.ContainsKey(_nextLocalId));
@@ -293,6 +293,62 @@ public sealed class DataGraph
         finally {
             EndModify();
         }
+    }
+
+    /// <summary>
+    /// 序列化Node为剪切板数据
+    /// </summary>
+    public string SerializeNodes(List<DataNode> nodes) {
+        using StringWriter streamWriter = new StringWriter();
+        using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, streamWriter, true);
+        // 内存Node也拷贝
+        foreach (DataNode dataNode in nodes) {
+            _helper.Write(textWriter, dataNode);
+        }
+        textWriter.Flush();
+        return streamWriter.ToString();
+    }
+
+    /// <summary>
+    /// 反序列化数据并执行粘贴
+    /// </summary>
+    public List<DataNode> UnserializeAndPasteNodes(string data) {
+        if (string.IsNullOrEmpty(data)) {
+            return new List<DataNode>();
+        }
+        using DsonTextReader textReader = new DsonTextReader(readerSettings, data);
+        DsonArray<string> collection = Dsons.ReadCollection(textReader);
+        List<DataNode> srcNodes = new List<DataNode>(collection.Count);
+        foreach (DsonValue dsonValue in collection) {
+            DataNode dataNode = _helper.DecodeNode(dsonValue);
+            RepairNode(dataNode, true);
+            srcNodes.Add(dataNode);
+        }
+        GraphPasteHelper pasteHelper = new GraphPasteHelper(this, srcNodes);
+        List<DataNode> result = pasteHelper.Execute();
+        BeginModify();
+        try {
+            foreach (DataNode dataNode in result) {
+                AddNode(dataNode);
+            }
+        }
+        finally {
+            EndModify();
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 复制Node(纯内存拷贝)
+    /// </summary>
+    public DataNode CopyNode(DataNode srcNode) {
+        DataNode.NodeMemento memento = mementoPool.Acquire();
+        srcNode.Backup(memento);
+        //
+        DataNode result = new DataNode(0);
+        result.Restore(memento);
+        RepairNode(result, true);
+        return result;
     }
 
     /// <summary>
@@ -1145,7 +1201,7 @@ public sealed class DataGraph
     /// 更新Undo队列（压缩数据）
     /// </summary>
     private void UpdateUndoQueue() {
-        if (undoQueue.Count < 50) {
+        if (undoQueue.Count < 100) {
             return;
         }
         Command headCommand = undoQueue.PeekFirst();

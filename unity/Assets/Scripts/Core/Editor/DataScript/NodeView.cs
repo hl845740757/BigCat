@@ -543,8 +543,18 @@ public class NodeView : Node
         if (evt.target is not Node) {
             return;
         }
+        evt.menu.AppendAction("Execute", OnClickExecute, GetExecuteActionStatus);
         base.BuildContextualMenu(evt);
-        evt.StopImmediatePropagation(); // 禁用全局菜单栏
+    }
+
+    private void OnClickExecute(DropdownMenuAction action) {
+        GraphView graphView = GetFirstAncestorOfType<GraphView>();
+        graphView.OnNodeExecuteRequest(this);
+    }
+
+    private DropdownMenuAction.Status GetExecuteActionStatus(DropdownMenuAction action) {
+        GraphView graphView = GetFirstAncestorOfType<GraphView>();
+        return graphView.GetExecuteActionStatus(this);
     }
 
     #endregion
