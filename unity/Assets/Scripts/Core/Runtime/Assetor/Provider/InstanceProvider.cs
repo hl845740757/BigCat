@@ -36,9 +36,16 @@ public class InstanceProvider : Provider
         : base(resourceMgr, pid) {
         this.backendHandle = backendHandle;
         this.promise.result = inst;
+        backendHandle.Retain();
         // 避免不必要的分配
         blackboard = sharedBlackboard;
         cancelToken = sharedCancelToken;
+    }
+
+    public override void Destroy() {
+        if (IsDestroyed) return;
+        IsDestroyed = true;
+        backendHandle.Release();
     }
 
     protected override void Execute() {

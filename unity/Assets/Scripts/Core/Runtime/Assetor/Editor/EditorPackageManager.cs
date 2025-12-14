@@ -19,9 +19,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Wjybxx.BigCat.Assetor.Tasks;
 using Wjybxx.Dson;
 using Wjybxx.Dson.IO;
+using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -40,20 +42,24 @@ public class EditorPackageManager : IPackageManager
     }
 
     public string PackageName => _packageName;
-    public string LocalVersion => "0.0.0";
+    public string LocalVersion { get; private set; }
     public string RemoteVersion => "0.0.0";
     public AssetPackageInfo PackageInfo { get; private set; }
 
     public ResourceTask Start() {
-        throw new System.NotImplementedException();
+        CompletedTask task = new CompletedTask();
+        _scheduler.AddChild(task);
+        return task;
     }
 
     public ResourceTask Stop() {
-        throw new System.NotImplementedException();
+        CompletedTask task = new CompletedTask();
+        _scheduler.AddChild(task);
+        return task;
     }
 
     public ResourceTask DownloadVersionFileAsync() {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     public ResourceTask DownloadPackageInfoAsync() {
@@ -61,12 +67,15 @@ public class EditorPackageManager : IPackageManager
     }
 
     public ResourceTask LoadPackageInfoAsync() {
+        AssetPackageInfo packageInfo = new AssetPackageInfo();
         // 编辑器下直接同步加载
         byte[] bytes = File.ReadAllBytes(_packagePath);
         using DsonBinaryReader<int> reader = new DsonBinaryReader<int>(DsonReaderSettings.Default, DsonInputs.NewInstance(bytes));
-        PackageInfo = new AssetPackageInfo();
-        PackageInfo.Deserialize(reader);
+        packageInfo.Deserialize(reader);
         //
+        PackageInfo = packageInfo;
+        LocalVersion = packageInfo.packageVersion;
+
         CompletedTask task = new CompletedTask();
         _scheduler.AddChild(task);
         return task;
@@ -97,7 +106,7 @@ public class EditorPackageManager : IPackageManager
     }
 
     public DownloadTask DownloadBundleAsync(AssetBundleInfo bundleInfo) {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     public IReadOnlyList<DownloadTask> GetDownloadTasks() {
@@ -109,7 +118,7 @@ public class EditorPackageManager : IPackageManager
     }
 
     public ResourceTask ImportBundleAsync(AssetBundleInfo bundleInfo) {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     public IReadOnlyList<ResourceTask> GetImportTasks() {

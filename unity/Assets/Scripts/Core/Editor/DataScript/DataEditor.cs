@@ -344,7 +344,7 @@ public class DataEditor : EditorWindow
     /// 目标Node是否可执行
     /// </summary>
     public virtual bool IsExecutable(NodeView nodeView) {
-        return false;
+        return (nodeView.dataNode.features & Features.Executable) != 0;
     }
 
     internal string GetDisplayName(DSNamedType namedType) {

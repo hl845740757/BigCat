@@ -45,7 +45,6 @@ public class ResourceManager
     private long _assetMaxIdleTime = 5 * 1000;
     private long _bundleMaxIdleTime = 15 * 1000;
     private long _lastCheckTime;
-    private readonly LinkedDictionary<string, string> _locationCache = new(500); // LRU
 
     public ResourceManager(TaskScheduler scheduler) {
         _scheduler = scheduler;
@@ -392,10 +391,6 @@ public class ResourceManager
                 provider.Destroy();
             }
         }
-        LinkedDictionary<string, string> locationCache = _locationCache;
-        while (locationCache.Count > 500) {
-            locationCache.RemoveLast();
-        }
     }
 
     private bool IsIdleTimeout(Provider provider) {
@@ -404,13 +399,11 @@ public class ResourceManager
     }
 
     internal void RemoveFromIdles(Provider provider) {
-        if (provider is InstanceProvider) return;
         _idleProviders.Remove(provider);
         provider.TimeReleased = 0;
     }
 
-    internal void AddToIdles(Provider provider) {
-        if (provider is InstanceProvider) return;
+    internal void AddToIdles(Provider provider) { // 实例Provider也自动销毁
         provider.TimeReleased = _scheduler.FrameTime;
         _idleProviders.Add(provider);
     }
@@ -430,14 +423,8 @@ public class ResourceManager
         if (string.IsNullOrEmpty(location)) {
             return null;
         }
-        if (Query.assetIndex2AssetDic.TryGetValue(location, out var assetInfo)) {
-            return assetInfo; // 避免额外的字符串转换
-        }
-        if (!_locationCache.TryGetAndMoveToFirst(location, out string path)) {
-            path = NormalizePath(location);
-            _locationCache.Add(location, path);
-        }
-        return Query.assetIndex2AssetDic.TryGetValue(path, out assetInfo) ? assetInfo : null;
+        Query.assetIndex2AssetDic.TryGetValue(location, out var assetInfo);
+        return assetInfo;
     }
 
     /// <summary>
@@ -446,7 +433,6 @@ public class ResourceManager
     /// <param name="sceneName">场景名，不包含文件扩展名</param>
     /// <returns></returns>
     public AssetFileInfo GetSceneAssetInfo(string sceneName) {
-        sceneName = NormalizePath(sceneName); // scene查询频率低且长度短，不做缓存
         return Query.sceneName2AssetDic.TryGetValue(sceneName, out AssetFileInfo assetInfo) ? assetInfo : null;
     }
 

@@ -40,6 +40,10 @@ public enum Features : uint
     /// 运行时可内联（虚拟节点，或是值类型节点）
     /// </summary>
     Inlinable = 0x04,
+    /// <summary>
+    /// 可执行节点
+    /// </summary>
+    Executable = 0x08,
 
     /// <summary>
     /// 输出节点的桥接Node

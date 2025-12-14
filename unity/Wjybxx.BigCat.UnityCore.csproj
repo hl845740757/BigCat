@@ -47,6 +47,7 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\FileExtension.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadMethod.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProviderBase.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
@@ -102,7 +104,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BinaryAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

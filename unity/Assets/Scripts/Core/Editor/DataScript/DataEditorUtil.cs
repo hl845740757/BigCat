@@ -216,7 +216,7 @@ public static class DataEditorUtil
         }
         // 枚举
         if (varType.Kind == DSElementKind.Enum) {
-            return variableCfg.HasMaskNames
+            return DSUtil.IsFlagEnum(varType)
                 ? CreateEnumMaskField(variable, editor)
                 : CreateEnumField(variable, editor);
         }

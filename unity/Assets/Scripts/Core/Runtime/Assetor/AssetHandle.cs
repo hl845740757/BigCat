@@ -169,7 +169,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     ///
     /// 1.该功能的作用是允许用户使用统一接口（AssetHandle）访问资源和资源实例。
     /// 2.但实例的生命周期由用户自行管理，框架不会管理实例对象。
-    /// 3.用户销毁实例时，还应当减少关联资产的引用计数。
+    /// 3.框架会自动销毁引用计数为0的Provider以避免内存泄漏。
     /// 4.该封装的成本相对较高，如果不是必须统一访问接口，更推荐封装为自定义结构。
     /// </summary>
     /// <returns></returns>
@@ -187,8 +187,6 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
         _provider.Scheduler.WaitForCompletion(instProvider, 0); // 立即完成且不需要添加为子节点
         AssetHandle handle = new AssetHandle(_location, instProvider);
         handle.Retain();
-        //
-        this.Retain();
         return handle;
     }
 

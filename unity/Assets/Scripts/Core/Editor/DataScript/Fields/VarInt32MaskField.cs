@@ -32,7 +32,12 @@ public class VarInt32MaskField : MaskField, IVarField
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
-        choices = variableCfg.maskNames;
+        if (variable.type.IsEnum) {
+            VariableCfg typeCfg = editor.dataGraph.GetVariableCfg(variable.type);
+            choices = typeCfg.maskNames;
+        } else {
+            choices = variableCfg.maskNames;
+        }
         //
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.intValue);

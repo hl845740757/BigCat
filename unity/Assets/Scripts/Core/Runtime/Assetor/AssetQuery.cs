@@ -20,6 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using Wjybxx.BigCat.Core;
 using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCat.Assetor
@@ -34,15 +36,15 @@ public sealed class AssetQuery
     /// </summary>
     public readonly List<AssetPackageInfo> packages = new List<AssetPackageInfo>();
     /// <summary>
-    /// 支持索引的文件类型
+    /// 支持无扩展名索引的文件类型
     ///
     /// 1.当一类资产支持多种文件类型时，才需要添加；json/xml这类非Unity对象资产无需添加。
     /// 2.大小写严格，文件扩展名不会被规格化。
     /// </summary>
-    public readonly HashSet<string> indexableExtensions = new HashSet<string>(16)
+    public readonly HashSet<string> supportExtensions = new HashSet<string>(16)
     {
-        "fbx",
-        "png", "jpg", "tif", "psd",
+        "fbx", "unity",
+        "png", "jpg", "tif",
         "ogg", "wav", "mp3"
     };
 
@@ -52,12 +54,12 @@ public sealed class AssetQuery
     /// 1.<code>folderName/fileName</code>一定不和fileName索引重复，因此一个字典即可。
     /// 2.资产路径到资产的映射也在这里，这样查询资产时只需要查询一次。
     /// </summary>
-    public readonly LinkedDictionary<string, AssetFileInfo> assetIndex2AssetDic = new();
+    public readonly LinkedDictionary<string, AssetFileInfo> assetIndex2AssetDic = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// 场景名到资产文件的映射
     /// 注：由于我们需要根据Scene的名字精准查询关联的资产，因此使用额外的索引以避免冲突。
     /// </summary>
-    public readonly LinkedDictionary<string, AssetFileInfo> sceneName2AssetDic = new();
+    public readonly LinkedDictionary<string, AssetFileInfo> sceneName2AssetDic = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 清理缓存
@@ -82,9 +84,14 @@ public sealed class AssetQuery
                 package.BuildCache();
             }
         }
-        List<AssetBundleInfo> bundleList = GetSortedBundles(); // 保证索引稳定性
-        Dictionary<string, string> folderNameCache = new(100); // 减少字符串切割
+        // 减少字符串切割
+        Dictionary<string, string> folderNameCache = new(100);
+        HashSet<FileExtension> supportExtensions2 = new HashSet<FileExtension>();
+        foreach (string extension in supportExtensions) {
+            supportExtensions2.Add(new FileExtension(extension));
+        }
         //
+        List<AssetBundleInfo> bundleList = GetSortedBundles(); // 保证索引稳定性
         int fileCount = GetMainAssetsCount();
         assetIndex2AssetDic.EnsureCapacity(fileCount * 3);
         sceneName2AssetDic.EnsureCapacity(50);
@@ -93,33 +100,43 @@ public sealed class AssetQuery
             bool hasFolderName = (bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileName) != 0;
             //
             foreach (AssetFileInfo fileInfo in bundleInfo.mainAssets) {
-                assetIndex2AssetDic.Add(fileInfo.assetPath, fileInfo);
+                string assetPath = fileInfo.assetPath;
+                assetIndex2AssetDic.Add(assetPath, fileInfo);
+                // 全路径索引无扩展名索引
+                FileExtension extension = GetExtension(assetPath);
+                if (supportExtensions2.Contains(extension)) {
+                    string assetPathNoExt = assetPath.Substring(0, assetPath.LastIndexOf('.'));
+                    assetIndex2AssetDic.Add(assetPathNoExt, fileInfo);
+                }
                 // 场景文件需要独立的索引
-                if (fileInfo.assetPath.EndsWith(".unity")) {
-                    string sceneName = Path.GetFileNameWithoutExtension(fileInfo.assetPath);
+                if (assetPath.EndsWith(".unity")) {
+                    string sceneName = Path.GetFileNameWithoutExtension(assetPath);
                     sceneName2AssetDic.Add(sceneName, fileInfo);
                 }
                 if (bundleInfo.assetIndexes == EAssetIndexes.None) {
                     continue;
                 }
-                string fileName = Path.GetFileName(fileInfo.assetPath);
-                GetExtension(fileName, out string fileNameNoExt, out string extension);
+                string fileName = Path.GetFileName(assetPath);
                 // 剔除无意义name索引，主要针对图片资源：1.png
-                if (hasFileName && !int.TryParse(fileNameNoExt, out int _)) {
+                if (hasFileName && !IsNumber(fileName)) {
                     assetIndex2AssetDic[fileName] = fileInfo;
-                    if (indexableExtensions.Contains(extension)) {
+                    //
+                    if (supportExtensions2.Contains(extension)) {
+                        string fileNameNoExt = GetFileNameNoExt(fileName);
                         assetIndex2AssetDic[fileNameNoExt] = fileInfo;
                     }
                 }
                 // 允许图片资源同文件夹建立索引：sm_8001/1.png
                 if (hasFolderName) {
-                    string directoryName = Path.GetDirectoryName(fileInfo.assetPath)!;
+                    string directoryName = Path.GetDirectoryName(assetPath)!;
                     if (!folderNameCache.TryGetValue(directoryName, out string folderName)) {
                         folderName = Path.GetFileName(directoryName);
                         folderNameCache[directoryName] = folderName;
                     }
                     assetIndex2AssetDic[folderName + "/" + fileName] = fileInfo;
-                    if (indexableExtensions.Contains(extension)) {
+                    //
+                    if (supportExtensions2.Contains(extension)) {
+                        string fileNameNoExt = GetFileNameNoExt(fileName);
                         assetIndex2AssetDic[folderName + "/" + fileNameNoExt] = fileInfo;
                     }
                 }
@@ -127,15 +144,25 @@ public sealed class AssetQuery
         }
     }
 
-    private static void GetExtension(string fileName, out string fileNameNoExt, out string extension) {
+    private static bool IsNumber(string fileName) {
         int index = fileName.LastIndexOf('.');
         if (index < 0) {
-            fileNameNoExt = fileName;
-            extension = "";
-        } else {
-            fileNameNoExt = fileName.Substring(0, index);
-            extension = fileName.Substring(index + 1);
+            return int.TryParse(fileName, out _);
         }
+        return int.TryParse(fileName.AsSpan(index + 1), out _);
+    }
+
+    private static string GetFileNameNoExt(string fileName) {
+        int index = fileName.LastIndexOf('.');
+        return index < 0 ? fileName : fileName.Substring(index + 1);
+    }
+
+    private static FileExtension GetExtension(string path) {
+        int index = path.LastIndexOf('.');
+        if (index >= 0 && index > path.LastIndexOf('/')) {
+            return new FileExtension(path.AsSpan(index + 1));
+        }
+        return default;
     }
 
     /// <summary>
