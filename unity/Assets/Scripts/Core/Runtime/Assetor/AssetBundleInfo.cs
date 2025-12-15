@@ -83,6 +83,14 @@ public sealed class AssetBundleInfo
     /// bundle内资产索引方式
     /// </summary>
     public EAssetIndexes assetIndexes;
+    /// <summary>
+    /// 索引深度(通常三级目录就应该具备唯一性)
+    /// </summary>
+    public int indexDepth;
+    /// <summary>
+    /// 关联的收集器路径(用于运行时计算索引)
+    /// </summary>
+    public string collectPath;
 
     /// <summary>
     /// 所属的资源包（用于运行时反向查询）
@@ -123,9 +131,10 @@ public sealed class AssetBundleInfo
     private const int KEY_MAIN_ASSETS = 11;
     private const int KEY_MAIN_ASSETS_COUNT = 12;
     private const int KEY_INDEXES = 13;
-    private const int KEY_BUNDLE_ID = 14;
-    private const int KEY_UPSTREAMS = 15;
-    private const int KEY_UPSTREAMS_COUNT = 16;
+    private const int KEY_COLLECT_PATH = 14;
+    private const int KEY_BUNDLE_ID = 15;
+    private const int KEY_UPSTREAMS = 16;
+    private const int KEY_UPSTREAMS_COUNT = 17;
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
@@ -154,6 +163,7 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.SignedHex);
+        writer.WriteString(nameof(collectPath), collectPath ?? "");
         writer.WriteInt32(nameof(bundleId), bundleId, NumberStyle.Simple);
         {
             writer.WriteStartArray(nameof(upstreamBundles), ObjectStyle.Flow);
@@ -226,6 +236,10 @@ public sealed class AssetBundleInfo
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
+                case nameof(collectPath): {
+                    collectPath = reader.ReadString();
+                    break;
+                }
                 case nameof(bundleId): {
                     bundleId = reader.ReadInt32();
                     break;
@@ -276,6 +290,7 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(KEY_INDEXES, (int)assetIndexes);
+        writer.WriteString(KEY_COLLECT_PATH, collectPath ?? "");
         writer.WriteInt32(KEY_BUNDLE_ID, bundleId);
         writer.WriteInt32(KEY_UPSTREAMS_COUNT, upstreamBundles.Count);
         if (upstreamBundles.Count > 0) {
@@ -357,6 +372,10 @@ public sealed class AssetBundleInfo
                 }
                 case KEY_INDEXES: {
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
+                    break;
+                }
+                case KEY_COLLECT_PATH: {
+                    collectPath = reader.ReadString();
                     break;
                 }
                 case KEY_BUNDLE_ID: {

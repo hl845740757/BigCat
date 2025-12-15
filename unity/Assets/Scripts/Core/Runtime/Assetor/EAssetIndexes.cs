@@ -39,5 +39,20 @@ public enum EAssetIndexes
     /// 文件夹+文件名索引
     /// </summary>
     FolderAndFileName = 2,
+    /// <summary>
+    /// 支持索引深度
+    /// 
+    /// 注：
+    /// 1.使用该索引方式时，应当避免再启用前一种索引
+    /// 2.该索引必须唯一（打包时），长路径索引必须唯一；运行时仍然允许覆盖
+    /// </summary>
+    FolderAndFileNamePlus = 3,
+    /// <summary>
+    /// 相对收集器目录的Path
+    /// 注：
+    /// 1.该方式与打包有一定的依赖，尽量减少使用
+    /// 2.该索引必须唯一（打包时），长路径索引必须唯一；运行时仍然允许覆盖
+    /// </summary>
+    RelativeToCollector = 4,
 }
 }

@@ -36,6 +36,10 @@ public sealed class AssetFileInfo
     /// </summary>
     public string assetPath;
     /// <summary>
+    /// 自定义索引（仅支持1个自定义索引）
+    /// </summary>
+    public string address;
+    /// <summary>
     /// 资产标签(不建议使用)
     /// </summary>
     public string[] assetTags = Array.Empty<string>();
@@ -51,12 +55,12 @@ public sealed class AssetFileInfo
     private const int KEY_ASSET_PATH = 1;
     private const int KEY_TAGS = 2;
     private const int KEY_TAGS_COUNT = 3;
-    private const int KEY_UPSTREAMS = 4;
-    private const int KEY_UPSTREAMS_COUNT = 5;
+    private const int KEY_ADDRESS = 4;
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
         writer.WriteString(nameof(assetPath), assetPath);
+        writer.WriteString(nameof(address), address ?? "");
         // 文本格式不写入Count，且空数组也写入，提高可读性
         {
             writer.WriteStartArray(nameof(assetTags), ObjectStyle.Flow);
@@ -75,6 +79,10 @@ public sealed class AssetFileInfo
             switch (key) {
                 case nameof(assetPath): {
                     assetPath = reader.ReadString();
+                    break;
+                }
+                case nameof(address): {
+                    address = reader.ReadString();
                     break;
                 }
                 case nameof(assetTags): {
@@ -99,6 +107,7 @@ public sealed class AssetFileInfo
     public void Serialize(IDsonWriter<int> writer) {
         writer.WriteStartObject();
         writer.WriteString(KEY_ASSET_PATH, assetPath);
+        writer.WriteString(KEY_ADDRESS, address ?? "");
         // 将Count写在对象外在二进制下是最佳方案，可减少嵌套(Header)
         writer.WriteInt32(KEY_TAGS_COUNT, assetTags.Length);
         if (assetTags.Length > 0) {
@@ -118,6 +127,10 @@ public sealed class AssetFileInfo
             switch (name) {
                 case KEY_ASSET_PATH: {
                     assetPath = reader.ReadString();
+                    break;
+                }
+                case KEY_ADDRESS: {
+                    address = reader.ReadString();
                     break;
                 }
                 case KEY_TAGS_COUNT: {

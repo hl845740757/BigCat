@@ -161,7 +161,7 @@ public abstract class Provider : ResourceTask
     /// </summary>
     /// <returns></returns>
     public virtual bool CanDestroy() {
-        return IsCompleted && RefCount == 0 && !HasCallbacks;
+        return IsCompleted && RefCount <= 0 && !HasCallbacks;
     }
 
     #endregion

@@ -38,15 +38,9 @@ namespace Wjybxx.BigCat.Co
 public interface ITimerMgr
 {
     /// <summary>
-    /// 最近分配的一个Timer的ID
-    ///
-    /// Q：为什么不直接在各个Schedule方法返回TimerId？
-    /// A：如果返回结果类型为元组(Tuple)类型，用户可能忘记处理Future；而方法的参数已经较多，再增加out参数也不明智。
-    /// </summary>
-    long LastTimerId { get; }
-
-    /// <summary>
     /// 创建一个高度自定义的Timer
+    ///
+    /// 注：<see cref="ValueFuture.TaskId"/>即为TimerId。
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>

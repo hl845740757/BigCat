@@ -40,8 +40,6 @@ internal sealed class TimerMgr : ITimerMgr
         _timingType = timingType;
     }
 
-    public long LastTimerId => _coroutineMgr.LastTimerId;
-
     public ValueFuture<T> Schedule<T>(in TaskBuilder<T> builder) {
         GameLoopPhase phase = builder.SchedulePhase;
         _coroutineMgr.CheckQueue(_timingType, phase);
@@ -80,7 +78,7 @@ internal sealed class TimerMgr : ITimerMgr
             asyncTask.countdown = builder.CountLimit;
         }
         _coroutineMgr.AddTimer(asyncTask, _timingType, phase);
-        return promise.Future;
+        return promise.Future.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture ScheduleAction(Action action, double delay, ICancelToken? cancelToken = null) {
@@ -96,7 +94,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.gatingFrame = GetGatingFrame();
 
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture;
+        return promise.VoidFuture.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture ScheduleAction(Action<object> action, object timerArg, double delay) {
@@ -112,7 +110,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.gatingFrame = GetGatingFrame();
 
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture;
+        return promise.VoidFuture.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture<T> ScheduleFunc<T>(Func<T> action, double delay, ICancelToken? cancelToken = null) {
@@ -129,7 +127,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.gatingFrame = GetGatingFrame();
 
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.Future;
+        return promise.Future.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture<T> ScheduleFunc<T>(Func<object, T> action, object timerArg, double delay) {
@@ -146,7 +144,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.gatingFrame = GetGatingFrame();
 
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.Future;
+        return promise.Future.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture ScheduleWithFixedDelay(Action action, double delay, double period, ICancelToken? cancelToken = null) {
@@ -164,7 +162,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.ScheduleType = SCHEDULE_FIXED_DELAY;
         //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture;
+        return promise.VoidFuture.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture ScheduleWithFixedDelay(Action<object> action, object timerArg, double delay, double period) {
@@ -182,7 +180,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.ScheduleType = SCHEDULE_FIXED_DELAY;
         //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture;
+        return promise.VoidFuture.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture ScheduleAtFixedRate(Action action, double delay, double period, ICancelToken? cancelToken = null) {
@@ -200,7 +198,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.ScheduleType = SCHEDULE_FIXED_RATE;
         //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture;
+        return promise.VoidFuture.WithTaskId(asyncTask.id);
     }
 
     public ValueFuture ScheduleAtFixedRate(Action<object> action, object timerArg, double delay, double period) {
@@ -218,7 +216,7 @@ internal sealed class TimerMgr : ITimerMgr
         asyncTask.ScheduleType = SCHEDULE_FIXED_RATE;
         //
         _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture;
+        return promise.VoidFuture.WithTaskId(asyncTask.id);
     }
 
     public void Cancel(long timerId) {
