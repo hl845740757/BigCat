@@ -184,7 +184,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
             ELoadMethod.InstHandle);
         //
         InstanceProvider instProvider = new InstanceProvider(provider.resourceMgr, pid, this, inst);
-        _provider.Scheduler.WaitForCompletion(instProvider, 0); // 立即完成且不需要添加为子节点
+        _provider.Scheduler.WaitForCompletion(instProvider, 0); // 立即完成
         AssetHandle handle = new AssetHandle(_location, instProvider);
         handle.Retain();
         return handle;

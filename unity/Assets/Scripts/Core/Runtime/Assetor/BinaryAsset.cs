@@ -59,7 +59,7 @@ public abstract class BinaryAsset
     ///
     /// 注：用于避免额外的bytes缓存，比如读表期间。
     /// </summary>
-    /// <param name="buffer">接收结果的</param>
+    /// <param name="buffer">接收结果的buffer</param>
     /// <param name="offset">buffer偏移</param>
     public abstract void GetData(byte[] buffer, int offset);
 

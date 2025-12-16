@@ -47,14 +47,20 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\IIgnoreService.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraphChange.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Collector.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DisplayType.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\ECompression.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimation\AnimationClipEditor.Context.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Tasks\EditorBuildTask.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarAssetPathField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\PackageBuilder.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraphHelper.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarTimestampField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataNode.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimation\AnimationClipEditor.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\ECollectorType.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\AABBField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MDoubleField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector2Field.cs" />
@@ -65,6 +71,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\SpriteGroupEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarEuler32Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector4Field.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\EAssetCategory.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\GraphView.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UnityEditorUtil.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarInt64Field.cs" />
@@ -75,23 +82,32 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarListField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\StringPopPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\PortView.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildPackageInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarInt32PopupField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildUtil.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\NodeView.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MIntegerField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarColorField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Classifiers\SpriteClassifier.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\MaskFieldPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector2IntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarAABBField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector2IntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector4Field.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\IAssetClassifier.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarObjectPathField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\EnumFlagsPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MFloatField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildAssetInfo.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\EGroupBy.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MToggle.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\IPrefixLabel.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarFloatField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\CollectorPackage.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\DependencyCache.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditorUtil.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MColorField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarInt32MaskField.cs" />
@@ -99,15 +115,20 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\AssetPathField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector2Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\DateTimeField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildWindow.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector3IntField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Tasks\BuildDependencyTask.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarStringField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraph.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\PathCache.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MLongField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector3IntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarDateTimeField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarBoolField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\IVarField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Features.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildPipelineTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\CollectorGroup.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\TypeSearchWindowProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Variable.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.cs" />
@@ -803,6 +824,9 @@
     </Reference>
     <Reference Include="Wjybxx.BTree.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.BTree.Codec">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Codec.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TestRunner">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>

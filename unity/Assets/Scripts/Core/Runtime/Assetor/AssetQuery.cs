@@ -172,7 +172,7 @@ public sealed class AssetQuery
         if (index < 0) {
             return int.TryParse(fileName, out _);
         }
-        return int.TryParse(fileName.AsSpan(index + 1), out _);
+        return int.TryParse(fileName.AsSpan(0, index), out _);
     }
 
     private static string GetSubAssetPath(string assetPath, int depth) {
@@ -189,7 +189,7 @@ public sealed class AssetQuery
     }
 
     private static string RemoveExtension(string path, in FileExtension extension) {
-        return path.Substring(0, path.Length - extension.Length - 1);
+        return extension.IsEmpty ? path : path.Substring(0, path.Length - extension.Length - 1);
     }
 
     private static FileExtension GetExtension(string path) {

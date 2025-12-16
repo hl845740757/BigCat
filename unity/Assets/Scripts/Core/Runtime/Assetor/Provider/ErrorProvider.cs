@@ -23,8 +23,6 @@ namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
 /// 异常提供者（用于表示资源不存在）
-///
-/// 注：资产类型不匹配时也表示资源部存在，但不能提前判断，因此ErrorProvider不能作为唯一判断标准。
 /// </summary>
 public class ErrorProvider : Provider
 {
@@ -38,6 +36,7 @@ public class ErrorProvider : Provider
         : base(resourceMgr, pid) {
         _errorCode = errorCode;
         // 避免不必要的分配
+        this.IsManualCheckCancel = true;
         blackboard = sharedBlackboard;
         cancelToken = sharedCancelToken;
     }

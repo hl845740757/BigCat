@@ -28,6 +28,8 @@ namespace Wjybxx.BigCat.Editor.UIElements
 /// </summary>
 public class AssetPathField : TextField, IPrefixLabel
 {
+    private bool _isFolder;
+
     public AssetPathField() {
         RegisterCallback<MouseDownEvent>(OnMouseDown);
     }
@@ -37,7 +39,21 @@ public class AssetPathField : TextField, IPrefixLabel
     }
 
     private void OnMouseDown(MouseDownEvent evt) {
-        if (evt.button == 0) UnityEditorUtil.PingObject(value);
+        if (evt.localMousePosition.x > 80) { // 只响应标签部分
+            return;
+        }
+        if (evt.button == 0) {
+            UnityEditorUtil.PingObject(value);
+            return;
+        }
+        if (evt.button == 1) {
+            string tempPath = isFolder
+                ? UnityEditorUtil.OpenFolderPanel("选择", value)
+                : UnityEditorUtil.OpenFilePanel("选择", value);
+            if (!string.IsNullOrEmpty(tempPath)) {
+                value = UnityEditorUtil.ConvertToAssetPath(tempPath);
+            }
+        }
     }
 
     public override string value {
@@ -48,6 +64,11 @@ public class AssetPathField : TextField, IPrefixLabel
     // 不处理SetValueWithoutNotify，因为调用SetValueWithoutNotify的通常是受信结果
     private static string RepairValue(string newValue) {
         return string.IsNullOrWhiteSpace(newValue) ? "" : newValue.Replace('\\', '/');
+    }
+
+    public bool isFolder {
+        get => _isFolder;
+        set => _isFolder = value;
     }
 
     public float labelMargin {
@@ -61,6 +82,11 @@ public class AssetPathField : TextField, IPrefixLabel
 
     public new class UxmlTraits : TextField.UxmlTraits
     {
+        private readonly UxmlBoolAttributeDescription isFolderAttribute = new()
+        {
+            name = "isFolder",
+            defaultValue = false,
+        };
         private readonly UxmlFloatAttributeDescription labelMargin = new()
         {
             name = "label-margin",
@@ -70,6 +96,7 @@ public class AssetPathField : TextField, IPrefixLabel
         public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc) {
             base.Init(ve, bag, cc);
             var myView = (AssetPathField)ve;
+            myView.isFolder = isFolderAttribute.GetValueFromBag(bag, cc);
             myView.labelMargin = labelMargin.GetValueFromBag(bag, cc);
         }
     }

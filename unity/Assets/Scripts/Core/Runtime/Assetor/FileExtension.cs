@@ -79,6 +79,8 @@ internal readonly struct FileExtension : IEquatable<FileExtension>
         }
     }
 
+    public bool IsEmpty => m1 == 0;
+
     public int Length {
         get {
             if (m2 != 0) {

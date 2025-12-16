@@ -34,6 +34,7 @@ public class VarAssetPathField : AssetPathField, IVarField
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.stringValue);
+        isFolder = variableCfg.isFolder;
     }
 
     public void Unbind() {

@@ -90,6 +90,7 @@ public static class DSAnnotations
     /// - isDelayed 是否延迟响应输入
     /// - isMultiline 是否是多行文本
     /// - isInteger 是否是整数类型AABB
+    /// - isFolder 是否是文件夹路径
     /// 
     /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr，Pointer。
     /// - nodeFeatures node的特征值，是否启用Port端口等
@@ -198,6 +199,7 @@ public static class DSAnnotations
     public const string KEY_IS_DELAYED = "isDelayed";
     public const string KEY_IS_MULTILINE = "isMultiline";
     public const string KEY_IS_INTEGER = "isInteger";
+    public const string KEY_IS_FOLDER = "isFolder";
 
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";

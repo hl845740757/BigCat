@@ -41,6 +41,7 @@ public class ResourceManager
     private readonly AssetQuery _query = new AssetQuery();
     private readonly Dictionary<ProviderId, Provider> _providers = new(1000);
     private readonly LinkedHashSet<Provider> _idleProviders = new(200);
+    private readonly HashSet<string> _loadStack = new HashSet<string>(16);
     //
     private long _assetMaxIdleTime = 5 * 1000;
     private long _bundleMaxIdleTime = 15 * 1000;
@@ -326,9 +327,7 @@ public class ResourceManager
     /// <summary>
     /// 创建异步Bundle加载任务
     /// 
-    /// 注：
-    /// 1.Bundle任务不立即启动，以允许外部调用阻塞接口转同步。
-    /// 2.Bundle之间不可存在编译时循环依赖，否则会导致死循环。
+    /// 注：Bundle任务不立即启动，以允许外部调用阻塞接口转同步。
     /// </summary>
     private BundleProvider LoadBundleAsync(AssetBundleInfo bundleInfo, int priority) {
         ProviderId providerId = new ProviderId(bundleInfo.assetPath, null, ELoadMethod.LoadBundle);
@@ -346,12 +345,21 @@ public class ResourceManager
     }
 
     private BundleProvider CreateBundleProvider(AssetBundleInfo bundleInfo, ProviderId providerId, int priority) {
-        List<BundleProvider> upstreamBundles = new List<BundleProvider>(bundleInfo.upstreamBundles.Count);
-        foreach (int bundleId in bundleInfo.upstreamBundles) {
-            AssetBundleInfo upstreamBundle = bundleInfo.packageInfo.id2BundleDic[bundleId];
-            upstreamBundles.Add(LoadBundleAsync(upstreamBundle, priority));
+        // 为什么禁止循环依赖？循环依赖会导致同步加载死锁
+        if (!_loadStack.Add(bundleInfo.bundleName)) {
+            throw new InvalidOperationException($"Circular dependency detected: {CollectionUtil.ToString(_loadStack)}");
         }
-        return new BundleProvider(this, providerId, bundleInfo, upstreamBundles);
+        try {
+            List<BundleProvider> upstreamBundles = new List<BundleProvider>(bundleInfo.upstreamBundles.Count);
+            foreach (int bundleId in bundleInfo.upstreamBundles) {
+                AssetBundleInfo upstreamBundleInfo = bundleInfo.packageInfo.id2BundleDic[bundleId];
+                upstreamBundles.Add(LoadBundleAsync(upstreamBundleInfo, priority));
+            }
+            return new BundleProvider(this, providerId, bundleInfo, upstreamBundles);
+        }
+        finally {
+            _loadStack.Remove(bundleInfo.bundleName);
+        }
     }
 
     private Provider GetErrorProvider(Type assetType, ELoadMethod loadMethod) {

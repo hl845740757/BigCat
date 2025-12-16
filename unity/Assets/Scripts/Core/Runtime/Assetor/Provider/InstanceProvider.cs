@@ -38,6 +38,7 @@ public class InstanceProvider : Provider
         this.promise.result = inst;
         backendHandle.Retain();
         // 避免不必要的分配
+        this.IsManualCheckCancel = true;
         blackboard = sharedBlackboard;
         cancelToken = sharedCancelToken;
     }

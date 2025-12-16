@@ -389,8 +389,8 @@ public class DataEditor : EditorWindow
             DataNode dataNode = dataGraph.CreateNode(namedType);
             // 特征值在字段上
             VariableCfg variableCfg = dataGraph.GetVariableCfg(field);
-            dataNode.folder = graphView.currentFolder;
             dataNode.features = variableCfg.nodeFeatures;
+            dataNode.folder = graphView.currentFolder;
             dataNode.position = graphView.contentViewContainer.WorldToLocal(context.screenMousePosition);
             dataGraph.AddNode(dataNode);
             return true;

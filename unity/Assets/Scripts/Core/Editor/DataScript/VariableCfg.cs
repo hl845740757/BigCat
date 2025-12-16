@@ -80,6 +80,10 @@ public sealed class VariableCfg
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public bool isInteger;
+    /// <summary>
+    /// 资产路径是否是文件夹路径
+    /// </summary>
+    public bool isFolder;
 
     /// <summary>
     /// Pop字段的展示名
@@ -248,6 +252,7 @@ public sealed class VariableCfg
         varCfg.isDelayed = listCfg.isDelayed;
         varCfg.isMultiline = listCfg.isMultiline;
         varCfg.isInteger = listCfg.isInteger;
+        varCfg.isFolder =  listCfg.isFolder;
         varCfg.dsonType = listCfg.dsonType;
 
         varCfg.popNames = listCfg.popNames;
@@ -432,6 +437,7 @@ public sealed class VariableCfg
         cfg.isDelayed = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_DELAYED);
         cfg.isMultiline = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_MULTILINE);
         cfg.isInteger = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_INTEGER);
+        cfg.isFolder =  Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_FOLDER);
     }
 }
 

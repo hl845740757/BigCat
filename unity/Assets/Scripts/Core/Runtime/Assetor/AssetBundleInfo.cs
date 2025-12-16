@@ -43,6 +43,10 @@ public sealed class AssetBundleInfo
     /// Bundle类型
     /// </summary>
     public EBundleType bundleType;
+    /// <summary>
+    /// 关联的收集器路径(主要用于计算索引)
+    /// </summary>
+    public string collectPath;
 
     /// <summary>
     /// Unity生成的CRC(基于未压缩内容计算)
@@ -84,13 +88,9 @@ public sealed class AssetBundleInfo
     /// </summary>
     public EAssetIndexes assetIndexes;
     /// <summary>
-    /// 索引深度(通常三级目录就应该具备唯一性)
+    /// 索引深度
     /// </summary>
     public int indexDepth;
-    /// <summary>
-    /// 关联的收集器路径(用于运行时计算索引)
-    /// </summary>
-    public string collectPath;
 
     /// <summary>
     /// 所属的资源包（用于运行时反向查询）
@@ -120,27 +120,30 @@ public sealed class AssetBundleInfo
     private const int KEY_ASSET_PATH = 1;
     private const int KEY_BUNDLE_NAME = 2;
     private const int KEY_BUNDLE_TYPE = 3;
-    private const int KEY_BUNDLE_UNITY_CRC = 4;
-    private const int KEY_FILE_HASH = 5;
-    private const int KEY_FILE_CRC = 6;
-    private const int KEY_FILE_SIZE = 7;
-    private const int KEY_ENCRYPTED = 8;
+    private const int KEY_COLLECT_PATH = 4;
 
-    private const int KEY_BUNDLE_TAGS = 9;
-    private const int KEY_BUNDLE_TAGS_COUNT = 10;
-    private const int KEY_MAIN_ASSETS = 11;
-    private const int KEY_MAIN_ASSETS_COUNT = 12;
-    private const int KEY_INDEXES = 13;
-    private const int KEY_COLLECT_PATH = 14;
-    private const int KEY_BUNDLE_ID = 15;
-    private const int KEY_UPSTREAMS = 16;
-    private const int KEY_UPSTREAMS_COUNT = 17;
+    private const int KEY_BUNDLE_UNITY_CRC = 5;
+    private const int KEY_FILE_HASH = 6;
+    private const int KEY_FILE_CRC = 7;
+    private const int KEY_FILE_SIZE = 8;
+    private const int KEY_ENCRYPTED = 9;
+
+    private const int KEY_BUNDLE_TAGS = 10;
+    private const int KEY_BUNDLE_TAGS_COUNT = 11;
+    private const int KEY_MAIN_ASSETS = 12;
+    private const int KEY_MAIN_ASSETS_COUNT = 13;
+    private const int KEY_INDEXES = 14;
+    private const int KEY_INDEX_DEPTH = 15;
+    private const int KEY_BUNDLE_ID = 16;
+    private const int KEY_UPSTREAMS = 17;
+    private const int KEY_UPSTREAMS_COUNT = 18;
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
         writer.WriteString(nameof(assetPath), assetPath);
         writer.WriteString(nameof(bundleName), bundleName);
         writer.WriteInt32(nameof(bundleType), (int)bundleType, NumberStyle.Simple);
+        writer.WriteString(nameof(collectPath), collectPath ?? "");
         //
         writer.WriteInt32(nameof(unityCRC), (int)unityCRC, NumberStyle.Unsigned);
         writer.WriteString(nameof(fileHash), fileHash);
@@ -163,7 +166,7 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.SignedHex);
-        writer.WriteString(nameof(collectPath), collectPath ?? "");
+        writer.WriteInt32(nameof(indexDepth), indexDepth, NumberStyle.Simple);
         writer.WriteInt32(nameof(bundleId), bundleId, NumberStyle.Simple);
         {
             writer.WriteStartArray(nameof(upstreamBundles), ObjectStyle.Flow);
@@ -190,6 +193,10 @@ public sealed class AssetBundleInfo
                 }
                 case nameof(bundleType): {
                     bundleType = (EBundleType)reader.ReadInt32();
+                    break;
+                }
+                case nameof(collectPath): {
+                    collectPath = reader.ReadString();
                     break;
                 }
                 case nameof(unityCRC): {
@@ -236,8 +243,8 @@ public sealed class AssetBundleInfo
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
-                case nameof(collectPath): {
-                    collectPath = reader.ReadString();
+                case nameof(indexDepth): {
+                    indexDepth = reader.ReadInt32();
                     break;
                 }
                 case nameof(bundleId): {
@@ -267,6 +274,8 @@ public sealed class AssetBundleInfo
         writer.WriteString(KEY_ASSET_PATH, assetPath);
         writer.WriteString(KEY_BUNDLE_NAME, bundleName);
         writer.WriteInt32(KEY_BUNDLE_TYPE, (int)bundleType);
+        writer.WriteString(KEY_COLLECT_PATH, collectPath ?? "");
+        //
         writer.WriteInt32(KEY_BUNDLE_UNITY_CRC, (int)unityCRC);
         writer.WriteString(KEY_FILE_HASH, fileHash);
         writer.WriteInt32(KEY_FILE_CRC, (int)fileCRC);
@@ -290,7 +299,7 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(KEY_INDEXES, (int)assetIndexes);
-        writer.WriteString(KEY_COLLECT_PATH, collectPath ?? "");
+        writer.WriteInt32(KEY_INDEX_DEPTH, indexDepth);
         writer.WriteInt32(KEY_BUNDLE_ID, bundleId);
         writer.WriteInt32(KEY_UPSTREAMS_COUNT, upstreamBundles.Count);
         if (upstreamBundles.Count > 0) {
@@ -318,6 +327,10 @@ public sealed class AssetBundleInfo
                 }
                 case KEY_BUNDLE_TYPE: {
                     bundleType = (EBundleType)reader.ReadInt32();
+                    break;
+                }
+                case KEY_COLLECT_PATH: {
+                    collectPath = reader.ReadString();
                     break;
                 }
                 case KEY_BUNDLE_UNITY_CRC: {
@@ -374,8 +387,8 @@ public sealed class AssetBundleInfo
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
-                case KEY_COLLECT_PATH: {
-                    collectPath = reader.ReadString();
+                case KEY_INDEX_DEPTH: {
+                    indexDepth = reader.ReadInt32();
                     break;
                 }
                 case KEY_BUNDLE_ID: {
