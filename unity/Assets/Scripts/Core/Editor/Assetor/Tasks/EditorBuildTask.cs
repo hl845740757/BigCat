@@ -70,10 +70,13 @@ public class EditorBuildTask : LeafTask<Blackboard>
             File.WriteAllBytes(binFilePath, data);
         }
         if (!string.IsNullOrEmpty(textFilePath)) {
-            StreamWriter streamWriter = new StreamWriter(File.Create(textFilePath), new UTF8Encoding(false));
-            DsonTextWriter textWriter = new DsonTextWriter(DsonTextWriterSettings.Default, streamWriter);
+            DsonWriterSettings writerSettings = new DsonTextWriterSettings.Builder() { SoftLineLength = 150 }.Build();
+            
+            using StreamWriter streamWriter = new StreamWriter(File.Create(textFilePath), new UTF8Encoding(false));
+            using DsonTextWriter textWriter = new DsonTextWriter(writerSettings as DsonTextWriterSettings, streamWriter);
             manifest.Serialize(textWriter);
         }
+        SetSuccess();
     }
 
     protected override void OnEventImpl(object eventObj) {

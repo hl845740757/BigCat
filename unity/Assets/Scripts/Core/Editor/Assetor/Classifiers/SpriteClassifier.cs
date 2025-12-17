@@ -36,7 +36,7 @@ public class SpriteClassifier : IAssetClassifier
         return asset switch
         {
             SpriteGroup => EAssetCategory.MainAsset,
-            Texture => EAssetCategory.DependAsset,
+            Texture or Sprite => EAssetCategory.DependAsset,
             _ => EAssetCategory.None
         };
     }

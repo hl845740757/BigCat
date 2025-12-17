@@ -35,6 +35,10 @@ public sealed class BuildAssetInfo
     /// 主资产类型
     /// </summary>
     public readonly Type assetType;
+    /// <summary>
+    /// 资产分类
+    /// </summary>
+    public readonly EAssetCategory category;
 
     /// <summary>
     /// 自定义索引
@@ -49,8 +53,9 @@ public sealed class BuildAssetInfo
     /// </summary>
     public BuildBundleInfo bundleInfo;
 
-    public BuildAssetInfo(string assetPath) {
+    public BuildAssetInfo(string assetPath, EAssetCategory category) {
         this.assetPath = assetPath;
+        this.category = category;
         this.assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
     }
 

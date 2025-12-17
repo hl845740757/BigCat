@@ -170,8 +170,8 @@ public static class UnityEditorUtil
 
     #region asset-path
 
-    public static string OpenFolderPanel(string title, string defaultPath, string defaultName = "") {
-        string openPath = EditorUtility.OpenFolderPanel(title, defaultPath, defaultName);
+    public static string OpenFolderPanel(string title, string folder, string defaultName = "") {
+        string openPath = EditorUtility.OpenFolderPanel(title, folder, defaultName);
         if (string.IsNullOrEmpty(openPath)) {
             return null;
         }
@@ -182,8 +182,8 @@ public static class UnityEditorUtil
         return openPath;
     }
 
-    public static string OpenFilePanel(string title, string defaultPath, string extension = "") {
-        string openPath = EditorUtility.OpenFilePanel(title, defaultPath, extension);
+    public static string OpenFilePanel(string title, string directory, string extension = "") {
+        string openPath = EditorUtility.OpenFilePanel(title, directory, extension);
         if (string.IsNullOrEmpty(openPath)) {
             return null;
         }

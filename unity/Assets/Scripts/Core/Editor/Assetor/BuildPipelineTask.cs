@@ -36,7 +36,7 @@ namespace Wjybxx.BigCat.Editor.Assetor
 {
     "BigCatUtil = Wjybxx.BigCat.Util",
 })]
-public class BuildPipelineTask : SingleRunningChildBranch<Blackboard>
+public class BuildPipelineTask : Sequence<Blackboard>
 {
     /// <summary>
     /// 构建目标

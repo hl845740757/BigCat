@@ -16,6 +16,7 @@
 
 #endregion
 
+using System.IO;
 using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.Editor.UIElements
@@ -49,7 +50,7 @@ public class AssetPathField : TextField, IPrefixLabel
         if (evt.button == 1) {
             string tempPath = isFolder
                 ? UnityEditorUtil.OpenFolderPanel("选择", value)
-                : UnityEditorUtil.OpenFilePanel("选择", value);
+                : UnityEditorUtil.OpenFilePanel("选择", Path.GetDirectoryName(value));
             if (!string.IsNullOrEmpty(tempPath)) {
                 value = UnityEditorUtil.ConvertToAssetPath(tempPath);
             }

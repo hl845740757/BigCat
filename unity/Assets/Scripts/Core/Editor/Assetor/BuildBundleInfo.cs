@@ -52,7 +52,7 @@ public sealed class BuildBundleInfo
     /// <summary>
     /// Unity生成的Hash(基于未压缩内容计算)
     /// </summary>
-    public string unityHash;
+    public string unityHash = "";
     /// <summary>
     /// Unity生成的CRC(基于未压缩内容计算)
     /// </summary>
@@ -60,7 +60,7 @@ public sealed class BuildBundleInfo
     /// <summary>
     /// 文件哈希值(sha1)
     /// </summary>
-    public string fileHash;
+    public string fileHash = "";
     /// <summary>
     /// 文件校验码
     /// </summary>

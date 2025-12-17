@@ -165,7 +165,7 @@ public sealed class DependencyCache
         }
         // index2str
         reader.ReadStartObject();
-        while (reader.CurrentDsonType != DsonType.EndOfObject) {
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
             int index = reader.ReadName();
             string str = reader.ReadString();
             index2StrMap.Add(index, str);
@@ -175,7 +175,7 @@ public sealed class DependencyCache
         // itemArray
         reader.ReadStartArray();
         List<Item> itemList = new List<Item>(10000);
-        while (reader.CurrentDsonType != DsonType.EndOfObject) {
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
             reader.ReadStartObject();
             int guidIndex = reader.ReadInt32(KEY_GUID_INDEX);
             string dependHash = reader.ReadString(KEY_DEPEND_HASH);

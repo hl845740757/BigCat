@@ -86,7 +86,7 @@ public class Collector : LeafTask<Blackboard>
     ///
     /// 1.不同文件夹的逻辑不同；
     /// 2.如果没有设置，则使用Group绑定的分类器；
-    /// 3.如果Group也没有绑定分类器，则默认为主资产；
+    /// 3.如果Group也没有绑定分类器，则根据收集器类型计算（即默认都有效）；
     /// </summary>
     [SerializeReference]
     public IAssetClassifier classifier;
@@ -130,10 +130,11 @@ public class Collector : LeafTask<Blackboard>
             if (package.ignoreService.IsIgnore(assetPath)) {
                 continue;
             }
-            if (!TestAssetCategory(assetPath)) {
+            EAssetCategory category = GetCategory(assetPath);
+            if (!TestAssetCategory(category)) {
                 continue;
             }
-            BuildAssetInfo assetInfo = new BuildAssetInfo(assetPath);
+            BuildAssetInfo assetInfo = new BuildAssetInfo(assetPath, category);
             collectedAssets.Add(assetInfo);
         }
         // 分组
@@ -187,8 +188,19 @@ public class Collector : LeafTask<Blackboard>
         return assetPath.Substring(assetPath.LastIndexOf('/'));
     }
 
-    private bool TestAssetCategory(string assetPath) {
-        EAssetCategory category = classifier == null ? EAssetCategory.MainAsset : classifier.GetCategory(assetPath);
+    private EAssetCategory GetCategory(string assetPath) {
+        if (classifier != null) {
+            return classifier.GetCategory(assetPath);
+        }
+        return collectorType switch
+        {
+            ECollectorType.MainAsset => EAssetCategory.MainAsset,
+            ECollectorType.RawFile => EAssetCategory.RawFile,
+            _ => EAssetCategory.DependAsset
+        };
+    }
+
+    private bool TestAssetCategory(EAssetCategory category) {
         if (category == EAssetCategory.None) {
             return false;
         }

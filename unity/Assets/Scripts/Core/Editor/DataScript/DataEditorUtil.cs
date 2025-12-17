@@ -17,17 +17,14 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Dson;
-using Wjybxx.Dson.IO;
-using Wjybxx.Dson.Text;
+using Wjybxx.Dson.Codec;
+
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
@@ -90,6 +87,38 @@ public static class DataEditorUtil
             }
         }
         return foldoutDepth;
+    }
+
+    public static int IndexOf(DsonArray<string> collection, long localId) {
+        for (int index = 0; index < collection.Count; index++) {
+            if (collection[index] is DsonObject<string> dsonObject
+                && dsonObject.Header.TryGetValue("localId", out DsonValue boxLocalId)
+                && boxLocalId.AsNumber().LongValue == localId) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    public static bool TryAddCodec(DsonConverterBuilder builder, Type type) {
+        if (type.Name.EndsWith("Codec") && type.GetInterface(nameof(IDsonCodec)) != null) {
+            Type encoderType = GetEncoderType(type);
+            // 添加Codec
+            if (type.IsGenericType) {
+                builder.AddGenericCodec(encoderType, type);
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.GetGenericTypeDefinition().Name));
+            } else {
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
+                builder.AddCodec((IDsonCodec)Activator.CreateInstance(type)!);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static Type GetEncoderType(Type codecType) {
+        Type @interface = codecType.GetInterface(typeof(IDsonCodec<>).Name);
+        return @interface.GetGenericArguments()[0];
     }
 
     #endregion

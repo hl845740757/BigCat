@@ -146,7 +146,7 @@ public sealed class AssetPackageInfo
         writer.WriteString(nameof(buildTime), buildTime ?? "");
         writer.WriteString(nameof(buildPipeline), buildPipeline ?? "");
         {
-            writer.WriteStartArray();
+            writer.WriteStartArray(nameof(bundleList));
             foreach (AssetBundleInfo bundleInfo in bundleList) {
                 bundleInfo.Serialize(writer);
             }
@@ -227,7 +227,7 @@ public sealed class AssetPackageInfo
         }
         writer.WriteInt32(KEY_BUNDLE_LIST_COUNT, bundleList.Count);
         if (bundleList.Count > 0) {
-            writer.WriteStartArray();
+            writer.WriteStartArray(KEY_BUNDLE_LIST);
             foreach (AssetBundleInfo bundleInfo in bundleList) {
                 bundleInfo.Serialize(writer);
             }

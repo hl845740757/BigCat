@@ -61,10 +61,13 @@ public class DataEditor : EditorWindow
     private static void OpenWindow() {
         DataEditor wnd = GetWindow<DataEditor>();
         wnd.titleContent = new GUIContent("DataGraphEditor");
-        DSRepository repository = wnd.repository;
-        // TODO 通过配置文件加载关联的ds文件
-        string scriptDir = Application.dataPath + "/Resources/DataScript";
-        foreach (string filePath in Directory.GetFiles(scriptDir, "*.ds", SearchOption.AllDirectories)) {
+        //
+        string scriptDir = Application.dataPath + "/Editor/DataScripts";
+        wnd.InitRepository(Directory.GetFiles(scriptDir, "*.ds", SearchOption.AllDirectories));
+    }
+
+    public void InitRepository(IEnumerable<string> scripts) {
+        foreach (string filePath in scripts) {
             DSFile dsFile = DSFileParser.Parse(new FileInfo(filePath));
             repository.AddFile(dsFile);
         }

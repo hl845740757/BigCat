@@ -41,16 +41,23 @@ public class BuildDependencyTask : LeafTask<Blackboard>
         DependencyCache dependencyCache = blackboard.Get(BuildKeys.dependencyCache);
         BuildPackageInfo packageInfo = blackboard.Get(BuildKeys.packageInfo);
         foreach (BuildBundleInfo bundleInfo in packageInfo.name2BundleDic.Values) {
-            foreach (string dependPath in bundleInfo.assetList.SelectMany(assetInfo => dependencyCache.GetDependencies(assetInfo.assetPath))) {
-                if (!packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
-                    throw new Exception($"The dependent asset: {dependPath} is missing");
+            for (int index = bundleInfo.assetList.Count - 1; index >= 0; index--) {
+                BuildAssetInfo assetInfo = bundleInfo.assetList[index];
+                if (assetInfo.category == EAssetCategory.DependAsset) {
+                    // TODO 剔除未引用的资源
                 }
-                BuildBundleInfo dependBundle = dependAssetInfo.bundleInfo;
-                if (bundleInfo.upstreamBundles.Add(dependBundle.bundleId)) {
-                    bundleInfo.upstreamBundleNames.Add(dependBundle.bundleName);
+                foreach (string dependPath in dependencyCache.GetDependencies(assetInfo.assetPath)) {
+                    if (!packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
+                        throw new Exception($"The dependent asset: {dependPath} is missing");
+                    }
+                    BuildBundleInfo dependBundle = dependAssetInfo.bundleInfo;
+                    if (bundleInfo.upstreamBundles.Add(dependBundle.bundleId)) {
+                        bundleInfo.upstreamBundleNames.Add(dependBundle.bundleName);
+                    }
                 }
             }
         }
+        SetSuccess();
     }
 
     protected override void OnEventImpl(object eventObj) {

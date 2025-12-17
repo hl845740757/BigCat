@@ -131,7 +131,9 @@ class PackageBuilder {
 
 // 编辑器下的构建任务
 class EditorBuildTask : Task<Blackboard> {
+  //@Editor {displayType: AssetPath}
   string binFilePath = 1;
+  //@Editor {displayType: AssetPath}
   string textFilePath = 2; 
 }
 // 图片分类器
