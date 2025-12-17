@@ -52,10 +52,6 @@ public sealed class AssetPackageInfo
     /// 注：构建时间代替的是构建版本，不能用于判断是否需要更新。
     /// </summary>
     public string buildTime;
-    /// <summary>
-    /// 构建管线
-    /// </summary>
-    public string buildPipeline;
 
     /// <summary>
     /// 所有的Bundle信息
@@ -144,7 +140,6 @@ public sealed class AssetPackageInfo
         writer.WriteString(nameof(displayName), displayName ?? "");
         writer.WriteString(nameof(description), description ?? "");
         writer.WriteString(nameof(buildTime), buildTime ?? "");
-        writer.WriteString(nameof(buildPipeline), buildPipeline ?? "");
         {
             writer.WriteStartArray(nameof(bundleList));
             foreach (AssetBundleInfo bundleInfo in bundleList) {
@@ -178,10 +173,6 @@ public sealed class AssetPackageInfo
                 }
                 case nameof(buildTime): {
                     buildTime = reader.ReadString();
-                    break;
-                }
-                case nameof(buildPipeline): {
-                    buildPipeline = reader.ReadString();
                     break;
                 }
                 case nameof(bundleList): {
@@ -222,9 +213,6 @@ public sealed class AssetPackageInfo
         if (!string.IsNullOrEmpty(buildTime)) {
             writer.WriteString(KEY_BUILD_TIME, buildTime);
         }
-        if (!string.IsNullOrEmpty(buildPipeline)) {
-            writer.WriteString(KEY_BUILD_PIPELINE, buildPipeline);
-        }
         writer.WriteInt32(KEY_BUNDLE_LIST_COUNT, bundleList.Count);
         if (bundleList.Count > 0) {
             writer.WriteStartArray(KEY_BUNDLE_LIST);
@@ -259,10 +247,6 @@ public sealed class AssetPackageInfo
                 }
                 case KEY_BUILD_TIME: {
                     buildTime = reader.ReadString();
-                    break;
-                }
-                case KEY_BUILD_PIPELINE: {
-                    buildPipeline = reader.ReadString();
                     break;
                 }
                 case KEY_BUNDLE_LIST_COUNT: {

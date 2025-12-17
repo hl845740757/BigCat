@@ -17,9 +17,11 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Wjybxx.BigCat.Util;
 using Wjybxx.BTree;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Editor.Assetor.Tasks
@@ -29,7 +31,9 @@ namespace Wjybxx.BigCat.Editor.Assetor.Tasks
 ///
 /// 1.根据文件之间的依赖计算Bundle之间的依赖
 /// 2.如果文件关联的依赖没有在Package中，则抛出异常
-/// 3.剔除未被引用的依赖资源 TODO
+/// 3.剔除未被引用的依赖资源
+///
+/// 注意：该任务通常应当为构建管线的第一个任务，后续的任务都依赖已构建好的依赖图。
 /// </summary>
 [DsonSerializable(NamespaceAliases = new string[]
 {
@@ -40,17 +44,44 @@ public class BuildDependencyTask : LeafTask<Blackboard>
     protected override void Execute() {
         DependencyCache dependencyCache = blackboard.Get(BuildKeys.dependencyCache);
         BuildPackageInfo packageInfo = blackboard.Get(BuildKeys.packageInfo);
+        // 可被剔除的资源，其依赖项不在打包范围内是安全的，因此需要先计算依赖
         foreach (BuildBundleInfo bundleInfo in packageInfo.name2BundleDic.Values) {
+            if (bundleInfo.collectorType != ECollectorType.MainAsset
+                && bundleInfo.collectorType != ECollectorType.DependBundle) {
+                continue;
+            }
+            foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
+                foreach (string dependPath in dependencyCache.GetDependencies(assetInfo.assetPath)) {
+                    if (packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
+                        dependAssetInfo.hasDownstreamAssets = true;
+                    }
+                }
+            }
+        }
+        // 剔除未被引用的资产 - 空Bundle在最终打包时跳过
+        foreach (BuildBundleInfo bundleInfo in packageInfo.name2BundleDic.Values) {
+            if (bundleInfo.collectorType != ECollectorType.DependAsset) {
+                continue;
+            }
             for (int index = bundleInfo.assetList.Count - 1; index >= 0; index--) {
                 BuildAssetInfo assetInfo = bundleInfo.assetList[index];
-                if (assetInfo.category == EAssetCategory.DependAsset) {
-                    // TODO 剔除未引用的资源
+                if (!assetInfo.hasDownstreamAssets) {
+                    assetInfo.bundleInfo = null;
+                    bundleInfo.assetList.RemoveAt(index);
                 }
+            }
+        }
+        // 构建Bundle之间依赖 - 理应和Unity构建管线计算的结果一致
+        foreach (BuildBundleInfo bundleInfo in packageInfo.name2BundleDic.Values) {
+            foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
                 foreach (string dependPath in dependencyCache.GetDependencies(assetInfo.assetPath)) {
                     if (!packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
                         throw new Exception($"The dependent asset: {dependPath} is missing");
                     }
                     BuildBundleInfo dependBundle = dependAssetInfo.bundleInfo;
+                    if (dependBundle == bundleInfo) {
+                        continue;
+                    }
                     if (bundleInfo.upstreamBundles.Add(dependBundle.bundleId)) {
                         bundleInfo.upstreamBundleNames.Add(dependBundle.bundleName);
                     }

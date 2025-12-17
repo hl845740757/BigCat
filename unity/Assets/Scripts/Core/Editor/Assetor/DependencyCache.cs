@@ -68,7 +68,7 @@ public sealed class DependencyCache
             List<string> dependPaths = new(item.dependGuids.Count);
             foreach (int guidIdx in item.dependGuids) {
                 string dependGuid = index2StrMap[guidIdx];
-                string dependPath = AssetDatabase.GUIDToAssetPath(dependGuid);
+                string dependPath = AssetDatabase.GUIDToAssetPath(dependGuid); // 依赖的文件可能尚不在缓存
                 dependPaths.Add(dependPath);
             }
             return dependPaths;
@@ -84,19 +84,19 @@ public sealed class DependencyCache
                 dependGuids.Add(AddSharedString(dependGuid));
             }
             Hash128 hash128 = AssetDatabase.GetAssetDependencyHash(assetPath);
-            item = new Item(AddSharedString(guid), hash128.ToString(), dependGuids);
-            item.guid = guid;
-            item.assetPath = assetPath;
-            item.hash128 = hash128;
+            item = new Item(AddSharedString(guid), hash128.ToString(), dependGuids)
+            {
+                guid = guid,
+                assetPath = assetPath,
+                hash128 = hash128
+            };
             path2ItemMap.Add(assetPath, item);
             return dependPaths;
         }
     }
 
     private int AddSharedString(string value) {
-        if (string.IsNullOrEmpty(value)) {
-            throw new Exception("Shared string is null or empty");
-        }
+        if (value == null) throw new ArgumentNullException(nameof(value));
         if (!str2IndexMap.TryGetValue(value, out int index)) {
             index = str2IndexMap.Count > 0 ? str2IndexMap.PeekLast().Value + 1 : 1;
             str2IndexMap.AddLast(value, index);

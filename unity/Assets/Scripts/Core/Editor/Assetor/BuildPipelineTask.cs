@@ -47,6 +47,10 @@ public class BuildPipelineTask : Sequence<Blackboard>
     /// </summary>
     public ECompression compression;
     /// <summary>
+    /// 是否启用资产依赖数据库
+    /// </summary>
+    public bool useAssetDependencyDB;
+
     /// 构建前的预处理任务
     /// </summary>
     [SerializeReference]
@@ -68,6 +72,7 @@ public class BuildPipelineTask : Sequence<Blackboard>
         children.AddRange(preBuildTasks);
         children.AddRange(buildTasks);
         children.AddRange(postBuildTasks);
+        CheckBuildEnvironment();
         //
         BuildPackageInfo packageInfo = blackboard.Get(BuildKeys.packageInfo);
         if (packageInfo == null) {
@@ -75,9 +80,25 @@ public class BuildPipelineTask : Sequence<Blackboard>
         }
         packageInfo.buildTime = DateTime.Now.ToString("s");
         //
+        DependencyCache dependencyCache = new DependencyCache();
+        if (useAssetDependencyDB) {
+            dependencyCache.Load();
+        }
+        blackboard.Set(BuildKeys.dependencyCache, dependencyCache);
+    }
+
+    private void CheckBuildEnvironment() {
         // 检测当前是否正在构建资源包
         if (UnityEditor.BuildPipeline.isBuildingPlayer) {
             throw new Exception("The pipeline is building, please try again after finish !");
+        }
+    }
+
+    protected override void Exit() {
+        base.Exit();
+        DependencyCache dependencyCache;
+        if (useAssetDependencyDB && (dependencyCache = blackboard.Get(BuildKeys.dependencyCache)) != null) {
+            dependencyCache.Save();
         }
     }
 }

@@ -45,7 +45,7 @@ public class BuildPackageInfo
     public string buildTime;
 
     /// <summary>
-    /// 资产路径到资产的映射
+    /// 资产路径到资产的映射(所有资产，包括被剔除的资产)
     /// </summary>
     public Dictionary<string, BuildAssetInfo> assetDic = new(10000);
     /// <summary>
@@ -53,7 +53,7 @@ public class BuildPackageInfo
     /// </summary>
     public Dictionary<string, BuildBundleInfo> name2BundleDic = new(1000);
     /// <summary>
-    /// Id到Bundle的字典缓存(id至少package内唯一)
+    /// Id到Bundle的字典缓存
     /// </summary>
     public Dictionary<int, BuildBundleInfo> id2BundleDic = new(1000);
 

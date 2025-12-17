@@ -18,8 +18,8 @@ enum EGroupBy {
 enum EAssetIndexes {
     FileName = 1; // 文件名索引
     FolderAndFileName = 2; // 文件夹+文件名索引
-    FolderAndFileNamePlus = 3; // 文件夹+文件名索引，支持指定深度
-    RelativeToCollector = 4; // 相对收集器的路径
+    FolderAndFileNamePlus = 4; // 文件夹+文件名索引，支持指定深度
+    RelativeToCollector = 8; // 相对收集器的路径
 }
 
 // 构建平台
@@ -62,20 +62,23 @@ class Collector : Task<Blackboard> {
   string collectPath = 1; // 扫描开始目录
   bool recursive = 2; // 是否递归
   ECollectorType collectorType = 3;
+  bool provided = 4; // 是否不参与最终打包
   
   EGroupBy groupBy = 5; // 分组方式
   int32 groupDepth = 6; // 分组深度
   HashSet<string> bundleTags = 7;
   EAssetIndexes assetIndexes = 8;
-  int32 indexDepth = 9; // 索引深度，大于1才有效
+  EAssetIndexes uniqueIndexes = 9;
+  int32 indexDepth = 10; // 索引深度，大于1才有效
   
   // @PortField{side: right}
-  IAssetClassifier classifier = 10;
+  IAssetClassifier classifier = 11;
 }
 inst Collector {
   recursive: true,
   groupDepth: 1,
-  assetIndexes: 1
+  assetIndexes: 2,
+  uniqueIndexes: 0
 }
 
 // 收集器组
@@ -98,9 +101,9 @@ inst CollectorGroup {
 class CollectorPackage : Task<Blackboard> {
   string packageName = 1; // 资源包名字
   string packageVersion = 2; // 资源包版本
-  bool useAssetDependencyDB = 3; // 是否启用缓存db
+
   // @PortField{side: right}
-  List<CollectorGroup> collectorGroups = 4; // 收集器组
+  List<CollectorGroup> groups = 4; // 收集器组
 }
 inst CollectorPackage {
   packageName: Default,
@@ -112,6 +115,7 @@ inst CollectorPackage {
 class BuildPipelineTask : Task<Blackboard> {
   EBuildTarget buildTarget = 1; // 构建目标
   ECompression compression = 2; // 压缩方式
+  bool useAssetDependencyDB = 3; // 是否启用缓存db
   
   // @PortField{side: bottom}
   List<Task<Blackboard>> preBuildTasks = 6; // 构建前任务
@@ -127,6 +131,13 @@ class PackageBuilder {
   CollectorPackage package = 1;
   // @PortField{side: right}
   BuildPipelineTask buildTask = 2;
+}
+
+// 构建依赖任务
+class BuildDependencyTask : Task<Blackboard> {  
+}
+// 构建索引任务
+class BuildIndexesTask : Task<Blackboard> {  
 }
 
 // 编辑器下的构建任务
@@ -150,4 +161,6 @@ class SkillGroupEntry : BTreeSearchTreeGroupEntry0<Blackboard> {
   PackageBuilder _f5 = 5; //@Editor{nodeFeatures: "Executable | EnablePort" }
   EditorBuildTask _f6 = 6;
   SpriteClassifier _f7 = 7;
+  BuildDependencyTask _f8 = 8;
+  BuildIndexesTask _f9 = 9;
 }

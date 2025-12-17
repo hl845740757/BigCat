@@ -49,9 +49,13 @@ public sealed class BuildAssetInfo
     /// </summary>
     public readonly List<string> assetTags = new List<string>();
     /// <summary>
-    /// 归属的bundle
+    /// 归属的bundle(在构建时被剔除后为null)
     /// </summary>
     public BuildBundleInfo bundleInfo;
+    /// <summary>
+    /// 是否存在下游资产(是否被引用)
+    /// </summary>
+    public bool hasDownstreamAssets;
 
     public BuildAssetInfo(string assetPath, EAssetCategory category) {
         this.assetPath = assetPath;

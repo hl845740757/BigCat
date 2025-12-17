@@ -34,25 +34,24 @@ public enum EAssetIndexes
     /// <summary>
     /// 文件名索引
     /// </summary>
-    FileName = 1,
+    FileName = 0x01,
     /// <summary>
     /// 文件夹+文件名索引
     /// </summary>
-    FolderAndFileName = 2,
+    FolderAndFileName = 0x02,
     /// <summary>
     /// 多层级目录+文件夹索引（支持指定索引深度，通常三级目录就应该具备唯一性）
     /// 
-    /// 注：
     /// 1.使用该索引方式时，应当避免再启用前一种索引
     /// 2.该索引打包时必须唯一(长路径索引必须唯一)，运行时仍然允许覆盖
     /// </summary>
-    FolderAndFileNamePlus = 3,
+    FolderAndFileNamePlus = 0x04,
     /// <summary>
     /// 相对收集器目录的Path
-    /// 注：
+    /// 
     /// 1.该方式与打包有一定的依赖，尽量减少使用
     /// 2.该索引打包时必须唯一(长路径索引必须唯一)，运行时仍然允许覆盖
     /// </summary>
-    RelativeToCollector = 4,
+    RelativeToCollector = 0x08,
 }
 }

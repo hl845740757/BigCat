@@ -86,7 +86,6 @@ public sealed class AssetQuery
             }
         }
         // 减少字符串切割
-        Dictionary<string, string> folderNameCache = new(100);
         HashSet<FileExtension> supportExtensions2 = new HashSet<FileExtension>();
         foreach (string extension in supportExtensions) {
             supportExtensions2.Add(new FileExtension(extension));
@@ -118,7 +117,7 @@ public sealed class AssetQuery
                 if (bundleInfo.assetIndexes == EAssetIndexes.None) {
                     continue;
                 }
-                string fileName = Path.GetFileName(assetPath);
+                string fileName = GetSubAssetPath(assetPath, 0);
                 // 文件名索引：剔除无意义name索引，主要针对图片资源：1.png
                 if ((bundleInfo.assetIndexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
                     assetIndex2AssetDic[fileName] = fileInfo;
@@ -130,16 +129,12 @@ public sealed class AssetQuery
                 }
                 // 文件夹索引：允许图片资源同文件夹建立索引：sm_8001/1.png
                 if ((bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileName) != 0) {
-                    string directoryName = Path.GetDirectoryName(assetPath)!;
-                    if (!folderNameCache.TryGetValue(directoryName, out string folderName)) {
-                        folderName = Path.GetFileName(directoryName);
-                        folderNameCache[directoryName] = folderName;
-                    }
-                    assetIndex2AssetDic[folderName + "/" + fileName] = fileInfo;
+                    string subAssetPath = GetSubAssetPath(assetPath, 1);
+                    assetIndex2AssetDic[subAssetPath] = fileInfo;
                     //
                     if (supportExtensions2.Contains(extension)) {
-                        string fileNameNoExt = RemoveExtension(fileName, in extension);
-                        assetIndex2AssetDic[folderName + "/" + fileNameNoExt] = fileInfo;
+                        string subAssetPathNoExt = RemoveExtension(subAssetPath, in extension);
+                        assetIndex2AssetDic[subAssetPathNoExt] = fileInfo;
                     }
                 }
                 // 自定义深度索引：需要唯一性（打包时）
@@ -177,7 +172,7 @@ public sealed class AssetQuery
 
     private static string GetSubAssetPath(string assetPath, int depth) {
         int index = assetPath.LastIndexOf('/');
-        int count = 1;
+        int count = 0;
         while (count < depth) {
             index = assetPath.LastIndexOf('/', index - 1);
             if (index < 0) {

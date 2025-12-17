@@ -26,6 +26,7 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Dson.Codec.Attributes;
 using Blackboard = Wjybxx.BigCat.Util.Blackboard;
+using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.Editor.Assetor
 {
@@ -69,6 +70,10 @@ public class Collector : LeafTask<Blackboard>
     public int groupDepth = 1;
 
     /// <summary>
+    /// 所属的Bundle是否由外部提供(不参与最终打包)
+    /// </summary>
+    public bool provided;
+    /// <summary>
     /// 为Bundle附加的标签
     /// </summary>
     public HashSet<string> bundleTags = new HashSet<string>();
@@ -76,6 +81,10 @@ public class Collector : LeafTask<Blackboard>
     /// 需要为Bundle建立的索引类型
     /// </summary>
     public EAssetIndexes assetIndexes = EAssetIndexes.None;
+    /// <summary>
+    /// 需要为Bundle建立的唯一索引(打包期间唯一)
+    /// </summary>
+    public EAssetIndexes uniqueIndexes = EAssetIndexes.None;
     /// <summary>
     /// 资产索引深度(三级目录就应该实现唯一)
     /// </summary>
@@ -145,6 +154,7 @@ public class Collector : LeafTask<Blackboard>
                 {
                     collectPath = collectPath,
                     collectorType = collectorType,
+                    provided = provided
                 };
                 bundleInfo.InitBundleName();
                 bundleInfo.bundleType = collectorType == ECollectorType.RawFile
@@ -155,6 +165,7 @@ public class Collector : LeafTask<Blackboard>
                 bundleInfo.bundleTags.AddRange(group.bundleTags);
                 bundleInfo.bundleTags.AddRange(bundleTags);
                 bundleInfo.assetIndexes = assetIndexes;
+                bundleInfo.uniqueIndexes = uniqueIndexes;
                 bundleInfo.indexDepth = indexDepth;
                 collectedBundles.Add(bundlePath, bundleInfo);
             }
@@ -191,6 +202,10 @@ public class Collector : LeafTask<Blackboard>
     private EAssetCategory GetCategory(string assetPath) {
         if (classifier != null) {
             return classifier.GetCategory(assetPath);
+        }
+        Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+        if (asset == null || asset is DefaultAsset) {
+            return EAssetCategory.None; // 通常是指文件夹
         }
         return collectorType switch
         {

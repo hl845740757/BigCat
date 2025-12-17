@@ -252,7 +252,7 @@ public sealed class VariableCfg
         varCfg.isDelayed = listCfg.isDelayed;
         varCfg.isMultiline = listCfg.isMultiline;
         varCfg.isInteger = listCfg.isInteger;
-        varCfg.isFolder =  listCfg.isFolder;
+        varCfg.isFolder = listCfg.isFolder;
         varCfg.dsonType = listCfg.dsonType;
 
         varCfg.popNames = listCfg.popNames;
@@ -437,7 +437,7 @@ public sealed class VariableCfg
         cfg.isDelayed = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_DELAYED);
         cfg.isMultiline = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_MULTILINE);
         cfg.isInteger = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_INTEGER);
-        cfg.isFolder =  Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_FOLDER);
+        cfg.isFolder = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_FOLDER);
     }
 }
 

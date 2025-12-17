@@ -20,7 +20,6 @@ using System;
 using System.IO;
 using System.Text;
 using Wjybxx.BigCat.Assetor;
-using Wjybxx.BigCatTool;
 using Wjybxx.BTree;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Pool;
@@ -71,7 +70,7 @@ public class EditorBuildTask : LeafTask<Blackboard>
         }
         if (!string.IsNullOrEmpty(textFilePath)) {
             DsonWriterSettings writerSettings = new DsonTextWriterSettings.Builder() { SoftLineLength = 150 }.Build();
-            
+
             using StreamWriter streamWriter = new StreamWriter(File.Create(textFilePath), new UTF8Encoding(false));
             using DsonTextWriter textWriter = new DsonTextWriter(writerSettings as DsonTextWriterSettings, streamWriter);
             manifest.Serialize(textWriter);

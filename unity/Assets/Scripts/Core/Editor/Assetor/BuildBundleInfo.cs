@@ -39,6 +39,10 @@ public sealed class BuildBundleInfo
     /// 关联的收集器类型(影响BundleName和BundleId等计算)
     /// </summary>
     public ECollectorType collectorType;
+    /// <summary>
+    /// 是否由外部提供（是否只参与模拟编译，但不执行最终的打包）
+    /// </summary>
+    public bool provided;
 
     /// <summary>
     /// Bundle名
@@ -83,16 +87,20 @@ public sealed class BuildBundleInfo
     /// </summary>
     public EAssetIndexes assetIndexes;
     /// <summary>
+    /// 唯一索引信息
+    /// </summary>
+    public EAssetIndexes uniqueIndexes;
+    /// <summary>
     /// 索引深度
     /// </summary>
     public int indexDepth;
     /// <summary>
-    /// Bundle内资源(需要支持快速删除)
+    /// Bundle内资源
     /// </summary>
-    public List<BuildAssetInfo> assetList = new();
+    public readonly List<BuildAssetInfo> assetList = new();
 
     /// <summary>
-    /// 自身BundleId
+    /// 自身BundleId(需要保持稳定且包内唯一)
     /// </summary>
     public int bundleId;
     /// <summary>
@@ -135,14 +143,13 @@ public sealed class BuildBundleInfo
             encrypted = encrypted,
 
             bundleTags = new List<string>(bundleTags),
-            assetIndexes = assetIndexes,
+            assetIndexes = assetIndexes | uniqueIndexes,
             indexDepth = indexDepth,
             bundleId = bundleId,
             upstreamBundles = new List<int>(upstreamBundles),
         };
         if (collectorType == ECollectorType.MainAsset
             || collectorType == ECollectorType.RawFile) {
-            //
             bundleInfo.mainAssets.Capacity = assetList.Count;
             foreach (BuildAssetInfo assetInfo in assetList) {
                 bundleInfo.mainAssets.Add(assetInfo.Build());

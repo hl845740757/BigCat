@@ -68,7 +68,7 @@ public class EditorPackageManager : IPackageManager
 
     public ResourceTask LoadPackageInfoAsync() {
         AssetPackageInfo packageInfo = new AssetPackageInfo();
-        // 编辑器下直接同步加载
+        // 编辑器下直接同步加载 -- TODO DSON支持文件流
         byte[] bytes = File.ReadAllBytes(_packagePath);
         using DsonBinaryReader<int> reader = new DsonBinaryReader<int>(DsonReaderSettings.Default, DsonInputs.NewInstance(bytes));
         packageInfo.Deserialize(reader);

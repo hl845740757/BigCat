@@ -62,17 +62,13 @@ public class CollectorPackage : Sequence<Blackboard>
     /// 注：大型项目可以将Group配置创建在独立Folder，以避免过多节点刷新卡顿
     /// </summary>
     [Commons.SerializeReference]
-    public List<CollectorGroup> collectorGroups = new List<CollectorGroup>();
+    public List<CollectorGroup> groups = new List<CollectorGroup>();
     /// <summary>
     /// 忽略规则服务
     /// 注：忽略工具使用全局配置更易维护
     /// </summary>
     [Commons.SerializeReference]
     public IIgnoreService ignoreService;
-    /// <summary>
-    /// 是否启用资产依赖数据库
-    /// </summary>
-    public bool useAssetDependencyDB;
 
     /// <summary>
     /// 收集到的信息
@@ -88,8 +84,7 @@ public class CollectorPackage : Sequence<Blackboard>
     protected override void BeforeEnter() {
         base.BeforeEnter();
         children.Clear();
-        children.AddRange(collectorGroups);
-        children.Add(new BuildDependencyTask());
+        children.AddRange(groups);
 
         ignoreService ??= new NullIgnoreService();
         ignoreService.Start();
@@ -110,17 +105,11 @@ public class CollectorPackage : Sequence<Blackboard>
         PathCache pathCache = new PathCache(allAssetPaths.Length);
         blackboard.Set(BuildKeys.pathCache, pathCache);
         //
-        DependencyCache dependencyCache = new DependencyCache();
-        if (useAssetDependencyDB) {
-            dependencyCache.Load();
-        }
-        blackboard.Set(BuildKeys.dependencyCache, dependencyCache);
-        //
         InitCollectorKeys();
     }
 
     private void InitCollectorKeys() {
-        foreach (Collector collector in collectorGroups.SelectMany(e => e.collectors)) {
+        foreach (Collector collector in groups.SelectMany(e => e.collectors)) {
             if (string.IsNullOrEmpty(collector.collectPath)) {
                 continue;
             }
@@ -141,11 +130,6 @@ public class CollectorPackage : Sequence<Blackboard>
     protected override void Exit() {
         base.Exit();
         ignoreService.Stop();
-        //
-        DependencyCache dependencyCache;
-        if (useAssetDependencyDB && (dependencyCache = blackboard.Get(BuildKeys.dependencyCache)) != null) {
-            dependencyCache.Save();
-        }
     }
 
     public bool ContainsCollector(string collectPath, ECollectorType collectorType) {
