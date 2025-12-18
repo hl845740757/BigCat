@@ -134,14 +134,14 @@ public class Collector : LeafTask<Blackboard>
                 continue;
             }
             // 测试Editor的效率较低，放在前面两个条件之后
-            if (assetPath.Contains("/Editor/")) {
+            if (assetPath.Contains("/Editor/") || assetPath.Contains("/Tests/")) {
                 continue;
             }
             // 剔除同类型子目录收集器的资源
             if (ContainsSubPathCollector(package, pathCache, assetPath)) {
                 continue;
             }
-            // 其实测试资产的类别一定程度上包含了Ignore规则
+            // 执行忽略规则：其实测试资产的类别一定程度上包含了Ignore规则
             if (package.ignoreService.IsIgnore(assetPath)) {
                 continue;
             }

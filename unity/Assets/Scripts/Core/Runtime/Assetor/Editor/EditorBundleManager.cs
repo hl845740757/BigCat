@@ -57,9 +57,9 @@ public class EditorBundleManager : IBundleManager
     }
 
     public ResourceTask LoadBundleAsync(AssetBundleInfo bundleInfo) {
-        LoadBundle(bundleInfo);
+        IAssetBundle assetBundle = LoadBundle(bundleInfo);
         // 返回的异步任务是延迟成功的
-        CompletedTask task = new CompletedTask();
+        CompletedTask task = new CompletedTask(assetBundle);
         _scheduler.AddChild(task);
         return task;
     }

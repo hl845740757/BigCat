@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Pool;
 using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.Assetor
@@ -47,9 +48,10 @@ public class ResourceManager
     private readonly Dictionary<ProviderId, Provider> _providers = new(1000);
     private readonly LinkedHashSet<Provider> _idleProviders = new(200);
     private readonly HashSet<string> _loadStack = new HashSet<string>(16);
+    private readonly List<Provider> _removeList = new List<Provider>(10);
     //
     private long _assetMaxIdleTime = 5 * 1000;
-    private long _bundleMaxIdleTime = 15 * 1000;
+    private long _bundleMaxIdleTime = 10 * 1000;
     private long _lastCheckTime;
 
     public ResourceManager(TaskScheduler scheduler) {
@@ -130,6 +132,9 @@ public class ResourceManager
     /// 注：可重复调用，支持动态增加资源包。
     /// </summary>
     public void BuildQuery() {
+        foreach (IPackageManager packageManager in _packageManagers) {
+            _query.AddPackage(packageManager.PackageInfo);
+        }
         _query.BuildCache();
     }
 
@@ -393,7 +398,9 @@ public class ResourceManager
     /// </summary>
     /// <param name="force"></param>
     private void UnloadIdleTimeoutProviders(bool force = false) {
-        LinkedHashSet<Provider>.Enumerator enumerator = _idleProviders.GetEnumerator();
+        // 这里删除元素时不能直接调用Destroy，因为释放资源的时候，可能会导致Bundle添加到集合
+        List<Provider> removeList = _removeList.ClearAndReturn();
+        var enumerator = _idleProviders.GetEnumerator();
         while (enumerator.MoveNext()) {
             Provider provider = enumerator.Current!;
             if (!provider.CanDestroy()) {
@@ -401,9 +408,13 @@ public class ResourceManager
             }
             if (force || IsIdleTimeout(provider)) {
                 enumerator.Remove();
-                provider.Destroy();
+                removeList.Add(provider);
             }
         }
+        foreach (Provider provider in removeList) {
+            provider.Destroy();
+        }
+        removeList.Clear();
     }
 
     private bool IsIdleTimeout(Provider provider) {

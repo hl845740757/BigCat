@@ -20,6 +20,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Wjybxx.BTree;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -54,6 +55,8 @@ public abstract class ResourceTask : Decorator<Blackboard>
     protected ResourceTask() {
         taskId = ++_nextTaskId;
     }
+
+    public ValueFuture Future => new ValueFuture(promise);
 
     /// <summary>
     /// 关联的调度器

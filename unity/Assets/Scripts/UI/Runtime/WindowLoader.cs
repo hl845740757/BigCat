@@ -17,34 +17,46 @@
 #endregion
 
 using UnityEngine;
-using Wjybxx.Commons.Concurrent;
+using Wjybxx.BigCat.Assetor;
 
 namespace Wjybxx.BigCat.UI
 {
 /// <summary>
 /// 窗口加载器
 ///
-/// 注：
-/// 1.暂不考虑Window池化，超过最大生命周期时直接销毁。
-/// 2.虽然命名为Load，实际应该返回资源的副本对象 —— 即对资源进行实例化。
-/// 3.尽量实现加载超时功能。
+/// 注：可以通过地址解析，实现同一个Window打开多份
 /// </summary>
 public interface WindowLoader
 {
     /// <summary>
-    /// 同步加载窗口
+    /// 加载窗口
     /// </summary>
     /// <param name="windowAddr">窗口地址</param>
-    /// <param name="timeout">超时时间</param>
+    /// <param name="timeout">超时时间，尽量实现</param>
     /// <returns></returns>
-    GameObject Load(string windowAddr, double timeout = 0);
+    AssetHandle LoadAsync(string windowAddr, double timeout = 0);
 
     /// <summary>
-    /// 异步加载窗口
+    /// 实例化窗口预制件
+    /// 
+    /// 注：用于初始化特殊数据
     /// </summary>
-    /// <param name="windowAddr">窗口地址</param>
-    /// <param name="timeout">超时时间</param>
+    /// <param name="windowAddr">关联</param>
+    /// <param name="prefab">关联预制件</param>
+    /// <param name="uiRoot">ui根对象</param>
     /// <returns></returns>
-    ValueFuture<GameObject> LoadAsync(string windowAddr, double timeout = 0);
+    GameObject Instantiate(string windowAddr, GameObject prefab, Transform uiRoot) {
+        return Object.Instantiate(prefab, uiRoot);
+    }
+}
+
+/// <summary>
+/// 默认额窗口加载器
+/// </summary>
+public class DefaultWindowLoader : WindowLoader
+{
+    public AssetHandle LoadAsync(string windowAddr, double timeout = 0) {
+        return ResourceManager.Inst.LoadAssetAsync<GameObject>(windowAddr);
+    }
 }
 }

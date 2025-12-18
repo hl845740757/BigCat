@@ -20,7 +20,17 @@ namespace Wjybxx.BigCat.Assetor.Tasks
 {
 public class CompletedTask : ResourceTask
 {
+    private readonly object result;
+
+    public CompletedTask() {
+    }
+
+    public CompletedTask(object result) {
+        this.result = result;
+    }
+
     protected override void Execute() {
+        promise.result = result;
         SetSuccess();
     }
 }

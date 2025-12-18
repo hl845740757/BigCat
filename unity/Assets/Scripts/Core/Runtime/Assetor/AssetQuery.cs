@@ -44,7 +44,7 @@ public sealed class AssetQuery
     /// </summary>
     public readonly HashSet<string> supportExtensions = new HashSet<string>(16)
     {
-        "fbx", "unity",
+        "fbx", "unity", "prefab",
         "png", "jpg", "tif",
         "ogg", "wav", "mp3"
     };

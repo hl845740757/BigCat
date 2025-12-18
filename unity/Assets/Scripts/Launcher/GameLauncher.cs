@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
+using Wjybxx.BigCat.Assetor;
+using Wjybxx.BigCat.Assetor.Tasks;
 using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
@@ -110,14 +112,32 @@ public class GameLauncher : MonoBehaviour
         };
         windowMgr = new WindowMgr(workerHolder, windowMgrCfg);
         WindowMgr.Inst = windowMgr;
+
+        windowMgr.CoroutineMgr.StartCoroutine(StartResourceManager, default);
     }
 
-    private void Start() {
-        // 打开测试UI
-        Transform child = uiRoot.transform.Find("LoginWindow");
-        if (child) {
-            windowMgr.Open("LoginWindow", child.gameObject, new WindowOpenArgs());
-        }
+    private async ValueFuture StartResourceManager(CoroutineTaskContext ctx) {
+        TaskScheduler scheduler = gameObject.AddComponent<MonoScheduler>().Scheduler;
+        ResourceManager resourceMgr = new ResourceManager(scheduler); // TODO 应该注入容器
+        ResourceManager.Inst = resourceMgr;
+        //
+        EditorPackageManager packageManager = new EditorPackageManager(scheduler, "Default", "Assets/Resources/manifest.bin");
+        EditorBundleManager bundleManager = new EditorBundleManager(scheduler);
+        //
+        resourceMgr.AddPackageManager(packageManager);
+        resourceMgr.AddBundleManager(bundleManager);
+        // 这部分Task需要自己添加到调度器...
+        StartManagerTask startManagerTask = new StartManagerTask(resourceMgr.PackageManagers, resourceMgr.BundleManagers);
+        scheduler.AddChild(startManagerTask);
+        await startManagerTask.Future;
+        //
+        await packageManager.LoadPackageInfoAsync().Future;
+        await packageManager.BuildCacheInfoAsync().Future;
+        // 初始化完毕以后，构建查询缓存
+        resourceMgr.BuildQuery();
+
+        // 尝试打开UI
+        windowMgr.Open("LoginWindow", new WindowOpenArgs());
     }
 
     private void FixedUpdate() {

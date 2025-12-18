@@ -65,6 +65,8 @@ public class LoginView : UINode
         float timeAfter = Time.time;
         string accountText = (string)context.StartArg1;
         Debug.Log($"Login, timeElapsed: {timeAfter - timeBefore}, account: {accountText}");
+        //
+        Window.Close();
     }
 }
 }

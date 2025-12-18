@@ -19,17 +19,21 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.BigCat.Assetor;
 using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.MVC;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
-using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Wjybxx.BigCat.UI
 {
@@ -129,7 +133,7 @@ public class WindowMgr
         this.coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
             enableFrameQueue: cfg.enableFrameQueue);
         this._canvas = cfg.canvas ?? throw new Exception("Canvas not found");
-        this._windowLoader = cfg.windowLoader; // 非必须
+        this._windowLoader = cfg.windowLoader ?? new DefaultWindowLoader();
         this._aggregationModel = cfg.aggregationModel;
         this._dataModelResolver = cfg.dataModelResolver;
         // 初始化Desktop
@@ -284,16 +288,26 @@ public class WindowMgr
     /// 
     /// 注：适用用户自己加载Window的场景。
     /// </summary>
-    public void Open(string windowAddr, GameObject gameObject, WindowOpenArgs openArgs, int pInstId = 0) {
+    public Window Open(string windowAddr, GameObject gameObject, WindowOpenArgs openArgs) {
         WindowCfg windowCfg = gameObject.GetComponent<WindowCfg>();
+#if UNITY_EDITOR
         if (!windowCfg) {
-            throw new Exception("invalid gameObject");
+            throw new Exception("Invalid gameObject");
         }
+        if (PrefabUtility.IsPartOfPrefabAsset(gameObject)) {
+            throw new Exception("Instantiate is required");
+        }
+#endif
+        openArgs ??= new WindowOpenArgs();
         Window window = new Window(windowCfg, windowAddr, this);
         windowCfg.SetWindow(window); // 双向绑定
-        window.ParentInstId = pInstId;
-        window.OpenArgs = openArgs ?? new WindowOpenArgs();
+        window.OpenArgs = openArgs;
+        window.ParentInstId = openArgs.pInstId;
+        if (!openArgs.assetHandle.IsNullHandle) {
+            window.assetHandles.Add(openArgs.assetHandle);
+        }
         Add(window);
+        return window;
     }
 
     /// <summary>
@@ -301,61 +315,52 @@ public class WindowMgr
     /// </summary>
     /// <param name="windowAddr">窗口路径</param>
     /// <param name="openArgs">打开参数</param>
-    /// <param name="pInstId">父窗口ID</param>
-    public void Open(string windowAddr, WindowOpenArgs openArgs, int pInstId = 0) {
+    public void Open(string windowAddr, WindowOpenArgs openArgs) {
         openArgs ??= new WindowOpenArgs();
         if (_addr2WindowMap.TryGetValue(windowAddr, out Window window)) {
             if (window.Status != ComponentStatus.Terminated && !openArgs.reopen) {
                 return; // 拒绝请求
             }
-            Reopen(window, openArgs, pInstId);
+            Reopen(window, openArgs);
             return;
         }
         // 取消既有加载请求 - 新的加载重新计时，旧加载可能存在异常
-        _loadingTaskMap.Remove(windowAddr);
-
+        if (_loadingTaskMap.Remove(windowAddr, out LoadingTask prevTask)) {
+            prevTask.Dispose();
+        }
         double timeout = openArgs.timeout > 0 ? openArgs.timeout : LoadingTimeout;
-        if (openArgs.asyncLoad) {
-            ValueFuture<GameObject> future = _windowLoader.LoadAsync(windowAddr, timeout);
-            LoadingTask loadingTask = new LoadingTask(windowAddr, openArgs, pInstId, time.UnscaledTime + timeout);
-            _loadingTaskMap[windowAddr] = loadingTask;
-            // 必须添加await回调，过时返回的对象需要被销毁
-            AwaitTask(future, loadingTask).Forget();
-        } else {
-            try {
-                GameObject gameObject = _windowLoader.Load(windowAddr, timeout);
-                Open(windowAddr, gameObject, openArgs, pInstId);
-            }
-            catch (Exception ex) {
-                logger.Warn(ex, "load window failed, windowAddr: " + windowAddr);
-            }
+        openArgs.assetHandle = _windowLoader.LoadAsync(windowAddr, timeout);
+        LoadingTask loadingTask = new LoadingTask(windowAddr, openArgs, time.UnscaledTime + timeout);
+        _loadingTaskMap[windowAddr] = loadingTask;
+        // 先注册再监听
+        openArgs.assetHandle.Completed += _ => OnLoadCompleted(loadingTask);
+    }
+
+    private void OnLoadCompleted(LoadingTask loadingTask) {
+        if (!_loadingTaskMap.TryGetValue(loadingTask.windowAddr, out LoadingTask exist)
+            || !ReferenceEquals(exist, loadingTask)) {
+            // 任务被取消
+            loadingTask.Dispose();
+            return;
+        }
+        _loadingTaskMap.Remove(loadingTask.windowAddr);
+        AssetHandle assetHandle = loadingTask.openArgs.assetHandle;
+        GameObject prefab = assetHandle.GetAsset<GameObject>();
+        if (!prefab) {
+            loadingTask.Dispose();
+            logger.Warn("Load window failed, windowAddr: " + loadingTask.windowAddr);
+            return;
+        }
+        try {
+            GameObject go = _windowLoader.Instantiate(loadingTask.windowAddr, prefab, _canvas.transform);
+            Open(loadingTask.windowAddr, go, loadingTask.openArgs);
+        }
+        catch (Exception ex) {
+            logger.Warn(ex, "Open window caught exception, windowAddr: " + loadingTask.windowAddr);
         }
     }
 
-    private async ValueFuture AwaitTask(ValueFuture<GameObject> future, LoadingTask loadingTask) {
-        TaskResult<GameObject> taskResult = await future.GetAwaitable(SuppressedTypes.All);
-
-        string windowAddr = loadingTask.windowAddr;
-        if (_loadingTaskMap.TryGetValue(windowAddr, out LoadingTask exist)
-            && ReferenceEquals(exist, loadingTask)) {
-            // 任务未被取消
-            _loadingTaskMap.Remove(windowAddr);
-            if (taskResult.IsSucceeded) {
-                Open(windowAddr, taskResult.Result, loadingTask.openArgs, loadingTask.pInstId);
-            } else {
-                logger.Warn(taskResult.Exception, "load window failed, windowAddr: " + windowAddr);
-            }
-        } else {
-            // 任务被取消 - 需要销毁被加载的对象
-            if (taskResult.IsSucceeded) {
-                UnityEngine.Object.Destroy(taskResult.Result);
-            } else {
-                logger.Warn(taskResult.Exception, "load window failed, windowAddr: " + windowAddr);
-            }
-        }
-    }
-
-    private void Reopen(Window window, WindowOpenArgs openArgs, int pInstId) {
+    private void Reopen(Window window, WindowOpenArgs openArgs) {
         // Reset触发Stop可能添加到关闭列表
         window.Reset();
         _closedWindowList.Remove(window);
@@ -367,8 +372,8 @@ public class WindowMgr
             _curDesktop.Add(window);
         }
         // 重新启动
-        window.ParentInstId = pInstId;
         window.OpenArgs = openArgs;
+        window.ParentInstId = openArgs.pInstId;
         try {
             window.Start();
         }
@@ -383,7 +388,8 @@ public class WindowMgr
     /// <param name="windowAddr">窗口路径</param>
     /// <param name="force">是否强制关闭常驻窗口</param>
     public void Close(string windowAddr, bool force = false) {
-        if (_loadingTaskMap.Remove(windowAddr)) { // 取消加载
+        if (_loadingTaskMap.Remove(windowAddr, out LoadingTask loadingTask)) { // 取消加载
+            loadingTask.Dispose();
             return;
         }
         if (!_addr2WindowMap.TryGetValue(windowAddr, out Window window)) {
@@ -493,6 +499,7 @@ public class WindowMgr
             LoadingTask loadingTask = enumerator.Current.Value;
             if (loadingTask.expireTime <= time.UnscaledTime) {
                 enumerator.Remove();
+                loadingTask.Dispose();
             }
         }
         enumerator.Dispose();
@@ -689,18 +696,21 @@ public class WindowMgr
     /// <summary>
     /// 注：不保留Future的引用，因为我们不能操作Future
     /// </summary>
-    private sealed class LoadingTask
+    private sealed class LoadingTask : IDisposable
     {
         public readonly string windowAddr;
         public readonly WindowOpenArgs openArgs;
-        public readonly int pInstId;
         public readonly double expireTime;
 
-        public LoadingTask(string windowAddr, WindowOpenArgs openArgs, int pInstId, double expireTime) {
+        public LoadingTask(string windowAddr, WindowOpenArgs openArgs,
+                           double expireTime) {
             this.windowAddr = windowAddr;
             this.openArgs = openArgs;
-            this.pInstId = pInstId;
             this.expireTime = expireTime;
+        }
+
+        public void Dispose() {
+            openArgs.assetHandle.Release();
         }
     }
 }

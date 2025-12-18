@@ -16,6 +16,8 @@
 
 #endregion
 
+using Wjybxx.BigCat.Assetor;
+
 namespace Wjybxx.BigCat.MVC
 {
 /// <summary>
@@ -41,17 +43,23 @@ public sealed class WindowOpenArgs
     /// </summary>
     public bool reopen = true;
     /// <summary>
-    /// 异步加载
-    /// </summary>
-    public bool asyncLoad = true;
-    /// <summary>
     /// 加载的超时时间
     /// </summary>
     public double timeout = -1;
+
+    /// <summary>
+    /// 父窗口实例id
+    /// </summary>
+    public int pInstId;
     /// <summary>
     /// 是否忽略父窗口关闭信号
     /// (是否不跟随父窗口一起关闭)
     /// </summary>
     public bool nohup;
+
+    /// <summary>
+    /// 资源对象句柄
+    /// </summary>
+    public AssetHandle assetHandle;
 }
 }
