@@ -88,7 +88,8 @@ public class EditorPackageManager : IPackageManager
     }
 
     public List<AssetBundleInfo> GetNeedDownloadBundles(List<AssetBundleInfo> result = null) {
-        return result ?? new List<AssetBundleInfo>();
+        result ??= new List<AssetBundleInfo>();
+        return result;
     }
 
     public ResourceTask ClearCacheFilesAsync() {

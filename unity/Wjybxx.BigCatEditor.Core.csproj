@@ -87,6 +87,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildUtil.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\NodeView.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MIntegerField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildErrorCodec.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarColorField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\Classifiers\SpriteClassifier.cs" />
@@ -127,6 +128,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarBoolField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\IVarField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Features.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Tasks\BuildIndexesTask.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildPipelineTask.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\CollectorGroup.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\TypeSearchWindowProvider.cs" />
@@ -134,7 +136,6 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector3Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarNullableField.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Tasks\BuildIndexesTask.cs" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.uxml" />
     <None Include="Assets\Scripts\Core\Editor\DataScript\GraphView.uss" />

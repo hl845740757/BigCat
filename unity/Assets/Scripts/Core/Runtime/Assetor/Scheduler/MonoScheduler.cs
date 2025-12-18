@@ -27,7 +27,6 @@ namespace Wjybxx.BigCat.Assetor
 ///
 /// 注：用户项目中可以不使用该MonoBehavior，仿照实现即可。
 /// </summary>
-[ExecuteInEditMode]
 public sealed class MonoScheduler : MonoBehaviour
 {
     private TaskEntry<Blackboard> _taskEntry;
@@ -42,7 +41,8 @@ public sealed class MonoScheduler : MonoBehaviour
         _scheduler = new TaskScheduler();
         _taskEntry = new TaskEntry<Blackboard>()
         {
-            RootTask = _scheduler
+            RootTask = _scheduler,
+            Blackboard = new Blackboard()
         };
         TaskScheduler.Current ??= _scheduler;
         _taskEntry.Update(); // 不可延迟到Start方法启动

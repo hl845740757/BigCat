@@ -66,5 +66,11 @@ internal static class BuildKeys
     /// </summary>
     public static readonly DataKey<DependencyCache> dependencyCache
         = DataKeys.NewObjectKey<DependencyCache>("dependencyCache");
+    /// <summary>
+    /// 索引错误信息
+    /// 注：用于外部统一收集日志
+    /// </summary>
+    public static readonly DataKey<string> indexReportLog
+        = DataKeys.NewStringKey("indexReportLog");
 }
 }

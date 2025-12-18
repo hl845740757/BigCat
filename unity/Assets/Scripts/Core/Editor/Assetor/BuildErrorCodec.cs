@@ -16,19 +16,31 @@
 
 #endregion
 
-using UnityEngine;
-using Wjybxx.Dson.Codec.Attributes;
+using Wjybxx.BTree;
 
-namespace Wjybxx.BigCat.Launcher
+namespace Wjybxx.BigCat.Editor.Assetor
 {
 /// <summary>
-/// 用于为Unity的常用类型生成DsonCodec
+/// 构建错误码
 /// </summary>
-// [UsedForReflectionBasedGenerator]
-[DsonCodecLinkerGroup]
-public class UnityCodecLinker
+public enum BuildErrorCodec
 {
-    private Vector2 _vector2;
-    private Vector3 _vector3;
+    /// <summary>
+    /// 任务尚未完成或执行成功 
+    /// </summary>
+    None = 0,
+    /// <summary>
+    /// 任务被取消
+    /// </summary>
+    Cancelled = TaskStatus.CANCELLED,
+    /// <summary>
+    /// 默认的错误码
+    /// </summary>
+    UnknownError = TaskStatus.ERROR,
+
+    /// <summary>
+    /// 索引冲突
+    /// </summary>
+    IndexConflict = 101,
 }
 }

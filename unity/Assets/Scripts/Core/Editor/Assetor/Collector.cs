@@ -36,8 +36,10 @@ namespace Wjybxx.BigCat.Editor.Assetor
 /// 注：
 /// 1.收集器的职责是：扫描指定目录下的指定类别资产，然后将其分组为<see cref="BuildBundleInfo"/>。
 /// 2.同一个资产目录，可以同时导出：主资产Bundle、依赖资产Bundle、原始文件Bundle三种类型的Bundle。
-/// 3.收集器需要自动剔除同类子文件夹收集器。
-/// 4.需要所有的收集器都执行完毕，构建依赖图后，才能检查依赖。
+/// 3.收集器需要自动剔除同类子文件夹收集器，只区分Unity资产和非Unity资产，否则难以界定归属。
+///
+/// Q：为什么不支持指定某些扩展名类型的文件才需要建立索引？
+/// A：指定需要索引的文件类型固然可以减少运行时的内存开销，但维护成本更高；在大型项目中，这类需要手动维护的配置越少越好。
 /// </summary>
 [DsonSerializable(NamespaceAliases = new string[]
 {
@@ -205,7 +207,7 @@ public class Collector : LeafTask<Blackboard>
         }
         Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
         if (asset == null || asset is DefaultAsset) {
-            return EAssetCategory.None; // 通常是指文件夹
+            return EAssetCategory.None; // 通常是文件夹
         }
         return collectorType switch
         {
@@ -230,17 +232,16 @@ public class Collector : LeafTask<Blackboard>
     }
 
     private bool ContainsSubPathCollector(CollectorPackage package, PathCache pathCache, string assetPath) {
-        string directoryName = Path.GetDirectoryName(assetPath);
+        string directoryName = pathCache.GetDirectoryName(assetPath);
         while (UnityEditorUtil.IsSubPath(collectPath, directoryName)) {
-            bool contains = collectorType switch
-            {
-                ECollectorType.MainAsset => package.ContainsCollector(directoryName, ECollectorType.MainAsset),
-                ECollectorType.DependBundle or ECollectorType.DependAsset
-                    => package.ContainsCollector(directoryName, ECollectorType.DependBundle)
-                       || package.ContainsCollector(directoryName, ECollectorType.DependBundle),
-                ECollectorType.RawFile => package.ContainsCollector(directoryName, ECollectorType.RawFile),
-                _ => false
-            };
+            bool contains;
+            if (collectorType != ECollectorType.RawFile) {
+                contains = package.ContainsCollector(directoryName, ECollectorType.MainAsset)
+                           || package.ContainsCollector(directoryName, ECollectorType.DependBundle)
+                           || package.ContainsCollector(directoryName, ECollectorType.DependAsset);
+            } else {
+                contains = package.ContainsCollector(directoryName, ECollectorType.RawFile);
+            }
             if (contains) {
                 return true;
             }

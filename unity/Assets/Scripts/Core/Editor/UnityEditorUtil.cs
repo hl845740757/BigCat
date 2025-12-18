@@ -224,7 +224,7 @@ public static class UnityEditorUtil
     /// <param name="filePath">文件路径</param>
     public static string ConvertToAssetPath(string filePath) {
         if (string.IsNullOrWhiteSpace(filePath)) {
-            return filePath;
+            throw new ArgumentNullException(nameof(filePath));
         }
         if (!filePath.StartsWith("Assets")) {
             filePath = filePath.Replace(Application.dataPath, "Assets");
@@ -233,13 +233,20 @@ public static class UnityEditorUtil
     }
 
     /// <summary>
-    /// 将资产路径转换为文件路径 - 可能会丢失大小写
+    /// 将资产路径转换为文件路径
     /// </summary>
     /// <param name="assetPath"></param>
     /// <returns></returns>
     public static string ConvertToFilePath(string assetPath) {
+        if (string.IsNullOrEmpty(assetPath)) {
+            throw new ArgumentNullException(nameof(assetPath));
+        }
         // "assets/sprites/xx" 
-        return Application.dataPath + assetPath.Substring(6);
+        if (assetPath.StartsWith("Assets")) {
+            return Application.dataPath + assetPath.Substring(6);
+        }
+        // "../../" 指向外部文件
+        return Application.dataPath + "/" + assetPath;
     }
 
     /// <summary>

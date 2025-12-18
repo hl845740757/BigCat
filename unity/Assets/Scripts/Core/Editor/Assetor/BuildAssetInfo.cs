@@ -79,7 +79,7 @@ public sealed class BuildAssetInfo
     public AssetFileInfo Build() {
         return new AssetFileInfo()
         {
-            assetPath = assetPath,
+            assetPath = assetPath.ToLowerInvariant(), // 构建最终数据时执行规格化
             address = address,
             assetTags = assetTags.Count > 0 ? assetTags.ToArray() : Array.Empty<string>()
         };

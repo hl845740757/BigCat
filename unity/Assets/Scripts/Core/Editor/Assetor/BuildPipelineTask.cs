@@ -30,7 +30,9 @@ namespace Wjybxx.BigCat.Editor.Assetor
 /// <summary>
 /// 构建管线
 ///
-/// 注：可以通过<see cref="Task{T}.Name"/>区别Editor管线和真实管线。
+/// 注：
+/// 1.可以通过<see cref="Task{T}.Name"/>区别Editor管线和真实管线。
+/// 2.如果存在并发执行的任务，应当避免并发任务访问黑板对象。
 /// </summary>
 [DsonSerializable(NamespaceAliases = new string[]
 {
@@ -51,6 +53,7 @@ public class BuildPipelineTask : Sequence<Blackboard>
     /// </summary>
     public bool useAssetDependencyDB;
 
+    /// <summary>
     /// 构建前的预处理任务
     /// </summary>
     [SerializeReference]

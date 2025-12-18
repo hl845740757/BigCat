@@ -31,6 +31,30 @@ class SingleRunningChildBranch<T> : BranchTask<T> {
 class ParallelBranch<T> : BranchTask<T> {
 }
 
+// ------------------------------------------
+// 子树引用
+class SubtreeRef<T> : Decorator<T> {
+  // @PortField{side: right}
+  ObjectPath path = 1; // 可直接连线
+}
+// 每帧检查任务的前置条件
+class AlwaysCheckGuard<T> : Decorator<T> {
+}
+// 子任务完成后返回失败
+class AlwaysFail<T> : Decorator<T> {
+  int32 failureStatus = 1; // 错误码
+}
+// 子任务完成后返回成功
+class AlwaysSuccess<T> : Decorator<T> {
+}
+// 保持运行状态
+class AlwaysRunning<T> : Decorator<T> {
+}
+// 反转子节点的执行结果
+class Inverter<T> : Decorator<T> {
+}
+
+// ------------------------------------------
 // FSM
 class StateMachineTask<T> : Decorator<T> {
   // @PortField{side: right, distinct : true}
@@ -51,31 +75,45 @@ class ChangeStateTask<T> : LeafTask<T> {
   // @PopField {value: 4, displayName: "Failed"}
   int32 delayArg = 5; // 延迟参数；不延迟时，表示FSM当前状态的执行结果
 }
-
-// 子树引用
-class SubtreeRef<T> : Decorator<T> {
-  // @PortField{side: right}
-  ObjectPath path = 1; // 可直接连线
+// 切换状态
+class ChangeStateTask2<T> : LeafTask<T> {
+  string stateName = 1; // 下一个状态的name
+  
+  string machineName = 3; // 目标状态机名，可空
+  int32 delayMode = 4; // 延迟模式，建议保持0
+  
+  // @PopField {value: 2, displayName: "Success"}
+  // @PopField {value: 3, displayName: "Cancelled"}
+  // @PopField {value: 4, displayName: "Failed"}
+  int32 delayArg = 5; // 延迟参数；不延迟时，表示FSM当前状态的执行结果
 }
 
-// 基础分支节点
+// ------------------------------------------
+
 class Selector<T> : SingleRunningChildBranch<T> {
 }
 class Sequence<T> : SingleRunningChildBranch<T> {
 }
+// 根据子节点的前置条件选择要执行的节点
 class Switch<T> : SingleRunningChildBranch<T> {
 }
+// 所有子节点执行完成之后返回成功
 class Foreach<T> : SingleRunningChildBranch<T> {
 }
+// 每帧重新选择要执行的节点
 class ActiveSelector<T> : SingleRunningChildBranch<T> {
 }
+// N个子节点成功时返回成功
 class SelectorN<T> : SingleRunningChildBranch<T> {
   int32 required = 1; // 需要成功的数量
   bool failFast = 2; // 是否快速失败，不等执行完毕
 }
 
+// ----------------------------------------
+// 简单并行节点
 class SimpleParallel<T> : ParallelBranch<T> {
 }
+// Join并行节点
 class Join<T> : ParallelBranch<T> {
   // @PloyField["JoinMain<T>", "JoinSelector<T>", "JoinSequence<T>", "JoinAnyOf<T>", "JoinWaitAll<T>"]
   JoinPolicy<T> policy = 1; // 调度策略，多态字段
@@ -95,11 +133,40 @@ class JoinAnyOf<T> : JoinPolicy<T> {
 class JoinWaitAll<T> : JoinPolicy<T> {
 }
 
+// --------------------------------------
+// 保持运行
+class Running<T> : LeafTask<T> {
+}
+// 返回成功
+class Success<T> : LeafTask<T> {
+}
+// 返回失败
+class Failure<T> : LeafTask<T> {
+  int32 failureStatus = 1; // 错误码
+}
+
+// 简单随机节点
+class SimpleRandom<T> : LeafTask<T> {
+  float p = 1; // 概率
+}
+// 简单等待N帧
+class SimpleWaitFrame<T> : LeafTask<T> {
+  int32 required = 1; // 需要等待的帧数
+}
+
+// -------------------------------------
 // 这里将所有类型引用进来，通过子类实例化泛型
 class BTreeSearchTreeGroupEntry0<T> {
   SubtreeRef<T> _f1 = 1;
-  StateMachineTask<T> _f2 = 2;
-  ChangeStateTask<T> _f3 = 3;
+  AlwaysCheckGuard<T> _f2 = 2;
+  AlwaysFail<T> _f3 = 3;
+  AlwaysSuccess<T> _f4 = 4;
+  AlwaysRunning<T> _f5 = 5;
+  Inverter<T> _f6 = 6;
+  
+  StateMachineTask<T> _f7 = 7;
+  ChangeStateTask<T> _f8 = 8;
+  ChangeStateTask2<T> _f9 = 9;
   
   Selector<T> _f11 = 11;
   Sequence<T> _f12 = 12;
@@ -110,6 +177,17 @@ class BTreeSearchTreeGroupEntry0<T> {
   
   SimpleParallel<T> _f21 = 21;
   Join<T> _f22 = 22;
+  JoinMain<T> _f23 = 23;
+  JoinSelector<T> _f24 = 24;
+  JoinSequence<T> _f25 = 25;
+  JoinAnyOf<T> _f26 = 26;
+  JoinWaitAll<T> _f27 = 27;
+  
+  Running<T> _f31 = 31;
+  Success<T> _f32 = 32;
+  Failure<T> _f33 = 33;
+  SimpleRandom<T> _f34 = 34;
+  SimpleWaitFrame<T> _f35 = 35;
 }
 // 通过子类直接实例化所有泛型
 // @SearchTreeGroupEntry {}

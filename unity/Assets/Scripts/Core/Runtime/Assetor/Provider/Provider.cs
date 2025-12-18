@@ -73,7 +73,7 @@ public abstract class Provider : ResourceTask
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     public void Retain(int count = 1) {
-        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+        if (count < 1) throw new ArgumentOutOfRangeException(nameof(count));
         ThrowIfDestroyed();
         if (RefCount == 0) {
             resourceMgr.RemoveFromIdles(this);
@@ -85,7 +85,7 @@ public abstract class Provider : ResourceTask
     /// 减少引用计数
     /// </summary>
     public void Release(int count = 1) {
-        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+        if (count < 1) throw new ArgumentOutOfRangeException(nameof(count));
         if (count > RefCount) throw new ArgumentOutOfRangeException(nameof(count), $"refCount: {RefCount}, count: {count}");
         ThrowIfDestroyed();
         RefCount -= count;

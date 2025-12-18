@@ -134,10 +134,18 @@ class PackageBuilder {
 }
 
 // 构建依赖任务
-class BuildDependencyTask : Task<Blackboard> {  
+class BuildDependencyTask : Task<Blackboard> {
+  bool autoIgnoreLibrary = 1; // 是否自动忽略第三方程序集
 }
+inst BuildDependencyTask {
+  autoIgnoreLibrary: true
+}
+
 // 构建索引任务
-class BuildIndexesTask : Task<Blackboard> {  
+class BuildIndexesTask : Task<Blackboard> {
+  bool reportLog = 1; // 是否上报详细日志到独立文件
+  //@Editor {displayType: AssetPath}
+  string reportPath = 2; // 日志文件路径
 }
 
 // 编辑器下的构建任务

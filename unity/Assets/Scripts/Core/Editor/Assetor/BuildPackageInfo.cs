@@ -17,6 +17,7 @@
 #endregion
 
 using System.Collections.Generic;
+using UnityEditor;
 using Wjybxx.BigCat.Assetor;
 
 namespace Wjybxx.BigCat.Editor.Assetor
@@ -68,9 +69,23 @@ public class BuildPackageInfo
         };
         packageInfo.bundleList.Capacity = name2BundleDic.Count;
         foreach (BuildBundleInfo bundleInfo in name2BundleDic.Values) {
+            if (bundleInfo.assetList.Count == 0 || bundleInfo.provided) {
+                continue;
+            }
             packageInfo.bundleList.Add(bundleInfo.Build());
         }
         return packageInfo;
+    }
+
+    public List<AssetBundleBuild> GetPipelineBuilds() {
+        List<AssetBundleBuild> result = new List<AssetBundleBuild>();
+        foreach (BuildBundleInfo bundleInfo in id2BundleDic.Values) {
+            if (bundleInfo.assetList.Count == 0 || bundleInfo.provided) {
+                continue;
+            }
+            result.Add(bundleInfo.GetPipelineBuild());
+        }
+        return result;
     }
 }
 }

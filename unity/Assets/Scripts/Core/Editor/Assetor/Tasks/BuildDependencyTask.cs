@@ -41,6 +41,11 @@ namespace Wjybxx.BigCat.Editor.Assetor.Tasks
 })]
 public class BuildDependencyTask : LeafTask<Blackboard>
 {
+    /// <summary>
+    /// 是否自动忽略第三方程序集
+    /// </summary>
+    public bool autoIgnoreLibrary = true;
+
     protected override void Execute() {
         DependencyCache dependencyCache = blackboard.Get(BuildKeys.dependencyCache);
         BuildPackageInfo packageInfo = blackboard.Get(BuildKeys.packageInfo);
@@ -73,18 +78,21 @@ public class BuildDependencyTask : LeafTask<Blackboard>
         }
         // 构建Bundle之间依赖 - 理应和Unity构建管线计算的结果一致
         foreach (BuildBundleInfo bundleInfo in packageInfo.name2BundleDic.Values) {
-            foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
-                foreach (string dependPath in dependencyCache.GetDependencies(assetInfo.assetPath)) {
-                    if (!packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
-                        throw new Exception($"The dependent asset: {dependPath} is missing");
+            foreach (string dependPath in bundleInfo.assetList
+                         .SelectMany(assetInfo => dependencyCache.GetDependencies(assetInfo.assetPath))) {
+                //
+                if (!packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
+                    if (autoIgnoreLibrary && dependPath.StartsWith("Packages/")) {
+                        continue; // 自动忽略第三方程序集
                     }
-                    BuildBundleInfo dependBundle = dependAssetInfo.bundleInfo;
-                    if (dependBundle == bundleInfo) {
-                        continue;
-                    }
-                    if (bundleInfo.upstreamBundles.Add(dependBundle.bundleId)) {
-                        bundleInfo.upstreamBundleNames.Add(dependBundle.bundleName);
-                    }
+                    throw new Exception($"The dependent asset: {dependPath} is missing");
+                }
+                BuildBundleInfo dependBundle = dependAssetInfo.bundleInfo;
+                if (dependBundle == bundleInfo || dependBundle.provided) {
+                    continue;
+                }
+                if (bundleInfo.upstreamBundles.Add(dependBundle.bundleId)) {
+                    bundleInfo.upstreamBundleNames.Add(dependBundle.bundleName);
                 }
             }
         }

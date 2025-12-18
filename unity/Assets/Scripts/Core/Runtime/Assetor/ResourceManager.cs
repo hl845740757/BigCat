@@ -34,6 +34,11 @@ namespace Wjybxx.BigCat.Assetor
 /// </summary>
 public class ResourceManager
 {
+    /// <summary>
+    /// 客户端总喜欢静态变量...
+    /// </summary>
+    public static ResourceManager Inst { get; set; }
+
     private readonly TaskScheduler _scheduler;
     private readonly List<IPackageManager> _packageManagers = new List<IPackageManager>();
     private readonly List<IBundleManager> _bundleManagers = new List<IBundleManager>();
@@ -50,7 +55,7 @@ public class ResourceManager
     public ResourceManager(TaskScheduler scheduler) {
         _scheduler = scheduler;
         _lastCheckTime = scheduler.FrameTime;
-        scheduler.AddChild(new Updater(this));
+        scheduler.AddChild(new Updater(this) { Name = "ResourceManager.Updater" });
     }
 
     /// <summary>

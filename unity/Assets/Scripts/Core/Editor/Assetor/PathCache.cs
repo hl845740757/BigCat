@@ -44,6 +44,16 @@ internal class PathCache
     }
 
     /// <summary>
+    /// 获取文件夹名字
+    /// </summary>
+    /// <param name="assetPath"></param>
+    /// <returns></returns>
+    public string GetDirectoryName(string assetPath) {
+        int index = assetPath.LastIndexOf('/');
+        return index == -1 ? "" : assetPath.Substring(0, index);
+    }
+
+    /// <summary>
     /// 获取父文件夹路径
     /// </summary>
     /// <param name="directory">当前路径</param>
@@ -51,7 +61,8 @@ internal class PathCache
     /// <returns></returns>
     public string GetParentPath(string directory, bool normalize = false) {
         if (!parentDirectoryCache.TryGetValue(directory, out string value)) {
-            value = Path.GetDirectoryName(directory) ?? "";
+            // Path.GetDirectoryName会将斜杆转为反斜杠...
+            value = GetDirectoryName(directory);
             parentDirectoryCache[directory] = value;
         }
         return normalize ? NormalizedPath(value) : value;

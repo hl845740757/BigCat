@@ -104,6 +104,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BinaryAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

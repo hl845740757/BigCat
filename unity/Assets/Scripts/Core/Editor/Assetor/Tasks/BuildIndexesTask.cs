@@ -19,9 +19,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Wjybxx.BigCat.Assetor;
+using Wjybxx.BigCatTool;
 using Wjybxx.BTree;
 using Wjybxx.Dson.Codec.Attributes;
+using Wjybxx.Dson.Text;
 using Blackboard = Wjybxx.BigCat.Util.Blackboard;
 
 namespace Wjybxx.BigCat.Editor.Assetor.Tasks
@@ -35,9 +38,18 @@ namespace Wjybxx.BigCat.Editor.Assetor.Tasks
 })]
 public class BuildIndexesTask : LeafTask<Blackboard>
 {
+    /// <summary>
+    /// 是否上报详细日志到独立文件
+    /// </summary>
+    public bool reportLog;
+    /// <summary>
+    /// 上报日志路径
+    /// </summary>
+    public string reportPath;
+
     protected override void Execute() {
         BuildPackageInfo packageInfo = blackboard.Get(BuildKeys.packageInfo);
-        Dictionary<string, BuildAssetInfo> index2AssetDic = new(packageInfo.assetDic.Count);
+        Dictionary<string, Item> index2AssetDic = new(packageInfo.assetDic.Count);
         foreach (BuildBundleInfo bundleInfo in packageInfo.id2BundleDic.Values) {
             if (bundleInfo.collectorType != ECollectorType.MainAsset
                 && bundleInfo.collectorType != ECollectorType.RawFile) {
@@ -49,38 +61,77 @@ public class BuildIndexesTask : LeafTask<Blackboard>
             }
             foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
                 string fileName = GetSubAssetPath(assetInfo.assetPath, 0);
-                if ((bundleInfo.uniqueIndexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
-                    if (!index2AssetDic.TryAdd(fileName, assetInfo)) {
-                        throw new Exception($"Duplicate index: {fileName}, asset: {assetInfo.assetPath}");
-                    }
+                // 单纯的数字文件名不参与索引
+                if ((indexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FileName) != 0;
+                    AddIndex(index2AssetDic, fileName, assetInfo, unique);
                 }
                 // 单层级目录索引可选唯一性
-                if ((bundleInfo.uniqueIndexes & EAssetIndexes.FolderAndFileName) != 0) {
+                if ((indexes & EAssetIndexes.FolderAndFileName) != 0) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FolderAndFileName) != 0;
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, 1);
-                    if (!index2AssetDic.TryAdd(subAssetPath, assetInfo)) {
-                        throw new Exception($"Duplicate index: {subAssetPath}, asset: {assetInfo.assetPath}");
-                    }
+                    AddIndex(index2AssetDic, subAssetPath, assetInfo, unique);
                 }
                 // 多层级目录索引强制检查唯一性
                 if ((indexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, bundleInfo.indexDepth);
-                    if (!index2AssetDic.TryAdd(subAssetPath, assetInfo)) {
-                        throw new Exception($"Duplicate index: {subAssetPath}, asset: {assetInfo.assetPath}");
-                    }
+                    AddIndex(index2AssetDic, subAssetPath, assetInfo, true);
                 }
                 // 相对Collector的路径，也强制检查唯一性
                 if ((indexes & EAssetIndexes.RelativeToCollector) != 0) {
                     string subAssetPath = assetInfo.assetPath.Substring(bundleInfo.collectPath.Length + 1);
-                    if (!index2AssetDic.TryAdd(subAssetPath, assetInfo)) {
-                        throw new Exception($"Duplicate index: {subAssetPath}, asset: {assetInfo.assetPath}");
-                    }
+                    AddIndex(index2AssetDic, subAssetPath, assetInfo, true);
                 }
             }
         }
-        SetSuccess();
+        if (index2AssetDic.Values.Any(e => e.conflict)) {
+            ReportLog(index2AssetDic);
+            SetFailed((int)BuildErrorCodec.IndexConflict);
+        } else {
+            SetSuccess();
+        }
     }
 
     protected override void OnEventImpl(object eventObj) {
+    }
+
+    private void ReportLog(Dictionary<string, Item> index2AssetDic) {
+        using StringWriter stringWriter = new StringWriter();
+        using DsonTextWriter writer = new DsonTextWriter(DsonTextWriterSettings.Default, stringWriter);
+        foreach (Item item in index2AssetDic.Values.Where(e => e.conflict)) {
+            writer.WriteStartObject(ObjectStyle.Indent);
+            writer.WriteString("index", item.index);
+            writer.WriteInt32("count", item.assetPaths.Count, NumberStyle.Simple); // 方便检索
+            writer.WriteStartArray("assetPaths", ObjectStyle.Indent);
+            foreach (string assetPath in item.assetPaths) {
+                writer.WriteString(assetPath);
+            }
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+        string details = stringWriter.ToString();
+        blackboard.Set(BuildKeys.indexReportLog, details);
+        // 上报到独立文件
+        if (reportLog && !string.IsNullOrEmpty(reportPath)) {
+            string filePath = UnityEditorUtil.ConvertToFilePath(reportPath);
+            if (File.Exists(filePath)) {
+                File.Delete(filePath);
+            }
+            ToolUtil.CreateFileDirectory(filePath);
+            File.WriteAllText(filePath, details);
+        }
+    }
+
+    private void AddIndex(Dictionary<string, Item> dic, string key, BuildAssetInfo assetInfo, bool unique) {
+        if (!dic.TryGetValue(key, out Item item)) {
+            item = new Item(key);
+            dic.Add(key, item);
+        }
+        item.unique |= unique;
+        item.assetPaths.Add(assetInfo.assetPath);
+        if (item.unique && item.assetPaths.Count > 1) {
+            item.conflict = true;
+        }
     }
 
     private static bool IsNumber(string fileName) {
@@ -102,6 +153,18 @@ public class BuildIndexesTask : LeafTask<Blackboard>
             count++;
         }
         return assetPath.Substring(index + 1);
+    }
+
+    private class Item
+    {
+        public readonly string index;
+        public readonly List<string> assetPaths = new();
+        public bool unique;
+        public bool conflict;
+
+        public Item(string index) {
+            this.index = index;
+        }
     }
 }
 }

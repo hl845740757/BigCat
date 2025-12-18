@@ -63,6 +63,16 @@ public sealed class AssetQuery
     public readonly LinkedDictionary<string, AssetFileInfo> sceneName2AssetDic = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// 添加一个包
+    /// </summary>
+    public void AddPackage(AssetPackageInfo packageInfo) {
+        if (packageInfo == null) throw new ArgumentNullException(nameof(packageInfo));
+        if (!packages.Contains(packageInfo)) {
+            packages.Add(packageInfo);
+        }
+    }
+
+    /// <summary>
     /// 清理缓存
     /// </summary>
     /// <returns></returns>
@@ -138,7 +148,7 @@ public sealed class AssetQuery
                     }
                 }
                 // 自定义深度索引：需要唯一性（打包时）
-                if ((bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0 && bundleInfo.indexDepth > 1) {
+                if ((bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
                     string subAssetPath = GetSubAssetPath(assetPath, bundleInfo.indexDepth);
                     assetIndex2AssetDic[subAssetPath] = fileInfo;
                     //

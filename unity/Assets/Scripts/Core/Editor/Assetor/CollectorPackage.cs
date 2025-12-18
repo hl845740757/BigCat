@@ -113,6 +113,11 @@ public class CollectorPackage : Sequence<Blackboard>
             if (string.IsNullOrEmpty(collector.collectPath)) {
                 continue;
             }
+            // 修复配置错误
+            int lastIndex = collector.collectPath.Length - 1;
+            if (collector.collectPath[lastIndex] == '/') {
+                collector.collectPath = collector.collectPath.Substring(0, lastIndex);
+            }
             Object assetObj = AssetDatabase.LoadAssetAtPath<Object>(collector.collectPath);
             if (assetObj == null) {
                 Debug.LogWarning($"invalid collectPath: {collector.collectPath}");

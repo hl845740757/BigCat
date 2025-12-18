@@ -17,6 +17,8 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using Wjybxx.BigCat.Assetor;
 using Wjybxx.Commons.Collections;
 
@@ -40,7 +42,7 @@ public sealed class BuildBundleInfo
     /// </summary>
     public ECollectorType collectorType;
     /// <summary>
-    /// 是否由外部提供（是否只参与模拟编译，但不执行最终的打包）
+    /// 是否由外部提供（是否只参与模拟编译，但参与最终打包）
     /// </summary>
     public bool provided;
 
@@ -118,6 +120,7 @@ public sealed class BuildBundleInfo
 
     /// <summary>
     /// 默认的BundleName计算规则
+    /// 注：转换为文件名的时候，需要处理斜杠。
     /// </summary>
     public void InitBundleName() {
         bundleName = collectorType switch
@@ -126,15 +129,16 @@ public sealed class BuildBundleInfo
             ECollectorType.RawFile => assetPath + "@raw",
             _ => assetPath + "@dep"
         };
+        bundleName = bundleName.ToLowerInvariant();
     }
 
     public AssetBundleInfo Build() {
         AssetBundleInfo bundleInfo = new AssetBundleInfo()
         {
-            assetPath = assetPath,
+            assetPath = assetPath.ToLowerInvariant(), // Path规格化
             bundleName = bundleName,
             bundleType = bundleType,
-            collectPath = collectPath,
+            collectPath = collectPath.ToLowerInvariant(),
 
             unityCRC = unityCRC,
             fileHash = fileHash,
@@ -156,6 +160,15 @@ public sealed class BuildBundleInfo
             }
         }
         return bundleInfo;
+    }
+
+    public AssetBundleBuild GetPipelineBuild() {
+        return new AssetBundleBuild()
+        {
+            assetBundleName = bundleName,
+            assetBundleVariant = "",
+            assetNames = assetList.Select(e => e.assetPath).ToArray()
+        };
     }
 }
 }
