@@ -159,7 +159,7 @@ public class DataEditor : EditorWindow
 
     private void UnserializeAndPasteNodes(string operation, string data) {
         // operation有两个值：Paste Duplicate 目前行为一致
-        List<DataNode> dataNodes = dataGraph.UnserializeAndPasteNodes(data);
+        List<DataNode> dataNodes = dataGraph.UnserializeAndPasteNodes(data, graphView.currentFolder);
         graphView.Refresh(); // 立即刷新并更新选中区域
         graphView.RefreshSelection(dataNodes);
     }

@@ -66,10 +66,10 @@ class Collector : Task<Blackboard> {
   
   EGroupBy groupBy = 5; // 分组方式
   int32 groupDepth = 6; // 分组深度
-  HashSet<string> bundleTags = 7;
-  EAssetIndexes assetIndexes = 8;
-  EAssetIndexes uniqueIndexes = 9;
-  int32 indexDepth = 10; // 索引深度，大于1才有效
+  HashSet<string> bundleTags = 7; // 自定义标签
+  EAssetIndexes assetIndexes = 8; // 普通索引
+  EAssetIndexes uniqueIndexes = 9; // 唯一索引
+  int32 indexDepth = 10; // 索引深度
   
   // @PortField{side: right}
   IAssetClassifier classifier = 11;
@@ -78,13 +78,14 @@ inst Collector {
   recursive: true,
   groupDepth: 1,
   assetIndexes: 2,
-  uniqueIndexes: 0
+  uniqueIndexes: 0,
+  indexDepth: 2
 }
 
 // 收集器组
 class CollectorGroup : Task<Blackboard> {
   bool enabled = 1; // 启用状态
-  HashSet<string> bundleTags = 2;
+  HashSet<string> bundleTags = 2; // 会合并到Collector
   
   // @PortField{side: right}
   List<Collector> collectors = 3; // 收集器
@@ -108,7 +109,6 @@ class CollectorPackage : Task<Blackboard> {
 inst CollectorPackage {
   packageName: Default,
   packageVersion: "0.0.0",
-  useAssetDependencyDB: true
 }
 
 // 构建管线 - ds文件中直接继承Task类，以屏蔽children属性

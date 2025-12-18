@@ -312,7 +312,9 @@ public sealed class DataGraph
     /// <summary>
     /// 反序列化数据并执行粘贴
     /// </summary>
-    public List<DataNode> UnserializeAndPasteNodes(string data) {
+    /// <param name="data">序列化数据</param>
+    /// <param name="folder">粘贴到哪个虚拟文件夹</param>
+    public List<DataNode> UnserializeAndPasteNodes(string data, string folder) {
         if (string.IsNullOrEmpty(data)) {
             return new List<DataNode>();
         }
@@ -321,6 +323,7 @@ public sealed class DataGraph
         List<DataNode> srcNodes = new List<DataNode>(collection.Count);
         foreach (DsonValue dsonValue in collection) {
             DataNode dataNode = _helper.DecodeNode(dsonValue);
+            dataNode.folder = folder;
             RepairNode(dataNode, true);
             srcNodes.Add(dataNode);
         }

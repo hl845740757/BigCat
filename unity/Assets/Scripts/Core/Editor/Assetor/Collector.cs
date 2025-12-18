@@ -126,18 +126,22 @@ public class Collector : LeafTask<Blackboard>
         CollectorGroup group = this.GetFirstAncestorOfType<CollectorGroup>();
         PathCache pathCache = blackboard.Get(BuildKeys.pathCache);
         // 筛选资产
-        string[] allAssetPaths = blackboard.Get(BuildKeys.allAssetPaths);
-        foreach (string assetPath in allAssetPaths) {
+        foreach (string assetPath in blackboard.Get(BuildKeys.allAssetPaths)) {
             if (!UnityEditorUtil.IsSubPath(collectPath, assetPath)) {
                 continue;
             }
             if (!recursive && assetPath.IndexOf('/', collectPath.Length) > 0) {
                 continue;
             }
+            // 测试Editor的效率较低，放在前面两个条件之后
+            if (assetPath.Contains("/Editor/")) {
+                continue;
+            }
             // 剔除同类型子目录收集器的资源
             if (ContainsSubPathCollector(package, pathCache, assetPath)) {
                 continue;
             }
+            // 其实测试资产的类别一定程度上包含了Ignore规则
             if (package.ignoreService.IsIgnore(assetPath)) {
                 continue;
             }

@@ -16,6 +16,7 @@
 
 #endregion
 
+using System.Collections.Generic;
 using Wjybxx.BigCat.Util;
 using Wjybxx.BTree;
 using Blackboard = Wjybxx.BigCat.Util.Blackboard;
@@ -52,10 +53,10 @@ internal static class BuildKeys
     public static readonly DataKey<BuildPackageInfo> packageInfo
         = DataKeys.NewObjectKey<BuildPackageInfo>("packageInfo");
     /// <summary>
-    /// 所有的资产路径缓存
+    /// 所有的资产路径缓存(含编辑器)
     /// </summary>
-    public static readonly DataKey<string[]> allAssetPaths
-        = DataKeys.NewObjectKey<string[]>("allAssetPaths");
+    public static readonly DataKey<IReadOnlyList<string>> allAssetPaths
+        = DataKeys.NewObjectKey<IReadOnlyList<string>>("allAssetPaths");
     /// <summary>
     /// 规格化的资产路径缓存
     /// </summary>

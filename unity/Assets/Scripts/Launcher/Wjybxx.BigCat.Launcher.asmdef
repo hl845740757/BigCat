@@ -12,7 +12,8 @@
         "Wjybxx.BTree.Codec",
         "Wjybxx.BigCat.Core",
         "Wjybxx.BigCat.UI",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Wjybxx.BigCat.UnityCore"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

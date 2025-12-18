@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using Wjybxx.BigCat.Assetor;
@@ -74,6 +75,8 @@ public class BuildPackageInfo
             }
             packageInfo.bundleList.Add(bundleInfo.Build());
         }
+        // 对Bundle排序，确保输出结果的稳定性（也更容易查看）
+        packageInfo.bundleList.Sort((a, b) => string.Compare(a.bundleName, b.bundleName, StringComparison.Ordinal));
         return packageInfo;
     }
 

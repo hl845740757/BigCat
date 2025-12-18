@@ -136,6 +136,7 @@ public abstract class Provider : ResourceTask
             retainHandles[handle.HandleId] = prevCount - count;
         } else {
             retainHandles.Remove(handle.HandleId);
+            UnregisterHandleCallbacks(handle);
             Release();
         }
     }
@@ -181,6 +182,7 @@ public abstract class Provider : ResourceTask
         for (int i = 0; i < callbacks.Count; i++) {
             HandleCallback wrapper = callbacks[i];
             if (!wrapper.HasCallback) continue;
+            callbacks[i] = default;
             try {
                 wrapper.callback(wrapper.handle);
             }
@@ -209,6 +211,21 @@ public abstract class Provider : ResourceTask
             handleCallbacks[index] = default;
         } else {
             handleCallbacks.RemoveAt(index);
+        }
+    }
+
+    private void UnregisterHandleCallbacks(AssetHandle handle) {
+        if (handleCallbacks == null) return;
+        for (int index = handleCallbacks.Count - 1; index >= 0; index--) {
+            HandleCallback callback = handleCallbacks[index];
+            if (callback.handle != handle) {
+                continue;
+            }
+            if (IsNotifying) {
+                handleCallbacks[index] = default;
+            } else {
+                handleCallbacks.RemoveAt(index);
+            }
         }
     }
 
