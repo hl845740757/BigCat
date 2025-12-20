@@ -303,9 +303,7 @@ public class WindowMgr
         windowCfg.SetWindow(window); // 双向绑定
         window.OpenArgs = openArgs;
         window.ParentInstId = openArgs.pInstId;
-        if (!openArgs.assetHandle.IsNullHandle) {
-            window.assetHandles.Add(openArgs.assetHandle);
-        }
+        window.prefabHandle = openArgs.assetHandle;
         Add(window);
         return window;
     }
@@ -503,6 +501,15 @@ public class WindowMgr
             }
         }
         enumerator.Dispose();
+    }
+
+    /// <summary>
+    /// 强制销毁已经关闭的窗口(主动释放资源)
+    /// </summary>
+    public void DestroyClosedWindows() {
+        while (_closedWindowList.TryDequeue(out Window window)) {
+            Destroy(window);
+        }
     }
 
     #endregion

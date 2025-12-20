@@ -262,6 +262,7 @@ public class ResourceManager
             ProviderId providerId = new ProviderId(assetInfo.assetPath, assetType, loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
                 provider = CreateAssetProvider(assetInfo, providerId, priority);
+                provider.TimeReleased = _scheduler.FrameTime;
                 _scheduler.AddChild(provider);
                 _providers[providerId] = provider;
             }
@@ -290,6 +291,7 @@ public class ResourceManager
             ProviderId providerId = new ProviderId(assetInfo.assetPath, typeof(BinaryAsset), loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
                 provider = CreateBinaryAssetProvider(assetInfo, providerId, priority);
+                provider.TimeReleased = _scheduler.FrameTime;
                 _scheduler.AddChild(provider);
                 _providers[providerId] = provider;
             }
@@ -318,6 +320,7 @@ public class ResourceManager
             ProviderId providerId = new ProviderId(assetInfo.assetPath, null, loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
                 provider = CreateSceneAssetProvider(assetInfo, providerId, priority);
+                provider.TimeReleased = _scheduler.FrameTime;
                 _scheduler.AddChild(provider);
                 _providers[providerId] = provider;
             }
@@ -343,7 +346,8 @@ public class ResourceManager
         ProviderId providerId = new ProviderId(bundleInfo.assetPath, null, ELoadMethod.LoadBundle);
         if (!_providers.TryGetValue(providerId, out Provider provider)) {
             provider = CreateBundleProvider(bundleInfo, providerId, priority);
-            provider.Priority = priority;
+            provider.TimeReleased = _scheduler.FrameTime;
+            provider.Priority = priority; // 修正上游Provider的优先级
             _scheduler.AddChild(provider);
             _providers[providerId] = provider;
         } else {

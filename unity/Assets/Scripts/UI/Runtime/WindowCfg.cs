@@ -102,7 +102,7 @@ public class WindowCfg : MonoBehaviour
     /// 注：窗口关闭X秒以后自动销毁以释放内存
     /// </summary>
     [Tooltip("窗口关闭后的保留时间；单位秒，'-1'表示不销毁")]
-    public float maxIdleTime = 30;
+    public float maxIdleTime = 15;
 
     /// <summary>
     /// 关联的Window实例

@@ -6,6 +6,7 @@ using UnityEngine;
 using Wjybxx.BigCat.Assetor;
 using Wjybxx.BigCat.Assetor.Tasks;
 using Wjybxx.BigCat.Co;
+using Wjybxx.BigCat.Core;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.MVC;
@@ -121,23 +122,13 @@ public class GameLauncher : MonoBehaviour
         ResourceManager resourceMgr = new ResourceManager(scheduler); // TODO 应该注入容器
         ResourceManager.Inst = resourceMgr;
         //
-        EditorPackageManager packageManager = new EditorPackageManager(scheduler, "Default", "Assets/Resources/manifest.bin");
-        EditorBundleManager bundleManager = new EditorBundleManager(scheduler);
-        //
-        resourceMgr.AddPackageManager(packageManager);
-        resourceMgr.AddBundleManager(bundleManager);
-        // 这部分Task需要自己添加到调度器...
-        StartManagerTask startManagerTask = new StartManagerTask(resourceMgr.PackageManagers, resourceMgr.BundleManagers);
-        scheduler.AddChild(startManagerTask);
-        await startManagerTask.Future;
-        //
-        await packageManager.LoadPackageInfoAsync().Future;
-        await packageManager.BuildCacheInfoAsync().Future;
-        // 初始化完毕以后，构建查询缓存
-        resourceMgr.BuildQuery();
+        EditorBootTask bootTaskTask = new EditorBootTask(resourceMgr);
+        scheduler.AddChild(bootTaskTask);
+        await bootTaskTask.Future;
 
         // 尝试打开UI
         windowMgr.Open("LoginWindow", new WindowOpenArgs());
+        // windowMgr.Open("Prefabs/UI/LoginWindow", new WindowOpenArgs());
     }
 
     private void FixedUpdate() {

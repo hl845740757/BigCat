@@ -265,17 +265,5 @@ internal static class UIInternal
     }
 
     #endregion
-
-    // TODO 处理开启和关闭动画
-    public class SimpleWindowAgent : WindowAgent
-    {
-        private Window _window;
-
-        public void Inject(Window window) {
-            _window = window;
-        }
-
-        public Window Window => _window;
-    }
 }
 }

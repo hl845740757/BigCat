@@ -46,10 +46,48 @@ public class BuildWindow : DataEditor
         wnd.InitRepository(Directory.GetFiles(scriptDir, "*.ds", SearchOption.AllDirectories));
     }
 
+    /// <summary>
+    /// Ctrl + E 快捷打包
+    /// </summary>
+    [MenuItem("Window/BigCat/EditorBuild %E")]
+    private static void QuickBuild() {
+        const string buildConfigPath = "Assets/Editor/DataScripts/PackageBuilder.dson";
+        const string buildNodeName = "EditorPacker"; // 编辑器打包节点任务的名字
+
+        string filePath = UnityEditorUtil.ConvertToFilePath(buildConfigPath);
+        DsonArray<string> collection = Dsons.FromCollectionDson(File.ReadAllText(filePath));
+        // 查找执行节点
+        int index = DataEditorUtil.IndexOf(collection, buildNodeName);
+        if (index < 0) {
+            Debug.LogError($"Node {buildNodeName} does not exist");
+            return;
+        }
+        DsonValue root = collection[index];
+        collection.RemoveAt(index);
+        collection.Insert(0, root); // 插到首部，只解码第一个
+
+        IDsonConverter converter = CreateConverter();
+        PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
+        TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
+        {
+            RootTask = builder,
+            Blackboard = new Blackboard()
+        };
+        taskEntry.Update();
+        //
+        if (taskEntry.IsSucceeded) {
+            Debug.Log("Build success");
+        } else if (taskEntry.IsFailed) {
+            Debug.LogError("Build failed, Code: " + taskEntry.Status);
+        } else {
+            Debug.LogError("Task is not completed!");
+        }
+    }
+
     public override void OnNodeExecuteRequest(NodeView nodeView) {
         string filePath = UnityEditorUtil.ConvertToFilePath(dataGraph.assetPath);
         DsonArray<string> collection = Dsons.FromCollectionDson(File.ReadAllText(filePath));
-
+        // 查找执行节点
         int index = DataEditorUtil.IndexOf(collection, nodeView.dataNode.localId);
         DsonValue root = collection[index];
         collection.RemoveAt(index);

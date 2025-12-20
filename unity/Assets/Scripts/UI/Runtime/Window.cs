@@ -155,6 +155,11 @@ public sealed class Window
     /// 注；跟随界面一起卸载的资源放在这里。
     /// </summary>
     [NonSerialized] public readonly List<AssetHandle> assetHandles = new(20);
+    /// <summary>
+    /// 窗口绑定的资源句柄
+    /// 注：在Window销毁时才能释放。
+    /// </summary>
+    [NonSerialized] internal AssetHandle prefabHandle;
 
     internal Window(WindowCfg windowCfg, string windowAddr, WindowMgr windowMgr) {
         this.windowCfg = windowCfg;
@@ -251,18 +256,18 @@ public sealed class Window
         ClearUpdateList();
         StopComponents();
         _coroutineMgr.Shutdown();
-        ReleaseAssets();
+        ReleaseAssets(assetHandles);
 
         _status = ComponentStatus.Terminated;
         windowMgr?.OnTerminated(this);
     }
 
-    private void ReleaseAssets() {
-        for (int index = assetHandles.Count - 1; index >= 0; index--) {
-            AssetHandle assetHandle = assetHandles[index];
+    private static void ReleaseAssets(List<AssetHandle> handles) {
+        for (int index = handles.Count - 1; index >= 0; index--) {
+            AssetHandle assetHandle = handles[index];
             assetHandle.Release(assetHandle.ReferenceCount);
         }
-        assetHandles.Clear();
+        handles.Clear();
     }
 
     private void StartComponents() {
@@ -377,7 +382,7 @@ public sealed class Window
         _components.Clear();
         _indexedComponents.Clear();
         ClearUpdateList();
-        //
+        prefabHandle.Release();
         UnityEngine.Object.Destroy(gameObject);
     }
 

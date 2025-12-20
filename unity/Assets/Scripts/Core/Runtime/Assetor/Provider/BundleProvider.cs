@@ -171,23 +171,23 @@ public class BundleProvider : Provider
     }
 
     private void ExecuteUtilComplete() {
-        // Bundle当前不可用
+        // Bundle当前不可用 - 避免将下载等任务也变为同步
         if (!packageManager.HasImported(bundleInfo)) {
-            throw new BlockingOperationException("Bundle has not been imported");
-        }
-        // 进行中的异步加载无法转同步
-        ResourceTask loadTask = _loadTask;
-        if (loadTask != null) {
-            if (!loadTask.IsCompleted) {
-                throw new BlockingOperationException("Bundle has started async loading");
-            }
-            promise.result = loadTask.promise.result;
-            SetCompleted(loadTask.Status, true);
-            return;
+            throw new BlockingOperationException($"Bundle {bundleInfo.bundleName} has not been imported");
         }
         // 等待上游Bundle加载
         foreach (BundleProvider upstreamBundle in upstreamBundles) {
             Scheduler.WaitForCompletion(upstreamBundle, blackboard.deadline);
+        }
+        // 是否可以强制异步加载任务完成，官网文档没有明确的描述，但属性绑定的方法是GetAssetBundleBlocking
+        ResourceTask loadTask = _loadTask;
+        if (loadTask != null) {
+            if (!loadTask.IsCompleted) {
+                Scheduler.WaitForCompletion(loadTask, blackboard.deadline);
+            }
+            promise.result = loadTask.promise.result;
+            SetCompleted(loadTask.Status, true);
+            return;
         }
         // 同步加载
         IAssetBundle assetBundle = null;

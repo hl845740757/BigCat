@@ -59,6 +59,7 @@ public sealed class WindowOpenArgs
 
     /// <summary>
     /// 资源对象句柄
+    /// 注：该参数由框架赋值，用户避免访问。
     /// </summary>
     public AssetHandle assetHandle;
 }

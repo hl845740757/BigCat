@@ -105,6 +105,8 @@ class CollectorPackage : Task<Blackboard> {
 
   // @PortField{side: right}
   List<CollectorGroup> groups = 4; // 收集器组
+  // @PortField{side: right}
+  IIgnoreService ignoreService = 5; // 忽略规则    
 }
 inst CollectorPackage {
   packageName: Default,
@@ -146,6 +148,12 @@ class BuildIndexesTask : Task<Blackboard> {
   bool reportLog = 1; // 是否上报详细日志到独立文件
   //@Editor {displayType: AssetPath}
   string reportPath = 2; // 日志文件路径
+  HashSet<string> supportExtensions = 3; // 支持无扩展名索引的文件类型
+}
+inst BuildIndexesTask {
+  reportLog: true,
+  reportPath: "Assets/Editor/IndexReport.log",
+  supportExtensions: [fbx, unity, prefab, png, jpg, tif, ogg, wav, mp3]
 }
 
 // 编辑器下的构建任务

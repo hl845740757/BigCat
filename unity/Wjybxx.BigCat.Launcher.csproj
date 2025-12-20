@@ -47,6 +47,7 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Launcher\EditorBootTask.cs" />
     <Compile Include="Assets\Scripts\Launcher\UI\LoginView.cs" />
     <Compile Include="Assets\Scripts\Launcher\AppContext.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />

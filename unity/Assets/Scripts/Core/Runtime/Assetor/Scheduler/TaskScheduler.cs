@@ -152,12 +152,15 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
     }
 
     /// <summary>
-    /// 通知监听器
+    /// 通知延迟通知的监听器，允许用户手动调用
     /// </summary>
-    private void CheckNotifyTasks() {
+    public void CheckNotifyTasks() {
         if (_delayedNotifyTasks.Count == 0) return;
         for (int index = 0; index < _delayedNotifyTasks.Count; index++) {
             ResourceTask task = _delayedNotifyTasks[index];
+            if (task.IsDestroyed) { // 回调任务不再影响生命周期
+                continue;
+            }
             task.NotifyListeners();
         }
         _delayedNotifyTasks.Clear();

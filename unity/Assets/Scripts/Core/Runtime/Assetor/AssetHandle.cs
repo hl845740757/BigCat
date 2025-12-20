@@ -273,7 +273,8 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// 释放资源（减少引用计数）
     /// </summary>
     public void Release(int count = 1) {
-        _provider.Release(this, count);
+        // 允许NullHandle安全调用Release
+        _provider?.Release(this, count);
     }
 
     /// <summary>

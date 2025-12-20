@@ -9,6 +9,8 @@
             <Wjybxx.BigCat.Editor.UIElements.MTextField label="Folder：" label-margin="-100" name="folder" tooltip="虚拟子文件夹" style="width: 200px;" />
             <uie:ToolbarMenu display-tooltip-when-elided="true" name="folder-menu" />
             <ui:Button text="切换" display-tooltip-when-elided="true" name="change-folder" />
+            <Wjybxx.BigCat.Editor.UIElements.MTextField label="TypeSymbol：" label-margin="-60" name="type-symbol" tooltip="要创建的类型" style="width: 250px;" />
+            <ui:Button text="创建" display-tooltip-when-elided="true" name="create-node" />
         </uie:Toolbar>
         <ui:VisualElement style="flex-direction: row; flex-grow: 1;">
             <Wjybxx.BigCat.Editor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; min-width: 60%; min-height: 100%;" />

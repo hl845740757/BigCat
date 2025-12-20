@@ -46,6 +46,10 @@ public class BuildIndexesTask : LeafTask<Blackboard>
     /// 上报日志路径
     /// </summary>
     public string reportPath;
+    /// <summary>
+    /// 支持无扩展名索引的文件类型
+    /// </summary>
+    public HashSet<string> supportExtensions = new HashSet<string>();
 
     protected override void Execute() {
         BuildPackageInfo packageInfo = blackboard.Get(BuildKeys.packageInfo);
@@ -61,26 +65,47 @@ public class BuildIndexesTask : LeafTask<Blackboard>
             }
             foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
                 string fileName = GetSubAssetPath(assetInfo.assetPath, 0);
+                string extension = UnityEditorUtil.GetExtension(fileName);
                 // 单纯的数字文件名不参与索引
                 if ((indexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FileName) != 0;
                     AddIndex(index2AssetDic, fileName, assetInfo, unique);
+                    //
+                    if (supportExtensions.Contains(extension)) {
+                        string fileNameNoExt = RemoveExtension(fileName, extension);
+                        AddIndex(index2AssetDic, fileNameNoExt, assetInfo, unique);
+                    }
                 }
                 // 单层级目录索引可选唯一性
                 if ((indexes & EAssetIndexes.FolderAndFileName) != 0) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FolderAndFileName) != 0;
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, 1);
                     AddIndex(index2AssetDic, subAssetPath, assetInfo, unique);
+                    //
+                    if (supportExtensions.Contains(extension)) {
+                        string subAssetPathNoExt = RemoveExtension(subAssetPath, extension);
+                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, unique);
+                    }
                 }
                 // 多层级目录索引强制检查唯一性
                 if ((indexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, bundleInfo.indexDepth);
                     AddIndex(index2AssetDic, subAssetPath, assetInfo, true);
+                    //
+                    if (supportExtensions.Contains(extension)) {
+                        string subAssetPathNoExt = RemoveExtension(subAssetPath, extension);
+                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, true);
+                    }
                 }
                 // 相对Collector的路径，也强制检查唯一性
                 if ((indexes & EAssetIndexes.RelativeToCollector) != 0) {
                     string subAssetPath = assetInfo.assetPath.Substring(bundleInfo.collectPath.Length + 1);
                     AddIndex(index2AssetDic, subAssetPath, assetInfo, true);
+                    //
+                    if (supportExtensions.Contains(extension)) {
+                        string subAssetPathNoExt = RemoveExtension(subAssetPath, extension);
+                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, true);
+                    }
                 }
             }
         }
@@ -132,6 +157,11 @@ public class BuildIndexesTask : LeafTask<Blackboard>
         if (item.unique && item.assetPaths.Count > 1) {
             item.conflict = true;
         }
+    }
+
+    private static string RemoveExtension(string path, string extension) {
+        if (string.IsNullOrEmpty(extension)) return path;
+        return path.Substring(0, path.Length - extension.Length - 1);
     }
 
     private static bool IsNumber(string fileName) {

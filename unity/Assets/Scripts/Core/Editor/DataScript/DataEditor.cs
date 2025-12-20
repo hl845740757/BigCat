@@ -141,6 +141,7 @@ public class DataEditor : EditorWindow
         toolbar.Q<Button>("save-file-as").RegisterCallback<ClickEvent>(OnClickSaveFileAs);
         toolbar.Q<Button>("change-folder").RegisterCallback<ClickEvent>(OnClickChangeFolder);
         toolbar.Q<ToolbarMenu>("folder-menu").RegisterCallback<ClickEvent>(OnClickFolderMenu);
+        toolbar.Q<Button>("create-node").RegisterCallback<ClickEvent>(OnClickCreateNode);
         // 
         graphView.Bind(dataGraph);
         graphView.nodeCreationRequest = OnNodeCreationRequest;
@@ -176,6 +177,23 @@ public class DataEditor : EditorWindow
             dataGraph.Redo();
         } else if (evt.keyCode == KeyCode.S) {
             dataGraph.Save();
+        }
+    }
+
+    private void OnClickCreateNode(ClickEvent evt) {
+        string text = toolbar.Q<MTextField>("type-symbol").text;
+        if (string.IsNullOrWhiteSpace(text)) return;
+        try {
+            Vector2 screenPos = this.position.center * new Vector2(0.6f, 1f);
+            // 该方式无法指定Features
+            DSNamedType namedType = (DSNamedType)repository.ResolveTypeSymbol(null, text);
+            DataNode dataNode = dataGraph.CreateNode(namedType);
+            dataNode.folder = graphView.currentFolder;
+            dataNode.position = graphView.contentViewContainer.WorldToLocal(screenPos);
+            dataGraph.AddNode(dataNode);
+        }
+        catch (Exception ex) {
+            Debug.LogException(ex);
         }
     }
 

@@ -100,6 +100,17 @@ public static class DataEditorUtil
         return -1;
     }
 
+    public static int IndexOf(DsonArray<string> collection, string name) {
+        for (int index = 0; index < collection.Count; index++) {
+            if (collection[index] is DsonObject<string> dsonObject
+                && dsonObject.Header.TryGetValue("name", out DsonValue boxName)
+                && boxName.AsString() == name) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
     public static bool TryAddCodec(DsonConverterBuilder builder, Type type) {
         if (type.Name.EndsWith("Codec") && type.GetInterface(nameof(IDsonCodec)) != null) {
             Type encoderType = GetEncoderType(type);

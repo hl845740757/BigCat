@@ -52,6 +52,7 @@ public enum ObjectPathType
     ExcelRow = 8,
     /// <summary>
     /// Excel表单元格，通常是I18N字符串坐标
+    /// 注；如果包含{index}，则表示取List的低N个元素；框架统一使用'{index}'表示下标。
     /// </summary>
     ExcelValue = 9,
 

@@ -24,6 +24,8 @@ namespace Wjybxx.BigCat.Core
 {
 /// <summary>
 /// 文件扩展名结构体
+///
+/// 注：不包含点号
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
 internal readonly struct FileExtension : IEquatable<FileExtension>

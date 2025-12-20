@@ -92,6 +92,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EBundleType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\DownloadTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelListener.cs" />
@@ -111,7 +112,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowCmdMgr.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

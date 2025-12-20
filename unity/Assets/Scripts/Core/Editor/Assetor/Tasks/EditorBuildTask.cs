@@ -19,6 +19,7 @@
 using System;
 using System.IO;
 using System.Text;
+using UnityEditor;
 using Wjybxx.BigCat.Assetor;
 using Wjybxx.BTree;
 using Wjybxx.Commons;
@@ -65,7 +66,7 @@ public class EditorBuildTask : LeafTask<Blackboard>
             using DsonBinaryWriter<int> writer = new DsonBinaryWriter<int>(DsonWriterSettings.Default, output, false);
             manifest.Serialize(writer);
             //
-            byte[] data = ArrayUtil.CopyOf(output.Buffer, 0, output.Buffer.Length);
+            byte[] data = ArrayUtil.CopyOf(output.Buffer, 0, output.Position);
             File.WriteAllBytes(binFilePath, data);
         }
         if (!string.IsNullOrEmpty(textFilePath)) {

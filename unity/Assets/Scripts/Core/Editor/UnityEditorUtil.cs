@@ -207,6 +207,20 @@ public static class UnityEditorUtil
     }
 
     /// <summary>
+    /// 获取文件扩展名
+    /// 注：不包含点号，而<code>Path.GetExtension</code>的返回值包含点号。
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string GetExtension(string path) {
+        int index = path.LastIndexOf('.');
+        if (index >= 0 && index > path.LastIndexOf('/')) {
+            return path.Substring(index + 1);
+        }
+        return "";
+    }
+
+    /// <summary>
     /// 是否是给定
     /// </summary>
     /// <param name="path"></param>
