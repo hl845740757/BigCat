@@ -23,9 +23,9 @@ namespace Wjybxx.BigCat.Assetor.Tasks
 {
 public class StopManagerTask : ResourceTask
 {
-    private const ELoadPhase Pending = 0;
-    private const ELoadPhase StopBundles = (ELoadPhase)1;
-    private const ELoadPhase StopPackages = (ELoadPhase)2;
+    private const ELoadStatus Pending = 0;
+    private const ELoadStatus StopBundles = (ELoadStatus)1;
+    private const ELoadStatus StopPackages = (ELoadStatus)2;
 
     private readonly IList<IPackageManager> packageManagers;
     private readonly IList<IBundleManager> bundleManagers;
@@ -39,11 +39,11 @@ public class StopManagerTask : ResourceTask
     }
 
     protected override void Execute() {
-        if (promise.phase == Pending) {
-            promise.phase = StopBundles;
+        if (promise.status == Pending) {
+            promise.status = StopBundles;
             StopBundleManagers();
         }
-        if (promise.phase == StopBundles) {
+        if (promise.status == StopBundles) {
             if (!ResourceManager.IsCompleted(bundleTasks)) {
                 return;
             }
@@ -51,10 +51,10 @@ public class StopManagerTask : ResourceTask
                 SetFailed(TaskStatus.ERROR);
                 return;
             }
-            promise.phase = StopPackages;
+            promise.status = StopPackages;
             StopPackageManagers();
         }
-        if (promise.phase == StopPackages) {
+        if (promise.status == StopPackages) {
             if (!ResourceManager.IsCompleted(packageTasks)) {
                 return;
             }

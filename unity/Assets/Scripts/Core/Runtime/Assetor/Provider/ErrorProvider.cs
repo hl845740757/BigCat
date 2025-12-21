@@ -42,7 +42,8 @@ public class ErrorProvider : Provider
     }
 
     protected override void Execute() {
-        SetFailed((int)_errorCode);
+        promise.errorCode = _errorCode;
+        SetFailed(TaskStatus.ERROR);
     }
 }
 }

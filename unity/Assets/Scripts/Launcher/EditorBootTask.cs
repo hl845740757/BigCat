@@ -57,10 +57,10 @@ public class EditorBootTask : ResourceTask
 
         StartManagerTask startManagerTask = new StartManagerTask(resourceMgr.PackageManagers, resourceMgr.BundleManagers);
         scheduler.AddChild(startManagerTask);
-        await startManagerTask.Future;
+        await startManagerTask;
         //
-        await packageManager.LoadPackageInfoAsync().Future;
-        await packageManager.BuildCacheInfoAsync().Future;
+        await packageManager.LoadPackageInfoAsync();
+        await packageManager.BuildCacheInfoAsync();
         // 初始化完毕以后，构建查询缓存
         resourceMgr.BuildQuery();
     }

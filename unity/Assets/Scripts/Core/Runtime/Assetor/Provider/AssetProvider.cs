@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Wjybxx.BTree;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Assetor
@@ -39,7 +40,7 @@ public class AssetProvider : AssetProviderBase
     }
 
     protected override void Enter(int reentryId) {
-        promise.phase = ELoadPhase.Loading; // 由于Bundle可能处于不同的状态，不能细化状态和进度
+        promise.status = ELoadStatus.Loading; // 由于Bundle可能处于不同的状态，不能细化状态和进度
     }
 
     protected override void Execute() {
@@ -54,7 +55,8 @@ public class AssetProvider : AssetProviderBase
         if (loadAssetTask == null) {
             // 检测Bundle加载结果
             if (bundleProvider.IsFailedOrCancelled) {
-                SetFailed((int)ResourceErrorCode.BundleLoadFailed);
+                promise.errorCode = ResourceErrorCode.BundleLoadFailed;
+                SetFailed(TaskStatus.ERROR);
                 return;
             }
             // 发起加载请求
@@ -66,10 +68,10 @@ public class AssetProvider : AssetProviderBase
                 ELoadMethod.LoadAllAssets => assetBundle.LoadAllAssetsAsync(assetType),
                 _ => throw new AssertionError(pid.ToString())
             };
-            // 资源类型不匹配 -- LoadAll可能返回空数组
+            // 资产文件不存在 - 通常不应该发生
             if (loadAssetTask == null) {
-                promise.result = null;
-                SetSuccess();
+                promise.errorCode = ResourceErrorCode.AssetFileNotFound;
+                SetFailed(TaskStatus.ERROR);
                 return;
             }
         }

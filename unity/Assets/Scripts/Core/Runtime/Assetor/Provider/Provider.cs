@@ -19,8 +19,6 @@
 using System;
 using System.Collections.Generic;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Logger;
-using ILogger = Wjybxx.Commons.Logger.ILogger;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -34,8 +32,6 @@ namespace Wjybxx.BigCat.Assetor
 /// </summary>
 public abstract class Provider : ResourceTask
 {
-    protected static readonly ILogger logger = LoggerFactory.GetLogger(typeof(Provider));
-
     /// <summary>
     /// 关联的资源管理器
     /// </summary>
@@ -56,10 +52,6 @@ public abstract class Provider : ResourceTask
     /// 引用计数
     /// </summary>
     public int RefCount { get; private set; }
-    /// <summary>
-    /// 用户回调
-    /// </summary>
-    private List<HandleCallback> handleCallbacks;
 
     protected Provider(ResourceManager resourceMgr, ProviderId pid) {
         this.resourceMgr = resourceMgr;
@@ -163,100 +155,6 @@ public abstract class Provider : ResourceTask
     /// <returns></returns>
     public virtual bool CanDestroy() {
         return IsCompleted && RefCount <= 0; // 回调数量不影响生命周期
-    }
-
-    #endregion
-
-    #region callback
-
-    /// <summary>
-    /// 当前是否有回调任务
-    /// </summary>
-    public bool HasCallbacks => handleCallbacks != null && handleCallbacks.Count > 0;
-
-    public override void NotifyListeners() {
-        List<HandleCallback> callbacks = handleCallbacks;
-        if (callbacks == null || callbacks.Count == 0) return;
-        // 当前迭代过程中新增的回调立即通知没有问题，因为也是延迟执行的
-        IsNotifying = true;
-        for (int i = 0; i < callbacks.Count; i++) {
-            HandleCallback wrapper = callbacks[i];
-            if (!wrapper.HasCallback) continue;
-            callbacks[i] = default;
-            try {
-                wrapper.callback(wrapper.handle);
-            }
-            catch (Exception ex) {
-                logger.Warn(ex);
-            }
-        }
-        callbacks.Clear();
-        IsNotifying = false;
-    }
-
-    public void RegisterHandleCallback(AssetHandle handle, Action<AssetHandle> callback) {
-        ThrowIfDestroyed();
-        handleCallbacks ??= new List<HandleCallback>(4);
-        handleCallbacks.Add(new HandleCallback(handle, callback));
-        if (IsCompleted && handleCallbacks.Count == 1) {
-            Scheduler.DelayNotifyListener(this);
-        }
-    }
-
-    public void UnregisterHandleCallback(AssetHandle handle, Action<AssetHandle> callback) {
-        if (handleCallbacks == null) return;
-        HandleCallback wrapper = new HandleCallback(handle, callback);
-        int index = handleCallbacks.IndexOf(wrapper);
-        if (IsNotifying) {
-            handleCallbacks[index] = default;
-        } else {
-            handleCallbacks.RemoveAt(index);
-        }
-    }
-
-    private void UnregisterHandleCallbacks(AssetHandle handle) {
-        if (handleCallbacks == null) return;
-        for (int index = handleCallbacks.Count - 1; index >= 0; index--) {
-            HandleCallback callback = handleCallbacks[index];
-            if (callback.handle != handle) {
-                continue;
-            }
-            if (IsNotifying) {
-                handleCallbacks[index] = default;
-            } else {
-                handleCallbacks.RemoveAt(index);
-            }
-        }
-    }
-
-    private bool IsNotifying {
-        get => (flags & MASK_NOTIFYING) != 0;
-        set => flags = BitFlags.Set(flags, MASK_NOTIFYING, value);
-    }
-
-    private readonly struct HandleCallback : IEquatable<HandleCallback>
-    {
-        public readonly AssetHandle handle;
-        public readonly Action<AssetHandle> callback;
-
-        public HandleCallback(AssetHandle handle, Action<AssetHandle> callback) {
-            this.handle = handle;
-            this.callback = callback;
-        }
-
-        public bool HasCallback => callback != null;
-
-        public bool Equals(HandleCallback other) {
-            return handle.Equals(other.handle) && Equals(callback, other.callback);
-        }
-
-        public override bool Equals(object obj) {
-            return obj is HandleCallback other && Equals(other);
-        }
-
-        public override int GetHashCode() {
-            return (handle.GetHashCode() * 397) ^ (callback != null ? callback.GetHashCode() : 0);
-        }
     }
 
     #endregion

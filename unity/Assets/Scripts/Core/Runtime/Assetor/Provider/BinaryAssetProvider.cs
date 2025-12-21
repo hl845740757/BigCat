@@ -16,6 +16,7 @@
 
 #endregion
 
+using Wjybxx.BTree;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Assetor
@@ -31,7 +32,7 @@ public class BinaryAssetProvider : AssetProviderBase
     }
 
     protected override void Enter(int reentryId) {
-        promise.phase = ELoadPhase.Loading;
+        promise.status = ELoadStatus.Loading;
     }
 
     protected override void Execute() {
@@ -43,7 +44,8 @@ public class BinaryAssetProvider : AssetProviderBase
             }
         }
         if (bundleProvider.IsFailedOrCancelled) {
-            SetFailed((int)ResourceErrorCode.BundleLoadFailed);
+            promise.errorCode = ResourceErrorCode.BundleLoadFailed;
+            SetFailed(TaskStatus.ERROR);
             return;
         }
         IAssetBundle assetBundle = bundleProvider.assetBundle;
@@ -53,8 +55,14 @@ public class BinaryAssetProvider : AssetProviderBase
             ELoadMethod.LoadAllBinaryAssets => assetBundle.LoadAllBinaryAssets(),
             _ => throw new AssertionError(pid.ToString())
         };
-        promise.result = result;
-        SetSuccess();
+        // 资产文件不存在 - 通常不应该发生
+        if (result == null) {
+            promise.errorCode = ResourceErrorCode.AssetFileNotFound;
+            SetFailed(TaskStatus.ERROR);
+        } else {
+            promise.result = result;
+            SetSuccess();
+        }
     }
 }
 }

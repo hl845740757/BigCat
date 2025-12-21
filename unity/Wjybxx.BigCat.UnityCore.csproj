@@ -73,7 +73,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetPackageInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadPhase.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadStatus.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorPackageManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />

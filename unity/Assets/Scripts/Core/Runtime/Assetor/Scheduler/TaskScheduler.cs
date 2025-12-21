@@ -143,7 +143,12 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
 
     protected override void OnChildCompleted(Task<Blackboard> child) {
         if (child is ResourceTask task) {
-            task.promise.TrySetResult(null); // promise优先
+            task.promise.status = task.Status switch
+            {
+                TaskStatus.SUCCESS => ELoadStatus.Succeeded,
+                TaskStatus.CANCELLED => ELoadStatus.Cancelled,
+                _ => ELoadStatus.Failed
+            };
             task.NotifyListeners();
         }
     }
@@ -196,7 +201,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
         //
         Blackboard blackboard = task.Blackboard;
         if (blackboard.isWaitForCompletion) {
-            throw new Exception("Recursively call WaitForComplete");
+            throw new Exception("Recursively call WaitForCompletion");
         }
         blackboard.isWaitForCompletion = true;
         blackboard.stopwatch = _stopwatch;

@@ -23,9 +23,9 @@ namespace Wjybxx.BigCat.Assetor.Tasks
 {
 public class StartManagerTask : ResourceTask
 {
-    private const ELoadPhase Pending = 0;
-    private const ELoadPhase StartPackages = (ELoadPhase)1;
-    private const ELoadPhase StartBundles = (ELoadPhase)2;
+    private const ELoadStatus Pending = 0;
+    private const ELoadStatus StartPackages = (ELoadStatus)1;
+    private const ELoadStatus StartBundles = (ELoadStatus)2;
 
     private readonly IList<IPackageManager> packageManagers;
     private readonly IList<IBundleManager> bundleManagers;
@@ -39,11 +39,11 @@ public class StartManagerTask : ResourceTask
     }
 
     protected override void Execute() {
-        if (promise.phase == Pending) {
-            promise.phase = StartPackages;
+        if (promise.status == Pending) {
+            promise.status = StartPackages;
             StartPackageManagers();
         }
-        if (promise.phase == StartPackages) {
+        if (promise.status == StartPackages) {
             if (!ResourceManager.IsCompleted(packageTasks)) {
                 return;
             }
@@ -51,10 +51,10 @@ public class StartManagerTask : ResourceTask
                 SetFailed(TaskStatus.ERROR);
                 return;
             }
-            promise.phase = StartBundles;
+            promise.status = StartBundles;
             StartBundleManagers();
         }
-        if (promise.phase == StartBundles) {
+        if (promise.status == StartBundles) {
             if (!ResourceManager.IsCompleted(bundleTasks)) {
                 return;
             }

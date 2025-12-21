@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Wjybxx.BTree;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -35,7 +36,7 @@ public class SceneAssetProvider : AssetProviderBase
     }
 
     protected override void Enter(int reentryId) {
-        promise.phase = ELoadPhase.Loading;
+        promise.status = ELoadStatus.Loading;
     }
 
     protected override void Execute() {
@@ -47,7 +48,8 @@ public class SceneAssetProvider : AssetProviderBase
             }
         }
         if (bundleProvider.IsFailedOrCancelled) {
-            SetFailed((int)ResourceErrorCode.BundleLoadFailed);
+            promise.errorCode = ResourceErrorCode.BundleLoadFailed;
+            SetFailed(TaskStatus.ERROR);
         } else {
             SetSuccess();
         }

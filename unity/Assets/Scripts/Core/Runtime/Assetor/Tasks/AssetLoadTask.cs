@@ -54,7 +54,7 @@ public class AssetLoadTask : ResourceTask
         }
         AssetBundleRequest request = _request;
         if (request == null) {
-            promise.phase = ELoadPhase.Loading;
+            promise.status = ELoadStatus.Loading;
             request = _request = _loadMethod switch
             {
                 ELoadMethod.LoadAsset => _bundle.LoadAssetAsync(_assetPath, _assetType),

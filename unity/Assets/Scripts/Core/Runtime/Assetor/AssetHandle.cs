@@ -160,7 +160,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     public ResourceErrorCode ErrorCode {
         get {
             _provider.UpdateAccessTime();
-            return _provider.IsFailedOrCancelled ? (ResourceErrorCode)_provider.Status : 0;
+            return _provider.promise.errorCode;
         }
     }
 
@@ -214,14 +214,19 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     }
 
     /// <summary>
-    /// 资源加载关联的Future
-    ///
-    /// 注：
-    /// 1.只能在返回的Future上等待任务完成，不能通过Future获取结果，也不能调用阻塞接口阻塞到任务完成。
-    /// 2.如果任务已完成，await后的代码将立即（同步）执行。
-    /// 3.用户应当在Await方法后通过Handle查询任务结果。
+    /// 当前任务进度
     /// </summary>
-    public ValueFuture Future => new ValueFuture(_provider.promise);
+    public float Progress => _provider.promise.progress;
+
+    /// <summary>
+    /// await回调支持
+    /// 
+    /// 注：
+    /// 1.如果任务已完成，await后的代码将立即（同步）执行。
+    /// 2.用户应当在Await方法后通过Handle查询任务结果。
+    /// 3.Awaiter只能感知任务是否完成，在任务失败的情况下不会抛出异常 —— 用户总是需要安全释放Handle。
+    /// </summary>
+    public Awaiter GetAwaiter() => new Awaiter(_provider ?? throw new InvalidOperationException());
 
     /// <summary>
     /// 注册加载完成回调
@@ -229,8 +234,8 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// 注：即使任务已完成，回调仍将被延迟到下一帧执行，即该形式的回调总是异步执行。
     /// </summary>
     public event Action<AssetHandle> Completed {
-        add => _provider.RegisterHandleCallback(this, value);
-        remove => _provider.UnregisterHandleCallback(this, value);
+        add => _provider.RegisterCallback(value, this);
+        remove => _provider.UnregisterCallback(value, this);
     }
 
     /// <summary>
@@ -335,6 +340,45 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
 
     public static bool operator !=(AssetHandle left, AssetHandle right) {
         return !left.Equals(right);
+    }
+
+    #endregion
+
+    #region awaiter
+
+    public readonly struct Awaiter : ICriticalNotifyCompletion
+    {
+        private readonly Provider _task;
+
+        internal Awaiter(Provider task) {
+            _task = task;
+        }
+
+        // 1.IsCompleted
+        // IsCompleted只在Start后调用一次，EventLoop可以通过接口查询是否已在线程中
+        public bool IsCompleted => _task.IsCompleted;
+
+        // 2. GetResult
+        // 状态机只在IsCompleted为true时，和OnCompleted后调用GetResult，因此在目标线程中 -- 不可手动调用
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetResult() {
+            Debug.Assert(_task.IsCompleted);
+        }
+
+        // 3. OnCompleted
+        /// <summary>
+        /// 添加一个Future完成时的回调。
+        /// </summary>
+        /// <param name="continuation">回调任务</param>
+        public void OnCompleted(Action continuation) {
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+            _task.RegisterCallback(continuation);
+        }
+
+        public void UnsafeOnCompleted(Action continuation) {
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+            _task.RegisterCallback(continuation);
+        }
     }
 
     #endregion

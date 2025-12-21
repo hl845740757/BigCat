@@ -17,10 +17,13 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Wjybxx.BTree;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Logger;
+using ILogger = Wjybxx.Commons.Logger.ILogger;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -35,6 +38,7 @@ namespace Wjybxx.BigCat.Assetor
 /// </summary>
 public abstract class ResourceTask : Decorator<Blackboard>
 {
+    protected static readonly ILogger logger = LoggerFactory.GetLogger(typeof(Provider));
     private static int _nextTaskId;
 
     /// <summary>
@@ -46,6 +50,10 @@ public abstract class ResourceTask : Decorator<Blackboard>
     /// </summary>
     public readonly ResourcePromise<object> promise = new ResourcePromise<object>();
     /// <summary>
+    /// 监听器列表
+    /// </summary>
+    private List<CallbackItem> _callbacks;
+    /// <summary>
     /// 任务优先级
     ///
     /// 注：数值越小优先级越高。
@@ -55,8 +63,6 @@ public abstract class ResourceTask : Decorator<Blackboard>
     protected ResourceTask() {
         taskId = ++_nextTaskId;
     }
-
-    public ValueFuture Future => new ValueFuture(promise);
 
     /// <summary>
     /// 关联的调度器
@@ -105,7 +111,6 @@ public abstract class ResourceTask : Decorator<Blackboard>
 
     /// <summary>
     /// 任务的优先级发生变更
-    /// 注：可能需要同步到关联的加载任务；由于Bundle加载任务可能被共享，因此通常只应该提升优先级。
     /// </summary>
     protected virtual void OnPriorityChanged(int prevValue) {
         Scheduler?.OnPriorityChanged(this, prevValue);
@@ -116,12 +121,6 @@ public abstract class ResourceTask : Decorator<Blackboard>
     /// </summary>
     /// <param name="child"></param>
     protected override void OnChildCompleted(Task<Blackboard> child) {
-    }
-
-    /// <summary>
-    /// 通知监听器
-    /// </summary>
-    public virtual void NotifyListeners() {
     }
 
     /// <summary>
@@ -158,6 +157,186 @@ public abstract class ResourceTask : Decorator<Blackboard>
     public override int GetHashCode() {
         return taskId;
     }
+
+    #region callback
+
+    /// <summary>
+    /// 资源任务的await实现
+    /// </summary>
+    /// <returns></returns>
+    public Awaiter GetAwaiter() => new Awaiter(this);
+
+    /// <summary>
+    /// 当前通知状态
+    /// </summary>
+    public bool IsNotifying {
+        get => (flags & MASK_NOTIFYING) != 0;
+        private set => flags = BitFlags.Set(flags, MASK_NOTIFYING, value);
+    }
+
+    public void RegisterCallback(Action action) {
+        RegisterCallbackImpl(action, default);
+    }
+
+    public void UnregisterCallback(Action action) {
+        UnregisterCallbackImpl(action, default);
+    }
+
+    public void RegisterCallback(Action<ResourceTask> action) {
+        RegisterCallbackImpl(action, default);
+    }
+
+    public void UnregisterCallback(Action<ResourceTask> action) {
+        UnregisterCallbackImpl(action, default);
+    }
+
+    public void RegisterCallback(Action<AssetHandle> action, AssetHandle handle) {
+        RegisterCallbackImpl(action, handle);
+    }
+
+    public void UnregisterCallback(Action<AssetHandle> action, AssetHandle handle) {
+        UnregisterCallbackImpl(action, handle);
+    }
+
+    private void RegisterCallbackImpl(Delegate action, AssetHandle handle) {
+        if (action == null) throw new ArgumentNullException(nameof(action));
+        _callbacks ??= new List<CallbackItem>();
+        _callbacks.Add(new CallbackItem(action, handle));
+    }
+
+    private void UnregisterCallbackImpl(Delegate action, AssetHandle handle) {
+        List<CallbackItem> callbacks = _callbacks;
+        if (callbacks == null || callbacks.Count == 0) return;
+        for (int index = callbacks.Count - 1; index >= 0; index--) {
+            CallbackItem wrapper = callbacks[index];
+            if (wrapper.action != action || wrapper.handle != handle) {
+                continue;
+            }
+            if (IsNotifying) {
+                callbacks[index] = default;
+            } else {
+                callbacks.RemoveAt(index);
+            }
+            return;
+        }
+    }
+
+    /// <summary>
+    /// 删除Handle关联的所有监听器
+    /// </summary>
+    /// <param name="handle"></param>
+    public void UnregisterHandleCallbacks(AssetHandle handle) {
+        List<CallbackItem> callbacks = _callbacks;
+        if (callbacks == null || callbacks.Count == 0) return;
+        for (int index = callbacks.Count - 1; index >= 0; index--) {
+            CallbackItem wrapper = callbacks[index];
+            if (wrapper.handle != handle) {
+                continue;
+            }
+            if (IsNotifying) {
+                callbacks[index] = default;
+            } else {
+                callbacks.RemoveAt(index);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 通知监听器
+    /// </summary>
+    public void NotifyListeners() {
+        List<CallbackItem> callbacks = _callbacks;
+        if (callbacks == null || callbacks.Count == 0) return;
+        // 当前迭代过程中新增的回调立即通知没有问题，因为也是延迟执行的
+        IsNotifying = true;
+        for (int i = 0; i < callbacks.Count; i++) {
+            var wrapper = callbacks[i];
+            if (wrapper.action == null) continue;
+            callbacks[i] = default; // 先清理
+            try {
+                switch (wrapper.action) {
+                    case Action action1: // await
+                        action1.Invoke();
+                        break;
+                    case Action<AssetHandle> action2: // handle
+                        action2.Invoke(wrapper.handle);
+                        break;
+                    case Action<ResourceTask> action3: // 其它
+                        action3.Invoke(this);
+                        break;
+                    default: throw new AssertionError();
+                }
+            }
+            catch (Exception ex) {
+                logger.Warn(ex);
+            }
+        }
+        callbacks.Clear();
+        IsNotifying = false;
+    }
+
+    private readonly struct CallbackItem : IEquatable<CallbackItem>
+    {
+        public readonly Delegate action; // Action或Action<Handle>或Action<Task>
+        public readonly AssetHandle handle;
+
+        public CallbackItem(Delegate action, AssetHandle handle = default) {
+            this.action = action;
+            this.handle = handle;
+        }
+
+        public bool Equals(CallbackItem other) {
+            return handle.Equals(other.handle) && Equals(action, other.action);
+        }
+
+        public override bool Equals(object obj) {
+            return obj is CallbackItem other && Equals(other);
+        }
+
+        public override int GetHashCode() {
+            return (handle.GetHashCode() * 397) ^ (action != null ? action.GetHashCode() : 0);
+        }
+    }
+
+    /// <summary>
+    /// 注意：该Awaiter是不暴露给用户的，仅限资源管理层任务之间交互
+    /// </summary>
+    public readonly struct Awaiter : ICriticalNotifyCompletion
+    {
+        private readonly ResourceTask _task;
+
+        internal Awaiter(ResourceTask task) {
+            _task = task;
+        }
+
+        // 1.IsCompleted
+        // IsCompleted只在Start后调用一次，EventLoop可以通过接口查询是否已在线程中
+        public bool IsCompleted => _task.IsCompleted;
+
+        // 2. GetResult
+        // 状态机只在IsCompleted为true时，和OnCompleted后调用GetResult，因此在目标线程中 -- 不可手动调用
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public object GetResult() {
+            return _task.promise.result;
+        }
+
+        // 3. OnCompleted
+        /// <summary>
+        /// 添加一个Future完成时的回调。
+        /// </summary>
+        /// <param name="continuation">回调任务</param>
+        public void OnCompleted(Action continuation) {
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+            _task.RegisterCallback(continuation);
+        }
+
+        public void UnsafeOnCompleted(Action continuation) {
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+            _task.RegisterCallback(continuation);
+        }
+    }
+
+    #endregion
 
     #region util
 

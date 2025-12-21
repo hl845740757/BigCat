@@ -17,24 +17,22 @@
 #endregion
 
 using System;
-using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
 /// 资源加载Promise
 ///
-/// 1.避免直接将Promise暴露给用户，否则需要大量的封装。
-/// 2.用户的普通回调不能注册到这里，因为不支持删除；Await回调可以注册到这里，在任务完成的情况下会立即执行。
-/// 2.继承<see cref="Promise{T}"/>是为了支持await操作，避免再分配一个对象。
-/// 3.Task只需将任务结果赋值到<see cref="result"/>，由调度器发布到Promise。
+/// 注：
+/// 1.避免直接将Promise暴露给用户，否则需要大量的封装 -- 用户总是通过<see cref="AssetHandle"/>访问。
+/// 2.Task只需要将结果写入Promise，由调度器通知监听器。
 /// </summary>
-public sealed class ResourcePromise<T> : Promise<T>
+public sealed class ResourcePromise<T>
 {
     /// <summary>
     /// 任务阶段
     /// </summary>
-    public ELoadPhase phase;
+    public ELoadStatus status;
     /// <summary>
     /// 任务进度(不可用于判断任务是否结束)
     /// </summary>
@@ -55,6 +53,10 @@ public sealed class ResourcePromise<T> : Promise<T>
     /// 任务的执行结果
     /// </summary>
     public T result;
+    /// <summary>
+    /// 错误码
+    /// </summary>
+    public ResourceErrorCode errorCode;
 
     public void ClearProgress() {
         this.progress = 0;

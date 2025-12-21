@@ -49,7 +49,7 @@ public sealed class MonoScheduler : MonoBehaviour
     }
 
     private void Update() {
-        _taskEntry.Template_Execute(false);
+        _taskEntry.Template_Execute(false); // false不影响正确性
     }
 
     private void OnDestroy() {

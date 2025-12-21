@@ -16,8 +16,6 @@
 
 #endregion
 
-using Wjybxx.BTree;
-
 namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
@@ -26,45 +24,36 @@ namespace Wjybxx.BigCat.Assetor
 public enum ResourceErrorCode
 {
     /// <summary>
-    /// 任务尚未完成或执行成功 
+    /// 未知 
     /// </summary>
-    None = 0,
-    /// <summary>
-    /// 任务被取消
-    /// </summary>
-    Cancelled = TaskStatus.CANCELLED,
-    /// <summary>
-    /// 默认的错误码
-    /// </summary>
-    UnknownError = TaskStatus.ERROR,
-
+    Unknown = 0,
     /// <summary>
     /// Bundle加载失败
     /// </summary>
-    BundleLoadFailed = 101,
+    BundleLoadFailed = 1,
     /// <summary>
     /// Bundle下载失败
     /// </summary>
-    BundleDownloadFailed = 102,
+    BundleDownloadFailed = 2,
     /// <summary>
     /// Bundle验证失败(CRC32)
     /// </summary>
-    BundleVerifyFailed = 103,
+    BundleVerifyFailed = 3,
     /// <summary>
     /// Bundle重命名失败(临时文件转正式文件失败)
     /// </summary>
-    BundleRenameFailed = 104,
+    BundleRenameFailed = 4,
     /// <summary>
     /// Bundle导入失败
     /// </summary>
-    BundleImportFailed = 105,
+    BundleImportFailed = 5,
     /// <summary>
     /// Bundle文件不存在
     /// </summary>
-    BundleFileNotFound = 106,
+    BundleFileNotFound = 6,
     /// <summary>
     /// 找不到资产文件
     /// </summary>
-    AssetFileNotFound = 107,
+    AssetFileNotFound = 7,
 }
 }

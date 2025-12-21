@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Wjybxx.Commons.Concurrent;
+using TaskStatus = Wjybxx.BTree.TaskStatus;
 
 namespace Wjybxx.BigCat.Assetor
 {
@@ -103,14 +104,14 @@ public class BundleProvider : Provider
             return;
         }
         // 这里使用状态模式是不必要的，因为逻辑很简单，顺序代码更清楚
-        if (promise.phase == ELoadPhase.Pending) {
-            promise.phase = ELoadPhase.Downloading;
+        if (promise.status == ELoadStatus.Pending) {
+            promise.status = ELoadStatus.Downloading;
             if (packageManager.NeedDownload(bundleInfo)) {
                 _downloadTask = packageManager.DownloadBundleAsync(bundleInfo);
             }
         }
         // 
-        if (promise.phase == ELoadPhase.Downloading) {
+        if (promise.status == ELoadStatus.Downloading) {
             DownloadTask downloadTask = _downloadTask;
             if (downloadTask != null) {
                 if (!downloadTask.IsCompleted) {
@@ -122,14 +123,14 @@ public class BundleProvider : Provider
                     return;
                 }
             }
-            promise.phase = ELoadPhase.Importing;
+            promise.status = ELoadStatus.Importing;
             promise.ClearProgress();
             if (packageManager.NeedImport(bundleInfo)) {
                 _importTask = packageManager.ImportBundleAsync(bundleInfo);
             }
         }
         //
-        if (promise.phase == ELoadPhase.Importing) {
+        if (promise.status == ELoadStatus.Importing) {
             ResourceTask importTask = _importTask;
             if (importTask != null) {
                 if (!importTask.IsCompleted) {
@@ -141,7 +142,7 @@ public class BundleProvider : Provider
                     return;
                 }
             }
-            promise.phase = ELoadPhase.Loading;
+            promise.status = ELoadStatus.Loading;
             promise.ClearProgress();
         }
         //
@@ -158,7 +159,8 @@ public class BundleProvider : Provider
                 }
             }
             if (loadTask == null) {
-                SetFailed((int)ResourceErrorCode.BundleFileNotFound);
+                promise.errorCode = ResourceErrorCode.BundleFileNotFound;
+                SetFailed(TaskStatus.ERROR);
                 return;
             }
             _loadTask = loadTask;
@@ -196,11 +198,12 @@ public class BundleProvider : Provider
                 break;
             }
         }
-        if (assetBundle != null) {
+        if (assetBundle == null) {
+            promise.errorCode = ResourceErrorCode.BundleFileNotFound;
+            SetFailed(TaskStatus.ERROR);
+        } else {
             promise.result = assetBundle;
             SetSuccess();
-        } else {
-            SetFailed((int)ResourceErrorCode.BundleFileNotFound);
         }
     }
 }

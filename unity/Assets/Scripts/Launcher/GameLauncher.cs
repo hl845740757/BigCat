@@ -124,7 +124,7 @@ public class GameLauncher : MonoBehaviour
         //
         EditorBootTask bootTaskTask = new EditorBootTask(resourceMgr);
         scheduler.AddChild(bootTaskTask);
-        await bootTaskTask.Future;
+        await bootTaskTask;
 
         // 尝试打开UI
         windowMgr.Open("LoginWindow", new WindowOpenArgs());

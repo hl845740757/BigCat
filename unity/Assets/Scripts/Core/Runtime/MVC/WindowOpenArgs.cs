@@ -37,11 +37,9 @@ public sealed class WindowOpenArgs
     public object? userData;
 
     /// <summary>
-    /// 如果目标窗口已打开，是否执行重新打开流程
-    ///
-    /// 注：默认值为true，即顶掉旧窗口。
+    /// 如果目标窗口已打开，是否顶掉旧窗口
     /// </summary>
-    public bool reopen = true;
+    public bool reopen = false;
     /// <summary>
     /// 加载的超时时间
     /// </summary>

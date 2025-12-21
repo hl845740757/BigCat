@@ -19,16 +19,18 @@
 namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
-/// 资源加载阶段
+/// 资源加载状态
 ///
 /// 注：这里只定义大阶段，以避免细节问题。
 /// </summary>
-public enum ELoadPhase
+public enum ELoadStatus
 {
     Pending = 0, // 等待中
     Downloading = 1, // 下载中(下载 + 验证)
     Importing = 2, // 导入中(拷贝 + 解压)
     Loading = 3, // 加载中
-    Done = 4, // 结束 -- 可能不会显式赋值，因为是冗余，可通过Promise感知任务完成
+    Succeeded = 4, // 执行成功
+    Cancelled = 5, // 被取消
+    Failed = 6, // 执行失败
 }
 }
