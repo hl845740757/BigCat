@@ -23,6 +23,7 @@ using Wjybxx.BTree;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Logger;
+using Wjybxx.Commons.Pool;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
 
 namespace Wjybxx.BigCat.Assetor
@@ -39,6 +40,7 @@ namespace Wjybxx.BigCat.Assetor
 public abstract class ResourceTask : Decorator<Blackboard>
 {
     protected static readonly ILogger logger = LoggerFactory.GetLogger(typeof(Provider));
+    private static readonly ObjectPool<List<CallbackItem>> _listPool = ObjectPoolUtil.NewListPool<CallbackItem>(100);
     private static int _nextTaskId;
 
     /// <summary>
@@ -200,7 +202,7 @@ public abstract class ResourceTask : Decorator<Blackboard>
 
     private void RegisterCallbackImpl(Delegate action, AssetHandle handle) {
         if (action == null) throw new ArgumentNullException(nameof(action));
-        _callbacks ??= new List<CallbackItem>();
+        _callbacks ??= _listPool.Acquire();
         _callbacks.Add(new CallbackItem(action, handle));
     }
 
@@ -209,7 +211,7 @@ public abstract class ResourceTask : Decorator<Blackboard>
         if (callbacks == null || callbacks.Count == 0) return;
         for (int index = callbacks.Count - 1; index >= 0; index--) {
             CallbackItem wrapper = callbacks[index];
-            if (wrapper.action != action || wrapper.handle != handle) {
+            if (wrapper.handle != handle || wrapper.action != action) {
                 continue;
             }
             if (IsNotifying) {
@@ -273,6 +275,9 @@ public abstract class ResourceTask : Decorator<Blackboard>
         }
         callbacks.Clear();
         IsNotifying = false;
+        // 池化
+        _callbacks = null;
+        _listPool.Release(callbacks);
     }
 
     private readonly struct CallbackItem : IEquatable<CallbackItem>

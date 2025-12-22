@@ -47,6 +47,10 @@ public class EditorBundleManager : IBundleManager
         return task;
     }
 
+    public bool Exists(AssetBundleInfo bundleInfo) {
+        return true;
+    }
+
     public IAssetBundle LoadBundle(AssetBundleInfo bundleInfo) {
         if (!_loadedBundles.TryGetValue(bundleInfo.bundleName, out EditorAssetBundle bundle)) {
             bundle = new EditorAssetBundle(bundleInfo, _scheduler);

@@ -27,7 +27,7 @@ public enum ELoadStatus
 {
     Pending = 0, // 等待中
     Downloading = 1, // 下载中(下载 + 验证)
-    Importing = 2, // 导入中(拷贝 + 解压)
+    Importing = 2, // 导入中(解压 + 拷贝)
     Loading = 3, // 加载中
     Succeeded = 4, // 执行成功
     Cancelled = 5, // 被取消

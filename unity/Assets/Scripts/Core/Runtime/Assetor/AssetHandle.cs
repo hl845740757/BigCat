@@ -334,10 +334,12 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
         return obj is AssetHandle other && Equals(other);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(AssetHandle left, AssetHandle right) {
         return left.Equals(right);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(AssetHandle left, AssetHandle right) {
         return !left.Equals(right);
     }

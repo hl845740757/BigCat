@@ -39,6 +39,11 @@ public interface IBundleManager
     ResourceTask Stop();
 
     /// <summary>
+    /// Bundle文件是否已存在于加载目录
+    /// </summary>
+    bool Exists(AssetBundleInfo bundleInfo);
+
+    /// <summary>
     /// 同步加载Bundle
     /// </summary>
     /// <returns>如果不存在关联的Bundle，则返回null</returns>
