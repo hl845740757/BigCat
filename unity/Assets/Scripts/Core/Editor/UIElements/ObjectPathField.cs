@@ -344,10 +344,17 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             }
             string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
             Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
-            if (sprite) {
-                view._localIdField.value = spriteGroup.IndexOf(sprite.name);
+            if (!sprite) {
+                view._localIdField.value = 0;
+                view._localPathField.value = "";
+                return;
+            }
+            if (spriteGroup.sequenced) {
+                view._localIdField.value = int.Parse(sprite.name);
+                view._localPathField.value = "";
             } else {
                 view._localIdField.value = 0;
+                view._localPathField.value = sprite.name;
             }
         }
 

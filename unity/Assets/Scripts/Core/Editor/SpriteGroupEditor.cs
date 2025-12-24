@@ -81,122 +81,29 @@ public class SpriteGroupEditor : UnityEditor.Editor
     private void DrawControlArea() {
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField("资产目录:");
-        bool clickSyncFrom = GUILayout.Button("SyncFrom") && Event.current.button == 0;
         bool clickRefresh = GUILayout.Button("刷新文件") && Event.current.button == 0;
         EditorGUILayout.EndHorizontal();
-        EditorGUILayout.SelectableLabel(AssetDatabase.GetAssetPath(_group));
+        //
+        string bindFolder = EditorGUILayout.DelayedTextField("绑定目录", _group.bindFolder);
         bool preferName = EditorGUILayout.Toggle("Name唯一", _group.preferName);
-        if (preferName != _group.preferName) { // 只有一个属性，手动管理dirty
+        bool sequenced = EditorGUILayout.Toggle("序列图", _group.sequenced);
+        //
+        if (bindFolder != _group.bindFolder) {
+            _group.bindFolder = bindFolder;
+            EditorUtility.SetDirty(_group);
+        }
+        if (preferName != _group.preferName) {
             _group.preferName = preferName;
             EditorUtility.SetDirty(_group);
         }
-        EditorGUILayout.Space(10);
-
-        if (clickSyncFrom) {
-            SyncFromOther();
+        if (sequenced != _group.sequenced) {
+            _group.sequenced = sequenced;
+            EditorUtility.SetDirty(_group);
         }
-        if (clickRefresh) {
-            RefreshSprites();
-        }
-    }
-
-    private void SyncFromOther() {
-        string filePath = UnityEditorUtil.OpenFilePanel("选择资产", UnityEditorUtil.lastOpenFolder, "asset");
-        if (string.IsNullOrEmpty(filePath)) {
-            return;
-        }
-        string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-        UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
         //
-        SpriteGroup baseGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
-        if (!baseGroup || baseGroup == _group) {
-            return;
+        if (clickRefresh) {
+            SpriteGroup.RefreshSprites(_group);
         }
-        _group.sprites = new Sprite[baseGroup.sprites.Length];
-        string assetFolderPath = UnityEditorUtil.GetAssetFolderPath(_group);
-        for (int index = 0; index < baseGroup.sprites.Length; index++) {
-            Sprite sprite = baseGroup.sprites[index];
-            if (!sprite) {
-                continue;
-            }
-            foreach (string fileExtension in UnityEditorUtil.imageFileExtensions) {
-                string spritePath = assetFolderPath + "/" + sprite.name + "." + fileExtension;
-                Sprite sprite2 = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
-                if (sprite2) {
-                    _group[index] = sprite2;
-                }
-            }
-        }
-        EditorUtility.SetDirty(_group);
-    }
-
-    private void RefreshSprites() {
-        HashSet<Sprite> spriteSet = new HashSet<Sprite>(_group.sprites);
-        List<Sprite> tempSprites = new(10);
-        List<int> nullIndexes = new();
-
-        // 目录变更不一定需要清理引用，因为关联的文件可能仍在目录下，但需要清理不在目录下的文件
-        string groupAssetDir = AssetDatabase.GetAssetPath(_group);
-        groupAssetDir = groupAssetDir.Substring(0, groupAssetDir.LastIndexOf('/'));
-        for (int index = 0; index < _group.sprites.Length; index++) {
-            Sprite sprite = _group[index];
-            if (!sprite) {
-                nullIndexes.Add(index);
-                continue;
-            }
-            string assetPath = AssetDatabase.GetAssetPath(sprite);
-            if (assetPath.StartsWith(groupAssetDir) && assetPath[groupAssetDir.Length] == '/') {
-                continue; // 仍在当前目录下
-            }
-            _group[index] = null;
-            nullIndexes.Add(index);
-        }
-        // dataPath是以assets结尾的
-        string groupDir = UnityEditorUtil.ConvertToFilePath(groupAssetDir);
-        foreach (string filePath in Directory.GetFiles(groupDir)) {
-            if (!UnityEditorUtil.IsImageFile(filePath)) {
-                continue;
-            }
-            string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-            Sprite sprite = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Sprite)) as Sprite;
-            if (!sprite) continue;
-            if (!spriteSet.Add(sprite)) continue;
-            tempSprites.Add(sprite);
-        }
-        // 图片通常命名为数字类型，尽量让数字小的排前面
-        tempSprites.Sort(CompareSprite);
-        // 当null占比较大时，新图片插在既有的null槽
-        float nullFactor = nullIndexes.Count * 1f / _group.sprites.Length;
-        if (nullIndexes.Count >= 4 && nullFactor >= 0.25f) {
-            int fillCount = Math.Min(nullIndexes.Count, tempSprites.Count);
-            for (int idx = 0; idx < fillCount; idx++) {
-                int nullIndex = nullIndexes[idx];
-                _group.sprites[nullIndex] = tempSprites[idx];
-            }
-            if (tempSprites.Count > fillCount) {
-                tempSprites.RemoveRange(0, fillCount);
-                ArrayUtility.AddRange(ref _group.sprites, tempSprites.ToArray());
-            }
-        } else {
-            ArrayUtility.AddRange(ref _group.sprites, tempSprites.ToArray());
-        }
-        EditorUtility.SetDirty(_group);
-    }
-
-    private static int CompareSprite(Sprite a, Sprite b) {
-        string nameA = a.name;
-        string nameB = b.name;
-        // 如果都是数字，则按照数字排序
-        bool b1 = int.TryParse(nameA, out int num1);
-        bool b2 = int.TryParse(nameB, out int num2);
-        if (b1 && b2) {
-            return num1.CompareTo(num2);
-        }
-        // 数字排普通字符串前面
-        if (b1) return -1;
-        if (b2) return 1;
-        // 否则按照字符串排序
-        return string.Compare(nameA, nameB, StringComparison.Ordinal);
     }
 }
 }

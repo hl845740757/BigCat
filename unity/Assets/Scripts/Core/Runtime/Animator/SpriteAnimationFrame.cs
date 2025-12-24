@@ -29,17 +29,17 @@ namespace Wjybxx.BigCat.Animator
 [Serializable]
 public sealed class SpriteAnimationFrame
 {
+#if UNITY_EDITOR
     /// <summary>
-    /// 关联的图片
-    ///
-    /// 注：缓存字段，运行时使用。
+    /// 关联的图片(动画编辑器使用)
     /// </summary>
     [NonSerialized]
     public Sprite sprite;
+#endif
     /// <summary>
     /// 关联的图片路径
     ///
-    /// 注：在运行时应当转小写并池化字符串。
+    /// 注：在运行时应当转小写并池化字符串；图组路径可能是参数化字符串。
     /// </summary>
     public ObjectPath spritePath;
     /// <summary>

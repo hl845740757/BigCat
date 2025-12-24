@@ -64,7 +64,7 @@ public class BuildWindow : DataEditor
         }
         DsonValue root = collection[index];
         collection.RemoveAt(index);
-        collection.Insert(0, root); // 插到首部，只解码第一个
+        collection.Insert(0, root); // 插到首部，只解码第一个及其引用的对象
 
         IDsonConverter converter = CreateConverter();
         PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
@@ -106,7 +106,7 @@ public class BuildWindow : DataEditor
         if (taskEntry.IsSucceeded) {
             Debug.Log("Build success");
         } else if (taskEntry.IsFailed) {
-            Debug.LogError("Build failed, Code: " + taskEntry.Status);
+            Debug.LogError("Build failed, ErrorCode: " + taskEntry.Status);
         } else {
             Debug.LogError("Task is not completed!");
         }

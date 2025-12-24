@@ -941,7 +941,18 @@ public sealed class DataGraph
         using StreamWriter streamWriter = new StreamWriter(File.Create(filePath), new UTF8Encoding(false));
         using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, streamWriter, true);
         //
-        foreach (DataNode dataNode in nodeList) {
+        List<DataNode> sortedNodes = new(nodeList);
+        sortedNodes.Sort((a, b) => {
+            if (a == b) return 0;
+            // 隐式类型靠后
+            bool lhsImplicit = (a.features & Features.ImplicitType) != 0;
+            bool rhsImplicit = (b.features & Features.ImplicitType) != 0;
+            if (lhsImplicit != rhsImplicit) {
+                return lhsImplicit ? 1 : -1;
+            }
+            return a.localId.CompareTo(b.localId);
+        });
+        foreach (DataNode dataNode in sortedNodes) {
             if ((dataNode.features & Features.MemoryOnly) != 0) {
                 continue;
             }

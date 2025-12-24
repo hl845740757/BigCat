@@ -181,19 +181,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 应用目标图组（贴图）
-    /// 注：该接口仅修改Sprite，不修改配置的路径引用。
-    /// </summary>
-    /// <param name="spriteGroup"></param>
-    public void ApplySpriteGroup(SpriteGroup spriteGroup) {
-        for (int index = 1; index < frames.Length; index++) {
-            var frame = frames[index];
-            int spriteIndex = (int)frame.spritePath.localId;
-            frame.sprite = spriteGroup.GetSprite(spriteIndex);
-        }
-    }
-
-    /// <summary>
     /// 确保时间的正确性
     /// </summary>
     private void OnEnable() {
@@ -341,6 +328,19 @@ public sealed class SpriteAnimationClip : ScriptableObject
         float baseValue = frames[0].rotation;
         for (int index = 1; index < frames.Length; index++) {
             frames[index].rotation = baseValue + rotation * index;
+        }
+    }
+
+    /// <summary>
+    /// 应用目标图组（贴图）
+    /// 注：该接口仅修改Sprite，不修改配置的路径引用。
+    /// </summary>
+    /// <param name="spriteGroup"></param>
+    public void ApplySpriteGroup(SpriteGroup spriteGroup) {
+        for (int index = 1; index < frames.Length; index++) {
+            var frame = frames[index];
+            int spriteIndex = (int)frame.spritePath.localId;
+            frame.sprite = spriteGroup.GetSprite(spriteIndex);
         }
     }
 

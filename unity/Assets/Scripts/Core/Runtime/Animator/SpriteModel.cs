@@ -57,13 +57,19 @@ public sealed class SpriteModel : ScriptableObject
     public int orderInLayer;
 
     /// <summary>
-    /// 模型默认图集
-    /// (也应该通过路径引用)
+    /// 模型id
+    /// </summary>
+    public int modelId;
+    /// <summary>
+    /// 默认贴图路径
+    /// (由于涉及大量图片，因此延迟加载)
     /// </summary>
     [Tooltip("模型默认图集，即默认贴图")]
-    public SpriteGroup spriteGroup;
+    public string spriteGroupPath;
     /// <summary>
     /// 模型动作
+    /// 1.由于攻击盒数据也在动作信息上，因此要求动作信息同步加载。
+    /// 2.动作信息整体来说还是比较轻量级的，因此同步加载的影响较小。
     /// </summary>
     [Tooltip("逻辑动作名到美术资源的映射")]
     public List<SpriteMotionRedir> motionList = new();

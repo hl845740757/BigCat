@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -295,7 +296,11 @@ public static class UnityEditorUtil
     /// Sprite的默认搜索文件夹
     /// </summary>
     /// <returns></returns>
-    public static readonly string[] spriteSearchFolders = new[] { "Assets/Resources/Sprites", "Assets/Sprites" };
+    public static readonly string[] spriteSearchFolders = new[]
+    {
+        "Assets/Resources/Sprites",
+        "Assets/GameRes/Sprites",
+    };
 
     /// <summary>
     /// 加载图片
@@ -326,6 +331,18 @@ public static class UnityEditorUtil
         public static SpriteGroup LoadSpriteGroup(string groupPath) {
             if (string.IsNullOrWhiteSpace(groupPath)) {
                 return null;
+            }
+            // 替换变量占位符 {sm_body8001} => sm_body8001 
+            int idx = groupPath.IndexOf('{');
+            if (idx > 0) {
+                int endIdx = groupPath.LastIndexOf('}');
+                if (endIdx < idx) {
+                    throw new Exception($"Invalid group path: {groupPath}");
+                }
+                StringBuilder sb = new(groupPath.Length);
+                sb.Remove(endIdx, 1);
+                sb.Remove(idx, 1);
+                groupPath = sb.ToString();
             }
             if (groupPath.LastIndexOf('/') > 0) {
                 return AssetDatabase.LoadAssetAtPath<SpriteGroup>(groupPath);
@@ -358,14 +375,20 @@ public static class UnityEditorUtil
         }
 
         public static Sprite LoadSprite(ObjectPath spritePath) {
-            if (spritePath.IsEmpty || spritePath.localId < 0) {
+            if (spritePath.IsEmpty || spritePath.localId < 0) { // localId为索引
                 return null;
             }
             SpriteGroup spriteGroup = LoadSpriteGroup(spritePath.collection);
-            if (spriteGroup) {
-                return spriteGroup.GetSprite((int)spritePath.localId);
+            if (!spriteGroup) {
+                return null;
             }
-            return null;
+            if (spriteGroup.sequenced) {
+                int index = (int)spritePath.localId;
+                return spriteGroup.GetSprite(index);
+            } else {
+                string name = spritePath.localPath;
+                return spriteGroup.GetSprite(name);
+            }
         }
     }
 

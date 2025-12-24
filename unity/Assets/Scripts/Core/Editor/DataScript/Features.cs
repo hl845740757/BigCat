@@ -67,6 +67,13 @@ public enum Features : uint
     /// 4.该属性需要持久化，才能正确从文件中恢复数据。
     /// </summary>
     EnablePort = 0x40,
+    /// <summary>
+    /// 隐式类型
+    ///
+    /// 1.不写入类型信息，可由父级上下文推断类型。
+    /// 2.通常为List的元素，用于减少序列化数据。(要求容器对象必须先解码，或可导出时固定排在末尾？)
+    /// </summary>
+    ImplicitType = 0x80,
 
     /// <summary>
     /// 默认值集合

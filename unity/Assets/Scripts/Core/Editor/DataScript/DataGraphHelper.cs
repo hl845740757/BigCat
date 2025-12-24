@@ -491,9 +491,11 @@ internal class DataGraphHelper
         if (variable.isRoot) {
             DataNode node = variable.dataNode;
             writer.WriteStartHeader();
-            //
-            string clsName = GetCodecName(node.value.type);
-            writer.WriteString(DsonHeader.Names_ClassName, clsName);
+            // 隐式类型不写入className
+            if ((node.features & Features.ImplicitType) == 0) {
+                string clsName = GetCodecName(node.value.type);
+                writer.WriteString(DsonHeader.Names_ClassName, clsName);
+            }
             writer.WriteInt64(DsonHeader.Names_LocalId, node.localId, NumberStyle.Simple);
             // localPath只在name有效的情况下才导出
             if (!string.IsNullOrWhiteSpace(node.name)) {
