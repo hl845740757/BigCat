@@ -27,7 +27,6 @@ public partial class AnimationClipEditor : EditorWindow
     private FloatField _timeScaleField;
 
     private Toggle _clipLoopToggle;
-    private FloatField _clipWeightField;
     private FloatField _clipDurationField;
     private IntegerField _frameCountField;
 
@@ -174,9 +173,8 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void InitClipInfoArea(VisualElement root) {
-        _clipLoopToggle = root.Q<Toggle>("loop");
-        _clipWeightField = root.Q<FloatField>("weight");
         _clipDurationField = root.Q<FloatField>("duration");
+        _clipLoopToggle = root.Q<Toggle>("loop");
         //
         _frameCountField = root.Q<IntegerField>("frame-count");
         _frameCountField.RegisterCallback<FocusOutEvent>(OnFrameCountFocusOut);
@@ -456,9 +454,8 @@ public partial class AnimationClipEditor : EditorWindow
         _frameIndexField.SetValueWithoutNotify(context.frameIndex);
 
         SerializedObject serializedClip = context.serializedClip;
-        _clipLoopToggle.BindProperty(serializedClip.FindProperty("loop"));
-        _clipWeightField.BindProperty(serializedClip.FindProperty("weight"));
         _clipDurationField.BindProperty(serializedClip.FindProperty("duration"));
+        _clipLoopToggle.BindProperty(serializedClip.FindProperty("loop"));
         //
         BindFrameInfoElements();
         RefreshBoxElementVisible(true);

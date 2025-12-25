@@ -55,12 +55,12 @@ public class CoroutineMgr : ICoroutineMgr
     /// 全局Task池
     /// </summary>
     internal static readonly ConcurrentObjectPool<PromiseTask> taskPool = new ConcurrentObjectPool<PromiseTask>(
-        () => new PromiseTask(), task => task.Reset(), 8192); // TODO 抽取环境变量
+        () => new PromiseTask(), task => task.Reset(), 1024); // TODO 抽取环境变量
     /// <summary>
     /// 全局协程对象池 
     /// </summary>
     private static readonly ConcurrentObjectPool<Coroutine> coroutinePool = new ConcurrentObjectPool<Coroutine>(
-        () => new Coroutine(), coroutine => coroutine.Reset(), 2048); // TODO 抽取环境变量
+        () => new Coroutine(), coroutine => coroutine.Reset(), 1024); // TODO 抽取环境变量
 
     /// <summary>
     /// id到协程或定时任务的字典

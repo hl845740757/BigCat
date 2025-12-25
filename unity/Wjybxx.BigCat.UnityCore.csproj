@@ -56,6 +56,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\MultiFileBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AssetLoadTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourcePromise.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\PlayablePort.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
@@ -68,10 +69,10 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\TaskScheduler.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BundleProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\PlayableNode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\ListenerContainer.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetPackageInfo.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationEvent.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadStatus.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetQuery.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EPlayableType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StopManagerTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
@@ -112,6 +114,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowCmdMgr.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\AudioGroup.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
@@ -784,6 +787,9 @@
     </Reference>
     <Reference Include="Wjybxx.Dson.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Dson.Codec">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
     </Reference>
     <Reference Include="Wjybxx.BTree.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>

@@ -153,7 +153,7 @@ class BuildIndexesTask : Task<Blackboard> {
 inst BuildIndexesTask {
   reportLog: true,
   reportPath: "Assets/Editor/IndexReport.log",
-  supportExtensions: [fbx, unity, prefab, png, jpg, tif, ogg, wav, mp3]
+  supportExtensions: [fbx, unity, prefab, png, jpg, tif, ogg, wav, mp3, asset]
 }
 
 // 编辑器下的构建任务

@@ -5,6 +5,7 @@
         "Wjybxx.Commons.Core",
         "Wjybxx.Commons.Concurrent",
         "Wjybxx.Dson.Core",
+        "Wjybxx.Dson.Codec",
         "Wjybxx.BTree.Core"
     ],
     "includePlatforms": [],

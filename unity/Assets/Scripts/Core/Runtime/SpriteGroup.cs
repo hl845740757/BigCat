@@ -30,9 +30,7 @@ namespace Wjybxx.BigCat.Core
 /// <summary>
 /// 图片组
 ///
-/// 注意：
-/// 1.该对象的数据由程序维护，避免手动修改。
-/// 2.文件名必须唯一，程序总是通过文件名引用
+/// 注意：文件名必须唯一，程序总是通过文件名引用。
 /// </summary>
 [CreateAssetMenu(menuName = "BigCat/SpriteGroup", fileName = "NewSpriteGroup")]
 public class SpriteGroup : ScriptableObject
@@ -120,13 +118,17 @@ public class SpriteGroup : ScriptableObject
     }
 
 #if UNITY_EDITOR
+    [ContextMenu("Refresh")]
+    private void Refresh() {
+        Refresh(this);
+    }
+
     /// <summary>
     /// 刷新图组信息
     /// (注：放在这里方便工具统一调用，避免依赖Editor)
     /// </summary>
     /// <param name="group"></param>
-    public static void RefreshSprites(SpriteGroup group) {
-        // 目录变更不一定需要清理引用，因为关联的文件可能仍在目录下，但需要清理不在目录下的文件
+    public static void Refresh(SpriteGroup group) {
         string groupAssetDir;
         if (string.IsNullOrEmpty(group.bindFolder)) {
             groupAssetDir = AssetDatabase.GetAssetPath(group);
@@ -139,7 +141,7 @@ public class SpriteGroup : ScriptableObject
         foreach (string guid in findAssets) {
             string assetPath = AssetDatabase.GUIDToAssetPath(guid);
             Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
-            if (sprite) {
+            if (sprite && sprite.name.IndexOf('(') < 0) { // 名字包含括号的忽略
                 list.Add(sprite);
             }
         }
@@ -163,7 +165,7 @@ public class SpriteGroup : ScriptableObject
         }
         // 非序列图，按照name排序，保持加载结果稳定
         if (!sequenced) {
-            list.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.Ordinal));
+            list.Sort(CompareSprite);
             sprites = list.ToArray();
             RefreshDic();
             return;

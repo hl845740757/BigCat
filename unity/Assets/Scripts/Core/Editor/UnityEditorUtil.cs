@@ -334,15 +334,12 @@ public static class UnityEditorUtil
             }
             // 替换变量占位符 {sm_body8001} => sm_body8001 
             int idx = groupPath.IndexOf('{');
-            if (idx > 0) {
+            if (idx >= 0) {
                 int endIdx = groupPath.LastIndexOf('}');
                 if (endIdx < idx) {
                     throw new Exception($"Invalid group path: {groupPath}");
                 }
-                StringBuilder sb = new(groupPath.Length);
-                sb.Remove(endIdx, 1);
-                sb.Remove(idx, 1);
-                groupPath = sb.ToString();
+                groupPath = groupPath.Substring2(idx + 1, endIdx);
             }
             if (groupPath.LastIndexOf('/') > 0) {
                 return AssetDatabase.LoadAssetAtPath<SpriteGroup>(groupPath);
@@ -382,12 +379,12 @@ public static class UnityEditorUtil
             if (!spriteGroup) {
                 return null;
             }
-            if (spriteGroup.sequenced) {
+            string name = spritePath.localPath;
+            if (!string.IsNullOrEmpty(name)) {
+                return spriteGroup.GetSprite(name);
+            } else {
                 int index = (int)spritePath.localId;
                 return spriteGroup.GetSprite(index);
-            } else {
-                string name = spritePath.localPath;
-                return spriteGroup.GetSprite(name);
             }
         }
     }

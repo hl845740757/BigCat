@@ -184,8 +184,15 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         _typeField.RegisterValueChangedCallback(OnFieldValueChanged);
         //
         _collectionField.RegisterCallback<MouseDownEvent>(evt => {
+            if (evt.localMousePosition.x > 100) {
+                return; // 只响应标签区域
+            }
             evt.StopPropagation();
-            handler.PingCollection();
+            if (evt.button == 0) {
+                handler.PingCollection();
+            } else if (evt.button == 1) {
+                handler.ShowCollectionContext();
+            }
         });
         _selectCollectionButton.RegisterCallback<ClickEvent>(evt => {
             evt.StopPropagation();
@@ -250,6 +257,9 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         public abstract void OnClickSelectLocalId();
 
         public abstract void PingCollection();
+
+        public virtual void ShowCollectionContext() {
+        }
     }
 
     private class DefaultPathHandler : ObjectPathHandler
@@ -364,6 +374,26 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             if (spriteGroup) {
                 EditorGUIUtility.PingObject(spriteGroup);
             }
+        }
+
+        public override void ShowCollectionContext() {
+            string groupPtah = view._collectionField.value;
+            if (string.IsNullOrEmpty(groupPtah)) {
+                return;
+            }
+            GenericMenu menu = new GenericMenu();
+            if (groupPtah.StartsWith('{')) {
+                menu.AddItem(new GUIContent("设为常量"), false, () => {
+                    groupPtah = groupPtah.Substring(1, groupPtah.Length - 2);
+                    view._collectionField.value = groupPtah;
+                });
+            } else {
+                menu.AddItem(new GUIContent("设为变量"), false, () => {
+                    groupPtah = "{" + groupPtah + "}";
+                    view._collectionField.value = groupPtah;
+                });
+            }
+            menu.ShowAsContext();
         }
     }
 

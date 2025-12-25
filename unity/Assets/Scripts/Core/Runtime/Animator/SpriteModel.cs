@@ -24,7 +24,7 @@ using Wjybxx.BigCat.Core;
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 2D图片模型
+/// 2D角色模型
 ///
 /// 注：运行时需要指定图集（贴图），否则没有表现。
 /// </summary>
@@ -48,13 +48,13 @@ public sealed class SpriteModel : ScriptableObject
     /// 2.角色通常可划分为三组：Body + 武器 + 其它。
     /// </summary>
     [Tooltip("部件所属的组，建议角色Body相关的部件归属在同一组")]
-    public int partGroupId;
+    public int partGroup;
     /// <summary>
     /// 部件渲染层级
-    /// (图层内排序)
+    /// (图层内排序，理论上还可能按照图组设置层级)
     /// </summary>
     [Tooltip("部件渲染顺序")]
-    public int orderInLayer;
+    public int partLayer;
 
     /// <summary>
     /// 模型id
@@ -77,7 +77,7 @@ public sealed class SpriteModel : ScriptableObject
     /// 模型动作映射缓存
     /// </summary>
     [NonSerialized]
-    public Dictionary<string, SpriteAnimationClip> motionDic = new();
+    public readonly Dictionary<string, SpriteMotionRedir> motionDic = new();
 
     /// <summary>
     /// 动作之间的融合配置
@@ -89,21 +89,21 @@ public sealed class SpriteModel : ScriptableObject
     /// 动作融合配置缓存
     /// </summary>
     [NonSerialized]
-    public Dictionary<(string, string), AnimationMixCfg> motionMixCfgDic = new();
+    public readonly Dictionary<(string, string), AnimationMixCfg> motionMixCfgDic = new();
 
     /// <summary>
     /// 查找动作
     /// </summary>
     /// <param name="motionName">要查找的动作名</param>
     /// <returns></returns>
-    public SpriteAnimationClip FindMotion(string motionName) {
+    public SpriteMotionRedir FindMotion(string motionName) {
 #if UNITY_EDITOR
         foreach (var motion in motionList) {
             if (motion.name == motionName) {
-                return motion.clip;
+                return motion;
             }
         }
-        return null;
+        return default;
 #else
         motionDic.TryGetValue(motionName, out var motion);
         return motion;
@@ -145,18 +145,20 @@ public sealed class SpriteModel : ScriptableObject
         }
         // Motion
         motionDic.Clear();
+        motionDic.EnsureCapacity(motionList.Count);
         for (int index = 0; index < motionList.Count; index++) {
-            var motionRedir = motionList[index];
-            if (string.IsNullOrWhiteSpace(motionRedir.name)) {
+            var motion = motionList[index];
+            if (string.IsNullOrWhiteSpace(motion.name)) {
                 continue;
             }
             // name池化
-            motionRedir.name = string.Intern(motionRedir.name);
-            motionList[index] = motionRedir;
-            motionDic.Add(motionRedir.name, motionRedir.clip);
+            motion.name = string.Intern(motion.name);
+            motionList[index] = motion;
+            motionDic.Add(motion.name, motion);
         }
         // MixCfg
         motionMixCfgDic.Clear();
+        motionMixCfgDic.EnsureCapacity(motionMixCfgList.Count);
         for (int index = 0; index < motionMixCfgList.Count; index++) {
             AnimationMixCfg mixCfg = motionMixCfgList[index];
             if (string.IsNullOrWhiteSpace(mixCfg.motionA)

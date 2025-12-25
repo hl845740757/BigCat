@@ -29,12 +29,8 @@ public class Blackboard
     private Blackboard shared; // 共享内存区 TODO
     private readonly Dictionary<DataKey, UnionValue> dataMap;
 
-    public Blackboard() {
-        dataMap = new Dictionary<DataKey, UnionValue>();
-    }
-
-    public Blackboard(int capacity, IEqualityComparer<DataKey>? comparer = null) {
-        dataMap = new Dictionary<DataKey, UnionValue>(capacity, comparer);
+    public Blackboard(int capacity = 0) {
+        dataMap = new Dictionary<DataKey, UnionValue>(capacity);
     }
 
     public int Count => dataMap.Count;

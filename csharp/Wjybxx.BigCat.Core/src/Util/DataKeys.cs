@@ -185,41 +185,7 @@ public static class DataKeys
         return new BitSetKey(name);
     }
 
-    public abstract class AbstractDataKey<T> : DataKey<T>
-    {
-        private readonly string _name;
-        private readonly int _hash;
-
-        protected AbstractDataKey(string name) {
-            _name = name;
-            _hash = name.GetHashCode(); // C#字符串的hash是实时计算的
-        }
-
-        public string Name => _name;
-
-        public abstract T Unbox(in UnionValue boxedValue);
-
-        public abstract UnionValue Box(T value);
-
-        public override bool Equals(object obj) {
-            if (obj is null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
-            // string的equals默认没有先测试引用，而我们的Key多数情况下是常量对象，因此先测试引用
-            AbstractDataKey<T> other = (AbstractDataKey<T>)obj;
-            return ReferenceEquals(_name, other._name) || _name == other._name;
-        }
-
-        public override int GetHashCode() {
-            return _hash;
-        }
-
-        public override string ToString() {
-            return $"{nameof(Name)}: {_name}";
-        }
-    }
-
-    public class ObjectKey<T> : AbstractDataKey<T>
+    public class ObjectKey<T> : DataKey<T>
     {
         public ObjectKey(string name) : base(name) {
         }
@@ -233,7 +199,7 @@ public static class DataKeys
         }
     }
 
-    public class IntKey : AbstractDataKey<int>
+    public class IntKey : DataKey<int>
     {
         public IntKey(string name) : base(name) {
         }
@@ -247,7 +213,7 @@ public static class DataKeys
         }
     }
 
-    public class LongKey : AbstractDataKey<long>
+    public class LongKey : DataKey<long>
     {
         public LongKey(string name) : base(name) {
         }
@@ -261,7 +227,7 @@ public static class DataKeys
         }
     }
 
-    public class FloatKey : AbstractDataKey<float>
+    public class FloatKey : DataKey<float>
     {
         public FloatKey(string name) : base(name) {
         }
@@ -275,7 +241,7 @@ public static class DataKeys
         }
     }
 
-    public class DoubleKey : AbstractDataKey<double>
+    public class DoubleKey : DataKey<double>
     {
         public DoubleKey(string name) : base(name) {
         }
@@ -289,7 +255,7 @@ public static class DataKeys
         }
     }
 
-    public class BoolKey : AbstractDataKey<bool>
+    public class BoolKey : DataKey<bool>
     {
         public BoolKey(string name) : base(name) {
         }
@@ -303,7 +269,7 @@ public static class DataKeys
         }
     }
 
-    public class StringKey : AbstractDataKey<string>
+    public class StringKey : DataKey<string>
     {
         public StringKey(string name) : base(name) {
         }
@@ -317,7 +283,7 @@ public static class DataKeys
         }
     }
 
-    public class UIntKey : AbstractDataKey<uint>
+    public class UIntKey : DataKey<uint>
     {
         public UIntKey(string name) : base(name) {
         }
@@ -331,7 +297,7 @@ public static class DataKeys
         }
     }
 
-    public class ULongKey : AbstractDataKey<ulong>
+    public class ULongKey : DataKey<ulong>
     {
         public ULongKey(string name) : base(name) {
         }
@@ -345,7 +311,7 @@ public static class DataKeys
         }
     }
 
-    public class BitSetKey : AbstractDataKey<GBitSet>
+    public class BitSetKey : DataKey<GBitSet>
     {
         public BitSetKey(string name) : base(name) {
         }
@@ -368,7 +334,7 @@ public static class DataKeys
     }
 
 #if UNITY_2021_3_OR_NEWER
-    public class Vector3Key : AbstractDataKey<Vector3>
+    public class Vector3Key : DataKey<Vector3>
     {
         public Vector3Key(string name) : base(name) {
         }
@@ -390,7 +356,7 @@ public static class DataKeys
         }
     }
 
-    public class Vector4Key : AbstractDataKey<Vector4>
+    public class Vector4Key : DataKey<Vector4>
     {
         public Vector4Key(string name) : base(name) {
         }
@@ -416,7 +382,7 @@ public static class DataKeys
         }
     }
 
-    public class QuaternionKey : AbstractDataKey<Quaternion>
+    public class QuaternionKey : DataKey<Quaternion>
     {
         public QuaternionKey(string name) : base(name) {
         }
@@ -442,7 +408,7 @@ public static class DataKeys
         }
     }
 
-    public class Vector2Key : AbstractDataKey<Vector2>
+    public class Vector2Key : DataKey<Vector2>
     {
         public Vector2Key(string name) : base(name) {
         }
@@ -464,7 +430,7 @@ public static class DataKeys
         }
     }
 
-    public class Vector2IntKey : AbstractDataKey<Vector2Int>
+    public class Vector2IntKey : DataKey<Vector2Int>
     {
         public Vector2IntKey(string name) : base(name) {
         }
@@ -486,7 +452,7 @@ public static class DataKeys
         }
     }
 
-    public class Vector3IntKey : AbstractDataKey<Vector3Int>
+    public class Vector3IntKey : DataKey<Vector3Int>
     {
         public Vector3IntKey(string name) : base(name) {
         }
@@ -510,7 +476,7 @@ public static class DataKeys
         }
     }
 
-    public class ColorKey : AbstractDataKey<Color>
+    public class ColorKey : DataKey<Color>
     {
         public ColorKey(string name) : base(name) {
         }
@@ -536,7 +502,7 @@ public static class DataKeys
         }
     }
 
-    public class Color32Key : AbstractDataKey<Color32>
+    public class Color32Key : DataKey<Color32>
     {
         public Color32Key(string name) : base(name) {
         }
@@ -556,7 +522,7 @@ public static class DataKeys
         }
     }
 
-    public class RectKey : AbstractDataKey<Rect>
+    public class RectKey : DataKey<Rect>
     {
         public RectKey(string name) : base(name) {
         }
@@ -582,7 +548,7 @@ public static class DataKeys
         }
     }
 
-    public class KeyCodeKey : AbstractDataKey<KeyCode>
+    public class KeyCodeKey : DataKey<KeyCode>
     {
         public KeyCodeKey(string name) : base(name) {
         }

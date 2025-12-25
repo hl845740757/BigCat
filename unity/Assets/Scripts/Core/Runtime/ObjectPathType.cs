@@ -42,7 +42,7 @@ public enum ObjectPathType
     /// </summary>
     SpriteOfAtlas = 2,
     /// <summary>
-    /// 音效组中的音效，GroupPath + index
+    /// 音效组中的音效，GroupPath + name
     /// </summary>
     AudioOfGroup = 3,
 

@@ -17,18 +17,38 @@
 #endregion
 
 using System;
+using UnityEngine;
 
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 模型动作映射
+/// 端口信息
 /// </summary>
-[Serializable]
-public struct SpriteMotionRedir
+public sealed class PlayablePort
 {
-    public string name; // 动作名
-    public SpriteAnimationClip clip; // 关联的动画
-    public bool loop; // 是否循环播放
-    public float weight; // 默认融合权重 - 编辑器指定默认值
+    /// <summary>
+    /// 端口名
+    /// </summary>
+    public string name;
+    /// <summary>
+    /// 端口初始权重
+    /// </summary>
+    public float weight;
+    /// <summary>
+    /// 端口索引
+    /// 注：运行时根据实际数据赋值，避免程序依赖，程序使用端口名建立稳定引用。
+    /// </summary>
+    [NonSerialized]
+    public int index;
+    /// <summary>
+    /// 端口连线的起点
+    /// </summary>
+    [NonSerialized]
+    public PlayableNode srcNode;
+    /// <summary>
+    /// 端口连接的目标(可能为null)
+    /// </summary>
+    [SerializeReference]
+    public PlayableNode destNode;
 }
 }

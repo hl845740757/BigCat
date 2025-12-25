@@ -68,7 +68,6 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarObjectField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarStringPopupField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\TimestampField.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\SpriteGroupEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarEuler32Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector4Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\EAssetCategory.cs" />

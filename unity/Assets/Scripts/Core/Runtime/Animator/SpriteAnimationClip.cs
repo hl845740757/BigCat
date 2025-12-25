@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using Wjybxx.BigCat.Core;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Animator
@@ -45,10 +44,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// 是否循环播放
     /// </summary>
     public bool loop = true;
-    /// <summary>
-    /// 动画融合的默认权重
-    /// </summary>
-    public float weight = 0.5f;
 
     //////////////////////////////////////////////////////////////
 
@@ -191,7 +186,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     private void Reset() {
         frames = Array.Empty<SpriteAnimationFrame>();
         duration = 0;
-        weight = 0.5f;
     }
 
     /// <summary>
@@ -328,19 +322,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
         float baseValue = frames[0].rotation;
         for (int index = 1; index < frames.Length; index++) {
             frames[index].rotation = baseValue + rotation * index;
-        }
-    }
-
-    /// <summary>
-    /// 应用目标图组（贴图）
-    /// 注：该接口仅修改Sprite，不修改配置的路径引用。
-    /// </summary>
-    /// <param name="spriteGroup"></param>
-    public void ApplySpriteGroup(SpriteGroup spriteGroup) {
-        for (int index = 1; index < frames.Length; index++) {
-            var frame = frames[index];
-            int spriteIndex = (int)frame.spritePath.localId;
-            frame.sprite = spriteGroup.GetSprite(spriteIndex);
         }
     }
 

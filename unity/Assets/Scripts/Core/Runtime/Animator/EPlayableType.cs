@@ -16,19 +16,33 @@
 
 #endregion
 
-using System;
+using UnityEngine.Playables;
 
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 模型动作映射
+/// Playable的类型 - <see cref="IPlayable"/>
 /// </summary>
-[Serializable]
-public struct SpriteMotionRedir
+public enum EPlayableType
 {
-    public string name; // 动作名
-    public SpriteAnimationClip clip; // 关联的动画
-    public bool loop; // 是否循环播放
-    public float weight; // 默认融合权重 - 编辑器指定默认值
+    AnimationClipPlayable,
+    AnimationLayerMixerPlayable,
+    AnimationMixerPlayable,
+    AnimationMotionXToDeltaPlayable,
+    AnimationOffsetPlayable,
+    AnimationPosePlayable,
+    AnimationRemoveScalePlayable,
+    AnimationScriptPlayable,
+    AnimatorControllerPlayable,
+
+    AudioClipPlayable,
+    AudioMixerPlayable,
+
+    ScriptPlayable,
+    CameraPlayable,
+    MaterialEffectPlayable,
+    TextureMixerPlayable,
+    VideoClipPlayable,
+    // VideoMixerPlayable,
 }
 }
