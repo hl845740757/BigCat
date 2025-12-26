@@ -28,7 +28,7 @@ public struct SpriteMotionRedir
 {
     public string name; // 动作名
     public SpriteAnimationClip clip; // 关联的动画
-    public bool loop; // 是否循环播放
-    public float weight; // 默认融合权重 - 编辑器指定默认值
+    public EWrapMode wrapMode; // 动画播放模式
+    public float weight; // 默认权重 - 编辑器指定
 }
 }

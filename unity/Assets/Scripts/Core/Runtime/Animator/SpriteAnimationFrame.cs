@@ -45,7 +45,7 @@ public sealed class SpriteAnimationFrame
     /// <summary>
     /// 图片坐标
     ///
-    /// 注：图片bottom相对角色坐标的位置。
+    /// 注：图片bottom相对角色坐标的位置（像素）。
     /// </summary>
     public Vector2 position;
     /// <summary>

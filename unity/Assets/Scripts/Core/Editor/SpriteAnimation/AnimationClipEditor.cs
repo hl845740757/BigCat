@@ -26,8 +26,8 @@ public partial class AnimationClipEditor : EditorWindow
     private FloatField _frameScaleField;
     private FloatField _timeScaleField;
 
-    private Toggle _clipLoopToggle;
     private FloatField _clipDurationField;
+    private FloatField _clipPpuField;
     private IntegerField _frameCountField;
 
     private Vector2Field _batchPositionField;
@@ -56,7 +56,7 @@ public partial class AnimationClipEditor : EditorWindow
     private ListView _hurtBoxListView;
     private ListView _damageBoxListView;
 
-    private int toolBarIndex;
+    // private int toolBarIndex;
     private readonly List<ClipContext> _clipContextList = new(4); // 当前编辑/播放的所有Clip
     private VisualElement _selectedElement; // 选中的图片和或攻击盒
     private Vector2 _dragStartMousePosition;
@@ -173,8 +173,8 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void InitClipInfoArea(VisualElement root) {
+        _clipPpuField = root.Q<FloatField>("ppu");
         _clipDurationField = root.Q<FloatField>("duration");
-        _clipLoopToggle = root.Q<Toggle>("loop");
         //
         _frameCountField = root.Q<IntegerField>("frame-count");
         _frameCountField.RegisterCallback<FocusOutEvent>(OnFrameCountFocusOut);
@@ -292,7 +292,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void OnClickToolbar0(ClickEvent evt) {
         evt.StopPropagation();
-        toolBarIndex = 0;
+        // toolBarIndex = 0;
         rootVisualElement.Q("clip-info-div").parent.SetDisplay(true);
         rootVisualElement.Q("clip-sync-div").SetDisplay(false);
         RefreshPreviewArea();
@@ -300,7 +300,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void OnClickToolbar1(ClickEvent evt) {
         evt.StopPropagation();
-        toolBarIndex = 1;
+        // toolBarIndex = 1;
         rootVisualElement.Q("clip-info-div").parent.SetDisplay(false);
         rootVisualElement.Q("clip-sync-div").SetDisplay(true);
     }
@@ -455,7 +455,7 @@ public partial class AnimationClipEditor : EditorWindow
 
         SerializedObject serializedClip = context.serializedClip;
         _clipDurationField.BindProperty(serializedClip.FindProperty("duration"));
-        _clipLoopToggle.BindProperty(serializedClip.FindProperty("loop"));
+        _clipPpuField.BindProperty(serializedClip.FindProperty("ppu"));
         //
         BindFrameInfoElements();
         RefreshBoxElementVisible(true);

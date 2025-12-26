@@ -51,6 +51,19 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
     }
 
+    private AssetHandle(string location) {
+        this._handleId = 0;
+        this._location = location;
+        this._provider = null;
+    }
+
+    /// <summary>
+    /// 创建一个Null句柄，但可以指定额外信息
+    /// </summary>
+    public static AssetHandle CreateNullHandle(string location) {
+        return new AssetHandle(location);
+    }
+
     #region 类型测试
 
     /// <summary>
@@ -278,8 +291,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// 释放资源（减少引用计数）
     /// </summary>
     public void Release(int count = 1) {
-        // 允许NullHandle安全调用Release
-        _provider?.Release(this, count);
+        _provider.Release(this, count);
     }
 
     /// <summary>

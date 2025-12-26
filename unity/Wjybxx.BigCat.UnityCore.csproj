@@ -77,6 +77,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadStatus.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorPackageManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\AudioGroup.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceErrorCode.cs" />
@@ -91,8 +92,10 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\EPlayableType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StopManagerTask.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationCtrl.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EWrapMode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EBundleType.cs" />
@@ -114,7 +117,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowCmdMgr.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\AudioGroup.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

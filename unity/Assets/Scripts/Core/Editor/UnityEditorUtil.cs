@@ -376,16 +376,10 @@ public static class UnityEditorUtil
                 return null;
             }
             SpriteGroup spriteGroup = LoadSpriteGroup(spritePath.collection);
-            if (!spriteGroup) {
-                return null;
+            if (spriteGroup) {
+                return spriteGroup.GetSprite(spritePath);
             }
-            string name = spritePath.localPath;
-            if (!string.IsNullOrEmpty(name)) {
-                return spriteGroup.GetSprite(name);
-            } else {
-                int index = (int)spritePath.localId;
-                return spriteGroup.GetSprite(index);
-            }
+            return null;
         }
     }
 

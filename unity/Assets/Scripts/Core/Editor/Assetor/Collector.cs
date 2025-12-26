@@ -133,8 +133,10 @@ public class Collector : LeafTask<Blackboard>
             if (!recursive && assetPath.IndexOf('/', collectPath.Length) > 0) {
                 continue;
             }
-            // 测试Editor的效率较低，放在前面两个条件之后
-            if (assetPath.Contains("/Editor/") || assetPath.Contains("/Tests/")) {
+            // 字符串匹配的效率较低，放在前面两个条件之后
+            if (assetPath.Contains("/Editor/")
+                || assetPath.Contains("/Tests/")
+                || assetPath.Contains("/Temp/")) {
                 continue;
             }
             // 剔除同类型子目录收集器的资源

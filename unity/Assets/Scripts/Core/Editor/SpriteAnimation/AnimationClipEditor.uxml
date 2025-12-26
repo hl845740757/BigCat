@@ -1,7 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <ui:Template name="ObjectPath" src="project://database/Assets/Scripts/Core/Editor/UIElements/ObjectPathField.uxml?fileID=9197481963319205126&amp;guid=007468af889367b48b09e8eb93250d97&amp;type=3#ObjectPathField" />
     <ui:Template name="AABBField" src="project://database/Assets/Scripts/Core/Editor/UIElements/AABBField.uxml?fileID=9197481963319205126&amp;guid=79f08d19f94ff8a4e85536709572ec9b&amp;type=3#AABBField" />
-    <Style src="project://database/Assets/Scripts/Core/Editor/SpriteAnimation/AnimationClipEditor.uss?fileID=7433441132597879392&amp;guid=5cd94e7d85ef5ee408817f039ad54a30&amp;type=3#AnimationClipEditor" />
     <uie:Toolbar style="margin-bottom: 0; border-left-color: rgb(166, 166, 166); border-right-color: rgb(166, 166, 166); border-top-color: rgb(166, 166, 166); border-bottom-color: rgb(166, 166, 166);">
         <uie:ToolbarButton text="动画编辑" display-tooltip-when-elided="true" name="toolbar0" style="-unity-font-style: bold;" />
         <uie:ToolbarButton text="同步工具" display-tooltip-when-elided="true" name="toolbar1" style="-unity-font-style: bold;" />
@@ -55,8 +54,7 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="clip-info-div" style="align-items: stretch; justify-content: flex-start; flex-shrink: 0; margin-right: 5px;">
-                    <ui:Toggle label="循环" name="loop" tooltip="是否循环播放" value="true" />
-                    <uie:FloatField label="融合权重" value="0.5" tooltip="动画融合的默认权重" name="weight" style="height: auto; width: auto; align-items: stretch; justify-content: flex-end;" />
+                    <uie:FloatField label="单位像素" value="100" tooltip="单位像素" name="ppu" style="height: auto; width: auto; align-items: stretch; justify-content: flex-end;" />
                     <uie:FloatField label="总时长" value="0" name="duration" readonly="true" tooltip="动画持续时间，根据帧信息统计获得" style="height: auto; width: auto; align-items: auto;" />
                     <ui:VisualElement style="flex-direction: row; justify-content: space-between; flex-shrink: 0; align-items: stretch; width: 100%;">
                         <uie:IntegerField label="总帧数" value="0" is-delayed="false" name="frame-count" style="height: auto; width: auto; min-width: 220px; margin-top: 3px; margin-right: 1px;" />

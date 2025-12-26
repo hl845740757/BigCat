@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
 #if UNITY_EDITOR
@@ -64,6 +65,18 @@ public class AudioGroup : ScriptableObject
     public int Count {
         get => audioClips.Length;
         set => Array.Resize(ref audioClips, value);
+    }
+
+    public AudioClip GetAudioClip(ObjectPath spritePath) {
+        string localPath = spritePath.localPath;
+        if (!string.IsNullOrEmpty(localPath)) {
+            return GetAudioClip(localPath);
+        }
+        int index = (int)spritePath.localId;
+        if (index < 0 || index >= audioClips.Length) {
+            return null;
+        }
+        return audioClips[index];
     }
 
     /// <summary>

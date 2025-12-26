@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
 #if UNITY_EDITOR
@@ -73,6 +74,18 @@ public class SpriteGroup : ScriptableObject
     public int Count {
         get => sprites.Length;
         set => Array.Resize(ref sprites, value);
+    }
+
+    public Sprite GetSprite(ObjectPath spritePath) {
+        string localPath = spritePath.localPath;
+        if (!string.IsNullOrEmpty(localPath)) {
+            return GetSprite(localPath);
+        }
+        int index = (int)spritePath.localId;
+        if (index < 0 || index >= sprites.Length) {
+            return null;
+        }
+        return sprites[index];
     }
 
     /// <summary>

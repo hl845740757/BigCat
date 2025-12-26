@@ -41,9 +41,9 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// </summary>
     public float duration;
     /// <summary>
-    /// 是否循环播放
+    /// 图片显示的ppu
     /// </summary>
-    public bool loop = true;
+    public float ppu = 100;
 
     //////////////////////////////////////////////////////////////
 
@@ -179,6 +179,10 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// 确保时间的正确性
     /// </summary>
     private void OnEnable() {
+        // 处理数据兼容
+        if (ppu <= 0) {
+            ppu = 100;
+        }
         RefreshDuration();
     }
 
