@@ -111,6 +111,18 @@ public static class DSAnnotations
     public const string NODE_STYLE = "NodeStyle";
 
     /// <summary>
+    /// 端口名重映射
+    ///
+    /// 语法：<code>// @PortNameRemap{ path: displayName }</code>
+    /// - path 为数据路劲，采用"a.b.c"格式
+    ///
+    /// 注：
+    /// 1.仅适用于静态路径字段，不适用于List/Map内的元素。
+    /// 2.每一个键值对为一个映射，用于解决复用数据结构导致的端口名重复问题。
+    /// </summary>
+    public const string PORT_NAME_REMAP = "PortNameRemap";
+
+    /// <summary>
     /// 端口字段
     ///
     /// 语法：<code>// @PortField{ side: Right }</code>
@@ -203,6 +215,7 @@ public static class DSAnnotations
 
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";
+    public const string KEY_PATH = "path";
     public const string KEY_SIDE = "side";
     public const string KEY_DISTINCT = "distinct";
     public const string KEY_EXPANDED = "expanded";

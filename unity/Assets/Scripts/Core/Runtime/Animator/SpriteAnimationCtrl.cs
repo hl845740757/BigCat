@@ -244,13 +244,29 @@ public class SpriteAnimationCtrl
     private void ApplyFrame() {
         SpriteAnimationFrame frame = clip[index];
         if (transform) {
+            Vector2 position = frame.position;
+            float rotation = frame.rotation;
+            if (renderer.flipX) {
+                position.x *= -1;
+                rotation *= -1;
+            }
+            if (renderer.flipY) {
+                position.y *= -1;
+                rotation *= -1;
+            }
             transform.localScale = frame.scale;
-            transform.localPosition = frame.position / clip.ppu;
-            transform.localRotation = frame.rotation == 0
+            transform.localPosition = position / clip.ppu;
+            transform.localRotation = rotation == 0
                 ? Quaternion.identity
-                : Quaternion.Euler(0, 0, frame.rotation);
+                : Quaternion.Euler(0, 0, rotation);
         }
-        //
+        // 测试环境不使用资源加载
+#if UNITY_EDITOR
+        if (frame.sprite) {
+            renderer.sprite = frame.sprite;
+            return;
+        }
+#endif
         ObjectPath spritePath = frame.spritePath;
         groupHandle = ResourceManager.Inst.LoadAssetAsync<SpriteGroup>(spritePath.collection);
     }

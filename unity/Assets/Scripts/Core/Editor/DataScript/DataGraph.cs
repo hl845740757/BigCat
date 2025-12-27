@@ -664,6 +664,7 @@ public sealed class DataGraph
             defineInfo = defineInfo,
             cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
+            displayName = variableCfg.displayName ?? defineInfo.SimpleName,
             isNull = DSUtil.IsNullableType(type)
         };
         if (variableCfg.initNull) {
@@ -671,6 +672,15 @@ public sealed class DataGraph
             variable.values = new List<Variable>();
         } else {
             CreateValues(variable);
+        }
+        // 覆盖字段端口名
+        if (variableCfg.portNameRemap != null) {
+            foreach (var pair in variableCfg.portNameRemap) {
+                Variable nestedValue = variable.FindValue(pair.Key);
+                if (nestedValue != null) {
+                    nestedValue.displayName = pair.Value;
+                }
+            }
         }
         return variable;
     }

@@ -130,6 +130,10 @@ public sealed class VariableCfg
     public List<DSInst> supportedInsts;
 
     /// <summary>
+    /// 端口名
+    /// </summary>
+    public List<KeyValuePair<string, string>> portNameRemap;
+    /// <summary>
     /// 字段端口配置
     /// </summary>
     public FieldPortCfg portCfg;
@@ -206,6 +210,10 @@ public sealed class VariableCfg
         annotation = element.GetAnnotation(DSAnnotations.PORT_FIELD);
         if (annotation != null) {
             ParsePortInfo(annotation.AsObject(), cfg);
+        }
+        annotation = element.GetAnnotation(DSAnnotations.PORT_NAME_REMAP);
+        if (annotation != null) {
+            ParsePortRemap(annotation.AsObject(), cfg);
         }
         // Pop和Branch都是多注解 - 只能用于字段
         List<Annotation> annotations = element.GetAnnotations(DSAnnotations.POP_FIELD);
@@ -368,6 +376,13 @@ public sealed class VariableCfg
             }
         }
         cfg.supportedTypes.TrimExcess();
+    }
+
+    private static void ParsePortRemap(DsonObject<string> dsonObject, VariableCfg cfg) {
+        cfg.portNameRemap = new List<KeyValuePair<string, string>>(dsonObject.Count);
+        foreach (var pair in dsonObject) {
+            cfg.portNameRemap.Add(new(pair.Key, pair.Value.AsString()));
+        }
     }
 
     private static void ParsePortInfo(DsonObject<string> dsonObject, VariableCfg cfg) {

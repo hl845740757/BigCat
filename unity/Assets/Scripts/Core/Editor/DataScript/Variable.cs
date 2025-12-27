@@ -65,6 +65,10 @@ public sealed class Variable : IDisposable
     /// 注：对于多态字段，该属性会变更；内存Undo/Redo会备份该数据。
     /// </summary>
     public DSNamedType type { get; internal set; }
+    /// <summary>
+    /// 展示名(用于覆盖配置)
+    /// </summary>
+    public string displayName { get; internal set; }
 
     /// <summary>
     /// 当前是否是null值
@@ -514,6 +518,7 @@ public sealed class Variable : IDisposable
         defineInfo = backup.defineInfo;
         cfg = backup.cfg;
         type = backup.type;
+        displayName = backup.displayName;
         //
         isNull = backup.isNull;
         longValue = backup.longValue;

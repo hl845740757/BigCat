@@ -119,7 +119,7 @@ public class NodeView : Node
         foreach (Variable outputField in dataNode.outputFields) {
             Side side = GetSide(outputField.cfg);
             PortView portView = CreateOutputPort(side, outputField.isCollectionType);
-            portView.portName = outputField.defineInfo.SimpleName;
+            portView.portName = outputField.displayName;
             portView.Bind(outputField);
             AddPort(portView, side);
             // 默认展开

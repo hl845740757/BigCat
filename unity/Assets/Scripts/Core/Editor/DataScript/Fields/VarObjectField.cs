@@ -128,7 +128,7 @@ public class VarObjectField : Foldout, IVarField
         contentContainer.Clear();
         foreach (Variable nestedVar in _variable.values) {
             VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
-            DataEditorUtil.SetFieldLabel(fieldView, nestedVar.defineInfo.SimpleName);
+            DataEditorUtil.SetFieldLabel(fieldView, nestedVar.displayName);
             fieldView.tooltip = nestedVar.cfg.tooltip;
             contentContainer.Add(fieldView);
         }
