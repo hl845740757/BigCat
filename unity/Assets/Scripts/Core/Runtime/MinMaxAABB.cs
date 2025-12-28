@@ -261,7 +261,7 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
     /// </summary>
     /// <param name="baseX">翻转轴的X坐标</param>
     /// <returns></returns>
-    public MinMaxAABB FlipX2D(float baseX) {
+    public MinMaxAABB FlipX2D(float baseX = 0f) {
         float maxX = baseX + (baseX - min.x); // delta
         float minX = maxX - (max.x - min.x); // width
         return new MinMaxAABB(minX, min.y, min.z, maxX, max.y, max.z);
@@ -272,10 +272,24 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
     /// </summary>
     /// <param name="baseY">翻转轴的Y坐标</param>
     /// <returns></returns>
-    public MinMaxAABB FlipY2D(float baseY) {
+    public MinMaxAABB FlipY2D(float baseY = 0f) {
         float maxY = baseY + (baseY - min.y); // delta
         float minY = maxY - (max.y - min.y); // height
         return new MinMaxAABB(min.x, minY, min.z, max.x, maxY, max.z);
+    }
+
+    public static void FlipX2D(ref MinMaxAABB box, float baseX = 0f) {
+        float maxX = baseX + (baseX - box.min.x); // delta
+        float minX = maxX - (box.max.x - box.min.x); // width
+        box.min.x = minX;
+        box.max.x = maxX;
+    }
+
+    public static void FlipY2D(ref MinMaxAABB box, float baseY = 0f) {
+        float maxY = baseY + (baseY - box.min.y); // delta
+        float minY = maxY - (box.max.y - box.min.y); // height
+        box.min.y = minY;
+        box.max.y = maxY;
     }
 
     /// <summary>

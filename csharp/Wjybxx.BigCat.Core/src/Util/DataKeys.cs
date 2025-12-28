@@ -71,7 +71,20 @@ public static class DataKeys
 
     public const int TYPE_BITSET = 21;
 
-    private static readonly ConcurrentDictionary<DataKey, DataKey> internedKeys = new ConcurrentDictionary<DataKey, DataKey>();
+    #region 池化
+
+    /// <summary>
+    /// 池化的对象
+    /// </summary>
+    private static readonly ConcurrentDictionary<(string, Type), DataKey> internedKeys = new();
+
+    /// <summary>
+    /// 尝试获取被池化的key
+    /// </summary>
+    public static bool TryGetInterned(string name, Type dataType, out DataKey key) {
+        (string, Type) cacheKey = (name, dataType);
+        return internedKeys.TryGetValue(cacheKey, out key);
+    }
 
     /// <summary>
     /// 将DataKey加入常量池，如果Key已存在于常量池，则返回常量池中的对象，否则返回当前对象。 
@@ -80,10 +93,11 @@ public static class DataKeys
         if (key == null) {
             throw new ArgumentNullException(nameof(key));
         }
-        if (internedKeys.TryAdd(key, key)) {
+        (string, Type) cacheKey = (key.Name, key.DataType);
+        if (internedKeys.TryAdd(cacheKey, key)) {
             return key;
         }
-        return internedKeys[key];
+        return internedKeys[cacheKey];
     }
 
     /// <summary>
@@ -93,11 +107,16 @@ public static class DataKeys
         if (key == null) {
             throw new ArgumentNullException(nameof(key));
         }
-        if (internedKeys.TryAdd(key, key)) {
+        (string, Type) cacheKey = (key.Name, key.DataType);
+        if (internedKeys.TryAdd(cacheKey, key)) {
             return key;
         }
-        return (DataKey<T>)internedKeys[key];
+        return (DataKey<T>)internedKeys[cacheKey];
     }
+
+    #endregion
+
+    #region 工厂方法
 
     public static DataKey<int> NewIntKey(string name) {
         return new IntKey(name);
@@ -184,6 +203,10 @@ public static class DataKeys
     public static DataKey<GBitSet> NewGBitSetKey(string name) {
         return new BitSetKey(name);
     }
+
+    #endregion
+
+    #region key实现
 
     public class ObjectKey<T> : DataKey<T>
     {
@@ -562,5 +585,7 @@ public static class DataKeys
         }
     }
 #endif
+
+    #endregion
 }
 }

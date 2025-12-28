@@ -54,7 +54,7 @@ public class SpriteAnimationCtrl
     /// <summary>
     /// 当前播放时间(只读)
     ///
-    /// 注：time是一直前进的，要想获取动画对应的采样时间，请使用<see cref="SampleTime"/>。
+    /// 注：time在Play状态下是一直前进的，要想获取动画对应的采样时间，请使用<see cref="SampleTime"/>。
     /// </summary>
     public float time;
     /// <summary>
@@ -99,6 +99,7 @@ public class SpriteAnimationCtrl
     /// 获取动画的采样时间(规格化时间)
     /// </summary>
     public float SampleTime => wrapMode.GetSampleTime(time, clip.duration);
+
     /// <summary>
     /// 当前帧
     /// </summary>
@@ -106,16 +107,20 @@ public class SpriteAnimationCtrl
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => clip[index];
     }
-
     public bool FlipX {
         get => renderer.flipX;
         set => renderer.flipX = value;
     }
-
     public bool FlipY {
         get => renderer.flipY;
         set => renderer.flipY = value;
     }
+    public int SortingOrder {
+        get => renderer.sortingOrder;
+        set => renderer.sortingOrder = value;
+    }
+
+    #region 流程
 
     /// <summary>
     /// 播放动画
@@ -182,6 +187,10 @@ public class SpriteAnimationCtrl
         } while (availTime > 0 && IsPlaying);
         CheckSpriteStatus();
     }
+
+    #endregion
+
+    #region move-next
 
     private const float ERROR = 1 / 64f;
 
@@ -284,6 +293,8 @@ public class SpriteAnimationCtrl
             groupHandle = default;
         }
     }
+
+    #endregion
 
     private enum Status : byte
     {

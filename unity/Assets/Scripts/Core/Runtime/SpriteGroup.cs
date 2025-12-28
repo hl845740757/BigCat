@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.BigCat.Animator;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 
@@ -46,6 +47,11 @@ public class SpriteGroup : ScriptableObject
     /// 注：SpriteGroup可以和SpriteAtlas一样放在文件夹外部。
     /// </summary>
     public string bindFolder;
+    /// <summary>
+    /// 排序层级
+    /// 注：部分贴图的层级可能要高于部件的默认值，因此配置在图组上。
+    /// </summary>
+    public ESortingOrder sortingOrder = ESortingOrder.Normal;
 
     /// <summary>
     /// 名字是000开始的有序数字

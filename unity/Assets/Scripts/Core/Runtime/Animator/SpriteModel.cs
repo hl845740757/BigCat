@@ -32,31 +32,6 @@ namespace Wjybxx.BigCat.Animator
 public sealed class SpriteModel : ScriptableObject
 {
     /// <summary>
-    /// 模型部件id
-    ///
-    /// 注：
-    /// 1.运行会根据id创建对应name的子GameObject负责部件的渲染。
-    /// 2.虽然使用数字也是可以的，但使用起来有较多不便，动作的Name同理。
-    /// </summary>
-    [Tooltip("部件id")]
-    public string partId;
-    /// <summary>
-    /// 部件归属的组
-    ///
-    /// 注：
-    /// 1.将Body相关的部件归属在同一组，使得我们可以按组切换模型动作。
-    /// 2.角色通常可划分为三组：Body + 武器 + 其它。
-    /// </summary>
-    [Tooltip("部件所属的组，建议角色Body相关的部件归属在同一组")]
-    public int partGroup;
-    /// <summary>
-    /// 部件渲染层级
-    /// (图层内排序，理论上还可能按照图组设置层级)
-    /// </summary>
-    [Tooltip("部件渲染顺序")]
-    public int partLayer;
-
-    /// <summary>
     /// 模型id
     /// </summary>
     public int modelId;
@@ -81,7 +56,6 @@ public sealed class SpriteModel : ScriptableObject
 
     /// <summary>
     /// 动作之间的融合配置
-    /// (不处理动作重映射)
     /// </summary>
     [Tooltip("动作融合信息")]
     public List<AnimationMixCfg> motionMixCfgList = new();
@@ -140,9 +114,6 @@ public sealed class SpriteModel : ScriptableObject
     /// 构建缓存信息，允许运行时调用
     /// </summary>
     public void RebuildCache() {
-        if (!string.IsNullOrWhiteSpace(partId)) {
-            partId = string.Intern(partId);
-        }
         // Motion
         motionDic.Clear();
         motionDic.EnsureCapacity(motionList.Count);

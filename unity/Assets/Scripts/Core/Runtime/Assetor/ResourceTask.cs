@@ -204,6 +204,9 @@ public abstract class ResourceTask : Decorator<Blackboard>
         if (action == null) throw new ArgumentNullException(nameof(action));
         _callbacks ??= _listPool.Acquire();
         _callbacks.Add(new CallbackItem(action, handle));
+        if (IsCompleted && _callbacks.Count == 1) {
+            Scheduler.DelayNotifyListener(this);
+        }
     }
 
     private void UnregisterCallbackImpl(Delegate action, AssetHandle handle) {
