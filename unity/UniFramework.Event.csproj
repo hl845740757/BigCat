@@ -11,12 +11,12 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace>Wjybxx.BigCat.Core</RootNamespace>
-    <ProjectGuid>{93bef834-af94-2596-e608-4f5ae4a01788}</ProjectGuid>
+    <RootNamespace></RootNamespace>
+    <ProjectGuid>{ab00088d-096c-3b73-5464-d49381d0ace9}</ProjectGuid>
     <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AssemblyName>Wjybxx.BigCat.UnityCore</AssemblyName>
+    <AssemblyName>UniFramework.Event</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <BaseDirectory>.</BaseDirectory>
@@ -25,12 +25,12 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>Temp\Bin\Debug\Wjybxx.BigCat.UnityCore\</OutputPath>
+    <OutputPath>Temp\Bin\Debug\UniFramework.Event\</OutputPath>
     <DefineConstants>UNITY_2021_3_56;UNITY_2021_3;UNITY_2021;UNITY_5_3_OR_NEWER;UNITY_5_4_OR_NEWER;UNITY_5_5_OR_NEWER;UNITY_5_6_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_3_OR_NEWER;UNITY_2017_4_OR_NEWER;UNITY_2018_1_OR_NEWER;UNITY_2018_2_OR_NEWER;UNITY_2018_3_OR_NEWER;UNITY_2018_4_OR_NEWER;UNITY_2019_1_OR_NEWER;UNITY_2019_2_OR_NEWER;UNITY_2019_3_OR_NEWER;UNITY_2019_4_OR_NEWER;UNITY_2020_1_OR_NEWER;UNITY_2020_2_OR_NEWER;UNITY_2020_3_OR_NEWER;UNITY_2021_1_OR_NEWER;UNITY_2021_2_OR_NEWER;UNITY_2021_3_OR_NEWER;PLATFORM_ARCH_64;UNITY_64;UNITY_INCLUDE_TESTS;ENABLE_AR;ENABLE_AUDIO;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_EVENT_QUEUE;ENABLE_MICROPHONE;ENABLE_MULTIPLE_DISPLAYS;ENABLE_PHYSICS;ENABLE_TEXTURE_STREAMING;ENABLE_VIRTUALTEXTURING;ENABLE_UNET;ENABLE_LZMA;ENABLE_UNITYEVENTS;ENABLE_VR;ENABLE_WEBCAM;ENABLE_UNITYWEBREQUEST;ENABLE_WWW;ENABLE_CLOUD_SERVICES;ENABLE_CLOUD_SERVICES_ADS;ENABLE_CLOUD_SERVICES_USE_WEBREQUEST;ENABLE_CLOUD_SERVICES_CRASH_REPORTING;ENABLE_CLOUD_SERVICES_PURCHASING;ENABLE_CLOUD_SERVICES_ANALYTICS;ENABLE_CLOUD_SERVICES_UNET;ENABLE_CLOUD_SERVICES_BUILD;ENABLE_CLOUD_LICENSE;ENABLE_EDITOR_HUB_LICENSE;ENABLE_WEBSOCKET_CLIENT;ENABLE_DIRECTOR_AUDIO;ENABLE_DIRECTOR_TEXTURE;ENABLE_MANAGED_JOBS;ENABLE_MANAGED_TRANSFORM_JOBS;ENABLE_MANAGED_ANIMATION_JOBS;ENABLE_MANAGED_AUDIO_JOBS;ENABLE_MANAGED_UNITYTLS;INCLUDE_DYNAMIC_GI;ENABLE_SCRIPTING_GC_WBARRIERS;PLATFORM_SUPPORTS_MONO;RENDER_SOFTWARE_CURSOR;ENABLE_VIDEO;ENABLE_ACCELERATOR_CLIENT_DEBUGGING;PLATFORM_STANDALONE;TEXTCORE_1_0_OR_NEWER;PLATFORM_STANDALONE_WIN;UNITY_STANDALONE_WIN;UNITY_STANDALONE;ENABLE_RUNTIME_GI;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_NVIDIA;ENABLE_CRUNCH_TEXTURE_COMPRESSION;ENABLE_UNITY_GAME_SERVICES_ANALYTICS_SUPPORT;ENABLE_OUT_OF_PROCESS_CRASH_HANDLER;ENABLE_CLUSTER_SYNC;ENABLE_CLUSTERINPUT;PLATFORM_UPDATES_TIME_OUTSIDE_OF_PLAYER_LOOP;GFXDEVICE_WAITFOREVENT_MESSAGEPUMP;ENABLE_WEBSOCKET_HOST;ENABLE_MONO;NET_4_6;NET_UNITY_4_8;ENABLE_PROFILER;DEBUG;TRACE;UNITY_ASSERTIONS;UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_WIN;ENABLE_UNITY_COLLECTIONS_CHECKS;ENABLE_BURST_AOT;UNITY_TEAM_LICENSE;UNITY_PRO_LICENSE;ENABLE_CUSTOM_RENDER_TEXTURE;ENABLE_DIRECTOR;ENABLE_LOCALIZATION;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_TILEMAP;ENABLE_TIMELINE;ENABLE_INPUT_SYSTEM;ENABLE_LEGACY_INPUT_MANAGER;TEXTCORE_FONT_ENGINE_1_5_OR_NEWER;CSHARP_7_OR_LATER;CSHARP_7_3_OR_NEWER</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>8632,8634,1701,1702,1591,0169,0649</NoWarn>
-    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
@@ -47,78 +47,12 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\FileExtension.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\ESortingLayer.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadMethod.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProviderBase.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EAssetIndexes.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\MultiFileBundle.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AssetLoadTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourcePromise.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\PlayablePort.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelResolver.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ProviderId.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\TaskScheduler.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BundleProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\PlayableNode.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceManager.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\ListenerContainer.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetPackageInfo.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadStatus.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorPackageManager.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\AudioGroup.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceErrorCode.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\MonoScheduler.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AsyncOperationAdaptor.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorAssetBundle.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationFrame.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\BytesAreaAttribute.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetQuery.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectBytes.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EPlayableType.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StopManagerTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationCtrl.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EWrapMode.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EBundleType.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\DownloadTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelListener.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\DataModelResolver.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MinMaxAABB.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowOpenArgs.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\InstanceProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\BinaryAsset.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetFileInfo.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ErrorProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\IAggregationModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\AssetBundleAdaptor.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationMixCfg.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\IPackageManager.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BinaryAssetProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowCmdMgr.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
+    <Compile Include="Assets\Samples\YooAsset\2.3.17\Space Shooter\ThirdParty\UniFramework\UniEvent\Runtime\UniEventDriver.cs" />
+    <Compile Include="Assets\Samples\YooAsset\2.3.17\Space Shooter\ThirdParty\UniFramework\UniEvent\Runtime\UniLogger.cs" />
+    <Compile Include="Assets\Samples\YooAsset\2.3.17\Space Shooter\ThirdParty\UniFramework\UniEvent\Runtime\EventGroup.cs" />
+    <Compile Include="Assets\Samples\YooAsset\2.3.17\Space Shooter\ThirdParty\UniFramework\UniEvent\Runtime\IEventMessage.cs" />
+    <Compile Include="Assets\Samples\YooAsset\2.3.17\Space Shooter\ThirdParty\UniFramework\UniEvent\Runtime\UniEvent.cs" />
+    <None Include="Assets\Samples\YooAsset\2.3.17\Space Shooter\ThirdParty\UniFramework\UniEvent\Runtime\UniFramework.Event.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
@@ -782,20 +716,8 @@
     <Reference Include="System.Xml.XPath.XDocument">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\Facades\System.Xml.XPath.XDocument.dll</HintPath>
     </Reference>
-    <Reference Include="Wjybxx.Commons.Core">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.Commons.Concurrent">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Concurrent.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.Dson.Core">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.Dson.Codec">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
-    </Reference>
-    <Reference Include="Wjybxx.BTree.Core">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.BTree.Core.dll</HintPath>
+    <Reference Include="YooAsset">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\YooAsset.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

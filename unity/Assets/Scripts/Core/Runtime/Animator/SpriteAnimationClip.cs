@@ -41,6 +41,10 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// </summary>
     public float duration;
     /// <summary>
+    /// 开启阴影
+    /// </summary>
+    public bool shadow = true;
+    /// <summary>
     /// 图片显示的ppu
     /// </summary>
     public float ppu = 100;

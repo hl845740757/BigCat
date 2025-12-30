@@ -119,11 +119,11 @@ public sealed class SpriteModel : ScriptableObject
         motionDic.EnsureCapacity(motionList.Count);
         for (int index = 0; index < motionList.Count; index++) {
             var motion = motionList[index];
-            if (string.IsNullOrWhiteSpace(motion.name)) {
+            if (!motion.clip) {
                 continue;
             }
-            // name池化
-            motion.name = string.Intern(motion.name);
+            // name池化 - 为空的情况下默认为动画名
+            motion.name = string.IsNullOrEmpty(motion.name) ? motion.clip.name : string.Intern(motion.name);
             motionList[index] = motion;
             motionDic.Add(motion.name, motion);
         }

@@ -73,21 +73,21 @@ public sealed class SpriteAnimationFrame
     [Tooltip("攻击包围盒")]
     public MinMaxAABB[] damageBoxes = Array.Empty<MinMaxAABB>();
     /// <summary>
-    /// 攻击盒插值函数
+    /// 攻击盒插值方式
     ///
     /// 注：0表示HitBox就是最终形状，即离散的AABB。
     /// </summary>
     [Tooltip("攻击盒插值函数")]
-    public int interp;
-
-    /// <summary>
-    /// 阴影
-    /// </summary>
-    public bool shadow = true;
+    public int boxInterp;
+    
     /// <summary>
     /// 色调
     /// </summary>
     public Color32 tint = new Color32(255, 255, 255, 255);
+    /// <summary>
+    /// 色调插值方式
+    /// </summary>
+    public int tintInterp;
 
     public SpriteAnimationFrame() {
         spritePath.type = (int)ObjectPathType.SpriteOfGroup;

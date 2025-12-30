@@ -76,6 +76,19 @@ public class Blackboard
         return dataMap.ContainsKey(key);
     }
 
+    /// <summary>
+    /// 将本地变量导出到共享内存
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    public bool ExportToShared(DataKey key) {
+        if (shared != null && dataMap.Remove(key, out UnionValue value)) {
+            shared.dataMap[key] = value;
+            return true;
+        }
+        return false;
+    }
+
     #region 泛型key
 
     public void Set<T>(DataKey<T> key, T value) {
@@ -93,7 +106,7 @@ public class Blackboard
             return unionValue.IsNull ? default : key.Unbox(unionValue);
         }
         if (shared != null) {
-            return shared.Get<T>(key);
+            return shared.Get(key);
         }
         return default;
     }

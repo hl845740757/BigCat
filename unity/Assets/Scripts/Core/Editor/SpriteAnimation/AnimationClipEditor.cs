@@ -28,6 +28,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private FloatField _clipDurationField;
     private FloatField _clipPpuField;
+    private Toggle _clipShadowToggle;
     private IntegerField _frameCountField;
 
     private Vector2Field _batchPositionField;
@@ -173,8 +174,9 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void InitClipInfoArea(VisualElement root) {
-        _clipPpuField = root.Q<FloatField>("ppu");
         _clipDurationField = root.Q<FloatField>("duration");
+        _clipShadowToggle = root.Q<Toggle>("shadow");
+        _clipPpuField = root.Q<FloatField>("ppu");
         //
         _frameCountField = root.Q<IntegerField>("frame-count");
         _frameCountField.RegisterCallback<FocusOutEvent>(OnFrameCountFocusOut);
@@ -455,6 +457,7 @@ public partial class AnimationClipEditor : EditorWindow
 
         SerializedObject serializedClip = context.serializedClip;
         _clipDurationField.BindProperty(serializedClip.FindProperty("duration"));
+        _clipShadowToggle.BindProperty(serializedClip.FindProperty("shadow"));
         _clipPpuField.BindProperty(serializedClip.FindProperty("ppu"));
         //
         BindFrameInfoElements();
@@ -722,13 +725,15 @@ public partial class AnimationClipEditor : EditorWindow
         foreach (ClipContext context in _clipContextList) {
             int prevIndex = context.frameIndex;
             context.frameIndex = ClampFrameIndex(frameIndex, context.clip.FrameCount);
-            context.playTime = 0;
+            context.playTime = context.clip.GetDuration(0, context.frameIndex - 1);
             context.frameTime = 0;
             if (context.frameIndex != prevIndex) {
                 BindBoxElements(context, true);
                 BindBoxElements(context, false);
             }
         }
+        _playTimeSlider.SetValueWithoutNotify(masterContext.playTime);
+        _playTimeField.SetValueWithoutNotify(masterContext.playTime);
         BindFrameInfoElements();
         RefreshPreviewArea();
     }
@@ -1118,9 +1123,10 @@ public partial class AnimationClipEditor : EditorWindow
         _frameInfoElement.Q<Vector2Field>("scale").BindProperty(serializedFrame.FindPropertyRelative("scale"));
         _frameInfoElement.Q<FloatField>("rotation").BindProperty(serializedFrame.FindPropertyRelative("rotation"));
         _frameInfoElement.Q<FloatField>("duration").BindProperty(serializedFrame.FindPropertyRelative("duration"));
-        _frameInfoElement.Q<IntegerField>("interp").BindProperty(serializedFrame.FindPropertyRelative("interp"));
-        _frameInfoElement.Q<Toggle>("shadow").BindProperty(serializedFrame.FindPropertyRelative("shadow"));
+        _frameInfoElement.Q<IntegerField>("box-interp").BindProperty(serializedFrame.FindPropertyRelative("boxInterp"));
+
         _frameInfoElement.Q<ColorField>("tint").BindProperty(serializedFrame.FindPropertyRelative("tint"));
+        _frameInfoElement.Q<IntegerField>("tint-interp").BindProperty(serializedFrame.FindPropertyRelative("tintInterp"));
 
         SerializedProperty serializeHurtBoxes = context.serializedHurtBoxes;
         _hurtBoxListView.BindProperty(serializeHurtBoxes);

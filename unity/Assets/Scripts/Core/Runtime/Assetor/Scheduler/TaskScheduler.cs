@@ -117,7 +117,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
                 children.RemoveAt(index--);
             }
             // 检测超时
-            if (RealTime - _frameTime >= _maxTimeSlice) {
+            if ((index & 7) == 0 && RealTime - _frameTime >= _maxTimeSlice) {
                 break;
             }
         }
