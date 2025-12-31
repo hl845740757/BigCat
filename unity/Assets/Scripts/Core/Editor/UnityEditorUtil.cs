@@ -260,8 +260,8 @@ public static class UnityEditorUtil
         if (assetPath.StartsWith("Assets")) {
             return Application.dataPath + assetPath.Substring(6);
         }
-        // "../../" 指向外部文件
-        return Application.dataPath + "/" + assetPath;
+        // "../../" 指向外部文件，当前工作目录就是Unity项目根目录
+        return assetPath;
     }
 
     /// <summary>

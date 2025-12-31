@@ -52,6 +52,11 @@ public class SpriteAnimationCtrl
     /// </summary>
     public EWrapMode wrapMode;
     /// <summary>
+    /// 播放区间
+    /// </summary>
+    public int startFrame;
+    public int endFrame;
+    /// <summary>
     /// 当前播放时间(只读)
     ///
     /// 注：time在Play状态下是一直前进的，要想获取动画对应的采样时间，请使用<see cref="SampleTime"/>。
@@ -125,14 +130,21 @@ public class SpriteAnimationCtrl
     /// <summary>
     /// 播放动画
     /// </summary>
-    public void Play(SpriteAnimationClip clip, EWrapMode wrapMode) {
+    /// <param name="clip">动画片段</param>
+    /// <param name="wrapMode">环绕模式</param>
+    /// <param name="startFrame">开始帧</param>
+    /// <param name="endFrame">结束帧</param>
+    /// 
+    public void Play(SpriteAnimationClip clip, EWrapMode wrapMode, int startFrame = 0, int endFrame = -1) {
         this.clip = clip;
         this.wrapMode = wrapMode;
-        this.index = 0;
+        this.startFrame = startFrame;
+        this.endFrame = endFrame < 0 ? clip.FrameCount - 1 : endFrame;
+        this.index = startFrame;
         this.time = 0;
         this.status = Status.Playing;
         this.direction = Direction.Ping;
-        this.threshold = clip[0].duration;
+        this.threshold = clip[index].duration;
         //
         ApplyFrame();
         CheckSpriteStatus();
@@ -178,10 +190,11 @@ public class SpriteAnimationCtrl
         }
         float availTime = deltaTime;
         do {
-            float used = Mathf.Clamp(threshold - time + ERROR, 0, availTime);
-            time += used;
-            availTime -= used;
+            time += availTime;
+            availTime = 0;
             if (time > threshold) {
+                availTime = time - threshold;
+                time = threshold;
                 MoveNext();
             }
         } while (availTime > 0 && IsPlaying);
@@ -191,38 +204,37 @@ public class SpriteAnimationCtrl
     #endregion
 
     #region move-next
-
-    private const float ERROR = 1 / 64f;
-
+    
     private void MoveNext() {
         switch (wrapMode) {
             case EWrapMode.StopAtEnd: {
-                if (++index >= clip.FrameCount) {
-                    // 溢出的时间转移给下一个动画
-                    // availTime += time - clip.duration;
-                    index = clip.FrameCount - 1;
-                    time = clip.duration;
+                if (index >= endFrame) {
+                    index = endFrame;
                     status = Status.Stopped;
                 } else {
+                    index++;
                     threshold += clip[index].duration;
                     ApplyFrame();
                 }
                 break;
             }
             case EWrapMode.Clamp: {
-                if (++index >= clip.FrameCount) {
-                    index = clip.FrameCount - 1;
+                if (index >= endFrame) {
+                    index = endFrame;
                     // 继续更新阈值，避免后续更新delta异常
                     threshold += clip[index].duration;
                 } else {
+                    index++;
                     threshold += clip[index].duration;
                     ApplyFrame();
                 }
                 break;
             }
             case EWrapMode.Loop: {
-                if (++index >= clip.FrameCount) {
-                    index = 0;
+                if (index >= endFrame) {
+                    index = startFrame;
+                } else {
+                    index++;
                 }
                 threshold += clip[index].duration;
                 ApplyFrame();
@@ -230,14 +242,18 @@ public class SpriteAnimationCtrl
             }
             case EWrapMode.PingPong: {
                 if (direction == Direction.Ping) {
-                    if (++index >= clip.FrameCount) {
-                        index = clip.FrameCount - 1;
+                    if (index >= endFrame) {
+                        index = endFrame;
                         direction = Direction.Pong;
+                    } else {
+                        index++;
                     }
                 } else {
-                    if (--index < 0) {
-                        index = 0;
+                    if (index <= startFrame) {
+                        index = startFrame;
                         direction = Direction.Ping;
+                    } else {
+                        index--;
                     }
                 }
                 threshold += clip[index].duration;

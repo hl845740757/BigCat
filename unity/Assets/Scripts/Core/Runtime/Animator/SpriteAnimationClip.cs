@@ -43,7 +43,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <summary>
     /// 开启阴影
     /// </summary>
-    public bool shadow = true;
+    public bool shadow;
     /// <summary>
     /// 图片显示的ppu
     /// </summary>
