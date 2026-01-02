@@ -57,13 +57,6 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
         this._provider = null;
     }
 
-    /// <summary>
-    /// 创建一个Null句柄，但可以指定额外信息
-    /// </summary>
-    public static AssetHandle CreateNullHandle(string location) {
-        return new AssetHandle(location);
-    }
-
     #region 类型测试
 
     /// <summary>
@@ -175,43 +168,6 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
             _provider.UpdateAccessTime();
             return _provider.promise.errorCode;
         }
-    }
-
-    /// <summary>
-    /// 创建一个实例句柄
-    ///
-    /// 1.该功能的作用是允许用户使用统一接口（AssetHandle）访问资源和资源实例。
-    /// 2.但实例的生命周期由用户自行管理，框架不会管理实例对象。
-    /// 3.框架会自动销毁引用计数为0的Provider以避免内存泄漏。
-    /// 4.该封装的成本相对较高，如果不是必须统一访问接口，更推荐封装为自定义结构。
-    /// </summary>
-    /// <returns></returns>
-    public AssetHandle CreateInstanceHandle(Object inst) {
-        if (!inst) throw new ArgumentNullException(nameof(inst));
-        if (_provider is not AssetProviderBase provider) {
-            throw new InvalidOperationException();
-        }
-        ProviderId pid = new ProviderId(
-            provider.pid.assetPath + "/" + inst.GetInstanceID(),
-            provider.pid.assetType,
-            ELoadMethod.InstHandle);
-        //
-        InstanceProvider instProvider = new InstanceProvider(provider.resourceMgr, pid, this, inst);
-        _provider.Scheduler.WaitForCompletion(instProvider, 0); // 立即完成
-        AssetHandle handle = new AssetHandle(_location, instProvider);
-        handle.Retain();
-        return handle;
-    }
-
-    /// <summary>
-    /// 如果当前是实例对象句柄，则返回关联的资产对象Handle
-    /// </summary>
-    /// <returns></returns>
-    public AssetHandle GetBackendHandle() {
-        if (_provider is not InstanceProvider provider) {
-            throw new InvalidOperationException();
-        }
-        return provider.backendHandle;
     }
 
     #endregion
@@ -327,6 +283,127 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
 
     public void SetFlag(int index, bool value) {
         _provider.SetFlag(index, value);
+    }
+
+    #endregion
+
+    #region 特殊handle
+
+    /// <summary>
+    /// 创建一个Null句柄，但可以指定额外信息
+    /// </summary>
+    public static AssetHandle CreateNullHandle(string location) {
+        return new AssetHandle(location);
+    }
+
+    /// <summary>
+    /// 创建一个实例句柄
+    ///
+    /// 1.该功能的作用是允许用户使用统一接口（AssetHandle）访问资源和资源实例。
+    /// 2.但实例的生命周期由用户自行管理，框架不会管理实例对象。
+    /// 3.框架会自动销毁引用计数为0的Provider以避免内存泄漏。
+    /// 4.该封装的成本相对较高，如果不是必须统一访问接口，更推荐封装为自定义结构。
+    /// </summary>
+    /// <returns></returns>
+    public AssetHandle CreateInstanceHandle(Object inst) {
+        if (!inst) throw new ArgumentNullException(nameof(inst));
+        if (_provider is not AssetProviderBase provider) {
+            throw new InvalidOperationException();
+        }
+        ProviderId pid = new ProviderId(
+            provider.pid.assetPath + "/" + inst.GetInstanceID(),
+            provider.pid.assetType,
+            ELoadMethod.InstHandle);
+        //
+        InstanceProvider instProvider = new InstanceProvider(provider.resourceMgr, pid, this, inst);
+        _provider.Scheduler.WaitForCompletion(instProvider, 0); // 立即完成
+        AssetHandle handle = new AssetHandle(_location, instProvider);
+        handle.Retain();
+        return handle;
+    }
+
+    /// <summary>
+    /// 如果当前是实例对象句柄，则返回关联的资产对象Handle
+    /// </summary>
+    /// <returns></returns>
+    public AssetHandle GetBackendHandle() {
+        if (_provider is not InstanceProvider provider) {
+            throw new InvalidOperationException();
+        }
+        return provider.backendHandle;
+    }
+
+    #endregion
+
+    #region 相对资源路径加载
+
+    /// <summary>
+    /// 基于当前资源路径的相对路径加载资源
+    /// </summary>
+    /// <param name="relativePath">相对路径</param>
+    /// <param name="priority">加载优先级</param>
+    public AssetHandle LoadAssetAsync<T>(string relativePath, int priority = 0) where T : Object {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAssetAsync<T>(path, priority);
+    }
+
+    /// <summary>
+    /// 加载主资源
+    /// </summary>
+    public AssetHandle LoadAssetAsync(string relativePath, Type assetType, int priority = 0) {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAssetAsync(path, assetType, priority);
+    }
+
+    /// <summary>
+    /// 加载主资源和子资源
+    /// </summary>
+    public AssetHandle LoadAssetWithSubAssetsAsync<T>(string relativePath, int priority = 0) where T : Object {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAssetWithSubAssetsAsync<T>(path, priority);
+    }
+
+    /// <summary>
+    /// 加载主资源和子资源
+    /// </summary>
+    public AssetHandle LoadAssetWithSubAssetsAsync(string relativePath, Type assetType, int priority = 0) {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAssetWithSubAssetsAsync(path, assetType, priority);
+    }
+
+    /// <summary>
+    /// 加载Location所属Bundle的所有指定类型资产
+    /// 注：通常用于加载自定义资产，
+    /// </summary>
+    public AssetHandle LoadAllAssetsAsync<T>(string relativePath, int priority = 0) where T : Object {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAllAssetsAsync<T>(path, priority);
+    }
+
+    /// <summary>
+    /// 加载Location所属Bundle的所有指定类型资产
+    /// 注：通常用于加载自定义资产，
+    /// </summary>
+    public AssetHandle LoadAllAssetsAsync(string relativePath, Type assetType, int priority = 0) {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAllAssetsAsync(path, assetType, priority);
+    }
+
+    /// <summary>
+    /// 加载原始二进制资产
+    /// </summary>
+    public AssetHandle LoadBinaryAssetAsync(string relativePath, int priority = 0) {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadBinaryAssetAsync(path, priority);
+    }
+
+    /// <summary>
+    /// 加载Location所属Bundle的所有指定类型资产
+    /// 注：通常用于加载自定义资产，
+    /// </summary>
+    public AssetHandle LoadAllBinaryAssetAsync(string relativePath, int priority = 0) {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAllBinaryAssetAsync(path, priority);
     }
 
     #endregion

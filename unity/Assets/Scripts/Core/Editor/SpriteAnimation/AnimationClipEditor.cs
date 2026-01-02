@@ -902,7 +902,7 @@ public partial class AnimationClipEditor : EditorWindow
         if (editMode == EditMode.Move) {
             Vector2 offset = (evt.mousePosition - _dragStartMousePosition) / _frameAreaElement.transform.scale;
             context.imageElement.transform.position = _dragStartItemSize + (Vector3)offset;
-            //
+            // TODO 需要支持0.5像素
             Vector2 framePosition = (Vector2)_dragStartItemPosition + new Vector2(offset.x, -offset.y);
             UnityEditorUtil.Truncate(ref framePosition);
             context.serializedPosition.vector2Value = framePosition;

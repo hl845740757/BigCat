@@ -47,11 +47,6 @@ public class SpriteGroup : ScriptableObject
     /// 注：SpriteGroup可以和SpriteAtlas一样放在文件夹外部。
     /// </summary>
     public string bindFolder;
-    /// <summary>
-    /// 排序层级
-    /// 注：部分贴图的层级可能要高于部件的默认值，因此配置在图组上。
-    /// </summary>
-    public ESortingOrder sortingOrder = ESortingOrder.Normal;
 
     /// <summary>
     /// 名字是000开始的有序数字
@@ -66,6 +61,10 @@ public class SpriteGroup : ScriptableObject
     /// 所管理的图片
     /// </summary>
     public Sprite[] sprites = Array.Empty<Sprite>();
+    /// <summary>
+    /// 图片映射
+    /// </summary>
+    public List<SpriteLink> linkList = new List<SpriteLink>();
     /// <summary>
     /// 无序图组根据name建立的映射
     /// </summary>
@@ -199,6 +198,12 @@ public class SpriteGroup : ScriptableObject
             }
             int index = int.Parse(spriteName);
             sprites[index] = sprite;
+        }
+        // 索引映射
+        foreach (SpriteLink link in linkList) {
+            if (sprites[link.index] == null) {
+                sprites[link.index] = sprites[link.dest];
+            }
         }
     }
 

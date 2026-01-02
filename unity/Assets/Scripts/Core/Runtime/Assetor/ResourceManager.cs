@@ -465,6 +465,57 @@ public class ResourceManager
     }
 
     /// <summary>
+    /// 根据相对资产路径，查询资产信息
+    /// </summary>
+    /// <param name="assetPath"></param>
+    /// <param name="relativePath"></param>
+    /// <returns></returns>
+    public AssetFileInfo GetRelativeAssetInfo(string assetPath, string relativePath) {
+        string path = CombinePath(assetPath, relativePath);
+        return GetAssetInfo(path);
+    }
+
+    /// <summary>
+    /// 根据当前路径和相对路径，计算最终资产路径
+    /// 
+    /// 注：这里并非通用规则，我们只支持极简规则(允许回退n级目录)
+    /// </summary>
+    /// <param name="currentPath">当前资产路径</param>
+    /// <param name="relativePath">相对资产路径</param>
+    /// <returns></returns>
+    internal static string CombinePath(string currentPath, string relativePath) {
+        StringBuilder sb = _sb.Clear();
+        sb.EnsureCapacity(currentPath.Length + relativePath.Length);
+        sb.Append(currentPath);
+        sb.Length = LastIndexOf(sb, '/'); // 获得当前目录
+        // 目录回退
+        int idx = 0;
+        while (relativePath[idx] == '.') {
+            if (idx + 2 >= relativePath.Length
+                || relativePath[idx + 1] != '.'
+                || relativePath[idx + 2] != '/') {
+                throw new InvalidOperationException($"Invalid relative path: {relativePath}");
+            }
+            idx += 3;
+            sb.Length = LastIndexOf(sb, '/');
+        }
+        // 其它字符转小写
+        sb.Append('/');
+        for (; idx < relativePath.Length; idx++) {
+            char c = _culture.ToLower(relativePath[idx]);
+            sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
+    private static int LastIndexOf(StringBuilder sb, char c) {
+        for (int idx = sb.Length - 1; idx >= 0; idx--) {
+            if (sb[idx] == c) return idx;
+        }
+        return -1;
+    }
+
+    /// <summary>
     /// 资产路径规格化
     /// </summary>
     private static string NormalizePath(string path) {

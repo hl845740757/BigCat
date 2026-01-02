@@ -129,6 +129,15 @@ public class GameLauncher : MonoBehaviour
         // 尝试打开UI
         windowMgr.Open("LoginWindow", new WindowOpenArgs());
         // windowMgr.Open("Prefabs/UI/LoginWindow", new WindowOpenArgs());
+        //
+        // 测试相对路径加载资源
+        AssetFileInfo loginWindowAssetInfo = resourceMgr.GetAssetInfo("LoginWindow.prefab");
+        AssetFileInfo maskWindowAssetInfo = resourceMgr.GetRelativeAssetInfo
+            (loginWindowAssetInfo.assetPath, "MaskWindow.prefab");
+        //
+        AssetFileInfo maskWindowAssetInfo2 = resourceMgr.GetRelativeAssetInfo
+            (loginWindowAssetInfo.assetPath, "../UI/MaskWindow.prefab");
+        Debug.Assert(maskWindowAssetInfo2 == maskWindowAssetInfo);
     }
 
     private void FixedUpdate() {

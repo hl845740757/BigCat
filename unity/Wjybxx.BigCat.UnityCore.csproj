@@ -102,6 +102,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EBundleType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\DownloadTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelListener.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\SpriteLink.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\DataModelResolver.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MinMaxAABB.cs" />

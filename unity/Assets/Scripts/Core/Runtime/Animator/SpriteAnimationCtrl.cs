@@ -197,14 +197,14 @@ public class SpriteAnimationCtrl
                 time = threshold;
                 MoveNext();
             }
+            CheckSpriteStatus();
         } while (availTime > 0 && IsPlaying);
-        CheckSpriteStatus();
     }
 
     #endregion
 
     #region move-next
-    
+
     private void MoveNext() {
         switch (wrapMode) {
             case EWrapMode.StopAtEnd: {
@@ -293,7 +293,12 @@ public class SpriteAnimationCtrl
         }
 #endif
         ObjectPath spritePath = frame.spritePath;
-        groupHandle = ResourceManager.Inst.LoadAssetAsync<SpriteGroup>(spritePath.collection);
+        if (spritePath.IsEmpty) {
+            renderer.sprite = null;
+            groupHandle = default;
+        } else {
+            groupHandle = ResourceManager.Inst.LoadAssetAsync<SpriteGroup>(spritePath.collection);
+        }
     }
 
     private void CheckSpriteStatus() {
