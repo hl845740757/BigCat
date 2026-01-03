@@ -1129,7 +1129,8 @@ public partial class AnimationClipEditor : EditorWindow
         _frameInfoElement.Q<IntegerField>("hurt-type").BindProperty(serializedFrame.FindPropertyRelative("hurtType"));
 
         _frameInfoElement.Q<ColorField>("tint").BindProperty(serializedFrame.FindPropertyRelative("tint"));
-        _frameInfoElement.Q<IntegerField>("tint-interp").BindProperty(serializedFrame.FindPropertyRelative("tintInterp"));
+        _frameInfoElement.Q<IntegerField>("interp").BindProperty(serializedFrame.FindPropertyRelative("interp"));
+        _frameInfoElement.Q<EnumField>("flip-type").BindProperty(serializedFrame.FindPropertyRelative("flipType"));
 
         SerializedProperty serializeHurtBoxes = context.serializedHurtBoxes;
         _hurtBoxListView.BindProperty(serializeHurtBoxes);

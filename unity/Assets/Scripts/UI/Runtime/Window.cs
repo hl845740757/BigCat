@@ -382,8 +382,12 @@ public sealed class Window
         _components.Clear();
         _indexedComponents.Clear();
         ClearUpdateList();
-        prefabHandle.Release();
         UnityEngine.Object.Destroy(gameObject);
+        // 释放预制件
+        if (!prefabHandle.IsNullHandle) {
+            prefabHandle.Release();
+            prefabHandle = default;
+        }
     }
 
     /// <summary>

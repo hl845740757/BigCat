@@ -105,6 +105,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\SpriteLink.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\DataModelResolver.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationRequest.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MinMaxAABB.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowOpenArgs.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\InstanceProvider.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\TimeValue.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\TimeUnit.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EFlipType.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

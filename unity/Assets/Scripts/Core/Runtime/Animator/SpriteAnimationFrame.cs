@@ -61,6 +61,20 @@ public sealed class SpriteAnimationFrame
     /// </summary>
     [Min(0f)]
     public float duration = 0.1f;
+    /// <summary>
+    /// 色调
+    /// </summary>
+    public Color32 tint = new Color32(255, 255, 255, 255);
+    /// <summary>
+    /// 插值方式（坐标、旋转、缩放、Rgba）
+    /// 注；在当前帧和下一帧之间进行线性插值，实现程序动画。
+    /// </summary>
+    public int interp;
+    /// <summary>
+    /// 图片翻转（镜像）效果
+    /// 注：并非直接修改SpriteRender的Flip属性，而是实现镜像效果。
+    /// </summary>
+    public EFlipType flipType;
 
     /// <summary>
     /// 受击类型（受击状态）
@@ -76,15 +90,6 @@ public sealed class SpriteAnimationFrame
     /// </summary>
     [Tooltip("攻击包围盒")]
     public MinMaxAABB[] hitBoxes = Array.Empty<MinMaxAABB>();
-
-    /// <summary>
-    /// 色调
-    /// </summary>
-    public Color32 tint = new Color32(255, 255, 255, 255);
-    /// <summary>
-    /// 色调插值方式
-    /// </summary>
-    public int tintInterp;
 
     public SpriteAnimationFrame() {
         spritePath.type = (int)ObjectPathType.SpriteOfGroup;

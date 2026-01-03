@@ -74,9 +74,10 @@
                     <uie:Vector2Field label="Scale" name="scale" x="1" y="1" tooltip="图片缩放。以场景效果为准" style="min-width: 100%;" />
                     <uie:FloatField label="Rotation" value="0" name="rotation" tooltip="旋转角度，顺时针为正" is-delayed="false" style="width: auto; min-width: 220px;" />
                     <uie:FloatField label="Duration" value="0.1" name="duration" tooltip="当前帧的持续时间，秒" is-delayed="true" style="width: auto; min-width: 220px;" />
-                    <uie:IntegerField label="HurtType" value="0" name="hurt-type" tooltip="受击类型，普通、霸体..." style="width: auto; min-width: 220px;" />
+                    <uie:IntegerField label="HurtType" value="0" name="hurt-type" tooltip="受击类型，普通、霸体..." style="width: auto; min-width: 220px; align-items: auto; height: 18px;" />
                     <uie:ColorField label="Tint" value="#FFFFFFFF" name="tint" tooltip="色调效果，叠加在图片之上" style="justify-content: flex-start; width: 300px; min-width: auto; max-width: none;" />
-                    <uie:IntegerField label="TintInterp" value="0" name="tint-interp" tooltip="色调插值函数" style="width: auto; min-width: 220px;" />
+                    <uie:IntegerField label="Interp" value="0" name="interp" tooltip="图形插值函数（色调、缩放、坐标）" style="width: auto; min-width: 220px;" />
+                    <uie:EnumField label="FlipType" value="None" name="flip-type" tooltip="图片翻转（镜像）效果" />
                     <ui:ListView focusable="true" tooltip="受击Box，图片bottom相对角色坐标的位置" name="hurt-boxes" header-title="受击Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="DynamicHeight" horizontal-scrolling="false" style="border-top-width: 1px; border-left-color: rgb(145, 145, 145); border-right-color: rgb(145, 145, 145); border-top-color: rgb(145, 145, 145); border-bottom-color: rgb(145, 145, 145); max-height: 200px; width: 98%; flex-shrink: 0; min-height: 20px; min-width: auto;" />
                     <ui:ListView focusable="true" tooltip="伤害Box，图片bottom相对角色坐标的位置" name="hit-boxes" header-title="伤害Box" show-border="true" show-foldout-header="true" reorderable="true" show-add-remove-footer="true" fixed-item-height="60" virtualization-method="DynamicHeight" horizontal-scrolling="false" style="max-height: 200px; width: 98%; flex-shrink: 0; align-items: stretch; flex-direction: column; min-width: auto; flex-grow: 0;" />
                 </ui:VisualElement>

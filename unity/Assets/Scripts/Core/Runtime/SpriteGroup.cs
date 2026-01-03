@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Wjybxx.BigCat.Animator;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 

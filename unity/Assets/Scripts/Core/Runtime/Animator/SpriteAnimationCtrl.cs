@@ -309,6 +309,7 @@ public class SpriteAnimationCtrl
             if (groupHandle.IsSucceeded) {
                 SpriteGroup spriteGroup = groupHandle.GetAsset<SpriteGroup>();
                 ObjectPath spritePath = clip[index].spritePath;
+                renderer.color = clip[index].tint; // TODO 线性插值
                 renderer.sprite = spriteGroup.GetSprite(spritePath);
             }
             groupHandle = default;
