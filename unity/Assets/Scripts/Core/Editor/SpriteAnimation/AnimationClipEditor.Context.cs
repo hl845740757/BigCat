@@ -44,7 +44,7 @@ public partial class AnimationClipEditor
         public VisualElement clipElement; // List元素
         public VisualElement container; // 帧图和攻击盒的容器
         public VisualElement imageElement;
-        public readonly List<VisualElement> damageBoxElements = new List<VisualElement>();
+        public readonly List<VisualElement> hitBoxElements = new List<VisualElement>();
         public readonly List<VisualElement> hurtBoxElements = new List<VisualElement>();
 
         public ClipContext(SpriteAnimationClip clip,
@@ -71,7 +71,7 @@ public partial class AnimationClipEditor
         /// </summary>
         private void CachePropertyFields() {
             serializedFrame?.Dispose();
-            serializedDamageBoxes?.Dispose();
+            serializedHitBoxes?.Dispose();
             serializedHurtBoxes?.Dispose();
             serializedPosition?.Dispose();
             serializedScale?.Dispose();
@@ -79,14 +79,14 @@ public partial class AnimationClipEditor
             //
             if (CheckFrameIndex()) {
                 serializedFrame = serializedFrameArray.GetArrayElementAtIndex(_frameIndex);
-                serializedDamageBoxes = serializedFrame.FindPropertyRelative("damageBoxes");
+                serializedHitBoxes = serializedFrame.FindPropertyRelative("hitBoxes");
                 serializedHurtBoxes = serializedFrame.FindPropertyRelative("hurtBoxes");
                 serializedPosition = serializedFrame.FindPropertyRelative("position");
                 serializedScale = serializedFrame.FindPropertyRelative("scale");
                 serializedRotation = serializedFrame.FindPropertyRelative("rotation");
             } else {
                 serializedFrame = null;
-                serializedDamageBoxes = null;
+                serializedHitBoxes = null;
                 serializedHurtBoxes = null;
                 serializedPosition = null;
                 serializedScale = null;
@@ -96,7 +96,7 @@ public partial class AnimationClipEditor
 
         public SpriteAnimationFrame frame => clip[frameIndex];
         public SerializedProperty serializedFrame { get; private set; }
-        public SerializedProperty serializedDamageBoxes { get; private set; }
+        public SerializedProperty serializedHitBoxes { get; private set; }
         public SerializedProperty serializedHurtBoxes { get; private set; }
         public SerializedProperty serializedPosition { get; private set; }
         public SerializedProperty serializedScale { get; private set; }
@@ -110,18 +110,18 @@ public partial class AnimationClipEditor
 
         public bool CheckFrameIndex(int frameIndex) => frameIndex >= 0 && frameIndex < clip.FrameCount;
 
-        public MinMaxAABB GetBox(int index, bool isDamageBox) {
-            return isDamageBox ? frame.damageBoxes[index] : frame.hurtBoxes[index];
+        public MinMaxAABB GetBox(int index, bool isHitBox) {
+            return isHitBox ? frame.hitBoxes[index] : frame.hurtBoxes[index];
         }
 
-        public void DeleteBox(int index, bool isDamageBox) {
-            SerializedProperty property = isDamageBox ? serializedDamageBoxes : serializedHurtBoxes;
+        public void DeleteBox(int index, bool isHitBox) {
+            SerializedProperty property = isHitBox ? serializedHitBoxes : serializedHurtBoxes;
             property.DeleteArrayElementAtIndex(index);
             serializedClip.ApplyModifiedProperties();
         }
 
-        public void AddBox(MinMaxAABB box, bool isDamageBox) {
-            SerializedProperty property = isDamageBox ? serializedDamageBoxes : serializedHurtBoxes;
+        public void AddBox(MinMaxAABB box, bool isHitBox) {
+            SerializedProperty property = isHitBox ? serializedHitBoxes : serializedHurtBoxes;
             int arraySize = property.arraySize;
             property.InsertArrayElementAtIndex(arraySize);
             // TODO 缓存
@@ -131,8 +131,8 @@ public partial class AnimationClipEditor
             }
         }
 
-        public void SetBox(int index, MinMaxAABB box, bool isDamageBox) {
-            SerializedProperty property = isDamageBox ? serializedDamageBoxes : serializedHurtBoxes;
+        public void SetBox(int index, MinMaxAABB box, bool isHitBox) {
+            SerializedProperty property = isHitBox ? serializedHitBoxes : serializedHurtBoxes;
             // TODO 缓存
             using (SerializedProperty elementAtIndex = property.GetArrayElementAtIndex(index)) {
                 box.WriteProperty(elementAtIndex);
@@ -153,7 +153,7 @@ public partial class AnimationClipEditor
             serializedClip.Dispose();
             serializedFrameArray.Dispose();
             serializedFrame?.Dispose();
-            serializedDamageBoxes?.Dispose();
+            serializedHitBoxes?.Dispose();
             serializedHurtBoxes?.Dispose();
             serializedPosition?.Dispose();
 
@@ -162,7 +162,7 @@ public partial class AnimationClipEditor
             container.RemoveFromHierarchy();
             container = null;
             imageElement = null;
-            damageBoxElements.Clear();
+            hitBoxElements.Clear();
             hurtBoxElements.Clear();
         }
     }
@@ -170,24 +170,24 @@ public partial class AnimationClipEditor
     private class BoxContext
     {
         public readonly ClipContext clipContext;
-        public readonly bool isDamageBox;
+        public readonly bool isHitBox;
         public readonly int boxIndex;
 
         public BoxContext(ClipContext clipContext,
-                          bool isDamageBox, int boxIndex) {
+                          bool isHitBox, int boxIndex) {
             this.clipContext = clipContext;
-            this.isDamageBox = isDamageBox;
+            this.isHitBox = isHitBox;
             this.boxIndex = boxIndex;
         }
 
-        public bool isHurtBox => !isDamageBox;
+        public bool isHurtBox => !isHitBox;
 
         public MinMaxAABB box {
-            get => clipContext.GetBox(boxIndex, isDamageBox);
-            set => clipContext.SetBox(boxIndex, value, isDamageBox);
+            get => clipContext.GetBox(boxIndex, isHitBox);
+            set => clipContext.SetBox(boxIndex, value, isHitBox);
         }
-        public VisualElement boxElement => isDamageBox
-            ? clipContext.damageBoxElements[boxIndex]
+        public VisualElement boxElement => isHitBox
+            ? clipContext.hitBoxElements[boxIndex]
             : clipContext.hurtBoxElements[boxIndex];
 
         public override bool Equals(object obj) {
@@ -199,7 +199,7 @@ public partial class AnimationClipEditor
 
         public override int GetHashCode() {
             int hashCode = (clipContext != null ? clipContext.GetHashCode() : 0);
-            hashCode = (hashCode * 397) ^ isDamageBox.GetHashCode();
+            hashCode = (hashCode * 397) ^ isHitBox.GetHashCode();
             hashCode = (hashCode * 397) ^ boxIndex;
             return hashCode;
         }

@@ -63,6 +63,10 @@ public sealed class SpriteAnimationFrame
     public float duration = 0.1f;
 
     /// <summary>
+    /// 受击类型（受击状态）
+    /// </summary>
+    public int hurtType;
+    /// <summary>
     /// 受击包围盒
     /// </summary>
     [Tooltip("受击包围盒")]
@@ -71,15 +75,8 @@ public sealed class SpriteAnimationFrame
     /// 攻击包围盒
     /// </summary>
     [Tooltip("攻击包围盒")]
-    public MinMaxAABB[] damageBoxes = Array.Empty<MinMaxAABB>();
-    /// <summary>
-    /// 攻击盒插值方式
-    ///
-    /// 注：0表示HitBox就是最终形状，即离散的AABB。
-    /// </summary>
-    [Tooltip("攻击盒插值函数")]
-    public int boxInterp;
-    
+    public MinMaxAABB[] hitBoxes = Array.Empty<MinMaxAABB>();
+
     /// <summary>
     /// 色调
     /// </summary>
