@@ -41,6 +41,10 @@ public partial class AnimationClipEditor
         private int _frameIndex; // 当前编辑/播放帧
         public float playTime; // 总播放时间
         public float frameTime; // 当前帧播放时间
+        public int startFrame; // 播放帧区间
+        public int endFrame;
+        public float playDuration; // 播放区间总时长
+
         public VisualElement clipElement; // List元素
         public VisualElement container; // 帧图和攻击盒的容器
         public VisualElement imageElement;

@@ -24,8 +24,8 @@ namespace Wjybxx.BigCat.Animator
 public enum EFlipType
 {
     None = 0,
-    FlipX = 1,
-    FlipY = 2,
+    X = 1,
+    Y = 2,
     All = 3
 }
 }

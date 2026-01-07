@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using UnityEngine;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -26,9 +27,12 @@ namespace Wjybxx.BigCat.Animator
 [Serializable]
 public struct AnimationRequest
 {
-    public SpriteAnimationClip clip; // 播放的动画
+    public string clipPath; // 播放的动画
     public EWrapMode wrapMode; // 动画播放模式
     public int startFrame; // 开始帧
-    public int endFrame; // 结束帧
+    public int endFrame; // 结束帧，-1表示未设值
+    public Vector2 offset; // 动画偏移
+    public bool enableOffset; // 是否启用动画偏移
+    // public bool shadow; // 是否开启阴影
 }
 }

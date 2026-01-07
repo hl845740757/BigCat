@@ -483,7 +483,7 @@ public class ResourceManager
     /// <param name="currentPath">当前资产路径</param>
     /// <param name="relativePath">相对资产路径</param>
     /// <returns></returns>
-    internal static string CombinePath(string currentPath, string relativePath) {
+    public static string CombinePath(string currentPath, string relativePath) {
         StringBuilder sb = _sb.Clear();
         sb.EnsureCapacity(currentPath.Length + relativePath.Length);
         sb.Append(currentPath);

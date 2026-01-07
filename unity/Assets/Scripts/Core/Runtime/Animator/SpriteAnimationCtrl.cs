@@ -285,6 +285,7 @@ public class SpriteAnimationCtrl
                 ? Quaternion.identity
                 : Quaternion.Euler(0, 0, rotation);
         }
+        renderer.color = frame.tint; // TODO 线性插值
         // 测试环境不使用资源加载
 #if UNITY_EDITOR
         if (frame.sprite) {
@@ -306,10 +307,9 @@ public class SpriteAnimationCtrl
             return;
         }
         if (groupHandle.IsCompleted) {
-            if (groupHandle.IsSucceeded) {
-                SpriteGroup spriteGroup = groupHandle.GetAsset<SpriteGroup>();
+            SpriteGroup spriteGroup = groupHandle.GetAsset<SpriteGroup>();
+            if (spriteGroup) {
                 ObjectPath spritePath = clip[index].spritePath;
-                renderer.color = clip[index].tint; // TODO 线性插值
                 renderer.sprite = spriteGroup.GetSprite(spritePath);
             }
             groupHandle = default;

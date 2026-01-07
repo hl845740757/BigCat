@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -32,14 +31,34 @@ namespace Wjybxx.BigCat.Animator
 public sealed class SpriteModel : ScriptableObject
 {
     /// <summary>
+    /// 模型部件id
+    ///
+    /// 注：虽然使用数字也是可以的，但使用起来有较多不便，动作的Name同理。
+    /// </summary>
+    [Tooltip("部件id")]
+    public string partId;
+    /// <summary>
+    /// 部件归属的组
+    ///
+    /// 注：
+    /// 1.将Body相关的部件归属在同一组，使得我们可以按组切换模型动作。
+    /// 2.角色通常可划分为三组：Body + 武器 + 其它。
+    /// </summary>
+    [Tooltip("部件所属的组")]
+    public int partGroup;
+    /// <summary>
+    /// 部件的渲染层级
+    /// </summary>
+    public int partLayer;
+
+    /// <summary>
     /// 模型id
     /// </summary>
     public int modelId;
     /// <summary>
-    /// 默认贴图路径
-    /// (由于涉及大量图片，因此延迟加载)
+    /// 默认贴图路径(延迟加载)
     /// </summary>
-    [Tooltip("模型默认图集，即默认贴图")]
+    [Tooltip("默认贴图")]
     public string spriteGroupPath;
     /// <summary>
     /// 模型动作
@@ -48,22 +67,11 @@ public sealed class SpriteModel : ScriptableObject
     /// </summary>
     [Tooltip("逻辑动作名到美术资源的映射")]
     public List<SpriteMotionRedir> motionList = new();
-    /// <summary>
+    /// <summary>`
     /// 模型动作映射缓存
     /// </summary>
     [NonSerialized]
     public readonly Dictionary<string, SpriteMotionRedir> motionDic = new();
-
-    /// <summary>
-    /// 动作之间的融合配置
-    /// </summary>
-    [Tooltip("动作融合信息")]
-    public List<AnimationMixCfg> motionMixCfgList = new();
-    /// <summary>
-    /// 动作融合配置缓存
-    /// </summary>
-    [NonSerialized]
-    public readonly Dictionary<(string, string), AnimationMixCfg> motionMixCfgDic = new();
 
     /// <summary>
     /// 查找动作
@@ -71,37 +79,8 @@ public sealed class SpriteModel : ScriptableObject
     /// <param name="motionName">要查找的动作名</param>
     /// <returns></returns>
     public SpriteMotionRedir FindMotion(string motionName) {
-#if UNITY_EDITOR
-        foreach (var motion in motionList) {
-            if (motion.name == motionName) {
-                return motion;
-            }
-        }
-        return default;
-#else
         motionDic.TryGetValue(motionName, out var motion);
         return motion;
-#endif
-    }
-
-    /// <summary>
-    /// 查找动作融合配置
-    /// </summary>
-    /// <param name="motionA"></param>
-    /// <param name="motionB"></param>
-    /// <returns></returns>
-    public AnimationMixCfg FindMotionMixCfg(string motionA, string motionB) {
-#if UNITY_EDITOR
-        foreach (AnimationMixCfg mixCfg in motionMixCfgList) {
-            if (mixCfg.motionA == motionA && mixCfg.motionB == motionB) {
-                return mixCfg;
-            }
-        }
-        return null;
-#else
-        (string, string) key = (motionA, motionB);
-        return motionMixCfgDic.TryGetValue(key, out var mixCfg) ? mixCfg : null;
-#endif
     }
 
     #region 序列化
@@ -114,6 +93,9 @@ public sealed class SpriteModel : ScriptableObject
     /// 构建缓存信息，允许运行时调用
     /// </summary>
     public void RebuildCache() {
+        if (string.IsNullOrEmpty(partId)) {
+            partId = this.name;
+        }
         // Motion
         motionDic.Clear();
         motionDic.EnsureCapacity(motionList.Count);
@@ -123,23 +105,9 @@ public sealed class SpriteModel : ScriptableObject
                 continue;
             }
             // name池化 - 为空的情况下默认为动画名
-            motion.name = string.IsNullOrEmpty(motion.name) ? motion.clip.name : string.Intern(motion.name);
+            motion.name = string.IsNullOrEmpty(motion.name) ? motion.clip.name : motion.name;
             motionList[index] = motion;
             motionDic.Add(motion.name, motion);
-        }
-        // MixCfg
-        motionMixCfgDic.Clear();
-        motionMixCfgDic.EnsureCapacity(motionMixCfgList.Count);
-        for (int index = 0; index < motionMixCfgList.Count; index++) {
-            AnimationMixCfg mixCfg = motionMixCfgList[index];
-            if (string.IsNullOrWhiteSpace(mixCfg.motionA)
-                || string.IsNullOrWhiteSpace(mixCfg.motionB)) {
-                continue;
-            }
-            mixCfg.motionA = string.Intern(mixCfg.motionA);
-            mixCfg.motionB = string.Intern(mixCfg.motionB);
-            motionMixCfgList[index] = mixCfg;
-            motionMixCfgDic[(mixCfg.motionA, mixCfg.motionB)] = mixCfg;
         }
     }
 

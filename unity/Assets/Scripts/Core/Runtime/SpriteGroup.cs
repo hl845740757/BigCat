@@ -61,9 +61,9 @@ public class SpriteGroup : ScriptableObject
     /// </summary>
     public Sprite[] sprites = Array.Empty<Sprite>();
     /// <summary>
-    /// 图片映射
+    /// 图片软连接（映射）
     /// </summary>
-    public List<SpriteLink> linkList = new List<SpriteLink>();
+    public List<SpriteLink> softLinks = new List<SpriteLink>();
     /// <summary>
     /// 无序图组根据name建立的映射
     /// </summary>
@@ -199,7 +199,7 @@ public class SpriteGroup : ScriptableObject
             sprites[index] = sprite;
         }
         // 索引映射
-        foreach (SpriteLink link in linkList) {
+        foreach (SpriteLink link in softLinks) {
             if (sprites[link.index] == null) {
                 sprites[link.index] = sprites[link.dest];
             }

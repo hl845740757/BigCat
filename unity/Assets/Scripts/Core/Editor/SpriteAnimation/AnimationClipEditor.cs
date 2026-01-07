@@ -24,7 +24,6 @@ public partial class AnimationClipEditor : EditorWindow
     private Vector2IntField _frameSizeField;
     private Vector2Field _framePivotField;
     private FloatField _frameScaleField;
-    private FloatField _timeScaleField;
 
     private FloatField _clipDurationField;
     private FloatField _clipPpuField;
@@ -43,6 +42,9 @@ public partial class AnimationClipEditor : EditorWindow
     private EnumField _imageEditModeToggle;
     private Toggle _imagePickIgnoreToggle;
     private ColorField _bgColorField;
+    private FloatField _timeScaleField;
+    private Vector2IntField _frameRangeField;
+    private Toggle _enableRangeToggle;
     private Toggle _playToggle;
     private Slider _playTimeSlider;
     private FloatField _playTimeField;
@@ -142,8 +144,6 @@ public partial class AnimationClipEditor : EditorWindow
         _frameScaleField = root.Q<FloatField>("frame-scale");
         _frameScaleField.isDelayed = true;
         _frameScaleField.RegisterValueChangedCallback(OnFrameScaleChanged);
-        //
-        _timeScaleField = root.Q<FloatField>("time-scale");
 
         InitSyncOperateArea(root);
         InitClipInfoArea(root);
@@ -260,13 +260,16 @@ public partial class AnimationClipEditor : EditorWindow
         _imageEditModeToggle = previewArea.Q<EnumField>("image-edit-mode");
         _imagePickIgnoreToggle = previewArea.Q<Toggle>("image-pick-ignore");
         _bgColorField = previewArea.Q<ColorField>("bg-color");
+        _timeScaleField = previewArea.Q<FloatField>("time-scale");
+        _frameRangeField = previewArea.Q<Vector2IntField>("frame-range");
+        _enableRangeToggle = previewArea.Q<Toggle>("enable-range");
         _playToggle = previewArea.Q<Toggle>("play-toggle");
         _playTimeSlider = previewArea.Q<Slider>("play-time-slider");
         _playTimeField = previewArea.Q<FloatField>("play-time-field");
         _aabbField = previewArea.Q<AABBField>();
         _imageEditModeToggle.Init(EditMode.Move);
-        _showHitBoxToggle.Init(RangeMode.Master);
-        _showHurtBoxToggle.Init(RangeMode.Master);
+        _showHitBoxToggle.Init(RangeMode.All);
+        _showHurtBoxToggle.Init(RangeMode.All);
         _showHitBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _showHurtBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _bgColorField.RegisterValueChangedCallback(OnBackgroundColorChanged);
@@ -559,12 +562,12 @@ public partial class AnimationClipEditor : EditorWindow
             }
             float playTime = context.playTime;
             context.playTime = globalPlayTime;
-            while (context.playTime >= context.clip.duration) {
-                context.playTime -= context.clip.duration;
+            while (context.playTime >= context.playDuration) {
+                context.playTime -= context.playDuration;
             }
             int frameIndex = context.frameIndex;
             if (context.playTime < playTime) { // 回环
-                context.frameIndex = 0;
+                context.frameIndex = context.startFrame;
                 context.playTime = 0;
                 context.frameTime = 0;
             } else {
@@ -575,8 +578,8 @@ public partial class AnimationClipEditor : EditorWindow
                 context.frameTime -= context.frame.duration;
                 context.frameIndex++;
                 //
-                if (context.frameIndex >= context.clip.FrameCount) { // 回环
-                    context.frameIndex = 0;
+                if (context.frameIndex > context.endFrame) { // 回环
+                    context.frameIndex = context.startFrame;
                     context.playTime = 0;
                     context.frameTime = 0;
                 }
@@ -607,12 +610,12 @@ public partial class AnimationClipEditor : EditorWindow
                 continue;
             }
             float playTime = evt.newValue;
-            while (playTime >= context.clip.duration) {
-                playTime -= context.clip.duration;
+            while (playTime >= context.playDuration) {
+                playTime -= context.playDuration;
             }
             context.playTime = evt.newValue;
             //
-            int frameIndex = context.clip.SearchFrameByTime(playTime, out float endTime);
+            int frameIndex = context.clip.SearchFrameByTime(playTime, context.startFrame, context.endFrame, out float endTime);
             context.frameTime = endTime - playTime;
             if (frameIndex == context.frameIndex) {
                 continue;
@@ -643,10 +646,31 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void RefreshPlayTimeSliderRange() {
-        float maxTime = 0; // 记录时间最长的动画，确保所有动画可正确循环
-        foreach (ClipContext context in _clipContextList) {
-            context.clip.RefreshDuration();
-            maxTime = Math.Max(maxTime, context.clip.duration);
+        Vector2Int range = _frameRangeField.value;
+        ClipContext masterContext = GetMasterContext();
+        if (masterContext != null) {
+            range.y = Math.Clamp(range.y, 0, masterContext.clip.FrameCount - 1); // end
+            range.x = Math.Clamp(range.x, 0, range.y); // start
+            _frameRangeField.SetValueWithoutNotify(range);
+        }
+        // 记录时间最长的动画，确保所有动画可正确循环
+        float maxTime = 0;
+        if (_enableRangeToggle.value) {
+            foreach (ClipContext context in _clipContextList) {
+                context.clip.RefreshDuration();
+                context.startFrame = range.x;
+                context.endFrame = range.y;
+                context.playDuration = context.clip.GetDuration(range.x, range.y);
+                maxTime = Math.Max(maxTime, context.playDuration);
+            }
+        } else {
+            foreach (ClipContext context in _clipContextList) {
+                context.clip.RefreshDuration();
+                context.startFrame = 0;
+                context.endFrame = context.clip.FrameCount - 1;
+                context.playDuration = context.clip.duration;
+                maxTime = Math.Max(maxTime, context.playDuration);
+            }
         }
         _playTimeSlider.highValue = maxTime;
     }
@@ -728,7 +752,17 @@ public partial class AnimationClipEditor : EditorWindow
         foreach (ClipContext context in _clipContextList) {
             int prevIndex = context.frameIndex;
             context.frameIndex = ClampFrameIndex(frameIndex, context.clip.FrameCount);
-            context.playTime = context.clip.GetDuration(0, context.frameIndex - 1);
+            // 启用帧区间的话，修正播放时间
+            if (_enableRangeToggle.value) {
+                if (frameIndex <= context.startFrame) {
+                    context.playTime = 0;
+                } else {
+                    context.playTime = context.clip.GetDuration(context.startFrame, context.frameIndex - 1);
+                    context.playTime = Math.Min(context.playTime, context.playDuration);
+                }
+            } else {
+                context.playTime = context.clip.GetDuration(0, context.frameIndex - 1);
+            }
             context.frameTime = 0;
             if (context.frameIndex != prevIndex) {
                 BindBoxElements(context, true);
@@ -1130,7 +1164,7 @@ public partial class AnimationClipEditor : EditorWindow
 
         _frameInfoElement.Q<ColorField>("tint").BindProperty(serializedFrame.FindPropertyRelative("tint"));
         _frameInfoElement.Q<IntegerField>("interp").BindProperty(serializedFrame.FindPropertyRelative("interp"));
-        _frameInfoElement.Q<EnumField>("flip-type").BindProperty(serializedFrame.FindPropertyRelative("flipType"));
+        // _frameInfoElement.Q<EnumField>("flip-type").BindProperty(serializedFrame.FindPropertyRelative("flipType"));
 
         SerializedProperty serializeHurtBoxes = context.serializedHurtBoxes;
         _hurtBoxListView.BindProperty(serializeHurtBoxes);

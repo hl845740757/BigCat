@@ -211,9 +211,12 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// 阻塞等待异步任务完成
     /// </summary>
     /// <param name="timeout">超时时间，毫秒</param>
+    /// <returns>this</returns>
     /// <exception cref="BlockingOperationException">如果当前不支持阻塞完成</exception>
-    public void WaitForCompletion(long timeout = 5000) {
-        if (_provider.IsCompleted) return;
+    public AssetHandle WaitForCompletion(long timeout = 15 * 1000) {
+        if (_provider.IsCompleted) {
+            return this;
+        }
         TaskScheduler scheduler = _provider.Scheduler;
         if (timeout <= 0) {
             scheduler.WaitForCompletion(_provider, 0);
@@ -221,6 +224,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
             long deadline = scheduler.RealTime + timeout;
             scheduler.WaitForCompletion(_provider, deadline);
         }
+        return this;
     }
 
     #endregion
@@ -247,7 +251,8 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// 释放资源（减少引用计数）
     /// </summary>
     public void Release(int count = 1) {
-        _provider.Release(this, count);
+        // 允许Null句柄安全调用
+        _provider?.Release(this, count);
     }
 
     /// <summary>

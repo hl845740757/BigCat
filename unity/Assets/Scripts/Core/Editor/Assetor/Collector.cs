@@ -113,12 +113,12 @@ public class Collector : LeafTask<Blackboard>
     public LinkedDictionary<string, BuildBundleInfo> collectedBundles = new(10);
 
     protected override void BeforeEnter() {
-        this.classifier ??= this.GetFirstAncestorOfType<CollectorGroup>().classifier;
+        this.classifier ??= this.GetFirstAncestorOfType<CollectorGroup>()!.classifier;
     }
 
     protected override void Execute() {
         if (string.IsNullOrEmpty(collectPath)
-            || AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(collectPath) == null) {
+            || AssetDatabase.LoadAssetAtPath<Object>(collectPath) == null) {
             SetSuccess();
             return;
         }

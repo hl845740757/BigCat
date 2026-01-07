@@ -450,9 +450,10 @@ FodyWeavers.xsd
 
 # 临时文件
 ~$*
-temp-*
+**/temp-*
 **/temp/*
-
+**/*.log
+**/*.log.*
 
 # Java项目临时文件
 *.flattened-pom.xml
@@ -472,10 +473,28 @@ unity/Assets/Plugins/graph-visualizer-2.2.meta
 unity/Assets/Samples/
 unity/Assets/Samples.meta
 
-unity/Assets/Editor/
-unity/Assets/GameRes/
-!unity/Assets/GameRes/Scenes
 unity/Assets/Resources/
+unity/Assets/Editor/Resources/
+unity/Assets/Editor/DataScripts/*.dson
+unity/Assets/Editor/DataScripts/*.meta
+
+unity/Assets/GameRes/Fonts
+unity/Assets/GameRes/Sprites
+
+# dnf分支不屏蔽的资源
+# unity/Assets/Editor/Dnf
+# unity/Assets/GameRes/Models
+# unity/Assets/GameRes/Animations
+
+# dnf分支需要屏蔽的工具和资源
+unity/Dnf.Extractor.csproj
+unity/Assets/DNF/
+unity/Assets/DNF.meta
+unity/Assets/Editor/_DnfExtractor/
+unity/Assets/Editor/_DnfExtractor.meta
+unity/Assets/Editor/DNF/Resources.meta
+unity/Assets/Editor/DNF/Resources/
+
 
 # 打包测试输出
 unity/Bundles/

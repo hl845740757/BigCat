@@ -434,12 +434,13 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
         return (min.GetHashCode() * 397) ^ max.GetHashCode();
     }
 
+    // == 不是精确相等，允许极小偏差
     public static bool operator ==(MinMaxAABB left, MinMaxAABB right) {
-        return left.Equals(right);
+        return left.min == right.min && left.max == right.max;
     }
 
     public static bool operator !=(MinMaxAABB left, MinMaxAABB right) {
-        return !left.Equals(right);
+        return !(left.min == right.min && left.max == right.max);
     }
 
     public override string ToString() {

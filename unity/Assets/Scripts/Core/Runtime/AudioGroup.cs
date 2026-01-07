@@ -67,12 +67,12 @@ public class AudioGroup : ScriptableObject
         set => Array.Resize(ref audioClips, value);
     }
 
-    public AudioClip GetAudioClip(ObjectPath spritePath) {
-        string localPath = spritePath.localPath;
+    public AudioClip GetAudioClip(ObjectPath audioPath) {
+        string localPath = audioPath.localPath;
         if (!string.IsNullOrEmpty(localPath)) {
             return GetAudioClip(localPath);
         }
-        int index = (int)spritePath.localId;
+        int index = (int)audioPath.localId;
         if (index < 0 || index >= audioClips.Length) {
             return null;
         }

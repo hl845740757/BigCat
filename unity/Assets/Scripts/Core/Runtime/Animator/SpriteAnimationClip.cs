@@ -41,13 +41,22 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// </summary>
     public float duration;
     /// <summary>
-    /// 开启阴影
+    /// 是否开启阴影
     /// </summary>
     public bool shadow;
     /// <summary>
-    /// 图片显示的ppu
+    /// 是否循环(测试用)
+    /// </summary>
+    public bool loop;
+    /// <summary>
+    /// 图片ppu
     /// </summary>
     public float ppu = 100;
+    /// <summary>
+    /// 动画片段信息
+    /// 注：用于将多个动画clip集成为单个动画资产，减少资产数。
+    /// </summary>
+    public Segment[] segments = Array.Empty<Segment>();
 
     //////////////////////////////////////////////////////////////
 
@@ -113,19 +122,33 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="endTime">搜索截止的时间</param>
     /// <returns>如果大于总播放时间，则固定返回最后一帧</returns>
     public int SearchFrameByTime(float time, out float endTime) {
+        return SearchFrameByTime(time, 0, frames.Length - 1, out endTime);
+    }
+
+    /// <summary>
+    /// 根据播放时间搜索关联的帧号
+    /// 
+    /// 注意：该方法只能在正确维护帧信息缓存的情况下调用。
+    /// </summary>
+    /// <param name="time">搜索参数</param>
+    /// <param name="endTime">搜索截止的时间</param>
+    /// <param name="startIndex">开始帧</param>
+    /// <param name="endIndex">结束帧</param>
+    /// <returns>如果大于总播放时间，则固定返回最后一帧</returns>
+    public int SearchFrameByTime(float time, int startIndex, int endIndex, out float endTime) {
         endTime = 0;
-        for (int index = 0; index < frames.Length; index++) {
+        for (int index = startIndex; index <= endIndex; index++) {
             endTime += frames[index].duration;
             if (time <= endTime) return index;
         }
-        return frames.Length - 1;
+        return endIndex;
     }
 
     /// <summary>
     /// 获取子区间持续时间
     /// </summary>
-    /// <param name="startIndex"></param>
-    /// <param name="endIndex"></param>
+    /// <param name="startIndex">开始索引，包含</param>
+    /// <param name="endIndex">结束索引，包含</param>
     /// <returns></returns>
     public float GetDuration(int startIndex, int endIndex) {
         float subDuration = 0;
@@ -141,14 +164,11 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// <param name="frame"></param>
     /// <param name="index"></param>
     public void AddFrame(SpriteAnimationFrame frame, int index = -1) {
-        if (index == -1 || index == frames.Length) {
-            Array.Resize(ref frames, frames.Length + 1);
-            frames[frames.Length - 1] = frame;
-            duration += frame.duration;
-        } else {
-            ArrayUtil.Insert(ref frames, index, frame);
-            RefreshDuration();
+        if (index == -1) {
+            index = frames.Length;
         }
+        ArrayUtil.Insert(ref frames, index, frame);
+        duration += frame.duration;
     }
 
     /// <summary>
@@ -194,6 +214,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     private void Reset() {
         frames = Array.Empty<SpriteAnimationFrame>();
         duration = 0;
+        segments = Array.Empty<Segment>();
     }
 
     /// <summary>
@@ -414,5 +435,37 @@ public sealed class SpriteAnimationClip : ScriptableObject
         }
     }
 #endif
+
+    /// <summary>
+    /// 子动画片段
+    /// </summary>
+    [Serializable]
+    public struct Segment
+    {
+        /// <summary>
+        /// 动画名
+        /// </summary>
+        public string name;
+        /// <summary>
+        /// 动画开始帧
+        /// </summary>
+        public int startFrame;
+        /// <summary>
+        /// 动画结束帧
+        /// </summary>
+        public int endFrame;
+        /// <summary>
+        /// 是否开启阴影
+        /// </summary>
+        public bool shadow;
+        /// <summary>
+        /// 是否循环播放
+        /// </summary>
+        public bool loop;
+        /// <summary>
+        /// 关联的clip(缓存)
+        /// </summary>
+        public SpriteAnimationClip clip { get; internal set; }
+    }
 }
 }

@@ -16,7 +16,6 @@
                 <uie:Vector2IntField label="帧域" name="frame-size" tooltip="注意！需要能放下角色的所有部件" x="600" y="500" style="justify-content: center;" />
                 <uie:Vector2Field label="轴心点" name="frame-pivot" tooltip="角色坐标的模拟位置" x="0.5" y="0.25" style="flex-direction: row; align-items: stretch; min-width: auto; justify-content: space-between; flex-wrap: nowrap;" />
                 <uie:FloatField value="1" name="frame-scale" label="帧域缩放" />
-                <uie:FloatField label="时间缩放" value="1" name="time-scale" />
             </ui:VisualElement>
             <ui:VisualElement style="display: flex; flex-shrink: 0; border-top-width: 0; border-left-color: rgb(140, 140, 140); border-right-color: rgb(140, 140, 140); border-top-color: rgb(140, 140, 140); border-bottom-color: rgb(140, 140, 140);">
                 <ui:VisualElement name="batch-div" style="flex-shrink: 0; border-top-color: rgb(161, 161, 161); border-bottom-color: rgb(134, 134, 134); border-top-width: 0; border-bottom-width: 1px;">
@@ -112,6 +111,11 @@
                     <uie:EnumField label="图片操作" value="Center" name="image-edit-mode" tooltip="Q，查看， W平移，E旋转" style="flex-direction: column; width: 60px;" />
                     <ui:Toggle label="图片穿透" name="image-pick-ignore" style="flex-direction: column; width: 60px;" />
                     <uie:ColorField label="背景色" value="#353535FF" name="bg-color" style="flex-direction: column; width: 60px;" />
+                </ui:VisualElement>
+                <ui:VisualElement style="flex-direction: row; align-items: flex-end;">
+                    <Wjybxx.BigCat.Editor.UIElements.MFloatField name="time-scale" label="时间缩放：" label-margin="-80" value="1" style="width: 120px;" />
+                    <Wjybxx.BigCat.Editor.UIElements.MVector2IntField label="帧区间：" name="frame-range" xyz-flex-basis="80" label-margin="-95" y="999" x-label="S" y-label="E" x-label-margin="0" y-label-margin="0" style="width: 220px; margin-left: 8px;" />
+                    <Wjybxx.BigCat.Editor.UIElements.MToggle name="enable-range" tooltip="是否启用帧区间，尽量只在1个动画时使用" label="启用" label-margin="-120" style="margin-left: 0; flex-direction: row-reverse;" />
                 </ui:VisualElement>
                 <ui:VisualElement style="flex-direction: row; margin-top: 10px; margin-bottom: 10px; flex-shrink: 0;">
                     <Wjybxx.BigCat.Editor.UIElements.MToggle name="play-toggle" tooltip="由动画时长最长的动画确定" label="循环播放：" label-margin="-90" />

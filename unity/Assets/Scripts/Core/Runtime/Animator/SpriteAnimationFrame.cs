@@ -70,11 +70,6 @@ public sealed class SpriteAnimationFrame
     /// 注；在当前帧和下一帧之间进行线性插值，实现程序动画。
     /// </summary>
     public int interp;
-    /// <summary>
-    /// 图片翻转（镜像）效果
-    /// 注：并非直接修改SpriteRender的Flip属性，而是实现镜像效果。
-    /// </summary>
-    public EFlipType flipType;
 
     /// <summary>
     /// 受击类型（受击状态）

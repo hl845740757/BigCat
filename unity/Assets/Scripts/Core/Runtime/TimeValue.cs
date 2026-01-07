@@ -42,12 +42,7 @@ public struct TimeValue : IEquatable<TimeValue>
 
     public static implicit operator TimeValue(float value) => new TimeValue(value);
 
-    public static bool operator ==(TimeValue lhs, TimeValue rhs) {
-        // ReSharper disable once CompareOfFloatsByEqualityOperator
-        return (double)lhs.value == rhs.value && lhs.unit == rhs.unit;
-    }
-
-    public static bool operator !=(TimeValue lhs, TimeValue rhs) => !(lhs == rhs);
+    #region equals
 
     public bool Equals(TimeValue other) => other == this;
 
@@ -56,6 +51,17 @@ public struct TimeValue : IEquatable<TimeValue>
     public override int GetHashCode() {
         return (this.value.GetHashCode() * 397) ^ (int)this.unit;
     }
+
+    // ReSharper disable CompareOfFloatsByEqualityOperator
+    public static bool operator ==(TimeValue lhs, TimeValue rhs) {
+        return (double)lhs.value == rhs.value && lhs.unit == rhs.unit;
+    }
+
+    public static bool operator !=(TimeValue lhs, TimeValue rhs) {
+        return !(lhs == rhs);
+    }
+
+    #endregion
 
     public override string ToString() {
         string str1 = this.value.ToString(CultureInfo.InvariantCulture.NumberFormat);

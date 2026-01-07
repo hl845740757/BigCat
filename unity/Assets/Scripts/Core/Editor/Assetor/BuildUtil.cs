@@ -25,21 +25,6 @@ namespace Wjybxx.BigCat.Editor.Assetor
 {
 internal static class BuildUtil
 {
-    /// <summary>
-    /// 查找父级中的指定类型节点
-    /// </summary>
-    public static T GetFirstAncestorOfType<T>(this Task<Blackboard> task) where T : class {
-        Task<Blackboard> control = task.Control;
-        if (control is T group) {
-            return group;
-        }
-        while ((control = control.Control) != null) {
-            if (control is T group2) {
-                return group2;
-            }
-        }
-        return null;
-    }
 }
 
 /// <summary>

@@ -53,5 +53,12 @@ public enum EAssetIndexes
     /// 2.该索引打包时必须唯一(长路径索引必须唯一)，运行时仍然允许覆盖
     /// </summary>
     RelativeToCollector = 0x08,
+    /// <summary>
+    /// 资产对象类型名 + 文件名(无后缀) 
+    ///
+    /// <code>SpriteGroup:sm_body8001</code>
+    /// 注；开启该索引时，应当避免再开启文件名索引。 
+    /// </summary>
+    TypeAndFileName = 0x10,
 }
 }
