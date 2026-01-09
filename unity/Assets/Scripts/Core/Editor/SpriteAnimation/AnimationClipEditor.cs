@@ -190,7 +190,7 @@ public partial class AnimationClipEditor : EditorWindow
         syncDiv.Q<Button>("sync-frame-order").RegisterCallback<ClickEvent>(OnClickSyncFrameOrder);
         syncDiv.Q<Button>("sync-frame-duration").RegisterCallback<ClickEvent>(OnClickSyncFrameDuration);
         syncDiv.Q<Button>("sync-frame-position").RegisterCallback<ClickEvent>(OnClickSyncFramePosition);
-        syncDiv.Q<Button>("sync-frame-rotation").RegisterCallback<ClickEvent>(OnClickSyncFrameRotation);
+        // syncDiv.Q<Button>("sync-frame-rotation").RegisterCallback<ClickEvent>(OnClickSyncFrameRotation);
     }
 
     private void InitBatchOperateArea(VisualElement root) {
@@ -274,12 +274,11 @@ public partial class AnimationClipEditor : EditorWindow
         _showHurtBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _bgColorField.RegisterValueChangedCallback(OnBackgroundColorChanged);
         _imagePickIgnoreToggle.RegisterValueChangedCallback(OnPickIgnoreChanged);
+        _enableRangeToggle.RegisterValueChangedCallback(_ => RefreshPlayTimeSliderRange());
         //
-        _playToggle.SetLabelMargin(-70);
         _playToggle.SetValueWithoutNotify(false);
         _playToggle.RegisterValueChangedCallback(OnPlayToggleChanged);
         _playTimeSlider.SetValueWithoutNotify(0);
-        _playTimeSlider.RegisterValueChangedCallback(OnPlayTimeSliderChanged);
         _playTimer = rootVisualElement.schedule.Execute(OnPlayTimerCallback).StartingIn(33).Every(33);
         _playTimer.Pause(); // 初始为暂停状态
         //
@@ -349,7 +348,11 @@ public partial class AnimationClipEditor : EditorWindow
         }
     }
 
-    private void TryAddClip(SpriteAnimationClip clip) {
+    /// <summary>
+    /// 开放方法以支持外部打开
+    /// </summary>
+    /// <param name="clip"></param>
+    public void TryAddClip(SpriteAnimationClip clip) {
         if (!clip || FindContext(clip) != null) {
             return;
         }
@@ -566,10 +569,8 @@ public partial class AnimationClipEditor : EditorWindow
                 context.playTime -= context.playDuration;
             }
             int frameIndex = context.frameIndex;
-            if (context.playTime < playTime) { // 回环
-                context.frameIndex = context.startFrame;
-                context.playTime = 0;
-                context.frameTime = 0;
+            if (context.playTime < playTime) { // 回环或调整slider
+                context.OnLoopback();
             } else {
                 context.frameTime += (context.playTime - playTime);
                 if (context.frameTime <= context.frame.duration) {
@@ -577,50 +578,13 @@ public partial class AnimationClipEditor : EditorWindow
                 }
                 context.frameTime -= context.frame.duration;
                 context.frameIndex++;
-                //
                 if (context.frameIndex > context.endFrame) { // 回环
-                    context.frameIndex = context.startFrame;
-                    context.playTime = 0;
-                    context.frameTime = 0;
+                    context.OnLoopback();
                 }
             }
             if (frameIndex == context.frameIndex) {
                 continue;
             }
-            needRefreshPreviewArea = true;
-            BindBoxElements(context, true);
-            BindBoxElements(context, false);
-            if (clipIndex == 0) {
-                _frameIndexField.SetValueWithoutNotify(context.frameIndex);
-                BindFrameInfoElements();
-            }
-        }
-        if (needRefreshPreviewArea) {
-            RefreshPreviewArea();
-        }
-    }
-
-    private void OnPlayTimeSliderChanged(ChangeEvent<float> evt) {
-        evt.StopPropagation();
-        _playTimeField.SetValueWithoutNotify(evt.newValue);
-        bool needRefreshPreviewArea = false;
-        for (int clipIndex = 0; clipIndex < _clipContextList.Count; clipIndex++) {
-            ClipContext context = _clipContextList[clipIndex];
-            if (!context.CheckFrameIndex()) {
-                continue;
-            }
-            float playTime = evt.newValue;
-            while (playTime >= context.playDuration) {
-                playTime -= context.playDuration;
-            }
-            context.playTime = evt.newValue;
-            //
-            int frameIndex = context.clip.SearchFrameByTime(playTime, context.startFrame, context.endFrame, out float endTime);
-            context.frameTime = endTime - playTime;
-            if (frameIndex == context.frameIndex) {
-                continue;
-            }
-            context.frameIndex = frameIndex;
             needRefreshPreviewArea = true;
             BindBoxElements(context, true);
             BindBoxElements(context, false);
@@ -754,12 +718,8 @@ public partial class AnimationClipEditor : EditorWindow
             context.frameIndex = ClampFrameIndex(frameIndex, context.clip.FrameCount);
             // 启用帧区间的话，修正播放时间
             if (_enableRangeToggle.value) {
-                if (frameIndex <= context.startFrame) {
-                    context.playTime = 0;
-                } else {
-                    context.playTime = context.clip.GetDuration(context.startFrame, context.frameIndex - 1);
-                    context.playTime = Math.Min(context.playTime, context.playDuration);
-                }
+                context.playTime = context.clip.GetDuration(context.startFrame, context.frameIndex - 1);
+                context.playTime = Math.Min(context.playTime, context.playDuration);
             } else {
                 context.playTime = context.clip.GetDuration(0, context.frameIndex - 1);
             }
@@ -1151,6 +1111,8 @@ public partial class AnimationClipEditor : EditorWindow
         _frameInfoElement.SetEnabled(true);
         _hurtBoxListView.SetEnabled(true);
         _hitBoxListView.SetEnabled(true);
+        _hurtBoxListView.SetFoldout(false);
+        _hitBoxListView.SetFoldout(false);
 
         // BindProperty不支持绑定到自定义字段，手动维护同步
         SpriteAnimationFrame frame = context.frame;
@@ -1485,17 +1447,6 @@ public partial class AnimationClipEditor : EditorWindow
             context.SetDirty();
         }
         RefreshPreviewArea();
-    }
-
-    private void OnClickSyncFrameRotation(ClickEvent evt) {
-        evt.StopPropagation();
-        if (_clipContextList.Count <= 1) return;
-        ClipContext masterContext = _clipContextList[0];
-        for (int index = 1; index < _clipContextList.Count; index++) {
-            ClipContext context = _clipContextList[index];
-            SpriteAnimationClip.SyncFrameRotation(masterContext.clip, context.clip);
-            context.SetDirty();
-        }
     }
 
     private void OnClickSyncFrameOrder(ClickEvent evt) {

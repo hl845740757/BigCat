@@ -42,7 +42,7 @@ public class AudioGroup : ScriptableObject
     [Tooltip("是否可通过[name引用]代替[路径引用]，如果name具有唯一性，则可以勾选")]
     public bool preferName = true;
     /// <summary>
-    /// 绑定的文件夹，如果为空则表示当前文件夹
+    /// 绑定的文件夹
     /// 注：AudioGroup可以和SpriteAtlas一样放在文件夹外部。
     /// </summary>
     public string bindFolder;
@@ -127,13 +127,7 @@ public class AudioGroup : ScriptableObject
     /// </summary>
     /// <param name="group"></param>
     public static void Refresh(AudioGroup group) {
-        string groupAssetDir;
-        if (string.IsNullOrEmpty(group.bindFolder)) {
-            groupAssetDir = AssetDatabase.GetAssetPath(group);
-            groupAssetDir = groupAssetDir.Substring(0, groupAssetDir.LastIndexOf('/'));
-        } else {
-            groupAssetDir = group.bindFolder;
-        }
+        string groupAssetDir = SpriteGroup.GetBindFolder(group, group.bindFolder);
         string[] findAssets = AssetDatabase.FindAssets("t:AudioClip", new[] { groupAssetDir });
         List<AudioClip> list = new(findAssets.Length);
         foreach (string guid in findAssets) {

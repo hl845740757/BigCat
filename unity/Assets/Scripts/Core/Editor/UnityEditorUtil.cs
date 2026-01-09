@@ -298,8 +298,9 @@ public static class UnityEditorUtil
     /// <returns></returns>
     public static readonly string[] spriteSearchFolders = new[]
     {
-        "Assets/Resources/Sprites",
         "Assets/GameRes/Sprites",
+        "Assets/DNF/Sprites",
+        "Assets/DNF/Animations",
     };
 
     /// <summary>

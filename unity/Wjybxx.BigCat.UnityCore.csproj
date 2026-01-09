@@ -52,6 +52,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\ESortingLayer.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadMethod.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProviderBase.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EFlipType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EAssetIndexes.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\MultiFileBundle.cs" />
@@ -61,8 +62,8 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\TimeUnit.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\ObjectRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelResolver.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationCtrl.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\TimeValue.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\EWrapMode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
@@ -120,9 +122,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowCmdMgr.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\TimeValue.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\TimeUnit.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\EFlipType.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

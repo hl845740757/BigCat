@@ -33,6 +33,7 @@ public struct AnimationRequest
     public int endFrame; // 结束帧，-1表示未设值
     public Vector2 offset; // 动画偏移
     public bool enableOffset; // 是否启用动画偏移
+    public bool enableRange; // 是否启用帧区间
     // public bool shadow; // 是否开启阴影
 }
 }

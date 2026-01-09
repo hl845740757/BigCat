@@ -144,6 +144,12 @@ public partial class AnimationClipEditor
             }
         }
 
+        public void OnLoopback() {
+            playTime -= playDuration;
+            frameIndex = clip.SearchFrameByTime(playTime, startFrame, endFrame, out float duration);
+            frameTime = frame.duration - (duration - playTime);
+        }
+
         public void SetDirty() {
             serializedClip.Update();
             EditorUtility.SetDirty(clip);

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -42,7 +43,7 @@ public class SpriteGroup : ScriptableObject
     [Tooltip("是否可通过[name引用]代替[路径引用]，如果name具有唯一性，则可以勾选")]
     public bool preferName = true;
     /// <summary>
-    /// 绑定的文件夹，如果为空则表示当前文件夹
+    /// 绑定的文件夹
     /// 注：SpriteGroup可以和SpriteAtlas一样放在文件夹外部。
     /// </summary>
     public string bindFolder;
@@ -146,13 +147,7 @@ public class SpriteGroup : ScriptableObject
     /// </summary>
     /// <param name="group"></param>
     public static void Refresh(SpriteGroup group) {
-        string groupAssetDir;
-        if (string.IsNullOrEmpty(group.bindFolder)) {
-            groupAssetDir = AssetDatabase.GetAssetPath(group);
-            groupAssetDir = groupAssetDir.Substring(0, groupAssetDir.LastIndexOf('/'));
-        } else {
-            groupAssetDir = group.bindFolder;
-        }
+        string groupAssetDir = SpriteGroup.GetBindFolder(group, group.bindFolder);
         string[] findAssets = AssetDatabase.FindAssets("t:Sprite", new[] { groupAssetDir });
         List<Sprite> list = new(findAssets.Length);
         foreach (string guid in findAssets) {
@@ -220,6 +215,26 @@ public class SpriteGroup : ScriptableObject
         if (b2) return 1;
         // 否则按照字符串排序
         return string.Compare(nameA, nameB, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 计算绑定的文件夹
+    /// </summary>
+    public static string GetBindFolder(UnityEngine.Object assetObject, string bindFolder) {
+        if (string.IsNullOrEmpty(bindFolder)) {
+            string assetFolder = GetAssetFolder(assetObject);
+            string sameNameFolder = assetFolder + "/" + assetObject.name;
+            return AssetDatabase.LoadAssetAtPath<DefaultAsset>(sameNameFolder) ? sameNameFolder : assetFolder;
+        }
+        if (bindFolder.StartsWith("Assets/")) {
+            return bindFolder;
+        }
+        return GetAssetFolder(assetObject) + "/" + bindFolder;
+    }
+
+    private static string GetAssetFolder(UnityEngine.Object assetObject) {
+        string assetPath = AssetDatabase.GetAssetPath(assetObject);
+        return assetPath.Substring(0, assetPath.LastIndexOf('/'));
     }
 #endif
 }

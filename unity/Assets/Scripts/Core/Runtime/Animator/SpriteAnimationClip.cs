@@ -131,15 +131,15 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// 注意：该方法只能在正确维护帧信息缓存的情况下调用。
     /// </summary>
     /// <param name="time">搜索参数</param>
-    /// <param name="endTime">搜索截止的时间</param>
     /// <param name="startIndex">开始帧</param>
     /// <param name="endIndex">结束帧</param>
+    /// <param name="duration">开始帧到目标帧之间的时长</param>
     /// <returns>如果大于总播放时间，则固定返回最后一帧</returns>
-    public int SearchFrameByTime(float time, int startIndex, int endIndex, out float endTime) {
-        endTime = 0;
+    public int SearchFrameByTime(float time, int startIndex, int endIndex, out float duration) {
+        duration = 0;
         for (int index = startIndex; index <= endIndex; index++) {
-            endTime += frames[index].duration;
-            if (time <= endTime) return index;
+            duration += frames[index].duration;
+            if (time <= duration) return index;
         }
         return endIndex;
     }
@@ -197,6 +197,23 @@ public sealed class SpriteAnimationClip : ScriptableObject
         }
         ArrayUtil.RemoveAt(ref frames, index);
         RefreshDuration();
+    }
+
+    /// <summary>
+    /// 查找指定name的选段
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public Segment FindSegment(string name) {
+        return Array.Find(segments, e => e.name == name);
+    }
+
+    /// <summary>
+    /// 添加片段
+    /// </summary>
+    /// <param name="segment"></param>
+    public void AddSegment(Segment segment) {
+        ArrayUtil.Insert(ref segments, segments.Length, segment);
     }
 
     /// <summary>
@@ -391,26 +408,10 @@ public sealed class SpriteAnimationClip : ScriptableObject
         int len = Mathf.Min(source.FrameCount, target.FrameCount);
         for (int i = 0; i < len; i++) {
             SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i].position = sourceFrame.position;
-        }
-    }
-
-    /// <summary>
-    /// 同步帧旋转值
-    /// </summary>
-    /// <param name="source"></param>
-    /// <param name="target"></param>
-    public static void SyncFrameRotation(SpriteAnimationClip source, SpriteAnimationClip target) {
-        if (source == target) {
-            return;
-        }
-        if (source.FrameCount != target.FrameCount) {
-            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
-        }
-        int len = Mathf.Min(source.FrameCount, target.FrameCount);
-        for (int i = 0; i < len; i++) {
-            SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i].rotation = sourceFrame.rotation;
+            SpriteAnimationFrame targetFrame = target.frames[i];
+            targetFrame.position = sourceFrame.position;
+            targetFrame.scale = sourceFrame.scale;
+            targetFrame.rotation = sourceFrame.rotation;
         }
     }
 
