@@ -18,6 +18,7 @@
 
 using System;
 using UnityEngine;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -32,8 +33,18 @@ public struct AnimationRequest
     public int startFrame; // 开始帧
     public int endFrame; // 结束帧，-1表示未设值
     public Vector2 offset; // 动画偏移
-    public bool enableOffset; // 是否启用动画偏移
-    public bool enableRange; // 是否启用帧区间
-    // public bool shadow; // 是否开启阴影
+    public AnimationOptions options; // 选项
+}
+
+/// <summary>
+/// 动画播放选项
+/// </summary>
+[Flags]
+public enum AnimationOptions
+{
+    None = 0,
+    EnableOffset = 0x01, // 启用偏移
+    EnableRange = 0x02, // 启用区间
+    EnableShadow = 0x04, // 启用阴影
 }
 }

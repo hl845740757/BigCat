@@ -41,6 +41,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: DistantBack
+    uniqueID: 3670699919
+    locked: 0
   - name: MiddleBack
     uniqueID: 2340483717
     locked: 0

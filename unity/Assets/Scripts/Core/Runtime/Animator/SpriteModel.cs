@@ -20,10 +20,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using Wjybxx.Commons;
+using Wjybxx.BigCat.Core;
+using UnityEditor;
+#endif
+
 namespace Wjybxx.BigCat.Animator
 {
 /// <summary>
-/// 2D角色模型
+/// 2D角色模型(资源)
 ///
 /// 注：运行时需要指定图集（贴图），否则没有表现。
 /// </summary>
@@ -51,21 +57,27 @@ public sealed class SpriteModel : ScriptableObject
     /// </summary>
     public int partLayer;
 
+#if UNITY_EDITOR
     /// <summary>
-    /// 模型id
+    /// 基准模型
+    /// 注：使用路径引用，避免打包时产生不期望的依赖。
     /// </summary>
-    public int modelId;
+    [Tooltip("模型对象路径；当指定模板时，则读取模板模型的配置，在绑定folder中查找资源")]
+    public string templatePath;
     /// <summary>
-    /// 默认贴图路径(延迟加载)
+    /// 绑定的动画文件夹
     /// </summary>
-    [Tooltip("默认贴图")]
-    public string spriteGroupPath;
+    [Tooltip("绑定的动画文件夹")]
+    public string bindFolder;
+#endif
     /// <summary>
     /// 模型动作
     /// 1.由于攻击盒数据也在动作信息上，因此要求动作信息同步加载。
     /// 2.动作信息整体来说还是比较轻量级的，因此同步加载的影响较小。
     /// </summary>
-    [Tooltip("逻辑动作名到美术资源的映射")]
+    [Tooltip("逻辑动作名到美术资源的映射，前面的覆盖后面的 - 特殊配置放前面")]
+    [ContextMenuItem("删除重复的Motion", "DeleteDuplicateMotions")]
+    [ContextMenuItem("刷新绑定的Motion", "RefreshBindMotions")]
     public List<SpriteMotionRedir> motionList = new();
     /// <summary>`
     /// 模型动作映射缓存
@@ -107,8 +119,63 @@ public sealed class SpriteModel : ScriptableObject
             // name池化 - 为空的情况下默认为动画名
             motion.name = string.IsNullOrEmpty(motion.name) ? motion.clip.name : motion.name;
             motionList[index] = motion;
-            motionDic.Add(motion.name, motion);
+            motionDic.TryAdd(motion.name, motion); // 特殊动作放前面
         }
+    }
+
+    #endregion
+
+    #region 维护
+
+    private void DeleteDuplicateMotions() {
+        HashSet<string> existNames = new();
+        for (int idx = 0; idx < motionList.Count; idx++) {
+            string currentName = motionList[idx].name;
+            if (existNames.Add(currentName)) {
+                continue;
+            }
+            motionList.RemoveAt(idx--);
+        }
+        EditorUtility.SetDirty(this);
+    }
+
+    private void RefreshBindMotions() {
+        string groupAssetDir = SpriteGroup.GetBindFolder(this, bindFolder);
+        SpriteModel template = string.IsNullOrEmpty(templatePath) ? null : AssetDatabase.LoadAssetAtPath<SpriteModel>(templatePath);
+        // 如果模板存在，则读取模板资源信息 - 然后覆盖本地信息
+        if (template && template != this) {
+            motionList.Clear();
+            motionList.AddRange(template.motionList);
+            for (int index = 0; index < motionList.Count; index++) {
+                SpriteMotionRedir motion = motionList[index];
+                if (!motion.clip) continue;
+                // 替换为绑定目录下的资产
+                string clipPath = groupAssetDir + "/" + motion.clip.name + ".asset";
+                motion.clip = AssetDatabase.LoadAssetAtPath<SpriteAnimationClip>(clipPath);
+                motionList[index] = motion;
+            }
+            return;
+        }
+        // 如果没有模板，则只会增加新增的资源
+        HashSet<string> existNames = new();
+        for (int idx = 0; idx < motionList.Count; idx++) {
+            SpriteMotionRedir motion = motionList[idx];
+            existNames.Add(motion.name);
+            if (motion.clip) {
+                existNames.Add(motion.clip.name);
+            }
+        }
+        string[] findAssets = AssetDatabase.FindAssets("t:SpriteAnimationClip", new[] { groupAssetDir });
+        foreach (string guid in findAssets) {
+            string clipPath = AssetDatabase.GUIDToAssetPath(guid);
+            SpriteAnimationClip clip = AssetDatabase.LoadAssetAtPath<SpriteAnimationClip>(clipPath);
+            if (existNames.Contains(clip.name)) {
+                continue;
+            }
+            SpriteMotionRedir motion = new SpriteMotionRedir() { name = clip.name, clip = clip };
+            motionList.Add(motion);
+        }
+        EditorUtility.SetDirty(this);
     }
 
     #endregion

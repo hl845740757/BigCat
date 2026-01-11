@@ -212,8 +212,8 @@ public class Collector : LeafTask<Blackboard>
             return classifier.GetCategory(assetPath);
         }
         Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-        if (asset == null || asset is DefaultAsset) {
-            return EAssetCategory.None; // 通常是文件夹
+        if (asset == null || asset.GetType().Namespace == "UnityEditor") {
+            return EAssetCategory.None; // 通常为文件夹和代码等
         }
         return collectorType switch
         {

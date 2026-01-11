@@ -109,20 +109,20 @@ public sealed class AssetQuery
             foreach (AssetFileInfo fileInfo in bundleInfo.mainAssets) {
                 string assetPath = fileInfo.assetPath;
                 assetIndex2AssetDic.Add(assetPath, fileInfo);
+                // 场景文件需要独立的索引
+                if (assetPath.EndsWith(".unity")) {
+                    string sceneName = Path.GetFileNameWithoutExtension(assetPath);
+                    sceneName2AssetDic.Add(sceneName, fileInfo);
+                }
                 // 全路径索引无扩展名索引
                 FileExtension extension = GetExtension(assetPath);
                 if (supportExtensions2.Contains(extension)) {
                     string assetPathNoExt = RemoveExtension(assetPath, in extension);
                     assetIndex2AssetDic.Add(assetPathNoExt, fileInfo);
                 }
-                // 场景文件需要独立的索引
-                if (assetPath.EndsWith(".unity")) {
-                    string sceneName = Path.GetFileNameWithoutExtension(assetPath);
-                    sceneName2AssetDic.Add(sceneName, fileInfo);
-                }
                 // 自定义索引禁止重复，程序生成的索引可以重复
-                if (!string.IsNullOrEmpty(fileInfo.address)) {
-                    assetIndex2AssetDic.Add(assetPath, fileInfo);
+                foreach (string address in fileInfo.addresses) {
+                    assetIndex2AssetDic.Add(address, fileInfo);
                 }
                 if (bundleInfo.assetIndexes == EAssetIndexes.None) {
                     continue;
@@ -158,9 +158,8 @@ public sealed class AssetQuery
                     }
                 }
                 // 相对收集器的路径索引：需要唯一性（打包时）
-                if ((bundleInfo.assetIndexes & EAssetIndexes.RelativeToCollector) != 0
-                    && !string.IsNullOrEmpty(bundleInfo.collectPath)) {
-                    string relativePath = fileInfo.assetPath.Substring(bundleInfo.collectPath.Length + 1);
+                if ((bundleInfo.assetIndexes & EAssetIndexes.RelativeToCollector) != 0) {
+                    string relativePath = fileInfo.assetPath.Substring(bundleInfo.collectPathLength + 1);
                     assetIndex2AssetDic[relativePath] = fileInfo;
                     //
                     if (supportExtensions2.Contains(extension)) {

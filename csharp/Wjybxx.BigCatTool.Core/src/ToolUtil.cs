@@ -383,6 +383,16 @@ public class ToolUtil
     }
 
     /// <summary>
+    /// 获取最后一级文件夹名
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string GetLastDirectoryName(string path) {
+        string directoryName = Path.GetDirectoryName(path);
+        return string.IsNullOrEmpty(directoryName) ? null : Path.GetFileName(directoryName);
+    }
+
+    /// <summary>
     /// 规格化资产路径
     /// </summary>
     public static string NormalizeAssetPath(string assetPath) {

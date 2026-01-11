@@ -35,6 +35,11 @@ public sealed class PlayablePort
     /// </summary>
     public float weight;
     /// <summary>
+    /// 最近访问时间
+    /// </summary>
+    [NonSerialized]
+    public float accessTime;
+    /// <summary>
     /// 端口索引
     /// 注：运行时根据实际数据赋值，避免程序依赖，程序使用端口名建立稳定引用。
     /// </summary>

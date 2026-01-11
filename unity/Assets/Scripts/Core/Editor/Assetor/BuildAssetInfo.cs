@@ -43,7 +43,7 @@ public sealed class BuildAssetInfo
     /// <summary>
     /// 自定义索引
     /// </summary>
-    public string address;
+    public readonly List<string> addresses = new List<string>();
     /// <summary>
     /// 资产标签(不建议使用)
     /// </summary>
@@ -80,7 +80,7 @@ public sealed class BuildAssetInfo
         return new AssetFileInfo()
         {
             assetPath = assetPath.ToLowerInvariant(), // 构建最终数据时执行规格化
-            address = address,
+            addresses = addresses.Count > 0 ? addresses.ToArray() : Array.Empty<string>(),
             assetTags = assetTags.Count > 0 ? assetTags.ToArray() : Array.Empty<string>()
         };
     }

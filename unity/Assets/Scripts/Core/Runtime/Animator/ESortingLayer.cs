@@ -23,12 +23,13 @@ namespace Wjybxx.BigCat.Animator
 /// </summary>
 public enum ESortingLayer : byte
 {
-    DistantBack = 0, // 远程背景 - 天空河流
-    MiddleBack = 1, // 中程背景 - 山石树木
-    Bottom = 2, // 底层 - Tile
-    Normal = 3, // 普通层 - 角色
-    CloseBack = 4, // 近距背景 - 栏杆/围墙/树木
-    Close = 5, // 近距层 - 云雾光照
+    // Default = 0, // 为避免和Unity冲突，我们不使用0
+    DistantBack = 1, // 远程背景 - 天空河流
+    MiddleBack = 2, // 中程背景 - 山石树木
+    Bottom = 3, // 底层 - Tile
+    Normal = 4, // 普通层 - 角色
+    CloseBack = 5, // 近距背景 - 栏杆/围墙/树木
+    Close = 6, // 近距层 - 云雾光照
 }
 
 /// <summary>

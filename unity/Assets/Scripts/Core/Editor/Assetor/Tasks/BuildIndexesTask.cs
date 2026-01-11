@@ -107,6 +107,12 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                         AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, true);
                     }
                 }
+                // 资产类型名+文件名索引
+                if ((indexes & EAssetIndexes.TypeAndFileName) != 0) {
+                    string address = assetInfo.assetType.Name + ":" + RemoveExtension(fileName, extension);
+                    assetInfo.addresses.Add(address);
+                    AddIndex(index2AssetDic, address, assetInfo, true);
+                }
             }
         }
         if (index2AssetDic.Values.Any(e => e.conflict)) {

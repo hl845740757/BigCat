@@ -197,7 +197,7 @@ internal sealed class PromiseTask
         }
         // 检测取消
         ICancelToken cancelToken = GetCancelToken();
-        if (cancelToken.IsCancelRequested) {
+        if (cancelToken.IsRequested) {
             TrySetCancelled(cancelToken.CancelCode);
             return false;
         }
@@ -230,7 +230,7 @@ internal sealed class PromiseTask
             FutureLogger.LogCause(ex, "periodic task caught exception");
         }
         // 任务执行后检测取消
-        if (cancelToken.IsCancelRequested || IsRecycledOrCompleted(promise, promiseRid)) {
+        if (cancelToken.IsRequested || IsRecycledOrCompleted(promise, promiseRid)) {
             TrySetCancelled(cancelToken, CancelCodes.REASON_DEFAULT);
             return false;
         }

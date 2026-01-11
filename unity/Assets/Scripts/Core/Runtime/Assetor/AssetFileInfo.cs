@@ -38,7 +38,7 @@ public sealed class AssetFileInfo
     /// <summary>
     /// 自定义索引（仅支持1个自定义索引）
     /// </summary>
-    public string address;
+    public string[] addresses = Array.Empty<string>();
     /// <summary>
     /// 资产标签(不建议使用)
     /// </summary>
@@ -53,22 +53,17 @@ public sealed class AssetFileInfo
     #region 序列化
 
     private const int KEY_ASSET_PATH = 1;
-    private const int KEY_TAGS = 2;
-    private const int KEY_TAGS_COUNT = 3;
-    private const int KEY_ADDRESS = 4;
+    private const int KEY_ADDRESSES = 2;
+    private const int KEY_ADDRESSES_COUNT = 3;
+    private const int KEY_TAGS = 4;
+    private const int KEY_TAGS_COUNT = 5;
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
         writer.WriteString(nameof(assetPath), assetPath);
-        writer.WriteString(nameof(address), address ?? "");
         // 文本格式不写入Count，且空数组也写入，提高可读性
-        {
-            writer.WriteStartArray(nameof(assetTags), ObjectStyle.Flow);
-            foreach (string assetTag in assetTags) {
-                writer.WriteString(assetTag);
-            }
-            writer.WriteEndArray();
-        }
+        WriteStringArray(writer, nameof(addresses), addresses);
+        WriteStringArray(writer, nameof(assetTags), assetTags);
         writer.WriteEndObject();
     }
 
@@ -81,18 +76,12 @@ public sealed class AssetFileInfo
                     assetPath = reader.ReadString();
                     break;
                 }
-                case nameof(address): {
-                    address = reader.ReadString();
+                case nameof(addresses): {
+                    this.addresses = ReadStringArray(reader);
                     break;
                 }
                 case nameof(assetTags): {
-                    List<string> assetTags = new List<string>();
-                    reader.ReadStartArray();
-                    while (reader.ReadDsonType() != DsonType.EndOfObject) {
-                        assetTags.Add(reader.ReadString());
-                    }
-                    reader.ReadEndArray();
-                    this.assetTags = assetTags.ToArray();
+                    this.assetTags = ReadStringArray(reader);
                     break;
                 }
                 default: {
@@ -107,15 +96,14 @@ public sealed class AssetFileInfo
     public void Serialize(IDsonWriter<int> writer) {
         writer.WriteStartObject();
         writer.WriteString(KEY_ASSET_PATH, assetPath);
-        writer.WriteString(KEY_ADDRESS, address ?? "");
         // 将Count写在对象外在二进制下是最佳方案，可减少嵌套(Header)
+        writer.WriteInt32(KEY_ADDRESSES_COUNT, addresses.Length);
+        if (addresses.Length > 0) {
+            WriteStringArray(writer, KEY_ADDRESSES, addresses);
+        }
         writer.WriteInt32(KEY_TAGS_COUNT, assetTags.Length);
         if (assetTags.Length > 0) {
-            writer.WriteStartArray(KEY_TAGS);
-            foreach (string assetTag in assetTags) {
-                writer.WriteString(assetTag);
-            }
-            writer.WriteEndArray();
+            WriteStringArray(writer, KEY_TAGS, assetTags);
         }
         writer.WriteEndObject();
     }
@@ -129,22 +117,14 @@ public sealed class AssetFileInfo
                     assetPath = reader.ReadString();
                     break;
                 }
-                case KEY_ADDRESS: {
-                    address = reader.ReadString();
+                case KEY_ADDRESSES_COUNT: {
+                    int count = reader.ReadInt32();
+                    addresses = ReadStringArray(reader, name, count);
                     break;
                 }
                 case KEY_TAGS_COUNT: {
-                    assetTags = Array.Empty<string>();
                     int count = reader.ReadInt32();
-                    if (count == 0) {
-                        break;
-                    }
-                    assetTags = new string[count];
-                    reader.ReadStartArray(KEY_TAGS); // 需校验name
-                    for (int idx = 0; idx < count; idx++) {
-                        assetTags[idx] = reader.ReadString();
-                    }
-                    reader.ReadEndArray();
+                    assetTags = ReadStringArray(reader, name, count);
                     break;
                 }
                 default: {
@@ -154,6 +134,46 @@ public sealed class AssetFileInfo
             }
         }
         reader.ReadEndObject();
+    }
+
+    private static void WriteStringArray(IDsonWriter<string> writer, string name, string[] array) {
+        writer.WriteStartArray(name, ObjectStyle.Flow);
+        foreach (string element in array) {
+            writer.WriteString(element);
+        }
+        writer.WriteEndArray();
+    }
+
+    private static string[] ReadStringArray(IDsonReader<string> reader) {
+        List<string> result = new List<string>();
+        reader.ReadStartArray();
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            result.Add(reader.ReadString());
+        }
+        reader.ReadEndArray();
+        return result.ToArray();
+    }
+
+    private static void WriteStringArray(IDsonWriter<int> writer, int name, string[] array) {
+        writer.WriteStartArray(name, ObjectStyle.Flow);
+        foreach (string element in array) {
+            writer.WriteString(element);
+        }
+        writer.WriteEndArray();
+    }
+
+    private static string[] ReadStringArray(IDsonReader<int> reader, int name, int count) {
+        if (count == 0) {
+            return Array.Empty<string>();
+        }
+        string[] result = new string[count];
+        int idx = 0;
+        reader.ReadStartArray(name); // 校验name
+        while (reader.ReadDsonType() != DsonType.EndOfObject) {
+            result[idx++] = reader.ReadString();
+        }
+        reader.ReadEndArray();
+        return result;
     }
 
     #endregion

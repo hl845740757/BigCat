@@ -19,10 +19,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using Wjybxx.BigCat.Util;
 using Wjybxx.BTree;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Dson.Codec.Attributes;
+using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.Editor.Assetor.Tasks
 {
@@ -84,6 +86,10 @@ public class BuildDependencyTask : LeafTask<Blackboard>
                 if (!packageInfo.assetDic.TryGetValue(dependPath, out BuildAssetInfo dependAssetInfo)) {
                     if (autoIgnoreLibrary && dependPath.StartsWith("Packages/")) {
                         continue; // 自动忽略第三方程序集
+                    }
+                    Object dependAsset = AssetDatabase.LoadMainAssetAtPath(dependPath);
+                    if (dependAsset && dependAsset.GetType().Namespace == "UnityEditor") {
+                        continue; // 自动跳过编辑器资产(如代码脚本)
                     }
                     throw new Exception($"The dependent asset: {dependPath} is missing");
                 }

@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -282,6 +283,16 @@ public static class UnityEditorUtil
         string assetPath = AssetDatabase.GetAssetPath(obj);
         int idx = assetPath.LastIndexOf('.');
         return idx > 0 ? assetPath.Substring(0, assetPath.LastIndexOf('/')) : assetPath;
+    }
+
+    /// <summary>
+    /// 获取最后一级文件夹名
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string GetLastDirectoryName(string path) {
+        string directoryName = Path.GetDirectoryName(path);
+        return string.IsNullOrEmpty(directoryName) ? null : Path.GetFileName(directoryName);
     }
 
     #endregion

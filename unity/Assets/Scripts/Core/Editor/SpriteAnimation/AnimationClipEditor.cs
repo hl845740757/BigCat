@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
+using UnityEditor.Callbacks;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
@@ -70,7 +72,7 @@ public partial class AnimationClipEditor : EditorWindow
     private double _lastRefreshTime;
 
     [MenuItem("Window/BigCat/AnimationClipEditor")]
-    public static void ShowExample() {
+    private static void OpenWindow() {
         AnimationClipEditor wnd = GetWindow<AnimationClipEditor>();
         wnd.titleContent = new GUIContent("AnimationClipEditor");
     }
@@ -366,6 +368,7 @@ public partial class AnimationClipEditor : EditorWindow
         objectField.allowSceneObjects = false;
         objectField.SetValueWithoutNotify(clip);
         objectField.RegisterValueChangedCallback(OnClipElementFieldChanged);
+        objectField.label = UnityEditorUtil.GetLastDirectoryName(AssetDatabase.GetAssetPath(clip));
         clipElement.Q<Button>("delete").RegisterCallback<ClickEvent>(OnClickClipElementDelete);
         clipElement.Q<Button>("move-top").RegisterCallback<ClickEvent>(OnClickClipElementMoveTop);
         clipElement.userData = context;
@@ -1481,6 +1484,18 @@ public partial class AnimationClipEditor : EditorWindow
         InitGUI(clonedTree);
     }
 
+    [OnOpenAsset(1)]
+    private static bool OnOpenAsset(int instanceID) {
+        SpriteAnimationClip clip = EditorUtility.InstanceIDToObject(instanceID) as SpriteAnimationClip;
+        if (!clip) {
+            return false;
+        }
+        OpenWindow();
+        AnimationClipEditor window = GetWindow<AnimationClipEditor>();
+        window.TryAddClip(clip);
+        return true;
+    }
+    
     private static VisualElement CreateClipElement() {
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Scripts/Core/Editor/SpriteAnimation/ClipListItem.uxml");
         return visualTree.CloneTree()[0];

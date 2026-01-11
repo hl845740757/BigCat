@@ -138,7 +138,7 @@ public sealed class BuildBundleInfo
             assetPath = assetPath.ToLowerInvariant(), // Path规格化
             bundleName = bundleName,
             bundleType = bundleType,
-            collectPath = collectPath.ToLowerInvariant(),
+            collectPathLength = collectPath.Length,
 
             unityCRC = unityCRC,
             fileHash = fileHash,

@@ -40,7 +40,7 @@ namespace Wjybxx.BigCat.Assetor
 public abstract class ResourceTask : Decorator<Blackboard>
 {
     protected static readonly ILogger logger = LoggerFactory.GetLogger(typeof(Provider));
-    private static readonly ObjectPool<List<CallbackItem>> _listPool = ObjectPoolUtil.NewListPool<CallbackItem>(100);
+    private static readonly ObjectPool<List<CallbackInfo>> _listPool = ObjectPoolUtil.NewListPool<CallbackInfo>(100);
     private static int _nextTaskId;
 
     /// <summary>
@@ -54,7 +54,7 @@ public abstract class ResourceTask : Decorator<Blackboard>
     /// <summary>
     /// 监听器列表
     /// </summary>
-    private List<CallbackItem> _callbacks;
+    private List<CallbackInfo> _callbacks;
     /// <summary>
     /// 任务优先级
     ///
@@ -203,17 +203,17 @@ public abstract class ResourceTask : Decorator<Blackboard>
     private void RegisterCallbackImpl(Delegate action, AssetHandle handle) {
         if (action == null) throw new ArgumentNullException(nameof(action));
         _callbacks ??= _listPool.Acquire();
-        _callbacks.Add(new CallbackItem(action, handle));
+        _callbacks.Add(new CallbackInfo(action, handle));
         if (IsCompleted && _callbacks.Count == 1) {
             Scheduler.DelayNotifyListener(this);
         }
     }
 
     private void UnregisterCallbackImpl(Delegate action, AssetHandle handle) {
-        List<CallbackItem> callbacks = _callbacks;
+        List<CallbackInfo> callbacks = _callbacks;
         if (callbacks == null || callbacks.Count == 0) return;
         for (int index = callbacks.Count - 1; index >= 0; index--) {
-            CallbackItem wrapper = callbacks[index];
+            CallbackInfo wrapper = callbacks[index];
             if (wrapper.handle != handle || wrapper.action != action) {
                 continue;
             }
@@ -231,10 +231,10 @@ public abstract class ResourceTask : Decorator<Blackboard>
     /// </summary>
     /// <param name="handle"></param>
     public void UnregisterHandleCallbacks(AssetHandle handle) {
-        List<CallbackItem> callbacks = _callbacks;
+        List<CallbackInfo> callbacks = _callbacks;
         if (callbacks == null || callbacks.Count == 0) return;
         for (int index = callbacks.Count - 1; index >= 0; index--) {
-            CallbackItem wrapper = callbacks[index];
+            CallbackInfo wrapper = callbacks[index];
             if (wrapper.handle != handle) {
                 continue;
             }
@@ -250,7 +250,7 @@ public abstract class ResourceTask : Decorator<Blackboard>
     /// 通知监听器
     /// </summary>
     public void NotifyListeners() {
-        List<CallbackItem> callbacks = _callbacks;
+        List<CallbackInfo> callbacks = _callbacks;
         if (callbacks == null || callbacks.Count == 0) return;
         // 当前迭代过程中新增的回调立即通知没有问题，因为也是延迟执行的
         IsNotifying = true;
@@ -283,22 +283,22 @@ public abstract class ResourceTask : Decorator<Blackboard>
         _listPool.Release(callbacks);
     }
 
-    private readonly struct CallbackItem : IEquatable<CallbackItem>
+    private readonly struct CallbackInfo : IEquatable<CallbackInfo>
     {
         public readonly Delegate action; // Action或Action<Handle>或Action<Task>
         public readonly AssetHandle handle;
 
-        public CallbackItem(Delegate action, AssetHandle handle = default) {
+        public CallbackInfo(Delegate action, AssetHandle handle = default) {
             this.action = action;
             this.handle = handle;
         }
 
-        public bool Equals(CallbackItem other) {
+        public bool Equals(CallbackInfo other) {
             return handle.Equals(other.handle) && Equals(action, other.action);
         }
 
         public override bool Equals(object obj) {
-            return obj is CallbackItem other && Equals(other);
+            return obj is CallbackInfo other && Equals(other);
         }
 
         public override int GetHashCode() {

@@ -44,9 +44,9 @@ public sealed class AssetBundleInfo
     /// </summary>
     public EBundleType bundleType;
     /// <summary>
-    /// 关联的收集器路径(主要用于计算索引)
+    /// 收集器路径的长度(用于计算索引)
     /// </summary>
-    public string collectPath;
+    public int collectPathLength;
 
     /// <summary>
     /// Unity生成的CRC(基于未压缩内容计算)
@@ -120,7 +120,7 @@ public sealed class AssetBundleInfo
     private const int KEY_ASSET_PATH = 1;
     private const int KEY_BUNDLE_NAME = 2;
     private const int KEY_BUNDLE_TYPE = 3;
-    private const int KEY_COLLECT_PATH = 4;
+    private const int KEY_COLLECT_PATH_LENGTH = 4;
 
     private const int KEY_BUNDLE_UNITY_CRC = 5;
     private const int KEY_FILE_HASH = 6;
@@ -143,7 +143,7 @@ public sealed class AssetBundleInfo
         writer.WriteString(nameof(assetPath), assetPath);
         writer.WriteString(nameof(bundleName), bundleName);
         writer.WriteInt32(nameof(bundleType), (int)bundleType, NumberStyle.Simple);
-        writer.WriteString(nameof(collectPath), collectPath ?? "");
+        writer.WriteInt32(nameof(collectPathLength), collectPathLength, NumberStyle.Simple);
         //
         writer.WriteInt32(nameof(unityCRC), (int)unityCRC, NumberStyle.Unsigned);
         writer.WriteString(nameof(fileHash), fileHash);
@@ -195,8 +195,8 @@ public sealed class AssetBundleInfo
                     bundleType = (EBundleType)reader.ReadInt32();
                     break;
                 }
-                case nameof(collectPath): {
-                    collectPath = reader.ReadString();
+                case nameof(collectPathLength): {
+                    collectPathLength = reader.ReadInt32();
                     break;
                 }
                 case nameof(unityCRC): {
@@ -274,7 +274,7 @@ public sealed class AssetBundleInfo
         writer.WriteString(KEY_ASSET_PATH, assetPath);
         writer.WriteString(KEY_BUNDLE_NAME, bundleName);
         writer.WriteInt32(KEY_BUNDLE_TYPE, (int)bundleType);
-        writer.WriteString(KEY_COLLECT_PATH, collectPath ?? "");
+        writer.WriteInt32(KEY_COLLECT_PATH_LENGTH, collectPathLength);
         //
         writer.WriteInt32(KEY_BUNDLE_UNITY_CRC, (int)unityCRC);
         writer.WriteString(KEY_FILE_HASH, fileHash);
@@ -329,8 +329,8 @@ public sealed class AssetBundleInfo
                     bundleType = (EBundleType)reader.ReadInt32();
                     break;
                 }
-                case KEY_COLLECT_PATH: {
-                    collectPath = reader.ReadString();
+                case KEY_COLLECT_PATH_LENGTH: {
+                    collectPathLength = reader.ReadInt32();
                     break;
                 }
                 case KEY_BUNDLE_UNITY_CRC: {
