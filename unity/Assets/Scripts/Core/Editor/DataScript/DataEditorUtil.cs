@@ -22,6 +22,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
+using Wjybxx.Commons;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 
@@ -117,7 +118,7 @@ public static class DataEditorUtil
             // 添加Codec
             if (type.IsGenericType) {
                 builder.AddGenericCodec(encoderType, type);
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.GetGenericTypeDefinition().Name));
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectUtil.GetSimpleName(encoderType)));
             } else {
                 builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
                 builder.AddCodec((IDsonCodec)Activator.CreateInstance(type)!);

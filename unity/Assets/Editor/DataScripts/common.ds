@@ -6,7 +6,6 @@ struct Vector2 {
     float x = 1;
     float y = 2;
 }
-
 // @Options{ alias: [Vector3, V3], style: flow }
 // @Editor{ displayType: Vector3 }
 struct Vector3 {
@@ -14,7 +13,6 @@ struct Vector3 {
     float y = 2;
     float z = 3;
 }
-
 // @Options{ alias: [Vector4, V4], style: flow }
 // @Editor{ displayType: Vector4 }
 struct Vector4 {
@@ -22,6 +20,46 @@ struct Vector4 {
     float y = 2;
     float z = 3;
     float w = 4;
+}
+// @Options{ alias: [Quaternion, Quat], style: flow }
+// @Editor{ displayType: Vector4 }
+struct Quaternion {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    float w = 4;
+}
+// @Options{ alias: [Vector2Int, VInt2], style: flow }
+// @Editor{ displayType: Vector2Int }
+struct Vector2Int {
+    int32 x = 1;
+    int32 y = 2;
+}
+// @Options{ alias: [Vector3Int, VInt3], style: flow }
+// @Editor{ displayType: Vector3Int }
+struct Vector3Int {
+    int32 x = 1;
+    int32 y = 2;
+    int32 z = 3;
+}
+
+// @Options{ style: flow }
+// @Editor { displayType : Color }
+struct Color {
+  float r = 1;
+  float g = 2;
+  float b = 3;
+  float a = 4;
+}
+// @Options{ style: flow }
+// @Editor { displayType : Color32 }
+struct Color32 {
+  int32 rgba = 1;
+}
+// @Options{ style: flow }
+// @Editor { displayType : Euler32 }
+struct Euler32 {
+  int32 xyz = 1;
 }
 
 // @Options{ style: flow }
@@ -32,21 +70,11 @@ struct ObjectPath {
 	int64 localId = 3;
 	int32 type = 4;
 }
-
 // @Options{ style: flow }
 // @Editor { displayType : MinMaxAABB }
 struct MinMaxAABB {
   Vector3 min = 1;
   Vector3 max = 2;
-}
-
-// @Options{ style: flow }
-// @Editor { displayType : Color }
-struct Color {
-	float r = 1;
-	float g = 2;
-	float b = 3;
-	float a = 4;
 }
 
 // 测试实例 -- {}和[]暂时需要严格缩进

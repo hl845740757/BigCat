@@ -19,6 +19,7 @@
 using System;
 using UnityEngine;
 using Wjybxx.BigCat.Core;
+using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Animator
 {
@@ -26,6 +27,7 @@ namespace Wjybxx.BigCat.Animator
 /// 动画播放请求
 /// </summary>
 [Serializable]
+[DsonSerializable]
 public struct AnimationRequest
 {
     public string clipPath; // 播放的动画
@@ -46,5 +48,6 @@ public enum AnimationOptions
     EnableOffset = 0x01, // 启用偏移
     EnableRange = 0x02, // 启用区间
     EnableShadow = 0x04, // 启用阴影
+    EnableSortOrder = 0x08, // 启用动画层级
 }
 }

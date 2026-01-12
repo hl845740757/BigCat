@@ -581,7 +581,7 @@ public class DSFileParser
             string numberString = opIdx > 0
                 ? content.Substring2(eqIdx + 1, opIdx)
                 : content.Substring2(eqIdx + 1, content.Length - 1); // -1去掉 ';'
-            number = int.Parse(numberString.Trim());
+            number = DsonTexts.ParseInt32(numberString.Trim()); // 支持16进制
         }
         DSEnumValue enumValue = new DSEnumValue(name, number)
         {

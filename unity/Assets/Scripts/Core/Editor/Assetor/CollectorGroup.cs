@@ -45,15 +45,15 @@ public class CollectorGroup : Sequence<Blackboard>
     public HashSet<string> bundleTags = new HashSet<string>();
 
     /// <summary>
-    /// 关联的收集器
-    /// </summary>
-    [SerializeReference]
-    public List<Collector> collectors = new();
-    /// <summary>
     /// 收集之前的预处理任务（用于导入外部资源文件）
     /// </summary>
     [SerializeReference]
     public List<Task<Blackboard>> preTasks = new();
+    /// <summary>
+    /// 关联的收集器
+    /// </summary>
+    [SerializeReference]
+    public List<Collector> collectors = new();
     /// <summary>
     /// 资产分类器
     /// </summary>

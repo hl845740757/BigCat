@@ -54,6 +54,31 @@ class AlwaysRunning<T> : Decorator<T> {
 class Inverter<T> : Decorator<T> {
 }
 
+// 重复N次
+class Repeat<T> : Decorator<T> {
+  // @PopField {value: 0, displayName: Always}
+  // @PopField {value: 1, displayName: OnlySuccess}
+  // @PopField {value: 2, displayName: OnlyFailed}
+  // @PopField {value: 3, displayName: Never}
+  int32 countMode = 1;
+  int32 required = 2;
+}
+inst Repeat {
+  required: 1
+}
+// 直到运行成功
+class UntilSuccess<T> : Decorator<T> {
+}
+// 直到运行失败
+class UntilFail<T> : Decorator<T> {
+}
+// 直到指定条件达成
+class UntilCond<T> : Decorator<T> {
+  // @Editor{initNull: true}
+  // @PortField{}
+  Task<T> cond = 1;
+}
+
 // ------------------------------------------
 // FSM
 class StateMachineTask<T> : Decorator<T> {
@@ -188,8 +213,13 @@ class BTreeSearchTreeGroupEntry0<T> {
   Failure<T> _f33 = 33;
   SimpleRandom<T> _f34 = 34;
   SimpleWaitFrame<T> _f35 = 35;
+  
+  Repeat<T> _f41 = 41;
+  UntilSuccess<T> _f42 = 42;
+  UntilFail<T> _f43 = 43;
+  UntilCond<T> _f44 = 44;
 }
 // 通过子类直接实例化所有泛型
 // @SearchTreeGroupEntry {}
-class BTreeSearchTreeGroupEntry : BTreeSearchTreeGroupEntry0<Object> {
-}
+// class BTreeSearchTreeGroupEntry : BTreeSearchTreeGroupEntry0<Object> {
+// }

@@ -26,10 +26,20 @@ namespace Wjybxx.BigCat.Editor.DataScript
 public class VarStringField : MTextField, IVarField
 {
     private Variable _variable;
+    private readonly DropdownField dropdownField;
 
     public VarStringField() {
         this.RegisterCallback<ContextClickEvent>(ShowContextMenu);
         this.RegisterValueChangedCallback(OnValueChanged);
+        // 支持候选项
+        dropdownField = new DropdownField();
+        dropdownField.style.width = 20f;
+        dropdownField.style.flexDirection = FlexDirection.RowReverse;
+        dropdownField.RegisterValueChangedCallback(evt => {
+            this.SetValueWithoutNotify(evt.newValue);
+            this.OnValueChanged(evt);
+        });
+        this.Add(dropdownField);
     }
 
     public void Bind(DataEditor editor, Variable variable) {
@@ -40,6 +50,13 @@ public class VarStringField : MTextField, IVarField
         this.SetValueWithoutNotify(variable.stringValue ?? "");
         this.isDelayed = variableCfg.isDelayed;
         this.multiline = variableCfg.isMultiline;
+        // 候选者下拉菜单
+        if (variableCfg.candidatesValues != null) {
+            dropdownField.choices = variableCfg.candidatesValues;
+            dropdownField.SetDisplay(true);
+        } else {
+            dropdownField.SetDisplay(false);
+        }
     }
 
     public void Unbind() {
@@ -69,6 +86,7 @@ public class VarStringField : MTextField, IVarField
 
     private void ShowContextMenu(ContextClickEvent evt) {
         if (_variable == null) return;
+        if (evt.localMousePosition.x > 100f) return; // 只响应标签区域
         evt.StopPropagation();
 
         Variable variable = _variable;

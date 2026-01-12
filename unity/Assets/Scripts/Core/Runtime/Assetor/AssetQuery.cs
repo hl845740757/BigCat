@@ -44,7 +44,7 @@ public sealed class AssetQuery
     /// </summary>
     public readonly HashSet<string> supportExtensions = new HashSet<string>(16)
     {
-        "fbx", "unity", "prefab", "asset",
+        "fbx", "prefab", "asset",
         "png", "jpg", "tif",
         "ogg", "wav", "mp3"
     };
@@ -120,9 +120,9 @@ public sealed class AssetQuery
                     string assetPathNoExt = RemoveExtension(assetPath, in extension);
                     assetIndex2AssetDic.Add(assetPathNoExt, fileInfo);
                 }
-                // 自定义索引禁止重复，程序生成的索引可以重复
+                // 编辑器导出索引+自定义索引
                 foreach (string address in fileInfo.addresses) {
-                    assetIndex2AssetDic.Add(address, fileInfo);
+                    assetIndex2AssetDic[address] = fileInfo;
                 }
                 if (bundleInfo.assetIndexes == EAssetIndexes.None) {
                     continue;

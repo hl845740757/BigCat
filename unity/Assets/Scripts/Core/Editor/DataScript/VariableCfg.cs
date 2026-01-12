@@ -104,6 +104,12 @@ public sealed class VariableCfg
     /// </summary>
     public List<string> stringPopValues;
     /// <summary>
+    /// 字符串候选值
+    ///
+    /// 注：List和Map字段的Pop信息表示Value的信息。
+    /// </summary>
+    public List<string> candidatesValues;
+    /// <summary>
     /// Mask字段时的展示名
     ///
     /// 1.如果是枚举，根据枚举类信息填充
@@ -201,7 +207,7 @@ public sealed class VariableCfg
         //
         Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
         if (annotation != null) {
-            ParseBaseOptions(annotation.AsObject(), cfg, element);
+            ParseEditorOptions(annotation.AsObject(), cfg, element);
         }
         annotation = element.GetAnnotation(DSAnnotations.FIELD_STYLE);
         if (annotation != null) {
@@ -224,16 +230,23 @@ public sealed class VariableCfg
         if (annotations.Count > 0) {
             ParseBranchInfo(annotations, cfg, (DSField)element);
         }
-        // Mask字段
-        annotations = element.GetAnnotations(DSAnnotations.MASK_FIELD);
-        if (annotations.Count > 0) {
-            ParseMaskInfo(annotations, cfg);
-        }
         // 多态字段
         annotations = element.GetAnnotations(DSAnnotations.PLOY_FIELD);
         if (annotations.Count > 0) {
             ParsePolyInfo(annotations, cfg);
         }
+
+        // Mask字段 - 自动合并多注解的值
+        annotations = element.GetAnnotations(DSAnnotations.MASK_FIELD);
+        if (annotations.Count > 0) {
+            ParseMaskInfo(annotations, cfg);
+        }
+        // 候选值信息 - 自动合并多注解的值
+        annotations = element.GetAnnotations(DSAnnotations.CANDIDATES);
+        if (annotations.Count > 0) {
+            ParseCandidateInfo(annotations, cfg);
+        }
+
         // 如果是枚举类型，提前缓存PopNames
         if (element.Kind == DSElementKind.Enum) {
             ParseEnumPops(cfg, (DSNamedType)element);
@@ -266,6 +279,7 @@ public sealed class VariableCfg
         varCfg.popNames = listCfg.popNames;
         varCfg.intPopValues = listCfg.intPopValues;
         varCfg.stringPopValues = listCfg.stringPopValues;
+        varCfg.candidatesValues = listCfg.candidatesValues;
         varCfg.maskNames = listCfg.maskNames;
         varCfg.supportedTypes = listCfg.supportedTypes;
         //
@@ -289,7 +303,7 @@ public sealed class VariableCfg
             cfg.popNames.Add(displayName);
             maxNumber = Math.Max(maxNumber, enumValue.Number);
         }
-        // 则额外解析Mask信息 - 需要去掉末尾的空白
+        // 解析Mask信息(额外缓存)
         int maxLen = Math.Min(32, maxNumber + 1);
         cfg.maskNames = new List<string>(maxLen);
         for (int index = 0; index < maxLen; index++) {
@@ -354,6 +368,17 @@ public sealed class VariableCfg
             }
             cfg.branchCfgs.Add(branchCfg);
         }
+    }
+
+    private static void ParseCandidateInfo(List<Annotation> annotations, VariableCfg cfg) {
+        cfg.candidatesValues = new List<string>();
+        foreach (Annotation annotation in annotations) {
+            DsonArray<string> dsonArray = annotation.AsArray();
+            foreach (DsonValue dsonValue in dsonArray) {
+                cfg.candidatesValues.Add(dsonValue.AsString());
+            }
+        }
+        cfg.candidatesValues.TrimExcess();
     }
 
     private static void ParseMaskInfo(List<Annotation> annotations, VariableCfg cfg) {
@@ -423,7 +448,7 @@ public sealed class VariableCfg
         cfg.styleCfg = styleCfg;
     }
 
-    private static void ParseBaseOptions(DsonObject<string> dsonObject, VariableCfg cfg, DSElement element) {
+    private static void ParseEditorOptions(DsonObject<string> dsonObject, VariableCfg cfg, DSElement element) {
         DsonValue dsonValue;
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DISPLAY_TYPE, out dsonValue)) {
             cfg.displayType = Enum.Parse<DisplayType>(dsonValue.AsString(), true);

@@ -158,7 +158,17 @@ public static class DSAnnotations
     public const string BRANCH_FIELD = "BranchField";
 
     /// <summary>
-    /// Mask字段
+    /// 多态字段
+    /// 语法：<code>// @PloyField[ Vector2, Vector3 ]</code>
+    ///
+    /// 注：
+    /// 1.注解为数组类型，Value为支持的类型。
+    /// 2.如果字段是集合或Map类型，则表示集合内元素支持的多态类型。
+    /// </summary>
+    public const string PLOY_FIELD = "PloyField";
+
+    /// <summary>
+    /// Mask字段(支持多个)
     ///
     /// 语法：<code>// @MaskField[ Left, Right, Bottom ]</code>
     ///
@@ -166,17 +176,18 @@ public static class DSAnnotations
     /// 1.注解为数组类型，Value为每个bit对应的名字，无特殊字符时可不加双引号。
     /// 2.如果字段是集合或Map类型，则表示集合内元素支持的多态类型。
     /// 3.如果是枚举字段，数组保持为空即可。
+    /// 4.支持多注解，自动合并它们的值
     /// </summary>
     public const string MASK_FIELD = "MaskField";
     /// <summary>
-    /// 多态字段
-    /// 语法：<code>// @PloyField[ Vector2, Vector3 ]</code>
+    /// 候选值
+    /// 语法：<code>// @Candidates[ Vector2, Vector3 ]</code>
     ///
-    /// 注：
-    /// 1.注解为数组类型，Value为为支持的类型。
-    /// 2.如果字段是集合或Map类型，则表示集合内元素支持的多态类型。
+    /// 1.注解为数组类型，Value为候选值。
+    /// 2.目前仅支持string字段
+    /// 3.支持多注解，自动合并它们的值
     /// </summary>
-    public const string PLOY_FIELD = "PloyField";
+    public const string CANDIDATES = "Candidates";
 
     #region 注解属性的键
 

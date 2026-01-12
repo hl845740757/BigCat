@@ -119,12 +119,12 @@ public sealed class AssetFileInfo
                 }
                 case KEY_ADDRESSES_COUNT: {
                     int count = reader.ReadInt32();
-                    addresses = ReadStringArray(reader, name, count);
+                    addresses = ReadStringArray(reader, KEY_ADDRESSES, count);
                     break;
                 }
                 case KEY_TAGS_COUNT: {
                     int count = reader.ReadInt32();
-                    assetTags = ReadStringArray(reader, name, count);
+                    assetTags = ReadStringArray(reader, KEY_TAGS, count);
                     break;
                 }
                 default: {

@@ -48,11 +48,11 @@ public sealed class Desktop
     /// (用于实现新打开的窗口在更上层)
     /// (会动态修正，避免无限膨胀)
     /// </summary>
-    private int openOrder = 0;
+    private int openOrder;
     /// <summary>
     /// 桌面是否处于显示状态
     /// </summary>
-    private bool showing = false;
+    private bool showing;
 
     internal Desktop(int desktopId, Canvas canvas) {
         _desktopId = desktopId;

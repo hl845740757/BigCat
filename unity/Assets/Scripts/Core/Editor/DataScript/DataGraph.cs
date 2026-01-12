@@ -188,7 +188,7 @@ public sealed class DataGraph
         // 初始值 - 为避免冲突，只尝试从类型的归属文件读默认值
         DSFile enclosingFile = namedType.GetEnclosingFile();
         DSInst inst;
-        if (!namedType.IsGenericType && (inst = enclosingFile.GetInst(namedType.SimpleName)) != null) {
+        if ((inst = enclosingFile.GetInst(namedType.SimpleName)) != null) {
             ResetVariable(node.value, inst.DsonValue);
         }
         return node;
@@ -733,6 +733,7 @@ public sealed class DataGraph
         // 递归创建Value
         List<DSField> fields = varType.GetFields(true, _fieldListPool.Acquire());
         try {
+            variable.isNull = false;
             variable.values = new List<Variable>(fields.Count);
             foreach (DSField field in fields) {
                 variable.Add(CreateVariable(field));

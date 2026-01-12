@@ -2,6 +2,11 @@
 import public "common.ds";
 import public "btree.ds";
 
+// 工具库的黑板类型，避免导出给其它ds文件
+// @Namespace{ cs: "Wjybxx.BigCat.Util", nonGenerate: true }
+class Blackboard  {
+}
+
 // 收集器类型
 enum ECollectorType {
   MainAsset = 0;
@@ -16,11 +21,11 @@ enum EGroupBy {
 }
 // @Options{ isFlags: true }
 enum EAssetIndexes {
-    FileName = 1; // 文件名索引
-    FolderAndFileName = 2; // 文件夹+文件名索引
-    FolderAndFileNamePlus = 4; // 文件夹+文件名索引，支持指定深度
-    RelativeToCollector = 8; // 相对收集器的路径
-    TypeAndFileName = 16; // 类型名+文件名（无后缀）
+    FileName = 0x01; // 文件名索引
+    FolderAndFileName = 0x02; // 文件夹+文件名索引
+    FolderAndFileNamePlus = 0x04; // 文件夹+文件名索引，支持指定深度
+    RelativeToCollector = 0x08; // 相对收集器的路径
+    TypeAndFileName = 0x10; // 类型名+文件名（无后缀）
 }
 
 // 构建平台
@@ -46,10 +51,6 @@ enum ECompression {
   LZ4 = 2;
 }
 
-// 工具库的黑板类型，避免导出给其它ds文件
-// @Namespace{ cs: "Wjybxx.BigCat.Util", nonGenerate: true }
-class Blackboard  {
-}
 // 分类工具
 class IAssetClassifier {
 }
@@ -87,13 +88,13 @@ inst Collector {
 class CollectorGroup : Task<Blackboard> {
   bool enabled = 1; // 启用状态
   HashSet<string> bundleTags = 2; // 会合并到Collector
-  
+
   // @PortField{side: right}
-  List<Collector> collectors = 3; // 收集器
+  List<Task<Blackboard>> preTasks = 3; // 预处理任务
   // @PortField{side: right}
-  List<Task<Blackboard>> preTasks = 4; // 预处理任务
+  List<Collector> collectors = 4; // 收集器
   // @PortField{side: right}
-  IAssetClassifier classifier = 5;
+  IAssetClassifier classifier = 5; // 资产分类器
 }
 inst CollectorGroup {
   enabled: true

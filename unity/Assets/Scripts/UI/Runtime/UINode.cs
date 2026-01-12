@@ -118,7 +118,7 @@ public class UINode : MonoBehaviour
         if (blackboard == null) {
             blackboard = _parent ? _parent.Blackboard : _window.Blackboard;
         }
-        if (controller) {
+        if (firstShow && controller) {
             controller.Inject(this);
         }
         ResetDisplayElements();

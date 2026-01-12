@@ -122,8 +122,8 @@ public class Collector : LeafTask<Blackboard>
             SetSuccess();
             return;
         }
-        CollectorPackage package = this.GetFirstAncestorOfType<CollectorPackage>();
-        CollectorGroup group = this.GetFirstAncestorOfType<CollectorGroup>();
+        CollectorPackage package = this.GetFirstAncestorOfType<CollectorPackage>()!;
+        CollectorGroup group = this.GetFirstAncestorOfType<CollectorGroup>()!;
         PathCache pathCache = blackboard.Get(BuildKeys.pathCache);
         // 筛选资产
         foreach (string assetPath in blackboard.Get(BuildKeys.allAssetPaths)) {

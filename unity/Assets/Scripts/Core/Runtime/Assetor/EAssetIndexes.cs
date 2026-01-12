@@ -57,7 +57,8 @@ public enum EAssetIndexes
     /// 资产对象类型名 + 文件名(无后缀) 
     ///
     /// <code>SpriteGroup:sm_body8001</code>
-    /// 注；开启该索引时，应当避免再开启文件名索引。 
+    /// 1.开启该索引时，应当避免再开启文件名索引。
+    /// 2.支持<see cref="AssetTypeAliasAttribute"/>指定额外别名。
     /// </summary>
     TypeAndFileName = 0x10,
 }

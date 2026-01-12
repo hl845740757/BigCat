@@ -16,19 +16,20 @@
 
 #endregion
 
-using UnityEngine;
-using Wjybxx.Dson.Codec.Attributes;
+using System;
 
-namespace Wjybxx.BigCat.Launcher
+namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
-/// 用于为Unity的常用类型生成DsonCodec
+/// 用于建立资产索引
 /// </summary>
-// [UsedForReflectionBasedGenerator]
-[DsonCodecLinkerGroup]
-public class UnityCodecLinker
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public sealed class AssetTypeAliasAttribute : Attribute
 {
-    private Vector2 _vector2;
-    private Vector3 _vector3;
+    public readonly string alias;
+
+    public AssetTypeAliasAttribute(string alias) {
+        this.alias = alias ?? throw new ArgumentNullException(nameof(alias));
+    }
 }
 }

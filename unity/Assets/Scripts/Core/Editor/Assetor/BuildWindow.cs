@@ -64,7 +64,7 @@ public class BuildWindow : DataEditor
         }
         DsonValue root = collection[index];
         collection.RemoveAt(index);
-        collection.Insert(0, root); // 插到首部，只解码第一个及其引用的对象
+        collection.Insert(0, root); // 插到首部，只解码第一个对象及其引用的对象
 
         IDsonConverter converter = CreateConverter();
         PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
@@ -78,7 +78,8 @@ public class BuildWindow : DataEditor
         if (taskEntry.IsSucceeded) {
             Debug.Log("Build success");
         } else if (taskEntry.IsFailed) {
-            Debug.LogError("Build failed, Code: " + taskEntry.Status);
+            BuildErrorCodec errorCodec = (BuildErrorCodec)taskEntry.Status;
+            Debug.LogError($"Build failed, ErrorCode: {taskEntry.Status}, desc: {errorCodec}");
         } else {
             Debug.LogError("Task is not completed!");
         }
@@ -91,10 +92,10 @@ public class BuildWindow : DataEditor
         int index = DataEditorUtil.IndexOf(collection, nodeView.dataNode.localId);
         DsonValue root = collection[index];
         collection.RemoveAt(index);
-        collection.Insert(0, root); // 插到首部，只解码第一个
+        collection.Insert(0, root); // 插到首部，只解码第一个对象及其引用的对象
 
         converter ??= CreateConverter();
-        // 泛型参数需要为所以节点的超类
+        // 泛型参数需要为所有节点的超类
         PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
         TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
         {
@@ -106,7 +107,8 @@ public class BuildWindow : DataEditor
         if (taskEntry.IsSucceeded) {
             Debug.Log("Build success");
         } else if (taskEntry.IsFailed) {
-            Debug.LogError("Build failed, ErrorCode: " + taskEntry.Status);
+            BuildErrorCodec errorCodec = (BuildErrorCodec)taskEntry.Status;
+            Debug.LogError($"Build failed, ErrorCode: {taskEntry.Status}, desc: {errorCodec}");
         } else {
             Debug.LogError("Task is not completed!");
         }

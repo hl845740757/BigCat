@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Wjybxx.BigCat.Assetor;
 using Wjybxx.BigCatTool;
 using Wjybxx.BTree;
@@ -89,29 +90,39 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                 }
                 // 多层级目录索引强制检查唯一性
                 if ((indexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0;
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, bundleInfo.indexDepth);
-                    AddIndex(index2AssetDic, subAssetPath, assetInfo, true);
+                    AddIndex(index2AssetDic, subAssetPath, assetInfo, unique);
                     //
                     if (supportExtensions.Contains(extension)) {
                         string subAssetPathNoExt = RemoveExtension(subAssetPath, extension);
-                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, true);
+                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, unique);
                     }
                 }
                 // 相对Collector的路径，也强制检查唯一性
                 if ((indexes & EAssetIndexes.RelativeToCollector) != 0) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.RelativeToCollector) != 0;
                     string subAssetPath = assetInfo.assetPath.Substring(bundleInfo.collectPath.Length + 1);
-                    AddIndex(index2AssetDic, subAssetPath, assetInfo, true);
+                    AddIndex(index2AssetDic, subAssetPath, assetInfo, unique);
                     //
                     if (supportExtensions.Contains(extension)) {
                         string subAssetPathNoExt = RemoveExtension(subAssetPath, extension);
-                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, true);
+                        AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, unique);
                     }
                 }
                 // 资产类型名+文件名索引
                 if ((indexes & EAssetIndexes.TypeAndFileName) != 0) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.TypeAndFileName) != 0;
                     string address = assetInfo.assetType.Name + ":" + RemoveExtension(fileName, extension);
                     assetInfo.addresses.Add(address);
-                    AddIndex(index2AssetDic, address, assetInfo, true);
+                    AddIndex(index2AssetDic, address, assetInfo, unique);
+                    //
+                    AssetTypeAliasAttribute aliasAttribute = assetInfo.assetType.GetCustomAttribute<AssetTypeAliasAttribute>();
+                    if (aliasAttribute != null) {
+                        address = aliasAttribute.alias + ":" + RemoveExtension(fileName, extension);
+                        assetInfo.addresses.Add(address);
+                        AddIndex(index2AssetDic, address, assetInfo, unique);
+                    }
                 }
             }
         }

@@ -72,11 +72,7 @@ public class WComponentCfg : MonoBehaviour
         if (type == null) {
             throw new Exception($"type {typeName} not found");
         }
-        ConstructorInfo constructorInfo = type.GetConstructor(Array.Empty<Type>());
-        if (constructorInfo == null) {
-            throw new Exception($"type {typeName} must contain a public constructor");
-        }
-        return (WComponent)constructorInfo.Invoke(null);
+        return Activator.CreateInstance(type) as WComponent;
     }
 
     #endregion

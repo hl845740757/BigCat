@@ -21,6 +21,11 @@ using UnityEngine.UIElements;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
+/// <summary>
+/// 多选时无法像原生的EnumField一样显示为A,B,C格式：
+/// 1.GetDisplayedValue(int) 无法重写
+/// 2.formatSelectedValueCallback 只有预设选项才会走到(IsPowerOf2)
+/// </summary>
 public class VarInt32MaskField : MaskField, IVarField
 {
     private Variable _variable;

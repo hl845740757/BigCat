@@ -36,8 +36,7 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IPref
     private const int MODE_CENTER_SIZE = 2;
     private const int MODE_BOTTOM_SIZE = 3;
 
-    private static readonly string[] _display = { "Min + Max", "Min + Size", "Center + Size", "Bottom + Size" };
-    private static readonly string[] _selectedDisplay = { "√ Min + Max", "√ Min + Size", "√ Center + Size", "√ Bottom + Size" };
+    private static readonly string[] _modeDisplays = { "Min + Max", "Min + Size", "Center + Size", "Bottom + Size" };
     private static int _mode = MODE_MIN_SIZE;
 
     public bool isInteger { get; set; } // 属性才可以保存到UXML
@@ -152,25 +151,25 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IPref
         MinMaxAABB aabb = GetRealtimeValue();
         switch (_mode) {
             default: {
-                _modeMune.text = _display[MODE_MIN_MAX];
+                _modeMune.text = _modeDisplays[MODE_MIN_MAX];
                 _minField.label = "Min";
                 _maxField.label = "Max";
                 break;
             }
             case MODE_MIN_SIZE: {
-                _modeMune.text = _display[MODE_MIN_SIZE];
+                _modeMune.text = _modeDisplays[MODE_MIN_SIZE];
                 _minField.label = "Min";
                 _maxField.label = "Size";
                 break;
             }
             case MODE_CENTER_SIZE: {
-                _modeMune.text = _display[MODE_CENTER_SIZE];
+                _modeMune.text = _modeDisplays[MODE_CENTER_SIZE];
                 _minField.label = "Center";
                 _maxField.label = "Size";
                 break;
             }
             case MODE_BOTTOM_SIZE: {
-                _modeMune.text = _display[MODE_BOTTOM_SIZE];
+                _modeMune.text = _modeDisplays[MODE_BOTTOM_SIZE];
                 _minField.label = "Bottom";
                 _maxField.label = "Size";
                 break;
@@ -180,9 +179,10 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IPref
         // 刷新菜单
         _modeMune.menu.MenuItems().Clear();
         for (int mode = MODE_MIN_MAX; mode <= MODE_BOTTOM_SIZE; mode++) {
-            string label = mode == _mode ? _selectedDisplay[mode] : _display[mode];
             int tempMode = mode;
-            _modeMune.menu.InsertAction(mode, label, _ => SwitchMode(tempMode));
+            _modeMune.menu.InsertAction(mode, _modeDisplays[mode],
+                _ => SwitchMode(tempMode),
+                _mode == mode ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
         }
     }
 

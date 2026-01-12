@@ -24,12 +24,12 @@ namespace Wjybxx.BigCat.Core
 /// <summary>
 /// 时间值抽象
 /// </summary>
-public struct TimeValue : IEquatable<TimeValue>
+public readonly struct TimeValue : IEquatable<TimeValue>
 {
     /// <summary>
     /// 时间值
     /// </summary>
-    public float value;
+    public readonly float value;
     /// <summary>
     /// 时间单位
     /// </summary>
@@ -40,7 +40,54 @@ public struct TimeValue : IEquatable<TimeValue>
         this.unit = mUnit;
     }
 
+    /// <summary>
+    /// 转换时间单位
+    /// </summary>
+    public TimeValue ConvertUnit(TimeUnit targetUnit) {
+        if (this.unit == targetUnit) return this;
+        return targetUnit == TimeUnit.Second
+            ? new TimeValue(this.value / 1000f, targetUnit)
+            : new TimeValue(this.value * 1000f, targetUnit);
+    }
+
     public static implicit operator TimeValue(float value) => new TimeValue(value);
+
+    public static TimeValue operator +(TimeValue lhs, float delta) {
+        return new TimeValue(lhs.value + delta, lhs.unit);
+    }
+
+    public static TimeValue operator -(TimeValue lhs, float delta) {
+        return new TimeValue(lhs.value - delta, lhs.unit);
+    }
+
+    public static TimeValue operator *(TimeValue lhs, float scale) {
+        return new TimeValue(lhs.value * scale, lhs.unit);
+    }
+
+    public static TimeValue operator /(TimeValue lhs, float scale) {
+        return new TimeValue(lhs.value / scale, lhs.unit);
+    }
+
+    // 慎重使用
+    public static TimeValue operator +(TimeValue lhs, TimeValue rhs) {
+        TimeUnit timeUnit = lhs.unit;
+        if (timeUnit == rhs.unit) {
+            return new TimeValue(lhs.value + rhs.value, timeUnit);
+        }
+        return timeUnit == TimeUnit.Second
+            ? new TimeValue(lhs.value + rhs.value / 1000f, timeUnit)
+            : new TimeValue(lhs.value + rhs.value * 1000f, timeUnit);
+    }
+
+    public static TimeValue operator -(TimeValue lhs, TimeValue rhs) {
+        TimeUnit timeUnit = lhs.unit;
+        if (timeUnit == rhs.unit) {
+            return new TimeValue(lhs.value - rhs.value, timeUnit);
+        }
+        return timeUnit == TimeUnit.Second
+            ? new TimeValue(lhs.value - rhs.value / 1000f, timeUnit)
+            : new TimeValue(lhs.value - rhs.value * 1000f, timeUnit);
+    }
 
     #region equals
 
