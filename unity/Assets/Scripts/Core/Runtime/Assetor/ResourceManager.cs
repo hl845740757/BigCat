@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using UnityEngine;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Pool;
 using Object = UnityEngine.Object;
@@ -254,7 +255,8 @@ public class ResourceManager
         if (string.IsNullOrEmpty(location)) {
             throw new ArgumentNullException(nameof(location));
         }
-        AssetFileInfo assetInfo = GetAssetInfo(location);
+        bool so = loadMethod == ELoadMethod.LoadAsset && assetType.IsSubclassOf(typeof(ScriptableObject));
+        AssetFileInfo assetInfo = GetAssetInfo(location, so ? assetType.Name : null);
         Provider provider;
         if (assetInfo == null) {
             provider = GetErrorProvider(assetType, loadMethod);
@@ -442,16 +444,29 @@ public class ResourceManager
 
     /// <summary>
     /// 根据location查询AssetInfo
-    ///
-    /// 注：运行时的location不可以包含反斜杠，运行时规格化只处理大小写问题。
     /// </summary>
-    /// <param name="location"></param>
-    /// <exception cref="ArgumentException">如果资源路径包含反斜杠</exception>
-    public AssetFileInfo GetAssetInfo(string location) {
+    /// <param name="location">资产坐标</param>
+    public AssetFileInfo GetAssetInfo<T>(string location) where T : Object {
+        bool so = typeof(T).IsSubclassOf(typeof(ScriptableObject));
+        return GetAssetInfo(location, so ? typeof(T).Name : null);
+    }
+
+    /// <summary>
+    /// 根据location查询AssetInfo
+    /// </summary>
+    /// <param name="location">资产坐标</param>
+    /// <param name="assetType">资产类型</param>
+    public AssetFileInfo GetAssetInfo(string location, string assetType = null) {
         if (string.IsNullOrEmpty(location)) {
             return null;
         }
-        Query.assetIndex2AssetDic.TryGetValue(location, out var assetInfo);
+        if (!Query.assetIndex2AssetDic.TryGetValue(location, out AssetFileInfo assetInfo) && !string.IsNullOrEmpty(assetType)) {
+            // Fallback - 尝试按照资产类型索引查询
+            location = location.EndsWith(".asset")
+                ? $"{assetType}:{location.Substring(0, location.Length - 6)}"
+                : $"{assetType}:{location}";
+            Query.assetIndex2AssetDic.TryGetValue(location, out assetInfo);
+        }
         return assetInfo;
     }
 

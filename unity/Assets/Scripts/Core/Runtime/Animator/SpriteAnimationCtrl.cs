@@ -295,7 +295,7 @@ public class SpriteAnimationCtrl
 #endif
         ObjectPath spritePath = frame.spritePath;
         if (spritePath.IsEmpty) {
-            renderer.sprite = null;
+            // renderer.sprite = null; // 保留旧图
             groupHandle = default;
         } else {
             groupHandle = ResourceManager.Inst.LoadAssetAsync<SpriteGroup>(spritePath.collection);

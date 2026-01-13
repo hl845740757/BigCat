@@ -36,8 +36,9 @@ public class TestRpcSerializer : RpcSerializer
             Type encoderType = GetEncoderType(codecType);
             // 添加Codec
             if (codecType.IsGenericType) {
+                encoderType = encoderType.GetGenericTypeDefinition();
                 builder.AddGenericCodec(encoderType, codecType);
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.GetGenericTypeDefinition().Name));
+                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
             } else {
                 builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
                 builder.AddCodec((IDsonCodec)Activator.CreateInstance(codecType)!);
@@ -52,7 +53,6 @@ public class TestRpcSerializer : RpcSerializer
     }
 
     private static List<Type> ScanCodecs() {
-        string interfaceName = typeof(IDsonCodec).FullName;
         List<Type> result = new List<Type>();
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies()) {
             string assemblyName = assembly.GetName().Name;
@@ -60,7 +60,7 @@ public class TestRpcSerializer : RpcSerializer
                 continue;
             }
             foreach (var type in assembly.GetTypes()) {
-                if (type.Name.EndsWith("Codec") && type.GetInterface(interfaceName!) != null) {
+                if (type.GetInterface(nameof(IDsonCodec)) != null) {
                     result.Add(type);
                 }
             }

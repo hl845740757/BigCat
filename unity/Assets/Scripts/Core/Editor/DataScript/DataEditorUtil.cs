@@ -113,10 +113,11 @@ public static class DataEditorUtil
     }
 
     public static bool TryAddCodec(DsonConverterBuilder builder, Type type) {
-        if (type.Name.EndsWith("Codec") && type.GetInterface(nameof(IDsonCodec)) != null) {
+        if (type.GetInterface(nameof(IDsonCodec)) != null) {
             Type encoderType = GetEncoderType(type);
             // 添加Codec
             if (type.IsGenericType) {
+                encoderType = encoderType.GetGenericTypeDefinition();
                 builder.AddGenericCodec(encoderType, type);
                 builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectUtil.GetSimpleName(encoderType)));
             } else {

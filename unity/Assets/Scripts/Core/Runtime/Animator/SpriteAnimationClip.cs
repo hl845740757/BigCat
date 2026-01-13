@@ -52,11 +52,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     /// 图片ppu
     /// </summary>
     public float ppu = 100;
-    /// <summary>
-    /// 动画片段信息
-    /// 注：用于将多个动画clip集成为单个动画资产，减少资产数。
-    /// </summary>
-    public Segment[] segments = Array.Empty<Segment>();
 
     //////////////////////////////////////////////////////////////
 
@@ -200,23 +195,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 查找指定name的选段
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    public Segment FindSegment(string name) {
-        return Array.Find(segments, e => e.name == name);
-    }
-
-    /// <summary>
-    /// 添加片段
-    /// </summary>
-    /// <param name="segment"></param>
-    public void AddSegment(Segment segment) {
-        ArrayUtil.Insert(ref segments, segments.Length, segment);
-    }
-
-    /// <summary>
     /// 确保时间的正确性
     /// </summary>
     private void OnEnable() {
@@ -231,7 +209,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     private void Reset() {
         frames = Array.Empty<SpriteAnimationFrame>();
         duration = 0;
-        segments = Array.Empty<Segment>();
     }
 
     /// <summary>

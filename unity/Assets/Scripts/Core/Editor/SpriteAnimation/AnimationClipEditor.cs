@@ -39,7 +39,7 @@ public partial class AnimationClipEditor : EditorWindow
 
     private VisualElement _frameAreaElement;
     private IntegerField _frameIndexField;
-    private EnumField _showHitBoxToggle;
+    private EnumField _showAttackBoxToggle;
     private EnumField _showHurtBoxToggle;
     private EnumField _imageEditModeToggle;
     private Toggle _imagePickIgnoreToggle;
@@ -54,12 +54,12 @@ public partial class AnimationClipEditor : EditorWindow
 
     private VisualElement _framePivotIcon;
     private VisualElement _imageStyleElement;
-    private VisualElement _hitBoxStyleElement;
+    private VisualElement _attackBoxStyleElement;
     private VisualElement _hurtBoxStyleElement;
 
     private VisualElement _frameInfoElement;
     private ListView _hurtBoxListView;
-    private ListView _hitBoxListView;
+    private ListView _attackBoxListView;
 
     // private int toolBarIndex;
     private readonly List<ClipContext> _clipContextList = new(4); // 当前编辑/播放的所有Clip
@@ -221,13 +221,13 @@ public partial class AnimationClipEditor : EditorWindow
     private void InitFrameInfoArea(VisualElement root) {
         _frameInfoElement = root.Q<VisualElement>("frame-info-div");
         _hurtBoxListView = root.Q<ListView>("hurt-boxes");
-        _hitBoxListView = root.Q<ListView>("hit-boxes");
+        _attackBoxListView = root.Q<ListView>("attack-boxes");
         _hurtBoxListView.SetFoldout(false);
         _hurtBoxListView.itemsAdded += _ => RebindHurtBoxElements();
         _hurtBoxListView.itemsRemoved += _ => RebindHurtBoxElements();
-        _hitBoxListView.SetFoldout(false);
-        _hitBoxListView.itemsAdded += _ => RebindHitBoxElements();
-        _hitBoxListView.itemsRemoved += _ => RebindHitBoxElements();
+        _attackBoxListView.SetFoldout(false);
+        _attackBoxListView.itemsAdded += _ => RebindAttackBoxElements();
+        _attackBoxListView.itemsRemoved += _ => RebindAttackBoxElements();
         // 帧数据变化刷新UI和图片
         ObjectPathField spritePathField = _frameInfoElement.Q<ObjectPathField>();
         spritePathField.label = "SpritePath";
@@ -244,7 +244,7 @@ public partial class AnimationClipEditor : EditorWindow
         _frameAreaElement = previewArea.Q<VisualElement>("frame-area");
         _framePivotIcon = previewArea.Q<VisualElement>("frame-pivot-icon");
         _imageStyleElement = previewArea.Q<VisualElement>("image-style");
-        _hitBoxStyleElement = previewArea.Q<VisualElement>("hit-box-style");
+        _attackBoxStyleElement = previewArea.Q<VisualElement>("attack-box-style");
         _hurtBoxStyleElement = previewArea.Q<VisualElement>("hurt-box-style");
         _frameAreaElement.RegisterCallback<MouseDownEvent>(OnFrameAreaMouseDown);
         _frameAreaElement.RegisterCallback<MouseMoveEvent>(OnFrameAreaMouseMove);
@@ -257,7 +257,7 @@ public partial class AnimationClipEditor : EditorWindow
         previewArea.Q<Button>("frame-index-prev").RegisterCallback<ClickEvent>(OnClickFrameIndexPrev);
         previewArea.Q<Button>("frame-index-next").RegisterCallback<ClickEvent>(OnClickFrameIndexNext);
         // 
-        _showHitBoxToggle = previewArea.Q<EnumField>("show-hit-box");
+        _showAttackBoxToggle = previewArea.Q<EnumField>("show-attack-box");
         _showHurtBoxToggle = previewArea.Q<EnumField>("show-hurt-box");
         _imageEditModeToggle = previewArea.Q<EnumField>("image-edit-mode");
         _imagePickIgnoreToggle = previewArea.Q<Toggle>("image-pick-ignore");
@@ -270,9 +270,9 @@ public partial class AnimationClipEditor : EditorWindow
         _playTimeField = previewArea.Q<FloatField>("play-time-field");
         _aabbField = previewArea.Q<AABBField>();
         _imageEditModeToggle.Init(EditMode.Move);
-        _showHitBoxToggle.Init(RangeMode.All);
+        _showAttackBoxToggle.Init(RangeMode.All);
         _showHurtBoxToggle.Init(RangeMode.All);
-        _showHitBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
+        _showAttackBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _showHurtBoxToggle.RegisterValueChangedCallback(OnShowBoxToggleChanged);
         _bgColorField.RegisterValueChangedCallback(OnBackgroundColorChanged);
         _imagePickIgnoreToggle.RegisterValueChangedCallback(OnPickIgnoreChanged);
@@ -533,7 +533,7 @@ public partial class AnimationClipEditor : EditorWindow
     }
 
     private void RefreshBoxElements(ClipContext clipContext) {
-        foreach (VisualElement boxElement in clipContext.hitBoxElements) {
+        foreach (VisualElement boxElement in clipContext.attackBoxElements) {
             if (boxElement.userData is not BoxContext context) break;
             RefreshBoxElement(boxElement, context.box);
         }
@@ -664,22 +664,22 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void OnShowBoxToggleChanged(ChangeEvent<Enum> evt) {
         evt.StopPropagation();
-        if (evt.currentTarget == _showHitBoxToggle) {
-            RebindHitBoxElements();
+        if (evt.currentTarget == _showAttackBoxToggle) {
+            RebindAttackBoxElements();
         } else {
             RebindHurtBoxElements();
         }
     }
 
-    private void RefreshBoxElementVisible(bool isHitBox) {
+    private void RefreshBoxElementVisible(bool isAttackBox) {
         for (int clipIndex = 0; clipIndex < _clipContextList.Count; clipIndex++) {
             ClipContext context = _clipContextList[clipIndex];
             List<VisualElement> boxElements;
             MinMaxAABB[] boxArray;
             bool visible;
-            if (isHitBox) {
-                boxElements = context.hitBoxElements;
-                boxArray = context.frame.hitBoxes;
+            if (isAttackBox) {
+                boxElements = context.attackBoxElements;
+                boxArray = context.frame.attackBoxes;
                 visible = IsBoxElementVisible(context, true);
             } else {
                 boxElements = context.hurtBoxElements;
@@ -693,9 +693,9 @@ public partial class AnimationClipEditor : EditorWindow
         }
     }
 
-    private bool IsBoxElementVisible(ClipContext clipContext, bool isHitBox) {
-        RangeMode mode = isHitBox
-            ? (RangeMode)_showHitBoxToggle.value.GetHashCode()
+    private bool IsBoxElementVisible(ClipContext clipContext, bool isAttackBox) {
+        RangeMode mode = isAttackBox
+            ? (RangeMode)_showAttackBoxToggle.value.GetHashCode()
             : (RangeMode)_showHurtBoxToggle.value.GetHashCode();
         return mode switch
         {
@@ -766,15 +766,15 @@ public partial class AnimationClipEditor : EditorWindow
 
     #region box-elments
 
-    private void BindBoxElements(ClipContext clipContext, bool isHitBox) {
+    private void BindBoxElements(ClipContext clipContext, bool isAttackBox) {
         clipContext.ApplyModifiedProperties();
         MinMaxAABB[] boxArray;
         List<VisualElement> boxElementList;
         VisualElement styleElement;
-        if (isHitBox) {
-            boxArray = clipContext.frame.hitBoxes;
-            boxElementList = clipContext.hitBoxElements;
-            styleElement = _hitBoxStyleElement;
+        if (isAttackBox) {
+            boxArray = clipContext.frame.attackBoxes;
+            boxElementList = clipContext.attackBoxElements;
+            styleElement = _attackBoxStyleElement;
         } else {
             boxArray = clipContext.frame.hurtBoxes;
             boxElementList = clipContext.hurtBoxElements;
@@ -792,10 +792,10 @@ public partial class AnimationClipEditor : EditorWindow
             clipContext.container.Add(element);
         }
         // 绑定有效区间
-        bool visible = IsBoxElementVisible(clipContext, isHitBox);
+        bool visible = IsBoxElementVisible(clipContext, isAttackBox);
         for (int idx = 0; idx < boxArray.Length; idx++) {
             boxElementList[idx].visible = visible;
-            boxElementList[idx].userData = new BoxContext(clipContext, isHitBox, idx);
+            boxElementList[idx].userData = new BoxContext(clipContext, isAttackBox, idx);
         }
         // 解绑多余部分
         for (int idx = boxArray.Length; idx < boxElementList.Count; idx++) {
@@ -969,7 +969,7 @@ public partial class AnimationClipEditor : EditorWindow
         // 在多动画编辑模式下，如果通过点击空白添加攻击盒，容易产生混乱，不知道添加到哪个动画上了
         Vector2 localMousePosition = (evt.mousePosition - _frameAreaElement.worldBound.position) / _frameAreaElement.transform.scale;
         FrameMenuContext menuContext = new FrameMenuContext(localMousePosition);
-        menu.AddItem(new GUIContent("添加攻击盒"), false, OnClickFrameAddHitBox, menuContext);
+        menu.AddItem(new GUIContent("添加攻击盒"), false, OnClickFrameAddAttackBox, menuContext);
         menu.AddItem(new GUIContent("添加受击盒"), false, OnClickFrameAddHurtBox, menuContext);
         menu.ShowAsContext();
     }
@@ -1000,21 +1000,21 @@ public partial class AnimationClipEditor : EditorWindow
         OnClickFrameAddBox(context, false);
     }
 
-    private void OnClickFrameAddHitBox(object obj) {
+    private void OnClickFrameAddAttackBox(object obj) {
         FrameMenuContext context = (FrameMenuContext)obj;
         OnClickFrameAddBox(context, true);
     }
 
-    private void OnClickFrameAddBox(FrameMenuContext context, bool isHitBox) {
+    private void OnClickFrameAddBox(FrameMenuContext context, bool isAttackBox) {
         ClipContext clipContext = GetMasterContext();
         if (clipContext == null || !clipContext.CheckFrameIndex()) return;
         //
         Vector2 offset = context.localMousePosition - pivotPosition;
         offset.y = -1 * offset.y;
         MinMaxAABB aabb = MinMaxAABB.OfCenter(offset, new Vector3(50, 50, 20));
-        clipContext.AddBox(aabb, isHitBox);
+        clipContext.AddBox(aabb, isAttackBox);
         //
-        BindBoxElements(clipContext, isHitBox);
+        BindBoxElements(clipContext, isAttackBox);
         RefreshBoxElements(clipContext);
     }
 
@@ -1108,14 +1108,14 @@ public partial class AnimationClipEditor : EditorWindow
         if (context == null || !context.CheckFrameIndex()) {
             _frameInfoElement.SetEnabled(false);
             _hurtBoxListView.SetEnabled(false);
-            _hitBoxListView.SetEnabled(false);
+            _attackBoxListView.SetEnabled(false);
             return;
         }
         _frameInfoElement.SetEnabled(true);
         _hurtBoxListView.SetEnabled(true);
-        _hitBoxListView.SetEnabled(true);
+        _attackBoxListView.SetEnabled(true);
         _hurtBoxListView.SetFoldout(false);
-        _hitBoxListView.SetFoldout(false);
+        _attackBoxListView.SetFoldout(false);
 
         // BindProperty不支持绑定到自定义字段，手动维护同步
         SpriteAnimationFrame frame = context.frame;
@@ -1137,11 +1137,11 @@ public partial class AnimationClipEditor : EditorWindow
         _hurtBoxListView.bindItem = BindHurtBoxItem;
         _hurtBoxListView.unbindItem = UnbindBoxItem;
 
-        SerializedProperty serializedHitBoxes = context.serializedHitBoxes;
-        _hitBoxListView.BindProperty(serializedHitBoxes);
-        _hitBoxListView.makeItem = MakeBoxItem;
-        _hitBoxListView.bindItem = BindHitBoxItem;
-        _hitBoxListView.unbindItem = UnbindBoxItem;
+        SerializedProperty serializedAttackBoxes = context.serializedAttackBoxes;
+        _attackBoxListView.BindProperty(serializedAttackBoxes);
+        _attackBoxListView.makeItem = MakeBoxItem;
+        _attackBoxListView.bindItem = BindAttackBoxItem;
+        _attackBoxListView.unbindItem = UnbindBoxItem;
     }
 
     private void OnFrameDurationChanged(ChangeEvent<float> evt) {
@@ -1172,7 +1172,7 @@ public partial class AnimationClipEditor : EditorWindow
         RefreshBoxElements(context);
     }
 
-    private void RebindHitBoxElements() {
+    private void RebindAttackBoxElements() {
         ClipContext context = GetMasterContext();
         BindBoxElements(context, true);
         RefreshBoxElements(context);
@@ -1190,15 +1190,15 @@ public partial class AnimationClipEditor : EditorWindow
         BindBoxItem(element, index, false);
     }
 
-    private void BindHitBoxItem(VisualElement element, int index) {
+    private void BindAttackBoxItem(VisualElement element, int index) {
         BindBoxItem(element, index, true);
     }
 
-    private void BindBoxItem(VisualElement element, int index, bool isHitBox) {
+    private void BindBoxItem(VisualElement element, int index, bool isAttackBox) {
         ClipContext context = GetMasterContext();
         if (context == null) return;
         SpriteAnimationFrame frame = context.frame;
-        MinMaxAABB[] boxArray = isHitBox ? frame.hitBoxes : frame.hurtBoxes;
+        MinMaxAABB[] boxArray = isAttackBox ? frame.attackBoxes : frame.hurtBoxes;
         if (index >= boxArray.Length) { // 在删除元素的时候可能触发
             return;
         }
@@ -1231,8 +1231,8 @@ public partial class AnimationClipEditor : EditorWindow
         ClipContext clipContext = context.clipContext;
         ClipContext masterContext = GetMasterContext();
         if (clipContext == masterContext) {
-            if (context.isHitBox) {
-                _hitBoxListView.RefreshItem(context.boxIndex);
+            if (context.isAttackBox) {
+                _attackBoxListView.RefreshItem(context.boxIndex);
             } else {
                 _hurtBoxListView.RefreshItem(context.boxIndex);
             }
@@ -1257,9 +1257,9 @@ public partial class AnimationClipEditor : EditorWindow
 
     private void OnClickBoxItemDelect(object obj) {
         BoxContext context = (BoxContext)obj;
-        context.clipContext.DeleteBox(context.boxIndex, context.isHitBox);
+        context.clipContext.DeleteBox(context.boxIndex, context.isAttackBox);
         //
-        BindBoxElements(context.clipContext, context.isHitBox);
+        BindBoxElements(context.clipContext, context.isAttackBox);
         RefreshBoxElements(context.clipContext);
     }
 

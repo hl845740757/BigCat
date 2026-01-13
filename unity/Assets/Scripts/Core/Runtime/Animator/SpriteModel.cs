@@ -76,8 +76,9 @@ public sealed class SpriteModel : ScriptableObject
     /// 2.动作信息整体来说还是比较轻量级的，因此同步加载的影响较小。
     /// </summary>
     [Tooltip("逻辑动作名到美术资源的映射，前面的覆盖后面的 - 特殊配置放前面")]
-    [ContextMenuItem("删除重复的Motion", "DeleteDuplicateMotions")]
-    [ContextMenuItem("刷新绑定的Motion", "RefreshBindMotions")]
+    [ContextMenuItem("删除无效Motion", "DeleteInvalidMotions")]
+    [ContextMenuItem("删除重复Motion", "DeleteDuplicateMotions")]
+    [ContextMenuItem("刷新绑定Motion", "RefreshBindMotions")]
     public List<SpriteMotionRedir> motionList = new();
     /// <summary>`
     /// 模型动作映射缓存
@@ -127,6 +128,18 @@ public sealed class SpriteModel : ScriptableObject
 
     #region 维护
 
+    private void DeleteInvalidMotions() {
+        int preCount = motionList.Count;
+        for (int idx = 0; idx < motionList.Count; idx++) {
+            if (!motionList[idx].clip) {
+                motionList.RemoveAt(idx--);
+            }
+        }
+        if (preCount != motionList.Count) {
+            EditorUtility.SetDirty(this);
+        }
+    }
+
     private void DeleteDuplicateMotions() {
         HashSet<string> existNames = new();
         for (int idx = 0; idx < motionList.Count; idx++) {
@@ -136,7 +149,9 @@ public sealed class SpriteModel : ScriptableObject
             }
             motionList.RemoveAt(idx--);
         }
-        EditorUtility.SetDirty(this);
+        if (existNames.Count != motionList.Count) {
+            EditorUtility.SetDirty(this);
+        }
     }
 
     private void RefreshBindMotions() {

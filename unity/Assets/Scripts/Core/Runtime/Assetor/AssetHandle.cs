@@ -80,6 +80,7 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     public Type AssetType => _provider.pid.assetType;
 
     public bool IsNullHandle => _handleId == 0;
+    public bool IsErrorHandle => _provider is ErrorProvider;
     public bool IsAssetHandle => _provider is AssetProvider;
     public bool IsBinaryAssetHandle => _provider is BinaryAssetProvider;
     public bool IsSceneAssetHandle => _provider is SceneAssetProvider;

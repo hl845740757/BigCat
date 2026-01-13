@@ -84,7 +84,7 @@ public sealed class SpriteAnimationFrame
     /// 攻击包围盒
     /// </summary>
     [Tooltip("攻击包围盒")]
-    public MinMaxAABB[] hitBoxes = Array.Empty<MinMaxAABB>();
+    public MinMaxAABB[] attackBoxes = Array.Empty<MinMaxAABB>();
 
     public SpriteAnimationFrame() {
         spritePath.type = (int)ObjectPathType.SpriteOfGroup;
