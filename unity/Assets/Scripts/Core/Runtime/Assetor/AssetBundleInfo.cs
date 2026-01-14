@@ -88,10 +88,14 @@ public sealed class AssetBundleInfo
     /// </summary>
     public EAssetIndexes assetIndexes;
     /// <summary>
-    /// 索引深度
+    /// 资产索引深度
     /// </summary>
-    public int indexDepth;
-
+    public int assetIndexDepth;
+    /// <summary>
+    /// bundle内文件总数(主资产+依赖资产)
+    /// </summary>
+    public int assetCount;
+    
     /// <summary>
     /// 所属的资源包（用于运行时反向查询）
     /// </summary>
@@ -134,9 +138,10 @@ public sealed class AssetBundleInfo
     private const int KEY_MAIN_ASSETS_COUNT = 13;
     private const int KEY_INDEXES = 14;
     private const int KEY_INDEX_DEPTH = 15;
-    private const int KEY_BUNDLE_ID = 16;
-    private const int KEY_UPSTREAMS = 17;
-    private const int KEY_UPSTREAMS_COUNT = 18;
+    private const int KEY_ASSET_COUNT = 16;
+    private const int KEY_BUNDLE_ID = 17;
+    private const int KEY_UPSTREAMS = 18;
+    private const int KEY_UPSTREAMS_COUNT = 19;
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
@@ -166,7 +171,8 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.SignedHex);
-        writer.WriteInt32(nameof(indexDepth), indexDepth, NumberStyle.Simple);
+        writer.WriteInt32(nameof(assetIndexDepth), assetIndexDepth, NumberStyle.Simple);
+        writer.WriteInt32(nameof(assetCount), assetCount, NumberStyle.Simple);
         writer.WriteInt32(nameof(bundleId), bundleId, NumberStyle.Simple);
         {
             writer.WriteStartArray(nameof(upstreamBundles), ObjectStyle.Flow);
@@ -243,8 +249,12 @@ public sealed class AssetBundleInfo
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
-                case nameof(indexDepth): {
-                    indexDepth = reader.ReadInt32();
+                case nameof(assetIndexDepth): {
+                    assetIndexDepth = reader.ReadInt32();
+                    break;
+                }
+                case nameof(assetCount): {
+                    assetCount = reader.ReadInt32();
                     break;
                 }
                 case nameof(bundleId): {
@@ -299,7 +309,8 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(KEY_INDEXES, (int)assetIndexes);
-        writer.WriteInt32(KEY_INDEX_DEPTH, indexDepth);
+        writer.WriteInt32(KEY_INDEX_DEPTH, assetIndexDepth);
+        writer.WriteInt32(KEY_ASSET_COUNT, assetCount);
         writer.WriteInt32(KEY_BUNDLE_ID, bundleId);
         writer.WriteInt32(KEY_UPSTREAMS_COUNT, upstreamBundles.Count);
         if (upstreamBundles.Count > 0) {
@@ -388,7 +399,11 @@ public sealed class AssetBundleInfo
                     break;
                 }
                 case KEY_INDEX_DEPTH: {
-                    indexDepth = reader.ReadInt32();
+                    assetIndexDepth = reader.ReadInt32();
+                    break;
+                }
+                case KEY_ASSET_COUNT: {
+                    assetCount = reader.ReadInt32();
                     break;
                 }
                 case KEY_BUNDLE_ID: {

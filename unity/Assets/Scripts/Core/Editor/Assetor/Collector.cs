@@ -91,13 +91,19 @@ public class Collector : LeafTask<Blackboard>
     /// 资产索引深度(三级目录就应该实现唯一)
     /// </summary>
     public int indexDepth;
+    /// <summary>
+    /// 不需要建立索引的资产对象类型
+    ///
+    /// 1.不建立索引的类型也不会写为主资产，即不能代码加载；
+    /// 2.主要解决主资产Bundle包含大量不需要索引的资产导致的Manifest文件膨胀问题，即允许主资产和依赖资产打包到一起。
+    /// </summary>
+    public HashSet<string> noIndexTypes = new HashSet<string>();
 
     /// <summary>
     /// 资产分类器
     ///
-    /// 1.不同文件夹的逻辑不同；
-    /// 2.如果没有设置，则使用Group绑定的分类器；
-    /// 3.如果Group也没有绑定分类器，则根据收集器类型计算（即默认都有效）；
+    /// 1.如果没有设置，则使用Group绑定的分类器；
+    /// 2.如果Group也没有绑定分类器，则根据收集器类型计算（即默认都有效）；
     /// </summary>
     [SerializeReference]
     public IAssetClassifier classifier;
@@ -152,6 +158,9 @@ public class Collector : LeafTask<Blackboard>
                 continue;
             }
             BuildAssetInfo assetInfo = new BuildAssetInfo(assetPath, category);
+            if (!noIndexTypes.Contains(assetInfo.assetType.Name)) {
+                assetInfo.assetIndexes = assetIndexes | uniqueIndexes;
+            }
             collectedAssets.Add(assetInfo);
         }
         // 分组

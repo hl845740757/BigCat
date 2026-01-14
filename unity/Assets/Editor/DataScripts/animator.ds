@@ -35,7 +35,7 @@ struct AnimationRequest {
   string clipPath = 1; // 播放的动画
   EWrapMode wrapMode = 2; // 动画播放模式
   int32 startFrame = 3; // 开始帧
-  int32 endFrame = 4; // 结束帧，-1表示未设值
+  int32 endFrame = 4; // 结束帧
   Vector2 offset = 5; // 动画偏移
   AnimationOptions options = 6; // 播放选项
 }
@@ -72,15 +72,15 @@ class SpriteMotionTask : Task<Blackboard> {
   List<TimeTrigger> triggers = 7; // 触发器
   bool autoComplete = 8; // 动画播放完成是否自动完成，如果为false，则依赖事件完成
 }
+inst SpriteMotionTask{
+  autoComplete: true
+}
 // 多部件运动分支
 class SpriteMotionBranch : BranchTask<Blackboard> {
   //@PopField{ value: 0, displayName: WaitFirst}
   //@PopField{ value: 1, displayName: WaitLast}
   //@PopField{ value: 2, displayName: WaitAll}
   int32 joinMode = 1; // 等待模式
-}
-inst SpriteMotionTask{
-  autoComplete: true
 }
 
 // 导入SearchWindow

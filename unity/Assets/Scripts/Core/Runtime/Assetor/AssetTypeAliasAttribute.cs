@@ -21,15 +21,22 @@ using System;
 namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
-/// 用于建立资产索引
+/// 资产对象类型别名（用于建立资产索引）
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class AssetTypeAliasAttribute : Attribute
 {
     public readonly string alias;
+    public readonly bool replace;
 
-    public AssetTypeAliasAttribute(string alias) {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="alias">类型别名</param>
+    /// <param name="replace">是否替换模式</param>
+    public AssetTypeAliasAttribute(string alias, bool replace = false) {
         this.alias = alias ?? throw new ArgumentNullException(nameof(alias));
+        this.replace = replace;
     }
 }
 }

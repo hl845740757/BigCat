@@ -124,12 +124,13 @@ public sealed class AssetQuery
                 foreach (string address in fileInfo.addresses) {
                     assetIndex2AssetDic[address] = fileInfo;
                 }
-                if (bundleInfo.assetIndexes == EAssetIndexes.None) {
+                EAssetIndexes assetIndexes = fileInfo.assetIndexes;
+                if (assetIndexes == EAssetIndexes.None) {
                     continue;
                 }
                 string fileName = GetSubAssetPath(assetPath, 0);
                 // 文件名索引：剔除无意义name索引，主要针对图片资源：1.png
-                if ((bundleInfo.assetIndexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
+                if ((assetIndexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
                     assetIndex2AssetDic[fileName] = fileInfo;
                     //
                     if (supportExtensions2.Contains(extension)) {
@@ -138,7 +139,7 @@ public sealed class AssetQuery
                     }
                 }
                 // 文件夹索引：允许图片资源同文件夹建立索引：sm_8001/1.png
-                if ((bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileName) != 0) {
+                if ((assetIndexes & EAssetIndexes.FolderAndFileName) != 0) {
                     string subAssetPath = GetSubAssetPath(assetPath, 1);
                     assetIndex2AssetDic[subAssetPath] = fileInfo;
                     //
@@ -148,8 +149,8 @@ public sealed class AssetQuery
                     }
                 }
                 // 自定义深度索引：需要唯一性（打包时）
-                if ((bundleInfo.assetIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
-                    string subAssetPath = GetSubAssetPath(assetPath, bundleInfo.indexDepth);
+                if ((assetIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
+                    string subAssetPath = GetSubAssetPath(assetPath, bundleInfo.assetIndexDepth);
                     assetIndex2AssetDic[subAssetPath] = fileInfo;
                     //
                     if (supportExtensions2.Contains(extension)) {
@@ -158,7 +159,7 @@ public sealed class AssetQuery
                     }
                 }
                 // 相对收集器的路径索引：需要唯一性（打包时）
-                if ((bundleInfo.assetIndexes & EAssetIndexes.RelativeToCollector) != 0) {
+                if ((assetIndexes & EAssetIndexes.RelativeToCollector) != 0) {
                     string relativePath = fileInfo.assetPath.Substring(bundleInfo.collectPathLength + 1);
                     assetIndex2AssetDic[relativePath] = fileInfo;
                     //

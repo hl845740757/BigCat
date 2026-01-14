@@ -73,9 +73,11 @@ class Collector : Task<Blackboard> {
   EAssetIndexes assetIndexes = 8; // 普通索引
   EAssetIndexes uniqueIndexes = 9; // 唯一索引
   int32 indexDepth = 10; // 索引深度
+  // @Candidates[AudioClip, Sprite, Texture]
+  HashSet<string> noIndexTypes = 11; // 不需要建立索引的资产对象类型
   
   // @PortField{side: right}
-  IAssetClassifier classifier = 11;
+  IAssetClassifier classifier = 12;
 }
 inst Collector {
   recursive: true,

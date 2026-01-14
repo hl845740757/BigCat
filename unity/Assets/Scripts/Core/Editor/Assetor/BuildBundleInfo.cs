@@ -148,7 +148,8 @@ public sealed class BuildBundleInfo
 
             bundleTags = new List<string>(bundleTags),
             assetIndexes = assetIndexes | uniqueIndexes,
-            indexDepth = indexDepth,
+            assetIndexDepth = indexDepth,
+            assetCount = assetList.Count,
             bundleId = bundleId,
             upstreamBundles = new List<int>(upstreamBundles),
         };
@@ -156,6 +157,9 @@ public sealed class BuildBundleInfo
             || collectorType == ECollectorType.RawFile) {
             bundleInfo.mainAssets.Capacity = assetList.Count;
             foreach (BuildAssetInfo assetInfo in assetList) {
+                if (assetInfo.assetIndexes == 0 && bundleInfo.assetIndexes != 0) {
+                    continue; // 无需索引(代码加载)的类型
+                }
                 bundleInfo.mainAssets.Add(assetInfo.Build());
             }
         }

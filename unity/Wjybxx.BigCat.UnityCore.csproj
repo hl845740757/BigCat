@@ -65,7 +65,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\TimeUnit.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Util\Easing.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelResolver.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ProviderId.cs" />

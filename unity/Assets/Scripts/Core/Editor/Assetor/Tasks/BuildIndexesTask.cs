@@ -67,6 +67,9 @@ public class BuildIndexesTask : LeafTask<Blackboard>
             foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
                 string fileName = GetSubAssetPath(assetInfo.assetPath, 0);
                 string extension = UnityEditorUtil.GetExtension(fileName);
+                if ((indexes = assetInfo.assetIndexes) == 0) {
+                    continue;
+                }
                 // 单纯的数字文件名不参与索引
                 if ((indexes & EAssetIndexes.FileName) != 0 && !IsNumber(fileName)) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FileName) != 0;
@@ -99,7 +102,7 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                         AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, unique);
                     }
                 }
-                // 相对Collector的路径，也强制检查唯一性
+                // 相对Collector的路径
                 if ((indexes & EAssetIndexes.RelativeToCollector) != 0) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.RelativeToCollector) != 0;
                     string subAssetPath = assetInfo.assetPath.Substring(bundleInfo.collectPath.Length + 1);
@@ -113,13 +116,15 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                 // 资产类型名+文件名索引
                 if ((indexes & EAssetIndexes.TypeAndFileName) != 0) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.TypeAndFileName) != 0;
-                    string address = assetInfo.assetType.Name + ":" + RemoveExtension(fileName, extension);
-                    assetInfo.addresses.Add(address);
-                    AddIndex(index2AssetDic, address, assetInfo, unique);
-                    //
+                    // 允许替换原始类名
                     AssetTypeAliasAttribute aliasAttribute = assetInfo.assetType.GetCustomAttribute<AssetTypeAliasAttribute>();
+                    if (aliasAttribute == null || !aliasAttribute.replace) {
+                        string address = assetInfo.assetType.Name + ":" + RemoveExtension(fileName, extension);
+                        assetInfo.addresses.Add(address);
+                        AddIndex(index2AssetDic, address, assetInfo, unique);
+                    }
                     if (aliasAttribute != null) {
-                        address = aliasAttribute.alias + ":" + RemoveExtension(fileName, extension);
+                        string address = aliasAttribute.alias + ":" + RemoveExtension(fileName, extension);
                         assetInfo.addresses.Add(address);
                         AddIndex(index2AssetDic, address, assetInfo, unique);
                     }
@@ -128,13 +133,15 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                 if ((indexes & EAssetIndexes.TypeAndFolderName) != 0) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.TypeAndFolderName) != 0;
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, 1);
-                    string address = assetInfo.assetType.Name + ":" + RemoveExtension(subAssetPath, extension);
-                    assetInfo.addresses.Add(address);
-                    AddIndex(index2AssetDic, address, assetInfo, unique);
-                    //
+                    // 允许替换原始类名
                     AssetTypeAliasAttribute aliasAttribute = assetInfo.assetType.GetCustomAttribute<AssetTypeAliasAttribute>();
+                    if (aliasAttribute == null || !aliasAttribute.replace) {
+                        string address = assetInfo.assetType.Name + ":" + RemoveExtension(subAssetPath, extension);
+                        assetInfo.addresses.Add(address);
+                        AddIndex(index2AssetDic, address, assetInfo, unique);
+                    }
                     if (aliasAttribute != null) {
-                        address = aliasAttribute.alias + ":" + RemoveExtension(subAssetPath, extension);
+                        string address = aliasAttribute.alias + ":" + RemoveExtension(subAssetPath, extension);
                         assetInfo.addresses.Add(address);
                         AddIndex(index2AssetDic, address, assetInfo, unique);
                     }

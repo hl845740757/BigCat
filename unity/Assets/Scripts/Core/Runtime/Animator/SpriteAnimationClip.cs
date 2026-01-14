@@ -28,7 +28,7 @@ namespace Wjybxx.BigCat.Animator
 /// <summary>
 /// 序列帧动画数据抽象
 /// </summary>
-[AssetTypeAlias("Anim2D")]
+[AssetTypeAlias("SpriteAnim", true)]
 [CreateAssetMenu(menuName = "BigCat/SpriteAnimationClip", fileName = "NewAnimationClip")]
 public sealed class SpriteAnimationClip : ScriptableObject
 {

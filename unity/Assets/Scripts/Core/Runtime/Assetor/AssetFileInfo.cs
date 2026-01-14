@@ -36,6 +36,10 @@ public sealed class AssetFileInfo
     /// </summary>
     public string assetPath;
     /// <summary>
+    /// 资产索引方式
+    /// </summary>
+    public EAssetIndexes assetIndexes;
+    /// <summary>
     /// 自定义索引（仅支持1个自定义索引）
     /// </summary>
     public string[] addresses = Array.Empty<string>();
@@ -53,14 +57,16 @@ public sealed class AssetFileInfo
     #region 序列化
 
     private const int KEY_ASSET_PATH = 1;
-    private const int KEY_ADDRESSES = 2;
-    private const int KEY_ADDRESSES_COUNT = 3;
-    private const int KEY_TAGS = 4;
-    private const int KEY_TAGS_COUNT = 5;
+    private const int KEY_ASSET_INDEXES = 2;
+    private const int KEY_ADDRESSES = 3;
+    private const int KEY_ADDRESSES_COUNT = 4;
+    private const int KEY_TAGS = 5;
+    private const int KEY_TAGS_COUNT = 6;
 
     public void Serialize(IDsonWriter<string> writer) {
         writer.WriteStartObject();
         writer.WriteString(nameof(assetPath), assetPath);
+        writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.Simple);
         // 文本格式不写入Count，且空数组也写入，提高可读性
         WriteStringArray(writer, nameof(addresses), addresses);
         WriteStringArray(writer, nameof(assetTags), assetTags);
@@ -74,6 +80,10 @@ public sealed class AssetFileInfo
             switch (key) {
                 case nameof(assetPath): {
                     assetPath = reader.ReadString();
+                    break;
+                }
+                case nameof(assetIndexes): {
+                    assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
                 case nameof(addresses): {
@@ -96,6 +106,7 @@ public sealed class AssetFileInfo
     public void Serialize(IDsonWriter<int> writer) {
         writer.WriteStartObject();
         writer.WriteString(KEY_ASSET_PATH, assetPath);
+        writer.WriteInt32(KEY_ASSET_INDEXES, (int)assetIndexes);
         // 将Count写在对象外在二进制下是最佳方案，可减少嵌套(Header)
         writer.WriteInt32(KEY_ADDRESSES_COUNT, addresses.Length);
         if (addresses.Length > 0) {
@@ -115,6 +126,10 @@ public sealed class AssetFileInfo
             switch (name) {
                 case KEY_ASSET_PATH: {
                     assetPath = reader.ReadString();
+                    break;
+                }
+                case KEY_ASSET_INDEXES: {
+                    assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
                 case KEY_ADDRESSES_COUNT: {
