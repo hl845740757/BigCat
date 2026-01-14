@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
 
 #if UNITY_EDITOR
 using UnityEditor;

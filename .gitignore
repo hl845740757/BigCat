@@ -478,13 +478,11 @@ unity/Assets/Editor/Resources/
 unity/Assets/Editor/DataScripts/*.dson
 unity/Assets/Editor/DataScripts/*.meta
 
-unity/Assets/GameRes/Fonts
-unity/Assets/GameRes/Sprites
-
-# dnf分支不屏蔽的资源
-# unity/Assets/Editor/Dnf
-# unity/Assets/GameRes/Models
-# unity/Assets/GameRes/Animations
+unity/Assets/GameRes/
+#unity/Assets/GameRes/Fonts
+#unity/Assets/GameRes/Sprites
+#unity/Assets/GameRes/Models
+#unity/Assets/GameRes/Animations
 
 # dnf分支需要屏蔽的工具和资源
 unity/Dnf.Extractor.csproj

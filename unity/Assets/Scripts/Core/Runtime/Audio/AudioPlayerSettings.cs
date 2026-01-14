@@ -16,27 +16,22 @@
 
 #endregion
 
-using UnityEditor;
+using System;
 using UnityEngine;
-using Wjybxx.BigCat.Core;
-using Wjybxx.Dson.Codec.Attributes;
 
-namespace Wjybxx.BigCat.Editor.Assetor.Classifiers
+namespace Wjybxx.BigCat.Audio
 {
 /// <summary>
-/// 将<see cref="SpriteGroup"/>定义为主资源，图片定义为依赖资源。
+/// 音频播放器设置
 /// </summary>
-[DsonSerializable]
-public class SpriteClassifier : IAssetClassifier
+[Serializable]
+public sealed class AudioPlayerSettings
 {
-    public EAssetCategory GetCategory(string assetPath) {
-        Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-        return asset switch
-        {
-            SpriteGroup => EAssetCategory.MainAsset,
-            Texture or Sprite => EAssetCategory.DependAsset,
-            _ => EAssetCategory.None
-        };
-    }
+    [NonSerialized]
+    public AudioPlayerSettings parent;
+    [Range(0, 1)]
+    public float volume = 1f; // 音量
+    public float pitch = 1f; // 音高
+    public bool mute; // 静音
 }
 }

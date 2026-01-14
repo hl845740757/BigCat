@@ -30,14 +30,11 @@ namespace Wjybxx.BigCat.Assetor
 /// <summary>
 /// 任务调度器
 ///
-/// 注：
-/// 1.虽然目前兼容<see cref="ResourceTask"/>和普通Task，但尽量都使用<see cref="ResourceTask"/>。
-/// 2.不建议复用该对象，资源任务有复杂的状态，很难保证Reset的正确性；当需要清理数据时，停止当前调度器，创建新的调度器即可。
+/// 注：虽然目前兼容<see cref="ResourceTask"/>和普通Task，但尽量都使用<see cref="ResourceTask"/>。
 /// </summary>
 public sealed class TaskScheduler : BranchTask<Blackboard>
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger(typeof(TaskScheduler));
-    public static TaskScheduler Current { get; set; } // 注：尽量不使用
     //
     private readonly Stopwatch _stopwatch = new Stopwatch();
     private readonly List<ResourceTask> _delayedNotifyTasks = new List<ResourceTask>();
@@ -69,20 +66,6 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
         get => _stopwatch.ElapsedMilliseconds;
     }
 
-    /// <summary>
-    /// 重置数据
-    /// </summary>
-    public override void ResetForRestart() {
-        // 子节点都不重用
-        children.Clear();
-        base.ResetForRestart();
-        //
-        _stopwatch.Reset();
-        _delayedNotifyTasks.Clear();
-        _frameTime = 0;
-        _needSort = false;
-    }
-
     protected override void Enter(int reentryId) {
         _stopwatch.Restart();
     }
@@ -110,8 +93,8 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
                 }
             }
             catch (Exception ex) {
-                logger.Warn(ex, "task.Execute caught exception");
-                child.SetFailed(TaskStatus.ERROR); // 强制失败
+                logger.LogWarn(ex, "task.Execute caught exception");
+                child.SetFailed(); // 强制失败
             }
             if (child.IsCompleted) {
                 children.RemoveAt(index--);
@@ -218,8 +201,8 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
             if (ex is BlockingOperationException || ex is TimeoutException) {
                 throw;
             }
-            logger.Warn(ex, "task.Execute caught exception");
-            task.SetFailed(TaskStatus.ERROR);
+            logger.LogWarn(ex, "task.Execute caught exception");
+            task.SetFailed();
         }
         finally {
             blackboard.isWaitForCompletion = false;

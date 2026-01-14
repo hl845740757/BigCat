@@ -201,7 +201,9 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// <summary>
     /// 注册加载完成回调
     ///
-    /// 注：即使任务已完成，回调仍将被延迟到下一帧执行，即该形式的回调总是异步执行。
+    /// 注：
+    /// 1.即使任务已完成，回调仍将被延迟到下一帧执行，即该形式的回调总是异步执行。
+    /// 2.当Handle引用计数为0时，Handle关联的回调将被丢弃。
     /// </summary>
     public event Action<AssetHandle> Completed {
         add => _provider.RegisterCallback(value, this);

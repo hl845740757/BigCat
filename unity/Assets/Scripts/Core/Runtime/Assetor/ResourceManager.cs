@@ -21,8 +21,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using UnityEngine;
+using Wjybxx.BTree;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Logger;
 using Wjybxx.Commons.Pool;
+using ILogger = Wjybxx.Commons.Logger.ILogger;
 using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.Assetor
@@ -32,13 +35,12 @@ namespace Wjybxx.BigCat.Assetor
 ///
 /// 注：
 /// 1.该管理器是<see cref="IPackageManager"/>和<see cref="IBundleManager"/>的集成门面。
-/// 2.由于游戏的启动逻辑和停止逻辑可能不同，因此启动和停止逻辑由用户负责，但需要在准备就绪后调用<see cref="BuildQuery"/>。
+/// 2.该管理器也为资源加载相关组件提供Update支持<see cref="TaskScheduler"/>。
+/// 3.由于游戏的启动逻辑和停止逻辑可能不同，因此启动和停止逻辑由用户负责，但需要在准备就绪后调用<see cref="BuildQuery"/>。
 /// </summary>
 public class ResourceManager
 {
-    /// <summary>
-    /// 客户端总喜欢静态变量...
-    /// </summary>
+    private static readonly ILogger logger = LoggerFactory.GetLogger<ResourceManager>();
     public static ResourceManager Inst { get; set; }
 
     private readonly TaskScheduler _scheduler;
@@ -55,10 +57,14 @@ public class ResourceManager
     private long _bundleMaxIdleTime = 10 * 1000;
     private long _lastCheckTime;
 
-    public ResourceManager(TaskScheduler scheduler) {
-        _scheduler = scheduler;
-        _lastCheckTime = scheduler.FrameTime;
-        scheduler.AddChild(new Updater(this) { Name = "ResourceManager.Updater" });
+    public ResourceManager() {
+        _scheduler = new TaskScheduler();
+        TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
+        {
+            RootTask = _scheduler,
+            Blackboard = new Blackboard()
+        };
+        taskEntry.Update(); // 启动
     }
 
     /// <summary>
@@ -141,23 +147,11 @@ public class ResourceManager
 
     #region update
 
-    private class Updater : ResourceTask
-    {
-        private readonly ResourceManager _resourceMgr;
-
-        public Updater(ResourceManager resourceMgr) {
-            _resourceMgr = resourceMgr;
-        }
-
-        protected override void Execute() {
-            _resourceMgr.Update();
-        }
-    }
-
     /// <summary>
     /// 心跳方法
     /// </summary>
-    private void Update() {
+    public void Update() {
+        _scheduler.Template_Execute(false); // false不影响正确性
         // 自动释放资源 - 每秒1次即可，避免不必要的开销
         long frameTime = _scheduler.FrameTime;
         if (frameTime - _lastCheckTime >= 1000) {
@@ -260,6 +254,7 @@ public class ResourceManager
         Provider provider;
         if (assetInfo == null) {
             provider = GetErrorProvider(assetType, loadMethod);
+            logger.LogWarn($"ObjectAsset not found, location: {location}, assetType: {assetType.Name}");
         } else {
             ProviderId providerId = new ProviderId(assetInfo.assetPath, assetType, loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
@@ -289,6 +284,7 @@ public class ResourceManager
         Provider provider;
         if (assetInfo == null) {
             provider = GetErrorProvider(typeof(BinaryAsset), loadMethod);
+            logger.LogWarn($"BinaryAsset not found, location: {location}");
         } else {
             ProviderId providerId = new ProviderId(assetInfo.assetPath, typeof(BinaryAsset), loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
@@ -414,6 +410,7 @@ public class ResourceManager
             }
             if (force || IsIdleTimeout(provider)) {
                 enumerator.Remove();
+                _providers.Remove(provider.pid);
                 removeList.Add(provider);
             }
         }
@@ -460,7 +457,9 @@ public class ResourceManager
         if (string.IsNullOrEmpty(location)) {
             return null;
         }
-        if (!Query.assetIndex2AssetDic.TryGetValue(location, out AssetFileInfo assetInfo) && !string.IsNullOrEmpty(assetType)) {
+        if (!Query.assetIndex2AssetDic.TryGetValue(location, out AssetFileInfo assetInfo)
+            && !string.IsNullOrEmpty(assetType)
+            && location.LastIndexOf('/') < 0) {
             // Fallback - 尝试按照资产类型索引查询
             location = location.EndsWith(".asset")
                 ? $"{assetType}:{location.Substring(0, location.Length - 6)}"

@@ -134,7 +134,8 @@ public class DataEditor : EditorWindow
         titleField.RegisterValueChangedCallback(OnTitleFieldChanged);
         positionField.RegisterValueChangedCallback(OnPositionFiledChanged);
         enablePortToggle.RegisterValueChangedCallback(OnEnablePortChanged);
-        //
+        // 如果不显式启用focusable，则在右侧inspector栏按键无效；总以为保存成功了，结果没保存...
+        root.focusable = true;
         root.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
         toolbar.Q<Button>("open-file").RegisterCallback<ClickEvent>(OnClickOpenFile);
         toolbar.Q<Button>("close-file").RegisterCallback<ClickEvent>(OnClickCloseFile);

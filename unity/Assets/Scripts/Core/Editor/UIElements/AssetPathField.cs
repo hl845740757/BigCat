@@ -48,9 +48,13 @@ public class AssetPathField : TextField, IPrefixLabel
             return;
         }
         if (evt.button == 1) {
-            string tempPath = isFolder
-                ? UnityEditorUtil.OpenFolderPanel("选择", value)
-                : UnityEditorUtil.OpenFilePanel("选择", Path.GetDirectoryName(value));
+            string tempPath;
+            if (isFolder) {
+                tempPath = UnityEditorUtil.OpenFolderPanel("选择", value);
+            } else {
+                string directory = value.LastIndexOf('/') > 0 ? Path.GetDirectoryName(value) : value;
+                tempPath = UnityEditorUtil.OpenFilePanel("选择", directory);
+            }
             if (!string.IsNullOrEmpty(tempPath)) {
                 value = UnityEditorUtil.ConvertToAssetPath(tempPath);
             }

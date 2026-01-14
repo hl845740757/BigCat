@@ -4,7 +4,6 @@
 // 行为树基类
 class Task<T> {
   string name = 1;
-  // @Editor{initNull: true}
   // @PortField{side: left}
   Task<T> guard = 2; // 条件节点
   int32 flags = 3; // 自定义特征值
@@ -15,7 +14,6 @@ class LeafTask<T> : Task<T> {
 }
 // 装饰器基类
 class Decorator<T> : Task<T> {
-  // @Editor{initNull: true}
   // @PortField{side: bottom}
   Task<T> child = 1;
 }
@@ -74,9 +72,11 @@ class UntilFail<T> : Decorator<T> {
 }
 // 直到指定条件达成
 class UntilCond<T> : Decorator<T> {
-  // @Editor{initNull: true}
   // @PortField{}
   Task<T> cond = 1;
+}
+// 只执行一次，除非手动调用Reset
+class OnlyOnce<T> : Decorator<T> {
 }
 
 // ------------------------------------------
@@ -218,6 +218,7 @@ class BTreeSearchTreeGroupEntry0<T> {
   UntilSuccess<T> _f42 = 42;
   UntilFail<T> _f43 = 43;
   UntilCond<T> _f44 = 44;
+  OnlyOnce<T> _f45 = 45;
 }
 // 通过子类直接实例化所有泛型
 // @SearchTreeGroupEntry {}

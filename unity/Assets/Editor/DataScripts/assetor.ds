@@ -26,6 +26,7 @@ enum EAssetIndexes {
     FolderAndFileNamePlus = 0x04; // 文件夹+文件名索引，支持指定深度
     RelativeToCollector = 0x08; // 相对收集器的路径
     TypeAndFileName = 0x10; // 类型名+文件名（无后缀）
+    TypeAndFolderName = 0x20; // 类型名+文件夹+文件名（无后缀）
 }
 
 // 构建平台
@@ -155,7 +156,7 @@ class BuildIndexesTask : Task<Blackboard> {
 inst BuildIndexesTask {
   reportLog: true,
   reportPath: "Assets/Editor/IndexReport.log",
-  supportExtensions: [fbx, unity, prefab, png, jpg, tif, ogg, wav, mp3, asset]
+  supportExtensions: [fbx, prefab, asset, png, jpg, tif, ogg, wav, mp3]
 }
 
 // 编辑器下的构建任务
@@ -168,6 +169,9 @@ class EditorBuildTask : Task<Blackboard> {
 // 图片分类器
 class SpriteClassifier {
 }
+// 音频分类器
+class AudioClassifier {
+}
 
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
@@ -178,7 +182,9 @@ class SkillGroupEntry : BTreeSearchTreeGroupEntry0<Blackboard> {
   BuildPipelineTask _f4 = 4;
   PackageBuilder _f5 = 5; //@Editor{nodeFeatures: "Executable | EnablePort" }
   EditorBuildTask _f6 = 6;
-  SpriteClassifier _f7 = 7;
-  BuildDependencyTask _f8 = 8;
-  BuildIndexesTask _f9 = 9;
+  BuildDependencyTask _f7 = 7;
+  BuildIndexesTask _f8 = 8;
+
+  SpriteClassifier _f11 = 11;
+  AudioClassifier _f12 = 12;
 }

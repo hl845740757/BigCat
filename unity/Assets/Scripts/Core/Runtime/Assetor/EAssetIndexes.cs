@@ -57,9 +57,19 @@ public enum EAssetIndexes
     /// 资产对象类型名 + 文件名(无后缀) 
     ///
     /// <code>SpriteGroup:sm_body8001</code>
+    /// 0.该索引主要解决自定义资产文件只能使用asset扩展名导致的索引冲突问题。
     /// 1.开启该索引时，应当避免再开启文件名索引。
     /// 2.支持<see cref="AssetTypeAliasAttribute"/>指定额外别名。
     /// </summary>
     TypeAndFileName = 0x10,
+    /// <summary>
+    /// 资产对象类型名 + 文件夹 + 文件名(无后缀)
+    /// 
+    /// <code>AudioClip:Music/Login</code>
+    /// 0.该索引主要解决具有多扩展名类型资产的索引问题。
+    /// 1.开启该索引时，应当避免再开启文件夹索引。
+    /// 2.支持<see cref="AssetTypeAliasAttribute"/>指定额外别名。
+    /// </summary>
+    TypeAndFolderName = 0x20,
 }
 }

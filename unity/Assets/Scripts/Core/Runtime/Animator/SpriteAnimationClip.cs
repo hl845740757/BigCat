@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Wjybxx.BigCat.Assetor;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Animator
@@ -27,6 +28,7 @@ namespace Wjybxx.BigCat.Animator
 /// <summary>
 /// 序列帧动画数据抽象
 /// </summary>
+[AssetTypeAlias("Anim2D")]
 [CreateAssetMenu(menuName = "BigCat/SpriteAnimationClip", fileName = "NewAnimationClip")]
 public sealed class SpriteAnimationClip : ScriptableObject
 {

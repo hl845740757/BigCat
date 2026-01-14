@@ -290,7 +290,6 @@ public sealed class VariableCfg
         List<DSEnumValue> enumValues = element.GetEnumValues();
         cfg.popNames = new List<string>(enumValues.Count);
         cfg.intPopValues = new List<int>(enumValues.Count);
-        int maxNumber = 0;
         for (int index = 0; index < enumValues.Count; index++) {
             DSEnumValue enumValue = enumValues[index];
             cfg.intPopValues.Add(enumValue.Number);
@@ -301,19 +300,22 @@ public sealed class VariableCfg
                 displayName = Annotation.GetString(annotation.AsObject(), DSAnnotations.KEY_DISPLAY_NAME, displayName);
             }
             cfg.popNames.Add(displayName);
-            maxNumber = Math.Max(maxNumber, enumValue.Number);
         }
         // 解析Mask信息(额外缓存)
-        int maxLen = Math.Min(32, maxNumber + 1);
-        cfg.maskNames = new List<string>(maxLen);
-        for (int index = 0; index < maxLen; index++) {
-            DSEnumValue enumValue = element.GetEnumValue(index);
-            if (enumValue == null) {
-                continue;
+        if (DSUtil.IsFlagEnum(element)) {
+            int maxIndex = -1;
+            string[] maskNames = new string[32];
+            foreach (DSEnumValue enumValue in element.GetEnumValues()) {
+                if (!MathCommon.IsPowerOfTwo(enumValue.Number)) continue;
+                int bitIndex = MathCommon.NumberOfTrailingZeros(enumValue.Number);
+                maskNames[bitIndex] = enumValue.SimpleName;
+                maxIndex = Math.Max(maxIndex, bitIndex);
             }
-            cfg.maskNames.Add(enumValue.SimpleName);
+            cfg.maskNames = new List<string>(maxIndex + 1);
+            for (int index = 0; index <= maxIndex; index++) {
+                cfg.maskNames.Add(maskNames[index] ?? index.ToString());
+            }
         }
-        cfg.maskNames.TrimExcess();
     }
 
     private static void ParsePopInfo(List<Annotation> annotations, VariableCfg cfg, DSField element) {

@@ -1,0 +1,94 @@
+﻿// 角色动画
+import public "common.ds";
+import public "btree.ds";
+
+// 黑板类型，避免导出给其它ds文件
+// @Namespace{ cs: "Wjybxx.BigCat.Util", nonGenerate: true }
+class Blackboard  {
+}
+
+// 触发器行为类型
+enum ActionType {
+  Custom = 0; // 自定义（脚本）
+  SetSuccess = 1; // 设置任务完成
+  SetFailure = 2; // 设置任务失败
+  SetCancelled = 3; // 设置为被取消
+}
+// 时间触发器
+class TimeTrigger {
+  bool enabled = 1; // 是否启用
+  float enterTime = 2; // 启动时间
+  float period = 3; // 触发间隔，大于0表示周期触发，否则安静等待持续时间结束
+  float duration = 4; // 持续时间，大于0表示不立即停止
+  
+  ActionType actionType = 5; // 行为类型
+  // @PortField{side: bottom}
+  Object actionTask = 6; // 对象参数
+}
+inst TimeTrigger {
+  enabled: true
+}
+
+// 动画播放请求
+struct AnimationRequest {
+  //@Editor{displayType: AssetPath}
+  string clipPath = 1; // 播放的动画
+  EWrapMode wrapMode = 2; // 动画播放模式
+  int32 startFrame = 3; // 开始帧
+  int32 endFrame = 4; // 结束帧，-1表示未设值
+  Vector2 offset = 5; // 动画偏移
+  AnimationOptions options = 6; // 播放选项
+}
+// 动画环绕模式
+enum EWrapMode {
+  StopAtEnd = 0;
+  Loop = 1;
+  PingPong = 2;
+  Clamp = 3;
+}
+// 动画播放选项
+// @Options{isFlags: true}
+enum AnimationOptions {
+  None = 0;
+  EnableOffset = 0x01; // 启用偏移
+  EnableRange = 0x02; // 启用区间
+  EnableShadow = 0x04; // 启用阴影
+  EnableSortOrder = 0x08; // 启用动画层级
+}
+
+// 部件运动任务 -- 继承Task以屏蔽children属性
+class SpriteMotionTask : Task<Blackboard> {
+  int32 branchId = 1; // 分支id
+  // @Candidates["body", "weapon"]
+  string partId = 2; // 要控制的部件名
+  // @MaskField[ "0", "body", "weapon", "3", "4", "5", "6", "7", "8", "9" ]
+  int32 partGroups = 3; // 部件组，掩码
+  string motionName = 4; // 部件动画
+  
+  AnimationRequest baseAnim = 5; // 基础动画(特效)
+  List<AnimationRequest> subAnims = 6; // 子动画
+  
+  //@PortField{side: bottom, distinct: true}
+  List<TimeTrigger> triggers = 7; // 触发器
+  bool autoComplete = 8; // 动画播放完成是否自动完成，如果为false，则依赖事件完成
+}
+// 多部件运动分支
+class SpriteMotionBranch : BranchTask<Blackboard> {
+  //@PopField{ value: 0, displayName: WaitFirst}
+  //@PopField{ value: 1, displayName: WaitLast}
+  //@PopField{ value: 2, displayName: WaitAll}
+  int32 joinMode = 1; // 等待模式
+}
+inst SpriteMotionTask{
+  autoComplete: true
+}
+
+// 导入SearchWindow
+// @SearchTreeGroupEntry {}
+class AnimatorGroupEntry {
+  TimeTrigger _f1 = 1;
+  AnimationRequest _f2 = 2;
+  
+  SpriteMotionTask _f11 = 11;
+  SpriteMotionBranch _f12 = 12;
+}

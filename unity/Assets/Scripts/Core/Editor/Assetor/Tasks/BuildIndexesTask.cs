@@ -88,7 +88,7 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                         AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, unique);
                     }
                 }
-                // 多层级目录索引强制检查唯一性
+                // 多层级目录索引
                 if ((indexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0;
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, bundleInfo.indexDepth);
@@ -120,6 +120,21 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                     AssetTypeAliasAttribute aliasAttribute = assetInfo.assetType.GetCustomAttribute<AssetTypeAliasAttribute>();
                     if (aliasAttribute != null) {
                         address = aliasAttribute.alias + ":" + RemoveExtension(fileName, extension);
+                        assetInfo.addresses.Add(address);
+                        AddIndex(index2AssetDic, address, assetInfo, unique);
+                    }
+                }
+                // 资产类型名+文件夹+文件名索引(AudioClip:Music/Login)
+                if ((indexes & EAssetIndexes.TypeAndFolderName) != 0) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.TypeAndFolderName) != 0;
+                    string subAssetPath = GetSubAssetPath(assetInfo.assetPath, 1);
+                    string address = assetInfo.assetType.Name + ":" + RemoveExtension(subAssetPath, extension);
+                    assetInfo.addresses.Add(address);
+                    AddIndex(index2AssetDic, address, assetInfo, unique);
+                    //
+                    AssetTypeAliasAttribute aliasAttribute = assetInfo.assetType.GetCustomAttribute<AssetTypeAliasAttribute>();
+                    if (aliasAttribute != null) {
+                        address = aliasAttribute.alias + ":" + RemoveExtension(subAssetPath, extension);
                         assetInfo.addresses.Add(address);
                         AddIndex(index2AssetDic, address, assetInfo, unique);
                     }

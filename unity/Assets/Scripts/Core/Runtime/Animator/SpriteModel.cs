@@ -76,7 +76,6 @@ public sealed class SpriteModel : ScriptableObject
     /// 2.动作信息整体来说还是比较轻量级的，因此同步加载的影响较小。
     /// </summary>
     [Tooltip("逻辑动作名到美术资源的映射，前面的覆盖后面的 - 特殊配置放前面")]
-    [ContextMenuItem("删除无效Motion", "DeleteInvalidMotions")]
     [ContextMenuItem("删除重复Motion", "DeleteDuplicateMotions")]
     [ContextMenuItem("刷新绑定Motion", "RefreshBindMotions")]
     public List<SpriteMotionRedir> motionList = new();
@@ -128,18 +127,6 @@ public sealed class SpriteModel : ScriptableObject
 
     #region 维护
 
-    private void DeleteInvalidMotions() {
-        int preCount = motionList.Count;
-        for (int idx = 0; idx < motionList.Count; idx++) {
-            if (!motionList[idx].clip) {
-                motionList.RemoveAt(idx--);
-            }
-        }
-        if (preCount != motionList.Count) {
-            EditorUtility.SetDirty(this);
-        }
-    }
-
     private void DeleteDuplicateMotions() {
         HashSet<string> existNames = new();
         for (int idx = 0; idx < motionList.Count; idx++) {
@@ -169,15 +156,18 @@ public sealed class SpriteModel : ScriptableObject
                 motion.clip = AssetDatabase.LoadAssetAtPath<SpriteAnimationClip>(clipPath);
                 motionList[index] = motion;
             }
+            EditorUtility.SetDirty(this);
             return;
         }
-        // 如果没有模板，则只会增加新增的资源
+        // 如果没有模板，则删除无效的Motion映射，并自动导入新动画
         HashSet<string> existNames = new();
         for (int idx = 0; idx < motionList.Count; idx++) {
             SpriteMotionRedir motion = motionList[idx];
-            existNames.Add(motion.name);
             if (motion.clip) {
+                existNames.Add(motion.name);
                 existNames.Add(motion.clip.name);
+            } else {
+                motionList.RemoveAt(idx--);
             }
         }
         string[] findAssets = AssetDatabase.FindAssets("t:SpriteAnimationClip", new[] { groupAssetDir });

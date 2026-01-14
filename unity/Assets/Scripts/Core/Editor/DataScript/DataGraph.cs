@@ -667,7 +667,7 @@ public sealed class DataGraph
             displayName = variableCfg.displayName ?? defineInfo.SimpleName,
             isNull = DSUtil.IsNullableType(type)
         };
-        if (variableCfg.initNull) {
+        if (variableCfg.initNull || (variableCfg.HasPortCfg && !DSUtil.IsCollectionOrMapType(type))) {
             variable.isNull = true;
             variable.values = new List<Variable>();
         } else {

@@ -24,17 +24,17 @@ using Wjybxx.Dson.Codec.Attributes;
 namespace Wjybxx.BigCat.Editor.Assetor.Classifiers
 {
 /// <summary>
-/// 将<see cref="SpriteGroup"/>定义为主资源，图片定义为依赖资源。
+/// 将<see cref="AudioGroup"/>定义为主资源，直接音频定义为依赖资源
 /// </summary>
 [DsonSerializable]
-public class SpriteClassifier : IAssetClassifier
+public class AudioClassifier : IAssetClassifier
 {
     public EAssetCategory GetCategory(string assetPath) {
         Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
         return asset switch
         {
-            SpriteGroup => EAssetCategory.MainAsset,
-            Texture or Sprite => EAssetCategory.DependAsset,
+            AudioGroup => EAssetCategory.MainAsset,
+            AudioClip => EAssetCategory.DependAsset,
             _ => EAssetCategory.None
         };
     }

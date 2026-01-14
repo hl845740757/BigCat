@@ -86,7 +86,7 @@ public static class DSAnnotations
     ///
     /// - min 数字类型的最小值
     /// - max 数字类型的最大值
-    /// - initNull bool类型，是否将字段初始化为null值(延迟初始化)
+    /// - initNull bool类型，是否将字段初始化为null值(延迟初始化)；Port字段自动初始化null
     /// - isDelayed 是否延迟响应输入
     /// - isMultiline 是否是多行文本
     /// - isInteger 是否是整数类型AABB

@@ -118,16 +118,15 @@ public class GameLauncher : MonoBehaviour
     }
 
     private async ValueFuture StartResourceManager(CoroutineTaskContext ctx) {
-        TaskScheduler scheduler = gameObject.AddComponent<MonoScheduler>().Scheduler;
-        ResourceManager resourceMgr = new ResourceManager(scheduler); // TODO 应该注入容器
+        ResourceManager resourceMgr = new ResourceManager(); // TODO 应该注入容器
         ResourceManager.Inst = resourceMgr;
         //
         EditorBootTask bootTaskTask = new EditorBootTask(resourceMgr);
-        scheduler.AddChild(bootTaskTask);
+        resourceMgr.Scheduler.AddChild(bootTaskTask);
         await bootTaskTask;
 
         // 尝试打开UI
-        windowMgr.Open("LoginWindow", new WindowOpenArgs());
+        // windowMgr.Open("LoginWindow", new WindowOpenArgs());
         // windowMgr.Open("Prefabs/UI/LoginWindow", new WindowOpenArgs());
         //
         // 测试相对路径加载资源
@@ -155,6 +154,7 @@ public class GameLauncher : MonoBehaviour
 
     private void Update() {
         worker.Internal_Update();
+        ResourceManager.Inst.Update();
         //
         sceneMgr.Update();
         windowMgr.Update();

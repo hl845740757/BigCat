@@ -23,6 +23,8 @@ namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
 /// 异常提供者（用于表示资源不存在）
+///
+/// 注：该Provider可以不显式释放，因为数量很少，使得我们可以随时查看当前的资源缺失信息。
 /// </summary>
 public class ErrorProvider : Provider
 {

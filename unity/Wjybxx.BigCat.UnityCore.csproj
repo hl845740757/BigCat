@@ -47,13 +47,13 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\FileExtension.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Util\FileExtension.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\EnumFlagsAttribute.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Animator\ESortingLayer.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadMethod.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProviderBase.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\EFlipType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\SpriteGroup.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Audio\AudioPlayerSettings.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EAssetIndexes.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\MultiFileBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AssetLoadTask.cs" />
@@ -65,11 +65,12 @@
     <Compile Include="Assets\Scripts\Core\Runtime\TimeUnit.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Util\Easing.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelResolver.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ProviderId.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteAnimationClip.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\TaskScheduler.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\TaskScheduler.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\BundleProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\PlayableNode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceManager.cs" />
@@ -77,13 +78,13 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetPackageInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\StartManagerTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ELoadStatus.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetTypeAliasAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorPackageManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\AudioGroup.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceErrorCode.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Scheduler\MonoScheduler.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AsyncOperationAdaptor.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorAssetBundle.cs" />
@@ -100,18 +101,21 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\TimeValue.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\EWrapMode.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Euler32.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Util\Euler32.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\EBundleType.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Package\DownloadTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\IDataModelListener.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\SpriteLink.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Audio\AudioRequest.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\MaskFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\DataModelResolver.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\AnimationRequest.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MinMaxAABB.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowOpenArgs.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\InstanceProvider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Audio\AudioClipCtrl.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Audio\AudioPlayer.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\BinaryAsset.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetFileInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\ErrorProvider.cs" />
@@ -123,7 +127,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\SceneAssetProvider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\MVC\WindowCmdMgr.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteModel.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetTypeAliasAttribute.cs" />
     <None Include="Assets\Scripts\Core\Runtime\Wjybxx.BigCat.UnityCore.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

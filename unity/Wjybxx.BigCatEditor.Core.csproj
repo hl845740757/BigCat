@@ -73,6 +73,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\EAssetCategory.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\GraphView.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UnityEditorUtil.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Classifiers\AudioClassifier.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarInt64Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MTextField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector3Field.cs" />
