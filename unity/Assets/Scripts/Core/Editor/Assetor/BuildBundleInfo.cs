@@ -157,9 +157,7 @@ public sealed class BuildBundleInfo
             || collectorType == ECollectorType.RawFile) {
             bundleInfo.mainAssets.Capacity = assetList.Count;
             foreach (BuildAssetInfo assetInfo in assetList) {
-                if (assetInfo.assetIndexes == 0 && bundleInfo.assetIndexes != 0) {
-                    continue; // 无需索引(代码加载)的类型
-                }
+                if (assetInfo.disableIndexes) continue;
                 bundleInfo.mainAssets.Add(assetInfo.Build());
             }
         }

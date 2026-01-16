@@ -87,7 +87,7 @@ public class NodeImpl : DisruptorEventLoop<WorkerEvent>, Node
     private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(DefaultNodeBuilder builder) {
         FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
-            builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
+            builder.Agent = builder.Injector.GetInstance<MainModule>();
         }
         return builder.Delegated;
     }

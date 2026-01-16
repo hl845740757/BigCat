@@ -90,6 +90,10 @@ public final class NodeImpl extends DisruptorEventLoop<WorkerEvent> implements N
 
     private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(DefaultNodeBuilder builder) {
         FxUtils.createModules(builder);
+        if (builder.getAgent() == null) {
+            MainModule agent = builder.getInjector().getInstance(MainModule.class);
+            builder.setAgent(agent);
+        }
         return builder.getDelegated();
     }
 

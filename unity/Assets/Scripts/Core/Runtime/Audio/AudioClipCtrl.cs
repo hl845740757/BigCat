@@ -113,6 +113,7 @@ public sealed class AudioClipCtrl
                 float t = fadeProgress / fadeOutTime;
                 audioSource.volume = Mathf.Lerp(targetVolume, 0, t);
             } else {
+                audioSource.volume = 0;
                 Stop();
             }
             return;

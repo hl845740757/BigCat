@@ -55,6 +55,10 @@ public final class WorkerImpl extends DisruptorEventLoop<WorkerEvent> implements
 
     private static EventLoopBuilder.DisruptorBuilder<WorkerEvent> decorate(DefaultWorkerBuilder builder) {
         FxUtils.createModules(builder);
+        if (builder.getAgent() == null) {
+            MainModule agent = builder.getInjector().getInstance(MainModule.class);
+            builder.setAgent(agent);
+        }
         return builder.getDelegated();
     }
 

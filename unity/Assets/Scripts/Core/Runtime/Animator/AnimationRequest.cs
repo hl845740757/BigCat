@@ -18,7 +18,6 @@
 
 using System;
 using UnityEngine;
-using Wjybxx.BigCat.Core;
 using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Animator
@@ -49,5 +48,6 @@ public enum AnimationOptions
     EnableRange = 0x02, // 启用区间
     EnableShadow = 0x04, // 启用阴影
     EnableSortOrder = 0x08, // 启用动画层级
+    ReservedMotion = 0x10, // 保留动作配置(禁止自动删除)
 }
 }

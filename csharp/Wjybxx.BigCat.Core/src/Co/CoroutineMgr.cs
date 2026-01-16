@@ -19,11 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using Wjybxx.BigCat.Gameplay;
-using Wjybxx.BigCat.Util;
-using Wjybxx.Commons;
 using Wjybxx.Commons.Attributes;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;

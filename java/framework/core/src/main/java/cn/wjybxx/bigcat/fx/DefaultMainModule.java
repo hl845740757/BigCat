@@ -18,7 +18,6 @@ package cn.wjybxx.bigcat.fx;
 
 import cn.wjybxx.concurrent.IAgentEventHandler;
 import cn.wjybxx.concurrent.IEventLoop;
-import cn.wjybxx.concurrent.IEventLoopAgent;
 import com.google.inject.Inject;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -29,7 +28,7 @@ import java.util.Objects;
  * @author wjybxx
  * date - 2023/12/23
  */
-public class DefaultMainModule implements IEventLoopAgent<WorkerEvent> {
+public class DefaultMainModule implements MainModule {
 
     @Inject
     protected TimeModule timeModule;

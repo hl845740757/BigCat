@@ -16,23 +16,14 @@
 
 #endregion
 
-using System;
-using UnityEngine;
+using Wjybxx.Commons.Concurrent;
 
-namespace Wjybxx.BigCat.Audio
+namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// 音频播放器设置
+/// Worker/Node的主模块
 /// </summary>
-[Serializable]
-public sealed class AudioPlayerSettings
+public interface MainModule : IEventLoopAgent<WorkerEvent>
 {
-    [NonSerialized]
-    public AudioPlayerSettings parent;
-    [Range(0, 1)]
-    public float volume = 1f; // 音量
-    public float pitch = 1f; // 音高
-    public bool mute; // 静音
-    public int shotChannels = 10; // 短促音效最大同时播放数
 }
 }

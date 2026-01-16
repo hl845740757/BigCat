@@ -167,7 +167,11 @@ public sealed class SpriteModel : ScriptableObject
                 existNames.Add(motion.name);
                 existNames.Add(motion.clip.name);
             } else {
-                motionList.RemoveAt(idx--);
+                if ((motion.options & AnimationOptions.ReservedMotion) != 0) {
+                    existNames.Add(motion.name);
+                } else {
+                    motionList.RemoveAt(idx--);
+                }
             }
         }
         string[] findAssets = AssetDatabase.FindAssets("t:SpriteAnimationClip", new[] { groupAssetDir });

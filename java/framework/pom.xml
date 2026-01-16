@@ -61,7 +61,7 @@
         <logback.version>1.5.17</logback.version>
         <junit.version>5.12.0</junit.version>
         <!-- 我的commons库 -->
-        <commons.version>1.8.0</commons.version>
+        <commons.version>2.0.0</commons.version>
         <!-- 基础工具库 -->
         <fastutil.version>8.5.14</fastutil.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
@@ -230,7 +230,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.14.1</version>
                 <configuration>
                     <encoding>UTF8</encoding>
                     <compilerArgs>
@@ -277,7 +277,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -312,7 +312,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.5.0</version>
+                        <version>3.6.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -346,24 +346,6 @@
                         </executions>
                     </plugin>
                     <!-- maven部署相关插件 -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <version>3.1.0</version>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <!-- serverId与mvn setting.xml 中的 server 对应-->
-                            <!-- 该插件用于自动close并release仓库，不使用插件则需要登录网页手动操作 -->
-                            <serverId>sonatype-oss</serverId>
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
                 </plugins>
             </build>
         </profile>

@@ -140,6 +140,7 @@ class SimpleParallel<T> : ParallelBranch<T> {
 }
 // Join并行节点
 class Join<T> : ParallelBranch<T> {
+  // @Editor{initNull: true}
   // @PloyField["JoinMain<T>", "JoinSelector<T>", "JoinSequence<T>", "JoinAnyOf<T>", "JoinWaitAll<T>"]
   JoinPolicy<T> policy = 1; // 调度策略，多态字段
 }

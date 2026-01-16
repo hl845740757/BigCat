@@ -329,6 +329,14 @@ public class AudioPlayer : MonoBehaviour
         _onLoadCompleted = OnLoadCompleted;
     }
 
+    private void OnEnable() {
+        audioSource.enabled = true;
+    }
+
+    private void OnDisable() {
+        audioSource.enabled = false;
+    }
+
     /// <summary>
     /// 运行时重置数据
     /// </summary>
@@ -340,6 +348,7 @@ public class AudioPlayer : MonoBehaviour
         assetHandles.Clear();
         shotContexts.Clear();
         requests.Clear();
+        settings.parent = null;
     }
 
     #endregion

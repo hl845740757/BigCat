@@ -45,6 +45,10 @@ public sealed class BuildAssetInfo
     /// </summary>
     public EAssetIndexes assetIndexes;
     /// <summary>
+    /// 禁用索引
+    /// </summary>
+    public bool disableIndexes;
+    /// <summary>
     /// 自定义索引
     /// </summary>
     public readonly List<string> addresses = new List<string>();

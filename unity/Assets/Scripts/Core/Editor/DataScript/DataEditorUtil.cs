@@ -193,6 +193,8 @@ public static class DataEditorUtil
         FieldStyleCfg styleCfg = variableCfg.styleCfg;
         if (styleCfg != null && styleCfg.maxHeight != null) {
             element.style.maxHeight = styleCfg.maxHeight.FloatValue;
+        } else {
+            element.style.maxHeight = new StyleLength(StyleKeyword.Auto);
         }
     }
 

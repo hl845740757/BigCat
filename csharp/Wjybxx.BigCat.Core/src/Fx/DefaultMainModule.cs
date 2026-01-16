@@ -25,14 +25,14 @@ using Wjybxx.Commons.Inject.Attributes;
 
 namespace Wjybxx.BigCat.Fx
 {
-public class DefaultMainModule : EventLoopModule, IEventLoopAgent<WorkerEvent>
+public class DefaultMainModule : EventLoopModule, MainModule
 {
 #nullable disable
     /** 时间模块由主模块驱动 */
     [Inject]
     protected TimeModule timeModule;
     /** 帧循环间隔 */
-    private int frameInterval = 30;
+    private int frameInterval = 33;
 
     /** 主循环前时间戳 - 用于计算帧耗时等 */
     protected long timeBeforeMainLoop;

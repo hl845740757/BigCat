@@ -430,6 +430,9 @@ public sealed class VariableCfg
         if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_HEIGHT, out dsonValue)) {
             styleCfg.maxHeight = dsonValue.AsNumber();
         }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_FLEX_DIRECTION, out dsonValue)) {
+            styleCfg.flexDirection = dsonValue.AsString();
+        }
         // 边距
         if (dsonObject.TryGetValue(DSAnnotations.KEY_LABEL_MARGIN, out dsonValue)) {
             styleCfg.labelMargin = dsonValue.AsNumber();
@@ -524,6 +527,7 @@ public sealed class FieldStyleCfg
 {
     public bool expanded; // 是否默认展开
     public DsonNumber maxHeight; // 最大高度
+    public string flexDirection; // 弹性布局方向
 
     public DsonNumber labelMargin; // 标签边距
     public DsonNumber xLabelMargin;

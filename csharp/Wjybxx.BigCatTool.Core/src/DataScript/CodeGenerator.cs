@@ -78,6 +78,9 @@ public class CodeGenerator
                     if (Annotation.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
                         continue;
                     }
+                    if (nsBuilder.nestedSpecs.Count > 0) {
+                        nsBuilder.AddSpec(new CodeBlockSpec(CodeBlock.NewLine));
+                    }
                     try {
                         TypeSpec.Builder typeBuilder = _helper.Generate(namedType);
                         nsBuilder.AddSpec(typeBuilder.Build());

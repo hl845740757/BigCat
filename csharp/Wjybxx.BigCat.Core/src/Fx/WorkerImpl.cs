@@ -50,7 +50,7 @@ public sealed class WorkerImpl : DisruptorEventLoop<WorkerEvent>, Worker
     private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(DefaultWorkerBuilder builder) {
         FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
-            builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
+            builder.Agent = builder.Injector.GetInstance<MainModule>();
         }
         return builder.Delegated;
     }

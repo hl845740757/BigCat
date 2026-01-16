@@ -125,7 +125,9 @@ public class CodeGeneratorHelper
             }
             if (comment.StartsWith("//")) {
                 int idx = ToolUtil.IndexOfNonWhitespace(comment, 2);
-                builder.Add(comment.Substring(idx));
+                if (idx > 0) {
+                    builder.Add(comment.Substring(idx));
+                }
             } else {
                 builder.Add(comment.TrimStart());
             }
@@ -138,6 +140,10 @@ public class CodeGeneratorHelper
         // 增加Flags注解
         if (Annotation.GetBool(options, DSAnnotations.KEY_IS_FLAGS)) {
             typeBuilder.AddAttribute(ATTRIBUTE_FLAGS);
+        }
+        string baseType = Annotation.GetString(options, DSAnnotations.KEY_BASE_TYPE);
+        if (!string.IsNullOrEmpty(baseType)) {
+            typeBuilder.AddBaseClass(ClassName.Get("System", baseType));
         }
         foreach (DSElement enclosedElement in namedType.EnclosedElements) {
             if (enclosedElement.Kind != DSElementKind.EnumValue) {
@@ -275,6 +281,9 @@ public class CodeGeneratorHelper
 
     #region 扩展钩子
 
+    /// <summary>
+    /// 初始化Class的注解
+    /// </summary>
     protected virtual void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
         if (NeedCodecMethod(namedType, options)) {
             typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));

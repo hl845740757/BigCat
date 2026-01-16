@@ -64,7 +64,7 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
     private static UnityEventLoopBuilder<WorkerEvent> Decorate(UnityWorkerBuilder builder) {
         FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
-            builder.Agent = builder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
+            builder.Agent = builder.Injector.GetInstance<MainModule>();
         }
         return builder.Delegated;
     }

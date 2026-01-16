@@ -85,12 +85,9 @@ public class GameLauncher : MonoBehaviour
                 //     workerBuilder.ModuleClasses.Add(typeof(RpcServiceExample));
                 //     workerBuilder.ServiceClasses.Add(typeof(RpcServiceExample));
                 // }
-                // 覆盖默认值
-                workerBuilder.Agent = workerBuilder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
                 return workerBuilder.Build();
             },
         };
-        nodeBuilder.Agent = nodeBuilder.Injector.GetInstance<IEventLoopAgent<WorkerEvent>>();
         node = (Node)nodeBuilder.Build();
         worker = (UnityWorker)node.MainWorker;
         // 发布Worker引用
@@ -175,7 +172,7 @@ public class GameLauncher : MonoBehaviour
     private class NodeInjectorConfig : IInjectModule
     {
         public void Configure(IInjectBinder binder) {
-            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IEventLoopAgent<WorkerEvent>));
+            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(MainModule));
             binder.Bind<TimeModule>();
             binder.Bind<S2SRpcClient, RpcClient>();
             binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
@@ -191,7 +188,7 @@ public class GameLauncher : MonoBehaviour
     private class WorkerInjectorConfig : IInjectModule
     {
         public void Configure(IInjectBinder binder) {
-            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IEventLoopAgent<WorkerEvent>));
+            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(MainModule));
             binder.Bind<TimeModule>();
             binder.Bind<S2SRpcClient, RpcClient>();
             binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();

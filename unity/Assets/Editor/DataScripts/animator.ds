@@ -61,6 +61,7 @@ class SpriteMotionTask : Task<Blackboard> {
   int32 branchId = 1; // 分支id
   // @Candidates["body", "weapon"]
   string partId = 2; // 要控制的部件名
+  // @Options{encodeFeatures: NumberHex}
   // @MaskField[ "0", "body", "weapon", "3", "4", "5", "6", "7", "8", "9" ]
   int32 partGroups = 3; // 部件组，掩码
   string motionName = 4; // 部件动画
@@ -86,8 +87,8 @@ class SpriteMotionBranch : BranchTask<Blackboard> {
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
 class AnimatorGroupEntry {
-  TimeTrigger _f1 = 1;
-  AnimationRequest _f2 = 2;
+  TimeTrigger _f1 = 1; // @Editor {nodeFeatures: "Inlinable | EnablePort"}
+  AnimationRequest _f2 = 2; // @Editor {nodeFeatures: "Inlinable | EnablePort"}
   
   SpriteMotionTask _f11 = 11;
   SpriteMotionBranch _f12 = 12;

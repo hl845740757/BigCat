@@ -158,9 +158,8 @@ public class Collector : LeafTask<Blackboard>
                 continue;
             }
             BuildAssetInfo assetInfo = new BuildAssetInfo(assetPath, category);
-            if (!noIndexTypes.Contains(assetInfo.assetType.Name)) {
-                assetInfo.assetIndexes = assetIndexes | uniqueIndexes;
-            }
+            assetInfo.assetIndexes = assetIndexes | uniqueIndexes;
+            assetInfo.disableIndexes = noIndexTypes.Contains(assetInfo.assetType.Name);
             collectedAssets.Add(assetInfo);
         }
         // 分组
@@ -207,13 +206,13 @@ public class Collector : LeafTask<Blackboard>
         }
         int depth = 0;
         int index = collectPath.Length;
-        while ((index = assetPath.IndexOf('/', index)) > 0) {
+        while ((index = assetPath.IndexOf('/', index + 1)) > 0) {
             depth++;
             if (depth >= groupDepth) {
                 return assetPath.Substring(0, index);
             }
         }
-        return assetPath.Substring(assetPath.LastIndexOf('/'));
+        return assetPath.Substring(0, assetPath.LastIndexOf('/'));
     }
 
     private EAssetCategory GetCategory(string assetPath) {

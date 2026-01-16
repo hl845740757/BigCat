@@ -114,7 +114,7 @@ public sealed class GIndexHelper : IIndexedElementHelper<GameUnit>
         }
     }
 
-    internal static readonly GIndexHelper MAIN_HELPER = new GIndexHelper(0, true);
+    public static readonly GIndexHelper MAIN_HELPER = new GIndexHelper(0, true);
     private static readonly GIndexHelper[] CACHE = new GIndexHelper[10];
 
     static GIndexHelper() {

@@ -26,6 +26,7 @@ using Wjybxx.BigCatTool;
 using Wjybxx.BTree;
 using Wjybxx.Dson.Codec.Attributes;
 using Wjybxx.Dson.Text;
+using Wjybxx.Dson.Types;
 using Blackboard = Wjybxx.BigCat.Util.Blackboard;
 
 namespace Wjybxx.BigCat.Editor.Assetor.Tasks
@@ -67,7 +68,7 @@ public class BuildIndexesTask : LeafTask<Blackboard>
             foreach (BuildAssetInfo assetInfo in bundleInfo.assetList) {
                 string fileName = GetSubAssetPath(assetInfo.assetPath, 0);
                 string extension = UnityEditorUtil.GetExtension(fileName);
-                if ((indexes = assetInfo.assetIndexes) == 0) {
+                if (assetInfo.disableIndexes) {
                     continue;
                 }
                 // 单纯的数字文件名不参与索引
@@ -162,6 +163,11 @@ public class BuildIndexesTask : LeafTask<Blackboard>
     private void ReportLog(Dictionary<string, Item> index2AssetDic) {
         using StringWriter stringWriter = new StringWriter();
         using DsonTextWriter writer = new DsonTextWriter(DsonTextWriterSettings.Default, stringWriter);
+        // 构建信息
+        writer.WriteStartObject(ObjectStyle.Indent);
+        writer.WriteDateTime("dateTime", ExtDateTime.OfDateTime(DateTime.Now));
+        writer.WriteEndObject();
+        // 冲突详情
         foreach (Item item in index2AssetDic.Values.Where(e => e.conflict)) {
             writer.WriteStartObject(ObjectStyle.Indent);
             writer.WriteString("index", item.index);

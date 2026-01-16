@@ -52,6 +52,7 @@ public static class DSAnnotations
     /// <h3>用于类型时</h3>
     /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true, encodeFeatures: [ObjectIndent]}</code>
     /// - isFlags 标识枚举类型是否是Flags类型
+    /// - baseType 代码生成时的特殊超类符号，主要用于指定枚举的类型
     /// - style 序列化样式，如果只想配置文本样式，可以通过style代替序列化特征值
     /// - dataClass 标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
     /// - nonGenerate 表示生成代码时跳过，即类型是外部库类型的镜像
@@ -101,6 +102,7 @@ public static class DSAnnotations
     /// - expanded 是否默认展开
     /// - maxWidth 最大宽度
     /// - maxHeight 最大高度
+    /// - flexDir 弹性布局
     /// - labelMargin label和value的边距
     /// </summary>
     public const string FIELD_STYLE = "FieldStyle";
@@ -183,7 +185,7 @@ public static class DSAnnotations
     /// 候选值
     /// 语法：<code>// @Candidates[ Vector2, Vector3 ]</code>
     ///
-    /// 1.注解为数组类型，Value为候选值。
+    /// 1.注解为数组类型，Value为候选值；TODO 如果注解是Object类型，则key为displayName，value为数字值。
     /// 2.目前仅支持string字段
     /// 3.支持多注解，自动合并它们的值
     /// </summary>
@@ -195,6 +197,7 @@ public static class DSAnnotations
     public const string KEY_JAVA = "java";
     // 类型
     public const string KEY_IS_FLAGS = "isFlags";
+    public const string KEY_BASE_TYPE = "baseType";
     public const string KEY_DATA_CLASS = "dataClass";
     public const string KEY_NON_GENERATE = "nonGenerate";
     // 字段
@@ -233,6 +236,7 @@ public static class DSAnnotations
 
     public const string KEY_MAX_WIDTH = "maxWidth";
     public const string KEY_MAX_HEIGHT = "maxHeight";
+    public const string KEY_FLEX_DIRECTION = "flexDir";
     public const string KEY_LABEL_MARGIN = "labelMargin";
     public const string KEY_X_LABEL_MARGIN = "xLabelMargin";
     public const string KEY_Y_LABEL_MARGIN = "yLabelMargin";

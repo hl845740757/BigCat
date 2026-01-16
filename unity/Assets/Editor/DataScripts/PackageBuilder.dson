@@ -1,0 +1,340 @@
+{@{clsName: CollectorGroup, localId: 1, title: "编译依赖组(仅提供依赖)",
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 109, y: -352}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  enabled: true,
+  bundleTags: [],
+  preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
+  collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 10,
+    @ptr 15
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: CollectorPackage, localId: 2,
+   typeSymbol: "assetor.CollectorPackage", features: @i 0x40, position: {x: 70, y: 15}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  packageName: Default,
+  packageVersion: "0.0.0",
+  groups: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 4,
+    @ptr 1,
+    @ptr 13,
+    @ptr 19,
+    @ptr 20,
+    @ptr 25
+  ],
+  ignoreService: @ptr 0
+}
+{@{clsName: BuildPipelineTask, localId: 3,
+   typeSymbol: "assetor.BuildPipelineTask", features: @i 0x40, position: {x: -87, y: 245}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  buildTarget: 19,
+  compression: 0,
+  useAssetDependencyDB: false,
+  preBuildTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 11,
+    @ptr 12
+  ],
+  buildTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 6
+  ],
+  postBuildTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}]
+}
+{@{clsName: CollectorGroup, localId: 4, title: Sprites收集组,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: 230}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  enabled: true,
+  bundleTags: [],
+  preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
+  collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 5
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 5, title: SpriteGroup收集器,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 229}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/DNF/Sprites",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 5,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x10,
+  indexDepth: 0,
+  noIndexTypes: [
+    Sprite,
+    Texture2D
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: EditorBuildTask, localId: 6,
+   typeSymbol: "assetor.EditorBuildTask", features: @i 0x40, position: {x: 140, y: 433}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  binFilePath: "Assets/Resources/manifest.bin",
+  textFilePath: "Assets/Resources/manifest.dson"
+}
+{@{clsName: PackageBuilder, localId: 9, localPath: EditorPacker, name: EditorPacker,
+   typeSymbol: "assetor.PackageBuilder", features: @i 0x48, position: {x: -253, y: 61}}
+  package: @ptr 2,
+  buildTask: @ptr 3
+}
+{@{clsName: Collector, localId: 10, title: Scripts,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 170, y: -523}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/Scripts",
+  recursive: true,
+  collectorType: 1,
+  provided: true,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x0,
+  indexDepth: 0,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: BuildDependencyTask, localId: 11,
+   typeSymbol: "assetor.BuildDependencyTask", features: @i 0x40, position: {x: -227, y: 433}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  autoIgnoreLibrary: true
+}
+{@{clsName: BuildIndexesTask, localId: 12,
+   typeSymbol: "assetor.BuildIndexesTask", features: @i 0x40, position: {x: -52, y: 432}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  reportLog: true,
+  reportPath: "Assets/Editor/IndexReport.log",
+  supportExtensions: [
+    fbx,
+    unity,
+    prefab,
+    png,
+    jpg,
+    tif,
+    ogg,
+    wav,
+    mp3
+  ]
+}
+{@{clsName: CollectorGroup, localId: 13, title: GameRes目录,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 541, y: -513}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  enabled: true,
+  bundleTags: [],
+  preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
+  collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 14,
+    @ptr 17,
+    @ptr 18,
+    @ptr 16
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 14, title: 预制件,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -522}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/GameRes/Prefabs",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x1,
+  uniqueIndexes: @i 0x4,
+  indexDepth: 2,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 15, title: "TextMesh Pro",
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 341, y: -523}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/TextMesh Pro",
+  recursive: true,
+  collectorType: 0,
+  provided: true,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x0,
+  indexDepth: 0,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 16, title: Scene,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -262}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/GameRes/Scenes",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x1,
+  indexDepth: 2,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 17, title: 配置表,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -393}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/GameRes/Config",
+  recursive: true,
+  collectorType: 3,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x1,
+  uniqueIndexes: @i 0x4,
+  indexDepth: 2,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 18, title: GameRes根目录,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -670}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/GameRes",
+  recursive: true,
+  collectorType: 2,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x0,
+  indexDepth: 0,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: CollectorGroup, localId: 19, title: Animations收集组,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 341, y: 37}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  enabled: true,
+  bundleTags: [],
+  preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 21
+  ],
+  collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
+  classifier: @ptr 0
+}
+{@{clsName: CollectorGroup, localId: 20, title: 音效收集组,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: 423}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  enabled: true,
+  bundleTags: [],
+  preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
+  collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 23
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 21, title: 模型资源收集器,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 546, y: 38}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/DNF/Animations",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 9,
+  bundleTags: [],
+  assetIndexes: @i 0x10,
+  uniqueIndexes: @i 0x0,
+  indexDepth: 0,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 23, title: AudioGroup收集器,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 549, y: 391}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/DNF/Sounds",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 9,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x10,
+  indexDepth: 2,
+  noIndexTypes: [
+    AudioClip
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: CollectorGroup, localId: 25, title: Music收集组,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: 596}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  enabled: true,
+  bundleTags: [],
+  preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
+  collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+    @ptr 26
+  ],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 26,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 596}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/DNF/Music",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x0,
+  uniqueIndexes: @i 0x2,
+  indexDepth: 2,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
