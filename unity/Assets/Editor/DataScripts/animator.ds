@@ -87,8 +87,8 @@ class SpriteMotionBranch : BranchTask<Blackboard> {
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
 class AnimatorGroupEntry {
-  TimeTrigger _f1 = 1; // @Editor {nodeFeatures: "Inlinable | EnablePort"}
-  AnimationRequest _f2 = 2; // @Editor {nodeFeatures: "Inlinable | EnablePort"}
+  TimeTrigger _f1 = 1; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
+  AnimationRequest _f2 = 2; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
   
   SpriteMotionTask _f11 = 11;
   SpriteMotionBranch _f12 = 12;

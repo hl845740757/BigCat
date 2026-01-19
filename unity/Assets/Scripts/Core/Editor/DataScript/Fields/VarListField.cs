@@ -18,17 +18,20 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
-using Wjybxx.Commons;
 using Wjybxx.Dson;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
+internal enum ListFieldMode
+{
+    Normal = 0, // 普通模式
+    Sheet = 1, // 表单
+}
+
 /// <summary>
 /// 通用List/Map字段布局
 ///
@@ -36,7 +39,6 @@ namespace Wjybxx.BigCat.Editor.DataScript
 /// 1.由于DropdownButton和List的布局非常难以协调，因此我们不使用ToolbarMenu实现菜单栏，而是使用右键。
 /// 2.HashSet和字典在编辑器中不执行去重操作，因为无法检测重复 - 无法执行元素的equals，以及无法确定输入结束。
 /// 3.List/HashSet类字段，在数据变化的时候需要刷新Port，可递归查询NodeView
-/// 4.由于我们支持多态，因此ListView的虚化功能可能导致我们频繁创建VisualElement。
 /// </summary>
 public class VarListField : BindableElement, IVarField
 {
@@ -44,6 +46,7 @@ public class VarListField : BindableElement, IVarField
     private DataEditor _editor;
     private Variable _variable;
     private int _movingIndex = -1;
+    internal ListFieldMode mode;
 
     public VarListField() {
         _listView = new ListView
@@ -99,7 +102,14 @@ public class VarListField : BindableElement, IVarField
         this._editor = editor;
         this._variable = variable;
         _listView.itemsSource = variable.values;
-        DataEditorUtil.SetMaxHeight(_listView, variable.cfg);
+        // 表达样式支持
+        FieldStyleCfg styleCfg = variable.cfg.styleCfg;
+        if (styleCfg != null && styleCfg.isSheet) {
+            mode = ListFieldMode.Sheet;
+        } else {
+            mode = ListFieldMode.Normal;
+        }
+        DataEditorUtil.SetFieldSize(_listView, variable.cfg);
         // 刷新UI
         Refresh();
     }
@@ -197,8 +207,17 @@ public class VarListField : BindableElement, IVarField
         //
         Variable nestedVar = variable[index];
         if (element.childCount == 0) {
-            element.Add(DataEditorUtil.CreateField(nestedVar, _editor));
+            VisualElement visualElement = DataEditorUtil.CreateField(nestedVar, _editor);
+            if (visualElement is VarObjectField objectField) {
+                objectField.mode = mode;
+                objectField.Refresh(); // 刷新样式
+            }
+            element.Add(visualElement);
         } else {
+            VisualElement visualElement = element[0];
+            if (visualElement is VarObjectField objectField) {
+                objectField.mode = mode;
+            }
             IVarField field = (IVarField)element[0];
             field.Bind(_editor, nestedVar);
         }
@@ -217,7 +236,7 @@ public class VarListField : BindableElement, IVarField
         }
         // 多态类型或不可重用的类型直接清理
         element.userData = null;
-        if (variable.cfg.HasSupportedTypes || !DataEditorUtil.IsCacheable(element[0])) {
+        if (variable.cfg.supportedTypes != null || !DataEditorUtil.IsCacheable(element[0])) {
             element.Clear();
         }
     }

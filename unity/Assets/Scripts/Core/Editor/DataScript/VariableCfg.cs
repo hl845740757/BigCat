@@ -111,13 +111,14 @@ public sealed class VariableCfg
     public List<string> candidatesValues;
     /// <summary>
     /// Mask字段时的展示名
-    ///
-    /// 1.如果是枚举，根据枚举类信息填充
-    /// 2.如果是int，则根据用户的配置填充
-    ///
+    /// 
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public List<string> maskNames;
+    /// <summary>
+    /// mask字段关联的索引枚举
+    /// </summary>
+    public string maskIndexEnum;
     /// <summary>
     /// 标签类字段配置
     ///
@@ -174,7 +175,7 @@ public sealed class VariableCfg
 
     public Func<int, string> intPopNameFunc => _intPopNameFunc ??= value => {
         int index = intPopValues.IndexOf(value);
-        return index < 0 ? index.ToString() : popNames[index]; // 可能是失效值
+        return index < 0 ? value.ToString() : popNames[index]; // 可能是失效值
     };
     public Func<string, string> stringPopNameFunc => _stringPopNameFunc ??= value => {
         int index = stringPopValues.IndexOf(value);
@@ -184,13 +185,6 @@ public sealed class VariableCfg
     public bool ContainsTypeSymbol(string typeSymbol) {
         return supportedTypes != null && supportedTypes.Contains(typeSymbol);
     }
-
-    public bool HasPopNames => popNames != null;
-    public bool HasMaskNames => maskNames != null;
-    public bool HasBranchCfg => branchCfgs != null;
-    public bool HasSupportedTypes => supportedTypes != null;
-    public bool HasSupportedInsts => supportedInsts != null;
-    public bool HasPortCfg => portCfg != null;
 
     /// <summary>
     /// 字段和类型都需要调用该接口
@@ -251,9 +245,14 @@ public sealed class VariableCfg
         if (element.Kind == DSElementKind.Enum) {
             ParseEnumPops(cfg, (DSNamedType)element);
         } else if (element is DSField field) {
-            if (cfg.tooltip == null && field.Comments.Count > 0) {
-                cfg.tooltip = field.Comments.PeekLast();
+            // 默认tooltip
+            if (cfg.tooltip == null && field.Comments.TryPeekLast(out string comment)
+                                    && !Annotation.IsAnnotationComment(comment)) {
+                int idx = ObjectUtil.IndexOfNonWhitespace(comment, 2);
+                cfg.tooltip = idx > 0 ? comment.Substring(idx) : null;
             }
+            cfg.tooltip ??= field.TypeSymbol;
+
             // 拷贝List的配置到元素
             if ((DSUtil.IsCollectionOrMapType(field.Type)
                  || DSUtil.IsNullableType(field.Type)
@@ -281,6 +280,7 @@ public sealed class VariableCfg
         varCfg.stringPopValues = listCfg.stringPopValues;
         varCfg.candidatesValues = listCfg.candidatesValues;
         varCfg.maskNames = listCfg.maskNames;
+        varCfg.maskIndexEnum = listCfg.maskIndexEnum;
         varCfg.supportedTypes = listCfg.supportedTypes;
         //
         varCfg.encodeFeatures = listCfg.encodeFeatures.GetElementFeatures();
@@ -308,6 +308,18 @@ public sealed class VariableCfg
             foreach (DSEnumValue enumValue in element.GetEnumValues()) {
                 if (!MathCommon.IsPowerOfTwo(enumValue.Number)) continue;
                 int bitIndex = MathCommon.NumberOfTrailingZeros(enumValue.Number);
+                maskNames[bitIndex] = enumValue.SimpleName;
+                maxIndex = Math.Max(maxIndex, bitIndex);
+            }
+            cfg.maskNames = new List<string>(maxIndex + 1);
+            for (int index = 0; index <= maxIndex; index++) {
+                cfg.maskNames.Add(maskNames[index] ?? index.ToString());
+            }
+        } else if (DSUtil.IsIndexesEnum(element)) {
+            int maxIndex = -1;
+            string[] maskNames = new string[32];
+            foreach (DSEnumValue enumValue in element.GetEnumValues()) {
+                int bitIndex = enumValue.Number;
                 maskNames[bitIndex] = enumValue.SimpleName;
                 maxIndex = Math.Max(maxIndex, bitIndex);
             }
@@ -390,6 +402,9 @@ public sealed class VariableCfg
             foreach (DsonValue dsonValue in dsonArray) {
                 cfg.maskNames.Add(dsonValue.AsString());
             }
+            if (dsonArray.Header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue clsName)) {
+                cfg.maskIndexEnum = clsName.AsString();
+            }
         }
         cfg.maskNames.TrimExcess();
     }
@@ -427,11 +442,14 @@ public sealed class VariableCfg
     private static void ParseStyleOptions(DsonObject<string> dsonObject, VariableCfg cfg) {
         FieldStyleCfg styleCfg = new FieldStyleCfg();
         DsonValue dsonValue;
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_MIN_WIDTH, out dsonValue)) {
+            styleCfg.minWidth = dsonValue.AsNumber();
+        }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_WIDTH, out dsonValue)) {
+            styleCfg.maxWidth = dsonValue.AsNumber();
+        }
         if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_HEIGHT, out dsonValue)) {
             styleCfg.maxHeight = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_FLEX_DIRECTION, out dsonValue)) {
-            styleCfg.flexDirection = dsonValue.AsString();
         }
         // 边距
         if (dsonObject.TryGetValue(DSAnnotations.KEY_LABEL_MARGIN, out dsonValue)) {
@@ -449,7 +467,7 @@ public sealed class VariableCfg
         if (dsonObject.TryGetValue(DSAnnotations.KEY_W_LABEL_MARGIN, out dsonValue)) {
             styleCfg.wLabelMargin = dsonValue.AsNumber();
         }
-        styleCfg.expanded = Annotation.GetBool(dsonObject, DSAnnotations.KEY_EXPANDED, true);
+        styleCfg.isSheet = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_SHEET, true);
         cfg.styleCfg = styleCfg;
     }
 
@@ -525,9 +543,10 @@ public enum Side
 /// </summary>
 public sealed class FieldStyleCfg
 {
-    public bool expanded; // 是否默认展开
+    public bool isSheet; // 是否是表单
+    public DsonNumber minWidth; // 最小宽度，表单元素很有用
+    public DsonNumber maxWidth; // 最大宽度
     public DsonNumber maxHeight; // 最大高度
-    public string flexDirection; // 弹性布局方向
 
     public DsonNumber labelMargin; // 标签边距
     public DsonNumber xLabelMargin;

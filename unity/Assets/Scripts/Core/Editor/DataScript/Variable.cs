@@ -171,19 +171,19 @@ public sealed class Variable : IDisposable
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    public Quaternion quaternionValue {
+    public Double4 double4Value {
         get {
-            float x = values[0].floatValue;
-            float y = values[1].floatValue;
-            float z = values[2].floatValue;
-            float w = values[3].floatValue;
-            return new Quaternion(x, y, z, w);
+            double x = values[0].doubleValue;
+            double y = values[1].doubleValue;
+            double z = values.Count > 2 ? values[2].doubleValue : 0;
+            double w = values.Count > 3 ? values[3].doubleValue : 0;
+            return new Double4(x, y, z, w);
         }
         set {
-            values[0].floatValue = value.x;
-            values[1].floatValue = value.y;
-            values[2].floatValue = value.z;
-            values[3].floatValue = value.w;
+            values[0].doubleValue = value[0];
+            values[1].doubleValue = value[1];
+            if (values.Count > 2) values[2].doubleValue = value[2];
+            if (values.Count > 3) values[3].doubleValue = value[3];
         }
     }
 

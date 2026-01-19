@@ -16,7 +16,7 @@
 
 #endregion
 
-namespace Wjybxx.BigCat.Core
+namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 时间单位

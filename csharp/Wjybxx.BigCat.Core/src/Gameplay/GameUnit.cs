@@ -66,7 +66,7 @@ public sealed class GameUnit
     /// <summary>
     /// 配置表id
     /// </summary>
-    private int _configId;
+    [NonSerialized] private int _configId;
     /// <summary>
     /// 实例id
     /// </summary>
@@ -128,7 +128,6 @@ public sealed class GameUnit
     }
 
     public GameUnit(IDsonObjectReader reader) {
-        _configId = reader.ReadInt("configId");
         _active = reader.ReadBool("active");
         // 组件列表
         List<GComponent> components = reader.ReadObject<List<GComponent>>("components");
@@ -141,7 +140,6 @@ public sealed class GameUnit
     }
 
     public void WriteObject(IDsonObjectWriter writer) {
-        writer.WriteInt("configId", _configId);
         writer.WriteBool("active", _active);
         writer.WriteObject("components", _components);
     }

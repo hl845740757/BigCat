@@ -41,6 +41,11 @@ public struct GBitSet : IEquatable<GBitSet>
         this._highBits = src._highBits;
     }
 
+    public bool this[int index] {
+        get => Get(index);
+        set => Set(index, value);
+    }
+
     public bool Get(int bitIndex) {
         CheckIndex(bitIndex);
         if (bitIndex > 63) {
@@ -55,7 +60,7 @@ public struct GBitSet : IEquatable<GBitSet>
         if (value) {
             Set(index);
         } else {
-            Clear(index);
+            Unset(index);
         }
     }
 
@@ -68,7 +73,7 @@ public struct GBitSet : IEquatable<GBitSet>
         }
     }
 
-    public void Clear(int bitIndex) {
+    public void Unset(int bitIndex) {
         CheckIndex(bitIndex);
         if (bitIndex > 63) {
             _highBits &= ~(1L << (bitIndex - 64));
@@ -137,7 +142,7 @@ public struct GBitSet : IEquatable<GBitSet>
     }
 
     /// <summary>
-    /// 与非
+    /// 与非（即清除）
     /// </summary>
     /// <param name="other"></param>
     public void AndNot(GBitSet other) {
@@ -150,9 +155,17 @@ public struct GBitSet : IEquatable<GBitSet>
     /// </summary>
     /// <param name="other"></param>
     /// <returns></returns>
-    public bool IsIntersect(GBitSet other) {
+    public bool Intersect(GBitSet other) {
         return (this._lowBits & other._lowBits) != 0
                || (this._highBits & other._highBits) != 0;
+    }
+
+    /// <summary>
+    /// 内容取反
+    /// </summary>
+    public void Not() {
+        this._lowBits = ~this._lowBits;
+        this._highBits = ~this._highBits;
     }
 
     #region equals

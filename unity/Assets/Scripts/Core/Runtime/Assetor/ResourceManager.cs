@@ -23,6 +23,7 @@ using System.Text;
 using UnityEngine;
 using Wjybxx.BTree;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using Wjybxx.Commons.Pool;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
@@ -57,6 +58,7 @@ public class ResourceManager
     private long _bundleMaxIdleTime = 10 * 1000;
     private long _lastCheckTime;
 
+    [Inject]
     public ResourceManager() {
         _scheduler = new TaskScheduler();
         TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()

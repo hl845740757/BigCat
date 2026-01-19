@@ -1,50 +1,50 @@
 ﻿// 公共类型定义
 
-// @Options{ alias: [Vector2, V2], style: flow }
-// @Editor{ displayType: Vector2 }
+// @Options{ alias: [Vector2, V2], encodeFeatures: "Double4AsVector | Double4Len2" }
+// @Editor{ displayType: Vector2, dsonType: Double4 }
 struct Vector2 {
     float x = 1;
     float y = 2;
 }
-// @Options{ alias: [Vector3, V3], style: flow }
-// @Editor{ displayType: Vector3 }
+// @Options{ alias: [Vector3, V3], encodeFeatures: "Double4AsVector | Double4Len3" }
+// @Editor{ displayType: Vector3, dsonType: Double4 }
 struct Vector3 {
     float x = 1;
     float y = 2;
     float z = 3;
 }
-// @Options{ alias: [Vector4, V4], style: flow }
-// @Editor{ displayType: Vector4 }
+// @Options{ alias: [Vector4, V4], encodeFeatures: "Double4AsVector" }
+// @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Vector4 {
     float x = 1;
     float y = 2;
     float z = 3;
     float w = 4;
 }
-// @Options{ alias: [Quaternion, Quat], style: flow }
-// @Editor{ displayType: Vector4 }
+// @Options{ alias: [Quaternion, Quat], encodeFeatures: "Double4AsVector" }
+// @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Quaternion {
     float x = 1;
     float y = 2;
     float z = 3;
     float w = 4;
 }
-// @Options{ alias: [Vector2Int, VInt2], style: flow }
-// @Editor{ displayType: Vector2Int }
+// @Options{ alias: [Vector2Int, VInt2], encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len2" }
+// @Editor{ displayType: Vector2Int, dsonType: Double4 }
 struct Vector2Int {
     int32 x = 1;
     int32 y = 2;
 }
-// @Options{ alias: [Vector3Int, VInt3], style: flow }
-// @Editor{ displayType: Vector3Int }
+// @Options{ alias: [Vector3Int, VInt3], encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len3" }
+// @Editor{ displayType: Vector3Int, dsonType: Double4 }
 struct Vector3Int {
     int32 x = 1;
     int32 y = 2;
     int32 z = 3;
 }
 
-// @Options{ style: flow }
-// @Editor { displayType : Color }
+// @Options{ encodeFeatures: "Double4AsRgba" }
+// @Editor { displayType : Color, dsonType: Double4 }
 struct Color {
   float r = 1;
   float g = 2;
@@ -77,24 +77,8 @@ struct MinMaxAABB {
   Vector3 max = 2;
 }
 
-// 测试实例 -- {}和[]暂时需要严格缩进
-// 大写名字表示关联类型的默认值
-inst Vector3 {
-    x: 0,
-    y: 1,
-    z: 0
+// 枚举Set
+// @Editor{ displayType: EnumSet, dsonType: Array }
+class EnumSet<T> {
+  List<int32> values = 1; // 所有元素
 }
-// 测试实例从另一个模板初始化
-inst Vector4 from Vector3 {
-    w: 0
-}
-// 测试数组实例
-inst vector3_array [
-    {x: 1, y: 0, z: 0},
-    {x: 0, y: 1, z: 0},
-    {x: 0, y: 0, z: 1}    
-]
-
-// 测试不换行缩进
-inst Vector3/1 { x: 0, y: 0, z: 0}
-inst Vector3/2 [0, 0, 0]

@@ -44,6 +44,7 @@ public class VarInt32PopupField : PopupField<int>, IVarField
             formatSelectedValueCallback = variableCfg.intPopNameFunc;
         }
         //
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.intValue);
     }

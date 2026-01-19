@@ -56,11 +56,11 @@ public class DataModelResolver : IDataModelResolver
     /// 1.如果是普通类型，value是属性或字段 -- 查找时属性优先。
     /// 2.如果是List或字典，value是索引器（属性）。
     /// </summary>
-    private readonly Dictionary<MemberKey, MemberInfo> memberCache = new Dictionary<MemberKey, MemberInfo>();
+    private readonly Dictionary<MemberKey, (MemberInfo, Type)> memberCache = new();
     /// <summary>
     /// 数据地址解析缓存
     /// </summary>
-    private readonly Dictionary<string, List<Item>> itemCache = new Dictionary<string, List<Item>>();
+    private readonly Dictionary<string, List<Item>> itemCache = new();
     /// <summary>
     /// 用于字典查询时的缓存
     /// </summary>
@@ -112,25 +112,24 @@ public class DataModelResolver : IDataModelResolver
         Type type = dataModel.GetType();
         // 测试是否是List类型 - TODO 测试接口类型是否范围过广？
         if (type.GetInterface(CNAME_ILIST) != null) {
-            PropertyInfo propertyInfo = GetIndexer(type);
+            PropertyInfo propertyInfo = GetIndexer(type, out _);
             int index = item.IsUiIndex ? uiIndex : item.number;
             return propertyInfo.GetValue(dataModel, new object[] { index });
         }
         // 测试是否是字典类型
         if (type.GetInterface(CNAME_IDICTIONARY) != null) {
-            PropertyInfo propertyInfo = GetIndexer(type);
-            ParameterInfo indexParameter = propertyInfo.GetIndexParameters()[0]; // 这里会创建数组，但字典使用频率不高
-            if (indexParameter.ParameterType == typeof(int)) {
+            PropertyInfo propertyInfo = GetIndexer(type, out Type indexType);
+            if (indexType == typeof(int)) {
                 int index = item.IsUiIndex ? uiIndex : item.number;
                 _arrayCache[0] = index;
                 return propertyInfo.GetValue(dataModel, _arrayCache);
             }
-            if (indexParameter.ParameterType == typeof(long)) {
+            if (indexType == typeof(long)) {
                 int index = item.IsUiIndex ? uiIndex : item.number;
                 _arrayCache[0] = index;
                 return propertyInfo.GetValue(dataModel, _arrayCache);
             }
-            if (indexParameter.ParameterType == typeof(string)) {
+            if (indexType == typeof(string)) {
                 string index = item.name;
                 _arrayCache[0] = index;
                 return propertyInfo.GetValue(dataModel, _arrayCache);
@@ -146,38 +145,40 @@ public class DataModelResolver : IDataModelResolver
         return fieldInfo.GetValue(dataModel);
     }
 
-    private PropertyInfo GetIndexer(Type type) {
+    private PropertyInfo GetIndexer(Type type, out Type indexType) {
         MemberKey key = new MemberKey(type, "Item");
-        if (memberCache.TryGetValue(key, out MemberInfo memberInfo)) {
-            return (PropertyInfo)memberInfo;
+        if (memberCache.TryGetValue(key, out (MemberInfo, Type) tuple)) {
+            indexType = tuple.Item2;
+            return (PropertyInfo)tuple.Item1;
         }
         PropertyInfo propertyInfo = type.GetProperty("Item", BindingFlags.Public | BindingFlags.Instance);
         if (propertyInfo == null) {
             throw new Exception("invalid type: " + type);
         }
         ParameterInfo indexParameter = propertyInfo.GetIndexParameters()[0];
-        if (!(indexParameter.ParameterType == typeof(int)
-              || indexParameter.ParameterType == typeof(long)
-              || indexParameter.ParameterType == typeof(string))) {
+        indexType = indexParameter.ParameterType;
+        if (!(indexType == typeof(int)
+              || indexType == typeof(long)
+              || indexType == typeof(string))) {
             throw new Exception("invalid type: " + type);
         }
-        memberCache[key] = propertyInfo;
+        memberCache[key] = (propertyInfo, indexType);
         return propertyInfo;
     }
 
     private MemberInfo GetPropertyOrField(Type type, string memberName) {
         MemberKey key = new MemberKey(type, memberName);
-        if (memberCache.TryGetValue(key, out MemberInfo memberInfo)) {
-            return memberInfo;
+        if (memberCache.TryGetValue(key, out (MemberInfo, Type) tuple)) {
+            return tuple.Item1;
         }
-        memberInfo = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.Instance);
+        MemberInfo memberInfo = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.Instance);
         if (memberInfo == null) {
             memberInfo = type.GetField(memberName, BindingFlags.Public | BindingFlags.Instance);
         }
         if (memberInfo == null) {
             throw new Exception($"member: {memberName} not found, type: {type}");
         }
-        memberCache[key] = memberInfo;
+        memberCache[key] = (memberInfo, null);
         return memberInfo;
     }
 

@@ -40,6 +40,7 @@ public class VarInt32Field : MIntegerField, IVarField
             hasMax = true;
             max = variableCfg.max.AsNumber().IntValue;
         }
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.intValue);

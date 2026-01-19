@@ -40,6 +40,7 @@ public class VarInt64Field : MLongField, IVarField
             hasMax = true;
             max = variableCfg.max.AsNumber().LongValue;
         }
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.longValue);
         this.isDelayed = variableCfg.isDelayed;

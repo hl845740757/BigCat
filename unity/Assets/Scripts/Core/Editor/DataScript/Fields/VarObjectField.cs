@@ -23,7 +23,6 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
-using Wjybxx.Commons;
 using Wjybxx.Dson;
 
 namespace Wjybxx.BigCat.Editor.DataScript
@@ -41,6 +40,7 @@ public class VarObjectField : Foldout, IVarField
     private DSNamedType _buildType;
     private EventCallback<ChangeEvent<int>> _onCtrlValueChanged1;
     private EventCallback<ChangeEvent<string>> _onCtrlValueChanged2;
+    internal ListFieldMode mode;
 
     public VarObjectField() {
         style.flexShrink = 0;
@@ -74,10 +74,18 @@ public class VarObjectField : Foldout, IVarField
         if (container.childCount == 0 && !ReferenceEquals(_buildType, variable.type)) {
             RebuildFieldViews();
         }
+        // 响应表单模式 - 字段布局由注解控制更灵活
+        bool isSheetMode = mode == ListFieldMode.Sheet;
+        if (isSheetMode) {
+            contentContainer.style.marginTop = -15;
+            contentContainer.style.marginLeft = 50;
+            contentContainer.style.flexDirection = FlexDirection.Row;
+        }
         for (int index = 0; index < container.childCount; index++) {
             VisualElement fieldView = container[index];
             Variable nestedVar = variable[index];
-            if (!nestedVar.cfg.HasBranchCfg) {
+            if (nestedVar.cfg.branchCfgs == null) {
+                DataEditorUtil.SetFieldLabel(fieldView, nestedVar.displayName);
                 DataEditorUtil.Bind(fieldView, nestedVar, _editor);
                 continue;
             }
@@ -107,6 +115,7 @@ public class VarObjectField : Foldout, IVarField
         if (typeChanged) {
             RebuildFieldViews();
         }
+        DataEditorUtil.SetFieldSize(this, variable.cfg);
         Refresh();
     }
 
@@ -179,7 +188,7 @@ public class VarObjectField : Foldout, IVarField
         }
         HashSet<VisualElement> ctrlFields = null;
         foreach (Variable nestedVar in _variable.values) {
-            if (!nestedVar.cfg.HasBranchCfg) {
+            if (nestedVar.cfg.branchCfgs == null) {
                 continue;
             }
             ctrlFields ??= new HashSet<VisualElement>(4);
@@ -240,7 +249,7 @@ public class VarObjectField : Foldout, IVarField
         // 实例选择
         bool isPairType = DSUtil.IsPairType(variable.type);
         VariableCfg variableCfg = variable.cfg;
-        if (variableCfg.HasSupportedInsts && !isPairType) {
+        if (variableCfg.supportedInsts != null && !isPairType) {
             GenericMenu.MenuFunction2 callback = OnClickResetWith;
             for (int index = 0; index < variableCfg.supportedInsts.Count; index++) {
                 DSInst inst = variableCfg.supportedInsts[index];
@@ -253,7 +262,7 @@ public class VarObjectField : Foldout, IVarField
             menu.AddDisabledItem(new GUIContent("ResetWith"));
         }
         // 多态类型选择
-        if (variableCfg.HasSupportedTypes && !isPairType) {
+        if (variableCfg.supportedTypes != null && !isPairType) {
             string curTypeSymbol = _editor.GetDisplayName(variable.type);
             menu.AddDisabledItem(new GUIContent("ChangeType/" + curTypeSymbol));
             menu.AddSeparator("ChangeType/");

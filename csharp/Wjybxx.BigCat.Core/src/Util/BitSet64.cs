@@ -19,12 +19,14 @@
 using System;
 using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
+using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 固定64位的BitSet
 /// </summary>
+[DsonSerializable]
 public sealed class BitSet64
 {
     /// <summary>
@@ -32,6 +34,8 @@ public sealed class BitSet64
     /// </summary>
     public const int LENGTH = 64;
 
+    [DsonIgnore(false)]
+    [DsonProperty(Getter = "Bits", Setter = "Bits")]
     private long _lowBits;
 
     public BitSet64() {
@@ -40,6 +44,11 @@ public sealed class BitSet64
 
     public BitSet64(BitSet64 src) {
         this._lowBits = src._lowBits;
+    }
+
+    public bool this[int index] {
+        get => Get(index);
+        set => Set(index, value);
     }
 
     public bool Get(int bitIndex) {
@@ -52,7 +61,7 @@ public sealed class BitSet64
         if (value) {
             Set(index);
         } else {
-            Clear(index);
+            Unset(index);
         }
     }
 
@@ -61,7 +70,7 @@ public sealed class BitSet64
         _lowBits |= (1L << bitIndex);
     }
 
-    public void Clear(int bitIndex) {
+    public void Unset(int bitIndex) {
         CheckIndex(bitIndex);
         _lowBits &= ~(1L << bitIndex);
     }
@@ -115,7 +124,7 @@ public sealed class BitSet64
     }
 
     /// <summary>
-    /// 与非
+    /// 与非（即清除）
     /// </summary>
     /// <param name="other"></param>
     public void AndNot(BitSet64 other) {
@@ -127,8 +136,15 @@ public sealed class BitSet64
     /// </summary>
     /// <param name="other"></param>
     /// <returns></returns>
-    public bool IsIntersect(BitSet64 other) {
+    public bool Intersect(BitSet64 other) {
         return (this._lowBits & other._lowBits) != 0;
+    }
+
+    /// <summary>
+    /// 内容取反
+    /// </summary>
+    public void Not() {
+        this._lowBits = ~this._lowBits;
     }
 
     /// <summary>

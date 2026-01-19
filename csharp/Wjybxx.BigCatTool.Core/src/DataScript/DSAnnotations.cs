@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using Wjybxx.Commons;
 using Wjybxx.Dson.Codec;
 
 namespace Wjybxx.BigCatTool.DataScript
@@ -50,9 +49,11 @@ public static class DSAnnotations
     /// 用于定义类型、字段、枚举值的可选项
     ///
     /// <h3>用于类型时</h3>
-    /// <code>// @Options{isFlags: true, dataClass: true, nonGenerate: true, encodeFeatures: [ObjectIndent]}</code>
-    /// - isFlags 标识枚举类型是否是Flags类型
+    /// <code>// @Options{isFlags: true, isIndexes: true, dataClass: true, nonGenerate: true, encodeFeatures: [ObjectIndent]}</code>
+    /// - isFlags 标识枚举类型是否是Flags类型(枚举值为掩码)
+    /// - isIndexes 标识枚举类型是否是Index类型(枚举值可充当数组下标，可存储在BitSet等集合中)
     /// - baseType 代码生成时的特殊超类符号，主要用于指定枚举的类型
+    /// 
     /// - style 序列化样式，如果只想配置文本样式，可以通过style代替序列化特征值
     /// - dataClass 标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
     /// - nonGenerate 表示生成代码时跳过，即类型是外部库类型的镜像
@@ -93,16 +94,16 @@ public static class DSAnnotations
     /// - isInteger 是否是整数类型AABB
     /// - isFolder 是否是文件夹路径
     /// 
-    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr，Pointer。
+    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr、Pointer、Double4。
     /// - nodeFeatures node的特征值，是否启用Port端口等
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
     /// 字段编辑器风格(Inspector视图)
-    /// - expanded 是否默认展开
+    /// - isSheet 是否是表单(适用List字段)
+    /// - minWidth 最小宽度
     /// - maxWidth 最大宽度
     /// - maxHeight 最大高度
-    /// - flexDir 弹性布局
     /// - labelMargin label和value的边距
     /// </summary>
     public const string FIELD_STYLE = "FieldStyle";
@@ -110,7 +111,7 @@ public static class DSAnnotations
     /// 节点编辑器风格(GraphView视图)
     /// 
     /// </summary>
-    public const string NODE_STYLE = "NodeStyle";
+    private const string NODE_STYLE = "NodeStyle";
 
     /// <summary>
     /// 端口名重映射
@@ -161,6 +162,7 @@ public static class DSAnnotations
 
     /// <summary>
     /// 多态字段
+    /// 
     /// 语法：<code>// @PloyField[ Vector2, Vector3 ]</code>
     ///
     /// 注：
@@ -170,24 +172,25 @@ public static class DSAnnotations
     public const string PLOY_FIELD = "PloyField";
 
     /// <summary>
-    /// Mask字段(支持多个)
-    ///
-    /// 语法：<code>// @MaskField[ Left, Right, Bottom ]</code>
+    /// Mask字段(支持多个，自动合并)
+    /// 
+    /// 语法1：<code>// @MaskField[ Left, Right, Bottom ]</code>
+    /// 语法2：<code>// @MaskField[ @{clsName} ]</code> - 将关联枚举放在对象头
     ///
     /// 注：
     /// 1.注解为数组类型，Value为每个bit对应的名字，无特殊字符时可不加双引号。
-    /// 2.如果字段是集合或Map类型，则表示集合内元素支持的多态类型。
-    /// 3.如果是枚举字段，数组保持为空即可。
-    /// 4.支持多注解，自动合并它们的值
+    /// 2.如果字段是集合或Map类型，则表示集合内元素支持的Mask配置。
+    /// 3.语法2表示通过Indexes类型枚举初始化MaskName
     /// </summary>
     public const string MASK_FIELD = "MaskField";
+    
     /// <summary>
-    /// 候选值
+    /// 候选值(支持多个，自动合并)
+    /// 
     /// 语法：<code>// @Candidates[ Vector2, Vector3 ]</code>
     ///
     /// 1.注解为数组类型，Value为候选值；TODO 如果注解是Object类型，则key为displayName，value为数字值。
     /// 2.目前仅支持string字段
-    /// 3.支持多注解，自动合并它们的值
     /// </summary>
     public const string CANDIDATES = "Candidates";
 
@@ -197,6 +200,7 @@ public static class DSAnnotations
     public const string KEY_JAVA = "java";
     // 类型
     public const string KEY_IS_FLAGS = "isFlags";
+    public const string KEY_IS_INDEXES = "isIndexes";
     public const string KEY_BASE_TYPE = "baseType";
     public const string KEY_DATA_CLASS = "dataClass";
     public const string KEY_NON_GENERATE = "nonGenerate";
@@ -234,9 +238,10 @@ public static class DSAnnotations
     public const string KEY_DISTINCT = "distinct";
     public const string KEY_EXPANDED = "expanded";
 
+    public const string KEY_IS_SHEET = "isSheet";
+    public const string KEY_MIN_WIDTH = "minWidth";
     public const string KEY_MAX_WIDTH = "maxWidth";
     public const string KEY_MAX_HEIGHT = "maxHeight";
-    public const string KEY_FLEX_DIRECTION = "flexDir";
     public const string KEY_LABEL_MARGIN = "labelMargin";
     public const string KEY_X_LABEL_MARGIN = "xLabelMargin";
     public const string KEY_Y_LABEL_MARGIN = "yLabelMargin";

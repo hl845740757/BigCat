@@ -45,7 +45,7 @@ public static class UnityEditorUtil
 
     static UnityEditorUtil() {
         for (int index = 0; index < elementNameCache.Length; index++) {
-            elementNameCache[index] = "Element " + index;
+            elementNameCache[index] = "Ln" + (index + 1);
         }
     }
 
@@ -55,7 +55,7 @@ public static class UnityEditorUtil
     /// <param name="index"></param>
     /// <returns></returns>
     public static string GetElementName(int index) {
-        return index >= 0 && index < elementNameCache.Length ? elementNameCache[index] : "Element " + index;
+        return index >= 0 && index < elementNameCache.Length ? elementNameCache[index] : "Ln" + (index + 1);
     }
 
     /// <summary>
@@ -400,12 +400,13 @@ public static class UnityEditorUtil
     #region uitoolkit
 
     private static PropertyInfo _listFoldoutProperty;
+    private static PropertyInfo _foldoutToggleProperty;
 
     public static void SetDisplay(this VisualElement element, bool display) {
         element.style.display = display ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    public static Foldout GetFoldout(this ListView listView) {
+    internal static Foldout GetFoldout(this ListView listView) {
         // 也可通过Query查询，但效率差一点，开销也大
         if (_listFoldoutProperty == null) {
             _listFoldoutProperty = typeof(ListView).GetProperty("headerFoldout",
@@ -414,11 +415,19 @@ public static class UnityEditorUtil
         return (Foldout)_listFoldoutProperty!.GetValue(listView, null);
     }
 
-    public static void SetFoldout(this ListView listView, bool value) {
+    internal static void SetFoldout(this ListView listView, bool value) {
         Foldout foldout = GetFoldout(listView);
         if (foldout != null) {
             foldout.value = value;
         }
+    }
+
+    internal static Toggle GetToggle(this Foldout foldout) {
+        if (_foldoutToggleProperty == null) {
+            _foldoutToggleProperty = typeof(Foldout).GetProperty("toggle",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+        return (Toggle)_foldoutToggleProperty!.GetValue(foldout, null);
     }
 
     internal static void SetLabelMargin<T>(this BaseField<T> field, float labelMargin) {

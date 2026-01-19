@@ -18,6 +18,7 @@
 
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+using Wjybxx.BigCatTool.DataScript;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
@@ -41,9 +42,16 @@ public class VarInt32MaskField : MaskField, IVarField
             VariableCfg typeCfg = editor.dataGraph.GetVariableCfg(variable.type);
             choices = typeCfg.maskNames;
         } else {
-            choices = variableCfg.maskNames;
+            // 支持映射到Indexes枚举
+            if (variableCfg.maskIndexEnum != null) {
+                DSTypeElement enumType = editor.repository.ResolveTypeSymbol(variable.defineInfo, variableCfg.maskIndexEnum);
+                VariableCfg enumCfg = editor.dataGraph.GetVariableCfg(enumType);
+                choices = enumCfg.maskNames;
+            } else {
+                choices = variableCfg.maskNames;
+            }
         }
-        //
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.intValue);
     }

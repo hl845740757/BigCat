@@ -37,6 +37,9 @@ public class TimestampField : BindableElement, INotifyValueChanged<Timestamp>, I
     private Timestamp _value;
     private bool _rebuildingValue;
 
+    public TimestampField() {
+    }
+
     public string label {
         get {
             EnsureInited();

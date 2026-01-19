@@ -415,7 +415,7 @@ public sealed class DSRepository
             }
             enclosingFile = namedType.GetEnclosingFile();
         } else {
-            enclosingFile = (DSFile)scopeEntry;
+            enclosingFile = scopeEntry.GetEnclosingFile();
             r = enclosingFile.GetType(typeName);
             if (r != null) {
                 return r;

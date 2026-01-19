@@ -47,5 +47,6 @@ public enum DisplayType
     Color32, // 单int值结构体
     Euler32, // 单int值结构体，xyz限制在[0, 360]
     MinMaxAABB, // 包围盒
+    EnumSet, // 枚举集合
 }
 }

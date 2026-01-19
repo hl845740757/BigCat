@@ -57,7 +57,7 @@ public sealed class Scene
     /// <summary>
     /// 配置表id
     /// </summary>
-    private int _configId;
+    [NonSerialized] private int _configId;
     /// <summary>
     /// 实例id
     /// </summary>
@@ -131,7 +131,6 @@ public sealed class Scene
     }
 
     public Scene(IDsonObjectReader reader) : this() {
-        _configId = reader.ReadInt("configId");
         _features = (SceneFeatures)reader.ReadInt("features");
         // 组件
         List<SComponent> components = reader.ReadObject<List<SComponent>>("components");
@@ -144,7 +143,6 @@ public sealed class Scene
     }
 
     public void WriteObject(IDsonObjectWriter writer) {
-        writer.WriteInt("configId", _configId);
         writer.WriteInt("features", (int)_features);
         writer.WriteObject("components", _components);
     }

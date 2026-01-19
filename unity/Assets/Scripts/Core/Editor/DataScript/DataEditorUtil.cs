@@ -189,13 +189,20 @@ public static class DataEditorUtil
         return intField.labelElement;
     }
 
-    public static void SetMaxHeight(VisualElement element, VariableCfg variableCfg) {
+    public static void SetFieldSize(VisualElement element, VariableCfg variableCfg) {
         FieldStyleCfg styleCfg = variableCfg.styleCfg;
-        if (styleCfg != null && styleCfg.maxHeight != null) {
-            element.style.maxHeight = styleCfg.maxHeight.FloatValue;
-        } else {
-            element.style.maxHeight = new StyleLength(StyleKeyword.Auto);
-        }
+        if (styleCfg == null) return;
+        element.style.minWidth = styleCfg.minWidth != null
+            ? styleCfg.minWidth.FloatValue
+            : new StyleLength(StyleKeyword.Auto);
+        //
+        element.style.maxWidth = styleCfg.maxWidth != null
+            ? styleCfg.maxWidth.FloatValue
+            : new StyleLength(StyleKeyword.Auto);
+        //
+        element.style.maxHeight = styleCfg.maxHeight != null
+            ? styleCfg.maxHeight.FloatValue
+            : new StyleLength(StyleKeyword.Auto);
     }
 
     #endregion
@@ -233,17 +240,17 @@ public static class DataEditorUtil
         // 根据字段类型自动推测
         switch (varType.SimpleName) {
             case DSKeywords.TYPE_INT32: {
-                if (variableCfg.HasMaskNames) return CreateInt32MaskField(variable, editor);
-                if (variableCfg.HasPopNames) return CreateInt32PopupField(variable, editor);
+                if (variableCfg.maskNames != null) return CreateInt32MaskField(variable, editor);
+                if (variableCfg.popNames != null) return CreateInt32PopupField(variable, editor);
                 return CreateInt32Field(variable, editor);
             }
             case DSKeywords.TYPE_INT64: { // 其实可以考虑支持一下Int64的Mask
-                if (variableCfg.HasMaskNames) return CreateInt32MaskField(variable, editor);
-                if (variableCfg.HasPopNames) return CreateInt32PopupField(variable, editor);
+                if (variableCfg.maskNames != null) return CreateInt32MaskField(variable, editor);
+                if (variableCfg.popNames != null) return CreateInt32PopupField(variable, editor);
                 return CreateInt64Field(variable, editor);
             }
             case DSKeywords.TYPE_STRING: {
-                if (variableCfg.HasPopNames) return CreateStringPopupField(variable, editor);
+                if (variableCfg.popNames != null) return CreateStringPopupField(variable, editor);
                 return CreateStringField(variable, editor);
             }
             case DSKeywords.TYPE_BYTES: {
@@ -285,6 +292,7 @@ public static class DataEditorUtil
             DisplayType.Color32 => CreateColor32Field(variable, editor),
             DisplayType.Euler32 => CreateEuler32Field(variable, editor),
             DisplayType.MinMaxAABB => CreateAABBField(variable, editor),
+            DisplayType.EnumSet => CreateEnumSetField(variable, editor),
             _ => throw new ArgumentException("invalid displayType: " + displayType)
         };
     }
@@ -487,6 +495,12 @@ public static class DataEditorUtil
 
     public static VarObjectField CreateObjectField(Variable variable, DataEditor editor) {
         VarObjectField field = new VarObjectField();
+        field.Bind(editor, variable);
+        return field;
+    }
+
+    public static VarEnumSetField CreateEnumSetField(Variable variable, DataEditor editor) {
+        VarEnumSetField field = new VarEnumSetField();
         field.Bind(editor, variable);
         return field;
     }

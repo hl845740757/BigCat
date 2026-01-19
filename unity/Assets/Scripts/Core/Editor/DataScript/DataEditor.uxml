@@ -13,8 +13,8 @@
             <ui:Button text="创建" display-tooltip-when-elided="true" name="create-node" />
         </uie:Toolbar>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row; flex-shrink: 0;">
-            <Wjybxx.BigCat.Editor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 0; min-width: 60%; max-width: 80%; width: 30%;" />
-            <ui:ScrollView name="inspector-div" style="flex-grow: 1; flex-shrink: 1; max-width: 30%; min-width: 20%; width: 25%; height: 800px;">
+            <Wjybxx.BigCat.Editor.DataScript.GraphView focusable="true" name="NodeGraphView" style="flex-grow: 1; flex-shrink: 1; width: 60%; max-width: 80%;" />
+            <ui:ScrollView name="inspector-div" mode="VerticalAndHorizontal" style="flex-grow: 1; flex-shrink: 1; width: 25%; max-width: 80%; min-height: 800px;">
                 <ui:VisualElement name="node-header" tooltip="node基础信息">
                     <Wjybxx.BigCat.Editor.UIElements.MTextField label="TypeSymbol" name="type-symbol" tooltip="类型信息" label-margin="-60" readonly="true" />
                     <Wjybxx.BigCat.Editor.UIElements.MLongField name="local-id" label="LocalId" hasMin="true" readonly="false" is-delayed="true" tooltip="程序分配的局部Id，允许手动修改" />

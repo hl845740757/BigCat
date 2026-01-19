@@ -32,6 +32,7 @@ public class VarBoolField : MToggle, IVarField
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.boolValue);
     }

@@ -53,6 +53,11 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IPref
     public AABBField() {
     }
 
+    public bool isExpanded {
+        get => _foldout.value;
+        set => _foldout.value = value;
+    }
+
     public string label {
         get {
             EnsureInited();

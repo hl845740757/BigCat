@@ -45,6 +45,7 @@ public class VarStringField : MTextField, IVarField
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         // Text为Null的情况下设置其它属性可能引发NPE
         this.SetValueWithoutNotify(variable.stringValue ?? "");

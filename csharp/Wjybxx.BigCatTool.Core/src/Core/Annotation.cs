@@ -72,15 +72,8 @@ public sealed class Annotation
         if (atIdx < 0 || comment[atIdx] != '@') {
             return null; // '@'符号前面有其它内容
         }
-        // 允许object和array格式
-        int startIndex = comment.IndexOf('{');
-        int endIndex = comment.LastIndexOf('}');
-        if (startIndex < 0 || startIndex >= endIndex) {
-            startIndex = comment.IndexOf('[');
-            endIndex = comment.LastIndexOf(']');
-            if (startIndex < 0 || startIndex >= endIndex) {
-                return null;
-            }
+        if (!TryGetRange(comment, out int startIndex, out int endIndex)) {
+            return null;
         }
         string type = comment.Substring2(atIdx + 1, startIndex).Trim();
         if (string.IsNullOrWhiteSpace(type)) {
@@ -104,20 +97,33 @@ public sealed class Annotation
         if (atIdx < 0 || comment[atIdx] != '@') {
             return false; // '@'符号前面有其它内容
         }
-        int startIndex = comment.IndexOf('{');
-        int endIndex = comment.LastIndexOf('}');
-        if (startIndex < 0 || startIndex >= endIndex) {
-            startIndex = comment.IndexOf('[');
-            endIndex = comment.LastIndexOf(']');
-            if (startIndex < 0 || startIndex >= endIndex) {
-                return false;
-            }
+        if (!TryGetRange(comment, out int startIndex, out int endIndex)) {
+            return false;
         }
         string type = comment.Substring2(atIdx + 1, startIndex).Trim();
         if (string.IsNullOrWhiteSpace(type)) {
             return false; // 类型信息为空
         }
         return true;
+    }
+
+    private static bool TryGetRange(string comment, out int startIndex, out int endIndex) {
+        // 允许object和array格式 -- 需要判断[和{出现的顺序，不能优先处理其中的某个，否则可能索引到其内部元素
+        int arrIndex = comment.IndexOf('[');
+        int objIndex = comment.IndexOf('{');
+        if (arrIndex < 0 && objIndex < 0) {
+            startIndex = 0;
+            endIndex = 0;
+            return false;
+        }
+        if (arrIndex >= 0 && arrIndex < objIndex) {
+            startIndex = arrIndex;
+            endIndex = comment.LastIndexOf(']');
+        } else {
+            startIndex = objIndex;
+            endIndex = comment.LastIndexOf('}');
+        }
+        return endIndex > startIndex;
     }
 
     #endregion

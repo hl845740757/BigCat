@@ -19,7 +19,7 @@
 using System;
 using System.Globalization;
 
-namespace Wjybxx.BigCat.Core
+namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 时间值抽象

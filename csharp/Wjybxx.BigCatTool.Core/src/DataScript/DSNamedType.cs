@@ -363,18 +363,6 @@ public sealed class DSNamedType : DSTypeElement
         return null;
     }
 
-    /// <summary>
-    /// 获取定义类型的文件，内建类型返回对应的虚拟文件
-    /// </summary>
-    /// <returns></returns>
-    public DSFile GetEnclosingFile() {
-        DSElement enclosing = OriginDefine.EnclosingElement;
-        while (enclosing.Kind != DSElementKind.File) {
-            enclosing = enclosing.EnclosingElement;
-        }
-        return (DSFile)enclosing;
-    }
-
     #endregion
 
     #region reversed

@@ -19,12 +19,14 @@
 using System;
 using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
+using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 固定128位的BitSet -- 可以满足绝大多数场景
 /// </summary>
+[DsonSerializable]
 public sealed class BitSet128
 {
     /// <summary>
@@ -44,6 +46,11 @@ public sealed class BitSet128
         this._highBits = src._highBits;
     }
 
+    public bool this[int index] {
+        get => Get(index);
+        set => Set(index, value);
+    }
+
     public bool Get(int bitIndex) {
         CheckIndex(bitIndex);
         if (bitIndex > 63) {
@@ -58,7 +65,7 @@ public sealed class BitSet128
         if (value) {
             Set(index);
         } else {
-            Clear(index);
+            Unset(index);
         }
     }
 
@@ -71,7 +78,7 @@ public sealed class BitSet128
         }
     }
 
-    public void Clear(int bitIndex) {
+    public void Unset(int bitIndex) {
         CheckIndex(bitIndex);
         if (bitIndex > 63) {
             _highBits &= ~(1L << (bitIndex - 64));
@@ -140,7 +147,7 @@ public sealed class BitSet128
     }
 
     /// <summary>
-    /// 与非
+    /// 与非（即清除）
     /// </summary>
     /// <param name="other"></param>
     public void AndNot(BitSet128 other) {
@@ -153,9 +160,17 @@ public sealed class BitSet128
     /// </summary>
     /// <param name="other"></param>
     /// <returns></returns>
-    public bool IsIntersect(BitSet128 other) {
+    public bool Intersect(BitSet128 other) {
         return (this._lowBits & other._lowBits) != 0
                || (this._highBits & other._highBits) != 0;
+    }
+
+    /// <summary>
+    /// 内容取反
+    /// </summary>
+    public void Not() {
+        this._lowBits = ~this._lowBits;
+        this._highBits = ~this._highBits;
     }
 
     /// <summary>

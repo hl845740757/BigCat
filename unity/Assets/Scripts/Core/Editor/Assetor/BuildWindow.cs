@@ -55,7 +55,7 @@ public class BuildWindow : DataEditor
         const string buildNodeName = "EditorPacker"; // 编辑器打包节点任务的名字
 
         string filePath = UnityEditorUtil.ConvertToFilePath(buildConfigPath);
-        DsonArray<string> collection = Dsons.FromCollectionDson(File.ReadAllText(filePath));
+        DsonArray<string> collection = Dsons.FromFlatDson(File.ReadAllText(filePath));
         // 查找执行节点
         int index = DataEditorUtil.IndexOf(collection, buildNodeName);
         if (index < 0) {
@@ -87,7 +87,7 @@ public class BuildWindow : DataEditor
 
     public override void OnNodeExecuteRequest(NodeView nodeView) {
         string filePath = UnityEditorUtil.ConvertToFilePath(dataGraph.assetPath);
-        DsonArray<string> collection = Dsons.FromCollectionDson(File.ReadAllText(filePath));
+        DsonArray<string> collection = Dsons.FromFlatDson(File.ReadAllText(filePath));
         // 查找执行节点
         int index = DataEditorUtil.IndexOf(collection, nodeView.dataNode.localId);
         DsonValue root = collection[index];

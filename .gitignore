@@ -475,8 +475,8 @@ unity/Assets/Samples.meta
 
 unity/Assets/Resources/
 unity/Assets/Editor/Resources/
-unity/Assets/Editor/DataScripts/*.dson
 unity/Assets/Editor/DataScripts/*.meta
+# unity/Assets/Editor/DataScripts/*.dson
 
 unity/Assets/GameRes/
 #unity/Assets/GameRes/Fonts

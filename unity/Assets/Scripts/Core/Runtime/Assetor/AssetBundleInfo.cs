@@ -170,7 +170,7 @@ public sealed class AssetBundleInfo
             }
             writer.WriteEndArray();
         }
-        writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.SignedHex);
+        writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.Hex);
         writer.WriteInt32(nameof(assetIndexDepth), assetIndexDepth, NumberStyle.Simple);
         writer.WriteInt32(nameof(assetCount), assetCount, NumberStyle.Simple);
         writer.WriteInt32(nameof(bundleId), bundleId, NumberStyle.Simple);

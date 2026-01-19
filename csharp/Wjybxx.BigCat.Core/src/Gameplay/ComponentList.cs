@@ -216,7 +216,7 @@ public sealed class ComponentList<T> where T : class
                 _helper.SetNext(component, null);
                 if (next == null) {
                     _elements[cid.cacheIndex] = null;
-                    _elementsMask.Clear(cid.cacheIndex);
+                    _elementsMask.Unset(cid.cacheIndex);
                 } else {
                     _elements[cid.cacheIndex] = next;
                 }

@@ -36,6 +36,7 @@ public class VarStringPopupField : PopupField<string>, IVarField
         formatListItemCallback = variableCfg.stringPopNameFunc;
         formatSelectedValueCallback = variableCfg.stringPopNameFunc;
         //
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.stringValue);
     }

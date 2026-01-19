@@ -21,8 +21,15 @@ class SimpleBean {
     // @Options {ssti: true, encodeFeatures: [NumberHex]}
     int32 strLink = 10;
     // 测试sstiList
-    // @Options {ssti: true, encodeFeatures: [NumberHex]}    
+    // @Options {ssti: true, encodeFeatures: [NumberHex]}
     List<int32> strLinkList = 11;
+    
+    // 测试Int掩码使用枚举
+    // @Options { encodeFeatures: [NumberHex, NumberFixed] }
+    // @MaskField [ @{EColor} ]
+    int32 colorMask = 12;
+    // 测试枚举集合
+    EnumSet<EColor> colorSet = 13;
 }
 
 // 测试普通类继承
@@ -31,6 +38,7 @@ class SimpleChildBean : SimpleBean {
 }
 
 // 测试枚举
+// @Options{ isIndexes: true }
 enum EColor {
     White = 0;
     Red = 1;
@@ -70,7 +78,7 @@ class OuterClass {
 	List<Vector3> vecList = 5;
 	// 枚举输出为字符串
 	// @Options{encodeFeatures: [EnumAsString]}
-	// @EditorStyle{maxHeight : 300}
+	// @FieldStyle{maxHeight : 300}
 	Map<int32, EColor> colorMap = 6;
 	Map<int32, Vector3> posMap = 7;
 
@@ -117,10 +125,15 @@ class OuterClass {
     // @PortField {side: right}
     Map<int32,Vector3> linkDic = 23;    
 
+    // 测试表单
+    // @FieldStyle{isSheet: true}
+    List<Request> listReq = 25;
+
+    // @Options{ style: flow }
     class Request {
-		int32 a = 1;
-        int64 b = 2;
-		string str = 3;
+		int32 a = 1; // @FieldStyle{labelMargin: -120, minWidth: 60}
+        int64 b = 2; // @FieldStyle{labelMargin: -120, minWidth: 60}
+		string str = 3; // @FieldStyle{labelMargin: -100, minWidth: 200}
     }
     class Result {
 		int32 a = 1;
@@ -159,3 +172,25 @@ class TestGroupEntry {
     Pair<int32,Vector3> _f1 = 5;
     Pair<int32,Vector3> _f2 = 6; //@Editor{nodeFeatures: 0}
 }
+
+// 测试实例 -- {}和[]暂时需要严格缩进
+// 大写名字表示关联类型的默认值
+inst Vector3 {
+    x: 0,
+    y: 1,
+    z: 0
+}
+// 测试实例从另一个模板初始化
+inst Vector4 from Vector3 {
+    w: 0
+}
+// 测试数组实例
+inst vector3_array [
+    {x: 1, y: 0, z: 0},
+    {x: 0, y: 1, z: 0},
+    {x: 0, y: 0, z: 1}    
+]
+
+// 测试不换行缩进
+inst Vector3/1 { x: 0, y: 0, z: 0}
+inst Vector3/2 [0, 0, 0]

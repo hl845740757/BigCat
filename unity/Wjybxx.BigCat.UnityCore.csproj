@@ -62,7 +62,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\TimeUnit.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Attributes\StringPopFieldAttribute.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetHandle.cs" />
@@ -98,7 +97,6 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Codecs\UnityCodecLinker.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IBundleManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\AssetProvider.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\TimeValue.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\EWrapMode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Util\Euler32.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorBundleManager.cs" />

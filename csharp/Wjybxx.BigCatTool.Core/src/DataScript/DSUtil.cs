@@ -333,6 +333,11 @@ public static class DSUtil
         return Annotation.GetBool(options, DSAnnotations.KEY_IS_FLAGS);
     }
 
+    public static bool IsIndexesEnum(DSNamedType namedType) {
+        DsonObject<string> options = GetOptions(namedType);
+        return Annotation.GetBool(options, DSAnnotations.KEY_IS_INDEXES);
+    }
+    
     #region Name工具方法
 
     /// <summary>

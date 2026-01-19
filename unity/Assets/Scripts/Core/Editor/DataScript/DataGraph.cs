@@ -41,7 +41,7 @@ namespace Wjybxx.BigCat.Editor.DataScript
 /// 4.即所有的数据都通过Node存储，边只是显示层概念的。
 /// 5.虽然框架支持自定义结构Map的Key，但推荐仅使用int32、int64、enum、string类型。
 ///
-/// TODO 标记DataGraph是否为脏
+/// TODO 标记DataGraph是否为脏，增加分组缓存
 /// </summary>
 public sealed class DataGraph
 {
@@ -594,7 +594,7 @@ public sealed class DataGraph
         if (DSUtil.IsAtomicType(varType)) { // 这里不能拦截值类型，否则会拦截转换后的ObjectPath
             return;
         }
-        if (!variable.cfg.HasPortCfg) {
+        if (variable.cfg.portCfg == null) {
             if (DSUtil.IsCollectionOrMapType(varType)) {
                 return; // 不扫描动态路径字段
             }
@@ -667,7 +667,7 @@ public sealed class DataGraph
             displayName = variableCfg.displayName ?? defineInfo.SimpleName,
             isNull = DSUtil.IsNullableType(type)
         };
-        if (variableCfg.initNull || (variableCfg.HasPortCfg && !DSUtil.IsCollectionOrMapType(type))) {
+        if (variableCfg.initNull || (variableCfg.portCfg != null && !DSUtil.IsCollectionOrMapType(type))) {
             variable.isNull = true;
             variable.values = new List<Variable>();
         } else {

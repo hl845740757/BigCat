@@ -39,6 +39,11 @@ public class DateTimeField : BindableElement, INotifyValueChanged<DateTime>, IPr
     public DateTimeField() {
     }
 
+    public bool isExpanded {
+        get => _foldout.value;
+        set => _foldout.value = value;
+    }
+
     public string label {
         get {
             EnsureInited();

@@ -41,6 +41,7 @@ public class VarDoubleField : MDoubleField, IVarField
             hasMax = true;
             max = variableCfg.max.AsNumber().DoubleValue;
         }
+        DataEditorUtil.SetFieldSize(this, variableCfg);
         DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.doubleValue);
         this.isDelayed = variableCfg.isDelayed;

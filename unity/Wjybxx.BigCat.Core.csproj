@@ -63,6 +63,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\S2SRpcClient.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\WorkerImpl.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcSupport.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\EnumSetCodec.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneFeatures.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcClientImpl.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcMethodAttribute.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcServiceAttribute.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcClientException.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Unity\UnityWorkerBuilder.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\TimeUnit.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\UnionValue.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\DataKeys.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Co\ITimerMgr.cs" />
@@ -86,6 +88,7 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\BitSet128.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneSortKey.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Co\TimerMgr.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\EnumSet.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\GRegulator.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\BitSet64.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\WorkerHolder.cs" />
@@ -111,8 +114,10 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Co\TimingType.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\IntPair.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcClient.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\TimeValue.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcServerException.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcErrorCodes.cs" />
+    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\MainModule.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\WorkerFactory.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Co\CoroutineMgr.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\IReadonlyTime.cs" />
@@ -146,7 +151,6 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcRequestStub.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Co\TaskIndexHelper.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcMethodKey.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\MainModule.cs" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Wjybxx.BigCat.Core.asmdef" />
     <None Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\package.json" />
     <Reference Include="UnityEngine">
