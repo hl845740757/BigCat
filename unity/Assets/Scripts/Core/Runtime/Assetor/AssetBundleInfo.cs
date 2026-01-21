@@ -150,9 +150,9 @@ public sealed class AssetBundleInfo
         writer.WriteInt32(nameof(bundleType), (int)bundleType, NumberStyle.Simple);
         writer.WriteInt32(nameof(collectPathLength), collectPathLength, NumberStyle.Simple);
         //
-        writer.WriteInt32(nameof(unityCRC), (int)unityCRC, NumberStyle.Unsigned);
+        writer.WriteInt32(nameof(unityCRC), (int)unityCRC, NumberStyle.Hex);
         writer.WriteString(nameof(fileHash), fileHash);
-        writer.WriteInt32(nameof(fileCRC), (int)fileCRC, NumberStyle.Unsigned);
+        writer.WriteInt32(nameof(fileCRC), (int)fileCRC, NumberStyle.Hex);
         writer.WriteInt32(nameof(fileSize), fileSize, NumberStyle.Simple);
         writer.WriteInt32(nameof(encrypted), encrypted, NumberStyle.Simple);
         //

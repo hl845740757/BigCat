@@ -29,6 +29,7 @@ public class VarDateTimeField : BindableElement, IVarField
 
     public VarDateTimeField() {
         Add(field);
+        field.labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

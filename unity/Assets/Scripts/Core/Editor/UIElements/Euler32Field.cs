@@ -44,6 +44,13 @@ public class Euler32Field : BindableElement, INotifyValueChanged<Euler32>, IPref
         }
     }
 
+    public Label labelElement {
+        get {
+            EnsureInited();
+            return _field.labelElement;
+        }
+    }
+
     public Euler32 value {
         get {
             EnsureInited();

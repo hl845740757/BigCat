@@ -26,6 +26,7 @@ public class VarInt64Field : MLongField, IVarField
     private Variable _variable;
 
     public VarInt64Field() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
@@ -40,8 +41,6 @@ public class VarInt64Field : MLongField, IVarField
             hasMax = true;
             max = variableCfg.max.AsNumber().LongValue;
         }
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.longValue);
         this.isDelayed = variableCfg.isDelayed;
     }

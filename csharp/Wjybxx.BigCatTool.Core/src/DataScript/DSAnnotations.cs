@@ -44,6 +44,16 @@ public static class DSAnnotations
     /// 2.显式指定单个类型的命名空间时，需要使用全路径
     /// </summary>
     public const string NAMESPACE = "Namespace";
+    /// <summary>
+    /// region支持
+    /// <code>// @region[cmd, p1, p2]</code>
+    /// <code>// @region{cmd: cmd, k1: v1, k2: v2}</code>
+    ///
+    /// 1.region注解强制为其所属容器的注解
+    /// 2.region的值格式由用户自行约定，可以是数组，也可以是Object
+    /// </summary>
+    public const string REGION = "region";
+    public const string ENDREGION = "endregion";
 
     /// <summary>
     /// 用于定义类型、字段、枚举值的可选项
@@ -89,6 +99,7 @@ public static class DSAnnotations
     /// - min 数字类型的最小值
     /// - max 数字类型的最大值
     /// - initNull bool类型，是否将字段初始化为null值(延迟初始化)；Port字段自动初始化null
+    /// - pathType 用于初始化ObjectPath字段，枚举值见ObjectPathType
     /// - isDelayed 是否延迟响应输入
     /// - isMultiline 是否是多行文本
     /// - isInteger 是否是整数类型AABB
@@ -183,7 +194,7 @@ public static class DSAnnotations
     /// 3.语法2表示通过Indexes类型枚举初始化MaskName
     /// </summary>
     public const string MASK_FIELD = "MaskField";
-    
+
     /// <summary>
     /// 候选值(支持多个，自动合并)
     /// 
@@ -226,6 +237,7 @@ public static class DSAnnotations
     public const string KEY_MIN = "min";
     public const string KEY_MAX = "max";
     public const string KEY_INIT_NULL = "initNull";
+    public const string KEY_PATH_TYPE = "pathType";
     public const string KEY_IS_DELAYED = "isDelayed";
     public const string KEY_IS_MULTILINE = "isMultiline";
     public const string KEY_IS_INTEGER = "isInteger";

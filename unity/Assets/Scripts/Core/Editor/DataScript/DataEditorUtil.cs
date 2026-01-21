@@ -138,30 +138,41 @@ public static class DataEditorUtil
 
     #region set-label
 
+    internal const string LABEL_ELEMENT_NAME = "field-label";
+
     /// <summary>
     /// 设置字段的Label
     /// </summary>
-    /// <param name="element"></param>
-    /// <param name="label"></param>
     public static void SetFieldLabel(VisualElement element, string label) {
         if (element is IVarField field) {
             field.label = label;
         }
     }
 
-    public static void SetFieldLabelMargin<T>(BaseField<T> field, VariableCfg variableCfg) {
-        FieldStyleCfg styleCfg = variableCfg.styleCfg;
-        if (styleCfg != null && styleCfg.labelMargin != null) {
-            field.SetLabelMargin(styleCfg.labelMargin.FloatValue);
+    internal static void SetFieldLabelMargin(VisualElement field, VariableCfg variableCfg) {
+        DsonNumber labelMargin = variableCfg.styleCfg?.labelMargin;
+        if (labelMargin == null) return;
+        // 注意：虽然我们为label设计了特殊的名字，但可能会查询到嵌套元素...
+        Label label = field.Q<Label>(LABEL_ELEMENT_NAME);
+        if (label != null) {
+            label.style.marginRight = labelMargin.FloatValue;
         }
     }
 
-    public static void SetVectorFieldMargin(VisualElement field, VisualElement labelElement, VariableCfg variableCfg) {
+    internal static void UnsetFieldLabelMargin(VisualElement field) {
+        Label label = field.Q<Label>(LABEL_ELEMENT_NAME);
+        if (label != null) {
+            label.style.marginRight = 0;
+        }
+    }
+
+    /// <summary>
+    /// 设置Vector内部字段的Label偏移
+    /// </summary>
+    internal static void SetVectorFieldMargin(VisualElement field, VariableCfg variableCfg) {
         FieldStyleCfg styleCfg = variableCfg.styleCfg;
         if (styleCfg == null) return;
-        if (styleCfg.labelMargin != null) {
-            labelElement.style.marginRight = styleCfg.labelMargin.FloatValue;
-        }
+        VisualElement labelElement;
         if (styleCfg.xLabelMargin != null && (labelElement = GetVectorFieldLabel(field, 0)) != null) {
             labelElement.style.marginRight = styleCfg.xLabelMargin.FloatValue;
         }
@@ -177,7 +188,7 @@ public static class DataEditorUtil
     }
 
     private static Label GetVectorFieldLabel(VisualElement field, int index) {
-        VisualElement values = field.childCount == 1 ? field[0] : field[1];
+        VisualElement values = field.childCount == 1 ? field[0] : field[1]; // 可能没有标签
         if (index >= field.childCount) {
             return null;
         }
@@ -189,7 +200,10 @@ public static class DataEditorUtil
         return intField.labelElement;
     }
 
-    public static void SetFieldSize(VisualElement element, VariableCfg variableCfg) {
+    /// <summary>
+    /// 设置视图宽度 - 只有Sheet视图中的字段需要设置
+    /// </summary>
+    public static void SetWidth(VisualElement element, VariableCfg variableCfg) {
         FieldStyleCfg styleCfg = variableCfg.styleCfg;
         if (styleCfg == null) return;
         element.style.minWidth = styleCfg.minWidth != null
@@ -199,7 +213,23 @@ public static class DataEditorUtil
         element.style.maxWidth = styleCfg.maxWidth != null
             ? styleCfg.maxWidth.FloatValue
             : new StyleLength(StyleKeyword.Auto);
-        //
+    }
+
+    /// <summary>
+    /// 取消宽度设置
+    /// </summary>
+    /// <param name="element"></param>
+    public static void UnsetWidth(VisualElement element) {
+        element.style.minWidth = new StyleLength(StyleKeyword.Auto);
+        element.style.maxWidth = new StyleLength(StyleKeyword.Auto);
+    }
+
+    /// <summary>
+    /// 设置高度
+    /// </summary>
+    public static void SetHeight(VisualElement element, VariableCfg variableCfg) {
+        FieldStyleCfg styleCfg = variableCfg.styleCfg;
+        if (styleCfg == null) return;
         element.style.maxHeight = styleCfg.maxHeight != null
             ? styleCfg.maxHeight.FloatValue
             : new StyleLength(StyleKeyword.Auto);

@@ -32,6 +32,7 @@ public class VarInt32MaskField : MaskField, IVarField
     private Variable _variable;
 
     public VarInt32MaskField() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
@@ -51,8 +52,6 @@ public class VarInt32MaskField : MaskField, IVarField
                 choices = variableCfg.maskNames;
             }
         }
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.intValue);
     }
 

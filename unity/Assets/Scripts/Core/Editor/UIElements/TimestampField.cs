@@ -19,7 +19,6 @@
 using System;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.Dson.Types;
 
@@ -30,7 +29,7 @@ namespace Wjybxx.BigCat.Editor.UIElements
 /// </summary>
 public class TimestampField : BindableElement, INotifyValueChanged<Timestamp>, IPrefixLabel
 {
-    private Label labelElement;
+    private Label _labelElement;
     private LongField _secondsField;
     private IntegerField _millisField;
 
@@ -40,22 +39,29 @@ public class TimestampField : BindableElement, INotifyValueChanged<Timestamp>, I
     public TimestampField() {
     }
 
+    public Label labelElement {
+        get {
+            EnsureInited();
+            return _labelElement;
+        }
+    }
+
     public string label {
         get {
             EnsureInited();
-            return labelElement.text;
+            return _labelElement.text;
         }
         set {
             EnsureInited();
-            if (labelElement.text == value) {
+            if (_labelElement.text == value) {
                 return;
             }
-            this.labelElement.text = value;
-            if (string.IsNullOrEmpty(this.labelElement.text)) {
+            this._labelElement.text = value;
+            if (string.IsNullOrEmpty(this._labelElement.text)) {
                 this.AddToClassList(BaseField<int>.noLabelVariantUssClassName);
-                this.labelElement.RemoveFromHierarchy();
-            } else if (!this.Contains(this.labelElement)) {
-                this.Insert(0, this.labelElement);
+                this._labelElement.RemoveFromHierarchy();
+            } else if (!this.Contains(this._labelElement)) {
+                this.Insert(0, this._labelElement);
                 this.RemoveFromClassList(BaseField<int>.noLabelVariantUssClassName);
             }
         }
@@ -120,10 +126,10 @@ public class TimestampField : BindableElement, INotifyValueChanged<Timestamp>, I
     }
 
     private void EnsureInited() {
-        if (childCount == 0 || labelElement != null) {
+        if (childCount == 0 || _labelElement != null) {
             return; // Tip创建的临时对象或已初始化
         }
-        labelElement = this.Q<Label>();
+        _labelElement = this.Q<Label>();
         _secondsField = this.Q<LongField>("seconds");
         _millisField = this.Q<IntegerField>("millis");
 

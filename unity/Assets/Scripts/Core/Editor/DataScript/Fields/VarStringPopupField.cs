@@ -26,6 +26,7 @@ public class VarStringPopupField : PopupField<string>, IVarField
     private Variable _variable;
 
     public VarStringPopupField() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
@@ -36,8 +37,6 @@ public class VarStringPopupField : PopupField<string>, IVarField
         formatListItemCallback = variableCfg.stringPopNameFunc;
         formatSelectedValueCallback = variableCfg.stringPopNameFunc;
         //
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.stringValue);
     }
 

@@ -26,6 +26,7 @@ public class VarInt32Field : MIntegerField, IVarField
     private Variable _variable;
 
     public VarInt32Field() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
@@ -40,8 +41,6 @@ public class VarInt32Field : MIntegerField, IVarField
             hasMax = true;
             max = variableCfg.max.AsNumber().IntValue;
         }
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.isDelayed = variableCfg.isDelayed;
         this.SetValueWithoutNotify(variable.intValue);
     }

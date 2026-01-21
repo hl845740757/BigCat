@@ -68,6 +68,8 @@ public class VarListField : BindableElement, IVarField
         this.Add(_listView);
         // 直接监听ContextClickEvent将无法拦截事件，因此监听原始的鼠标事件
         this.RegisterCallback<MouseDownEvent>(ShowListContextMenu);
+        // 设置label名字
+        _listView.GetFoldout().GetToggle().labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
     }
 
     public string label {
@@ -109,7 +111,7 @@ public class VarListField : BindableElement, IVarField
         } else {
             mode = ListFieldMode.Normal;
         }
-        DataEditorUtil.SetFieldSize(_listView, variable.cfg);
+        DataEditorUtil.SetHeight(_listView, variable.cfg);
         // 刷新UI
         Refresh();
     }
@@ -208,20 +210,15 @@ public class VarListField : BindableElement, IVarField
         Variable nestedVar = variable[index];
         if (element.childCount == 0) {
             VisualElement visualElement = DataEditorUtil.CreateField(nestedVar, _editor);
-            if (visualElement is VarObjectField objectField) {
-                objectField.mode = mode;
-                objectField.Refresh(); // 刷新样式
-            }
             element.Add(visualElement);
         } else {
-            VisualElement visualElement = element[0];
-            if (visualElement is VarObjectField objectField) {
-                objectField.mode = mode;
-            }
             IVarField field = (IVarField)element[0];
             field.Bind(_editor, nestedVar);
         }
         element.userData = index; // 用于处理事件
+        if (element[0] is VarObjectField objectField) {
+            objectField.mode = mode; // Sheet支持
+        }
         DataEditorUtil.SetFieldLabel(element[0], UnityEditorUtil.GetElementName(index));
     }
 

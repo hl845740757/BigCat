@@ -35,6 +35,7 @@ public class VarNullableField : Foldout, IVarField
 
     public VarNullableField() {
         style.flexShrink = 0;
+        this.GetToggle().labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
 

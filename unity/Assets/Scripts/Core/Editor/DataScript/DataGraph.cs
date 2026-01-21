@@ -682,6 +682,10 @@ public sealed class DataGraph
                 }
             }
         }
+        // 特殊默认值
+        if (variableCfg.pathType != 0) {
+            variable.objectPathValue = new ObjectPath() { type = (int)variableCfg.pathType };
+        }
         return variable;
     }
 

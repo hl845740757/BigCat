@@ -58,6 +58,13 @@ public class AABBField : BindableElement, INotifyValueChanged<MinMaxAABB>, IPref
         set => _foldout.value = value;
     }
 
+    public Label labelElement {
+        get {
+            EnsureInited();
+            return _foldout.GetToggle().labelElement;
+        }
+    }
+
     public string label {
         get {
             EnsureInited();

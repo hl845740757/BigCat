@@ -27,6 +27,7 @@ public class VarInt32PopupField : PopupField<int>, IVarField
     private Variable _variable;
 
     public VarInt32PopupField() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
@@ -44,8 +45,6 @@ public class VarInt32PopupField : PopupField<int>, IVarField
             formatSelectedValueCallback = variableCfg.intPopNameFunc;
         }
         //
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.intValue);
     }
 

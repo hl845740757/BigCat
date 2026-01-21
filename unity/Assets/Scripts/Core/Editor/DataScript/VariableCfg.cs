@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.BigCat.Core;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Commons;
@@ -84,6 +85,10 @@ public sealed class VariableCfg
     /// 资产路径是否是文件夹路径
     /// </summary>
     public bool isFolder;
+    /// <summary>
+    /// 资产路径类型
+    /// </summary>
+    public ObjectPathType pathType;
 
     /// <summary>
     /// Pop字段的展示名
@@ -273,6 +278,7 @@ public sealed class VariableCfg
         varCfg.isMultiline = listCfg.isMultiline;
         varCfg.isInteger = listCfg.isInteger;
         varCfg.isFolder = listCfg.isFolder;
+        varCfg.pathType = listCfg.pathType;
         varCfg.dsonType = listCfg.dsonType;
 
         varCfg.popNames = listCfg.popNames;
@@ -293,13 +299,7 @@ public sealed class VariableCfg
         for (int index = 0; index < enumValues.Count; index++) {
             DSEnumValue enumValue = enumValues[index];
             cfg.intPopValues.Add(enumValue.Number);
-            //
-            string displayName = enumValue.SimpleName;
-            Annotation annotation = enumValue.GetAnnotation(DSAnnotations.EDITOR);
-            if (annotation != null) {
-                displayName = Annotation.GetString(annotation.AsObject(), DSAnnotations.KEY_DISPLAY_NAME, displayName);
-            }
-            cfg.popNames.Add(displayName);
+            cfg.popNames.Add(GetEnumDisplayName(enumValue));
         }
         // 解析Mask信息(额外缓存)
         if (DSUtil.IsFlagEnum(element)) {
@@ -308,7 +308,7 @@ public sealed class VariableCfg
             foreach (DSEnumValue enumValue in element.GetEnumValues()) {
                 if (!MathCommon.IsPowerOfTwo(enumValue.Number)) continue;
                 int bitIndex = MathCommon.NumberOfTrailingZeros(enumValue.Number);
-                maskNames[bitIndex] = enumValue.SimpleName;
+                maskNames[bitIndex] = GetEnumDisplayName(enumValue);
                 maxIndex = Math.Max(maxIndex, bitIndex);
             }
             cfg.maskNames = new List<string>(maxIndex + 1);
@@ -317,17 +317,50 @@ public sealed class VariableCfg
             }
         } else if (DSUtil.IsIndexesEnum(element)) {
             int maxIndex = -1;
-            string[] maskNames = new string[32];
+            Dictionary<int, string> maskNames = new(32); // 可能超过32位
             foreach (DSEnumValue enumValue in element.GetEnumValues()) {
                 int bitIndex = enumValue.Number;
-                maskNames[bitIndex] = enumValue.SimpleName;
+                maskNames[bitIndex] = GetEnumDisplayName(enumValue);
                 maxIndex = Math.Max(maxIndex, bitIndex);
             }
             cfg.maskNames = new List<string>(maxIndex + 1);
             for (int index = 0; index <= maxIndex; index++) {
-                cfg.maskNames.Add(maskNames[index] ?? index.ToString());
+                if (!maskNames.TryGetValue(index, out string maskName)) {
+                    maskName = index.ToString();
+                }
+                cfg.maskNames.Add(maskName);
             }
         }
+    }
+
+    private static string GetEnumDisplayName(DSElement element) {
+        Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
+        string displayName = element.SimpleName;
+        if (annotation != null && annotation.AsObject().TryGetValue(DSAnnotations.KEY_DISPLAY_NAME, out DsonValue dsonValue)) {
+            displayName = dsonValue.AsString();
+        }
+        Annotation region = GetBelongRegion(element);
+        if (region != null) {
+            DsonValue regionName = region.dsonValue.AsArray()[0];
+            return regionName.AsString() + "/" + displayName;
+        }
+        return displayName;
+    }
+
+    private static Annotation GetBelongRegion(DSElement element) {
+        int ln = element.OriginDefine.StartLine;
+        Annotation prev = null;
+        foreach (Annotation annotation in element.EnclosingElement.OriginDefine.Annotations) {
+            if (annotation.ln > ln) return prev;
+            if (annotation.type == DSAnnotations.ENDREGION) {
+                prev = null;
+                continue;
+            }
+            if (annotation.type == DSAnnotations.REGION) {
+                prev = annotation;
+            }
+        }
+        return prev;
     }
 
     private static void ParsePopInfo(List<Annotation> annotations, VariableCfg cfg, DSField element) {
@@ -489,6 +522,9 @@ public sealed class VariableCfg
         if (dsonObject.TryGetValue(DSAnnotations.KEY_NODE_FEATURES, out dsonValue)) {
             cfg.nodeFeatures = DSUtil.ParseFlags<Features>(dsonValue);
         }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_PATH_TYPE, out dsonValue)) {
+            cfg.pathType = Enum.Parse<ObjectPathType>(dsonValue.AsString(), true);
+        }
         //
         if (dsonObject.TryGetValue(DSAnnotations.KEY_MIN, out dsonValue)) {
             cfg.min = dsonValue.AsNumber();
@@ -544,12 +580,12 @@ public enum Side
 public sealed class FieldStyleCfg
 {
     public bool isSheet; // 是否是表单
-    public DsonNumber minWidth; // 最小宽度，表单元素很有用
-    public DsonNumber maxWidth; // 最大宽度
+    public DsonNumber minWidth; // 最小宽度 - 表单模式下生效
+    public DsonNumber maxWidth; // 最大宽度 - 表单模式下生效
     public DsonNumber maxHeight; // 最大高度
 
-    public DsonNumber labelMargin; // 标签边距
-    public DsonNumber xLabelMargin;
+    public DsonNumber labelMargin; // 标签边距 - 表单模式下生效
+    public DsonNumber xLabelMargin; // 向量内部字段的偏移，总是生效
     public DsonNumber yLabelMargin;
     public DsonNumber zLabelMargin;
     public DsonNumber wLabelMargin;

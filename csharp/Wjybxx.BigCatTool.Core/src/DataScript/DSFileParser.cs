@@ -24,6 +24,7 @@ using System.IO;
 using System.Text;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
 using Wjybxx.Dson;
@@ -49,6 +50,8 @@ public class DSFileParser
     private int _recursionDepth;
     /** 当前上下文 */
     private Context _context;
+    /** 文件支持的region注解 */
+    private HashSet<string> regionTypes = new();
 
     private DSFileParser(FileInfo file, bool isVirtual, IEnumerator<string> lineIterator) {
         this.file = file;
@@ -97,6 +100,14 @@ public class DSFileParser
                 LineInfo curLine = LineInfo.Parse(lineIterator.CurrentLn, lineIterator.Current);
                 if (!_context.started) {
                     CheckStart(curLine);
+                    continue;
+                }
+                // @region注解支持
+                Annotation annotation;
+                if (curLine.IsCommentLine
+                    && (annotation = Annotation.TryParseAnnotation(curLine.comment, curLine.ln)) != null
+                    && regionTypes.Contains(annotation.type)) {
+                    _context.container.AddAnnotation(annotation);
                     continue;
                 }
                 switch (_context.contextType) {
@@ -179,6 +190,10 @@ public class DSFileParser
                 // option java_package = "com.example.foo";
                 var pair = ParseOption(content);
                 _context.container.AddOption(pair.Key, pair.Value);
+                // region注解支持
+                if (pair.Key == DSKeywords.REGION_TYPES) {
+                    regionTypes.AddAll(ObjectUtil.SplitAndTrim(pair.Value, ','));
+                }
                 return;
             }
             default: {

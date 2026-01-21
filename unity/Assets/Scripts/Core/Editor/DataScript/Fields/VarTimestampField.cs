@@ -29,6 +29,7 @@ public class VarTimestampField : BindableElement, IVarField
 
     public VarTimestampField() {
         Add(field);
+        field.labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

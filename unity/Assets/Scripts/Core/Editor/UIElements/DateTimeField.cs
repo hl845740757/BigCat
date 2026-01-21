@@ -44,6 +44,13 @@ public class DateTimeField : BindableElement, INotifyValueChanged<DateTime>, IPr
         set => _foldout.value = value;
     }
 
+    public Label labelElement {
+        get {
+            EnsureInited();
+            return _foldout.GetToggle().labelElement;
+        }
+    }
+
     public string label {
         get {
             EnsureInited();

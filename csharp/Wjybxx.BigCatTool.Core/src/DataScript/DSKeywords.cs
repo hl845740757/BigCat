@@ -60,6 +60,8 @@ public static class DSKeywords
 
     #region options-file
 
+    /** 支持的Region系列注解 -- value为字符串，需要加双引号，元素之间通过逗号分隔; */
+    public const string REGION_TYPES = "region_types";
     /** 生成的java文件的包名 -- value为字符串，需要加双引号 */
     public const string JAVA_PACKAGE = "java_package";
     /** csharp命名空间 -- value为字符串，需要加双引号 */

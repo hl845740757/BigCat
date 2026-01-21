@@ -29,6 +29,7 @@ public class VarAABBField : BindableElement, IVarField
 
     public VarAABBField() {
         Add(field);
+        field.labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

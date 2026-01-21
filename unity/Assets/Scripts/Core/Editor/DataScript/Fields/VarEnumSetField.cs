@@ -37,6 +37,7 @@ public class VarEnumSetField : Foldout, IVarField
     private DSNamedType _buildType;
 
     public VarEnumSetField() {
+        this.GetToggle().labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
     }
 
     public string label {
@@ -64,7 +65,6 @@ public class VarEnumSetField : Foldout, IVarField
         if (typeChanged) {
             RebuildFieldViews();
         }
-        DataEditorUtil.SetFieldSize(this, variable.cfg);
         Refresh();
     }
 

@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Text.RegularExpressions;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Text;
@@ -37,16 +38,20 @@ public sealed class Annotation
     public readonly string value;
     /** 解析缓存 -- 延迟初始化 */
     [NonSerialized] private DsonValue? _dsonValue;
+    /** 关联行号 */
+    public readonly int ln;
 
-    public Annotation(string type, string value) {
+    public Annotation(string type, string value, int ln = -1) {
         this.type = type;
         this.value = value;
+        this.ln = ln;
     }
 
-    public Annotation(string type, DsonValue dsonValue, string? rawValue = null) {
+    public Annotation(string type, DsonValue dsonValue, string? rawValue = null, int ln = -1) {
         this.type = type;
         this._dsonValue = dsonValue ?? throw new ArgumentNullException(nameof(dsonValue));
         this.value = rawValue ?? dsonValue.ToDson(ObjectStyle.Flow);
+        this.ln = ln;
     }
 
     public DsonValue dsonValue {
@@ -59,25 +64,26 @@ public sealed class Annotation
     public DsonArray<string> AsArray() => dsonValue.AsArray();
 
     public override string ToString() {
-        return $"{nameof(type)}: {type}, {nameof(value)}: {value}";
+        return $"{nameof(type)}: {type}, {nameof(value)}: {value}, {nameof(ln)}: {ln}";
     }
 
     #region parse
 
     /** 解析注解 */
-    public static Annotation? TryParseAnnotation(string comment) {
+    public static Annotation? TryParseAnnotation(string comment, int ln = -1) {
         // 允许'//'和'@'符号之间有空格，但'@'符号后面的类名无空格，类名和'{}'可以有空格
+        // 允许 ‘@' 之前出现注释，即@Type{}必须作为行尾注释
         // '//@RpcService{}'
-        int atIdx = ToolUtil.IndexOfNonWhitespace(comment, 2);
-        if (atIdx < 0 || comment[atIdx] != '@') {
-            return null; // '@'符号前面有其它内容
+        int atIdx = comment.IndexOf('@');
+        if (atIdx < 0) {
+            return null;
         }
         if (!TryGetRange(comment, out int startIndex, out int endIndex)) {
             return null;
         }
         string type = comment.Substring2(atIdx + 1, startIndex).Trim();
-        if (string.IsNullOrWhiteSpace(type)) {
-            return null; // 类型信息为空
+        if (string.IsNullOrWhiteSpace(type) || !classNameRegex.IsMatch(type)) {
+            return null;
         }
         DsonValue dsonValue;
         string rawValue;
@@ -88,24 +94,26 @@ public sealed class Annotation
             dsonValue = DsonNull.NULL;
             rawValue = "";
         }
-        return new Annotation(type, dsonValue, rawValue);
+        return new Annotation(type, dsonValue, rawValue, ln);
     }
 
     /** 是否是注解类型注释 */
     public static bool IsAnnotationComment(string comment) {
-        int atIdx = ToolUtil.IndexOfNonWhitespace(comment, 2);
-        if (atIdx < 0 || comment[atIdx] != '@') {
-            return false; // '@'符号前面有其它内容
+        int atIdx = comment.IndexOf('@');
+        if (atIdx < 0) {
+            return false;
         }
         if (!TryGetRange(comment, out int startIndex, out int endIndex)) {
             return false;
         }
         string type = comment.Substring2(atIdx + 1, startIndex).Trim();
-        if (string.IsNullOrWhiteSpace(type)) {
+        if (string.IsNullOrWhiteSpace(type) || !classNameRegex.IsMatch(type)) {
             return false; // 类型信息为空
         }
         return true;
     }
+
+    private static readonly Regex classNameRegex = new Regex("^[a-zA-Z][a-zA-Z0-9_\\.]*$", RegexOptions.Compiled);
 
     private static bool TryGetRange(string comment, out int startIndex, out int endIndex) {
         // 允许object和array格式 -- 需要判断[和{出现的顺序，不能优先处理其中的某个，否则可能索引到其内部元素
@@ -116,7 +124,7 @@ public sealed class Annotation
             endIndex = 0;
             return false;
         }
-        if (arrIndex >= 0 && arrIndex < objIndex) {
+        if (arrIndex >= 0 && (objIndex < 0 || arrIndex < objIndex)) {
             startIndex = arrIndex;
             endIndex = comment.LastIndexOf(']');
         } else {

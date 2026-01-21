@@ -26,6 +26,7 @@ public class VarFloatField : MFloatField, IVarField
     private Variable _variable;
 
     public VarFloatField() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
@@ -40,8 +41,6 @@ public class VarFloatField : MFloatField, IVarField
             hasMax = true;
             max = variableCfg.max.AsNumber().FloatValue;
         }
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.floatValue);
         this.isDelayed = variableCfg.isDelayed;
     }

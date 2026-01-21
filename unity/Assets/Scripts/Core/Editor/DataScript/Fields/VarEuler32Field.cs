@@ -29,6 +29,7 @@ public class VarEuler32Field : BindableElement, IVarField
 
     public VarEuler32Field() {
         Add(field);
+        field.labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

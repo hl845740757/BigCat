@@ -27,13 +27,14 @@ public class VarVector3IntField : MVector3IntField, IVarField
     private Variable _variable;
 
     public VarVector3IntField() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
-        DataEditorUtil.SetVectorFieldMargin(this, this.labelElement, variableCfg);
+        DataEditorUtil.SetVectorFieldMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.vector3IntValue);
         this.isDelayed = variableCfg.isDelayed;
     }

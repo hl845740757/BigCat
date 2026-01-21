@@ -27,7 +27,9 @@ namespace Wjybxx.BigCat.Core
 /// <summary>
 /// 用于为Unity的常用类型生成DsonCodec
 ///
-/// 注：常用数据结构已转为<see cref="Double4"/>存储，可以有效减少DsonObject数量。
+/// 注：
+/// 1.常用数据结构已转为<see cref="Double4"/>存储，可以有效减少DsonObject数量。
+/// 2.Codec类定义为public的，以方便扫描（只扫描ExportTypes）。
 /// </summary>
 // [UsedForReflectionBasedGenerator]
 [DsonCodecLinkerGroup]
@@ -42,7 +44,7 @@ public class UnityCodecLinker
     // private Color _color;
 
 // ReSharper disable All
-    private class Vector2Codec : IDsonCodec<Vector2>
+    public class Vector2Codec : IDsonCodec<Vector2>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector2 inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsVector | SerializeFeatures.Double4Len2;
@@ -55,7 +57,7 @@ public class UnityCodecLinker
         }
     };
 
-    private class Vector3Codec : IDsonCodec<Vector3>
+    public class Vector3Codec : IDsonCodec<Vector3>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector3 inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsVector | SerializeFeatures.Double4Len3;
@@ -68,7 +70,7 @@ public class UnityCodecLinker
         }
     };
 
-    private class Vector4Codec : IDsonCodec<Vector4>
+    public class Vector4Codec : IDsonCodec<Vector4>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector4 inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsVector;
@@ -81,7 +83,7 @@ public class UnityCodecLinker
         }
     };
 
-    private class QuaternionCodec : IDsonCodec<Quaternion>
+    public class QuaternionCodec : IDsonCodec<Quaternion>
     {
         public void WriteObject(IDsonObjectWriter writer, Quaternion inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsVector;
@@ -94,7 +96,7 @@ public class UnityCodecLinker
         }
     };
 
-    private class Vector2IntCodec : IDsonCodec<Vector2Int>
+    public class Vector2IntCodec : IDsonCodec<Vector2Int>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector2Int inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsVector
@@ -109,7 +111,7 @@ public class UnityCodecLinker
         }
     };
 
-    private class Vector3IntCodec : IDsonCodec<Vector3Int>
+    public class Vector3IntCodec : IDsonCodec<Vector3Int>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector3Int inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsVector
@@ -124,7 +126,7 @@ public class UnityCodecLinker
         }
     };
 
-    private class ColorCodec : IDsonCodec<Color>
+    public class ColorCodec : IDsonCodec<Color>
     {
         public void WriteObject(IDsonObjectWriter writer, Color inst, Type declaredType, SerializeFeatures _) {
             const SerializeFeatures features = SerializeFeatures.Double4AsRgba;

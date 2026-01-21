@@ -80,10 +80,10 @@ public sealed class SpriteModel : ScriptableObject
     [ContextMenuItem("刷新绑定Motion", "RefreshBindMotions")]
     public List<SpriteMotionRedir> motionList = new();
     /// <summary>`
-    /// 模型动作映射缓存
+    /// 模型动作映射缓存(忽略大小写更易用)
     /// </summary>
     [NonSerialized]
-    public readonly Dictionary<string, SpriteMotionRedir> motionDic = new();
+    public readonly Dictionary<string, SpriteMotionRedir> motionDic = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 查找动作

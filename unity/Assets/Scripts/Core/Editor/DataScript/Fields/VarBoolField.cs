@@ -26,14 +26,12 @@ public class VarBoolField : MToggle, IVarField
     private Variable _variable;
 
     public VarBoolField() {
+        labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
 
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
-        VariableCfg variableCfg = variable.cfg;
-        DataEditorUtil.SetFieldSize(this, variableCfg);
-        DataEditorUtil.SetFieldLabelMargin(this, variableCfg);
         this.SetValueWithoutNotify(variable.boolValue);
     }
 

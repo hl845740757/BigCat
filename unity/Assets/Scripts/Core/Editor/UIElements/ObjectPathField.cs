@@ -66,6 +66,13 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         set => _foldout.value = value;
     }
 
+    public Label labelElement {
+        get {
+            EnsureInited();
+            return _foldout.GetToggle().labelElement;
+        }
+    }
+    
     private void RefreshReadonly() {
         if (_collectionField == null) return;
         _collectionField.isReadOnly = _isReadOnly;

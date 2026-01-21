@@ -30,6 +30,7 @@ public class VarObjectPathField : BindableElement, IVarField
     public VarObjectPathField() {
         Add(field);
         field.isExpanded = false; // 默认折叠
+        field.labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         field.RegisterValueChangedCallback(OnValueChanged);
     }
 

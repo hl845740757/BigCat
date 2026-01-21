@@ -434,7 +434,7 @@ internal class DataGraphHelper
                 }
                 writer.WriteString(enumValue.SimpleName);
             } else {
-                NumberStyle style = DSUtil.IsFlagEnum(varType) ? NumberStyle.UnsignedHex : NumberStyle.Simple;
+                NumberStyle style = DSUtil.IsFlagEnum(varType) ? NumberStyle.Hex : NumberStyle.Simple;
                 writer.WriteInt32(variable.intValue, style);
             }
             return;
@@ -525,6 +525,7 @@ internal class DataGraphHelper
 
     private void WriteMap(IDsonWriter<string> writer, Variable variable) {
         bool isStringKey = DSUtil.IsStringType(variable.type.TypeArguments[0]);
+        bool enumKeyAsString = (variable.cfg.encodeFeatures & SerializeFeatures.EnumKeyAsString) != 0;
         //
         writer.WriteStartObject(GetObjectStyle(variable));
         WriteHeader(writer, variable);
@@ -533,7 +534,14 @@ internal class DataGraphHelper
             Variable keyVar = nestedVar[0];
             Variable valueVar = nestedVar[1];
             //
-            string keyString = isStringKey ? (keyVar.stringValue ?? "") : keyVar.longValue.ToString();
+            string keyString;
+            if (isStringKey) {
+                keyString = keyVar.stringValue ?? "";
+            } else if (keyVar.type.IsEnum && enumKeyAsString) {
+                keyString = keyVar.type.GetEnumValue(keyVar.intValue)!.SimpleName;
+            } else {
+                keyString = keyVar.longValue.ToString();
+            }
             writer.WriteName(keyString); // Map中的null和0值不可跳过
             Write(writer, valueVar, keyString);
         }
@@ -581,7 +589,7 @@ internal class DataGraphHelper
                 textWriter.PrintBeforeName("\n  ");
             }
             writer.WriteString(KEY_TYPE_SYMBOL, typeSymbol, StringStyle.Quote);
-            writer.WriteInt32(KEY_FEATURES, (int)node.features, NumberStyle.UnsignedHex);
+            writer.WriteInt32(KEY_FEATURES, (int)node.features, NumberStyle.Hex);
             {
                 writer.WriteStartObject(KEY_POSITION, ObjectStyle.Flow);
                 writer.WriteFloat("x", node.position.x, NumberStyle.Simple);

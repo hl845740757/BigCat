@@ -40,11 +40,12 @@ public class VarObjectField : Foldout, IVarField
     private DSNamedType _buildType;
     private EventCallback<ChangeEvent<int>> _onCtrlValueChanged1;
     private EventCallback<ChangeEvent<string>> _onCtrlValueChanged2;
-    internal ListFieldMode mode;
+    private ListFieldMode _mode;
 
     public VarObjectField() {
         style.flexShrink = 0;
-        RegisterCallback<ContextClickEvent>(ShowContextMenu);
+        this.GetToggle().labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
+        this.RegisterCallback<ContextClickEvent>(ShowContextMenu);
     }
 
     /// <summary>
@@ -52,9 +53,44 @@ public class VarObjectField : Foldout, IVarField
     /// </summary>
     public DSNamedType buildType => _buildType;
 
+    internal ListFieldMode mode {
+        get => _mode;
+        set {
+            if (_mode == value) return;
+            _mode = value;
+            OnModeChanged();
+        }
+    }
+
     public string label {
         get => text;
         set => text = value;
+    }
+
+    private void OnModeChanged() {
+        // 响应表单模式
+        VisualElement container = contentContainer;
+        bool isSheetMode = _mode == ListFieldMode.Sheet;
+        if (isSheetMode) {
+            container.style.marginTop = -15;
+            container.style.marginLeft = 50;
+            container.style.flexDirection = FlexDirection.Row;
+        } else {
+            container.style.marginTop = 1;
+            container.style.marginLeft = 3;
+            container.style.flexDirection = FlexDirection.Column;
+        }
+        for (int index = 0; index < container.childCount; index++) {
+            VisualElement fieldView = container[index];
+            Variable nestedVar = _variable[index];
+            if (isSheetMode) {
+                DataEditorUtil.SetFieldLabelMargin(fieldView, nestedVar.cfg);
+                DataEditorUtil.SetWidth(fieldView, nestedVar.cfg);
+            } else {
+                DataEditorUtil.UnsetWidth(fieldView);
+                DataEditorUtil.UnsetFieldLabelMargin(fieldView);
+            }
+        }
     }
 
     /// <summary>
@@ -73,13 +109,6 @@ public class VarObjectField : Foldout, IVarField
         VisualElement container = contentContainer;
         if (container.childCount == 0 && !ReferenceEquals(_buildType, variable.type)) {
             RebuildFieldViews();
-        }
-        // 响应表单模式 - 字段布局由注解控制更灵活
-        bool isSheetMode = mode == ListFieldMode.Sheet;
-        if (isSheetMode) {
-            contentContainer.style.marginTop = -15;
-            contentContainer.style.marginLeft = 50;
-            contentContainer.style.flexDirection = FlexDirection.Row;
         }
         for (int index = 0; index < container.childCount; index++) {
             VisualElement fieldView = container[index];
@@ -115,7 +144,6 @@ public class VarObjectField : Foldout, IVarField
         if (typeChanged) {
             RebuildFieldViews();
         }
-        DataEditorUtil.SetFieldSize(this, variable.cfg);
         Refresh();
     }
 
