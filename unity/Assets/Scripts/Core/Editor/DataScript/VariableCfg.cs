@@ -59,25 +59,21 @@ public sealed class VariableCfg
     public bool initNull;
     /// <summary>
     /// 数字字段的最大最小值
-    ///
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public DsonNumber min, max;
     /// <summary>
     /// 是否延迟响应输入
-    ///
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public bool isDelayed;
     /// <summary>
     /// 是否是多行文本
-    ///
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public bool isMultiline;
     /// <summary>
     /// 是否是整数类型AABB
-    ///
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public bool isInteger;
@@ -149,10 +145,27 @@ public sealed class VariableCfg
     /// 字段端口配置
     /// </summary>
     public FieldPortCfg portCfg;
+
     /// <summary>
-    /// 字段Style设置
+    /// 最小宽度 - 表单模式下生效
     /// </summary>
-    public FieldStyleCfg styleCfg;
+    public DsonNumber minWidth;
+    /// <summary>
+    /// 最大宽度 - 表单模式下生效
+    /// </summary>
+    public DsonNumber maxWidth;
+    /// <summary>
+    /// 最大高度
+    /// </summary>
+    public DsonNumber maxHeight;
+    /// <summary>
+    /// 标签边距 - 表单模式下生效
+    /// </summary>
+    public DsonNumber labelMargin;
+    /// <summary>
+    /// Vector等原子结构的标签编辑，也适用于Pair
+    /// </summary>
+    public List<DsonNumber> labelMargins;
 
     /// <summary>
     /// 投影Dson类型
@@ -207,10 +220,6 @@ public sealed class VariableCfg
         Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
         if (annotation != null) {
             ParseEditorOptions(annotation.AsObject(), cfg, element);
-        }
-        annotation = element.GetAnnotation(DSAnnotations.FIELD_STYLE);
-        if (annotation != null) {
-            ParseStyleOptions(annotation.AsObject(), cfg);
         }
         annotation = element.GetAnnotation(DSAnnotations.PORT_FIELD);
         if (annotation != null) {
@@ -279,7 +288,7 @@ public sealed class VariableCfg
         varCfg.isInteger = listCfg.isInteger;
         varCfg.isFolder = listCfg.isFolder;
         varCfg.pathType = listCfg.pathType;
-        varCfg.dsonType = listCfg.dsonType;
+        varCfg.labelMargins = listCfg.labelMargins;
 
         varCfg.popNames = listCfg.popNames;
         varCfg.intPopValues = listCfg.intPopValues;
@@ -289,6 +298,7 @@ public sealed class VariableCfg
         varCfg.maskIndexEnum = listCfg.maskIndexEnum;
         varCfg.supportedTypes = listCfg.supportedTypes;
         //
+        varCfg.dsonType = listCfg.dsonType;
         varCfg.encodeFeatures = listCfg.encodeFeatures.GetElementFeatures();
     }
 
@@ -472,38 +482,6 @@ public sealed class VariableCfg
         cfg.portCfg = portCfg;
     }
 
-    private static void ParseStyleOptions(DsonObject<string> dsonObject, VariableCfg cfg) {
-        FieldStyleCfg styleCfg = new FieldStyleCfg();
-        DsonValue dsonValue;
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_MIN_WIDTH, out dsonValue)) {
-            styleCfg.minWidth = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_WIDTH, out dsonValue)) {
-            styleCfg.maxWidth = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_HEIGHT, out dsonValue)) {
-            styleCfg.maxHeight = dsonValue.AsNumber();
-        }
-        // 边距
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_LABEL_MARGIN, out dsonValue)) {
-            styleCfg.labelMargin = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_X_LABEL_MARGIN, out dsonValue)) {
-            styleCfg.xLabelMargin = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_Y_LABEL_MARGIN, out dsonValue)) {
-            styleCfg.yLabelMargin = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_Z_LABEL_MARGIN, out dsonValue)) {
-            styleCfg.zLabelMargin = dsonValue.AsNumber();
-        }
-        if (dsonObject.TryGetValue(DSAnnotations.KEY_W_LABEL_MARGIN, out dsonValue)) {
-            styleCfg.wLabelMargin = dsonValue.AsNumber();
-        }
-        styleCfg.isSheet = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_SHEET, true);
-        cfg.styleCfg = styleCfg;
-    }
-
     private static void ParseEditorOptions(DsonObject<string> dsonObject, VariableCfg cfg, DSElement element) {
         DsonValue dsonValue;
         if (dsonObject.TryGetValue(DSAnnotations.KEY_DISPLAY_TYPE, out dsonValue)) {
@@ -537,6 +515,27 @@ public sealed class VariableCfg
         cfg.isMultiline = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_MULTILINE);
         cfg.isInteger = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_INTEGER);
         cfg.isFolder = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_FOLDER);
+        //
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_MIN_WIDTH, out dsonValue)) {
+            cfg.minWidth = dsonValue.AsNumber();
+        }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_WIDTH, out dsonValue)) {
+            cfg.maxWidth = dsonValue.AsNumber();
+        }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_MAX_HEIGHT, out dsonValue)) {
+            cfg.maxHeight = dsonValue.AsNumber();
+        }
+        // 边距
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_LABEL_MARGIN, out dsonValue)) {
+            cfg.labelMargin = dsonValue.AsNumber();
+        }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_LABEL_MARGINS, out dsonValue)) {
+            cfg.labelMargins = new List<DsonNumber>();
+            foreach (DsonValue value in dsonValue.AsArray()) {
+                DsonNumber margin = value.IsNumber ? value.AsNumber() : null; // 可能null
+                cfg.labelMargins.Add(margin);
+            }
+        }
     }
 }
 
@@ -572,22 +571,5 @@ public enum Side
     Right,
     Bottom,
     Top // 不可手动指定为Top区，Top区固定为Parent连接点，即Input区域。
-}
-
-/// <summary>
-/// 额外的Style配置
-/// </summary>
-public sealed class FieldStyleCfg
-{
-    public bool isSheet; // 是否是表单
-    public DsonNumber minWidth; // 最小宽度 - 表单模式下生效
-    public DsonNumber maxWidth; // 最大宽度 - 表单模式下生效
-    public DsonNumber maxHeight; // 最大高度
-
-    public DsonNumber labelMargin; // 标签边距 - 表单模式下生效
-    public DsonNumber xLabelMargin; // 向量内部字段的偏移，总是生效
-    public DsonNumber yLabelMargin;
-    public DsonNumber zLabelMargin;
-    public DsonNumber wLabelMargin;
 }
 }

@@ -26,7 +26,7 @@ using Wjybxx.Dson;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
-internal enum ListFieldMode
+public enum ListFieldMode
 {
     Normal = 0, // 普通模式
     Sheet = 1, // 表单
@@ -46,9 +46,10 @@ public class VarListField : BindableElement, IVarField
     private DataEditor _editor;
     private Variable _variable;
     private int _movingIndex = -1;
-    internal ListFieldMode mode;
+    private ListFieldMode _mode;
 
-    public VarListField() {
+    public VarListField(ListFieldMode mode = ListFieldMode.Normal) {
+        _mode = mode;
         _listView = new ListView
         {
             virtualizationMethod = CollectionVirtualizationMethod.DynamicHeight,
@@ -104,13 +105,6 @@ public class VarListField : BindableElement, IVarField
         this._editor = editor;
         this._variable = variable;
         _listView.itemsSource = variable.values;
-        // 表达样式支持
-        FieldStyleCfg styleCfg = variable.cfg.styleCfg;
-        if (styleCfg != null && styleCfg.isSheet) {
-            mode = ListFieldMode.Sheet;
-        } else {
-            mode = ListFieldMode.Normal;
-        }
         DataEditorUtil.SetHeight(_listView, variable.cfg);
         // 刷新UI
         Refresh();
@@ -217,7 +211,7 @@ public class VarListField : BindableElement, IVarField
         }
         element.userData = index; // 用于处理事件
         if (element[0] is VarObjectField objectField) {
-            objectField.mode = mode; // Sheet支持
+            objectField.mode = _mode; // Sheet支持
         }
         DataEditorUtil.SetFieldLabel(element[0], UnityEditorUtil.GetElementName(index));
     }

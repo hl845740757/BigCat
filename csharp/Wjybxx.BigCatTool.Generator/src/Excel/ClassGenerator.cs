@@ -70,7 +70,7 @@ public class ClassGenerator : ISheetProcessor
     public ClassGenerator(DSRepository dsRepository, CodeGeneratorCfg cfg, ICollection<string> fileNames) {
         _dsRepository = dsRepository;
         _cfg = cfg;
-        _helper = new Helper(cfg, processorInfo);
+        _helper = new Helper(dsRepository, cfg, processorInfo);
         _fileNames = new LinkedHashSet<string>(fileNames);
     }
 
@@ -111,8 +111,8 @@ public class ClassGenerator : ISheetProcessor
     {
         private readonly List<DSField> _fieldListCache = new(20);
 
-        public Helper(CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo)
-            : base(generatorCfg, processorInfo) {
+        public Helper(DSRepository dsRepository, CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo)
+            : base(dsRepository, generatorCfg, processorInfo) {
         }
 
         protected override void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {

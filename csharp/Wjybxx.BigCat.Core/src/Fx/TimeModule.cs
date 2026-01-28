@@ -48,6 +48,10 @@ public class TimeModule : ITimeProvider
         this.deltaTime = 0;
     }
 
+    /// <summary>
+    /// 需要由外部防止时间戳回退
+    /// </summary>
+    /// <param name="curTime"></param>
     public void Update(long curTime) {
         frameCount++;
         this.deltaTime = Math.Max(0, curTime - this.time);

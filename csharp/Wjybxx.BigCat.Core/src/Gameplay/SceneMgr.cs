@@ -97,8 +97,7 @@ public class SceneMgr
 
     [Inject]
     public SceneMgr(WorkerHolder workerHolder, SceneMgrCfg cfg) {
-        coroutineMgr = new CoroutineMgr(workerHolder.Worker, time,
-            cfg.minPeriod, cfg.unscaledMinPeriod,
+        coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
             enableFrameQueue: cfg.enableFrameQueue);
     }
 

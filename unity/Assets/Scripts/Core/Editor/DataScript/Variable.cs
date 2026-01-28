@@ -215,6 +215,22 @@ public sealed class Variable : IDisposable
         }
     }
 
+    public Integer4 integer4Value {
+        get {
+            int x = values[0].intValue;
+            int y = values[1].intValue;
+            int z = values[2].intValue;
+            int w = values[3].intValue;
+            return new Integer4(x, y, z, w);
+        }
+        set {
+            values[0].intValue = value.v0;
+            values[1].intValue = value.v1;
+            values[2].intValue = value.v2;
+            values[3].intValue = value.v3;
+        }
+    }
+
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Color colorValue {
         get {
@@ -394,7 +410,7 @@ public sealed class Variable : IDisposable
     /// <summary>
     /// 是否的Pair类型
     /// </summary>
-    public bool isPariType => DSUtil.IsPairType(type);
+    public bool isPairType => DSUtil.IsPairType(type);
     /// <summary>
     /// 是否是集合类型(List/HashSet)
     /// </summary>

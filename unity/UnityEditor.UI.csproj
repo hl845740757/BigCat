@@ -754,11 +754,11 @@
     <Reference Include="System.Xml.XPath.XDocument">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\Facades\System.Xml.XPath.XDocument.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.TestRunner">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEditor.TestRunner">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEditor.TestRunner.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TestRunner">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -196,7 +196,7 @@ public sealed class Scene
     /// </summary>
     public bool IsActive {
         get => _active;
-        set => SetActive(value); // 可能反序列化调用
+        set => SetActive(value);
     }
 
     /// <summary>

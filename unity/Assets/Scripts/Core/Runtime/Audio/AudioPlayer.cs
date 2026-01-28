@@ -135,12 +135,14 @@ public class AudioPlayer : MonoBehaviour
     /// 播放长音效(如bgm)
     /// </summary>
     /// <param name="audioPath">音频路径</param>
+    /// <param name="clipName">音频名</param>
     /// <param name="loop">是否循环播放</param>
-    public void PlayClip(string audioPath, bool loop) {
+    public void PlayClip(string audioPath, string clipName, bool loop) {
         Play(new AudioRequest()
         {
             playMode = AudioPlayMode.PlayClip,
             audioPath = audioPath,
+            clipName = clipName,
             loop = loop,
         });
     }
@@ -159,6 +161,7 @@ public class AudioPlayer : MonoBehaviour
         // 短音效 - 资源handle在心跳方法中释放
         AssetHandle handle;
         if (request.playMode != AudioPlayMode.PlayClip) {
+            if (audioSource.mute || audioSource.volume == 0f) return;
             if (assetHandles.TryGetValue(audioPath, out handle)) {
                 handle.Retain();
             } else {
@@ -200,6 +203,10 @@ public class AudioPlayer : MonoBehaviour
         if (status == Status.Stopped) {
             status = Status.Playing;
         }
+        // 同步非实时变化设置
+        audioSource.spatialBlend = settings.spatialBlend;
+        audioSource.dopplerLevel = settings.dopplerLevel;
+        audioSource.spread = settings.spread;
     }
 
     internal bool HasPrevClip => prevClipCtrl != null;
@@ -217,7 +224,7 @@ public class AudioPlayer : MonoBehaviour
             ReleaseHandle(handle);
             return;
         }
-        audioSource.PlayOneShot(audioClip, request.volume);
+        audioSource.PlayOneShot(audioClip, audioSource.volume * request.volume);
         shotContexts.Add(new ShotContext(handle, audioClip.length + Time.time + 0.1f));
     }
 
@@ -234,20 +241,24 @@ public class AudioPlayer : MonoBehaviour
             _lastCheckTime = tickTime;
             CheckShotContexts(tickTime);
         }
-        if (status != Status.Playing) {
-            return;
-        }
-        // 同步音量信息 - 开销可忽略
+        // 同步音量信息 - PlayOneShot也需要同步
         AudioPlayerSettings parentSettings = settings.parent;
-        float targetVolume;
         if (parentSettings != null) {
-            audioSource.mute = parentSettings.mute || settings.mute;
-            audioSource.pitch = parentSettings.pitch * settings.pitch;
-            targetVolume = parentSettings.volume * settings.volume;
+            settings.realMute = parentSettings.realMute || settings.mute;
+            settings.realPitch = parentSettings.realPitch * settings.pitch;
+            settings.realVolume = parentSettings.realVolume * settings.volume;
         } else {
-            audioSource.mute = settings.mute;
-            audioSource.pitch = settings.pitch;
-            targetVolume = settings.volume;
+            settings.realMute = settings.mute;
+            settings.realPitch = settings.pitch;
+            settings.realVolume = settings.volume;
+        }
+        audioSource.mute = settings.realMute;
+        audioSource.pitch = settings.realPitch;
+        float targetVolume = settings.realVolume;
+        //
+        if (status != Status.Playing) {
+            audioSource.volume = targetVolume;
+            return;
         }
         // 更新Clip
         float deltaTime = Time.deltaTime;
@@ -327,14 +338,6 @@ public class AudioPlayer : MonoBehaviour
         audioSource.playOnAwake = false;
         audioSource.loop = false;
         _onLoadCompleted = OnLoadCompleted;
-    }
-
-    private void OnEnable() {
-        audioSource.enabled = true;
-    }
-
-    private void OnDisable() {
-        audioSource.enabled = false;
     }
 
     /// <summary>

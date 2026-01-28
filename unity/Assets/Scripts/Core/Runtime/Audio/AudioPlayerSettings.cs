@@ -18,6 +18,7 @@
 
 using System;
 using UnityEngine;
+using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Audio
 {
@@ -25,14 +26,35 @@ namespace Wjybxx.BigCat.Audio
 /// 音频播放器设置
 /// </summary>
 [Serializable]
+[DsonSerializable]
 public sealed class AudioPlayerSettings
 {
     [NonSerialized]
     public AudioPlayerSettings parent;
     [Range(0, 1)]
-    public float volume = 1f; // 音量
-    public float pitch = 1f; // 音高
+    public float volume = 1f; // 目标音量
+    public float pitch = 1f; // 目标音高
     public bool mute; // 静音
-    public int shotChannels = 10; // 短促音效最大同时播放数
+
+    public float spatialBlend; // 空间混合 - 0即为2D音效
+    public float dopplerLevel = 1f; // 多普勒效应等级
+    public int spread; // 声音扩散角度，范围 [0, 360]
+    // public float minDistance = 1f; // 最小距离
+    // public float maxDistance = 500f; // 最大距离
+
+    // 音量信息缓存，避免递归计算
+    public float realVolume;
+    public float realPitch;
+    public bool realMute;
+
+    public void SyncFrom(AudioPlayerSettings source) {
+        this.volume = source.volume;
+        this.pitch = source.pitch;
+        this.mute = source.mute;
+        //
+        this.spatialBlend = source.spatialBlend;
+        this.dopplerLevel = source.dopplerLevel;
+        this.spread = source.spread;
+    }
 }
 }

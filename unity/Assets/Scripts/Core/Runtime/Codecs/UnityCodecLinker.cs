@@ -135,8 +135,21 @@ public class UnityCodecLinker
 
         public Color ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
             Double4 quad = reader.ReadDouble4();
-            return new Vector4((float)quad.v0, (float)quad.v1, (float)quad.v2, (float)quad.v3);
+            return new Color((float)quad.v0, (float)quad.v1, (float)quad.v2, (float)quad.v3);
         }
     };
+
+    public class Color32Codec : IDsonCodec<Color32>
+    {
+        public void WriteObject(IDsonObjectWriter writer, Color32 inst, Type declaredType, SerializeFeatures _) {
+            const SerializeFeatures features = SerializeFeatures.Double4AsRgba | SerializeFeatures.Double4AsInt;
+            writer.WriteDouble4(new Double4(inst.r, inst.g, inst.b, inst.a), features);
+        }
+
+        public Color32 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+            Double4 quad = reader.ReadDouble4();
+            return new Color32((byte)quad.v0, (byte)quad.v1, (byte)quad.v2, (byte)quad.v3);
+        }
+    }
 }
 }

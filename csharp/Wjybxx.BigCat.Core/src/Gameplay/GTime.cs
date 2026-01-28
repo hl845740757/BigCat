@@ -43,8 +43,8 @@ public sealed class GTime : IReadonlyTime
     public GTime() {
     }
 
-    public void Restart(double timeScale = 1) {
-        this.timeScale = timeScale;
+    public void Restart() {
+        this.timeScale = 1f;
 
         this.frameCount = 0; // 初始帧0
         this.time = 0;

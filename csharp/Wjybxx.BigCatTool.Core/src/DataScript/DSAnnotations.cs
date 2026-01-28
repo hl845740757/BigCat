@@ -64,13 +64,14 @@ public static class DSAnnotations
     /// - isIndexes 标识枚举类型是否是Index类型(枚举值可充当数组下标，可存储在BitSet等集合中)
     /// - baseType 代码生成时的特殊超类符号，主要用于指定枚举的类型
     /// 
-    /// - style 序列化样式，如果只想配置文本样式，可以通过style代替序列化特征值
     /// - dataClass 标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
     /// - nonGenerate 表示生成代码时跳过，即类型是外部库类型的镜像
     /// -
+    /// - style 序列化样式，如果只想配置文本样式，可以通过style代替序列化特征值
     /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写；单值模式可不声明为数组；
     /// - encodeFeatures 序列化特征值，使用枚举名配置，忽略大小写 - <see cref="SerializeFeatures"/>
     /// - decodeFeatures 反序列化特征值，使用枚举名配置，忽略大小写 - <see cref="DeserializeFeatures"/>
+    /// - projection 类型投影，将自定义数据结构投影到其它数据结构，以覆盖数据结构的编辑器属性；投影类型在生成代码时自动跳过
     ///
     /// <h3>用于字段时</h3>
     /// <code>// @Options{ nonSerialized: true, nonEqual: true, ssti: true, encodeFeatures: [NumberHex] }</code>
@@ -104,23 +105,19 @@ public static class DSAnnotations
     /// - isMultiline 是否是多行文本
     /// - isInteger 是否是整数类型AABB
     /// - isFolder 是否是文件夹路径
+    ///
+    /// - minWidth 最小宽度
+    /// - maxWidth 最大宽度
+    /// - maxHeight 最大高度
+    /// - labelMargin label和value的边距
+    /// - labelMargins 原子结构内嵌字段的label和value的边距；数组类型，允许null值
     /// 
     /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr、Pointer、Double4。
     /// - nodeFeatures node的特征值，是否启用Port端口等
     /// </summary>
     public const string EDITOR = "Editor";
     /// <summary>
-    /// 字段编辑器风格(Inspector视图)
-    /// - isSheet 是否是表单(适用List字段)
-    /// - minWidth 最小宽度
-    /// - maxWidth 最大宽度
-    /// - maxHeight 最大高度
-    /// - labelMargin label和value的边距
-    /// </summary>
-    public const string FIELD_STYLE = "FieldStyle";
-    /// <summary>
     /// 节点编辑器风格(GraphView视图)
-    /// 
     /// </summary>
     private const string NODE_STYLE = "NodeStyle";
 
@@ -149,7 +146,7 @@ public static class DSAnnotations
     public const string PORT_FIELD = "PortField";
 
     /// <summary>
-    /// Pop字段(支持多个)
+    /// Pop字段(支持多个，自动合并)
     /// 
     /// 语法：<code>// @PopField{ value: 1, displayName: AABB }</code>
     /// - value 字段对应的值
@@ -159,7 +156,7 @@ public static class DSAnnotations
     /// </summary>
     public const string POP_FIELD = "PopField";
     /// <summary>
-    /// 分支字段（标签类字段）(支持多个)
+    /// 分支字段（标签类字段）(支持多个，自动合并)
     ///
     /// 语法：<code>// @BranchField{ ctrl: type, value: 1, displayName: radius, tooltip: "半径" }</code>
     /// - ctrl 控制字段的名字，通常为PopField或枚举字段
@@ -172,7 +169,7 @@ public static class DSAnnotations
     public const string BRANCH_FIELD = "BranchField";
 
     /// <summary>
-    /// 多态字段
+    /// 多态字段(支持多个，自动合并)
     /// 
     /// 语法：<code>// @PloyField[ Vector2, Vector3 ]</code>
     ///
@@ -224,6 +221,7 @@ public static class DSAnnotations
     public const string KEY_STYLE = "style";
     public const string KEY_ENCODE_FEATURES = "encodeFeatures";
     public const string KEY_DECODE_FEATURES = "decodeFeatures";
+    public const string KEY_PROJECTION = "projection";
     public const string KEY_NAME = "name";
 
     // Editor
@@ -250,15 +248,11 @@ public static class DSAnnotations
     public const string KEY_DISTINCT = "distinct";
     public const string KEY_EXPANDED = "expanded";
 
-    public const string KEY_IS_SHEET = "isSheet";
     public const string KEY_MIN_WIDTH = "minWidth";
     public const string KEY_MAX_WIDTH = "maxWidth";
     public const string KEY_MAX_HEIGHT = "maxHeight";
     public const string KEY_LABEL_MARGIN = "labelMargin";
-    public const string KEY_X_LABEL_MARGIN = "xLabelMargin";
-    public const string KEY_Y_LABEL_MARGIN = "yLabelMargin";
-    public const string KEY_Z_LABEL_MARGIN = "zLabelMargin";
-    public const string KEY_W_LABEL_MARGIN = "wLabelMargin";
+    public const string KEY_LABEL_MARGINS = "labelMargins";
 
     #endregion
 }

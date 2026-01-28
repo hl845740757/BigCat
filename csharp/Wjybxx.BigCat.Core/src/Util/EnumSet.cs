@@ -29,7 +29,7 @@ namespace Wjybxx.BigCat.Util
 /// 枚举比特集
 ///
 /// 注：
-/// 1.虽然内存中为long数组，但序列化为int数组格式；其目的是为与编辑器导出数据对齐 —— 编辑器仅支持32位枚举。
+/// 1.虽然内存中为long数组，但序列化为int数组格式；其目的是与编辑器导出数据对齐 —— 编辑器仅支持32位枚举。
 /// 2.枚举类型需要为int32类型，其hashcode即为其number
 /// </summary>
 /// <typeparam name="T"></typeparam>

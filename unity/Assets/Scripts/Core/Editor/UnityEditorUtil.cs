@@ -30,6 +30,7 @@ using Wjybxx.BigCat.Core;
 using Wjybxx.BigCatTool;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.Editor
 {
@@ -82,7 +83,7 @@ public static class UnityEditorUtil
         return obj;
     }
 
-    public static readonly ImmutableList<string> imageFileExtensions = new string[] { "png", "jpg", "tif", "psd" }.ToImmutableList2();
+    public static readonly ImmutableList<string> imageFileExtensions = new string[] { "png", "jpg", "tif" }.ToImmutableList2();
     public static readonly ImmutableList<string> audioFileExtensions = new string[] { "ogg", "wav", "mp3" }.ToImmutableList2();
 
     /// <summary>
@@ -397,6 +398,40 @@ public static class UnityEditorUtil
 
     #endregion
 
+    #region ugui
+
+    /** 单行绘制Vector2 */
+    public static Vector2 DrawVector2(string label, Vector2 value) {
+        bool wideMode = EditorGUIUtility.wideMode;
+        EditorGUIUtility.wideMode = true; // 强制单行显示
+        value = EditorGUILayout.Vector2Field(label, value);
+        EditorGUIUtility.wideMode = wideMode;
+        return value;
+    }
+
+    /** 单行绘制Vector3 */
+    public static Vector3 DrawVector3(string label, Vector3 value) {
+        bool wideMode = EditorGUIUtility.wideMode;
+        EditorGUIUtility.wideMode = true; // 强制单行显示
+        value = EditorGUILayout.Vector3Field(label, value);
+        EditorGUIUtility.wideMode = wideMode;
+        return value;
+    }
+
+    /** 绘制分割线 */
+    public static void DrawSeparator() {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1);
+        EditorGUI.DrawRect(rect, Color.gray);
+    }
+
+    /** 绘制分割线 */
+    public static void DrawSeparator(Color color) {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1);
+        EditorGUI.DrawRect(rect, color);
+    }
+
+    #endregion
+
     #region uitoolkit
 
     private static PropertyInfo _listFoldoutProperty;
@@ -512,6 +547,14 @@ public static class UnityEditorUtil
         return new Color32(r, g, b, a);
     }
 
+    public static Color32 AsColor32(Integer4 integer4) {
+        return new Color32((byte)integer4.v0, (byte)integer4.v1, (byte)integer4.v2, (byte)integer4.v3);
+    }
+
+    public static Integer4 AsInteger4(Color32 color) {
+        return new Integer4(color.r, color.g, color.b, color.a);
+    }
+
     public static Quaternion AsQuaternion(Vector4 vector4) {
         return new Quaternion(vector4.x, vector4.y, vector4.z, vector4.w);
     }
@@ -520,6 +563,31 @@ public static class UnityEditorUtil
         return new Vector4(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
     }
 
+    /// <summary>
+    /// 量化
+    /// </summary>
+    /// <param name="value">要量化的值</param>
+    /// <param name="q">量化步长</param>
+    /// <returns></returns>
+    public static Vector2 Quantize(this Vector2 value, Vector2 q) {
+        return Vector2.Scale(q, new Vector2(
+            Mathf.Floor(value.x / q.x),
+            Mathf.Floor(value.y / q.y))
+        );
+    }
+
+    public static Vector3 Quantize(this Vector3 value, Vector3 q) {
+        return Vector3.Scale(q, new Vector3(
+            Mathf.Floor(value.x / q.x),
+            Mathf.Floor(value.y / q.y),
+            Mathf.Floor(value.z / q.z))
+        );
+    }
+
+    /// <summary>
+    /// 将浮点数截断为整数
+    /// </summary>
+    /// <param name="vector"></param>
     internal static void Truncate(ref Vector2 vector) {
         vector.x = (int)vector.x;
         vector.y = (int)vector.y;

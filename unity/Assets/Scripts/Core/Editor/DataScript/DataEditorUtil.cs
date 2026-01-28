@@ -149,8 +149,11 @@ public static class DataEditorUtil
         }
     }
 
-    internal static void SetFieldLabelMargin(VisualElement field, VariableCfg variableCfg) {
-        DsonNumber labelMargin = variableCfg.styleCfg?.labelMargin;
+    /// <summary>
+    /// 设置字段的Label边距
+    /// </summary>
+    internal static void SetFieldLabelMargin(VisualElement field, VariableCfg cfg) {
+        DsonNumber labelMargin = cfg.labelMargin;
         if (labelMargin == null) return;
         // 注意：虽然我们为label设计了特殊的名字，但可能会查询到嵌套元素...
         Label label = field.Q<Label>(LABEL_ELEMENT_NAME);
@@ -169,21 +172,16 @@ public static class DataEditorUtil
     /// <summary>
     /// 设置Vector内部字段的Label偏移
     /// </summary>
-    internal static void SetVectorFieldMargin(VisualElement field, VariableCfg variableCfg) {
-        FieldStyleCfg styleCfg = variableCfg.styleCfg;
-        if (styleCfg == null) return;
-        VisualElement labelElement;
-        if (styleCfg.xLabelMargin != null && (labelElement = GetVectorFieldLabel(field, 0)) != null) {
-            labelElement.style.marginRight = styleCfg.xLabelMargin.FloatValue;
+    internal static void SetVectorFieldMargin(VisualElement field, VariableCfg cfg) {
+        if (cfg.labelMargins == null) {
+            return;
         }
-        if (styleCfg.yLabelMargin != null && (labelElement = GetVectorFieldLabel(field, 1)) != null) {
-            labelElement.style.marginRight = styleCfg.yLabelMargin.FloatValue;
-        }
-        if (styleCfg.zLabelMargin != null && (labelElement = GetVectorFieldLabel(field, 2)) != null) {
-            labelElement.style.marginRight = styleCfg.zLabelMargin.FloatValue;
-        }
-        if (styleCfg.wLabelMargin != null && (labelElement = GetVectorFieldLabel(field, 3)) != null) {
-            labelElement.style.marginRight = styleCfg.wLabelMargin.FloatValue;
+        for (int idx = 0; idx < cfg.labelMargins.Count; idx++) {
+            DsonNumber margin = cfg.labelMargins[idx];
+            if (margin == null) continue;
+            //
+            VisualElement labelElement = GetVectorFieldLabel(field, idx);
+            labelElement.style.marginRight = margin.FloatValue;
         }
     }
 
@@ -201,17 +199,24 @@ public static class DataEditorUtil
     }
 
     /// <summary>
+    /// 设置高度
+    /// </summary>
+    public static void SetHeight(VisualElement element, VariableCfg cfg) {
+        element.style.maxHeight = cfg.maxHeight != null
+            ? cfg.maxHeight.FloatValue
+            : new StyleLength(StyleKeyword.Auto);
+    }
+
+    /// <summary>
     /// 设置视图宽度 - 只有Sheet视图中的字段需要设置
     /// </summary>
-    public static void SetWidth(VisualElement element, VariableCfg variableCfg) {
-        FieldStyleCfg styleCfg = variableCfg.styleCfg;
-        if (styleCfg == null) return;
-        element.style.minWidth = styleCfg.minWidth != null
-            ? styleCfg.minWidth.FloatValue
+    public static void SetWidth(VisualElement element, VariableCfg cfg) {
+        element.style.minWidth = cfg.minWidth != null
+            ? cfg.minWidth.FloatValue
             : new StyleLength(StyleKeyword.Auto);
         //
-        element.style.maxWidth = styleCfg.maxWidth != null
-            ? styleCfg.maxWidth.FloatValue
+        element.style.maxWidth = cfg.maxWidth != null
+            ? cfg.maxWidth.FloatValue
             : new StyleLength(StyleKeyword.Auto);
     }
 
@@ -222,17 +227,6 @@ public static class DataEditorUtil
     public static void UnsetWidth(VisualElement element) {
         element.style.minWidth = new StyleLength(StyleKeyword.Auto);
         element.style.maxWidth = new StyleLength(StyleKeyword.Auto);
-    }
-
-    /// <summary>
-    /// 设置高度
-    /// </summary>
-    public static void SetHeight(VisualElement element, VariableCfg variableCfg) {
-        FieldStyleCfg styleCfg = variableCfg.styleCfg;
-        if (styleCfg == null) return;
-        element.style.maxHeight = styleCfg.maxHeight != null
-            ? styleCfg.maxHeight.FloatValue
-            : new StyleLength(StyleKeyword.Auto);
     }
 
     #endregion
@@ -279,7 +273,8 @@ public static class DataEditorUtil
                 if (variableCfg.popNames != null) return CreateInt32PopupField(variable, editor);
                 return CreateInt64Field(variable, editor);
             }
-            case DSKeywords.TYPE_STRING: {
+            case DSKeywords.TYPE_STRING: { // 资产类型字段名匹配
+                if (variable.defineInfo.SimpleName == "assetPath") return CreateAssetPathField(variable, editor);
                 if (variableCfg.popNames != null) return CreateStringPopupField(variable, editor);
                 return CreateStringField(variable, editor);
             }
@@ -309,6 +304,7 @@ public static class DataEditorUtil
         return displayType switch
         {
             DisplayType.List => CreateListField(variable, editor),
+            DisplayType.Sheet => CreateSheetField(variable, editor),
             DisplayType.AssetPath => CreateAssetPathField(variable, editor),
             DisplayType.ObjectPath => CreateObjectPathField(variable, editor),
             DisplayType.DateTime => CreateDateTimeField(variable, editor),
@@ -501,10 +497,12 @@ public static class DataEditorUtil
 
     #region list/map/object
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <returns></returns>
+    public static VarListField CreateSheetField(Variable variable, DataEditor editor) {
+        VarListField field = new VarListField(ListFieldMode.Sheet);
+        field.Bind(editor, variable);
+        return field;
+    }
+
     public static VarListField CreateListField(Variable variable, DataEditor editor) {
         VarListField field = new VarListField();
         field.Bind(editor, variable);

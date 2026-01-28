@@ -51,6 +51,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// </summary>
 public class CodeGeneratorHelper
 {
+    protected readonly DSRepository repository;
     protected readonly CodeGeneratorCfg generatorCfg;
     private readonly AttributeSpec processorInfo;
     // 缓存
@@ -69,9 +70,11 @@ public class CodeGeneratorHelper
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="repository"></param>
     /// <param name="generatorCfg">生成器相关配置</param>
     /// <param name="processorInfo"></param>
-    public CodeGeneratorHelper(CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo) {
+    public CodeGeneratorHelper(DSRepository repository, CodeGeneratorCfg generatorCfg, AttributeSpec processorInfo) {
+        this.repository = repository;
         this.generatorCfg = generatorCfg;
         this.processorInfo = processorInfo;
     }
@@ -1068,6 +1071,12 @@ public class CodeGeneratorHelper
         if (r != null) {
             _metaTypeNameCache.Add(originDefine.FullName, r);
             return r;
+        }
+        // 处理类型投影
+        DsonObject<string> options = GetOptions(originDefine);
+        if (options.TryGetValue(DSAnnotations.KEY_PROJECTION, out DsonValue projection)) {
+            DSTypeElement projectionType = repository.ResolveTypeSymbol(originDefine, projection.AsString());
+            return (ClassName)GetTypeName(projectionType);
         }
         // 内部类需要A.B.C格式访问
         if (originDefine.EnclosingElement is DSNamedType outerClass) {

@@ -531,11 +531,11 @@
     <Reference Include="Wjybxx.Dson.Core">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.TestRunner">
-      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEditor.TestRunner">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEditor.TestRunner.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TestRunner">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\UnityEngine.TestRunner.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

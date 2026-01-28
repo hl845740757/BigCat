@@ -2,9 +2,10 @@
 import public "common.ds";
 import public "btree.ds";
 
-// 黑板类型，避免导出给其它ds文件
-// @Namespace{ cs: "Wjybxx.BigCat.Util", nonGenerate: true }
-class Blackboard  {
+// 工具库的黑板类型，避免导出给其它ds文件
+// @Options{nonGenerate: true}
+// @Namespace{cs: "Wjybxx.BigCat.Util"}
+class Blackboard {
 }
 
 // 触发器行为类型
@@ -26,7 +27,8 @@ class TimeTrigger {
   Object actionTask = 6; // 对象参数
 }
 inst TimeTrigger {
-  enabled: true
+  enabled: true,
+  period: 0.1
 }
 
 // 动画播放请求
@@ -86,7 +88,7 @@ class SpriteMotionBranch : BranchTask<Blackboard> {
 
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
-class AnimatorGroupEntry {
+class SearchTreeGroupEntry {
   TimeTrigger _f1 = 1; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
   AnimationRequest _f2 = 2; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
   

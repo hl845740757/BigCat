@@ -386,22 +386,27 @@ internal class DataGraphHelper
         // 原子值
         switch (varType.SimpleName) {
             case DSKeywords.TYPE_INT32: {
+                if (variable.longValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteInt32(variable.intValue, features.ToNumberStyle());
                 return;
             }
             case DSKeywords.TYPE_INT64: {
+                if (variable.longValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteInt64(variable.longValue, features.ToNumberStyle());
                 return;
             }
             case DSKeywords.TYPE_FLOAT: {
+                if (variable.doubleValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteFloat(variable.floatValue, features.ToNumberStyle());
                 return;
             }
             case DSKeywords.TYPE_DOUBLE: {
+                if (variable.doubleValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteDouble(variable.doubleValue, features.ToNumberStyle());
                 return;
             }
             case DSKeywords.TYPE_BOOL: {
+                if (variable.longValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteBool(variable.boolValue);
                 return;
             }
@@ -427,7 +432,7 @@ internal class DataGraphHelper
         }
         // Enum
         if (varType.Kind == DSElementKind.Enum) {
-            if ((features & SerializeFeatures.EnumAsString) != 0) {
+            if (IsWriteEnumAsString(variable)) {
                 DSEnumValue enumValue = varType.GetEnumValue(variable.intValue);
                 if (enumValue == null) {
                     throw new InvalidOperationException($"enumValue {variable.intValue} is absent");
@@ -525,7 +530,7 @@ internal class DataGraphHelper
 
     private void WriteMap(IDsonWriter<string> writer, Variable variable) {
         bool isStringKey = DSUtil.IsStringType(variable.type.TypeArguments[0]);
-        bool enumKeyAsString = (variable.cfg.encodeFeatures & SerializeFeatures.EnumKeyAsString) != 0;
+        bool enumKeyAsString = variable.type.IsEnum && IsWriteEnumAsString(variable, true);
         //
         writer.WriteStartObject(GetObjectStyle(variable));
         WriteHeader(writer, variable);
@@ -537,7 +542,7 @@ internal class DataGraphHelper
             string keyString;
             if (isStringKey) {
                 keyString = keyVar.stringValue ?? "";
-            } else if (keyVar.type.IsEnum && enumKeyAsString) {
+            } else if (enumKeyAsString) {
                 keyString = keyVar.type.GetEnumValue(keyVar.intValue)!.SimpleName;
             } else {
                 keyString = keyVar.longValue.ToString();
@@ -630,6 +635,17 @@ internal class DataGraphHelper
 
     private static bool IsWriteAsArray(Variable variable) {
         return (variable.cfg.encodeFeatures & SerializeFeatures.WriteAsArray) != 0;
+    }
+
+    private bool IsWriteEnumAsString(Variable variable, bool isKey = false) {
+        SerializeFeatures features = variable.cfg.encodeFeatures;
+        if (isKey) {
+            if ((features & SerializeFeatures.EnumKeyAsString) != 0) return true;
+        } else {
+            if ((features & SerializeFeatures.EnumAsString) != 0) return true;
+        }
+        SerializeFeatures typeFeatures = _graph.GetVariableCfg(variable.type).encodeFeatures;
+        return (typeFeatures & SerializeFeatures.EnumAsString) != 0;
     }
 
     private bool IsWriteNullValue(Variable variable) {

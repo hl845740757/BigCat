@@ -5,6 +5,8 @@
         "Wjybxx.Commons.Core",
         "Wjybxx.Commons.Concurrent",
         "Wjybxx.Commons.Inject",
+        "Wjybxx.Dson.Core",
+        "Wjybxx.Dson.Codec",        
         "Wjybxx.BigCat.Core",
         "Wjybxx.BigCat.UnityCore"
     ],

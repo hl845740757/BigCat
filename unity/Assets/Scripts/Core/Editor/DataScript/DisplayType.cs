@@ -32,6 +32,7 @@ public enum DisplayType
 {
     Default, // 根据字段类型和配置数据自动推测
     List, // 所有的集合类型默认都使用List类型展示；Map也可以指定为List，解码兼容
+    Sheet, // 表单，List的特殊样式
 
     AssetPath, // string类型特殊样式，string值为资产路径，编辑器会提供点击定位功能
     ObjectPath, // 资产对象引用 [collection, localPath, localId, type]
@@ -44,8 +45,8 @@ public enum DisplayType
     Vector2Int,
     Vector3Int,
     Color, // float(r,g,b,a)
-    Color32, // 单int值结构体
-    Euler32, // 单int值结构体，xyz限制在[0, 360]
+    Color32, // int32(r,g,b,a)
+    Euler32, // int32(x,y,z)，xyz限制在[0, 360]
     MinMaxAABB, // 包围盒
     EnumSet, // 枚举集合
 }

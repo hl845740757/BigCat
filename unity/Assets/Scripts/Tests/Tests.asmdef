@@ -1,6 +1,6 @@
 {
     "name": "Tests",
-    "rootNamespace": "",
+    "rootNamespace": "Wjybxx.BigCat.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",

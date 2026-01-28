@@ -305,9 +305,6 @@ public abstract class ResourceTask : Decorator<Blackboard>
         }
     }
 
-    /// <summary>
-    /// 注意：该Awaiter是不暴露给用户的，仅限资源管理层任务之间交互
-    /// </summary>
     public readonly struct Awaiter : ICriticalNotifyCompletion
     {
         private readonly ResourceTask _task;

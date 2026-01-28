@@ -16,11 +16,18 @@
 
 #endregion
 
+using System;
+using Wjybxx.Dson.Codec.Attributes;
+
 namespace Wjybxx.BigCat.Gameplay
 {
 /// <summary>
 /// 场景管理器的配置数据
+///
+/// 注：建议绑定实例到容器中。
 /// </summary>
+[Serializable]
+[DsonSerializable]
 public class SceneMgrCfg
 {
     /// <summary>

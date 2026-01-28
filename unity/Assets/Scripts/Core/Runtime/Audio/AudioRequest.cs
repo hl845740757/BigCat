@@ -16,20 +16,24 @@
 
 #endregion
 
+using Wjybxx.Dson.Codec.Attributes;
+
 namespace Wjybxx.BigCat.Audio
 {
 /// <summary>
 /// 音频播放请求
 /// </summary>
+[DsonSerializable]
 public struct AudioRequest
 {
     public AudioPlayMode playMode; // 播放模式，决定参数有效性
     public string audioPath; // 资源路径 -- 短音频为音效组路径
-    public string clipName; // 短音频名
+    public string clipName; // 短音频名 -- 如果不为空，表示使用AudioGroup
     public bool loop; // 是否循环 -- 仅适用长音频
-    public float volume; // 音量 -- 仅适用短促音效，长音频应当设置播放器的音量实现
-    public float fadeInTime; // 音频淡入时间
+    public float volume; // 音量 -- 仅适用短促音效，长音频应当通过设置播放器的音量实现
+    public float fadeInTime; // 音频淡入时间 -- 可能还需要支持其它淡出算法
     public float fadeOutTime; // 旧音频淡出时间
+    public float fadeInStartVol; // 淡入起始音量 -- 感觉是不是也应用作淡出音量？否则过渡可能不自然
 }
 
 /// <summary>

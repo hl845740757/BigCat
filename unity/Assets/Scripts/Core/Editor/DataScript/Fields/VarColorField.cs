@@ -19,6 +19,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Editor.UIElements;
+using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
@@ -44,8 +45,9 @@ public class VarColorField : MColorField, IVarField
         if (_variable == null) {
             return;
         }
-        if (_variable.Count == 1) { // Color32
-            _variable[0].intValue = UnityEditorUtil.AsInt32(evt.newValue);
+        if (IsColor32) {
+            Color32 color32 = evt.newValue;
+            _variable.integer4Value = UnityEditorUtil.AsInteger4(color32);
         } else {
             _variable.colorValue = evt.newValue;
         }
@@ -56,12 +58,14 @@ public class VarColorField : MColorField, IVarField
         if (_variable == null) {
             return;
         }
-        if (_variable.Count == 1) { // Color32
-            Color32 color32 = UnityEditorUtil.AsColor32(_variable[0].intValue);
-            this.SetValueWithoutNotify(color32);
+        if (IsColor32) {
+            Color32 color32 = UnityEditorUtil.AsColor32(_variable.integer4Value);
+            SetValueWithoutNotify(color32);
         } else {
             SetValueWithoutNotify(_variable.colorValue);
         }
     }
+
+    private bool IsColor32 => _variable.type.SimpleName == "Color32";
 }
 }

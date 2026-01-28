@@ -48,7 +48,7 @@ public class CodeGenerator
     public CodeGenerator(DSRepository repository, CodeGeneratorCfg cfg, ICollection<string> fileNames, CodeGeneratorHelper? helper = null) {
         _repository = repository;
         _cfg = cfg;
-        _helper = helper ?? new CodeGeneratorHelper(cfg, processorInfo);
+        _helper = helper ?? new CodeGeneratorHelper(repository, cfg, processorInfo);
         _fileNames = new LinkedHashSet<string>(fileNames);
     }
 
@@ -78,6 +78,9 @@ public class CodeGenerator
                     if (Annotation.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
                         continue;
                     }
+                    if (options.ContainsKey(DSAnnotations.KEY_PROJECTION)) {
+                        continue;
+                    }
                     if (nsBuilder.nestedSpecs.Count > 0) {
                         nsBuilder.AddSpec(new CodeBlockSpec(CodeBlock.NewLine));
                     }
@@ -98,6 +101,9 @@ public class CodeGenerator
                     DSNamedType namedType = (DSNamedType)element;
                     DsonObject<string> options = DSUtil.GetOptions(namedType);
                     if (Annotation.GetBool(options, DSAnnotations.KEY_NON_GENERATE)) {
+                        continue;
+                    }
+                    if (options.ContainsKey(DSAnnotations.KEY_PROJECTION)) {
                         continue;
                     }
                     try {

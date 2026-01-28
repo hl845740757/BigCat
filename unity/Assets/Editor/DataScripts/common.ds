@@ -51,15 +51,21 @@ struct Color {
   float b = 3;
   float a = 4;
 }
-// @Options{ style: flow }
+// Color32编辑器下输出为4个整数的可维护性更好，Euler32同理 - 二进制下也不会占用太多开销
+// @Options{ style: flow, encodeFeatures: "Double4AsRgba | Double4AsInt"  }
 // @Editor { displayType : Color32 }
 struct Color32 {
-  int32 rgba = 1;
+  int32 r = 1;
+  int32 g = 2;
+  int32 b = 3;
+  int32 a = 4;
 }
-// @Options{ style: flow }
+// @Options{ style: flow, encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len3" }
 // @Editor { displayType : Euler32 }
 struct Euler32 {
-  int32 xyz = 1;
+  int32 x = 1;
+  int32 y = 2;
+  int32 z = 3;
 }
 
 // @Options{ style: flow }

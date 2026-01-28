@@ -275,9 +275,8 @@ public class VarObjectField : Foldout, IVarField
         menu.AddItem(new GUIContent("Reset"), false, OnClickReset, null);
 
         // 实例选择
-        bool isPairType = DSUtil.IsPairType(variable.type);
         VariableCfg variableCfg = variable.cfg;
-        if (variableCfg.supportedInsts != null && !isPairType) {
+        if (variableCfg.supportedInsts != null && !variable.isPairType) {
             GenericMenu.MenuFunction2 callback = OnClickResetWith;
             for (int index = 0; index < variableCfg.supportedInsts.Count; index++) {
                 DSInst inst = variableCfg.supportedInsts[index];
@@ -290,7 +289,7 @@ public class VarObjectField : Foldout, IVarField
             menu.AddDisabledItem(new GUIContent("ResetWith"));
         }
         // 多态类型选择
-        if (variableCfg.supportedTypes != null && !isPairType) {
+        if (variableCfg.supportedTypes != null && !variable.isPairType) {
             string curTypeSymbol = _editor.GetDisplayName(variable.type);
             menu.AddDisabledItem(new GUIContent("ChangeType/" + curTypeSymbol));
             menu.AddSeparator("ChangeType/");

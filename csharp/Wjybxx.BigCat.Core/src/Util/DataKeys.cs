@@ -256,11 +256,11 @@ public static class DataKeys
         }
 
         public override float Unbox(in UnionValue boxedValue) {
-            return (float)boxedValue.dv1;
+            return boxedValue.fVal;
         }
 
         public override UnionValue Box(float value) {
-            return new UnionValue(TYPE_FLOAT) { dv1 = value };
+            return new UnionValue(TYPE_FLOAT) { fVal = value };
         }
     }
 

@@ -51,9 +51,10 @@
     <Compile Include="Assets\Scripts\Launcher\UI\LoginView.cs" />
     <Compile Include="Assets\Scripts\Launcher\AppContext.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\RpcClientExample.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Tests\SpriteMotionTest.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\TestRpcSerializer.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\Response.cs" />
-    <Compile Include="Assets\Scripts\Launcher\UnityCodecLinker.cs" />
+    <Compile Include="Assets\Scripts\Launcher\Tests\SpriteAnimationCtrlTest.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\Request.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\TestRpcRouter.cs" />
     <Compile Include="Assets\Scripts\Launcher\Test\RpcServiceExample.cs" />
@@ -726,6 +727,10 @@
     <ProjectReference Include="Wjybxx.BigCat.UnityCore.csproj">
       <Project>{93bef834-af94-2596-e608-4f5ae4a01788}</Project>
       <Name>Wjybxx.BigCat.UnityCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="Wjybxx.BigCat.Dnf.csproj">
+      <Project>{7bbad03e-036c-15c6-6022-697d17bf0475}</Project>
+      <Name>Wjybxx.BigCat.Dnf</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
       <Project>{c69cdfb4-e234-2892-09e0-f3bd60e5c932}</Project>

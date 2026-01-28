@@ -18,6 +18,7 @@
 
 using UnityEngine;
 using Wjybxx.BigCat.Assetor;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.Audio
 {
@@ -133,7 +134,13 @@ public sealed class AudioClipCtrl
     /// </summary>
     private void StartPlay() {
         status = Status.Playing;
-        audioSource.clip = handle.GetAsset<AudioClip>();
+        // 兼容两种资产
+        if (!string.IsNullOrEmpty(request.clipName)) {
+            AudioGroup audioGroup = handle.GetAsset<AudioGroup>();
+            audioSource.clip = audioGroup.GetAudioClip(request.clipName);
+        } else {
+            audioSource.clip = handle.GetAsset<AudioClip>();
+        }
         audioSource.loop = request.loop;
         audioSource.time = 0;
         audioSource.Play();
@@ -141,7 +148,7 @@ public sealed class AudioClipCtrl
         if (request.fadeInTime > 0) {
             fadeStatus = FadeStatus.FadeIn;
             fadeProgress = 0;
-            audioSource.volume = 0;
+            audioSource.volume = request.fadeInStartVol;
         } else {
             fadeStatus = FadeStatus.Stopped;
             fadeProgress = 0;

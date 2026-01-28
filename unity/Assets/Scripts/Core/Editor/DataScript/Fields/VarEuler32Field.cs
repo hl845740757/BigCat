@@ -49,14 +49,15 @@ public class VarEuler32Field : BindableElement, IVarField
 
     private void OnValueChanged(ChangeEvent<Euler32> evt) {
         if (_variable != null) {
-            _variable[0].intValue = evt.newValue;
+            _variable.vector3IntValue = evt.newValue;
             _variable.ApplyModifiedProperties();
         }
     }
 
     public void Refresh(bool rebuild = false) {
         if (_variable != null) {
-            field.SetValueWithoutNotify((Euler32)_variable[0].intValue);
+            Euler32 value = (Euler32)_variable.vector3IntValue;
+            field.SetValueWithoutNotify(value);
         }
     }
 }

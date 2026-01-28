@@ -60,15 +60,15 @@ public class WindowMgr
     /// <summary>
     /// 窗口加载器
     /// </summary>
-    private readonly WindowLoader _windowLoader;
+    private WindowLoader _windowLoader = new DefaultWindowLoader();
     /// <summary>
     /// 聚合模型（所有Window的依赖）
     /// </summary>
-    private readonly IAggregationModel _aggregationModel;
+    private IAggregationModel _aggregationModel;
     /// <summary>
     /// 数据模型解析器
     /// </summary>
-    private readonly IDataModelResolver _dataModelResolver;
+    private IDataModelResolver _dataModelResolver;
 
     /// <summary>
     /// 所有的窗口
@@ -132,11 +132,8 @@ public class WindowMgr
     public WindowMgr(WorkerHolder workerHolder, WindowMgrCfg cfg) {
         this.coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
             enableFrameQueue: cfg.enableFrameQueue);
-        this._canvas = cfg.canvas ?? throw new Exception("Canvas not found");
-        this._windowLoader = cfg.windowLoader ?? new DefaultWindowLoader();
-        this._aggregationModel = cfg.aggregationModel;
-        this._dataModelResolver = cfg.dataModelResolver;
         // 初始化Desktop
+        this._canvas = cfg.canvas ?? throw new Exception("Canvas not found");
         for (int desktopId = 1; desktopId <= WindowCfg.MAX_DESKTOP; desktopId++) {
             _desktops[desktopId - 1] = new Desktop(desktopId, _canvas);
         }
@@ -683,9 +680,18 @@ public class WindowMgr
     #region PROPS
 
     public Canvas Canvas => _canvas;
-    public IAggregationModel AggregationModel => _aggregationModel;
-    public WindowLoader WindowLoader => _windowLoader;
-    public IDataModelResolver DataModelResolver => _dataModelResolver;
+    public IAggregationModel AggregationModel {
+        get => _aggregationModel;
+        set => _aggregationModel = value;
+    }
+    public WindowLoader WindowLoader {
+        get => _windowLoader;
+        set => _windowLoader = value;
+    }
+    public IDataModelResolver DataModelResolver {
+        get => _dataModelResolver;
+        set => _dataModelResolver = value;
+    }
     public Desktop CurrentDesktop => _curDesktop;
 
     #endregion

@@ -736,6 +736,12 @@
     <Reference Include="Wjybxx.Commons.Inject">
       <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Commons.Inject.dll</HintPath>
     </Reference>
+    <Reference Include="Wjybxx.Dson.Core">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Wjybxx.Dson.Codec">
+      <HintPath>D:\github-mine\BigCat\unity\Library\ScriptAssemblies\Wjybxx.Dson.Codec.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Wjybxx.BigCat.Core.csproj">

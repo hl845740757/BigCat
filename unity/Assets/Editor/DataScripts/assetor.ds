@@ -177,7 +177,7 @@ class AudioClassifier {
 
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
-class SkillGroupEntry : BTreeSearchTreeGroupEntry0<Blackboard> {
+class SearchTreeGroupEntry : BTreeSearchTreeGroupEntry0<Blackboard> {
   Collector _f1 = 1;
   CollectorGroup _f2 = 2;
   CollectorPackage _f3 = 3;

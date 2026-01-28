@@ -60,6 +60,7 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourcePromise.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\PlayablePort.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Provider\Provider.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Codecs\BuiltinCodecs.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Blackboard.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Animator\SpriteMotionRedir.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\CompletedTask.cs" />
@@ -80,8 +81,8 @@
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\AssetBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Editor\EditorPackageManager.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\AudioGroup.cs" />
-    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectPathType.cs" />
+    <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Bundle\IAssetBundle.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\ResourceErrorCode.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\Assetor\Tasks\AsyncOperationAdaptor.cs" />
     <Compile Include="Assets\Scripts\Core\Runtime\ObjectBucket.cs" />

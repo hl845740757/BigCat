@@ -47,9 +47,11 @@
     <Analyzer Include="D:\github-mine\BigCat\unity\Assets\Analyzers\Wjybxx.Dson.Apt.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Button.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\ContentSizeFitter.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Text.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Button.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\CanvasScaler.cs" />
+    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\ScrollRect.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\EventSystem\UIElements\PanelRaycaster.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Image.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\LayoutElement.cs" />
@@ -65,6 +67,7 @@
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\StencilMaterial.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Culling\IClipRegion.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\InputField.cs" />
+    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Generation\Targets\BuiltIn\Editor\ShaderGUI\MaterialAssemblyReference\RawRenderQueue.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Navigation.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\GraphicRegistry.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\CanvasUpdateRegistry.cs" />
@@ -77,6 +80,7 @@
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Toggle.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\IGraphicEnabledDisabled.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\HorizontalLayoutGroup.cs" />
+    <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\ShaderGUI\MaterialAssemblyReference\RawRenderQueue.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\EventSystem\UIElements\PanelEventHandler.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Animation\CoroutineTween.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\FontUpdateTracker.cs" />
@@ -104,7 +108,6 @@
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\GraphicRaycaster.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\ToggleGroup.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\EventSystem\RaycastResult.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\ContentSizeFitter.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\EventSystem\InputModules\BaseInput.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\ILayoutElement.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\MaskUtilities.cs" />
@@ -128,11 +131,12 @@
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Culling\ClipperRegistry.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\EventSystem\EventTrigger.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Culling\Clipping.cs" />
-    <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\ScrollRect.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\Properties\AssemblyInfo.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\EventSystem\EventHandle.cs" />
     <Compile Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UI\Core\Layout\LayoutGroup.cs" />
+    <None Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Generation\Targets\BuiltIn\Editor\ShaderGUI\MaterialAssemblyReference\MaterialAssemblyReference.asmref" />
     <None Include="Library\PackageCache\com.unity.ugui@1.0.0\Runtime\UnityEngine.UI.asmdef" />
+    <None Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\ShaderGUI\MaterialAssemblyReference\MaterialAssemblyReference.asmref" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity 2021.3.56f2\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>

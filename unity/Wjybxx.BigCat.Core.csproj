@@ -98,7 +98,6 @@
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\LongPair.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SComponent.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\TimeModule.cs" />
-    <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Util\SerialVersionAttribute.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Fx\RpcResult.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\ScriptMethods.cs" />
     <Compile Include="D:\github-mine\BigCat\csharp\Wjybxx.BigCat.Core\src\Gameplay\SceneMgr.cs" />
