@@ -448,23 +448,23 @@ FodyWeavers.xsd
 
 ######################################################################
 
-# 临时文件
+### 临时文件
 ~$*
 **/temp-*
 **/temp/*
 **/*.log
 **/*.log.*
 
-# Java项目临时文件
-*.flattened-pom.xml
 
-
-# C#生成文件
+### C#生成文件
 csharp/*/Generated
 
-# Unity项目
+
+### Unity项目
 unity/UserSettings/
 unity/UIElementsSchema/
+unity/Bundles/
+unity/Library/
 
 unity/Assets/TextMesh Pro.meta
 unity/Assets/TextMesh Pro/
@@ -492,7 +492,3 @@ unity/Assets/Editor/_DnfExtractor/
 unity/Assets/Editor/_DnfExtractor.meta
 unity/Assets/Editor/DNF/Resources.meta
 unity/Assets/Editor/DNF/Resources/
-
-
-# 打包测试输出
-unity/Bundles/
