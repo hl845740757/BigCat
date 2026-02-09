@@ -485,7 +485,7 @@ public sealed class Variable : IDisposable
             return values[index];
         }
         foreach (Variable nestedVar in values) {
-            if (nestedVar.defineInfo.SimpleName == path) {
+            if (nestedVar.defineInfo.Name == path) {
                 return nestedVar;
             }
         }

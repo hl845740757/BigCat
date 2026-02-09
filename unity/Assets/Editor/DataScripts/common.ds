@@ -1,11 +1,13 @@
 ﻿// 公共类型定义
 
+// @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector2, V2], encodeFeatures: "Double4AsVector | Double4Len2" }
 // @Editor{ displayType: Vector2, dsonType: Double4 }
 struct Vector2 {
     float x = 1;
     float y = 2;
 }
+// @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector3, V3], encodeFeatures: "Double4AsVector | Double4Len3" }
 // @Editor{ displayType: Vector3, dsonType: Double4 }
 struct Vector3 {
@@ -13,6 +15,7 @@ struct Vector3 {
     float y = 2;
     float z = 3;
 }
+// @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector4, V4], encodeFeatures: "Double4AsVector" }
 // @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Vector4 {
@@ -21,6 +24,7 @@ struct Vector4 {
     float z = 3;
     float w = 4;
 }
+// @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Quaternion, Quat], encodeFeatures: "Double4AsVector" }
 // @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Quaternion {
@@ -29,12 +33,14 @@ struct Quaternion {
     float z = 3;
     float w = 4;
 }
+// @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector2Int, VInt2], encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len2" }
 // @Editor{ displayType: Vector2Int, dsonType: Double4 }
 struct Vector2Int {
     int32 x = 1;
     int32 y = 2;
 }
+// @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector3Int, VInt3], encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len3" }
 // @Editor{ displayType: Vector3Int, dsonType: Double4 }
 struct Vector3Int {
@@ -43,6 +49,7 @@ struct Vector3Int {
     int32 z = 3;
 }
 
+// @Namespace{cs: "UnityEngine"}
 // @Options{ encodeFeatures: "Double4AsRgba" }
 // @Editor { displayType : Color, dsonType: Double4 }
 struct Color {
@@ -52,6 +59,7 @@ struct Color {
   float a = 4;
 }
 // Color32编辑器下输出为4个整数的可维护性更好，Euler32同理 - 二进制下也不会占用太多开销
+// @Namespace{cs: "UnityEngine"}
 // @Options{ style: flow, encodeFeatures: "Double4AsRgba | Double4AsInt"  }
 // @Editor { displayType : Color32 }
 struct Color32 {
@@ -60,6 +68,7 @@ struct Color32 {
   int32 b = 3;
   int32 a = 4;
 }
+// @Namespace{cs: "Wjybxx.BigCat.Core"}
 // @Options{ style: flow, encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len3" }
 // @Editor { displayType : Euler32 }
 struct Euler32 {
@@ -67,7 +76,14 @@ struct Euler32 {
   int32 y = 2;
   int32 z = 3;
 }
-
+// @Namespace{cs: "Wjybxx.BigCat.Core"}
+// @Options{ style: flow }
+// @Editor { displayType : MinMaxAABB }
+struct MinMaxAABB {
+  Vector3 min = 1;
+  Vector3 max = 2;
+}
+// @Namespace{cs: "Wjybxx.Commons"}
 // @Options{ style: flow }
 // @Editor { displayType : ObjectPath, dsonType: Pointer }
 struct ObjectPath {
@@ -76,14 +92,35 @@ struct ObjectPath {
 	int64 localId = 3;
 	int32 type = 4;
 }
-// @Options{ style: flow }
-// @Editor { displayType : MinMaxAABB }
-struct MinMaxAABB {
-  Vector3 min = 1;
-  Vector3 max = 2;
+
+// 不可变内置集合
+// @Namespace{cs: "Wjybxx.Commons.Collections"}
+class ImmutableList<T> : List<T> {
+}
+// @Namespace{cs: "Wjybxx.Commons.Collections"}
+class ImmutableSet<T> : HashSet<T> {
+}
+// @Namespace{cs: "Wjybxx.Commons.Collections"}
+class ImmutableMap<K,V> : Map<K, V> {
+}
+// ArrayMap
+// @Namespace{cs: "Wjybxx.Commons.Collections"}
+class ArrayMap<K,V> : Map<K, V> {
+}
+
+// Dson类型 - 只能用于Port字段
+// @Namespace{cs: "Wjybxx.Dson"}
+class DsonValue {
+}
+// @Namespace{cs: "Wjybxx.Dson"}
+class DsonObject<Key> : DsonValue {
+}
+// @Namespace{cs: "Wjybxx.Dson"}
+class DsonArray<Key> : DsonValue {
 }
 
 // 枚举Set
+// @Namespace{cs: "Wjybxx.BigCat.Util"}
 // @Editor{ displayType: EnumSet, dsonType: Array }
 class EnumSet<T> {
   List<int32> values = 1; // 所有元素

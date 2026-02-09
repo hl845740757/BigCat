@@ -60,6 +60,7 @@ public class SpriteGroup : ScriptableObject
     /// <summary>
     /// 所管理的图片
     /// </summary>
+    [ContextMenuItem("刷新", "Refresh")]
     public Sprite[] sprites = Array.Empty<Sprite>();
     /// <summary>
     /// 图片软连接（映射）

@@ -81,14 +81,14 @@ public class PBRepository
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public void AddFile(PBFile pbFile) {
-        string simpleName = pbFile.SimpleName;
+        string simpleName = pbFile.Name;
         // 检查重复
         if (!fileMap.TryAdd(simpleName, pbFile)) {
             throw new ArgumentException("duplicate fileName " + simpleName);
         }
         // 添加索引
         foreach (PBElement element in pbFile.EnclosedElements) {
-            var key = new StringPair(simpleName, element.SimpleName);
+            var key = new StringPair(simpleName, element.Name);
             topElementMap[key] = element;
         }
     }
@@ -102,7 +102,7 @@ public class PBRepository
         if (fileMap.Remove(simpleName, out PBFile pbFile)) {
             // 删除索引
             foreach (PBElement element in pbFile.EnclosedElements) {
-                var key = new StringPair(simpleName, element.SimpleName);
+                var key = new StringPair(simpleName, element.Name);
                 topElementMap.Remove(key);
             }
         }
@@ -123,7 +123,7 @@ public class PBRepository
     /// <returns></returns>
     public List<PBFile> GetSortedFiles() {
         List<PBFile> result = new(fileMap.Values);
-        result.Sort((a, b) => string.Compare(a.SimpleName, b.SimpleName, StringComparison.Ordinal));
+        result.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.Ordinal));
         return result;
     }
 

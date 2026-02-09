@@ -68,7 +68,7 @@ public class ServiceGenerator
                     BuildService(service);
                 }
                 catch (Exception e) {
-                    throw new Exception($"service: {service.SimpleName}", e);
+                    throw new Exception($"service: {service.Name}", e);
                 }
             }
             _curFile = null;
@@ -80,7 +80,7 @@ public class ServiceGenerator
         if (serviceAnnotation == null) {
             return;
         }
-        TypeSpec.Builder typeBuilder = TypeSpec.NewInterfaceBuilder(service.SimpleName)
+        TypeSpec.Builder typeBuilder = TypeSpec.NewInterfaceBuilder(service.Name)
             .AddModifiers(Modifiers.Public)
             .AddAttribute(processorInfo)
             .AddDocument(BuildDocument(service.Comments));
@@ -103,7 +103,7 @@ public class ServiceGenerator
                 continue;
             }
             DsonObject<string> methodData = methodAnnotation.AsObject();
-            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.SimpleName);
+            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(method.Name);
             // method注解
             {
                 AttributeSpec.Builder annoBuilder = AttributeSpec.NewBuilder(TYPE_NAME_RPC_METHOD)
@@ -131,7 +131,7 @@ public class ServiceGenerator
             methodBuilder.AddDocument(BuildDocument(method.Comments));
             typeBuilder.AddMethod(methodBuilder.Build());
         }
-        ClassName serviceTypeName = ClassNameOfType(service.SimpleName);
+        ClassName serviceTypeName = ClassNameOfType(service.Name);
         GeneratorUtil.WriteToFile(outDir, serviceTypeName.ns, typeBuilder.Build());
     }
 
@@ -205,7 +205,7 @@ public class ServiceGenerator
     /// <exception cref="ArgumentException"></exception>
     private ClassName ClassNameOfType(string type) {
         // 先尝试从当前文件查询
-        PBElement topElement = repository.GetTopElement(_curFile.SimpleName, type);
+        PBElement topElement = repository.GetTopElement(_curFile.Name, type);
         if (topElement != null) {
             return ClassName.Get(GetNamespace(_curFile), type);
         }

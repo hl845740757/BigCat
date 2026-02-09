@@ -154,11 +154,11 @@ public sealed class DSRepository
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
     public void AddFile(DSFile dsFile) {
-        if (!logicFileMap.TryAdd(dsFile.SimpleName, dsFile)) {
-            throw new ArgumentException("duplicate fileName " + dsFile.SimpleName);
+        if (!logicFileMap.TryAdd(dsFile.Name, dsFile)) {
+            throw new ArgumentException("duplicate fileName " + dsFile.Name);
         }
         if (!dsFile.IsVirtualFile) {
-            fileMap.Add(dsFile.SimpleName, dsFile);
+            fileMap.Add(dsFile.Name, dsFile);
         }
     }
 
@@ -168,7 +168,7 @@ public sealed class DSRepository
     /// <returns></returns>
     public List<DSFile> GetSortedFiles() {
         List<DSFile> result = new(fileMap.Values);
-        result.Sort((a, b) => string.Compare(a.SimpleName, b.SimpleName, StringComparison.Ordinal));
+        result.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.Ordinal));
         return result;
     }
 
@@ -394,14 +394,14 @@ public sealed class DSRepository
         }
         DSFile enclosingFile;
         if (scopeEntry is DSNamedType namedType) {
-            if (typeName == namedType.SimpleName) {
+            if (typeName == namedType.Name) {
                 return namedType;
             }
             // 查找泛型变量 -- 需要通过泛型原型查询；symbol总是基于泛型定义类编写的
             ImmutableList<DSTypeParameter> typeParameters = namedType.OriginNamedType.TypeParameters;
             for (int idx = 0; idx < typeParameters.Count; idx++) {
                 var typeParameter = typeParameters[idx];
-                if (typeParameter.SimpleName == typeName) {
+                if (typeParameter.Name == typeName) {
                     return namedType.IsGenericTypeDefinition ? typeParameter : namedType.TypeArguments[idx];
                 }
             }
@@ -436,13 +436,13 @@ public sealed class DSRepository
 
     private static DSNamedType? FindFirstType(DSNamedType scopeEntry, string firstName) {
         scopeEntry = scopeEntry.OriginNamedType;
-        if (scopeEntry.SimpleName == firstName) {
+        if (scopeEntry.Name == firstName) {
             return scopeEntry;
         }
         // 先查询内部类--禁止直接访问内部类的内部类，必须是A.B.C相对路径格式访问
         foreach (DSElement enclosedElement in scopeEntry.EnclosedElements) {
             if (!enclosedElement.Kind.IsNamedType()) continue;
-            if (enclosedElement.SimpleName == firstName) {
+            if (enclosedElement.Name == firstName) {
                 return (DSNamedType)enclosedElement;
             }
         }
@@ -452,7 +452,7 @@ public sealed class DSRepository
             foreach (DSElement peerElement in enclosingElement.EnclosedElements) {
                 if (ReferenceEquals(peerElement, scopeEntry)) continue;
                 if (!peerElement.Kind.IsNamedType()) continue;
-                if (peerElement.SimpleName == firstName) {
+                if (peerElement.Name == firstName) {
                     return (DSNamedType?)peerElement;
                 }
             }
@@ -466,7 +466,7 @@ public sealed class DSRepository
         if (idx < 0) {
             string firstName = accessName;
             foreach (DSElement enclosedElement in root.EnclosedElements) {
-                if (enclosedElement.Kind.IsNamedType() && enclosedElement.SimpleName == firstName) {
+                if (enclosedElement.Kind.IsNamedType() && enclosedElement.Name == firstName) {
                     return (DSNamedType)enclosedElement;
                 }
             }
@@ -474,7 +474,7 @@ public sealed class DSRepository
         } else {
             string firstName = accessName.Substring2(0, idx);
             foreach (DSElement enclosedElement in root.EnclosedElements) {
-                if (enclosedElement.Kind.IsNamedType() && enclosedElement.SimpleName == firstName) {
+                if (enclosedElement.Kind.IsNamedType() && enclosedElement.Name == firstName) {
                     return FindEnclosedType(enclosedElement, accessName.Substring2(idx + 1));
                 }
             }
@@ -517,7 +517,7 @@ public sealed class DSRepository
     private static DsonTypeName NameOfType(DSTypeElement type) {
         // 泛型参数
         if (type is DSTypeParameter typeParameter) {
-            return new DsonTypeName(typeParameter.SimpleName);
+            return new DsonTypeName(typeParameter.Name);
         }
         DSNamedType namedType = (DSNamedType)type;
         if (namedType.IsGenericTypeDefinition) {
@@ -526,7 +526,7 @@ public sealed class DSRepository
             ImmutableList<DSTypeParameter> genericTypeArgs = namedType.TypeParameters;
             List<DsonTypeName> typeArgClassNames = new List<DsonTypeName>(genericTypeArgs.Count);
             foreach (var genericTypeArg in genericTypeArgs) {
-                typeArgClassNames.Add(new DsonTypeName(genericTypeArg.SimpleName));
+                typeArgClassNames.Add(new DsonTypeName(genericTypeArg.Name));
             }
             return new DsonTypeName(mainClsName, typeArgClassNames);
         }
@@ -558,7 +558,7 @@ public sealed class DSRepository
         List<DSTypeElement> typeArgs = new List<DSTypeElement>(typeArgsCount);
         for (int index = 0; index < typeArgsCount; index++) {
             DsonTypeName typeNameArg = typeName.typeArgs[index]; // 可能是泛型变量
-            if (typeNameArg.name == originDefine.TypeParameters[index].SimpleName) {
+            if (typeNameArg.name == originDefine.TypeParameters[index].Name) {
                 typeArgs[index] = originDefine.TypeParameters[index];
             } else {
                 typeArgs[index] = TypeOfName(typeNameArg);
@@ -587,7 +587,7 @@ public sealed class DSRepository
                 InitCodecInfo(dsFile, namedType);
             }
             foreach (DSInst inst in dsFile.InstMap.Values) {
-                string fullName = dsFile.SimpleName + "." + inst.SimpleName;
+                string fullName = dsFile.Name + "." + inst.Name;
                 indexedElementMap.Add(new IndexKey(isInst: true, fullName), inst);
             }
         }
@@ -626,7 +626,7 @@ public sealed class DSRepository
         if (namedType.CodecAliases.Count == 0) {
             string prefix = dsFile.GetOption(DSKeywords.CODEC_ALIAS_PREFIX);
             if (prefix == DSKeywords.VARIABLE_FILENAME) {
-                prefix = dsFile.SimpleName;
+                prefix = dsFile.Name;
             }
             // 是否为手动指定的别名添加前缀?
             if (options.ContainsKey(DSAnnotations.KEY_ALIAS)) {

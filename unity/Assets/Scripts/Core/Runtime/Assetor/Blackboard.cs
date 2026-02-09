@@ -28,7 +28,7 @@ namespace Wjybxx.BigCat.Assetor
 /// </summary>
 public class Blackboard
 {
-    public bool isWaitForCompletion;
+    public bool isWaitForCompletion { get; internal set; }
     internal Stopwatch stopwatch;
     internal long deadline;
 

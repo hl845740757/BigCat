@@ -164,7 +164,7 @@ public static class DSUtil
     /// </summary>
     public static bool IsNumberType(DSElement typeElement) {
         if (typeElement.Kind.IsNamedType()) {
-            return typeElement.SimpleName switch
+            return typeElement.Name switch
             {
                 DSKeywords.TYPE_INT32 => true,
                 DSKeywords.TYPE_INT64 => true,
@@ -180,14 +180,14 @@ public static class DSUtil
     /// 是否是bool类型
     /// </summary>
     public static bool IsBoolType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_BOOL;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_BOOL;
     }
 
     /// <summary>
     /// 是否是string类型
     /// </summary>
     public static bool IsStringType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_STRING;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_STRING;
     }
 
     /// <summary>
@@ -196,18 +196,18 @@ public static class DSUtil
     /// <param name="typeElement"></param>
     /// <returns></returns>
     public static bool IsBytesType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_BYTES;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_BYTES;
     }
 
     /// <summary>
     /// 是否是日期时间类型
     /// </summary>
     public static bool IsDateTimeType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_DATETIME;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_DATETIME;
     }
 
     public static bool IsTimestampType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_TIMESTAMP;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_TIMESTAMP;
     }
 
     /// <summary>
@@ -216,35 +216,35 @@ public static class DSUtil
     /// <param name="typeElement"></param>
     /// <returns></returns>
     public static bool IsPointerType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_POINTER;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_POINTER;
     }
 
     /// <summary>
     /// 是否是可空值类型
     /// </summary>
     public static bool IsNullableType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_NULLABLE;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_NULLABLE;
     }
 
     /// <summary>
     /// 是否是Object类型
     /// </summary>
     public static bool IsObjectType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_OBJECT;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_OBJECT;
     }
 
     /// <summary>
     /// 是否是Pair类型
     /// </summary>
     public static bool IsPairType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName == DSKeywords.TYPE_PAIR;
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_PAIR;
     }
 
     /// <summary>
     /// 是否是List类型
     /// </summary>
     public static bool IsListType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
+        return typeElement.Kind.IsNamedType() && typeElement.Name switch
         {
             DSKeywords.TYPE_LIST => true,
             TYPE_IMMUTABLE_LIST => true,
@@ -258,7 +258,7 @@ public static class DSUtil
     /// <param name="typeElement"></param>
     /// <returns></returns>
     public static bool IsSetType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
+        return typeElement.Kind.IsNamedType() && typeElement.Name switch
         {
             DSKeywords.TYPE_HASHSET => true,
             TYPE_LINKED_HASHSET => true,
@@ -275,7 +275,7 @@ public static class DSUtil
     /// <param name="typeElement"></param>
     /// <returns></returns>
     public static bool IsMapType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.SimpleName switch
+        return typeElement.Kind.IsNamedType() && typeElement.Name switch
         {
             DSKeywords.TYPE_MAP => true,
             TYPE_LINKED_MAP => true,
@@ -315,7 +315,7 @@ public static class DSUtil
         if (typeElement.Kind == DSElementKind.Enum) {
             return true;
         }
-        return typeElement.SimpleName switch
+        return typeElement.Name switch
         {
             DSKeywords.TYPE_INT32 => true,
             DSKeywords.TYPE_INT64 => true,
@@ -336,6 +336,11 @@ public static class DSUtil
     public static bool IsIndexesEnum(DSNamedType namedType) {
         DsonObject<string> options = GetOptions(namedType);
         return Annotation.GetBool(options, DSAnnotations.KEY_IS_INDEXES);
+    }
+
+    public static bool IsNonSerialized(DSElement element) {
+        DsonObject<string> options = GetOptions(element);
+        return Annotation.GetBool(options, DSAnnotations.KEY_NON_SERIALIZED);
     }
     
     #region Name工具方法

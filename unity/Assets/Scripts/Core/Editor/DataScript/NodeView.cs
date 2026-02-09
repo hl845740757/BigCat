@@ -99,7 +99,7 @@ public class NodeView : Node
     public virtual void Refresh() {
         title = !string.IsNullOrWhiteSpace(dataNode.title)
             ? dataNode.title
-            : dataNode.value.type.SimpleName;
+            : dataNode.value.type.Name;
         // 见Node.SetPosition
         style.left = dataNode.position.x;
         style.top = dataNode.position.y;

@@ -66,6 +66,7 @@ public static class DSAnnotations
     /// 
     /// - dataClass 标识class或struct是否是纯粹的数据类，如果为true，则会生成equals和hashcode方法
     /// - nonGenerate 表示生成代码时跳过，即类型是外部库类型的镜像
+    /// - modifiers 修饰符(待定)
     /// -
     /// - style 序列化样式，如果只想配置文本样式，可以通过style代替序列化特征值
     /// - alias 表示类型序列化时的别名，别名用于简化Dson文本编写；单值模式可不声明为数组；
@@ -105,6 +106,7 @@ public static class DSAnnotations
     /// - isMultiline 是否是多行文本
     /// - isInteger 是否是整数类型AABB
     /// - isFolder 是否是文件夹路径
+    /// - isSheet List/Map字段是否是表单
     ///
     /// - minWidth 最小宽度
     /// - maxWidth 最大宽度
@@ -240,6 +242,7 @@ public static class DSAnnotations
     public const string KEY_IS_MULTILINE = "isMultiline";
     public const string KEY_IS_INTEGER = "isInteger";
     public const string KEY_IS_FOLDER = "isFolder";
+    public const string KEY_IS_SHEET = "isSheet";
 
     public const string KEY_CTRL = "ctrl";
     public const string KEY_VALUE = "value";

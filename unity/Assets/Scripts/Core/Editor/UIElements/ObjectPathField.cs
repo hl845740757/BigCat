@@ -72,7 +72,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
             return _foldout.GetToggle().labelElement;
         }
     }
-    
+
     private void RefreshReadonly() {
         if (_collectionField == null) return;
         _collectionField.isReadOnly = _isReadOnly;
@@ -292,8 +292,6 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
                 return;
             }
             string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-            UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
-            //
             view._collectionField.value = UnityEditorUtil.NormalizeAssetPath(assetPath);
         }
 
@@ -332,8 +330,6 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
                 return;
             }
             string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-            UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
-            //
             assetPath = UnityEditorUtil.NormalizeAssetPath(assetPath);
             spriteGroup = AssetDatabase.LoadAssetAtPath<SpriteGroup>(assetPath);
             if (spriteGroup) {

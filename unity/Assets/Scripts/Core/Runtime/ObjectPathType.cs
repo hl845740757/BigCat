@@ -60,6 +60,7 @@ public enum ObjectPathType
     // SpriteGroup = 11,
     // SpriteAnimation,
     // AudioGroup,
+    // SpriteModel
 
     // Unity原生资产
     // AnimatorController = 21,

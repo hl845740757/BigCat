@@ -34,7 +34,7 @@ public abstract class PBElement
     private static readonly IDictionary<string, string> EMPTY_OPTIONS = ImmutableDictionary<string, string>.Empty;
 #nullable disable
     /** 简单名 */
-    private string simpleName;
+    private string name;
     /** 定义该元素的元素 */
     private PBElement enclosingElement;
     /** 嵌套定义的元素 -- 任何便捷查询都是筛选后的快照 */
@@ -109,9 +109,9 @@ public abstract class PBElement
 
     #region props
 
-    public string SimpleName {
-        get => simpleName;
-        set => simpleName = value;
+    public string Name {
+        get => name;
+        set => name = value;
     }
 
     public PBElement EnclosingElement => enclosingElement;
@@ -134,8 +134,8 @@ public abstract class PBElement
     public sealed override string ToString() {
         StringBuilder stringBuilder = new StringBuilder()
             .Append(EnumUtil.GetName(Kind)).Append("{")
-            .Append("simpleName='").Append(simpleName).Append('\'')
-            .Append(", enclosingElement=").Append(enclosingElement == null ? null : enclosingElement.simpleName);
+            .Append("simpleName='").Append(name).Append('\'')
+            .Append(", enclosingElement=").Append(enclosingElement == null ? null : enclosingElement.name);
 
         ToString(stringBuilder);
         return stringBuilder

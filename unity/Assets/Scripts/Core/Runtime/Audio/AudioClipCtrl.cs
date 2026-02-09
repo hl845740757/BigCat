@@ -33,7 +33,7 @@ public sealed class AudioClipCtrl
     private AssetHandle handle;
 
     /// <summary>
-    /// Clip的状态
+    /// 播放状态
     /// </summary>
     private Status status;
     /// <summary>
@@ -148,7 +148,7 @@ public sealed class AudioClipCtrl
         if (request.fadeInTime > 0) {
             fadeStatus = FadeStatus.FadeIn;
             fadeProgress = 0;
-            audioSource.volume = request.fadeInStartVol;
+            audioSource.volume = 0;
         } else {
             fadeStatus = FadeStatus.Stopped;
             fadeProgress = 0;

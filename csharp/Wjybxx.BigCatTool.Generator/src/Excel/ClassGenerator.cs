@@ -169,12 +169,12 @@ public class ClassGenerator : ISheetProcessor
             DSField primaryKeyField = _fieldListCache[0];
             // 打印主键id即可 -- 主键是数字或字符串 -- ItemCfg{id: 1001}
             methodBuilder.codeBuilder.AddStatement("return \"$L{$L: \" + $L + \"}\"",
-                namedType.SimpleName, primaryKeyField.SimpleName, primaryKeyField.SimpleName);
+                namedType.Name, primaryKeyField.Name, primaryKeyField.Name);
             typeBuilder.AddMethod(methodBuilder.Build());
         }
 
         protected override ClassName? GetBuiltinMetaTypeName(DSNamedType originDefine) {
-            return originDefine.SimpleName switch
+            return originDefine.Name switch
             {
                 // 集合全部转不可变
                 DSKeywords.TYPE_LIST => TYPE_NAME_IMMUTABLE_LIST,

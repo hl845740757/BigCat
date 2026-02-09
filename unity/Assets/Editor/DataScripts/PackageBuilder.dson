@@ -1,5 +1,5 @@
 {@{clsName: CollectorGroup, localId: 1, title: "编译依赖组(仅提供依赖)",
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 109, y: -352}}
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 29, y: -372}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -13,7 +13,7 @@
   classifier: @ptr 0
 }
 {@{clsName: CollectorPackage, localId: 2,
-   typeSymbol: "assetor.CollectorPackage", features: @i 0x40, position: {x: 70, y: 15}}
+   typeSymbol: "assetor.CollectorPackage", features: @i 0x40, position: {x: 4, y: 8}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -47,7 +47,7 @@
   postBuildTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}]
 }
 {@{clsName: CollectorGroup, localId: 4, title: Sprites收集组,
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: 230}}
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 350, y: 198}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -88,13 +88,49 @@
   binFilePath: "Assets/Resources/manifest.bin",
   textFilePath: "Assets/Resources/manifest.dson"
 }
+{@{clsName: Collector, localId: 7, title: MOB配置收集器,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 68}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/DNF/Config/Monster",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 9,
+  bundleTags: [],
+  assetIndexes: @i 0x10,
+  uniqueIndexes: @i 0x0,
+  indexDepth: 0,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
+{@{clsName: Collector, localId: 8, title: Shader,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: -500}}
+  name: "",
+  guard: @ptr 0,
+  flags: 0,
+  collectPath: "Assets/DNF/Shaders",
+  recursive: true,
+  collectorType: 0,
+  provided: false,
+  groupBy: 0,
+  groupDepth: 1,
+  bundleTags: [],
+  assetIndexes: @i 0x1,
+  uniqueIndexes: @i 0x4,
+  indexDepth: 2,
+  noIndexTypes: [],
+  classifier: @ptr 0
+}
 {@{clsName: PackageBuilder, localId: 9, localPath: EditorPacker, name: EditorPacker,
    typeSymbol: "assetor.PackageBuilder", features: @i 0x48, position: {x: -253, y: 61}}
   package: @ptr 2,
   buildTask: @ptr 3
 }
 {@{clsName: Collector, localId: 10, title: Scripts,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 170, y: -523}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 276, y: -614}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -137,8 +173,8 @@
     mp3
   ]
 }
-{@{clsName: CollectorGroup, localId: 13, title: GameRes目录,
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 541, y: -513}}
+{@{clsName: CollectorGroup, localId: 13, title: 预制件和场景,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 347, y: -318}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -147,18 +183,17 @@
   preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
   collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
     @ptr 14,
-    @ptr 17,
-    @ptr 18,
-    @ptr 16
+    @ptr 16,
+    @ptr 8
   ],
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 14, title: 预制件,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -522}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: -374}}
   name: "",
   guard: @ptr 0,
   flags: 0,
-  collectPath: "Assets/GameRes/Prefabs",
+  collectPath: "Assets/DNF/Prefabs",
   recursive: true,
   collectorType: 0,
   provided: false,
@@ -172,7 +207,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 15, title: "TextMesh Pro",
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 341, y: -523}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 276, y: -475}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -190,11 +225,11 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 16, title: Scene,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -262}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: -232}}
   name: "",
   guard: @ptr 0,
   flags: 0,
-  collectPath: "Assets/GameRes/Scenes",
+  collectPath: "Assets/DNF/Scenes",
   recursive: true,
   collectorType: 0,
   provided: false,
@@ -207,57 +242,22 @@
   noIndexTypes: [],
   classifier: @ptr 0
 }
-{@{clsName: Collector, localId: 17, title: 配置表,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -393}}
-  name: "",
-  guard: @ptr 0,
-  flags: 0,
-  collectPath: "Assets/GameRes/Config",
-  recursive: true,
-  collectorType: 3,
-  provided: false,
-  groupBy: 0,
-  groupDepth: 1,
-  bundleTags: [],
-  assetIndexes: @i 0x1,
-  uniqueIndexes: @i 0x4,
-  indexDepth: 2,
-  noIndexTypes: [],
-  classifier: @ptr 0
-}
-{@{clsName: Collector, localId: 18, title: GameRes根目录,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 762, y: -670}}
-  name: "",
-  guard: @ptr 0,
-  flags: 0,
-  collectPath: "Assets/GameRes",
-  recursive: true,
-  collectorType: 2,
-  provided: false,
-  groupBy: 0,
-  groupDepth: 1,
-  bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x0,
-  indexDepth: 0,
-  noIndexTypes: [],
-  classifier: @ptr 0
-}
-{@{clsName: CollectorGroup, localId: 19, title: Animations收集组,
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 341, y: 37}}
+{@{clsName: CollectorGroup, localId: 19, title: 模型&动画收集组,
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: -8}}
   name: "",
   guard: @ptr 0,
   flags: 0,
   enabled: true,
   bundleTags: [],
   preTasks: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
-    @ptr 21
+    @ptr 21,
+    @ptr 7
   ],
   collectors: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}],
   classifier: @ptr 0
 }
 {@{clsName: CollectorGroup, localId: 20, title: 音效收集组,
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: 423}}
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 350, y: 372}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -269,12 +269,12 @@
   ],
   classifier: @ptr 0
 }
-{@{clsName: Collector, localId: 21, title: 模型资源收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 546, y: 38}}
+{@{clsName: Collector, localId: 21, title: Char配置收集器,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 550, y: -76}}
   name: "",
   guard: @ptr 0,
   flags: 0,
-  collectPath: "Assets/DNF/Animations",
+  collectPath: "Assets/DNF/Config/Character",
   recursive: true,
   collectorType: 0,
   provided: false,
@@ -308,7 +308,7 @@
   classifier: @ptr 0
 }
 {@{clsName: CollectorGroup, localId: 25, title: Music收集组,
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: 596}}
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 350, y: 569}}
   name: "",
   guard: @ptr 0,
   flags: 0,

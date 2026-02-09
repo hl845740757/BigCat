@@ -147,11 +147,13 @@ public class DSFile : DSElement
             int idx = fullName.IndexOf('.');
             string accessName = fullName.Substring2(idx + 1);
             typeMap.Add(accessName, namedType);
+            //
+            namedType.BuildCache();
         }
         instMap.Clear();
         foreach (DSElement element in EnclosedElements) {
             if (element.Kind == DSElementKind.Inst) {
-                instMap.Add(element.SimpleName, (DSInst)element);
+                instMap.Add(element.Name, (DSInst)element);
             }
         }
     }

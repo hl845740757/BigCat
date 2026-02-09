@@ -45,7 +45,7 @@ public sealed class DSTypeParameter : DSTypeElement
     }
 
     public DSTypeParameter(DSTypeParameter originDefine)
-        : base(originDefine.SimpleName, originDefine.TypeName) {
+        : base(originDefine.Name, originDefine.TypeName) {
         this.constraints = originDefine.constraints;
     }
 

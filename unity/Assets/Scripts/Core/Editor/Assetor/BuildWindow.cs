@@ -66,7 +66,7 @@ public class BuildWindow : DataEditor
         collection.RemoveAt(index);
         collection.Insert(0, root); // 插到首部，只解码第一个对象及其引用的对象
 
-        IDsonConverter converter = CreateConverter();
+        IDsonConverter converter = UnityEditorUtil.Converter;
         PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
         TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
         {
@@ -94,7 +94,7 @@ public class BuildWindow : DataEditor
         collection.RemoveAt(index);
         collection.Insert(0, root); // 插到首部，只解码第一个对象及其引用的对象
 
-        converter ??= CreateConverter();
+        converter ??= UnityEditorUtil.Converter;
         // 泛型参数需要为所有节点的超类
         PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
         TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
@@ -112,25 +112,6 @@ public class BuildWindow : DataEditor
         } else {
             Debug.LogError("Task is not completed!");
         }
-    }
-
-    /// <summary>
-    /// 需要统计行为树和打包工具相关的对象
-    /// </summary>
-    /// <returns></returns>
-    private static IDsonConverter CreateConverter() {
-        DsonConverterBuilder builder = new DsonConverterBuilder();
-        // 行为树Codec
-        foreach (Type type in typeof(BtreeCodecLinker).Assembly.ExportedTypes) {
-            DataEditorUtil.TryAddCodec(builder, type);
-        }
-        // 打包工具Codec - Task需要补充类型元数据
-        builder.AddTypeMeta(TypeMeta.Of(typeof(Task<>), "Task"));
-        builder.AddTypeMeta(TypeMeta.Of(typeof(Blackboard), "Blackboard"));
-        foreach (Type type in typeof(PackageBuilder).Assembly.ExportedTypes) {
-            DataEditorUtil.TryAddCodec(builder, type);
-        }
-        return builder.Build();
     }
 }
 }

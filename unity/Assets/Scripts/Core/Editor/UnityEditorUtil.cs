@@ -21,16 +21,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Core;
 using Wjybxx.BigCatTool;
+using Wjybxx.BTree;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Dson.Codec;
+using Wjybxx.Dson.Codec.Attributes;
 using Wjybxx.Dson.Types;
+using Blackboard = Wjybxx.BigCat.Util.Blackboard;
 
 namespace Wjybxx.BigCat.Editor
 {
@@ -182,6 +185,7 @@ public static class UnityEditorUtil
             Debug.LogWarning("Please select unity assets folder.");
             return null;
         }
+        UnityEditorUtil.lastOpenFolder = ConvertToAssetPath(openPath);
         return openPath;
     }
 
@@ -194,6 +198,7 @@ public static class UnityEditorUtil
             Debug.LogWarning("Please select unity assets file.");
             return null;
         }
+        UnityEditorUtil.lastOpenFolder = GetAssetFolderPath(openPath);
         return openPath;
     }
 
@@ -272,8 +277,11 @@ public static class UnityEditorUtil
     /// <param name="assetPath"></param>
     /// <returns></returns>
     public static string GetAssetFolderPath(string assetPath) {
-        int idx = assetPath.LastIndexOf('.');
-        return idx > 0 ? assetPath.Substring(0, assetPath.LastIndexOf('/')) : assetPath;
+        int lastIndex = assetPath.LastIndexOf('/');
+        if (lastIndex == -1 || assetPath.IndexOf('.', lastIndex) < 0) {
+            return assetPath;
+        }
+        return assetPath.Substring(0, lastIndex);
     }
 
     /// <summary>
@@ -300,10 +308,16 @@ public static class UnityEditorUtil
 
     #region object-path
 
+    private static string _lastOpenFolder = "Assets";
+
     /// <summary>
     /// 上次打开的文件夹路径
     /// </summary>
-    public static string lastOpenFolder = "Assets";
+    public static string lastOpenFolder {
+        get => _lastOpenFolder;
+        set => _lastOpenFolder = value;
+    }
+
     /// <summary>
     /// Sprite的默认搜索文件夹
     /// </summary>
@@ -535,18 +549,6 @@ public static class UnityEditorUtil
 
     #region convert
 
-    public static int AsInt32(Color32 color) {
-        return color.r | color.g << 8 | color.b << 16 | color.a << 24;
-    }
-
-    public static Color32 AsColor32(int rgba) {
-        byte r = (byte)(rgba & 0xff);
-        byte g = (byte)(rgba >> 8);
-        byte b = (byte)(rgba >> 16);
-        byte a = (byte)(rgba >> 24);
-        return new Color32(r, g, b, a);
-    }
-
     public static Color32 AsColor32(Integer4 integer4) {
         return new Color32((byte)integer4.v0, (byte)integer4.v1, (byte)integer4.v2, (byte)integer4.v3);
     }
@@ -649,6 +651,51 @@ public static class UnityEditorUtil
 
         pValue.Next(false);
         path.type = pValue.intValue;
+    }
+
+    #endregion
+
+    #region 公共的序列化支持
+
+    private static IDsonConverter _converter;
+
+    /// <summary>
+    /// 获取公共的序列化工具
+    /// </summary>
+    public static IDsonConverter Converter => _converter ?? CreateConverter();
+
+    private static IDsonConverter CreateConverter() {
+        DsonConverterBuilder builder = new DsonConverterBuilder();
+        TypeCache.TypeCollection codecTypes = TypeCache.GetTypesDerivedFrom<IDsonCodec>();
+        for (int i = 0; i < codecTypes.Count; i++) {
+            Type codecType = codecTypes[i];
+            if (codecType.IsAbstract || codecType.IsInterface) continue;
+            if (!IsWjybxxLogicNamespace(codecType.Namespace)) {
+                continue;
+            }
+            builder.AddByCodecType(codecType);
+        }
+        // 补充元数据（不序列化但被使用到的类型）
+        builder.AddTypeMeta(TypeMeta.Of(typeof(Task<>), "Task"));
+        builder.AddTypeMeta(TypeMeta.Of(typeof(Blackboard), "Blackboard"));
+        // 大量的枚举被使用
+        foreach (Type type in TypeCache.GetTypesDerivedFrom<Enum>()) {
+            if (type.IsNested) continue;
+            if (!IsWjybxxLogicNamespace(type.Namespace)) {
+                continue;
+            }
+            builder.AddTypeMeta(TypeMeta.Of(type, type.Name));
+        }
+        return builder.Build();
+    }
+
+    private static bool IsWjybxxLogicNamespace(string ns) {
+        if (string.IsNullOrEmpty(ns)) {
+            return false;
+        }
+        return ns.StartsWith("Wjybxx.")
+               && !ns.StartsWith("Wjybxx.Common")
+               && !ns.StartsWith("Wjybxx.Dson");
     }
 
     #endregion

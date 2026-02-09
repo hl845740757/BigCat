@@ -22,7 +22,6 @@ using System.Linq;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
-using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using Range = Wjybxx.BigCatTool.Core.Range;
 using TypeName = Wjybxx.Commons.Poet.TypeName;
@@ -122,6 +121,9 @@ public sealed class DSNamedType : DSTypeElement
     /// 4.Csharp和Java的命名空间（包路径）不一定相同，因此不能依赖于生成代码的命名空间 -- 别名就是用来解决这个问题的。
     /// </summary>
     private readonly List<string> _codecAliases = new();
+
+    private Dictionary<int, DSEnumValue> _number2EnumValueDic;
+    private Dictionary<string, DSEnumValue> _name2EnumValueDic;
 #nullable restore
 
     /// <summary>
@@ -174,7 +176,7 @@ public sealed class DSNamedType : DSTypeElement
     public override DSTypeKind TypeKind => _typeKind;
     /// <summary>
     /// 类型名缓存
-    /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSFile.SimpleName"/>。
+    /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSElement.Name"/>。
     /// </summary>
     public new ClassName TypeName => (ClassName)typeName;
     /// <summary>
@@ -222,6 +224,11 @@ public sealed class DSNamedType : DSTypeElement
         }
     }
 
+    /// <summary>
+    /// 是否是嵌套类
+    /// </summary>
+    public bool IsNestedType => EnclosingElement.Kind != DSElementKind.File;
+
     #endregion
 
     #region logic
@@ -236,7 +243,7 @@ public sealed class DSNamedType : DSTypeElement
     /// <returns></returns>
     public DSField? GetField(string name, bool flatInherit = true) {
         foreach (var element in EnclosedElements) {
-            if (element.Kind == DSElementKind.Field && element.SimpleName == name) {
+            if (element.Kind == DSElementKind.Field && element.Name == name) {
                 return (DSField?)element;
             }
         }
@@ -279,7 +286,7 @@ public sealed class DSNamedType : DSTypeElement
     /// <param name="flatInherit">是否拉取继承的字段，默认true</param>
     public DSMethod? GetMethod(string name, bool flatInherit = true) {
         foreach (var element in EnclosedElements) {
-            if (element.Kind == DSElementKind.Method && element.SimpleName == name) {
+            if (element.Kind == DSElementKind.Method && element.Name == name) {
                 return (DSMethod?)element;
             }
         }
@@ -319,6 +326,9 @@ public sealed class DSNamedType : DSTypeElement
     /// </summary>
     /// <returns></returns>
     public List<DSEnumValue> GetEnumValues() {
+        if (_number2EnumValueDic != null) {
+            return new List<DSEnumValue>(_number2EnumValueDic.Values);
+        }
         return EnclosedElements.Where(e => e.Kind == DSElementKind.EnumValue)
             .Cast<DSEnumValue>()
             .ToList();
@@ -330,14 +340,18 @@ public sealed class DSNamedType : DSTypeElement
     /// <param name="name">枚举名</param>
     /// <param name="ignoreCase">是否忽略大小写</param>
     /// <returns></returns>
-    public DSEnumValue? GetEnumValue(string name, bool ignoreCase = false) {
+    public DSEnumValue? GetEnumValue(string name, bool ignoreCase = true) {
+        if (_name2EnumValueDic != null && ignoreCase) {
+            _name2EnumValueDic.TryGetValue(name, out DSEnumValue value);
+            return value;
+        }
         foreach (DSElement enclosedElement in EnclosedElements) {
             if (enclosedElement.Kind != DSElementKind.EnumValue) {
                 continue;
             }
             bool match = ignoreCase
-                ? string.Equals(enclosedElement.SimpleName, name, StringComparison.OrdinalIgnoreCase)
-                : string.Equals(enclosedElement.SimpleName, name);
+                ? string.Equals(enclosedElement.Name, name, StringComparison.OrdinalIgnoreCase)
+                : string.Equals(enclosedElement.Name, name);
             if (match) {
                 return enclosedElement as DSEnumValue;
             }
@@ -351,6 +365,10 @@ public sealed class DSNamedType : DSTypeElement
     /// <param name="number">枚举对应的数字</param>
     /// <returns></returns>
     public DSEnumValue? GetEnumValue(int number) {
+        if (_number2EnumValueDic != null) {
+            _number2EnumValueDic.TryGetValue(number, out DSEnumValue value);
+            return value;
+        }
         foreach (DSElement enclosedElement in EnclosedElements) {
             if (enclosedElement.Kind != DSElementKind.EnumValue) {
                 continue;
@@ -361,6 +379,20 @@ public sealed class DSNamedType : DSTypeElement
             }
         }
         return null;
+    }
+
+    internal void BuildCache() {
+        if (Kind != DSElementKind.Enum) return;
+        _number2EnumValueDic = new(EnclosedElements.Count);
+        _name2EnumValueDic = new(EnclosedElements.Count, StringComparer.OrdinalIgnoreCase);
+        //
+        foreach (DSElement element in EnclosedElements) {
+            if (element is not DSEnumValue enumValue) {
+                continue;
+            }
+            _number2EnumValueDic.Add(enumValue.Number, enumValue);
+            _name2EnumValueDic.Add(enumValue.Name, enumValue);
+        }
     }
 
     #endregion
@@ -539,8 +571,8 @@ public sealed class DSNamedType : DSTypeElement
         for (int i = 0; i < typeParameters.Count; i++) {
             DSTypeParameter typeParameter = typeParameters[i];
             TypeParameterName typeArgumentName = (TypeParameterName)className.typeArguments[i];
-            if (typeParameter.SimpleName != typeArgumentName.name) {
-                throw new ArgumentException($"TypeParameter name mismatch, expected {typeParameter.SimpleName}, but found: {typeArgumentName.name}");
+            if (typeParameter.Name != typeArgumentName.name) {
+                throw new ArgumentException($"TypeParameter name mismatch, expected {typeParameter.Name}, but found: {typeArgumentName.name}");
             }
         }
     }

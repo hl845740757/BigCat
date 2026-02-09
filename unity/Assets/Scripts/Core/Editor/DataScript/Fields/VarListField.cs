@@ -48,8 +48,7 @@ public class VarListField : BindableElement, IVarField
     private int _movingIndex = -1;
     private ListFieldMode _mode;
 
-    public VarListField(ListFieldMode mode = ListFieldMode.Normal) {
-        _mode = mode;
+    public VarListField() {
         _listView = new ListView
         {
             virtualizationMethod = CollectionVirtualizationMethod.DynamicHeight,
@@ -105,6 +104,7 @@ public class VarListField : BindableElement, IVarField
         this._editor = editor;
         this._variable = variable;
         _listView.itemsSource = variable.values;
+        _mode = variable.cfg.isSheet ? ListFieldMode.Sheet : ListFieldMode.Normal;
         DataEditorUtil.SetHeight(_listView, variable.cfg);
         // 刷新UI
         Refresh();

@@ -1,4 +1,7 @@
 ﻿import public "common.ds";
+//
+option region_types = "region, endregion";
+option csharp_namespace = "Wjybxx.BTree";
 
 // 行为树编辑器配置文件，行为树实现模块见BTree.Core
 // 行为树基类
@@ -9,50 +12,51 @@ class Task<T> {
   int32 flags = 3; // 自定义特征值
 } 
 
-// 叶子节点基类
-class LeafTask<T> : Task<T> {
+// 分支节点基类
+class BranchTask<T> : Task<T> {
+  // @PortField{side: bottom, distinct : true, expanded: true}
+  List<Task<T>> children = 1;
 }
 // 装饰器基类
 class Decorator<T> : Task<T> {
   // @PortField{side: bottom}
   Task<T> child = 1;
 }
-// 分支节点基类
-class BranchTask<T> : Task<T> {
-  // @PortField{side: bottom, distinct : true, expanded: true}
-  List<Task<T>> children = 1;
-}
-// 非并行分支基类
-class SingleRunningChildBranch<T> : BranchTask<T> {
-}
-// 并行分支基类
-class ParallelBranch<T> : BranchTask<T> {
+// 叶子节点基类
+class LeafTask<T> : Task<T> {
 }
 
 // ------------------------------------------
 // 子树引用
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class SubtreeRef<T> : Decorator<T> {
   // @PortField{side: right}
   ObjectPath path = 1; // 可直接连线
 }
 // 每帧检查任务的前置条件
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class AlwaysCheckGuard<T> : Decorator<T> {
 }
 // 子任务完成后返回失败
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class AlwaysFail<T> : Decorator<T> {
   int32 failureStatus = 1; // 错误码
 }
 // 子任务完成后返回成功
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class AlwaysSuccess<T> : Decorator<T> {
 }
 // 保持运行状态
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class AlwaysRunning<T> : Decorator<T> {
 }
 // 反转子节点的执行结果
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class Inverter<T> : Decorator<T> {
 }
 
 // 重复N次
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class Repeat<T> : Decorator<T> {
   // @PopField {value: 0, displayName: Always}
   // @PopField {value: 1, displayName: OnlySuccess}
@@ -65,27 +69,33 @@ inst Repeat {
   required: 1
 }
 // 直到运行成功
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class UntilSuccess<T> : Decorator<T> {
 }
 // 直到运行失败
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class UntilFail<T> : Decorator<T> {
 }
 // 直到指定条件达成
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class UntilCond<T> : Decorator<T> {
   // @PortField{}
   Task<T> cond = 1;
 }
 // 只执行一次，除非手动调用Reset
+// @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class OnlyOnce<T> : Decorator<T> {
 }
 
 // ------------------------------------------
 // FSM
+// @Namespace{cs: "Wjybxx.BTree.FSM"}
 class StateMachineTask<T> : Decorator<T> {
   // @PortField{side: right, distinct : true}
   List<Task<T>> stateList = 1; // 状态列表
 }
 // 切换状态
+// @Namespace{cs: "Wjybxx.BTree.FSM"}
 class ChangeStateTask<T> : LeafTask<T> {
   // @PortField{side: right}
   Task<T> nextState = 1; // 下一个状态
@@ -101,6 +111,7 @@ class ChangeStateTask<T> : LeafTask<T> {
   int32 delayArg = 5; // 延迟参数；不延迟时，表示FSM当前状态的执行结果
 }
 // 切换状态
+// @Namespace{cs: "Wjybxx.BTree.FSM"}
 class ChangeStateTask2<T> : LeafTask<T> {
   string stateName = 1; // 下一个状态的name
   
@@ -114,38 +125,48 @@ class ChangeStateTask2<T> : LeafTask<T> {
 }
 
 // ------------------------------------------
-
-class Selector<T> : SingleRunningChildBranch<T> {
+// 选择执行 - OR
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class Selector<T> : BranchTask<T> {
 }
-class Sequence<T> : SingleRunningChildBranch<T> {
+// 顺序执行 - AND
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class Sequence<T> : BranchTask<T> {
 }
 // 根据子节点的前置条件选择要执行的节点
-class Switch<T> : SingleRunningChildBranch<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class Switch<T> : BranchTask<T> {
 }
 // 所有子节点执行完成之后返回成功
-class Foreach<T> : SingleRunningChildBranch<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class Foreach<T> : BranchTask<T> {
 }
 // 每帧重新选择要执行的节点
-class ActiveSelector<T> : SingleRunningChildBranch<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class ActiveSelector<T> : BranchTask<T> {
 }
 // N个子节点成功时返回成功
-class SelectorN<T> : SingleRunningChildBranch<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class SelectorN<T> : BranchTask<T> {
   int32 required = 1; // 需要成功的数量
   bool failFast = 2; // 是否快速失败，不等执行完毕
 }
 
 // ----------------------------------------
 // 简单并行节点
-class SimpleParallel<T> : ParallelBranch<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class SimpleParallel<T> : BranchTask<T> {
 }
 // Join并行节点
-class Join<T> : ParallelBranch<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
+class Join<T> : BranchTask<T> {
   // @Editor{initNull: true}
   // @PloyField["JoinMain<T>", "JoinSelector<T>", "JoinSequence<T>", "JoinAnyOf<T>", "JoinWaitAll<T>"]
   JoinPolicy<T> policy = 1; // 调度策略，多态字段
 }
 
 // 调度策略接口
+// @Namespace{cs: "Wjybxx.BTree.Branch"}
 class JoinPolicy<T> {
 }
 class JoinMain<T> : JoinPolicy<T> {
@@ -161,21 +182,26 @@ class JoinWaitAll<T> : JoinPolicy<T> {
 
 // --------------------------------------
 // 保持运行
+// @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class Running<T> : LeafTask<T> {
 }
 // 返回成功
+// @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class Success<T> : LeafTask<T> {
 }
 // 返回失败
+// @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class Failure<T> : LeafTask<T> {
   int32 failureStatus = 1; // 错误码
 }
 
 // 简单随机节点
+// @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class SimpleRandom<T> : LeafTask<T> {
   float p = 1; // 概率
 }
 // 简单等待N帧
+// @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class SimpleWaitFrame<T> : LeafTask<T> {
   int32 required = 1; // 需要等待的帧数
 }
@@ -183,43 +209,43 @@ class SimpleWaitFrame<T> : LeafTask<T> {
 // -------------------------------------
 // 这里将所有类型引用进来，通过子类实例化泛型
 class BTreeSearchTreeGroupEntry0<T> {
-  SubtreeRef<T> _f1 = 1;
-  AlwaysCheckGuard<T> _f2 = 2;
-  AlwaysFail<T> _f3 = 3;
-  AlwaysSuccess<T> _f4 = 4;
-  AlwaysRunning<T> _f5 = 5;
-  Inverter<T> _f6 = 6;
+  SubtreeRef<T> = 1;
+  AlwaysCheckGuard<T> = 2;
+  AlwaysFail<T> = 3;
+  AlwaysSuccess<T> = 4;
+  AlwaysRunning<T> = 5;
+  Inverter<T> = 6;
   
-  StateMachineTask<T> _f7 = 7;
-  ChangeStateTask<T> _f8 = 8;
-  ChangeStateTask2<T> _f9 = 9;
+  StateMachineTask<T> = 7;
+  ChangeStateTask<T> = 8;
+  ChangeStateTask2<T> = 9;
   
-  Selector<T> _f11 = 11;
-  Sequence<T> _f12 = 12;
-  Switch<T> _f13 = 13;
-  Foreach<T> _f14 = 14;
-  ActiveSelector<T> _f15 =15;
-  SelectorN<T> _f16 = 16;
+  Selector<T> = 11;
+  Sequence<T> = 12;
+  Switch<T> = 13;
+  Foreach<T> = 14;
+  ActiveSelector<T> =15;
+  SelectorN<T> = 16;
   
-  SimpleParallel<T> _f21 = 21;
-  Join<T> _f22 = 22;
-  JoinMain<T> _f23 = 23;
-  JoinSelector<T> _f24 = 24;
-  JoinSequence<T> _f25 = 25;
-  JoinAnyOf<T> _f26 = 26;
-  JoinWaitAll<T> _f27 = 27;
+  SimpleParallel<T> = 21;
+  Join<T> = 22;
+  JoinMain<T> = 23;
+  JoinSelector<T> = 24;
+  JoinSequence<T> = 25;
+  JoinAnyOf<T> = 26;
+  JoinWaitAll<T> = 27;
   
-  Running<T> _f31 = 31;
-  Success<T> _f32 = 32;
-  Failure<T> _f33 = 33;
-  SimpleRandom<T> _f34 = 34;
-  SimpleWaitFrame<T> _f35 = 35;
+  Running<T> = 31;
+  Success<T> = 32;
+  Failure<T> = 33;
+  SimpleRandom<T> = 34;
+  SimpleWaitFrame<T> = 35;
   
-  Repeat<T> _f41 = 41;
-  UntilSuccess<T> _f42 = 42;
-  UntilFail<T> _f43 = 43;
-  UntilCond<T> _f44 = 44;
-  OnlyOnce<T> _f45 = 45;
+  Repeat<T> = 41;
+  UntilSuccess<T> = 42;
+  UntilFail<T> = 43;
+  UntilCond<T> = 44;
+  OnlyOnce<T> = 45;
 }
 // 通过子类直接实例化所有泛型
 // @SearchTreeGroupEntry {}

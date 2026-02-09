@@ -17,6 +17,8 @@
 #endregion
 
 using System;
+using UnityEngine;
+using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Types;
 
@@ -27,6 +29,31 @@ namespace Wjybxx.BigCat.Core
 /// </summary>
 public static class BuiltinCodecs
 {
+    public class AABBCodec : IDsonCodec<MinMaxAABB>
+    {
+        public void WriteObject(IDsonObjectWriter writer, MinMaxAABB inst, Type declaredType, SerializeFeatures _) {
+            const SerializeFeatures features = SerializeFeatures.Double4AsVector | SerializeFeatures.Double4Len3;
+            writer.WriteStartObject(typeof(MinMaxAABB));
+            writer.WriteDouble4("min", inst.min.ToDouble4(), features);
+            writer.WriteDouble4("size", inst.Size.ToDouble4(), features);
+            writer.WriteEndObject();
+        }
+
+        public MinMaxAABB ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+            // 支持Min+Max、Min+Size
+            reader.ReadStartObject(typeof(MinMaxAABB), DeserializeFeatures.PassiveRandomRead);
+            Vector3 min = reader.ReadDouble4("min").ToVector3();
+            Vector3 max = reader.ReadName() switch
+            {
+                "max" => reader.ReadDouble4().ToVector3(),
+                "size" => min + reader.ReadDouble4().ToVector3(),
+                _ => throw new InvalidOperationException("Unknown MinMaxAABB format"),
+            };
+            reader.ReadEndObject();
+            return new MinMaxAABB(min, max);
+        }
+    }
+
     public class Euler32Codec : IDsonCodec<Euler32>
     {
         public void WriteObject(IDsonObjectWriter writer, Euler32 inst, Type declaredType, SerializeFeatures _) {

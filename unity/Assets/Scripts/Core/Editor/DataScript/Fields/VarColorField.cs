@@ -66,6 +66,6 @@ public class VarColorField : MColorField, IVarField
         }
     }
 
-    private bool IsColor32 => _variable.type.SimpleName == "Color32";
+    private bool IsColor32 => _variable.type.Name == "Color32";
 }
 }

@@ -49,5 +49,7 @@ public enum AnimationOptions
     EnableShadow = 0x04, // 启用阴影
     EnableSortOrder = 0x08, // 启用动画层级
     ReservedMotion = 0x10, // 保留动作配置(禁止自动删除)
+    FlipX = 0x20, // X轴翻转
+    FlipY = 0x40, // Y轴翻转
 }
 }

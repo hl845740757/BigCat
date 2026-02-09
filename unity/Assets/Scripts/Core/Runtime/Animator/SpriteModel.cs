@@ -48,7 +48,7 @@ public sealed class SpriteModel : ScriptableObject
     ///
     /// 注：
     /// 1.将Body相关的部件归属在同一组，使得我们可以按组切换模型动作。
-    /// 2.角色通常可划分为三组：Body + 武器 + 其它。
+    /// 2.角色通常可划分为三组：Body + 武器 + 其它；极限情况下可以每个部件1组。
     /// </summary>
     [Tooltip("部件所属的组")]
     public int partGroup;
@@ -75,9 +75,8 @@ public sealed class SpriteModel : ScriptableObject
     /// 1.由于攻击盒数据也在动作信息上，因此要求动作信息同步加载。
     /// 2.动作信息整体来说还是比较轻量级的，因此同步加载的影响较小。
     /// </summary>
-    [Tooltip("逻辑动作名到美术资源的映射，前面的覆盖后面的 - 特殊配置放前面")]
-    [ContextMenuItem("删除重复Motion", "DeleteDuplicateMotions")]
-    [ContextMenuItem("刷新绑定Motion", "RefreshBindMotions")]
+    [Tooltip("动作列表；前面的覆盖后面的 - 特殊配置放前面")]
+    [ContextMenuItem("刷新", "Refresh")]
     public List<SpriteMotionRedir> motionList = new();
     /// <summary>`
     /// 模型动作映射缓存(忽略大小写更易用)
@@ -127,21 +126,7 @@ public sealed class SpriteModel : ScriptableObject
 
     #region 维护
 
-    private void DeleteDuplicateMotions() {
-        HashSet<string> existNames = new();
-        for (int idx = 0; idx < motionList.Count; idx++) {
-            string currentName = motionList[idx].name;
-            if (existNames.Add(currentName)) {
-                continue;
-            }
-            motionList.RemoveAt(idx--);
-        }
-        if (existNames.Count != motionList.Count) {
-            EditorUtility.SetDirty(this);
-        }
-    }
-
-    private void RefreshBindMotions() {
+    private void Refresh() {
         string groupAssetDir = SpriteGroup.GetBindFolder(this, bindFolder);
         SpriteModel template = string.IsNullOrEmpty(templatePath) ? null : AssetDatabase.LoadAssetAtPath<SpriteModel>(templatePath);
         // 如果模板存在，则读取模板资源信息 - 然后覆盖本地信息
@@ -166,12 +151,12 @@ public sealed class SpriteModel : ScriptableObject
             if (motion.clip) {
                 existNames.Add(motion.name);
                 existNames.Add(motion.clip.name);
+                continue;
+            }
+            if ((motion.options & AnimationOptions.ReservedMotion) != 0) {
+                existNames.Add(motion.name);
             } else {
-                if ((motion.options & AnimationOptions.ReservedMotion) != 0) {
-                    existNames.Add(motion.name);
-                } else {
-                    motionList.RemoveAt(idx--);
-                }
+                motionList.RemoveAt(idx--);
             }
         }
         string[] findAssets = AssetDatabase.FindAssets("t:SpriteAnimationClip", new[] { groupAssetDir });

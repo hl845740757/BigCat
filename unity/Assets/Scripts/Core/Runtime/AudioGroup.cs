@@ -49,6 +49,7 @@ public class AudioGroup : ScriptableObject
     /// <summary>
     /// 关联的音效资源
     /// </summary>
+    [ContextMenuItem("刷新", "Refresh")]
     public AudioClip[] audioClips = Array.Empty<AudioClip>();
     /// <summary>
     /// 根据name建立的映射

@@ -22,9 +22,17 @@ using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
+using Wjybxx.Dson.Codec.Codecs;
 
 namespace Wjybxx.BigCat.Util
 {
+/// <summary>
+/// 虚拟的Enum，特殊场景下配合EnumSet使用
+/// </summary>
+public enum MockEnum : int
+{
+}
+
 /// <summary>
 /// 枚举比特集
 ///
@@ -54,6 +62,10 @@ public sealed class EnumSet<T> where T : struct, Enum
     public bool this[T key] {
         get => Get(key.GetHashCode());
         set => Set(key.GetHashCode(), value);
+    }
+    public bool this[int key] {
+        get => Get(key);
+        set => Set(key, value);
     }
 
     #region enum-api
@@ -243,18 +255,44 @@ public sealed class EnumSet<T> where T : struct, Enum
     #region 序列化
 
     internal static EnumSet<T> NewInstance(IDsonObjectReader reader) {
+        DsonType firstDsonType = reader.ReadDsonType();
+        if (firstDsonType == DsonType.EndOfObject) {
+            return new EnumSet<T>();
+        }
+        // 单值字符串数组 [A, B, C]
+        if (firstDsonType == DsonType.String) {
+            DsonCodecImpl<T> enumCodec = reader.GetInlinableCodec<T>();
+            if (enumCodec == null) throw new AssertionError();
+            //
+            EnumSet<T> result = new EnumSet<T>();
+            result.Set(enumCodec.DecodeKey(reader.ReadString()));
+            while ((reader.ReadDsonType()) != DsonType.EndOfObject) {
+                result.Set(enumCodec.DecodeKey(reader.ReadString()));
+            }
+            return result;
+        }
+        // flags数组格式
         List<int> tempList = new List<int>(8);
+        tempList.Add(reader.ReadInt());
         while ((reader.ReadDsonType()) != DsonType.EndOfObject) {
             tempList.Add(reader.ReadInt());
         }
-        int bitCount = tempList.Count * 32;
-        if ((tempList.Count & 1) == 1) { // 奇数补齐，方便迭代
-            tempList.Add(0);
-        }
-        EnumSet<T> enumSet = new EnumSet<T>(bitCount);
-        for (int idx = 0; idx < tempList.Count; idx += 2) {
+        int wordCount = tempList.Count;
+        EnumSet<T> enumSet = new EnumSet<T>(wordCount * 32);
+        for (int idx = 0; idx < wordCount; idx += 2) {
             long low = tempList[idx];
-            long high = tempList[idx + 1];
+            long high = idx + 1 < wordCount ? tempList[idx + 1] : 0;
+            enumSet._values[idx / 2] = (high << 32) | low;
+        }
+        return enumSet;
+    }
+
+    public static EnumSet<T> NewInstance(int[] bitArray) {
+        int wordCount = bitArray.Length;
+        EnumSet<T> enumSet = new EnumSet<T>(wordCount * 32);
+        for (int idx = 0; idx < wordCount; idx += 2) {
+            long low = bitArray[idx];
+            long high = idx + 1 < wordCount ? bitArray[idx + 1] : 0;
             enumSet._values[idx / 2] = (high << 32) | low;
         }
         return enumSet;
@@ -268,6 +306,18 @@ public sealed class EnumSet<T> where T : struct, Enum
             writer.WriteInt(low, fixedHex);
             writer.WriteInt(high, fixedHex);
         }
+    }
+
+    public int[] ToIntArray() {
+        int[] result = new int[_values.Length * 2];
+        for (int index = 0; index < _values.Length; index++) {
+            long element = _values[index];
+            int low = (int)element;
+            int high = (int)(element >> 32);
+            result[index * 2] = low;
+            result[index * 2 + 1] = high;
+        }
+        return result;
     }
 
     #endregion

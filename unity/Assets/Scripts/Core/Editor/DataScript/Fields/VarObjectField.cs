@@ -233,7 +233,7 @@ public class VarObjectField : Foldout, IVarField
             FieldBranchCfg branchCfg = branchCfgs[index];
             Variable ctrlValue = container[branchCfg.ctrlIndex];
             // Debug.Assert(ctrlValue.defineInfo.SimpleName == branchCfg.ctrl);
-            bool isMatch = ctrlValue.type.SimpleName == DSKeywords.TYPE_STRING
+            bool isMatch = ctrlValue.type.Name == DSKeywords.TYPE_STRING
                 ? ctrlValue.stringValue == branchCfg.value
                 : ctrlValue.intValue == branchCfg.intValue;
             if (isMatch) {
@@ -280,8 +280,8 @@ public class VarObjectField : Foldout, IVarField
             GenericMenu.MenuFunction2 callback = OnClickResetWith;
             for (int index = 0; index < variableCfg.supportedInsts.Count; index++) {
                 DSInst inst = variableCfg.supportedInsts[index];
-                int spIndex = inst.SimpleName.LastIndexOf('/');
-                string label = spIndex > 0 ? inst.SimpleName.Substring(spIndex + 1) : inst.SimpleName;
+                int spIndex = inst.Name.LastIndexOf('/');
+                string label = spIndex > 0 ? inst.Name.Substring(spIndex + 1) : inst.Name;
                 label = "ResetWith/" + label;
                 menu.AddItem(new GUIContent(label), false, callback, index);
             }

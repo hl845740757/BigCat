@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.Core
 /// </summary>
 // [UsedForReflectionBasedGenerator]
 [DsonCodecLinkerGroup]
-public class UnityCodecLinker
+public static class UnityCodecLinker
 {
     // private Vector2 _vector2;
     // private Vector3 _vector3;
@@ -42,6 +42,22 @@ public class UnityCodecLinker
     // private Vector2Int _vector2Int; // 命名不规范，需要特殊映射...
     // private Vector3Int _vector3Int; // 命名不规范，需要特殊映射...
     // private Color _color;
+
+    public static Double4 ToDouble4(this Vector3 vector) {
+        return new Double4(vector.x, vector.y, vector.z);
+    }
+
+    public static Vector3 ToVector3(this Double4 double4) {
+        return new Vector3((float)double4.v0, (float)double4.v1, (float)double4.v2);
+    }
+
+    public static Double4 ToDouble4(this Vector2 vector) {
+        return new Double4(vector.x, vector.y, 0);
+    }
+
+    public static Vector2 ToVector2(this Double4 double4) {
+        return new Vector2((float)double4.v0, (float)double4.v1);
+    }
 
 // ReSharper disable All
     public class Vector2Codec : IDsonCodec<Vector2>

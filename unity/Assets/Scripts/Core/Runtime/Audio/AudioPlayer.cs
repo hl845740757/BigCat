@@ -52,6 +52,10 @@ public class AudioPlayer : MonoBehaviour
     /// 当前片段的控制器
     /// </summary>
     private AudioClipCtrl curClipCtrl;
+    /// <summary>
+    /// 空闲的控制器
+    /// </summary>
+    private AudioClipCtrl freeClipCtrl;
 
     /// <summary>
     /// 短音效资源句柄(长音频由ctrl管理)
@@ -161,6 +165,7 @@ public class AudioPlayer : MonoBehaviour
         // 短音效 - 资源handle在心跳方法中释放
         AssetHandle handle;
         if (request.playMode != AudioPlayMode.PlayClip) {
+            if (!Application.isFocused) return; // 后台运行时不播放短音效
             if (audioSource.mute || audioSource.volume == 0f) return;
             if (assetHandles.TryGetValue(audioPath, out handle)) {
                 handle.Retain();
@@ -187,6 +192,7 @@ public class AudioPlayer : MonoBehaviour
         // 先停止更久远的播放请求
         if (prevClipCtrl != null) {
             prevClipCtrl.Stop();
+            freeClipCtrl = prevClipCtrl;
             prevClipCtrl = null;
         }
         // 淡出或停止当前Clip播放
@@ -194,10 +200,15 @@ public class AudioPlayer : MonoBehaviour
             curClipCtrl = null;
             if (!prevClipCtrl.FadeOut(request.fadeOutTime)) {
                 prevClipCtrl.Stop();
+                freeClipCtrl = prevClipCtrl;
                 prevClipCtrl = null;
             }
         }
-        curClipCtrl = new AudioClipCtrl(this, audioSource);
+        if ((curClipCtrl = freeClipCtrl) != null) {
+            freeClipCtrl = null;
+        } else {
+            curClipCtrl = new AudioClipCtrl(this, audioSource);
+        }
         curClipCtrl.Play(in request, handle);
         // 加载状态也进入播放状态，如果暂停状态则保持暂停
         if (status == Status.Stopped) {
@@ -224,7 +235,7 @@ public class AudioPlayer : MonoBehaviour
             ReleaseHandle(handle);
             return;
         }
-        audioSource.PlayOneShot(audioClip, audioSource.volume * request.volume);
+        audioSource.PlayOneShot(audioClip, settings.realVolume * request.volume);
         shotContexts.Add(new ShotContext(handle, audioClip.length + Time.time + 0.1f));
     }
 
@@ -241,7 +252,7 @@ public class AudioPlayer : MonoBehaviour
             _lastCheckTime = tickTime;
             CheckShotContexts(tickTime);
         }
-        // 同步音量信息 - PlayOneShot也需要同步
+        // 同步音量设置 - PlayOneShot也需要同步
         AudioPlayerSettings parentSettings = settings.parent;
         if (parentSettings != null) {
             settings.realMute = parentSettings.realMute || settings.mute;
@@ -267,6 +278,7 @@ public class AudioPlayer : MonoBehaviour
             if (!prevClipCtrl.IsStopped) {
                 return;
             }
+            freeClipCtrl = prevClipCtrl;
             prevClipCtrl = null;
             deltaTime = 0;
         }
@@ -275,6 +287,7 @@ public class AudioPlayer : MonoBehaviour
             if (!curClipCtrl.IsStopped) {
                 return;
             }
+            freeClipCtrl = curClipCtrl;
             curClipCtrl = null;
             onStopped?.Invoke(this);
         }

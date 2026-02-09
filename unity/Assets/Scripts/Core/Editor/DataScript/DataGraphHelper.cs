@@ -34,7 +34,7 @@ namespace Wjybxx.BigCat.Editor.DataScript
 /// <summary>
 /// 该类主要负责数据的编解码逻辑，这部分逻辑相对独立，但代码量较大。
 /// </summary>
-internal class DataGraphHelper
+public class DataGraphHelper
 {
     private const string KEY_TYPE_SYMBOL = "typeSymbol";
     private const string KEY_NAME = "name";
@@ -49,8 +49,16 @@ internal class DataGraphHelper
     private readonly Dictionary<DSNamedType, string> typeSymbolCache = new();
     private readonly Dictionary<string, DSNamedType> typeSymbolResolveCache = new();
 
+    private readonly Dictionary<string, IVarCodec> codecDic = new();
+    private readonly VarEnumCodec _enumCodec;
+
     public DataGraphHelper(DataGraph graph) {
         _graph = graph;
+        _enumCodec = new VarEnumCodec();
+        //
+        codecDic[DSKeywords.ENUM] = _enumCodec;
+        codecDic["MinMaxAABB"] = new VarAABBCodec();
+        codecDic["EnumSet"] = new VarEnumSetCodec();
     }
 
     private string GetTypeSymbol(DSNamedType type) {
@@ -81,6 +89,8 @@ internal class DataGraphHelper
         };
     }
 
+    public DataGraph Graph => _graph;
+
     #region variable
 
     /// <summary>
@@ -103,7 +113,7 @@ internal class DataGraphHelper
     /// <param name="dsonValue"></param>
     /// <param name="variable"></param>
     /// <param name="applySerializedType">是否应用于序列化中的类型数据</param>
-    public void Decode(Variable variable, DsonValue dsonValue, bool applySerializedType = false) {
+    public void ReadVariable(Variable variable, DsonValue dsonValue, bool applySerializedType = false) {
         // 处理类型变更
         DsonHeader<string> header = GetHeader(dsonValue);
         if (header != null && header.TryGetValue(KEY_TYPE_SYMBOL, out DsonValue boxedTypeSymbol)) {
@@ -125,8 +135,8 @@ internal class DataGraphHelper
         }
         variable.isNull = false;
         DSNamedType varType = variable.type;
-        // 原子值
-        switch (varType.SimpleName) {
+        // 原子值 - 或特殊支持的结构
+        switch (varType.Name) {
             case DSKeywords.TYPE_INT32:
             case DSKeywords.TYPE_INT64: {
                 if (dsonValue.DsonType == DsonType.String) { // 可能是字典的key
@@ -182,17 +192,7 @@ internal class DataGraphHelper
         }
         // Enum
         if (varType.Kind == DSElementKind.Enum) {
-            if (dsonValue.DsonType == DsonType.String) { // 可能是字典的key
-                string stringValue = dsonValue.AsString();
-                if (int.TryParse(stringValue, out int intValue)) {
-                    variable.longValue = intValue;
-                } else {
-                    DSEnumValue enumValue = varType.GetEnumValue(stringValue, true);
-                    variable.longValue = enumValue == null ? 0 : enumValue.Number;
-                }
-            } else if (dsonValue.IsNumber) {
-                variable.longValue = dsonValue.AsNumber().IntValue;
-            }
+            _enumCodec.ReadVariable(dsonValue, variable, applySerializedType, this);
             return;
         }
 
@@ -223,7 +223,7 @@ internal class DataGraphHelper
         // Nullable
         if (DSUtil.IsNullableType(varType)) {
             // ResetVariable(variable); // 强制清理，确保正确覆盖 - Nullable的路径是稳定的，可不清理
-            Decode(variable[0], dsonValue, applySerializedType);
+            ReadVariable(variable[0], dsonValue, applySerializedType);
             return;
         }
         // 集合 - 不支持导入Object，无法为key创建定义
@@ -239,7 +239,16 @@ internal class DataGraphHelper
         if (variable.Count == 0) {
             _graph.CreateValues(variable);
         }
-        // 自定义结构：可能是List的投影类型 - EnumSet等
+        // 自定义结构
+        if (codecDic.TryGetValue(varType.OriginNamedType.FullName, out IVarCodec codec)) {
+            codec.ReadVariable(dsonValue, variable, applySerializedType, this);
+            return;
+        }
+        if (!varType.OriginNamedType.IsNestedType && codecDic.TryGetValue(varType.Name, out codec)) {
+            codec.ReadVariable(dsonValue, variable, applySerializedType, this);
+            return;
+        }
+        // 可能是List的投影类型 - 自定义集合
         if (typeCfg.dsonType == DsonType.Array) {
             ReadProjectionArray(variable, dsonValue, applySerializedType);
         } else {
@@ -248,12 +257,11 @@ internal class DataGraphHelper
     }
 
     private void ReadProjectionArray(Variable variable, DsonValue dsonValue, bool applySerializedType) {
-        Variable arrayField = variable.values[0];
-        //
+        Variable arrayField = variable.values[0]; // values字段
         DsonArray<string> dsonArray = dsonValue.AsArray();
         foreach (DsonValue nestValue in dsonArray) {
             Variable nestedVar = _graph.CreateListItem(arrayField);
-            Decode(nestedVar, nestValue, applySerializedType);
+            ReadVariable(nestedVar, nestValue, applySerializedType);
             arrayField.Add(nestedVar);
         }
     }
@@ -263,11 +271,11 @@ internal class DataGraphHelper
         if (dsonValue.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = dsonValue.AsObject();
             foreach (Variable nestedVar in variable.values) {
-                string fieldName = nestedVar.defineInfo.SimpleName;
+                string fieldName = nestedVar.defineInfo.Name;
                 if (!dsonObject.TryGetValue(fieldName, out DsonValue fieldValue)) {
                     continue;
                 }
-                Decode(nestedVar, fieldValue, applySerializedType);
+                ReadVariable(nestedVar, fieldValue, applySerializedType);
             }
         } else if (dsonValue.DsonType == DsonType.Array) {
             DsonArray<string> dsonArray = dsonValue.AsArray();
@@ -277,7 +285,7 @@ internal class DataGraphHelper
                     break;
                 }
                 DsonValue fieldValue = dsonArray[index];
-                Decode(nestedVar, fieldValue, applySerializedType);
+                ReadVariable(nestedVar, fieldValue, applySerializedType);
             }
         }
     }
@@ -291,8 +299,8 @@ internal class DataGraphHelper
         variable.values.EnsureCapacity(dsonObject.Count);
         foreach (var pair in dsonObject) {
             Variable varPair = _graph.CreateMapItem(variable);
-            Decode(varPair[0], new DsonString(pair.Key));
-            Decode(varPair[1], pair.Value, applySerializedType);
+            ReadVariable(varPair[0], new DsonString(pair.Key));
+            ReadVariable(varPair[1], pair.Value, applySerializedType);
             variable.Add(varPair);
         }
     }
@@ -306,7 +314,7 @@ internal class DataGraphHelper
         variable.values.EnsureCapacity(dsonArray.Count);
         foreach (DsonValue nestValue in dsonArray) {
             Variable nestedVar = _graph.CreateListItem(variable);
-            Decode(nestedVar, nestValue, applySerializedType);
+            ReadVariable(nestedVar, nestValue, applySerializedType);
             variable.Add(nestedVar);
         }
     }
@@ -316,62 +324,37 @@ internal class DataGraphHelper
     #region node
 
     public DataNode DecodeNode(DsonValue dsonValue) {
-        DsonHeader<string> header = GetHeader(dsonValue);
-        if (header == null) {
-            throw new InvalidDataException();
-        }
-        // 要支持编辑器解析的数据，header至少需要包含localId和typeSymbol
-        DsonValue tempValue;
-        if (!header.TryGetValue(DsonHeader.Names_LocalId, out tempValue)) {
-            throw new InvalidDataException("localId is absent");
-        }
-        long localId = tempValue.AsNumber().LongValue;
-        DataNode node = new DataNode(localId);
-        if (header.TryGetValue(KEY_NAME, out tempValue)) {
-            node.name = tempValue.AsString();
-        }
-        if (header.TryGetValue(KEY_FOLDER, out tempValue)) {
-            node.folder = tempValue.AsString();
-        }
-        if (header.TryGetValue(KEY_TITLE, out tempValue)) {
-            node.title = tempValue.AsString();
-        }
-        if (header.TryGetValue(KEY_FEATURES, out tempValue)) { // 16进制
-            node.features = (Features)tempValue.AsNumber().IntValue;
-        }
-        if (header.TryGetValue(KEY_POSITION, out tempValue)) {
-            float x = tempValue.AsObject()["x"].AsNumber().FloatValue;
-            float y = tempValue.AsObject()["y"].AsNumber().FloatValue;
-            node.position.x = x;
-            node.position.y = y;
-        }
         // 要支持编辑器解析的数据，必须包含typeSymbol属性
-        if (!header.TryGetValue(KEY_TYPE_SYMBOL, out tempValue)) {
+        DsonHeader<string> header = GetHeader(dsonValue);
+        if (!header.TryGetValue(KEY_TYPE_SYMBOL, out DsonValue tempValue)) {
             throw new InvalidDataException("typeSymbol is absent");
         }
-        string typeSymbol = tempValue.AsString();
-        node.value = _graph.CreateVariable(ResolveTypeSymbol(typeSymbol));
+        DSNamedType namedType = ResolveTypeSymbol(tempValue.AsString());
+        // 解析失败会抛出异常
+        DataNode node = new DataNode(0);
+        ReadHeader(header, node);
+        node.value = _graph.CreateVariable(namedType);
         // 需要先纠正字段类型，才能解码
         _graph.InitOutputFields(node);
-        Decode(node.value, dsonValue, true);
+        ReadVariable(node.value, dsonValue, true);
         return node;
     }
 
     /// <summary>
     /// 输出到文件
     /// </summary>
-    public void Write(DsonTextWriter textWriter, DataNode node) {
+    public void EncodeNode(DsonTextWriter textWriter, DataNode node) {
         if (node.value.isNull) {
             throw new InvalidOperationException("root value cant be null");
         }
-        Write(textWriter, node.value, null);
+        WriteVariable(textWriter, node.value, null);
     }
 
     /// <summary>
     /// 写入变量到Writer
     /// </summary>
-    internal void Write(IDsonWriter<string> writer, Variable variable, string name) {
-        // 我们暂时只执行Null跳过，0值仍然输出，否则可能产生维护性问题(字段缺失容易让人产生疑惑)
+    public void WriteVariable(IDsonWriter<string> writer, Variable variable, string name) {
+        // null值在Object上下文固定跳过，数字0值由注解指定，否则可能产生维护性问题(字段缺失容易让人产生疑惑)
         if (variable.isNull) {
             if (!writer.IsAtName || IsWriteNullValue(variable)) {
                 writer.WriteNull(name);
@@ -383,8 +366,8 @@ internal class DataGraphHelper
         }
         DSNamedType varType = variable.type;
         SerializeFeatures features = variable.cfg.encodeFeatures;
-        // 原子值
-        switch (varType.SimpleName) {
+        // 原子值 - 或特殊支持结构
+        switch (varType.Name) {
             case DSKeywords.TYPE_INT32: {
                 if (variable.longValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteInt32(variable.intValue, features.ToNumberStyle());
@@ -432,16 +415,7 @@ internal class DataGraphHelper
         }
         // Enum
         if (varType.Kind == DSElementKind.Enum) {
-            if (IsWriteEnumAsString(variable)) {
-                DSEnumValue enumValue = varType.GetEnumValue(variable.intValue);
-                if (enumValue == null) {
-                    throw new InvalidOperationException($"enumValue {variable.intValue} is absent");
-                }
-                writer.WriteString(enumValue.SimpleName);
-            } else {
-                NumberStyle style = DSUtil.IsFlagEnum(varType) ? NumberStyle.Hex : NumberStyle.Simple;
-                writer.WriteInt32(variable.intValue, style);
-            }
+            _enumCodec.WriteVariable(writer, variable, this);
             return;
         }
         // 测试类型的投影类型
@@ -470,7 +444,7 @@ internal class DataGraphHelper
         }
         // Nullable - 导出时拆箱
         if (DSUtil.IsNullableType(varType)) {
-            Write(writer, variable[0], name);
+            WriteVariable(writer, variable[0], name);
             return;
         }
         // 普通集合
@@ -483,7 +457,16 @@ internal class DataGraphHelper
             WriteMap(writer, variable);
             return;
         }
-        // 自定义结构可能投影为Array - EnumSet等，第一个字段必须是List/HashSet类型
+        // 自定义结构
+        if (codecDic.TryGetValue(varType.OriginNamedType.FullName, out IVarCodec codec)) {
+            codec.WriteVariable(writer, variable, this);
+            return;
+        }
+        if (!varType.OriginNamedType.IsNestedType && codecDic.TryGetValue(varType.Name, out codec)) {
+            codec.WriteVariable(writer, variable, this);
+            return;
+        }
+        // 可能是List的投影类型 - 自定义集合
         if (typeCfg.dsonType == DsonType.Array) {
             WriteProjectionArray(writer, variable);
         } else {
@@ -491,12 +474,12 @@ internal class DataGraphHelper
         }
     }
 
-    protected void WriteProjectionArray(IDsonWriter<string> writer, Variable variable) {
+    private void WriteProjectionArray(IDsonWriter<string> writer, Variable variable) {
         writer.WriteStartArray(GetObjectStyle(variable));
         WriteHeader(writer, variable);
         Variable arrayField = variable.values[0];
         foreach (Variable nestedVar in arrayField.values) {
-            Write(writer, nestedVar, null);
+            WriteVariable(writer, nestedVar, null);
         }
         writer.WriteEndArray();
     }
@@ -511,8 +494,8 @@ internal class DataGraphHelper
             writer.WriteStartArray(objectStyle);
             WriteHeader(writer, variable);
             foreach (Variable nestedVar in variable.values) {
-                string fieldName = nestedVar.defineInfo.SimpleName;
-                Write(writer, nestedVar, fieldName);
+                string fieldName = nestedVar.defineInfo.Name;
+                WriteVariable(writer, nestedVar, fieldName);
             }
             writer.WriteEndArray();
         } else {
@@ -520,8 +503,8 @@ internal class DataGraphHelper
             WriteHeader(writer, variable);
             textWriter?.PrintBeforeName("\n  ");
             foreach (Variable nestedVar in variable.values) {
-                string fieldName = nestedVar.defineInfo.SimpleName;
-                Write(writer, nestedVar, fieldName);
+                string fieldName = nestedVar.defineInfo.Name;
+                WriteVariable(writer, nestedVar, fieldName);
             }
             textWriter?.Println();
             writer.WriteEndObject();
@@ -543,12 +526,13 @@ internal class DataGraphHelper
             if (isStringKey) {
                 keyString = keyVar.stringValue ?? "";
             } else if (enumKeyAsString) {
-                keyString = keyVar.type.GetEnumValue(keyVar.intValue)!.SimpleName;
+                DSEnumValue tempQualifier = keyVar.type.GetEnumValue(keyVar.intValue)!;
+                keyString = tempQualifier.Name;
             } else {
                 keyString = keyVar.longValue.ToString();
             }
             writer.WriteName(keyString); // Map中的null和0值不可跳过
-            Write(writer, valueVar, keyString);
+            WriteVariable(writer, valueVar, keyString);
         }
         writer.WriteEndObject();
     }
@@ -557,9 +541,33 @@ internal class DataGraphHelper
         writer.WriteStartArray(GetObjectStyle(variable));
         WriteHeader(writer, variable);
         foreach (Variable nestedVar in variable.values) {
-            Write(writer, nestedVar, null);
+            WriteVariable(writer, nestedVar, null);
         }
         writer.WriteEndArray();
+    }
+
+    private void ReadHeader(DsonHeader<string> header, DataNode node) {
+        if (header.TryGetValue(DsonHeader.Names_LocalId, out DsonValue tempValue)) {
+            node.localId = tempValue.AsNumber().LongValue;
+        }
+        if (header.TryGetValue(KEY_NAME, out tempValue)) {
+            node.name = tempValue.AsString();
+        }
+        if (header.TryGetValue(KEY_FOLDER, out tempValue)) {
+            node.folder = tempValue.AsString();
+        }
+        if (header.TryGetValue(KEY_TITLE, out tempValue)) {
+            node.title = tempValue.AsString();
+        }
+        if (header.TryGetValue(KEY_FEATURES, out tempValue)) { // 16进制
+            node.features = (Features)tempValue.AsNumber().IntValue;
+        }
+        if (header.TryGetValue(KEY_POSITION, out tempValue)) {
+            float x = tempValue.AsObject()["x"].AsNumber().FloatValue;
+            float y = tempValue.AsObject()["y"].AsNumber().FloatValue;
+            node.position.x = x;
+            node.position.y = y;
+        }
     }
 
     private void WriteHeader(IDsonWriter<string> writer, Variable variable) {
@@ -618,6 +626,11 @@ internal class DataGraphHelper
     }
 
     private string GetCodecName(DSNamedType namedType) {
+        // 投影类型需要转换为原始类型
+        DsonObject<string> options = DSUtil.GetOptions(namedType);
+        if (options.TryGetValue(DSAnnotations.KEY_PROJECTION, out DsonValue dsonValue)) {
+            namedType = (DSNamedType)_graph.repository.ResolveTypeSymbol(namedType, dsonValue.AsString());
+        }
         return namedType.CodecTypeName.ToString(_sbCache.Clear()).ToString();
     }
 
@@ -637,7 +650,7 @@ internal class DataGraphHelper
         return (variable.cfg.encodeFeatures & SerializeFeatures.WriteAsArray) != 0;
     }
 
-    private bool IsWriteEnumAsString(Variable variable, bool isKey = false) {
+    public bool IsWriteEnumAsString(Variable variable, bool isKey = false) {
         SerializeFeatures features = variable.cfg.encodeFeatures;
         if (isKey) {
             if ((features & SerializeFeatures.EnumKeyAsString) != 0) return true;

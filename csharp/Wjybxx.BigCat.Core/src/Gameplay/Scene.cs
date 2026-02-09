@@ -87,7 +87,7 @@ public sealed class Scene
     /// <summary>
     /// 用户自定义数据
     /// </summary>
-    [NonSerialized] private object? _userData;
+    [NonSerialized] public object userData;
 #if UNITY_2021_3_OR_NEWER
     /// <summary>
     /// 关联的引擎对象
@@ -184,11 +184,6 @@ public sealed class Scene
             CheckStatus();
             _agent = value;
         }
-    }
-
-    public object? UserData {
-        get => _userData;
-        set => _userData = value;
     }
 
     /// <summary>

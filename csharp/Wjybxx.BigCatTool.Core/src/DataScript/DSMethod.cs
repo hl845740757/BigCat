@@ -31,7 +31,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 3.方法至多一个参数和一个结果 -- 支持无参。
 ///
 /// <h3>泛型</h3>
-/// 1.方法本身都不支持泛型，但可以使用类型的泛型参数。
+/// 1.方法本身不支持泛型，但可以使用类型的泛型参数。
 /// 2.应当避免在服务以外的上下文使用函数。
 ///
 /// <h3>函数的目的</h3>
@@ -70,7 +70,7 @@ public class DSMethod : DSElement
     }
 
     public DSMethod(DSMethod originDefine, DSTypeElement? parameterType, DSTypeElement? resultType)
-        : base(originDefine.SimpleName) {
+        : base(originDefine.Name) {
         _originDefine = originDefine;
         this.parameterType = parameterType;
         this.resultType = resultType;

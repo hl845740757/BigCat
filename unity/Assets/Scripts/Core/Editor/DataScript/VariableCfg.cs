@@ -82,6 +82,10 @@ public sealed class VariableCfg
     /// </summary>
     public bool isFolder;
     /// <summary>
+    /// List字段是否是表单
+    /// </summary>
+    public bool isSheet;
+    /// <summary>
     /// 资产路径类型
     /// </summary>
     public ObjectPathType pathType;
@@ -345,7 +349,7 @@ public sealed class VariableCfg
 
     private static string GetEnumDisplayName(DSElement element) {
         Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
-        string displayName = element.SimpleName;
+        string displayName = element.Name;
         if (annotation != null && annotation.AsObject().TryGetValue(DSAnnotations.KEY_DISPLAY_NAME, out DsonValue dsonValue)) {
             displayName = dsonValue.AsString();
         }
@@ -375,7 +379,7 @@ public sealed class VariableCfg
 
     private static void ParsePopInfo(List<Annotation> annotations, VariableCfg cfg, DSField element) {
         cfg.popNames = new List<string>(annotations.Count);
-        if (element.Type.SimpleName == DSKeywords.TYPE_INT32) {
+        if (element.Type.Name == DSKeywords.TYPE_INT32) {
             cfg.intPopValues = new List<int>(annotations.Count);
         } else {
             cfg.stringPopValues = new List<string>(annotations.Count);
@@ -405,12 +409,12 @@ public sealed class VariableCfg
             Annotation annotation = annotations[index];
             DsonObject<string> dsonObject = annotation.AsObject();
             string ctrlName = dsonObject[DSAnnotations.KEY_CTRL].AsString();
-            if (ctrlName == element.SimpleName) {
+            if (ctrlName == element.Name) {
                 throw new InvalidOperationException("ctrl == self");
             }
             FieldBranchCfg branchCfg = new FieldBranchCfg();
             branchCfg.ctrl = ctrlName;
-            branchCfg.ctrlIndex = allFields.FindIndex(e => e.SimpleName == ctrlName);
+            branchCfg.ctrlIndex = allFields.FindIndex(e => e.Name == ctrlName);
             // 
             DsonValue dsonValue = dsonObject[DSAnnotations.KEY_VALUE];
             if (dsonValue.IsNumber) {
@@ -515,6 +519,7 @@ public sealed class VariableCfg
         cfg.isMultiline = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_MULTILINE);
         cfg.isInteger = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_INTEGER);
         cfg.isFolder = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_FOLDER);
+        cfg.isSheet = Annotation.GetBool(dsonObject, DSAnnotations.KEY_IS_SHEET);
         //
         if (dsonObject.TryGetValue(DSAnnotations.KEY_MIN_WIDTH, out dsonValue)) {
             cfg.minWidth = dsonValue.AsNumber();

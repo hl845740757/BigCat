@@ -749,7 +749,7 @@ public class DSFileParser
             if (spIdx < 0) throw new IOException(content);
 
             string tpName = token.Substring2(0, spIdx).Trim();
-            int tpIdx = typeParameters.FindIndex(e => e.SimpleName == tpName);
+            int tpIdx = typeParameters.FindIndex(e => e.Name == tpName);
             if (tpIdx < 0) throw new IOException(content);
 
             TypeParameterConstraints tpConstraints = ParseConstraints(token.Substring2(spIdx + 1));
@@ -764,7 +764,7 @@ public class DSFileParser
             return enclosingType.TypeName.NestedClass(name, typeParameterNames, false);
         }
         // 注意：这里的命名空间是文件简单名
-        return ClassName.Get(dsFile.SimpleName, name, typeParameterNames);
+        return ClassName.Get(dsFile.Name, name, typeParameterNames);
     }
 
     private static TypeParameterConstraints ParseConstraints(string constraintsToken) {

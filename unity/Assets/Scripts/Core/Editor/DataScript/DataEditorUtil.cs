@@ -112,28 +112,6 @@ public static class DataEditorUtil
         return -1;
     }
 
-    public static bool TryAddCodec(DsonConverterBuilder builder, Type type) {
-        if (type.GetInterface(nameof(IDsonCodec)) != null) {
-            Type encoderType = GetEncoderType(type);
-            // 添加Codec
-            if (type.IsGenericType) {
-                encoderType = encoderType.GetGenericTypeDefinition();
-                builder.AddGenericCodec(encoderType, type);
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, ObjectUtil.GetSimpleName(encoderType)));
-            } else {
-                builder.AddTypeMeta(TypeMeta.Of(encoderType, encoderType.Name));
-                builder.AddCodec((IDsonCodec)Activator.CreateInstance(type)!);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    public static Type GetEncoderType(Type codecType) {
-        Type @interface = codecType.GetInterface(typeof(IDsonCodec<>).Name);
-        return @interface.GetGenericArguments()[0];
-    }
-
     #endregion
 
     #region set-label
@@ -262,7 +240,7 @@ public static class DataEditorUtil
             return CreateField(variable, typeCfg.displayType, editor);
         }
         // 根据字段类型自动推测
-        switch (varType.SimpleName) {
+        switch (varType.Name) {
             case DSKeywords.TYPE_INT32: {
                 if (variableCfg.maskNames != null) return CreateInt32MaskField(variable, editor);
                 if (variableCfg.popNames != null) return CreateInt32PopupField(variable, editor);
@@ -274,7 +252,7 @@ public static class DataEditorUtil
                 return CreateInt64Field(variable, editor);
             }
             case DSKeywords.TYPE_STRING: { // 资产类型字段名匹配
-                if (variable.defineInfo.SimpleName == "assetPath") return CreateAssetPathField(variable, editor);
+                if (variable.defineInfo.Name == "assetPath") return CreateAssetPathField(variable, editor);
                 if (variableCfg.popNames != null) return CreateStringPopupField(variable, editor);
                 return CreateStringField(variable, editor);
             }
@@ -304,7 +282,6 @@ public static class DataEditorUtil
         return displayType switch
         {
             DisplayType.List => CreateListField(variable, editor),
-            DisplayType.Sheet => CreateSheetField(variable, editor),
             DisplayType.AssetPath => CreateAssetPathField(variable, editor),
             DisplayType.ObjectPath => CreateObjectPathField(variable, editor),
             DisplayType.DateTime => CreateDateTimeField(variable, editor),
@@ -496,12 +473,6 @@ public static class DataEditorUtil
     #endregion
 
     #region list/map/object
-
-    public static VarListField CreateSheetField(Variable variable, DataEditor editor) {
-        VarListField field = new VarListField(ListFieldMode.Sheet);
-        field.Bind(editor, variable);
-        return field;
-    }
 
     public static VarListField CreateListField(Variable variable, DataEditor editor) {
         VarListField field = new VarListField();

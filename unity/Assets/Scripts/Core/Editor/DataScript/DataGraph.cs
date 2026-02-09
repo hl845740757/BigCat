@@ -188,7 +188,7 @@ public sealed class DataGraph
         // 初始值 - 为避免冲突，只尝试从类型的归属文件读默认值
         DSFile enclosingFile = namedType.GetEnclosingFile();
         DSInst inst;
-        if ((inst = enclosingFile.GetInst(namedType.SimpleName)) != null) {
+        if ((inst = enclosingFile.GetInst(namedType.Name)) != null) {
             ResetVariable(node.value, inst.DsonValue);
         }
         return node;
@@ -303,7 +303,7 @@ public sealed class DataGraph
         using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, streamWriter, true);
         // 内存Node也拷贝
         foreach (DataNode dataNode in nodes) {
-            _helper.Write(textWriter, dataNode);
+            _helper.EncodeNode(textWriter, dataNode);
         }
         textWriter.Flush();
         return streamWriter.ToString();
@@ -664,7 +664,7 @@ public sealed class DataGraph
             defineInfo = defineInfo,
             cfg = variableCfg,
             type = type ?? throw new ArgumentNullException(nameof(type)),
-            displayName = variableCfg.displayName ?? defineInfo.SimpleName,
+            displayName = variableCfg.displayName ?? defineInfo.Name,
             isNull = DSUtil.IsNullableType(type)
         };
         if (variableCfg.initNull || (variableCfg.portCfg != null && !DSUtil.IsCollectionOrMapType(type))) {
@@ -728,7 +728,7 @@ public sealed class DataGraph
         if (!_typeCreateStack.Add(varType)) {
             Debug.LogWarning("Reference type recursion"
                              + $", root: {_typeCreateStack.PeekFirst().FullName}"
-                             + $", filed: {varType.SimpleName}.{variable.defineInfo.SimpleName}"
+                             + $", filed: {varType.Name}.{variable.defineInfo.Name}"
                              + ", manual init required");
             variable.isNull = true;
             variable.values = new List<Variable>();
@@ -824,7 +824,7 @@ public sealed class DataGraph
     /// </summary>
     public void ResetVariable(Variable variable, DsonValue dsonValue) {
         ResetVariable(variable);
-        _helper.Decode(variable, dsonValue);
+        _helper.ReadVariable(variable, dsonValue);
     }
 
     /// <summary>
@@ -908,7 +908,7 @@ public sealed class DataGraph
     }
 
     private static bool MatchInstName(DSNamedType namedType, string instName) {
-        string typeName = namedType.SimpleName;
+        string typeName = namedType.Name;
         if (instName == typeName) return true;
         // inst MyClass/A {}
         // inst MyClass:10001 {} 冒号的常见作用之一就是表作用域，更双冒号可能更常见
@@ -971,7 +971,7 @@ public sealed class DataGraph
             if ((dataNode.features & Features.MemoryOnly) != 0) {
                 continue;
             }
-            _helper.Write(textWriter, dataNode);
+            _helper.EncodeNode(textWriter, dataNode);
         }
         Debug.Log("Saved: " + assetPath);
     }
@@ -1015,7 +1015,7 @@ public sealed class DataGraph
     public string DoCopy(Variable variable) {
         StringBuilder sb = _sbCache.Clear();
         using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, new StringWriter(sb));
-        _helper.Write(textWriter, variable, null);
+        _helper.WriteVariable(textWriter, variable, null);
         return sb.ToString();
     }
 
@@ -1025,7 +1025,7 @@ public sealed class DataGraph
     public void DoPaste(Variable variable, string dson) {
         using DsonTextReader textReader = new DsonTextReader(readerSettings, dson);
         DsonValue dsonValue = Dsons.ReadTopDsonValue(textReader);
-        _helper.Decode(variable, dsonValue);
+        _helper.ReadVariable(variable, dsonValue);
     }
 
     #endregion

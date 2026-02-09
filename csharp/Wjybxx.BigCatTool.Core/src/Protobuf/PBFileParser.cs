@@ -269,7 +269,7 @@ public sealed class PBFileParser
         //
         field.Type = type;
         field.Number = number;
-        field.SimpleName = name;
+        field.Name = name;
         field.StartLine = lineInfo.ln;
         field.EndLine = lineInfo.ln;
         // 追加注释
@@ -430,7 +430,7 @@ public sealed class PBFileParser
             ParameterType = argType,
             ParameterName = argName,
             ResultType = resultType,
-            SimpleName = name,
+            Name = name,
             Number = number,
             StartLine = lineInfo.ln,
             EndLine = lineInfo.ln
@@ -507,7 +507,7 @@ public sealed class PBFileParser
         }
         PBEnumValue enumValue = new PBEnumValue()
         {
-            SimpleName = name,
+            Name = name,
             Number = number,
             StartLine = lineInfo.ln,
             EndLine = lineInfo.ln
@@ -573,7 +573,7 @@ public sealed class PBFileParser
             default: throw new AssertionError();
         }
         context.container.StartLine = lineInfo.ln;
-        context.container.SimpleName = ParseContainerName(lineInfo.content, out context.started);
+        context.container.Name = ParseContainerName(lineInfo.content, out context.started);
 
         parent.container.AddEnclosedElement(context.container);
         DrainCommentLine(context.container, parent.PopCommentLines(), lineInfo.comment);

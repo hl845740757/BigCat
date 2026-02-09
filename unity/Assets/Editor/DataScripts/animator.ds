@@ -1,4 +1,7 @@
 ﻿// 角色动画
+option region_types = "region, endregion";
+option csharp_namespace = "Wjybxx.BigCat.Dnf.Trigger";
+
 import public "common.ds";
 import public "btree.ds";
 
@@ -56,24 +59,27 @@ enum AnimationOptions {
   EnableRange = 0x02; // 启用区间
   EnableShadow = 0x04; // 启用阴影
   EnableSortOrder = 0x08; // 启用动画层级
+  FlipX = 0x20; // X轴翻转
+  FlipY = 0x40; // Y轴翻转  
 }
 
 // 部件运动任务 -- 继承Task以屏蔽children属性
 class SpriteMotionTask : Task<Blackboard> {
   int32 branchId = 1; // 分支id
-  // @Candidates["body", "weapon"]
+  // @Candidates["", "body", "weapon", "effect"]
   string partId = 2; // 要控制的部件名
+  string motionName = 3; // 部件动画
   // @Options{encodeFeatures: NumberHex}
-  // @MaskField[ "0", "body", "weapon", "3", "4", "5", "6", "7", "8", "9" ]
-  int32 partGroups = 3; // 部件组，掩码
-  string motionName = 4; // 部件动画
-  
-  AnimationRequest baseAnim = 5; // 基础动画(特效)
+  // @MaskField["0", "body", "weapon", "effect", "4", "5", "6", "7", "8", "9"]
+  int32 partGroups = 4; // 部件组，掩码
+
+  AnimationRequest baseAnim = 5; // 基础动画
   List<AnimationRequest> subAnims = 6; // 子动画
+  List<string> subEffects = 7; // 子特效  
   
   //@PortField{side: bottom, distinct: true}
-  List<TimeTrigger> triggers = 7; // 触发器
-  bool autoComplete = 8; // 动画播放完成是否自动完成，如果为false，则依赖事件完成
+  List<TimeTrigger> triggers = 8; // 触发器
+  bool autoComplete = 9; // 动画播放完成是否自动完成，如果为false，则依赖事件完成
 }
 inst SpriteMotionTask{
   autoComplete: true
@@ -89,9 +95,9 @@ class SpriteMotionBranch : BranchTask<Blackboard> {
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
 class SearchTreeGroupEntry {
-  TimeTrigger _f1 = 1; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
-  AnimationRequest _f2 = 2; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
+  TimeTrigger = 1; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
+  AnimationRequest = 2; // @Editor {nodeFeatures: "Inlinable | EnablePort | ImplicitType"}
   
-  SpriteMotionTask _f11 = 11;
-  SpriteMotionBranch _f12 = 12;
+  SpriteMotionTask = 11;
+  SpriteMotionBranch = 12;
 }

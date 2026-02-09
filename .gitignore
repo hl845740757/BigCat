@@ -466,12 +466,17 @@ unity/UIElementsSchema/
 unity/Bundles/
 unity/Library/
 
-unity/Assets/TextMesh Pro.meta
-unity/Assets/TextMesh Pro/
-unity/Assets/Plugins/graph-visualizer-2.2/
-unity/Assets/Plugins/graph-visualizer-2.2.meta
+# 样例代码
 unity/Assets/Samples/
 unity/Assets/Samples.meta
+unity/Assets/TextMesh Pro.meta
+unity/Assets/TextMesh Pro/
+
+# 第三方插件
+unity/Assets/ThirdParty/TextMesh Pro/
+unity/Assets/ThirdParty/TextMesh Pro.meta
+unity/Assets/Plugins/graph-visualizer-2.2/
+unity/Assets/Plugins/graph-visualizer-2.2.meta
 
 unity/Assets/Resources/
 unity/Assets/Editor/Resources/
@@ -479,16 +484,24 @@ unity/Assets/Editor/DataScripts/*.meta
 # unity/Assets/Editor/DataScripts/*.dson
 
 unity/Assets/GameRes/
-#unity/Assets/GameRes/Fonts
+#unity/Assets/GameRes/Animations
 #unity/Assets/GameRes/Sprites
 #unity/Assets/GameRes/Models
-#unity/Assets/GameRes/Animations
+#unity/Assets/GameRes/Fonts
 
 # dnf分支需要屏蔽的工具和资源
 unity/Dnf.Extractor.csproj
-unity/Assets/DNF/
-unity/Assets/DNF.meta
 unity/Assets/Editor/_DnfExtractor/
 unity/Assets/Editor/_DnfExtractor.meta
 unity/Assets/Editor/DNF/Resources.meta
 unity/Assets/Editor/DNF/Resources/
+
+# 纯粹的美术资源不提交
+unity/Assets/DNF/*.meta
+unity/Assets/DNF/Animations
+unity/Assets/DNF/Sprites
+unity/Assets/DNF/Models
+unity/Assets/DNF/Fonts
+unity/Assets/DNF/Music
+unity/Assets/DNF/Sounds
+unity/Assets/DNF/Config/**/*Animation*/

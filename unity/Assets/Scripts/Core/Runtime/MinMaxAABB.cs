@@ -33,7 +33,7 @@ namespace Wjybxx.BigCat.Core
 /// 2.直接命名为AABB会导致编辑器将其识别为<see cref="Bounds"/>，导致序列化错误。。。
 /// </summary>
 [Serializable]
-[DsonSerializable]
+[DsonSerializable(Names = new[] { "AABB", "MinMaxAABB" })]
 public struct MinMaxAABB : IEquatable<MinMaxAABB>
 {
     /// <summary>

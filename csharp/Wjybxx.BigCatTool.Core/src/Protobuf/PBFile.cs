@@ -43,7 +43,7 @@ public class PBFile : PBElement
 
     public PBFile(string fileName) {
         this.fileName = fileName;
-        this.SimpleName = Path.GetFileNameWithoutExtension(fileName);
+        this.Name = Path.GetFileNameWithoutExtension(fileName);
     }
 
     public override PBElementKind Kind => PBElementKind.File;

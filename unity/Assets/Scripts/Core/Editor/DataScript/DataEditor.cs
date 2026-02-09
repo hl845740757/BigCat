@@ -245,7 +245,6 @@ public class DataEditor : EditorWindow
             return;
         }
         string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-        UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
         toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify(assetPath);
         //
         dataGraph.assetPath = assetPath;
@@ -259,7 +258,6 @@ public class DataEditor : EditorWindow
             return;
         }
         string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-        UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
         toolbar.Q<MTextField>("asset-path").SetValueWithoutNotify(assetPath);
         toolbar.Q<MTextField>("folder").SetValueWithoutNotify("");
         //
@@ -393,7 +391,7 @@ public class DataEditor : EditorWindow
                 if (element is not DSNamedType groupType || groupType.GetAnnotation("SearchTreeGroupEntry") == null) {
                     continue;
                 }
-                entries.Add(new SearchTreeGroupEntry(new GUIContent(groupType.SimpleName)));
+                entries.Add(new SearchTreeGroupEntry(new GUIContent(groupType.Name)));
                 foreach (DSField field in groupType.GetFields(true, _filedListCache.ClearAndReturn())) {
                     DSNamedType filedType = (DSNamedType)field.Type;
                     VariableCfg variableCfg = dataGraph.GetVariableCfg(field);

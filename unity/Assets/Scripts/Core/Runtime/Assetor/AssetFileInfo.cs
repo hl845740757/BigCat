@@ -40,7 +40,7 @@ public sealed class AssetFileInfo
     /// </summary>
     public EAssetIndexes assetIndexes;
     /// <summary>
-    /// 自定义索引（仅支持1个自定义索引）
+    /// 自定义索引
     /// </summary>
     public string[] addresses = Array.Empty<string>();
     /// <summary>

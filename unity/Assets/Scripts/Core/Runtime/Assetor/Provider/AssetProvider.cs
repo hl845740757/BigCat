@@ -82,8 +82,8 @@ public class AssetProvider : AssetProviderBase
         }
         //
         if (loadAssetTask.IsCompleted) {
-            promise.result = _loadAssetTask.promise.result;
-            SetCompleted(_loadAssetTask.Status, true);
+            promise.result = loadAssetTask.promise.result;
+            SetCompleted(loadAssetTask.Status, true);
         }
     }
 }

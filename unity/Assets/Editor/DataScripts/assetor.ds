@@ -34,7 +34,7 @@ enum EBuildTarget {
   NoTarget = -2;
   StandaloneOSX = 2;
   StandaloneWindows = 5;
-  iOS = 9;
+  IOS = 9;
   Android = 13;
   StandaloneWindows64 = 19;
   WebGL = 20;
@@ -178,15 +178,15 @@ class AudioClassifier {
 // 导入SearchWindow
 // @SearchTreeGroupEntry {}
 class SearchTreeGroupEntry : BTreeSearchTreeGroupEntry0<Blackboard> {
-  Collector _f1 = 1;
-  CollectorGroup _f2 = 2;
-  CollectorPackage _f3 = 3;
-  BuildPipelineTask _f4 = 4;
-  PackageBuilder _f5 = 5; //@Editor{nodeFeatures: "Executable | EnablePort" }
-  EditorBuildTask _f6 = 6;
-  BuildDependencyTask _f7 = 7;
-  BuildIndexesTask _f8 = 8;
+  Collector = 1;
+  CollectorGroup = 2;
+  CollectorPackage = 3;
+  BuildPipelineTask = 4;
+  PackageBuilder = 5; //@Editor{nodeFeatures: "Executable | EnablePort" }
+  EditorBuildTask = 6;
+  BuildDependencyTask = 7;
+  BuildIndexesTask = 8;
 
-  SpriteClassifier _f11 = 11;
-  AudioClassifier _f12 = 12;
+  SpriteClassifier = 11;
+  AudioClassifier = 12;
 }

@@ -235,7 +235,7 @@ public class DataScriptGenerator : ISheetProcessor
         int hash = 1;
         foreach (DSField field in fields) {
             hash = hash * 31 + field.TypeSymbol.GetHashCode();
-            hash = hash * 31 + field.SimpleName.GetHashCode();
+            hash = hash * 31 + field.Name.GetHashCode();
         }
         return hash;
     }

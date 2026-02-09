@@ -29,7 +29,7 @@ public abstract class DSTypeElement : DSElement
 {
     /// <summary>
     /// 类型的全限定名
-    /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSFile.SimpleName"/>。
+    /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSElement.Name"/>。
     /// </summary>
     protected readonly TypeName typeName;
 
@@ -39,7 +39,7 @@ public abstract class DSTypeElement : DSElement
 
     /// <summary>
     /// 类型名缓存
-    /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSFile.SimpleName"/>。
+    /// 注意：ns不是c#或java的命名空间，而是文件简单名<see cref="DSElement.Name"/>。
     /// </summary>
     public TypeName TypeName => typeName;
 

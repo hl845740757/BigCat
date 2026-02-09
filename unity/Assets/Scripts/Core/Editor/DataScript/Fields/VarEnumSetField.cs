@@ -117,13 +117,13 @@ public class VarEnumSetField : Foldout, IVarField
             if (enumValue.Number >= minNum + 32) break;
             //
             int idx = enumValue.Number - minNum;
-            tempNames[idx] = enumValue.SimpleName;
+            tempNames[idx] = enumValue.Name;
             maxNum = Math.Max(maxNum, enumValue.Number);
         }
         int count = maxNum - minNum + 1;
         List<string> maskNames = new List<string>(count);
         for (int index = 0; index < count; index++) {
-            maskNames.Add(tempNames[index] ?? index.ToString());
+            maskNames.Add(tempNames[index] ?? "");
         }
         return maskNames;
     }

@@ -333,8 +333,6 @@ public partial class AnimationClipEditor : EditorWindow
         string filePath = UnityEditorUtil.OpenFilePanel("选择动画资产", UnityEditorUtil.lastOpenFolder, "asset");
         if (string.IsNullOrEmpty(filePath)) return;
         string assetPath = UnityEditorUtil.ConvertToAssetPath(filePath);
-        UnityEditorUtil.lastOpenFolder = UnityEditorUtil.GetAssetFolderPath(assetPath);
-
         SpriteAnimationClip clip = AssetDatabase.LoadAssetAtPath<SpriteAnimationClip>(assetPath);
         if (clip) {
             TryAddClip(clip);

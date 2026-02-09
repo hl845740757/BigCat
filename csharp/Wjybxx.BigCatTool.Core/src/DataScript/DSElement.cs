@@ -34,7 +34,7 @@ public abstract class DSElement
     private static readonly IDictionary<string, string> EMPTY_OPTIONS = ImmutableDictionary<string, string>.Empty;
 #nullable disable
     /** 简单名 */
-    private readonly string simpleName;
+    private readonly string name;
     /** 定义该元素的元素 -- 只有元素定义才可以访问 */
     private DSElement enclosingElement;
     /** 嵌套定义的元素 -- 只有元素定义才可以访问 */
@@ -58,7 +58,7 @@ public abstract class DSElement
 #endif
 
     protected DSElement(string simpleName) {
-        this.simpleName = simpleName ?? throw new ArgumentNullException(nameof(simpleName));
+        this.name = simpleName ?? throw new ArgumentNullException(nameof(simpleName));
     }
 
     #region logic
@@ -154,7 +154,7 @@ public abstract class DSElement
 
     #region props
 
-    public string SimpleName => simpleName;
+    public string Name => name;
     public DSElement EnclosingElement => enclosingElement;
     public List<DSElement> EnclosedElements => enclosedElements;
     public List<string> Comments => comments;
@@ -175,8 +175,8 @@ public abstract class DSElement
     public sealed override string ToString() {
         StringBuilder stringBuilder = new StringBuilder()
             .Append(EnumUtil.GetName(Kind)).Append("{")
-            .Append("simpleName='").Append(simpleName).Append('\'')
-            .Append(", enclosingElement=").Append(enclosingElement == null ? null : enclosingElement.simpleName);
+            .Append("simpleName='").Append(name).Append('\'')
+            .Append(", enclosingElement=").Append(enclosingElement == null ? null : enclosingElement.name);
 
         ToString(stringBuilder);
         return stringBuilder

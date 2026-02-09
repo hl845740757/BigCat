@@ -56,7 +56,7 @@ public class DSField : DSElement
     }
 
     public DSField(DSField originDefine, DSTypeElement type)
-        : base(originDefine.SimpleName) {
+        : base(originDefine.Name) {
         _originDefine = originDefine;
         this.number = originDefine.number;
         this.isReadonly = originDefine.isReadonly;

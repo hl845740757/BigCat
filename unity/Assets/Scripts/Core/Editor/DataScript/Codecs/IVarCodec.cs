@@ -1,6 +1,6 @@
 ﻿#region LICENSE
 
-// Copyright 2025 wjybxx(845740757@qq.com)
+// Copyright 2026 wjybxx(845740757@qq.com)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 #endregion
 
-using System;
-using UnityEngine;
+using Wjybxx.Dson;
 
-namespace Wjybxx.BigCat.Core
+namespace Wjybxx.BigCat.Editor.DataScript
 {
 /// <summary>
-/// Flags枚举属性
+/// 变量的编解码器
 /// </summary>
-[AttributeUsage(AttributeTargets.Field)]
-public sealed class EnumFlagsAttribute : PropertyAttribute
+public interface IVarCodec
 {
+    void WriteVariable(IDsonWriter<string> writer, Variable variable, DataGraphHelper helper);
+
+    void ReadVariable(DsonValue dsonValue, Variable variable, bool applySerializedType, DataGraphHelper helper);
 }
 }
