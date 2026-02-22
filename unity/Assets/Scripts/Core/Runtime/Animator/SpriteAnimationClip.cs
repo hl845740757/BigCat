@@ -351,51 +351,7 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 同步帧动画每帧的时间
-    ///
-    /// 注：主要用于同步身体各个部件之间的帧动画时长。
-    /// </summary>
-    /// <param name="source"></param>
-    /// <param name="target"></param>
-    public static void SyncFrameDuration(SpriteAnimationClip source, SpriteAnimationClip target) {
-        if (source == target) {
-            return;
-        }
-        if (source.FrameCount != target.FrameCount) {
-            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
-        }
-        int len = Mathf.Min(source.FrameCount, target.FrameCount);
-        for (int i = 0; i < len; i++) {
-            SpriteAnimationFrame sourceFrame = source.frames[i];
-            target.frames[i].duration = sourceFrame.duration;
-        }
-        target.RefreshDuration();
-    }
-
-    /// <summary>
-    /// 同步帧坐标
-    /// </summary>
-    /// <param name="source"></param>
-    /// <param name="target"></param>
-    public static void SyncFramePosition(SpriteAnimationClip source, SpriteAnimationClip target) {
-        if (source == target) {
-            return;
-        }
-        if (source.FrameCount != target.FrameCount) {
-            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
-        }
-        int len = Mathf.Min(source.FrameCount, target.FrameCount);
-        for (int i = 0; i < len; i++) {
-            SpriteAnimationFrame sourceFrame = source.frames[i];
-            SpriteAnimationFrame targetFrame = target.frames[i];
-            targetFrame.position = sourceFrame.position;
-            targetFrame.scale = sourceFrame.scale;
-            targetFrame.rotation = sourceFrame.rotation;
-        }
-    }
-
-    /// <summary>
-    /// 按照基础动画的图片(名)序列重排序其它动画的图片序列
+    /// 同步帧序号
     /// 
     /// 注：需要保持动画归属的图组数据一致，可通过工具同步。
     /// </summary>
@@ -412,6 +368,50 @@ public sealed class SpriteAnimationClip : ScriptableObject
             SpriteAnimationFrame targetFrame = target.frames[index];
             targetFrame.spritePath.localPath = sourceFrame.spritePath.localPath;
             targetFrame.spritePath.localId = sourceFrame.spritePath.localId;
+        }
+    }
+
+    /// <summary>
+    /// 同步帧动画基础信息
+    /// </summary>
+    public static void SyncBaseInfo(SpriteAnimationClip source, SpriteAnimationClip target) {
+        if (source == target) {
+            return;
+        }
+        if (source.FrameCount != target.FrameCount) {
+            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
+        }
+        int len = Mathf.Min(source.FrameCount, target.FrameCount);
+        for (int i = 0; i < len; i++) {
+            SpriteAnimationFrame sourceFrame = source.frames[i];
+            SpriteAnimationFrame targetFrame = target.frames[i];
+            targetFrame.position = sourceFrame.position;
+            targetFrame.scale = sourceFrame.scale;
+            targetFrame.rotation = sourceFrame.rotation;
+            //
+            targetFrame.duration = sourceFrame.duration;
+            targetFrame.tint = sourceFrame.tint;
+            targetFrame.interp = sourceFrame.interp;
+        }
+    }
+
+    /// <summary>
+    /// 同步攻击盒和受击盒
+    /// </summary>
+    public static void SyncBoxes(SpriteAnimationClip source, SpriteAnimationClip target) {
+        if (source == target) {
+            return;
+        }
+        if (source.FrameCount != target.FrameCount) {
+            Debug.LogWarning($"{source.name}.FrameCount != {target.name}.FrameCount");
+        }
+        int len = Mathf.Min(source.FrameCount, target.FrameCount);
+        for (int i = 0; i < len; i++) {
+            SpriteAnimationFrame sourceFrame = source.frames[i];
+            SpriteAnimationFrame targetFrame = target.frames[i];
+            targetFrame.hurtType = sourceFrame.hurtType;
+            targetFrame.hurtBoxes = ArrayUtil.CopyOf(sourceFrame.hurtBoxes);
+            targetFrame.attackBoxes = ArrayUtil.CopyOf(sourceFrame.attackBoxes);
         }
     }
 #endif

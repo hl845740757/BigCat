@@ -24,14 +24,13 @@ namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 值类型，固定128位的BitSet
-/// （这可以让我们快速返回快照给外部）
 /// </summary>
 public struct GBitSet : IEquatable<GBitSet>
 {
     /// <summary>
     /// Bit集长度
     /// </summary>
-    public const int LENGTH = 64 * 2;
+    private const int LENGTH = 64 * 2;
 
     private long _lowBits;
     private long _highBits;
@@ -46,13 +45,19 @@ public struct GBitSet : IEquatable<GBitSet>
         set => Set(index, value);
     }
 
-    public bool Get(int bitIndex) {
-        CheckIndex(bitIndex);
-        if (bitIndex > 63) {
-            return (_highBits & 1L << (bitIndex - 64)) != 0;
-        } else {
-            return (_lowBits & (1L << bitIndex)) != 0;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void CheckIndex(int index) {
+        if (index < 0 || index >= LENGTH) {
+            throw new IndexOutOfRangeException($"length: {LENGTH}, index {index}");
         }
+    }
+
+    public bool Get(int index) {
+        CheckIndex(index);
+        if (index > 63) {
+            return (_highBits & (1L << index - 64)) != 0;
+        }
+        return (_lowBits & (1L << index)) != 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -64,24 +69,27 @@ public struct GBitSet : IEquatable<GBitSet>
         }
     }
 
-    public void Set(int bitIndex) {
-        CheckIndex(bitIndex);
-        if (bitIndex > 63) {
-            _highBits |= (1L << (bitIndex - 64));
+    public void Set(int index) {
+        CheckIndex(index);
+        if (index > 63) {
+            _highBits |= (1L << (index - 64));
         } else {
-            _lowBits |= (1L << bitIndex);
+            _lowBits |= (1L << index);
         }
     }
 
-    public void Unset(int bitIndex) {
-        CheckIndex(bitIndex);
-        if (bitIndex > 63) {
-            _highBits &= ~(1L << (bitIndex - 64));
+    public void Unset(int index) {
+        CheckIndex(index);
+        if (index > 63) {
+            _highBits &= ~(1L << (index - 64));
         } else {
-            _lowBits &= ~(1L << bitIndex);
+            _lowBits &= ~(1L << index);
         }
     }
 
+    /// <summary>
+    /// 清空数据
+    /// </summary>
     public void Clear() {
         _lowBits = 0;
         _highBits = 0;
@@ -189,7 +197,7 @@ public struct GBitSet : IEquatable<GBitSet>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(GBitSet left, GBitSet right) {
-        return left._lowBits != right._lowBits || left._highBits != right._highBits;
+        return !(left._lowBits == right._lowBits && left._highBits == right._highBits);
     }
 
     #endregion
@@ -197,13 +205,6 @@ public struct GBitSet : IEquatable<GBitSet>
     public override string ToString() {
         // 高位在前
         return $" {nameof(_highBits)}: {_highBits.ToString("X")}, {nameof(_lowBits)}: {_lowBits.ToString("X")}";
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void CheckIndex(int index) {
-        if (index < 0 || index >= LENGTH) {
-            throw new IndexOutOfRangeException($"length: {LENGTH}, index {index}");
-        }
     }
 }
 }

@@ -165,7 +165,9 @@ public class AudioPlayer : MonoBehaviour
         // 短音效 - 资源handle在心跳方法中释放
         AssetHandle handle;
         if (request.playMode != AudioPlayMode.PlayClip) {
-            if (!Application.isFocused) return; // 后台运行时不播放短音效
+#if !UNITY_EDITOR
+            if (!Application.isFocused) return;
+#endif
             if (audioSource.mute || audioSource.volume == 0f) return;
             if (assetHandles.TryGetValue(audioPath, out handle)) {
                 handle.Retain();

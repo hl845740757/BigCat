@@ -185,12 +185,6 @@ public sealed class DataGraph
             value = CreateVariable(namedType)
         };
         node.value.SetDataNode(node);
-        // 初始值 - 为避免冲突，只尝试从类型的归属文件读默认值
-        DSFile enclosingFile = namedType.GetEnclosingFile();
-        DSInst inst;
-        if ((inst = enclosingFile.GetInst(namedType.Name)) != null) {
-            ResetVariable(node.value, inst.DsonValue);
-        }
         return node;
     }
 
@@ -673,6 +667,16 @@ public sealed class DataGraph
         } else {
             CreateValues(variable);
         }
+        // 默认值支持
+        DSFile enclosingFile = type.GetEnclosingFile();
+        DSInst inst;
+        if ((inst = enclosingFile.GetInst(type.Name)) != null) {
+            ResetVariable(variable, inst.DsonValue);
+        }
+        // 特殊默认值
+        if (variableCfg.pathType != 0) {
+            variable.objectPathValue = new ObjectPath() { type = (int)variableCfg.pathType };
+        }
         // 覆盖字段端口名
         if (variableCfg.portNameRemap != null) {
             foreach (var pair in variableCfg.portNameRemap) {
@@ -681,10 +685,6 @@ public sealed class DataGraph
                     nestedValue.displayName = pair.Value;
                 }
             }
-        }
-        // 特殊默认值
-        if (variableCfg.pathType != 0) {
-            variable.objectPathValue = new ObjectPath() { type = (int)variableCfg.pathType };
         }
         return variable;
     }
@@ -953,7 +953,7 @@ public sealed class DataGraph
             return;
         }
         string filePath = UnityEditorUtil.ConvertToFilePath(assetPath);
-        using StreamWriter streamWriter = new StreamWriter(File.Create(filePath), new UTF8Encoding(false));
+        using StreamWriter streamWriter = new StreamWriter(File.Create(filePath), UnityEditorUtil.UTF8);
         using DsonTextWriter textWriter = new DsonTextWriter(writerSettings, streamWriter, true);
         //
         List<DataNode> sortedNodes = new(nodeList);
@@ -987,7 +987,7 @@ public sealed class DataGraph
             return;
         }
         string filePath = UnityEditorUtil.ConvertToFilePath(assetPath);
-        using StreamReader streamReader = new StreamReader(filePath, new UTF8Encoding(false));
+        using StreamReader streamReader = new StreamReader(filePath, UnityEditorUtil.UTF8);
         using DsonTextReader textReader = new DsonTextReader(readerSettings, streamReader);
         //
         DsonArray<string> collection = Dsons.ReadCollection(textReader);

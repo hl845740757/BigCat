@@ -195,6 +195,7 @@ public class EditorAssetBundle : IAssetBundle
             this._fileInfo = fileInfo;
         }
 
+        public override int compression => 0;
         public override int dataLength => (int)_fileInfo.Length;
 
         public override void GetData(byte[] buffer, int offset) {

@@ -121,9 +121,9 @@ public sealed class VariableCfg
     /// </summary>
     public List<string> maskNames;
     /// <summary>
-    /// mask字段关联的索引枚举
+    /// mask字段关联的索引枚举(symbol)
     /// </summary>
-    public string maskIndexEnum;
+    public string maskEnum;
     /// <summary>
     /// 标签类字段配置
     ///
@@ -299,7 +299,7 @@ public sealed class VariableCfg
         varCfg.stringPopValues = listCfg.stringPopValues;
         varCfg.candidatesValues = listCfg.candidatesValues;
         varCfg.maskNames = listCfg.maskNames;
-        varCfg.maskIndexEnum = listCfg.maskIndexEnum;
+        varCfg.maskEnum = listCfg.maskEnum;
         varCfg.supportedTypes = listCfg.supportedTypes;
         //
         varCfg.dsonType = listCfg.dsonType;
@@ -340,7 +340,7 @@ public sealed class VariableCfg
             cfg.maskNames = new List<string>(maxIndex + 1);
             for (int index = 0; index <= maxIndex; index++) {
                 if (!maskNames.TryGetValue(index, out string maskName)) {
-                    maskName = index.ToString();
+                    maskName = ""; // 空字符串显式为横线
                 }
                 cfg.maskNames.Add(maskName);
             }
@@ -450,7 +450,7 @@ public sealed class VariableCfg
                 cfg.maskNames.Add(dsonValue.AsString());
             }
             if (dsonArray.Header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue clsName)) {
-                cfg.maskIndexEnum = clsName.AsString();
+                cfg.maskEnum = clsName.AsString();
             }
         }
         cfg.maskNames.TrimExcess();

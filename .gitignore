@@ -496,7 +496,7 @@ unity/Assets/Editor/_DnfExtractor.meta
 unity/Assets/Editor/DNF/Resources.meta
 unity/Assets/Editor/DNF/Resources/
 
-# 纯粹的美术资源不提交
+# 纯粹的美术资源不提交，生成的资源也不提交
 unity/Assets/DNF/*.meta
 unity/Assets/DNF/Animations
 unity/Assets/DNF/Sprites
@@ -505,3 +505,4 @@ unity/Assets/DNF/Fonts
 unity/Assets/DNF/Music
 unity/Assets/DNF/Sounds
 unity/Assets/DNF/Config/**/*Animation*/
+unity/Assets/DNF/Config/Monster/

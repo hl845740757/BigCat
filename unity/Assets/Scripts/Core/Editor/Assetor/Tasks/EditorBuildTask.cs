@@ -72,7 +72,7 @@ public class EditorBuildTask : LeafTask<Blackboard>
         if (!string.IsNullOrEmpty(textFilePath)) {
             DsonWriterSettings writerSettings = new DsonTextWriterSettings.Builder() { SoftLineLength = 150 }.Build();
 
-            using StreamWriter streamWriter = new StreamWriter(File.Create(textFilePath), new UTF8Encoding(false));
+            using StreamWriter streamWriter = new StreamWriter(File.Create(textFilePath), UnityEditorUtil.UTF8);
             using DsonTextWriter textWriter = new DsonTextWriter(writerSettings as DsonTextWriterSettings, streamWriter);
             manifest.Serialize(textWriter);
         }

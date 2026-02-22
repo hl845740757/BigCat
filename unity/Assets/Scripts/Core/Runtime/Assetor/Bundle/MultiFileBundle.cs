@@ -63,12 +63,13 @@ public class MultiFileBundle : IAssetBundle
             int pathLen = ByteBufferUtil.GetInt16LE(buffer, 0);
             _ = stream.Read(buffer, 0, pathLen);
             string assetPath = Encoding.UTF8.GetString(buffer, 0, pathLen);
+            int compression = stream.ReadByte();
             //
             _ = stream.Read(buffer, 0, 4);
             int dataLen = ByteBufferUtil.GetInt32LE(buffer, 0);
             int offset = (int)stream.Position;
             //
-            FileItem item = new FileItem(assetPath, offset, dataLen, this);
+            FileItem item = new FileItem(assetPath, compression, offset, dataLen, this);
             _fileItemList.Add(item);
             _fileItemDic.Add(item.assetPath, item); // 全路径索引，禁止重复
             _fileItemDic[item.fileName] = item; // 文件名索引，允许重复
@@ -119,16 +120,21 @@ public class MultiFileBundle : IAssetBundle
     private class FileItem : BinaryAsset
     {
         private readonly MultiFileBundle bundle;
+        private readonly int _compression; // 压缩方式
         private readonly int _offset; // 数据部分偏移
         private readonly int _length; // 数据长度
 
-        public FileItem(string assetPath, int offset, int length, MultiFileBundle bundle)
+        public FileItem(string assetPath, int compression,
+                        int offset, int length,
+                        MultiFileBundle bundle)
             : base(assetPath) {
             this.bundle = bundle;
+            this._compression = compression;
             this._offset = offset;
             this._length = length;
         }
 
+        public override int compression => _compression;
         public override int dataLength => _length;
 
         public override void GetData(byte[] buffer, int offset) {

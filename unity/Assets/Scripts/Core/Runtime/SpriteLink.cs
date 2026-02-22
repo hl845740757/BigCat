@@ -25,5 +25,10 @@ public struct SpriteLink
 {
     public int index; // 原始索引
     public int dest; // 目标索引
+
+    public SpriteLink(int index, int dest) {
+        this.index = index;
+        this.dest = dest;
+    }
 }
 }

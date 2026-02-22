@@ -125,3 +125,10 @@ class DsonArray<Key> : DsonValue {
 class EnumSet<T> {
   List<int32> values = 1; // 所有元素
 }
+// 64位枚举Set
+// @Namespace{cs: "Wjybxx.BigCat.Util"}
+// @Editor{ displayType: EnumSet64 }
+class EnumSet64<T> {
+  int32 lowBits = 1;
+  int32 highBits = 2;
+}

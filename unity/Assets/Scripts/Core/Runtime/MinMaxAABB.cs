@@ -180,6 +180,7 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
     /// 确保AABB包含目标包围盒
     /// </summary>
     /// <param name="aabb"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Encapsulate(MinMaxAABB aabb) {
         Encapsulate(aabb.min);
         Encapsulate(aabb.max);
@@ -199,10 +200,12 @@ public struct MinMaxAABB : IEquatable<MinMaxAABB>
 
     #region util
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Bounds(MinMaxAABB box) {
         return new Bounds(box.Center, box.Size);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator MinMaxAABB(Bounds bounds) {
         return new MinMaxAABB(bounds.min, bounds.max);
     }

@@ -339,6 +339,9 @@ public static class DSUtil
     }
 
     public static bool IsNonSerialized(DSElement element) {
+        if (string.IsNullOrEmpty(element.Name)) { // 匿名字段
+            return true;
+        }
         DsonObject<string> options = GetOptions(element);
         return Annotation.GetBool(options, DSAnnotations.KEY_NON_SERIALIZED);
     }

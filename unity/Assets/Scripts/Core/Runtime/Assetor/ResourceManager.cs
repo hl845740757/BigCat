@@ -215,8 +215,19 @@ public class ResourceManager
     /// <summary>
     /// 加载原始二进制资产
     /// </summary>
-    public AssetHandle LoadBinaryAssetAsync(string location, int priority = 0) {
-        return LoadBinaryAssetAsync(location, priority, ELoadMethod.LoadBinaryAsset);
+    /// <param name="location">资产坐标，建议使用全路径</param>
+    /// <param name="assetType">资产类型，用于解压缩</param>
+    /// <param name="priority">优先级</param>
+    public AssetHandle LoadBinaryAssetAsync(string location, Type assetType = null, int priority = 0) {
+        return LoadBinaryAssetAsync(location, assetType, priority, ELoadMethod.LoadBinaryAsset);
+    }
+
+    /// <summary>
+    /// 加载原始二进制资产
+    /// </summary>
+    public AssetHandle LoadBinaryAssetAsync<T>(string location, int priority = 0)
+        where T : ScriptableObject, IBinaryAssetReceiver {
+        return LoadBinaryAssetAsync(location, typeof(T), priority, ELoadMethod.LoadBinaryAsset);
     }
 
     /// <summary>
@@ -225,9 +236,15 @@ public class ResourceManager
     /// </summary>
     /// <returns></returns>
     /// <param name="location">资产坐标，建议使用全路径</param>
+    /// <param name="assetType">资产类型，用于解压缩</param>
     /// <param name="priority">优先级</param>
-    public AssetHandle LoadAllBinaryAssetAsync(string location, int priority = 0) {
-        return LoadBinaryAssetAsync(location, priority, ELoadMethod.LoadAllBinaryAssets);
+    public AssetHandle LoadAllBinaryAssetAsync(string location, Type assetType = null, int priority = 0) {
+        return LoadBinaryAssetAsync(location, assetType, priority, ELoadMethod.LoadAllBinaryAssets);
+    }
+
+    public AssetHandle LoadAllBinaryAssetAsync<T>(string location, int priority = 0)
+        where T : ScriptableObject, IBinaryAssetReceiver {
+        return LoadBinaryAssetAsync(location, typeof(T), priority, ELoadMethod.LoadAllBinaryAssets);
     }
 
     /// <summary>
@@ -278,17 +295,19 @@ public class ResourceManager
         return provider;
     }
 
-    private AssetHandle LoadBinaryAssetAsync(string location, int priority, ELoadMethod loadMethod) {
+    private AssetHandle LoadBinaryAssetAsync(string location, Type assetType, int priority, ELoadMethod loadMethod) {
+        assetType ??= typeof(BinaryAsset);
         if (string.IsNullOrEmpty(location)) {
             throw new ArgumentNullException(nameof(location));
         }
-        AssetFileInfo assetInfo = GetAssetInfo(location);
+        bool so = loadMethod == ELoadMethod.LoadBinaryAsset && assetType.IsSubclassOf(typeof(ScriptableObject));
+        AssetFileInfo assetInfo = GetAssetInfo(location, so ? assetType.Name : null);
         Provider provider;
         if (assetInfo == null) {
-            provider = GetErrorProvider(typeof(BinaryAsset), loadMethod);
+            provider = GetErrorProvider(assetType, loadMethod);
             logger.LogWarn($"BinaryAsset not found, location: {location}");
         } else {
-            ProviderId providerId = new ProviderId(assetInfo.assetPath, typeof(BinaryAsset), loadMethod);
+            ProviderId providerId = new ProviderId(assetInfo.assetPath, assetType, loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
                 provider = CreateBinaryAssetProvider(assetInfo, providerId, priority);
                 provider.TimeReleased = _scheduler.FrameTime;

@@ -69,13 +69,12 @@ class SpriteMotionTask : Task<Blackboard> {
   // @Candidates["", "body", "weapon", "effect"]
   string partId = 2; // 要控制的部件名
   string motionName = 3; // 部件动画
-  // @Options{encodeFeatures: NumberHex}
   // @MaskField["0", "body", "weapon", "effect", "4", "5", "6", "7", "8", "9"]
-  int32 partGroups = 4; // 部件组，掩码
+  int32 partGroups = 4; // 部件组，掩码   @Options{encodeFeatures: NumberHex}
 
-  AnimationRequest baseAnim = 5; // 基础动画
-  List<AnimationRequest> subAnims = 6; // 子动画
-  List<string> subEffects = 7; // 子特效  
+  AnimationRequest baseAnim = 5; // 基础动画     @Editor{initNull: true}
+  List<AnimationRequest> subAnims = 6; // 子动画 @Editor{initNull: true}
+  List<string> subEffects = 7; // 子特效         @Editor{initNull: true}
   
   //@PortField{side: bottom, distinct: true}
   List<TimeTrigger> triggers = 8; // 触发器

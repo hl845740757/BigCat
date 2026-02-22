@@ -42,11 +42,11 @@ public class VarAABBCodec : IVarCodec
             helper.ReadVariable(variable[0], min);
         }
         if (dsonObject.TryGetValue("max", out DsonValue max)) {
-            helper.ReadVariable(variable[1], max);
+            helper.ReadVariable(variable[1], max); // min + max
         }
         if (dsonObject.TryGetValue("size", out DsonValue size)) {
-            helper.ReadVariable(variable[1], size);
-            variable[1].vector3Value += variable[0].vector3Value; // min + size
+            helper.ReadVariable(variable[1], size); // min + size
+            variable[1].vector3Value += variable[0].vector3Value;
         }
     }
 }

@@ -16,6 +16,7 @@
 
 #endregion
 
+using UnityEngine;
 using Wjybxx.BTree;
 using Wjybxx.Commons;
 
@@ -33,6 +34,13 @@ public class BinaryAssetProvider : AssetProviderBase
 
     protected override void Enter(int reentryId) {
         promise.status = ELoadStatus.Loading;
+    }
+
+    public override void Destroy() {
+        base.Destroy();
+        if (promise.result is ScriptableObject so) {
+            Object.Destroy(so);
+        }
     }
 
     protected override void Execute() {
@@ -59,10 +67,20 @@ public class BinaryAssetProvider : AssetProviderBase
         if (result == null) {
             promise.errorCode = ResourceErrorCode.AssetFileNotFound;
             SetFailed(TaskStatus.ERROR);
-        } else {
-            promise.result = result;
-            SetSuccess();
+            return;
         }
+        // 图片音频压缩包等在底层解压，并缓存在资源管理层
+        if (result is BinaryAsset binAsset
+            && assetType.IsSubclassOf(typeof(ScriptableObject))
+            && assetType.IsSubclassOf(typeof(IBinaryAssetReceiver))) {
+            // TODO 考虑支持异步解压？
+            ScriptableObject so = ScriptableObject.CreateInstance(assetType);
+            IBinaryAssetReceiver receiver = (IBinaryAssetReceiver)so;
+            receiver.Unpack(binAsset);
+            result = so;
+        }
+        promise.result = result;
+        SetSuccess();
     }
 }
 }

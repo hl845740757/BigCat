@@ -108,7 +108,13 @@ public class VarEnumSetField : Foldout, IVarField
         }
     }
 
-    private static List<string> GetMaskNames(DSNamedType enumType, int wordIndex) {
+    private static readonly Dictionary<(string fullName, int wordIndex), List<string>> cache = new();
+
+    internal static List<string> GetMaskNames(DSNamedType enumType, int wordIndex) {
+        (string fullName, int wordIndex) key = (enumType.FullName, wordIndex);
+        if (cache.TryGetValue(key, out List<string> list)) {
+            return list;
+        }
         int minNum = wordIndex * 32;
         string[] tempNames = new string[32];
         int maxNum = minNum;
@@ -125,6 +131,7 @@ public class VarEnumSetField : Foldout, IVarField
         for (int index = 0; index < count; index++) {
             maskNames.Add(tempNames[index] ?? "");
         }
+        cache[key] = maskNames;
         return maskNames;
     }
 

@@ -16,28 +16,23 @@
 
 #endregion
 
-using Wjybxx.BigCat.Util;
 using Wjybxx.BigCatTool.DataScript;
+using Wjybxx.Commons;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
-public class VarEnumSetCodec : IVarCodec
+public class VarEnumSet64Codec : IVarCodec
 {
     public void WriteVariable(IDsonWriter<string> writer, Variable variable, DataGraphHelper helper) {
-        Variable arrayField = variable[0];
-        int[] wordArray = new int[arrayField.Count];
-        for (int idx = 0; idx < arrayField.Count; idx++) {
-            wordArray[idx] = arrayField[idx].intValue;
-        }
-        EnumSet<MockEnum> enumSet = EnumSet<MockEnum>.NewInstance(wordArray);
         DSNamedType enumType = (DSNamedType)variable.type.TypeArguments[0];
+        long values = variable[1].longValue << 32 | variable[0].longValue;
         // 编码为 [A, B, C] 格式
         writer.WriteStartArray(ObjectStyle.Flow);
         foreach (DSElement element in enumType.EnclosedElements) {
             if (element is not DSEnumValue enumValue) continue;
-            if (enumSet.Get(enumValue.Number)) {
+            if (BitFlags.GetAt(values, enumValue.Number)) {
                 writer.WriteString(enumValue.Name);
             }
         }
@@ -45,29 +40,18 @@ public class VarEnumSetCodec : IVarCodec
     }
 
     public void ReadVariable(DsonValue dsonValue, Variable variable, bool applySerializedType, DataGraphHelper helper) {
-        EnumSet<MockEnum> enumSet = new EnumSet<MockEnum>();
         DSNamedType enumType = (DSNamedType)variable.type.TypeArguments[0];
-        //
+        long values = 0;
         foreach (DsonValue enumName in dsonValue.AsArray()) {
             DSEnumValue enumValue = enumType.GetEnumValue(enumName.AsString(), true);
             if (enumValue == null) {
                 continue; // 解码过程都是有损恢复
             }
-            enumSet.Set(enumValue.Number);
+            values = BitFlags.SetAt(values, enumValue.Number, true);
         }
-        //
-        int[] wordArray = enumSet.ToIntArray();
-        Variable arrayField = variable[0];
-        while (arrayField.Count < wordArray.Length) {
-            Variable nestedVar = helper.Graph.CreateListItem(arrayField);
-            arrayField.Add(nestedVar);
-        }
-        while (arrayField.Count > wordArray.Length) {
-            arrayField.RemoveAt(arrayField.Count - 1);
-        }
-        for (int index = 0; index < wordArray.Length; index++) {
-            arrayField[index].longValue = wordArray[index];
-        }
+        const long mask = uint.MaxValue;
+        variable[0].longValue = (int)values;
+        variable[1].longValue = (values >> 32) & mask;
     }
 }
 }

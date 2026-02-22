@@ -41,7 +41,7 @@ public static class BuiltinCodecs
 
         public MinMaxAABB ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
             // 支持Min+Max、Min+Size
-            reader.ReadStartObject(typeof(MinMaxAABB), DeserializeFeatures.PassiveRandomRead);
+            reader.ReadStartObject(typeof(MinMaxAABB), DeserializeFeatures.PassiveReading);
             Vector3 min = reader.ReadDouble4("min").ToVector3();
             Vector3 max = reader.ReadName() switch
             {

@@ -190,8 +190,8 @@ public partial class AnimationClipEditor : EditorWindow
     private void InitSyncOperateArea(VisualElement root) {
         VisualElement syncDiv = root.Q("clip-sync-div");
         syncDiv.Q<Button>("sync-frame-order").RegisterCallback<ClickEvent>(OnClickSyncFrameOrder);
-        syncDiv.Q<Button>("sync-frame-duration").RegisterCallback<ClickEvent>(OnClickSyncFrameDuration);
-        syncDiv.Q<Button>("sync-frame-position").RegisterCallback<ClickEvent>(OnClickSyncFramePosition);
+        syncDiv.Q<Button>("sync-frame-base").RegisterCallback<ClickEvent>(OnClickSyncBaseInfo);
+        syncDiv.Q<Button>("sync-frame-boxes").RegisterCallback<ClickEvent>(OnClickSyncBoxes);
         // syncDiv.Q<Button>("sync-frame-rotation").RegisterCallback<ClickEvent>(OnClickSyncFrameRotation);
     }
 
@@ -1426,25 +1426,25 @@ public partial class AnimationClipEditor : EditorWindow
 
     #region sync-operate
 
-    private void OnClickSyncFrameDuration(ClickEvent evt) {
+    private void OnClickSyncBoxes(ClickEvent evt) {
         evt.StopPropagation();
         if (_clipContextList.Count <= 1) return;
         ClipContext masterContext = _clipContextList[0];
         for (int index = 1; index < _clipContextList.Count; index++) {
             ClipContext context = _clipContextList[index];
-            SpriteAnimationClip.SyncFrameDuration(masterContext.clip, context.clip);
+            SpriteAnimationClip.SyncBoxes(masterContext.clip, context.clip);
             context.SetDirty();
         }
         RefreshPreviewArea();
     }
 
-    private void OnClickSyncFramePosition(ClickEvent evt) {
+    private void OnClickSyncBaseInfo(ClickEvent evt) {
         evt.StopPropagation();
         if (_clipContextList.Count <= 1) return;
         ClipContext masterContext = _clipContextList[0];
         for (int index = 1; index < _clipContextList.Count; index++) {
             ClipContext context = _clipContextList[index];
-            SpriteAnimationClip.SyncFramePosition(masterContext.clip, context.clip);
+            SpriteAnimationClip.SyncBaseInfo(masterContext.clip, context.clip);
             context.SetDirty();
         }
         RefreshPreviewArea();
@@ -1493,7 +1493,7 @@ public partial class AnimationClipEditor : EditorWindow
         window.TryAddClip(clip);
         return true;
     }
-    
+
     private static VisualElement CreateClipElement() {
         var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Scripts/Core/Editor/SpriteAnimation/ClipListItem.uxml");
         return visualTree.CloneTree()[0];

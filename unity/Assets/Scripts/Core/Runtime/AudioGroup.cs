@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Wjybxx.BigCat.Assetor;
 using Wjybxx.Commons;
 
 #if UNITY_EDITOR
@@ -33,7 +34,7 @@ namespace Wjybxx.BigCat.Core
 /// 注意：文件名必须唯一，程序总是通过文件名引用。
 /// </summary>
 [CreateAssetMenu(menuName = "BigCat/AudioGroup", fileName = "NewAudioGroup")]
-public class AudioGroup : ScriptableObject
+public class AudioGroup : ScriptableObject, IBinaryAssetReceiver
 {
     /// <summary>
     /// 是否优先使用name引用
@@ -115,19 +116,17 @@ public class AudioGroup : ScriptableObject
         }
     }
 
-#if UNITY_EDITOR
-    [ContextMenu("Refresh")]
-    private void Refresh() {
-        Refresh(this);
+    public void Unpack(BinaryAsset binAsset) {
+        // TODO
     }
-
+#if UNITY_EDITOR
     /// <summary>
-    /// 刷新图组信息
+    /// 刷新绑定数据
     /// (注：放在这里方便工具统一调用，避免依赖Editor)
     /// </summary>
-    /// <param name="group"></param>
-    public static void Refresh(AudioGroup group) {
-        string groupAssetDir = SpriteGroup.GetBindFolder(group, group.bindFolder);
+    [ContextMenu("Refresh")]
+    public void Refresh() {
+        string groupAssetDir = SpriteGroup.GetBindFolder(this, bindFolder);
         string[] findAssets = AssetDatabase.FindAssets("t:AudioClip", new[] { groupAssetDir });
         List<AudioClip> list = new(findAssets.Length);
         foreach (string guid in findAssets) {
@@ -138,9 +137,9 @@ public class AudioGroup : ScriptableObject
             }
         }
         //
-        group.audioClips = list.ToArray();
-        group.Sort();
-        EditorUtility.SetDirty(group);
+        audioClips = list.ToArray();
+        Sort();
+        EditorUtility.SetDirty(this);
     }
 
     /// <summary>

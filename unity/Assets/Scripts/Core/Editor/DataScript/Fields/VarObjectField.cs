@@ -22,6 +22,8 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Wjybxx.BigCat.Editor.UIElements;
+using Wjybxx.BigCat.Util;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.Dson;
 
@@ -38,6 +40,7 @@ public class VarObjectField : Foldout, IVarField
     private DataEditor _editor;
     private Variable _variable;
     private DSNamedType _buildType;
+
     private EventCallback<ChangeEvent<int>> _onCtrlValueChanged1;
     private EventCallback<ChangeEvent<string>> _onCtrlValueChanged2;
     private ListFieldMode _mode;
@@ -105,13 +108,12 @@ public class VarObjectField : Foldout, IVarField
             return;
         }
         contentContainer.SetEnabled(true);
-        // 延迟初始化
         VisualElement container = contentContainer;
-        if (container.childCount == 0 && !ReferenceEquals(_buildType, variable.type)) {
-            RebuildFieldViews();
-        }
         for (int index = 0; index < container.childCount; index++) {
             VisualElement fieldView = container[index];
+            if (ReferenceEquals(fieldView.GetType(), typeof(VarPendingField))) {
+                continue;
+            }
             Variable nestedVar = variable[index];
             if (nestedVar.cfg.branchCfgs == null) {
                 DataEditorUtil.SetFieldLabel(fieldView, nestedVar.displayName);
@@ -163,7 +165,13 @@ public class VarObjectField : Foldout, IVarField
     private void RebuildFieldViews() {
         _buildType = _variable.type;
         contentContainer.Clear();
-        foreach (Variable nestedVar in _variable.values) {
+        List<Variable> values = _variable.values;
+        for (int index = 0; index < values.Count; index++) {
+            Variable nestedVar = values[index];
+            if (DSUtil.IsNonSerialized(nestedVar.defineInfo)) {
+                contentContainer.Add(new VarPendingField());
+                continue;
+            }
             VisualElement fieldView = DataEditorUtil.CreateField(nestedVar, this._editor);
             DataEditorUtil.SetFieldLabel(fieldView, nestedVar.displayName);
             fieldView.tooltip = nestedVar.cfg.tooltip;
@@ -316,6 +324,12 @@ public class VarObjectField : Foldout, IVarField
     private void OnClickSetNotNull(object _) {
         Variable variable = _variable;
         variable.isNull = false;
+        // 延迟初始化
+        if (variable.Count == 0) {
+            _editor.dataGraph.CreateValues(variable);
+            RebuildFieldViews();
+            this.value = true;
+        }
         variable.ApplyModifiedProperties();
         Refresh();
     }

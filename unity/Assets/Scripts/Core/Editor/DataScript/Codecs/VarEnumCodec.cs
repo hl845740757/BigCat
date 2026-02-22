@@ -84,7 +84,7 @@ public class VarEnumCodec : IVarCodec
         foreach (string name in ObjectUtil.SplitAndTrim(str, '|')) {
             DSEnumValue enumValue = namedType.GetEnumValue(name, true);
             if (enumValue == null) {
-                continue; // 数据丢失(解码过程都是有损恢复)
+                continue; // 解码过程都是有损恢复
             }
             value |= enumValue.Number;
         }

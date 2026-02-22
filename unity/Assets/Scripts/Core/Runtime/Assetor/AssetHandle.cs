@@ -18,9 +18,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 using Wjybxx.Commons.Concurrent;
+using Debug = System.Diagnostics.Debug;
 using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.Assetor
@@ -400,18 +401,30 @@ public readonly struct AssetHandle : IEquatable<AssetHandle>
     /// <summary>
     /// 加载原始二进制资产
     /// </summary>
-    public AssetHandle LoadBinaryAssetAsync(string relativePath, int priority = 0) {
+    public AssetHandle LoadBinaryAssetAsync(string relativePath, Type assetType = null, int priority = 0) {
         string path = ResourceManager.CombinePath(AssetPath, relativePath);
-        return _provider.resourceMgr.LoadBinaryAssetAsync(path, priority);
+        return _provider.resourceMgr.LoadBinaryAssetAsync(path, assetType, priority);
+    }
+
+    public AssetHandle LoadBinaryAssetAsync<T>(string relativePath, int priority = 0)
+        where T : ScriptableObject, IBinaryAssetReceiver {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadBinaryAssetAsync<T>(path, priority);
     }
 
     /// <summary>
     /// 加载Location所属Bundle的所有指定类型资产
     /// 注：通常用于加载自定义资产，
     /// </summary>
-    public AssetHandle LoadAllBinaryAssetAsync(string relativePath, int priority = 0) {
+    public AssetHandle LoadAllBinaryAssetAsync(string relativePath, Type assetType = null, int priority = 0) {
         string path = ResourceManager.CombinePath(AssetPath, relativePath);
-        return _provider.resourceMgr.LoadAllBinaryAssetAsync(path, priority);
+        return _provider.resourceMgr.LoadAllBinaryAssetAsync(path, assetType, priority);
+    }
+
+    public AssetHandle LoadAllBinaryAssetAsync<T>(string relativePath, int priority = 0)
+        where T : ScriptableObject, IBinaryAssetReceiver {
+        string path = ResourceManager.CombinePath(AssetPath, relativePath);
+        return _provider.resourceMgr.LoadAllBinaryAssetAsync<T>(path, priority);
     }
 
     #endregion

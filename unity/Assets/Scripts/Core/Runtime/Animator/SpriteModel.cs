@@ -126,7 +126,13 @@ public sealed class SpriteModel : ScriptableObject
 
     #region 维护
 
-    private void Refresh() {
+#if UNITY_EDITOR
+    /// <summary>
+    /// 刷新绑定数据
+    /// (注：放在这里方便工具统一调用，避免依赖Editor)
+    /// </summary>
+    [ContextMenu("Refresh")]
+    public void Refresh() {
         string groupAssetDir = SpriteGroup.GetBindFolder(this, bindFolder);
         SpriteModel template = string.IsNullOrEmpty(templatePath) ? null : AssetDatabase.LoadAssetAtPath<SpriteModel>(templatePath);
         // 如果模板存在，则读取模板资源信息 - 然后覆盖本地信息
@@ -171,6 +177,7 @@ public sealed class SpriteModel : ScriptableObject
         }
         EditorUtility.SetDirty(this);
     }
+#endif
 
     #endregion
 }

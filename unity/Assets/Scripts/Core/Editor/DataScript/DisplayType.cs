@@ -49,5 +49,6 @@ public enum DisplayType
     Euler32, // int32(x,y,z)，xyz限制在[0, 360]
     MinMaxAABB, // 包围盒
     EnumSet, // 枚举集合
+    EnumSet64, // 64位枚举集合
 }
 }

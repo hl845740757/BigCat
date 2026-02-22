@@ -86,7 +86,6 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
             Task<Blackboard> child = children[index];
             try {
                 if (child.Status == TaskStatus.NEW) {
-                    child.IsBreakInline = true; // 忽略内联-避免不必要的回调
                     Template_StartChild(child, true);
                 } else if (child.IsRunning) {
                     child.Template_Execute(true);
@@ -191,7 +190,6 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
         blackboard.deadline = deadline;
         try {
             if (task.Status == TaskStatus.NEW) {
-                task.IsBreakInline = true;
                 Template_StartChild(task, true);
             } else if (task.IsRunning) {
                 task.Template_Execute(true);

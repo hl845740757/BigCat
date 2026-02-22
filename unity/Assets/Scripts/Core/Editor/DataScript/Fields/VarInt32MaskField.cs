@@ -44,8 +44,8 @@ public class VarInt32MaskField : MaskField, IVarField
             choices = typeCfg.maskNames;
         } else {
             // 支持映射到Indexes枚举
-            if (variableCfg.maskIndexEnum != null) {
-                DSTypeElement enumType = editor.repository.ResolveTypeSymbol(variable.defineInfo, variableCfg.maskIndexEnum);
+            if (variableCfg.maskEnum != null) {
+                DSTypeElement enumType = editor.repository.ResolveTypeSymbol(variable.defineInfo, variableCfg.maskEnum);
                 VariableCfg enumCfg = editor.dataGraph.GetVariableCfg(enumType);
                 choices = enumCfg.maskNames;
             } else {

@@ -84,8 +84,8 @@
             <ui:VisualElement name="clip-sync-div" style="flex-shrink: 0; flex-direction: column; flex-wrap: wrap; display: none; flex-grow: 0; justify-content: flex-end; overflow: visible;">
                 <ui:VisualElement name="VisualElement" style="flex-direction: row; flex-shrink: 0; width: auto; flex-grow: 1; min-width: 350px;">
                     <ui:Button text="同步序列" display-tooltip-when-elided="true" name="sync-frame-order" tooltip="将第一个动画的图片引用信息同步到其它动画，慎重点击" style="font-size: 12px; -unity-font-style: normal;" />
-                    <ui:Button text="同步帧长" display-tooltip-when-elided="true" name="sync-frame-duration" tooltip="将第一个动画的每一帧时长同步到其它动画" style="-unity-font-style: normal; font-size: 12px;" />
-                    <ui:Button text="同步坐标" display-tooltip-when-elided="true" name="sync-frame-position" tooltip="将第一个动画的每一帧坐标、旋转、缩放同步到其它动画" style="font-size: 12px; -unity-font-style: normal;" />
+                    <ui:Button text="同步基础数据" display-tooltip-when-elided="true" name="sync-frame-base" tooltip="将第一个动画的每一帧坐标、旋转、缩放同步到其它动画" style="font-size: 12px; -unity-font-style: normal;" />
+                    <ui:Button text="同步攻击盒" display-tooltip-when-elided="true" name="sync-frame-boxes" tooltip="将第一个动画的攻击盒、受击盒同步到其它动画" style="-unity-font-style: normal; font-size: 12px;" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

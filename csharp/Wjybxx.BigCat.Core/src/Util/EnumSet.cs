@@ -22,7 +22,6 @@ using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
-using Wjybxx.Dson.Codec.Codecs;
 
 namespace Wjybxx.BigCat.Util
 {
@@ -53,10 +52,18 @@ public sealed class EnumSet<T> where T : struct, Enum
     /// </summary>
     /// <param name="bitCount">期望的bit数</param>
     public EnumSet(int bitCount = 128) {
-        if (bitCount < 0 || bitCount > MAX_COUNT) {
+        if (bitCount < 0 || bitCount > MAX_LENGTH) {
             throw new ArgumentException(nameof(bitCount));
         }
         _values = new long[WordCount(bitCount)];
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="other">要拷贝的集合</param>
+    public EnumSet(EnumSet<T> other) {
+        _values = ArrayUtil.CopyOf(other._values);
     }
 
     public bool this[T key] {
@@ -88,23 +95,25 @@ public sealed class EnumSet<T> where T : struct, Enum
         }
     }
 
+    public void Set(params T[] array) {
+        foreach (T e in array) {
+            Set(e.GetHashCode());
+        }
+    }
+
     #endregion
 
     #region int-api
 
     public bool Get(int index) {
-        if (index < 0 || index >= MAX_COUNT) {
-            throw new IndexOutOfRangeException();
-        }
+        CheckIndex(index);
         int wordIndex = WordIndex(index);
         return wordIndex < _values.Length
-               && (_values[wordIndex] & 1L << index) != 0;
+               && (_values[wordIndex] & (1L << index)) != 0;
     }
 
     public void Set(int index) {
-        if (index < 0 || index >= MAX_COUNT) {
-            throw new IndexOutOfRangeException();
-        }
+        CheckIndex(index);
         int wordIndex = WordIndex(index);
         if (wordIndex >= _values.Length) {
             Array.Resize(ref _values, wordIndex + 1);
@@ -113,9 +122,7 @@ public sealed class EnumSet<T> where T : struct, Enum
     }
 
     public void Unset(int index) {
-        if (index < 0 || index >= MAX_COUNT) {
-            throw new IndexOutOfRangeException();
-        }
+        CheckIndex(index);
         int wordIndex = WordIndex(index);
         if (wordIndex >= _values.Length) {
             return;
@@ -132,13 +139,6 @@ public sealed class EnumSet<T> where T : struct, Enum
     }
 
     #endregion
-
-    /// <summary>
-    /// 清理所有bit
-    /// </summary>
-    public void Clear() {
-        Array.Clear(_values, 0, _values.Length);
-    }
 
     /// <summary>
     /// 比特集中的1数量
@@ -174,12 +174,21 @@ public sealed class EnumSet<T> where T : struct, Enum
     }
 
     /// <summary>
+    /// 清理所有bit
+    /// </summary>
+    public void Clear() {
+        Array.Clear(_values, 0, _values.Length);
+    }
+
+    /// <summary>
     /// 与运算
     /// </summary>
     /// <param name="other"></param>
     public void And(EnumSet<T> other) {
-        CheckLength(other);
-        int minLen = Math.Min(_values.Length, other._values.Length);
+        int minLen = other._values.Length;
+        if (_values.Length < minLen) {
+            Array.Resize(ref _values, minLen);
+        }
         for (int i = 0; i < minLen; i++) {
             _values[i] &= other._values[i];
         }
@@ -190,8 +199,10 @@ public sealed class EnumSet<T> where T : struct, Enum
     /// </summary>
     /// <param name="other"></param>
     public void Or(EnumSet<T> other) {
-        CheckLength(other);
-        int minLen = Math.Min(_values.Length, other._values.Length);
+        int minLen = other._values.Length;
+        if (_values.Length < minLen) {
+            Array.Resize(ref _values, minLen);
+        }
         for (int i = 0; i < minLen; i++) {
             _values[i] |= other._values[i];
         }
@@ -202,8 +213,10 @@ public sealed class EnumSet<T> where T : struct, Enum
     /// </summary>
     /// <param name="other"></param>
     public void Xor(EnumSet<T> other) {
-        CheckLength(other);
-        int minLen = Math.Min(_values.Length, other._values.Length);
+        int minLen = other._values.Length;
+        if (_values.Length < minLen) {
+            Array.Resize(ref _values, minLen);
+        }
         for (int i = 0; i < minLen; i++) {
             _values[i] ^= other._values[i];
         }
@@ -214,8 +227,10 @@ public sealed class EnumSet<T> where T : struct, Enum
     /// </summary>
     /// <param name="other"></param>
     public void AndNot(EnumSet<T> other) {
-        CheckLength(other);
-        int minLen = Math.Min(_values.Length, other._values.Length);
+        int minLen = other._values.Length;
+        if (_values.Length < minLen) {
+            Array.Resize(ref _values, minLen);
+        }
         for (int i = 0; i < minLen; i++) {
             _values[i] &= ~other._values[i];
         }
@@ -245,11 +260,25 @@ public sealed class EnumSet<T> where T : struct, Enum
         }
     }
 
-    private void CheckLength(EnumSet<T> other) {
-        int minLen = other._values.Length;
-        if (_values.Length < minLen) {
-            Array.Resize(ref _values, minLen);
-        }
+    /// <summary>
+    /// 拷贝数据
+    /// </summary>
+    /// <returns></returns>
+    public EnumSet<T> Copy() {
+        return new EnumSet<T>(this);
+    }
+
+    /// <summary>
+    /// 枚举集合的第一个word
+    /// </summary>
+    public long FirstWord => _values.Length > 0 ? _values[0] : 0;
+
+    /// <summary>
+    /// 转换为<see cref="EnumSet64{T}"/>类型
+    /// </summary>
+    /// <returns></returns>
+    public EnumSet64<T> ToEnumSet64() {
+        return new EnumSet64<T> { Bits = _values.Length > 0 ? _values[0] : 0 };
     }
 
     #region 序列化
@@ -287,20 +316,11 @@ public sealed class EnumSet<T> where T : struct, Enum
         return enumSet;
     }
 
-    public static EnumSet<T> NewInstance(int[] bitArray) {
-        int wordCount = bitArray.Length;
-        EnumSet<T> enumSet = new EnumSet<T>(wordCount * 32);
-        for (int idx = 0; idx < wordCount; idx += 2) {
-            long low = bitArray[idx];
-            long high = idx + 1 < wordCount ? bitArray[idx + 1] : 0;
-            enumSet._values[idx / 2] = (high << 32) | low;
-        }
-        return enumSet;
-    }
-
     internal void WriteObject(IDsonObjectWriter writer) {
         const SerializeFeatures fixedHex = SerializeFeatures.NumberFixed | SerializeFeatures.NumberHex;
-        foreach (long element in _values) {
+        int usingWordCount = UsingWordCount;
+        for (int index = 0; index < usingWordCount; index++) {
+            long element = _values[index];
             int low = (int)element;
             int high = (int)(element >> 32);
             writer.WriteInt(low, fixedHex);
@@ -308,9 +328,21 @@ public sealed class EnumSet<T> where T : struct, Enum
         }
     }
 
+    public static EnumSet<T> NewInstance(int[] wordArray) {
+        int wordCount = wordArray.Length;
+        EnumSet<T> enumSet = new EnumSet<T>(wordCount * 32);
+        for (int idx = 0; idx < wordCount; idx += 2) {
+            long low = wordArray[idx];
+            long high = idx + 1 < wordCount ? wordArray[idx + 1] : 0;
+            enumSet._values[idx / 2] = (high << 32) | low;
+        }
+        return enumSet;
+    }
+
     public int[] ToIntArray() {
-        int[] result = new int[_values.Length * 2];
-        for (int index = 0; index < _values.Length; index++) {
+        int usingWordCount = UsingWordCount;
+        int[] result = new int[usingWordCount * 2];
+        for (int index = 0; index < usingWordCount; index++) {
             long element = _values[index];
             int low = (int)element;
             int high = (int)(element >> 32);
@@ -320,11 +352,20 @@ public sealed class EnumSet<T> where T : struct, Enum
         return result;
     }
 
+    private int UsingWordCount {
+        get {
+            for (int index = _values.Length - 1; index >= 0; index--) {
+                if (_values[index] != 0) return index + 1;
+            }
+            return 0;
+        }
+    }
+
     #endregion
 
     #region internal
 
-    private const int MAX_COUNT = 1024;
+    private const int MAX_LENGTH = 1024;
     private const int ADDRESS_BITS_PER_WORD = 6;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -335,6 +376,13 @@ public sealed class EnumSet<T> where T : struct, Enum
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int WordCount(int bitCount) {
         return (bitCount >> ADDRESS_BITS_PER_WORD) + 1;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void CheckIndex(int index) {
+        if (index < 0 || index >= MAX_LENGTH) {
+            throw new IndexOutOfRangeException($"length: {MAX_LENGTH}, index {index}");
+        }
     }
 
     #endregion

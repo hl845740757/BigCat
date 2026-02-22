@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -72,7 +73,7 @@ public static class SstMgr
         string value;
         Stream stream = item.Stream;
         lock (stream) {
-            byte[] buffer = IArrayPool<byte>.Shared.Acquire(BUFFER_LENGTH);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(BUFFER_LENGTH);
             try {
                 stream.Seek(item.offset, SeekOrigin.Begin);
                 _ = stream.Read(buffer, 0, 4 + 1 + 2);
@@ -81,7 +82,7 @@ public static class SstMgr
                 value = Encoding.UTF8.GetString(buffer, 0, len);
             }
             finally {
-                IArrayPool<byte>.Shared.Release(buffer);
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
         item = item.WithValue(value);
@@ -207,7 +208,7 @@ public static class SstMgr
     }
 
     private static void ReadSstMetaInfo(Dictionary<int, Item> sstStringMap, Stream fileStream) {
-        byte[] buffer = IArrayPool<byte>.Shared.Acquire(BUFFER_LENGTH);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(BUFFER_LENGTH);
         while (fileStream.Position < fileStream.Length) {
             int offset = (int)fileStream.Position;
             // [id, preload, len, data]
@@ -229,7 +230,7 @@ public static class SstMgr
             }
             sstStringMap.Add(ssti, new Item(ssti, offset, streamOrValue));
         }
-        IArrayPool<byte>.Shared.Release(buffer);
+        ArrayPool<byte>.Shared.Return(buffer);
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 ﻿#region LICENSE
 
-// Copyright 2025 wjybxx(845740757@qq.com)
+// Copyright 2026 wjybxx(845740757@qq.com)
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,37 +19,69 @@
 using System;
 using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
+using Wjybxx.Dson;
+using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Util
 {
 /// <summary>
-/// 固定64位的BitSet
+/// 轻量级枚举集
 /// </summary>
-[DsonSerializable]
-public sealed class BitSet64
+/// <typeparam name="T"></typeparam>
+public class EnumSet64<T> where T : struct, Enum
 {
-    /// <summary>
-    /// Bit集长度
-    /// </summary>
     private const int LENGTH = 64;
 
     [DsonIgnore(false)]
     [DsonProperty(Getter = "Bits", Setter = "Bits")]
     private long _bits;
 
-    public BitSet64() {
-
+    public EnumSet64() {
     }
 
-    public BitSet64(BitSet64 src) {
+    public EnumSet64(EnumSet64<T> src) {
         this._bits = src._bits;
     }
 
-    public bool this[int index] {
-        get => Get(index);
-        set => Set(index, value);
+    public bool this[T key] {
+        get => Get(key.GetHashCode());
+        set => Set(key.GetHashCode(), value);
     }
+    public bool this[int key] {
+        get => Get(key);
+        set => Set(key, value);
+    }
+
+    #region enum-api
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Get(T key) => Get(key.GetHashCode());
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Set(T key) => Set(key.GetHashCode());
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Unset(T key) => Unset(key.GetHashCode());
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Set(T key, bool val) {
+        if (val) {
+            Set(key.GetHashCode());
+        } else {
+            Unset(key.GetHashCode());
+        }
+    }
+
+    public void Set(params T[] array) {
+        foreach (T e in array) {
+            Set(e.GetHashCode());
+        }
+    }
+
+    #endregion
+
+    #region int-api
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void CheckIndex(int index) {
@@ -82,6 +114,8 @@ public sealed class BitSet64
         _bits &= ~(1L << index);
     }
 
+    #endregion
+
     /// <summary>
     /// 所有的bit信息
     /// </summary>
@@ -113,7 +147,7 @@ public sealed class BitSet64
     /// 与运算
     /// </summary>
     /// <param name="other"></param>
-    public void And(BitSet64 other) {
+    public void And(EnumSet64<T> other) {
         this._bits &= other._bits;
     }
 
@@ -121,7 +155,7 @@ public sealed class BitSet64
     /// 或运算
     /// </summary>
     /// <param name="other"></param>
-    public void Or(BitSet64 other) {
+    public void Or(EnumSet64<T> other) {
         this._bits |= other._bits;
     }
 
@@ -129,7 +163,7 @@ public sealed class BitSet64
     /// 异或
     /// </summary>
     /// <param name="other"></param>
-    public void Xor(BitSet64 other) {
+    public void Xor(EnumSet64<T> other) {
         this._bits ^= other._bits;
     }
 
@@ -137,7 +171,7 @@ public sealed class BitSet64
     /// 与非（即清除）
     /// </summary>
     /// <param name="other"></param>
-    public void AndNot(BitSet64 other) {
+    public void AndNot(EnumSet64<T> other) {
         this._bits &= ~other._bits;
     }
 
@@ -146,7 +180,7 @@ public sealed class BitSet64
     /// </summary>
     /// <param name="other"></param>
     /// <returns></returns>
-    public bool Intersect(BitSet64 other) {
+    public bool Intersect(EnumSet64<T> other) {
         return (this._bits & other._bits) != 0;
     }
 
@@ -161,12 +195,50 @@ public sealed class BitSet64
     /// 拷贝数据
     /// </summary>
     /// <returns></returns>
-    public BitSet64 Copy() {
-        return new BitSet64(this);
+    public EnumSet64<T> Copy() {
+        return new EnumSet64<T>(this);
     }
 
     public override string ToString() {
         return _bits.ToString("X");
     }
+
+    #region 序列化
+
+    internal static EnumSet64<T> NewInstance(IDsonObjectReader reader) {
+        DsonType firstDsonType = reader.ReadDsonType();
+        if (firstDsonType == DsonType.EndOfObject) {
+            return new EnumSet64<T>();
+        }
+        // 单值字符串数组 [A, B, C]
+        if (firstDsonType == DsonType.String) {
+            DsonCodecImpl<T> enumCodec = reader.GetInlinableCodec<T>();
+            if (enumCodec == null) throw new AssertionError();
+            //
+            EnumSet64<T> result = new EnumSet64<T>();
+            result.Set(enumCodec.DecodeKey(reader.ReadString()));
+            while ((reader.ReadDsonType()) != DsonType.EndOfObject) {
+                result.Set(enumCodec.DecodeKey(reader.ReadString()));
+            }
+            return result;
+        }
+        // 双int值数组 [A, B]
+        long lowBits = reader.ReadInt();
+        long highBits = reader.ReadInt();
+        return new EnumSet64<T>()
+        {
+            Bits = highBits << 32 | lowBits
+        };
+    }
+
+    internal void WriteObject(IDsonObjectWriter writer) {
+        const SerializeFeatures fixedHex = SerializeFeatures.NumberFixed | SerializeFeatures.NumberHex;
+        int low = (int)_bits;
+        int high = (int)(_bits >> 32);
+        writer.WriteInt(low, fixedHex);
+        writer.WriteInt(high, fixedHex);
+    }
+
+    #endregion
 }
 }

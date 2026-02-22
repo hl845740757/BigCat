@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -88,6 +89,26 @@ public static class UnityEditorUtil
 
     public static readonly ImmutableList<string> imageFileExtensions = new string[] { "png", "jpg", "tif" }.ToImmutableList2();
     public static readonly ImmutableList<string> audioFileExtensions = new string[] { "ogg", "wav", "mp3" }.ToImmutableList2();
+    
+    public static readonly Encoding UTF8 = new UTF8Encoding(false);
+    private static string _lastOpenFolder = "Assets";
+    /// <summary>
+    /// 上次打开的文件夹路径
+    /// </summary>
+    public static string lastOpenFolder {
+        get => _lastOpenFolder;
+        set => _lastOpenFolder = value;
+    }
+    /// <summary>
+    /// Sprite的默认搜索文件夹
+    /// </summary>
+    /// <returns></returns>
+    public static readonly string[] spriteSearchFolders = new[]
+    {
+        "Assets/GameRes/Sprites",
+        "Assets/DNF/Sprites",
+        // "Assets/DNF/Animations",
+    };
 
     /// <summary>
     /// 是否是图片文件(测试文件路径后缀)
@@ -308,27 +329,6 @@ public static class UnityEditorUtil
 
     #region object-path
 
-    private static string _lastOpenFolder = "Assets";
-
-    /// <summary>
-    /// 上次打开的文件夹路径
-    /// </summary>
-    public static string lastOpenFolder {
-        get => _lastOpenFolder;
-        set => _lastOpenFolder = value;
-    }
-
-    /// <summary>
-    /// Sprite的默认搜索文件夹
-    /// </summary>
-    /// <returns></returns>
-    public static readonly string[] spriteSearchFolders = new[]
-    {
-        "Assets/GameRes/Sprites",
-        "Assets/DNF/Sprites",
-        "Assets/DNF/Animations",
-    };
-
     /// <summary>
     /// 加载图片
     /// </summary>
@@ -352,7 +352,7 @@ public static class UnityEditorUtil
 
     private static class SpriteGroupLoader
     {
-        private static readonly Dictionary<string, SpriteGroup> _nameToSpriteGroup = new();
+        private static readonly Dictionary<string, SpriteGroup> _nameToSpriteGroup = new(StringComparer.OrdinalIgnoreCase);
         private static double _lastSearchTime;
 
         public static SpriteGroup LoadSpriteGroup(string groupPath) {
@@ -689,6 +689,7 @@ public static class UnityEditorUtil
         return builder.Build();
     }
 
+    // TODO 可以通过注解导入
     private static bool IsWjybxxLogicNamespace(string ns) {
         if (string.IsNullOrEmpty(ns)) {
             return false;

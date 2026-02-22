@@ -296,6 +296,7 @@ public static class DataEditorUtil
             DisplayType.Euler32 => CreateEuler32Field(variable, editor),
             DisplayType.MinMaxAABB => CreateAABBField(variable, editor),
             DisplayType.EnumSet => CreateEnumSetField(variable, editor),
+            DisplayType.EnumSet64 => CreateEnumSet64Field(variable, editor),
             _ => throw new ArgumentException("invalid displayType: " + displayType)
         };
     }
@@ -500,6 +501,12 @@ public static class DataEditorUtil
 
     public static VarEnumSetField CreateEnumSetField(Variable variable, DataEditor editor) {
         VarEnumSetField field = new VarEnumSetField();
+        field.Bind(editor, variable);
+        return field;
+    }
+
+    public static VarEnumSet64Field CreateEnumSet64Field(Variable variable, DataEditor editor) {
+        VarEnumSet64Field field =  new VarEnumSet64Field();
         field.Bind(editor, variable);
         return field;
     }

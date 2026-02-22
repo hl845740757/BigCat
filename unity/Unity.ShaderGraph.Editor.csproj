@@ -113,8 +113,8 @@
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\RedirectNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\DefaultShaderIncludes.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Artistic\Normal\NormalReconstructZNode.cs" />
-    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Interfaces\IMayRequireTransform.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Importers\ShaderSubGraphImporterEditor.cs" />
+    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Interfaces\IMayRequireTransform.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Math\Advanced\ModuloNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Drawing\Views\Slots\UVSlotControlView.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Math\Range\OneMinusNode.cs" />
@@ -341,8 +341,8 @@
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Math\Advanced\ReciprocalSquareRootNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Input\Geometry\ViewDirectionNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Implementation\NodeUtils.cs" />
-    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Drawing\Controls\VectorControl.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Graphs\MaterialSlot.cs" />
+    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Drawing\Controls\VectorControl.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Input\Basic\ConstantNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Legacy\GraphData0.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\UV\RotateNode.cs" />

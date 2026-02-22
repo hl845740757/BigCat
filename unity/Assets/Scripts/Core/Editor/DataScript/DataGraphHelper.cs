@@ -59,6 +59,7 @@ public class DataGraphHelper
         codecDic[DSKeywords.ENUM] = _enumCodec;
         codecDic["MinMaxAABB"] = new VarAABBCodec();
         codecDic["EnumSet"] = new VarEnumSetCodec();
+        codecDic["EnumSet64"] = new VarEnumSet64Codec();
     }
 
     private string GetTypeSymbol(DSNamedType type) {
@@ -437,9 +438,11 @@ public class DataGraphHelper
         }
         // Double4
         if (typeCfg.dsonType == DsonType.Double4) {
-            // 注意：这里使用类型上的特征值
-            Double4Style style = typeCfg.encodeFeatures.ToDouble4Style();
-            writer.WriteDouble4(variable.double4Value, style);
+            SerializeFeatures doubleFeatures = features & SerializeFeatures.MaskDouble4Styles;
+            if (doubleFeatures == 0) {
+                doubleFeatures = typeCfg.encodeFeatures;
+            }
+            writer.WriteDouble4(variable.double4Value, doubleFeatures.ToDouble4Style());
             return;
         }
         // Nullable - 导出时拆箱
