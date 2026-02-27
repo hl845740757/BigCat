@@ -373,6 +373,7 @@ public partial class AnimationClipEditor : EditorWindow
         objectField.label = UnityEditorUtil.GetLastDirectoryName(AssetDatabase.GetAssetPath(clip));
         clipElement.Q<Button>("delete").RegisterCallback<ClickEvent>(OnClickClipElementDelete);
         clipElement.Q<Button>("move-top").RegisterCallback<ClickEvent>(OnClickClipElementMoveTop);
+        clipElement.Q<IntegerField>("layer").RegisterValueChangedCallback(OnClipElementLayerChanged);
         clipElement.userData = context;
         context.clipElement = clipElement;
         //
@@ -445,6 +446,23 @@ public partial class AnimationClipEditor : EditorWindow
             OnMasterClipChanged();
         }
         RefreshPlayTimeSliderRange();
+    }
+
+    private void OnClipElementLayerChanged(ChangeEvent<int> evt) {
+        VisualElement layerField = (VisualElement)evt.currentTarget;
+        ClipContext context = layerField.FindUserContextInParent<ClipContext>();
+        context.container.SetDisplay(evt.newValue >= 0);
+        context.layer = Math.Max(0, evt.newValue);
+        //
+        List<ClipContext> sortList = new (_clipContextList);
+        sortList.Sort((lhs, rhs) => lhs.layer.CompareTo(rhs.layer));
+        //
+        VisualElement prev = sortList[0].container;
+        for (int idx = 1; idx < sortList.Count; idx++) {
+            VisualElement current = sortList[idx].container;
+            current.PlaceInFront(prev);
+            prev = current;
+        }
     }
 
     // 禁止用户更改引用，由于不支持Readonly，只能出此下策

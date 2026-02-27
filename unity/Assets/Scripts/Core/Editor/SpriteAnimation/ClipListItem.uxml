@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
     <ui:VisualElement style="flex-direction: row; justify-content: flex-end; align-items: flex-start; flex-grow: 0;">
         <uie:ObjectField style="width: 200px; flex-grow: 1;" />
+        <Wjybxx.BigCat.Editor.UIElements.MIntegerField label="层级" label-margin="-120" tooltip="-1表示隐藏，默认0；值越大，显示越上层" name="layer" style="width: 60px;" />
         <ui:Button text="删除" display-tooltip-when-elided="true" name="delete" style="height: auto; width: 40px;" />
         <ui:Button text="置顶" display-tooltip-when-elided="true" name="move-top" style="width: 40px;" />
     </ui:VisualElement>

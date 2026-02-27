@@ -44,6 +44,7 @@ public partial class AnimationClipEditor
         public int startFrame; // 播放帧区间
         public int endFrame;
         public float playDuration; // 播放区间总时长
+        public int layer; // 渲染层级
 
         public VisualElement clipElement; // List元素
         public VisualElement container; // 帧图和攻击盒的容器
