@@ -75,10 +75,10 @@ class SpriteMotionTask : Task<Blackboard> {
   AnimationRequest baseAnim = 5; // 基础动画     @Editor{initNull: true}
   List<AnimationRequest> subAnims = 6; // 子动画 @Editor{initNull: true}
   List<string> subEffects = 7; // 子特效         @Editor{initNull: true}
-  
-  //@PortField{side: bottom, distinct: true}
-  List<TimeTrigger> triggers = 8; // 触发器
-  bool autoComplete = 9; // 动画播放完成是否自动完成，如果为false，则依赖事件完成
+
+  List<TimeTrigger> triggers = 8; // 触发器 @PortField{side: bottom, distinct: true}
+  List<Object> actions = 9; // 启动钩子     @PortField{side: right}
+  bool autoComplete = 10; // 动画播放完成是否自动完成，如果为false，则依赖事件完成
 }
 inst SpriteMotionTask{
   autoComplete: true

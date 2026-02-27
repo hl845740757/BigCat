@@ -506,3 +506,5 @@ unity/Assets/DNF/Music
 unity/Assets/DNF/Sounds
 unity/Assets/DNF/Config/**/*Animation*/
 unity/Assets/DNF/Config/Monster/
+unity/Assets/DNF/Config/Npc/
+unity/Assets/DNF/Config/Map/

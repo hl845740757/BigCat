@@ -31,13 +31,17 @@ public class VarEnumCodec : IVarCodec
 
     public void WriteVariable(IDsonWriter<string> writer, Variable variable, DataGraphHelper helper) {
         DSNamedType varType = variable.type;
+        if (variable.intValue == 0) {
+            writer.WriteInt32(variable.intValue, NumberStyle.Simple);
+            return;
+        }
         if (!helper.IsWriteEnumAsString(variable)) {
             NumberStyle style = DSUtil.IsFlagEnum(varType) ? NumberStyle.Hex : NumberStyle.Simple;
             writer.WriteInt32(variable.intValue, style);
             return;
         }
         int value = variable.intValue;
-        if (!DSUtil.IsFlagEnum(varType) || MathCommon.BitCount(value) <= 1) {
+        if (!DSUtil.IsFlagEnum(varType)) {
             DSEnumValue enumValue = varType.GetEnumValue(variable.intValue);
             if (enumValue == null) {
                 throw new InvalidDataException($"enumValue {variable.intValue} is absent");

@@ -19,7 +19,7 @@
   flags: 0,
   packageName: Default,
   packageVersion: "0.0.0",
-  groups: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>"}
+  groups: [@{clsName: "List[ObjectPath]", typeSymbol: "List<common.ObjectPath>", count: 6}
     @ptr 4,
     @ptr 1,
     @ptr 13,
@@ -71,9 +71,9 @@
   groupBy: 0,
   groupDepth: 5,
   bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x10,
-  indexDepth: 0,
+  assetIndexes: 0,
+  uniqueIndexes: "TypeAndFileName",
+  ancestorPath: "",
   noIndexTypes: [
     Sprite,
     Texture2D
@@ -89,7 +89,7 @@
   textFilePath: "Assets/Resources/manifest.dson"
 }
 {@{clsName: Collector, localId: 7, title: MOB配置收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 68}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 549, y: 84}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -100,9 +100,9 @@
   groupBy: 0,
   groupDepth: 9,
   bundleTags: [],
-  assetIndexes: @i 0x10,
-  uniqueIndexes: @i 0x0,
-  indexDepth: 0,
+  assetIndexes: "TypeAndFileName",
+  uniqueIndexes: "RelativeToAncestor",
+  ancestorPath: "Assets/DNF/Config",
   noIndexTypes: [],
   classifier: @ptr 0
 }
@@ -118,9 +118,9 @@
   groupBy: 0,
   groupDepth: 1,
   bundleTags: [],
-  assetIndexes: @i 0x1,
-  uniqueIndexes: @i 0x4,
-  indexDepth: 2,
+  assetIndexes: "FileName",
+  uniqueIndexes: "FolderAndFileName",
+  ancestorPath: "",
   noIndexTypes: [],
   classifier: @ptr 0
 }
@@ -141,9 +141,9 @@
   groupBy: 0,
   groupDepth: 1,
   bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x0,
-  indexDepth: 0,
+  assetIndexes: 0,
+  uniqueIndexes: 0,
+  ancestorPath: "",
   noIndexTypes: [],
   classifier: @ptr 0
 }
@@ -200,9 +200,9 @@
   groupBy: 0,
   groupDepth: 1,
   bundleTags: [],
-  assetIndexes: @i 0x1,
-  uniqueIndexes: @i 0x4,
-  indexDepth: 2,
+  assetIndexes: "FileName",
+  uniqueIndexes: "FolderAndFileName",
+  ancestorPath: "",
   noIndexTypes: [],
   classifier: @ptr 0
 }
@@ -218,9 +218,9 @@
   groupBy: 0,
   groupDepth: 1,
   bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x0,
-  indexDepth: 0,
+  assetIndexes: 0,
+  uniqueIndexes: 0,
+  ancestorPath: "",
   noIndexTypes: [],
   classifier: @ptr 0
 }
@@ -236,13 +236,13 @@
   groupBy: 0,
   groupDepth: 1,
   bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x1,
-  indexDepth: 2,
+  assetIndexes: 0,
+  uniqueIndexes: "FileName",
+  ancestorPath: "",
   noIndexTypes: [],
   classifier: @ptr 0
 }
-{@{clsName: CollectorGroup, localId: 19, title: 模型&动画收集组,
+{@{clsName: CollectorGroup, localId: 19, title: Config收集器,
    typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 351, y: -8}}
   name: "",
   guard: @ptr 0,
@@ -270,7 +270,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 21, title: Char配置收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 550, y: -76}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 548, y: -52}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -281,14 +281,14 @@
   groupBy: 0,
   groupDepth: 9,
   bundleTags: [],
-  assetIndexes: @i 0x10,
-  uniqueIndexes: @i 0x0,
-  indexDepth: 0,
+  assetIndexes: "TypeAndFileName",
+  uniqueIndexes: "RelativeToAncestor",
+  ancestorPath: "Assets/DNF/Config/Character",
   noIndexTypes: [],
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 23, title: AudioGroup收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 549, y: 391}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 552, y: 376}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -299,16 +299,16 @@
   groupBy: 0,
   groupDepth: 9,
   bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x10,
-  indexDepth: 2,
+  assetIndexes: "TypeAndFileName",
+  uniqueIndexes: "RelativeToAncestor",
+  ancestorPath: "Assets/DNF/",
   noIndexTypes: [
     AudioClip
   ],
   classifier: @ptr 0
 }
 {@{clsName: CollectorGroup, localId: 25, title: Music收集组,
-   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 350, y: 569}}
+   typeSymbol: "assetor.CollectorGroup", features: @i 0x40, position: {x: 350, y: 546}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -320,8 +320,8 @@
   ],
   classifier: @ptr 0
 }
-{@{clsName: Collector, localId: 26,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 596}}
+{@{clsName: Collector, localId: 26, title: Music收集器,
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 546}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -330,11 +330,11 @@
   collectorType: 0,
   provided: false,
   groupBy: 0,
-  groupDepth: 1,
+  groupDepth: 9,
   bundleTags: [],
-  assetIndexes: @i 0x0,
-  uniqueIndexes: @i 0x2,
-  indexDepth: 2,
+  assetIndexes: 0,
+  uniqueIndexes: "RelativeToAncestor",
+  ancestorPath: "Assets/DNF/",
   noIndexTypes: [],
   classifier: @ptr 0
 }

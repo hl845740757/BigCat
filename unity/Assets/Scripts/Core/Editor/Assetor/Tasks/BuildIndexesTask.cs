@@ -93,8 +93,8 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                     }
                 }
                 // 多层级目录索引
-                if ((indexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
-                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0;
+                if ((indexes & EAssetIndexes.RelativeToAncestor) != 0) {
+                    bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.RelativeToAncestor) != 0;
                     string subAssetPath = GetSubAssetPath(assetInfo.assetPath, bundleInfo.indexDepth);
                     AddIndex(index2AssetDic, subAssetPath, assetInfo, unique);
                     //

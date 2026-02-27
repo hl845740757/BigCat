@@ -231,7 +231,17 @@ public class EnumSet64<T> where T : struct, Enum
         };
     }
 
-    internal void WriteObject(IDsonObjectWriter writer) {
+    internal void WriteObject(IDsonObjectWriter writer, SerializeFeatures features) {
+        if ((features & SerializeFeatures.EnumAsString) != 0) {
+            // 序列化为字符串数组，暂时暴力迭代 - 主要用于导出编辑器兼容数据
+            DsonCodecImpl<T> keyCodec = writer.GetInlinableCodec<T>()!;
+            for (int index = 0, end = 64; index < end; index++) {
+                if (Get(index)) {
+                    keyCodec.WriteObject(writer, keyCodec.ToObject(index), typeof(T), SerializeFeatures.EnumAsString);
+                }
+            }
+            return;
+        }
         const SerializeFeatures fixedHex = SerializeFeatures.NumberFixed | SerializeFeatures.NumberHex;
         int low = (int)_bits;
         int high = (int)(_bits >> 32);

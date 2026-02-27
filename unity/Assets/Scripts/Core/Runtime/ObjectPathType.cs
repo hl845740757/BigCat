@@ -46,16 +46,6 @@ public enum ObjectPathType
     /// </summary>
     AudioOfGroup = 3,
 
-    /// <summary>
-    /// Excel表的行，即配置对象引用（SheetName + id）
-    /// </summary>
-    ExcelRow = 8,
-    /// <summary>
-    /// Excel表单元格，通常是I18N字符串坐标
-    /// 注；如果包含{index}，则表示取List的低N个元素；框架统一使用'{index}'表示下标。
-    /// </summary>
-    ExcelValue = 9,
-
     // 自定义资产
     // SpriteGroup = 11,
     // SpriteAnimation,

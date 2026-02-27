@@ -62,17 +62,17 @@ public sealed class SpriteAnimationFrame
     [Min(0f)]
     public float duration = 0.1f;
     /// <summary>
-    /// 色调
+    /// 色调(叠加色)
     /// </summary>
     public Color32 tint = new Color32(255, 255, 255, 255);
     /// <summary>
-    /// 插值方式（坐标、旋转、缩放、Rgba）
-    /// 注；在当前帧和下一帧之间进行线性插值，实现程序动画。
+    /// 插值选项（坐标、旋转、缩放、Rgba）
+    /// 注；在当前帧和下一帧之间进行插值，实现程序动画。
     /// </summary>
     public int interp;
 
     /// <summary>
-    /// 受击类型（受击状态）
+    /// 受击类型
     /// </summary>
     public int hurtType;
     /// <summary>

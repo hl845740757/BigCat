@@ -290,10 +290,9 @@ public sealed class EnumSet<T> where T : struct, Enum
         }
         // 单值字符串数组 [A, B, C]
         if (firstDsonType == DsonType.String) {
-            DsonCodecImpl<T> enumCodec = reader.GetInlinableCodec<T>();
-            if (enumCodec == null) throw new AssertionError();
-            //
+            DsonCodecImpl<T> enumCodec = reader.GetInlinableCodec<T>()!;
             EnumSet<T> result = new EnumSet<T>();
+            //
             result.Set(enumCodec.DecodeKey(reader.ReadString()));
             while ((reader.ReadDsonType()) != DsonType.EndOfObject) {
                 result.Set(enumCodec.DecodeKey(reader.ReadString()));
@@ -316,9 +315,19 @@ public sealed class EnumSet<T> where T : struct, Enum
         return enumSet;
     }
 
-    internal void WriteObject(IDsonObjectWriter writer) {
-        const SerializeFeatures fixedHex = SerializeFeatures.NumberFixed | SerializeFeatures.NumberHex;
+    internal void WriteObject(IDsonObjectWriter writer, SerializeFeatures features) {
         int usingWordCount = UsingWordCount;
+        if ((features & SerializeFeatures.EnumAsString) != 0) {
+            // 序列化为字符串数组，暂时暴力迭代 - 主要用于导出编辑器兼容数据
+            DsonCodecImpl<T> keyCodec = writer.GetInlinableCodec<T>()!;
+            for (int index = 0, end = usingWordCount * 64; index < end; index++) {
+                if (Get(index)) {
+                    keyCodec.WriteObject(writer, keyCodec.ToObject(index), typeof(T), SerializeFeatures.EnumAsString);
+                }
+            }
+            return;
+        }
+        const SerializeFeatures fixedHex = SerializeFeatures.NumberFixed | SerializeFeatures.NumberHex;
         for (int index = 0; index < usingWordCount; index++) {
             long element = _values[index];
             int low = (int)element;

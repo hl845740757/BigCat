@@ -149,7 +149,7 @@ public sealed class AssetQuery
                     }
                 }
                 // 自定义深度索引：需要唯一性（打包时）
-                if ((assetIndexes & EAssetIndexes.FolderAndFileNamePlus) != 0) {
+                if ((assetIndexes & EAssetIndexes.RelativeToAncestor) != 0) {
                     string subAssetPath = GetSubAssetPath(assetPath, bundleInfo.assetIndexDepth);
                     assetIndex2AssetDic[subAssetPath] = fileInfo;
                     //

@@ -228,8 +228,8 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         return type switch
         {
             ObjectPathType.SpriteOfGroup => new SpriteOfGroupHandler(this),
-            ObjectPathType.ExcelRow => new ExcelRowHandler(this),
-            ObjectPathType.ExcelValue => new ExcelValueHandler(this),
+            // ObjectPathType.ExcelRow => new ExcelRowHandler(this),
+            // ObjectPathType.ExcelValue => new ExcelValueHandler(this),
             _ => new DefaultPathHandler(this),
         };
     }

@@ -372,11 +372,6 @@ public class CodeGeneratorHelper
         // 序列化注解
         if (IsNonSerializedField(field, fieldOptions)) {
             fieldBuilder.AddAttribute(ATTRIBUTE_NON_SERIALIZED);
-        } else {
-            if (fieldOptions.ContainsKey(DSAnnotations.KEY_ENCODE_FEATURES)
-                || fieldOptions.ContainsKey(DSAnnotations.KEY_DECODE_FEATURES)) {
-                fieldBuilder.AddAttribute(BuildCodecAttribute(field));
-            }
         }
         CodeBlock initializer = GetFieldInitializer(field, fieldOptions, fieldTypeName);
         if (initializer != null) {
@@ -599,10 +594,11 @@ public class CodeGeneratorHelper
             TypeName fieldTypeName = GetTypeName(field.Type);
             string writeMethodName = GetWriteMethodName(field.Type, fieldTypeName);
 
-            if (writeMethodName == METHOD_NAME_WRITE_OBJECT) {
-                // 写Object时传入类型信息和Style -- 会自动匹配泛型方法，暂不处理Style
-                methodBuilder.codeBuilder.AddStatement("writer.$L($S, this.$L)",
-                    writeMethodName, field.Name, fieldName);
+            if (writeMethodName == METHOD_NAME_WRITE_OBJECT || writeMethodName == METHOD_NAME_WRITE_ENUM) {
+                // 写Object时传入类型信息和Style -- 会自动匹配泛型方法
+                methodBuilder.codeBuilder.AddStatement("writer.$L($S, this.$L, ($T)$L)",
+                    writeMethodName, field.Name, fieldName,
+                    TYPE_NAME_SERIALIZE_FEATURES, (int)GetEncodeFeatures(fieldOptions));
             } else {
                 methodBuilder.codeBuilder.AddStatement("writer.$L($S, this.$L)",
                     writeMethodName, field.Name, fieldName);
@@ -652,7 +648,8 @@ public class CodeGeneratorHelper
             }
             // Enum/Object需要传入类型参数
             if (readMethodName == METHOD_NAME_READ_OBJECT || readMethodName == METHOD_NAME_READ_ENUM) {
-                codeBuilder.AddStatement("this.$L = reader.$L<$T>(default)", fieldName, readMethodName, fieldTypeName);
+                codeBuilder.AddStatement("this.$L = reader.$L<$T>(($T)$L)", fieldName, readMethodName, fieldTypeName,
+                    TYPE_NAME_DESERIALIZE_FEATURES, (int)GetDecodeFeatures(fieldOptions));
             } else {
                 codeBuilder.AddStatement("this.$L = reader.$L()", fieldName, readMethodName);
             }
@@ -695,7 +692,8 @@ public class CodeGeneratorHelper
             }
             // Enum/Object需要传入类型参数
             if (readMethodName == METHOD_NAME_READ_OBJECT || readMethodName == METHOD_NAME_READ_ENUM) {
-                codeBuilder.AddStatement("this.$L = reader.$L<$T>(default); return true", fieldName, readMethodName, fieldTypeName);
+                codeBuilder.AddStatement("this.$L = reader.$L<$T>(($T)$L); return true", fieldName, readMethodName, fieldTypeName,
+                    TYPE_NAME_DESERIALIZE_FEATURES, (int)GetDecodeFeatures(fieldOptions));
             } else {
                 codeBuilder.AddStatement("this.$L = reader.$L(); return true", fieldName, readMethodName);
             }
@@ -1236,6 +1234,8 @@ public class CodeGeneratorHelper
     private const string METHOD_NAME_READ_OBJECT = "ReadObject";
     private const string METHOD_NAME_READ_FIELDS = "ReadFields";
     private const string METHOD_NAME_READ_FIELD = "ReadField";
+
+    private const string METHOD_NAME_WRITE_ENUM = "WriteEnum";
     private const string METHOD_NAME_READ_ENUM = "ReadEnum";
 
     /** 获取read字段的方法名 */

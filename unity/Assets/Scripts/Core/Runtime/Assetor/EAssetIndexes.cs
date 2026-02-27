@@ -40,12 +40,12 @@ public enum EAssetIndexes
     /// </summary>
     FolderAndFileName = 0x02,
     /// <summary>
-    /// 多层级目录+文件夹索引（支持指定索引深度，通常三级目录就应该具备唯一性）
+    /// 相对指定祖先节点的路径
     /// 
     /// 1.使用该索引方式时，应当避免再启用前一种索引
     /// 2.该索引打包时必须唯一(长路径索引必须唯一)，运行时仍然允许覆盖
     /// </summary>
-    FolderAndFileNamePlus = 0x04,
+    RelativeToAncestor = 0x04,
     /// <summary>
     /// 相对收集器目录的Path
     /// 

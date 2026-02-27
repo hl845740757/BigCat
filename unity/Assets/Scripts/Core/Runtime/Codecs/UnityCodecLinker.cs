@@ -63,8 +63,7 @@ public static class UnityCodecLinker
     public class Vector2Codec : IDsonCodec<Vector2>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector2 inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector | SerializeFeatures.Double4Len2;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, 0), features);
+            writer.WriteDouble4(new Double4(inst.x, inst.y, 0), SerializeFeatures.Double4AsVector2);
         }
 
         public Vector2 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -76,8 +75,7 @@ public static class UnityCodecLinker
     public class Vector3Codec : IDsonCodec<Vector3>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector3 inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector | SerializeFeatures.Double4Len3;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z), features);
+            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z), SerializeFeatures.Double4AsVector3);
         }
 
         public Vector3 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -89,8 +87,7 @@ public static class UnityCodecLinker
     public class Vector4Codec : IDsonCodec<Vector4>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector4 inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z, inst.w), features);
+            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z, inst.w), SerializeFeatures.Double4AsVector);
         }
 
         public Vector4 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -102,8 +99,7 @@ public static class UnityCodecLinker
     public class QuaternionCodec : IDsonCodec<Quaternion>
     {
         public void WriteObject(IDsonObjectWriter writer, Quaternion inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z, inst.w), features);
+            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z, inst.w), SerializeFeatures.Double4AsVector);
         }
 
         public Quaternion ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -115,10 +111,8 @@ public static class UnityCodecLinker
     public class Vector2IntCodec : IDsonCodec<Vector2Int>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector2Int inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector
-                                               | SerializeFeatures.Double4AsInt
-                                               | SerializeFeatures.Double4Len2;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, 0), features);
+            const SerializeFeatures style = SerializeFeatures.Double4AsVector2 | SerializeFeatures.Double4AsInt;
+            writer.WriteDouble4(new Double4(inst.x, inst.y, 0), style);
         }
 
         public Vector2Int ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -130,10 +124,8 @@ public static class UnityCodecLinker
     public class Vector3IntCodec : IDsonCodec<Vector3Int>
     {
         public void WriteObject(IDsonObjectWriter writer, Vector3Int inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector
-                                               | SerializeFeatures.Double4AsInt
-                                               | SerializeFeatures.Double4Len3;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z), features);
+            const SerializeFeatures style = SerializeFeatures.Double4AsVector3 | SerializeFeatures.Double4AsInt;
+            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z), style);
         }
 
         public Vector3Int ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -145,8 +137,7 @@ public static class UnityCodecLinker
     public class ColorCodec : IDsonCodec<Color>
     {
         public void WriteObject(IDsonObjectWriter writer, Color inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsRgba;
-            writer.WriteDouble4(new Double4(inst.r, inst.g, inst.b, inst.a), features);
+            writer.WriteDouble4(new Double4(inst.r, inst.g, inst.b, inst.a), SerializeFeatures.Double4AsRgba);
         }
 
         public Color ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
@@ -158,8 +149,8 @@ public static class UnityCodecLinker
     public class Color32Codec : IDsonCodec<Color32>
     {
         public void WriteObject(IDsonObjectWriter writer, Color32 inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsRgba | SerializeFeatures.Double4AsInt;
-            writer.WriteDouble4(new Double4(inst.r, inst.g, inst.b, inst.a), features);
+            const SerializeFeatures style = SerializeFeatures.Double4AsRgba | SerializeFeatures.Double4AsInt;
+            writer.WriteDouble4(new Double4(inst.r, inst.g, inst.b, inst.a), style);
         }
 
         public Color32 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {

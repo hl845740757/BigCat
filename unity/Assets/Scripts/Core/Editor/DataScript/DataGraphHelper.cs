@@ -325,12 +325,17 @@ public class DataGraphHelper
     #region node
 
     public DataNode DecodeNode(DsonValue dsonValue) {
-        // 要支持编辑器解析的数据，必须包含typeSymbol属性
+        // 要支持编辑器解析的数据，必须包含typeSymbol属性 - 没有typeSymbol时回滚为clsName
         DsonHeader<string> header = GetHeader(dsonValue);
-        if (!header.TryGetValue(KEY_TYPE_SYMBOL, out DsonValue tempValue)) {
+        string typeSymbol;
+        if (header.TryGetValue(KEY_TYPE_SYMBOL, out DsonValue tempValue)) {
+            typeSymbol = tempValue.AsString();
+        } else if (header.TryGetValue(DsonHeader.Names_ClassName, out tempValue)) {
+            typeSymbol = tempValue.AsString().Replace('[', '<').Replace(']', '>');
+        } else {
             throw new InvalidDataException("typeSymbol is absent");
         }
-        DSNamedType namedType = ResolveTypeSymbol(tempValue.AsString());
+        DSNamedType namedType = ResolveTypeSymbol(typeSymbol);
         // 解析失败会抛出异常
         DataNode node = new DataNode(0);
         ReadHeader(header, node);
@@ -624,6 +629,10 @@ public class DataGraphHelper
             writer.WriteStartHeader();
             writer.WriteString(DsonHeader.Names_ClassName, clsName);
             writer.WriteString(KEY_TYPE_SYMBOL, typeSymbol, StringStyle.Quote);
+            // 集合和Map写入Count
+            if (variable.Count > 4 && (variable.isCollectionType || variable.isMapType)) {
+                writer.WriteInt32(DsonHeader.Names_Count, variable.Count, NumberStyle.Simple);
+            }
             writer.WriteEndHeader();
         }
     }

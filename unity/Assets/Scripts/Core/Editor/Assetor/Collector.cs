@@ -88,9 +88,9 @@ public class Collector : LeafTask<Blackboard>
     /// </summary>
     public EAssetIndexes uniqueIndexes = EAssetIndexes.None;
     /// <summary>
-    /// 资产索引深度(三级目录就应该实现唯一)
+    /// 祖先节点路径，计算索引
     /// </summary>
-    public int indexDepth;
+    public string ancestorPath;
     /// <summary>
     /// 不需要建立索引的资产对象类型
     ///
@@ -182,7 +182,8 @@ public class Collector : LeafTask<Blackboard>
                 bundleInfo.bundleTags.AddRange(bundleTags);
                 bundleInfo.assetIndexes = assetIndexes;
                 bundleInfo.uniqueIndexes = uniqueIndexes;
-                bundleInfo.indexDepth = indexDepth;
+                bundleInfo.ancestorPath = ancestorPath;
+                bundleInfo.indexDepth = GetIndexDepth(ancestorPath, assetInfo.assetPath);
                 collectedBundles.Add(bundlePath, bundleInfo);
             }
             assetInfo.bundleInfo = bundleInfo; // 即使当前尚未分配name和id也安全
@@ -198,6 +199,21 @@ public class Collector : LeafTask<Blackboard>
             }
         }
         SetSuccess();
+    }
+
+    private static int GetIndexDepth(string ancestorPath, string assetPath) {
+        if (string.IsNullOrEmpty(ancestorPath)) return 0;
+        string relativePath = Path.GetRelativePath(ancestorPath, assetPath).Replace('\\', '/');
+        if (string.IsNullOrEmpty(relativePath)) {
+            throw new ArgumentException($"invalid ancestor: {ancestorPath}, assetPath: {assetPath}");
+        }
+        int depth = 0;
+        for (int idx = 0; idx < relativePath.Length; idx++) {
+            if (relativePath[idx] == '/') {
+                depth++;
+            }
+        }
+        return depth;
     }
 
     private string GetBundlePath(string assetPath) {

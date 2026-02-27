@@ -237,6 +237,10 @@ public partial class AnimationClipEditor : EditorWindow
         _frameInfoElement.Q<Vector2Field>("scale").RegisterValueChangedCallback(OnImagePropertyChanged);
         _frameInfoElement.Q<FloatField>("rotation").RegisterValueChangedCallback(OnImagePropertyChanged);
         _frameInfoElement.Q<ColorField>("tint").RegisterValueChangedCallback(OnImagePropertyChanged);
+        _frameInfoElement.Q<MaskField>("interp").choices = new List<string>
+        {
+            "Position", "Rotation", "Scale", "Color"
+        };
     }
 
     private void InitFramePreviewArea(VisualElement root) {
@@ -1126,7 +1130,7 @@ public partial class AnimationClipEditor : EditorWindow
         _frameInfoElement.Q<IntegerField>("hurt-type").BindProperty(serializedFrame.FindPropertyRelative("hurtType"));
 
         _frameInfoElement.Q<ColorField>("tint").BindProperty(serializedFrame.FindPropertyRelative("tint"));
-        _frameInfoElement.Q<IntegerField>("interp").BindProperty(serializedFrame.FindPropertyRelative("interp"));
+        _frameInfoElement.Q<MaskField>("interp").BindProperty(serializedFrame.FindPropertyRelative("interp"));
         // _frameInfoElement.Q<EnumField>("flip-type").BindProperty(serializedFrame.FindPropertyRelative("flipType"));
 
         SerializedProperty serializeHurtBoxes = context.serializedHurtBoxes;

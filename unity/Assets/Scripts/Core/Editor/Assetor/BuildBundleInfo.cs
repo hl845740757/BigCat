@@ -93,7 +93,11 @@ public sealed class BuildBundleInfo
     /// </summary>
     public EAssetIndexes uniqueIndexes;
     /// <summary>
-    /// 索引深度
+    /// 索引用祖先节点路径
+    /// </summary>
+    public string ancestorPath;
+    /// <summary>
+    /// 索引深度（相对祖先节点的路径深度，缓存值）
     /// </summary>
     public int indexDepth;
     /// <summary>

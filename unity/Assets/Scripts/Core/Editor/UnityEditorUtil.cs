@@ -31,8 +31,10 @@ using Wjybxx.BigCatTool;
 using Wjybxx.BTree;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
+using Wjybxx.Dson.Text;
 using Wjybxx.Dson.Types;
 using Blackboard = Wjybxx.BigCat.Util.Blackboard;
 
@@ -89,7 +91,7 @@ public static class UnityEditorUtil
 
     public static readonly ImmutableList<string> imageFileExtensions = new string[] { "png", "jpg", "tif" }.ToImmutableList2();
     public static readonly ImmutableList<string> audioFileExtensions = new string[] { "ogg", "wav", "mp3" }.ToImmutableList2();
-    
+
     public static readonly Encoding UTF8 = new UTF8Encoding(false);
     private static string _lastOpenFolder = "Assets";
     /// <summary>
@@ -665,7 +667,15 @@ public static class UnityEditorUtil
     public static IDsonConverter Converter => _converter ?? CreateConverter();
 
     private static IDsonConverter CreateConverter() {
-        DsonConverterBuilder builder = new DsonConverterBuilder();
+        ConverterOptions options = new ConverterOptions.Builder
+        {
+            TextWriterSettings = new DsonTextWriterSettings.Builder()
+            {
+                NumberStyle = NumberStyle.Simple,
+                MaxLengthOfUnquoteString = 32,
+            }.Build() as DsonTextWriterSettings
+        }.Build();
+        DsonConverterBuilder builder = new DsonConverterBuilder() { Options = options };
         TypeCache.TypeCollection codecTypes = TypeCache.GetTypesDerivedFrom<IDsonCodec>();
         for (int i = 0; i < codecTypes.Count; i++) {
             Type codecType = codecTypes[i];

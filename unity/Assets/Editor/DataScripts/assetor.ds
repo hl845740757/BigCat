@@ -19,14 +19,15 @@ enum EGroupBy {
   Directory = 0; 
   Collector = 1; 
 }
-// @Options{ isFlags: true }
+// @Options{isFlags: true, encodeFeatures: EnumAsString}
 enum EAssetIndexes {
-    FileName = 0x01; // 文件名索引
-    FolderAndFileName = 0x02; // 文件夹+文件名索引
-    FolderAndFileNamePlus = 0x04; // 文件夹+文件名索引，支持指定深度
-    RelativeToCollector = 0x08; // 相对收集器的路径
-    TypeAndFileName = 0x10; // 类型名+文件名（无后缀）
-    TypeAndFolderName = 0x20; // 类型名+文件夹+文件名（无后缀）
+  None = 0; // 无
+  FileName = 0x01; // 文件名索引
+  FolderAndFileName = 0x02; // 文件夹+文件名索引
+  RelativeToAncestor = 0x04; // 相对指定祖先的路径
+  RelativeToCollector = 0x08; // 相对收集器的路径
+  TypeAndFileName = 0x10; // 类型名+文件名（无后缀）
+  TypeAndFolderName = 0x20; // 类型名+文件夹+文件名（无后缀）
 }
 
 // 构建平台
@@ -61,8 +62,7 @@ class IIgnoreService {
 
 // 收集器 - ds文件中直接继承Task类，以屏蔽children/child属性
 class Collector : Task<Blackboard> {
-  //@Editor {displayType: AssetPath, isFolder: true}
-  string collectPath = 1; // 扫描开始目录
+  string collectPath = 1; // 扫描开始目录 @Editor{displayType: AssetPath, isFolder: true}
   bool recursive = 2; // 是否递归
   ECollectorType collectorType = 3;
   bool provided = 4; // 是否不参与最终打包
@@ -72,12 +72,12 @@ class Collector : Task<Blackboard> {
   HashSet<string> bundleTags = 7; // 自定义标签
   EAssetIndexes assetIndexes = 8; // 普通索引
   EAssetIndexes uniqueIndexes = 9; // 唯一索引
-  int32 indexDepth = 10; // 索引深度
+  string ancestorPath = 10; // 祖先节点路径  @Editor{displayType: AssetPath}
   // @Candidates[Sprite, Texture2D, AudioClip, VideoClip]
   HashSet<string> noIndexTypes = 11; // 不需要建立索引的资产对象类型
   
   // @PortField{side: right}
-  IAssetClassifier classifier = 12;
+  IAssetClassifier classifier = 12; // 文件分类器
 }
 inst Collector {
   recursive: true,

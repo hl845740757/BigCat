@@ -32,10 +32,10 @@ public class BuiltinCodecs
     /// <typeparam name="T"></typeparam>
     public class EnumSetCodec<T> : IDsonCodec<EnumSet<T>> where T : struct, Enum
     {
-        public void WriteObject(IDsonObjectWriter writer, EnumSet<T> inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.WriteAsArray | SerializeFeatures.ObjectFlow;
-            writer.WriteStartArray(typeof(EnumSet<T>), declaredType, features);
-            inst.WriteObject(writer);
+        public void WriteObject(IDsonObjectWriter writer, EnumSet<T> inst, Type declaredType, SerializeFeatures features) {
+            const SerializeFeatures style = SerializeFeatures.WriteAsArray | SerializeFeatures.ObjectFlow;
+            writer.WriteStartArray(typeof(EnumSet<T>), declaredType, style);
+            inst.WriteObject(writer, features);
             writer.WriteEndArray();
         }
 
@@ -49,10 +49,10 @@ public class BuiltinCodecs
 
     public class EnumSet64Codec<T> : IDsonCodec<EnumSet64<T>> where T : struct, Enum
     {
-        public void WriteObject(IDsonObjectWriter writer, EnumSet64<T> inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.WriteAsArray | SerializeFeatures.ObjectFlow;
-            writer.WriteStartArray(typeof(EnumSet64<T>), declaredType, features);
-            inst.WriteObject(writer);
+        public void WriteObject(IDsonObjectWriter writer, EnumSet64<T> inst, Type declaredType, SerializeFeatures features) {
+            const SerializeFeatures style = SerializeFeatures.WriteAsArray | SerializeFeatures.ObjectFlow;
+            writer.WriteStartArray(typeof(EnumSet64<T>), declaredType, style);
+            inst.WriteObject(writer, features);
             writer.WriteEndArray();
         }
 

@@ -70,7 +70,7 @@ public sealed class DataGraph
     /// 资产文件路径
     /// </summary>
     public string assetPath { get; set; }
-    public DsonTextWriterSettings writerSettings { get; set; } = DsonTextWriterSettings.Default;
+    public DsonTextWriterSettings writerSettings { get; set; }
     public DsonTextReaderSettings readerSettings { get; set; } = DsonTextReaderSettings.Default;
 
     /// <summary>
@@ -103,6 +103,11 @@ public sealed class DataGraph
 
     public DataGraph(DSRepository repository) {
         this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        this.writerSettings = (DsonTextWriterSettings)new DsonTextWriterSettings.Builder
+        {
+            NumberStyle = NumberStyle.Simple,
+            MaxLengthOfUnquoteString = 32,
+        }.Build();
         _tickTime = Time.realtimeSinceStartup;
         _helper = new DataGraphHelper(this);
     }
