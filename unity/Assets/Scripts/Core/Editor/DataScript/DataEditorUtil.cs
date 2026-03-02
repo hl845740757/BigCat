@@ -291,6 +291,8 @@ public static class DataEditorUtil
             DisplayType.Vector4 => CreateVector4Field(variable, editor),
             DisplayType.Vector2Int => CreateVector2IntField(variable, editor),
             DisplayType.Vector3Int => CreateVector3IntField(variable, editor),
+            DisplayType.Rect => CreateRectField(variable, editor),
+            DisplayType.RectInt => CreateRectIntField(variable, editor),
             DisplayType.Color => CreateColorField(variable, editor),
             DisplayType.Color32 => CreateColor32Field(variable, editor),
             DisplayType.Euler32 => CreateEuler32Field(variable, editor),
@@ -429,6 +431,18 @@ public static class DataEditorUtil
         return field;
     }
 
+    public static VarRectField CreateRectField(Variable variable, DataEditor editor) {
+        VarRectField field = new VarRectField();
+        field.Bind(editor, variable);
+        return field;
+    }
+
+    public static VarRectIntField CreateRectIntField(Variable variable, DataEditor editor) {
+        VarRectIntField field = new VarRectIntField();
+        field.Bind(editor, variable);
+        return field;
+    }
+
     public static VarColorField CreateColorField(Variable variable, DataEditor editor) {
         VarColorField field = new VarColorField();
         field.Bind(editor, variable);
@@ -506,7 +520,7 @@ public static class DataEditorUtil
     }
 
     public static VarEnumSet64Field CreateEnumSet64Field(Variable variable, DataEditor editor) {
-        VarEnumSet64Field field =  new VarEnumSet64Field();
+        VarEnumSet64Field field = new VarEnumSet64Field();
         field.Bind(editor, variable);
         return field;
     }

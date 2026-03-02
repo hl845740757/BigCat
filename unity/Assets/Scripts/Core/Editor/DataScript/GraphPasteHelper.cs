@@ -32,13 +32,13 @@ internal class GraphPasteHelper
     private readonly DataGraph graph;
     private readonly List<DataNode> srcNodes;
     private readonly List<DataNode> destNodes;
-    private readonly Dictionary<long, long> idMap;
+    private readonly Dictionary<int, int> idMap;
 
     public GraphPasteHelper(DataGraph graph, List<DataNode> srcNodes) {
         this.graph = graph;
         this.srcNodes = srcNodes;
         this.destNodes = new List<DataNode>(srcNodes.Count);
-        this.idMap = new Dictionary<long, long>(srcNodes.Count);
+        this.idMap = new Dictionary<int, int>(srcNodes.Count);
     }
 
     public List<DataNode> Execute() {
@@ -58,7 +58,7 @@ internal class GraphPasteHelper
                     if (objectPath.HasCollection) {
                         continue;
                     }
-                    if (idMap.TryGetValue(objectPath.localId, out long newLocalId)) {
+                    if (idMap.TryGetValue(objectPath.localId, out int newLocalId)) {
                         objectPath.localId = newLocalId;
                     } else {
                         objectPath.localId = 0;
@@ -72,7 +72,7 @@ internal class GraphPasteHelper
                     if (objectPath.HasCollection) {
                         continue;
                     }
-                    if (idMap.TryGetValue(objectPath.localId, out long newLocalId)) {
+                    if (idMap.TryGetValue(objectPath.localId, out int newLocalId)) {
                         objectPath.localId = newLocalId;
                         outputField[index].objectPathValue = objectPath;
                     } else {

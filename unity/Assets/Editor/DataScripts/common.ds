@@ -48,6 +48,24 @@ struct Vector3Int {
     int32 y = 2;
     int32 z = 3;
 }
+// @Namespace{cs: "UnityEngine"}
+// @Options{ encodeFeatures: "Double4AsArray" }
+// @Editor{ displayType: Rect, dsonType: Double4 }
+struct Rect {
+  float x = 1;
+  float y = 2;
+  float w = 3;
+  float h = 4;
+}
+// @Namespace{cs: "UnityEngine"}
+// @Options{ encodeFeatures: "Double4AsArray | Double4AsInt" }
+// @Editor{ displayType: RectInt, dsonType: Double4 }
+struct RectInt {
+  int32 x = 1;
+  int32 y = 2;
+  int32 w = 3;
+  int32 h = 4;
+}
 
 // @Namespace{cs: "UnityEngine"}
 // @Options{ encodeFeatures: "Double4AsRgba" }
@@ -61,7 +79,7 @@ struct Color {
 // Color32编辑器下输出为4个整数的可维护性更好，Euler32同理 - 二进制下也不会占用太多开销
 // @Namespace{cs: "UnityEngine"}
 // @Options{ style: flow, encodeFeatures: "Double4AsRgba | Double4AsInt"  }
-// @Editor { displayType : Color32 }
+// @Editor { displayType : Color32, dsonType: Double4 }
 struct Color32 {
   int32 r = 1;
   int32 g = 2;
@@ -77,7 +95,6 @@ struct Euler32 {
   int32 z = 3;
 }
 // @Namespace{cs: "Wjybxx.BigCat.Core"}
-// @Options{ style: flow }
 // @Editor { displayType : MinMaxAABB }
 struct MinMaxAABB {
   Vector3 min = 1;
@@ -89,7 +106,7 @@ struct MinMaxAABB {
 struct ObjectPath {
 	string colletion = 1;
 	string localPath = 2;
-	int64 localId = 3;
+	int32 localId = 3;
 	int32 type = 4;
 }
 

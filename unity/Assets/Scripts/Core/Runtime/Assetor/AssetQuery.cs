@@ -114,9 +114,9 @@ public sealed class AssetQuery
                     string sceneName = Path.GetFileNameWithoutExtension(assetPath);
                     sceneName2AssetDic.Add(sceneName, fileInfo);
                 }
-                // 全路径索引无扩展名索引
+                // 全路径索引无扩展名索引(有索引的情况下不自动创建额外索引)
                 FileExtension extension = GetExtension(assetPath);
-                if (supportExtensions2.Contains(extension)) {
+                if (fileInfo.assetIndexes == 0 && supportExtensions2.Contains(extension)) {
                     string assetPathNoExt = RemoveExtension(assetPath, in extension);
                     assetIndex2AssetDic.Add(assetPathNoExt, fileInfo);
                 }

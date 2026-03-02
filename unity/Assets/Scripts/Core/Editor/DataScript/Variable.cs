@@ -171,23 +171,6 @@ public sealed class Variable : IDisposable
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    public Double4 double4Value {
-        get {
-            double x = values[0].doubleValue;
-            double y = values[1].doubleValue;
-            double z = values.Count > 2 ? values[2].doubleValue : 0;
-            double w = values.Count > 3 ? values[3].doubleValue : 0;
-            return new Double4(x, y, z, w);
-        }
-        set {
-            values[0].doubleValue = value[0];
-            values[1].doubleValue = value[1];
-            if (values.Count > 2) values[2].doubleValue = value[2];
-            if (values.Count > 3) values[3].doubleValue = value[3];
-        }
-    }
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Vector2Int vector2IntValue {
         get {
             int x = values[0].intValue;
@@ -215,22 +198,6 @@ public sealed class Variable : IDisposable
         }
     }
 
-    public Integer4 integer4Value {
-        get {
-            int x = values[0].intValue;
-            int y = values[1].intValue;
-            int z = values[2].intValue;
-            int w = values[3].intValue;
-            return new Integer4(x, y, z, w);
-        }
-        set {
-            values[0].intValue = value.v0;
-            values[1].intValue = value.v1;
-            values[2].intValue = value.v2;
-            values[3].intValue = value.v3;
-        }
-    }
-
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Color colorValue {
         get {
@@ -245,6 +212,38 @@ public sealed class Variable : IDisposable
             values[1].floatValue = value.g;
             values[2].floatValue = value.b;
             values[3].floatValue = value.a;
+        }
+    }
+
+    public Rect rectValue {
+        get {
+            float x = values[0].floatValue;
+            float y = values[1].floatValue;
+            float w = values[2].floatValue;
+            float h = values[3].floatValue;
+            return new Rect(x, y, w, h);
+        }
+        set {
+            values[0].floatValue = value.x;
+            values[1].floatValue = value.y;
+            values[2].floatValue = value.width;
+            values[3].floatValue = value.height;
+        }
+    }
+
+    public RectInt rectIntValue {
+        get {
+            int x = values[0].intValue;
+            int y = values[1].intValue;
+            int w = values[2].intValue;
+            int h = values[3].intValue;
+            return new RectInt(x, y, w, h);
+        }
+        set {
+            values[0].intValue = value.x;
+            values[1].intValue = value.y;
+            values[2].intValue = value.width;
+            values[3].intValue = value.height;
         }
     }
 
@@ -281,14 +280,14 @@ public sealed class Variable : IDisposable
         get {
             string collection = values[0].stringValue;
             string localPath = values[1].stringValue;
-            long localId = values[2].longValue;
+            int localId = values[2].intValue;
             int type = values[3].intValue;
             return new ObjectPath(collection, localPath, localId, type);
         }
         set {
             values[0].stringValue = value.collection;
             values[1].stringValue = value.localPath;
-            values[2].longValue = value.localId;
+            values[2].intValue = value.localId;
             values[3].intValue = value.type;
         }
     }
@@ -303,6 +302,39 @@ public sealed class Variable : IDisposable
         set {
             values[0].vector3Value = value.min;
             values[1].vector3Value = value.max;
+        }
+    }
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    public Double4 double4Value {
+        get {
+            double x = values[0].doubleValue;
+            double y = values[1].doubleValue;
+            double z = values.Count > 2 ? values[2].doubleValue : 0;
+            double w = values.Count > 3 ? values[3].doubleValue : 0;
+            return new Double4(x, y, z, w);
+        }
+        set {
+            values[0].doubleValue = value[0];
+            values[1].doubleValue = value[1];
+            if (values.Count > 2) values[2].doubleValue = value[2];
+            if (values.Count > 3) values[3].doubleValue = value[3];
+        }
+    }
+
+    public Integer4 integer4Value {
+        get {
+            int x = values[0].intValue;
+            int y = values[1].intValue;
+            int z = values.Count > 2 ? values[2].intValue : 0;
+            int w = values.Count > 3 ? values[3].intValue : 0;
+            return new Integer4(x, y, z, w);
+        }
+        set {
+            values[0].intValue = value.v0;
+            values[1].intValue = value.v1;
+            if (values.Count > 2) values[2].intValue = value[2];
+            if (values.Count > 3) values[3].intValue = value[3];
         }
     }
 

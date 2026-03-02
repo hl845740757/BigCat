@@ -158,5 +158,31 @@ public static class UnityCodecLinker
             return new Color32((byte)quad.v0, (byte)quad.v1, (byte)quad.v2, (byte)quad.v3);
         }
     }
+
+    public class RectCodec : IDsonCodec<Rect>
+    {
+        public void WriteObject(IDsonObjectWriter writer, Rect inst, Type declaredType, SerializeFeatures features) {
+            const SerializeFeatures style = SerializeFeatures.Double4AsArray;
+            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.width, inst.height), style);
+        }
+
+        public Rect ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+            Double4 quad = reader.ReadDouble4();
+            return new Rect((float)quad.v0, (float)quad.v1, (float)quad.v2, (float)quad.v3);
+        }
+    }
+
+    public class RectIntCodec : IDsonCodec<RectInt>
+    {
+        public void WriteObject(IDsonObjectWriter writer, RectInt inst, Type declaredType, SerializeFeatures features) {
+            const SerializeFeatures style = SerializeFeatures.Double4AsArray | SerializeFeatures.Double4AsInt;
+            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.width, inst.height), style);
+        }
+
+        public RectInt ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+            Double4 quad = reader.ReadDouble4();
+            return new RectInt((int)quad.v0, (int)quad.v1, (int)quad.v2, (int)quad.v3);
+        }
+    }
 }
 }

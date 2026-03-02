@@ -30,7 +30,7 @@ public class VarAABBCodec : IVarCodec
         Vector3 min = variable[0].vector3Value;
         Vector3 size = variable[1].vector3Value - min;
         // min + size的可维护性更高
-        writer.WriteStartObject(ObjectStyle.Flow);
+        writer.WriteStartObject();
         writer.WriteDouble4("min", min.ToDouble4(), style);
         writer.WriteDouble4("size", size.ToDouble4(), style);
         writer.WriteEndObject();

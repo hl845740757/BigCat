@@ -178,7 +178,7 @@ public class DSFileParser
                 int startIdx = content.IndexOf('"');
                 int endIdx = content.LastIndexOf('"');
                 string fileName = content.Substring2(startIdx + 1, endIdx);
-                string? modifier = content.Substring2(firstWord.Length, startIdx);
+                string? modifier = content.Substring2(firstWord.Length, startIdx)?.Trim();
                 if (string.IsNullOrWhiteSpace(modifier)) {
                     modifier = null;
                 }

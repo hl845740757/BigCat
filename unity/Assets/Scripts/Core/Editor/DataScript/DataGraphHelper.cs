@@ -213,12 +213,18 @@ public class DataGraphHelper
         }
         // ObjectPtr/ObjectPath
         if (typeCfg.dsonType == DsonType.Pointer) {
-            variable.objectPathValue = dsonValue.AsPointer();
+            ObjectPtr pointer = dsonValue.AsPointer();
+            variable.objectPathValue = new ObjectPath(pointer.Collection, pointer.LocalPath, (int)pointer.LocalId, pointer.Type);
             return;
         }
-        // Double4
+        // Double4 - 逻辑层可能是Integer4
         if (typeCfg.dsonType == DsonType.Double4) {
-            variable.double4Value = dsonValue.AsDouble4();
+            Double4 quad = dsonValue.AsDouble4();
+            if (IsInteger4(variable)) {
+                variable.integer4Value = new Integer4((int)quad[0], (int)quad[1], (int)quad[2], (int)quad[3]);
+            } else {
+                variable.double4Value = quad;
+            }
             return;
         }
         // Nullable
@@ -438,7 +444,8 @@ public class DataGraphHelper
         }
         // ObjectPtr
         if (typeCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
-            writer.WritePtr(variable.objectPathValue);
+            ObjectPath path = variable.objectPathValue;
+            writer.WritePtr(new ObjectPtr(path.collection, path.localPath, path.localId, path.type));
             return;
         }
         // Double4
@@ -447,7 +454,12 @@ public class DataGraphHelper
             if (doubleFeatures == 0) {
                 doubleFeatures = typeCfg.encodeFeatures;
             }
-            writer.WriteDouble4(variable.double4Value, doubleFeatures.ToDouble4Style());
+            if (IsInteger4(variable)) {
+                Integer4 quad = variable.integer4Value;
+                writer.WriteDouble4(new Double4(quad[0], quad[1], quad[2], quad[3]), doubleFeatures.ToDouble4Style());
+            } else {
+                writer.WriteDouble4(variable.double4Value, doubleFeatures.ToDouble4Style());
+            }
             return;
         }
         // Nullable - 导出时拆箱
@@ -556,7 +568,7 @@ public class DataGraphHelper
 
     private void ReadHeader(DsonHeader<string> header, DataNode node) {
         if (header.TryGetValue(DsonHeader.Names_LocalId, out DsonValue tempValue)) {
-            node.localId = tempValue.AsNumber().LongValue;
+            node.localId = tempValue.AsNumber().IntValue;
         }
         if (header.TryGetValue(KEY_NAME, out tempValue)) {
             node.name = tempValue.AsString();
@@ -660,6 +672,16 @@ public class DataGraphHelper
 
     private static bool IsWriteAsArray(Variable variable) {
         return (variable.cfg.encodeFeatures & SerializeFeatures.WriteAsArray) != 0;
+    }
+
+    private static bool IsInteger4(Variable variable) {
+        for (int idx = 0; idx < variable.Count; idx++) {
+            if (variable[idx].type.Name != DSKeywords.TYPE_INT32
+                && variable[idx].type.Name != DSKeywords.TYPE_INT64) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public bool IsWriteEnumAsString(Variable variable, bool isKey = false) {

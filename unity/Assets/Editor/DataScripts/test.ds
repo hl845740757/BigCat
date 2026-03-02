@@ -30,6 +30,10 @@ class SimpleBean {
     int32 colorMask = 12;
     // 测试枚举集合
     EnumSet<EColor> colorSet = 13;
+    
+    // 测试矩形
+    Rect rect = 14;
+    RectInt rect2 = 15;
 }
 
 // 测试普通类继承

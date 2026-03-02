@@ -35,7 +35,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
     // TODO 增加ObjectField用于选择对象和展示Icon
     private TextField _collectionField;
     private TextField _localPathField;
-    private LongField _localIdField;
+    private IntegerField _localIdField;
     private EnumField _typeField;
 
     private Foldout _foldout;
@@ -172,7 +172,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
         _foldout = this.Q<Foldout>();
         _collectionField = this.Q<TextField>("collection");
         _localPathField = this.Q<TextField>("local-path");
-        _localIdField = this.Q<LongField>("local-id");
+        _localIdField = this.Q<IntegerField>("local-id");
         _typeField = this.Q<EnumField>("type");
 
         _selectCollectionButton = this.Q<Button>("select-collection");

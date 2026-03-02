@@ -36,7 +36,7 @@ public sealed class DataNode
     ///
     /// 注：当外部引用Node时，应当优先使用name进行引用，更具有稳定性。
     /// </summary>
-    public long localId { get; set; }
+    public int localId { get; set; }
     /// <summary>
     /// 节点的名字
     /// </summary>
@@ -98,7 +98,7 @@ public sealed class DataNode
     /// </summary>
     internal NodeMemento currentMemento;
 
-    internal DataNode(long localId) {
+    internal DataNode(int localId) {
         this.localId = localId;
     }
 
@@ -201,7 +201,7 @@ public sealed class DataNode
     /// </summary>
     internal class NodeMemento
     {
-        public long localId;
+        public int localId;
         public int version;
         public string name;
         public string folder;

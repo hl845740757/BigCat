@@ -392,9 +392,12 @@ public static class UnityEditorUtil
                 if (!spriteGroup) {
                     continue;
                 }
-                if (spriteGroup.preferName) {
-                    _nameToSpriteGroup[spriteGroup.name] = spriteGroup;
-                }
+                string folderName = GetLastDirectoryName(assetPath);
+                _nameToSpriteGroup[spriteGroup.name] = spriteGroup;
+                _nameToSpriteGroup[$"{folderName}/{spriteGroup.name}"] = spriteGroup;
+                //
+                _nameToSpriteGroup[$"{nameof(SpriteGroup)}:{spriteGroup.name}"] = spriteGroup;
+                _nameToSpriteGroup[$"{nameof(SpriteGroup)}:{folderName}/{spriteGroup.name}"] = spriteGroup;
             }
             _nameToSpriteGroup.TryGetValue(assetName, out spriteGroup);
             return spriteGroup;
@@ -634,7 +637,7 @@ public static class UnityEditorUtil
         pValue.stringValue = path.localPath;
 
         pValue.Next(false);
-        pValue.longValue = path.localId;
+        pValue.intValue = path.localId;
 
         pValue.Next(false);
         pValue.intValue = path.type;
@@ -649,7 +652,7 @@ public static class UnityEditorUtil
         path.localPath = pValue.stringValue;
 
         pValue.Next(false);
-        path.localId = pValue.longValue;
+        path.localId = pValue.intValue;
 
         pValue.Next(false);
         path.type = pValue.intValue;

@@ -25,7 +25,7 @@ public class DataEditor : EditorWindow
     protected VisualElement nodeHeaderView;
     protected VisualElement nodeValueView;
 
-    protected LongField localIdField; // 其实Node也可以通过一个Variable绑定UI
+    protected IntegerField localIdField; // 其实Node也可以通过一个Variable绑定UI
     protected TextField folderField;
     protected TextField nameField;
     protected TextField titleField;
@@ -121,7 +121,7 @@ public class DataEditor : EditorWindow
         nodeValueView = root.Q<VisualElement>("node-value");
         graphView.editor = this;
         //
-        localIdField = nodeHeaderView.Q<LongField>("local-id");
+        localIdField = nodeHeaderView.Q<IntegerField>("local-id");
         nameField = nodeHeaderView.Q<TextField>("name");
         folderField = nodeHeaderView.Q<TextField>("folder");
         titleField = nodeHeaderView.Q<TextField>("title");
@@ -310,7 +310,7 @@ public class DataEditor : EditorWindow
         selectedNode.dataNode.ApplyModifiedProperties();
     }
 
-    private void OnLocalIdFieldChanged(ChangeEvent<long> evt) {
+    private void OnLocalIdFieldChanged(ChangeEvent<int> evt) {
         if (selectedNode == null) return;
         if (evt.newValue <= 0) {
             Debug.LogWarning("localId is invalid: " + evt.newValue);

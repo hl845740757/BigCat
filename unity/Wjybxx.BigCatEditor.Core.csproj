@@ -62,6 +62,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\SpriteAnimation\AnimationClipEditor.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\ECollectorType.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\AABBField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\UIElements\MRectIntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MDoubleField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector2Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\VariableCfg.cs" />
@@ -71,6 +72,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarEuler32Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector4Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Codecs\VarEnumCodec.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarRectIntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\EAssetCategory.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\GraphView.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UnityEditorUtil.cs" />
@@ -102,6 +104,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarObjectPathField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\EnumFlagsPropertyDrawer.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MFloatField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\UIElements\MRectField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildAssetInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\EGroupBy.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MToggle.cs" />
@@ -127,6 +130,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\DataGraph.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarEnumSet64Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\PathCache.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarRectField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MLongField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector3IntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarDateTimeField.cs" />

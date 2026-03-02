@@ -31,7 +31,7 @@ public struct SpriteMotionRedir
     public SpriteAnimationClip clip; // 关联的动画
     public EWrapMode wrapMode; // 动画播放模式
     public int startFrame; // 开始帧
-    public int endFrame; // 结束帧，-1表示未设值
+    public int endFrame; // 结束帧
     public Vector2 offset; // 额外偏移
     public AnimationOptions options; // 选项
 }

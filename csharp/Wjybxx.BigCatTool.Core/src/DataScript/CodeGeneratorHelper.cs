@@ -209,6 +209,9 @@ public class CodeGeneratorHelper
         List<FieldSpec> sstiFieldList = _sstiFieldListCache.ClearAndReturn();
         // 原生字段
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
+            if (string.IsNullOrEmpty(field.Name)) {
+                continue;
+            }
             DsonObject<string> fieldOptions = GetOptions(field);
             BuildFieldAndProperty(field, fieldOptions, out FieldSpec fieldSpec, out PropertySpec propertySpec);
             fieldSpecs.Add(fieldSpec);
@@ -604,7 +607,7 @@ public class CodeGeneratorHelper
                     writeMethodName, field.Name, fieldName);
             }
         }
-        return methodBuilder.Build();
+        return methodBuilder.Build(true);
     }
 
     private MethodSpec BuildReaderConstructor(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? _) {
@@ -654,7 +657,7 @@ public class CodeGeneratorHelper
                 codeBuilder.AddStatement("this.$L = reader.$L()", fieldName, readMethodName);
             }
         }
-        return methodBuilder.Build();
+        return methodBuilder.Build(true);
     }
 
     private MethodSpec BuildReadFieldMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
@@ -1210,7 +1213,7 @@ public class CodeGeneratorHelper
         return attributeBuilder.Build();
     }
 
-    public static AttributeSpec BuildCodecAttribute(DSField field) {
+    private static AttributeSpec BuildCodecAttribute(DSField field) {
         var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_DSON_PROPERTY);
         DsonObject<string> codecOptions = GetOptions(field);
         SerializeFeatures encodeFeatures = GetEncodeFeatures(codecOptions);

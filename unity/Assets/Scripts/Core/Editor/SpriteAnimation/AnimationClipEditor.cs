@@ -239,7 +239,7 @@ public partial class AnimationClipEditor : EditorWindow
         _frameInfoElement.Q<ColorField>("tint").RegisterValueChangedCallback(OnImagePropertyChanged);
         _frameInfoElement.Q<MaskField>("interp").choices = new List<string>
         {
-            "Position", "Rotation", "Scale", "Color"
+            "Color", "Position", "Rotation", "Scale"
         };
     }
 
@@ -454,7 +454,7 @@ public partial class AnimationClipEditor : EditorWindow
         context.container.SetDisplay(evt.newValue >= 0);
         context.layer = Math.Max(0, evt.newValue);
         //
-        List<ClipContext> sortList = new (_clipContextList);
+        List<ClipContext> sortList = new(_clipContextList);
         sortList.Sort((lhs, rhs) => lhs.layer.CompareTo(rhs.layer));
         //
         VisualElement prev = sortList[0].container;

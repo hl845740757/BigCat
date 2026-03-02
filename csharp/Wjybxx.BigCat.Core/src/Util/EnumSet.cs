@@ -268,19 +268,6 @@ public sealed class EnumSet<T> where T : struct, Enum
         return new EnumSet<T>(this);
     }
 
-    /// <summary>
-    /// 枚举集合的第一个word
-    /// </summary>
-    public long FirstWord => _values.Length > 0 ? _values[0] : 0;
-
-    /// <summary>
-    /// 转换为<see cref="EnumSet64{T}"/>类型
-    /// </summary>
-    /// <returns></returns>
-    public EnumSet64<T> ToEnumSet64() {
-        return new EnumSet64<T> { Bits = _values.Length > 0 ? _values[0] : 0 };
-    }
-
     #region 序列化
 
     internal static EnumSet<T> NewInstance(IDsonObjectReader reader) {

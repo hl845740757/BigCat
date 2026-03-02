@@ -44,6 +44,8 @@ public enum DisplayType
     Vector4,
     Vector2Int,
     Vector3Int,
+    Rect,
+    RectInt,
     Color, // float(r,g,b,a)
     Color32, // int32(r,g,b,a)
     Euler32, // int32(x,y,z)，xyz限制在[0, 360]

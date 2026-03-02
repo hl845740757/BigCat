@@ -17,7 +17,7 @@
             <ui:ScrollView name="inspector-div" style="flex-grow: 1; flex-shrink: 1; width: 25%; max-width: 80%; min-height: 800px;">
                 <ui:VisualElement name="node-header" tooltip="node基础信息">
                     <Wjybxx.BigCat.Editor.UIElements.MTextField label="TypeSymbol" name="type-symbol" tooltip="类型信息" label-margin="-60" readonly="true" />
-                    <Wjybxx.BigCat.Editor.UIElements.MLongField name="local-id" label="LocalId" hasMin="true" readonly="false" is-delayed="true" tooltip="程序分配的局部Id，允许手动修改" />
+                    <Wjybxx.BigCat.Editor.UIElements.MIntegerField tooltip="程序分配的局部Id，允许手动修改" name="local-id" is-delayed="true" hasMin="true" label="LocalId" />
                     <Wjybxx.BigCat.Editor.UIElements.MToggle name="enable-port" label="EnablePort" tooltip="用于Pair类型启用数据端口" />
                     <Wjybxx.BigCat.Editor.UIElements.MTextField name="folder" label="Folder" tooltip="Node归属的文件夹（逻辑分组）" is-delayed="true" />
                     <Wjybxx.BigCat.Editor.UIElements.MTextField name="name" label="Name" is-delayed="true" tooltip="Node的名字，用于外部引用" />

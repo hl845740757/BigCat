@@ -25,14 +25,13 @@ namespace Wjybxx.BigCat.Animator
 /// <summary>
 /// 动画播放请求
 /// </summary>
-[Serializable]
 [DsonSerializable]
 public struct AnimationRequest
 {
     public string clipPath; // 播放的动画
     public EWrapMode wrapMode; // 动画播放模式
     public int startFrame; // 开始帧
-    public int endFrame; // 结束帧，-1表示未设值
+    public int endFrame; // 结束帧
     public Vector2 offset; // 动画偏移
     public AnimationOptions options; // 选项
 }
@@ -51,5 +50,6 @@ public enum AnimationOptions
     ReservedMotion = 0x10, // 保留动作配置(禁止自动删除)
     FlipX = 0x20, // X轴翻转
     FlipY = 0x40, // Y轴翻转
+    Expand = 0x80, // 展开
 }
 }

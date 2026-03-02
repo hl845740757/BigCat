@@ -76,7 +76,7 @@ public sealed class DataGraph
     /// <summary>
     /// 用于分配LocalId（需要和已存在的Node去重）
     /// </summary>
-    private long _nextLocalId;
+    private int _nextLocalId;
     /// <summary>
     /// 按帧计时，同一帧产生的修改同时执行undo和redo
     /// </summary>
@@ -167,7 +167,7 @@ public sealed class DataGraph
     /// 由于需要和手动分配的LocalId去除，因此不能简单的基于当前最大值进行++
     /// </summary>
     /// <returns></returns>
-    internal long NextLocalId() {
+    internal int NextLocalId() {
         do {
             _nextLocalId++;
         } while (nodeDic.ContainsKey(_nextLocalId));
@@ -1322,7 +1322,7 @@ public sealed class DataGraph
         EndModify();
     }
 
-    private void FixPointer(DataNode node, long prevLocalId, long nextLocalId, bool applyModifiers) {
+    private void FixPointer(DataNode node, int prevLocalId, int nextLocalId, bool applyModifiers) {
         node.localId = prevLocalId;
         List<Variable> list = _variableListPool.Acquire();
         GetInputs(node, list);
