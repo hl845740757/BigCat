@@ -88,14 +88,14 @@ public sealed class AssetBundleInfo
     /// </summary>
     public EAssetIndexes assetIndexes;
     /// <summary>
-    /// 资产索引深度
+    /// 索引祖先节点长度
     /// </summary>
-    public int assetIndexDepth;
+    public int ancestorPathLength;
     /// <summary>
     /// bundle内文件总数(主资产+依赖资产)
     /// </summary>
     public int assetCount;
-    
+
     /// <summary>
     /// 所属的资源包（用于运行时反向查询）
     /// </summary>
@@ -137,7 +137,7 @@ public sealed class AssetBundleInfo
     private const int KEY_MAIN_ASSETS = 12;
     private const int KEY_MAIN_ASSETS_COUNT = 13;
     private const int KEY_INDEXES = 14;
-    private const int KEY_INDEX_DEPTH = 15;
+    private const int KEY_ANCESTOR_PATH_LENGTH = 15;
     private const int KEY_ASSET_COUNT = 16;
     private const int KEY_BUNDLE_ID = 17;
     private const int KEY_UPSTREAMS = 18;
@@ -171,7 +171,7 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(nameof(assetIndexes), (int)assetIndexes, NumberStyle.Hex);
-        writer.WriteInt32(nameof(assetIndexDepth), assetIndexDepth, NumberStyle.Simple);
+        writer.WriteInt32(nameof(ancestorPathLength), ancestorPathLength, NumberStyle.Simple);
         writer.WriteInt32(nameof(assetCount), assetCount, NumberStyle.Simple);
         writer.WriteInt32(nameof(bundleId), bundleId, NumberStyle.Simple);
         {
@@ -249,8 +249,8 @@ public sealed class AssetBundleInfo
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
-                case nameof(assetIndexDepth): {
-                    assetIndexDepth = reader.ReadInt32();
+                case nameof(ancestorPathLength): {
+                    ancestorPathLength = reader.ReadInt32();
                     break;
                 }
                 case nameof(assetCount): {
@@ -309,7 +309,7 @@ public sealed class AssetBundleInfo
             writer.WriteEndArray();
         }
         writer.WriteInt32(KEY_INDEXES, (int)assetIndexes);
-        writer.WriteInt32(KEY_INDEX_DEPTH, assetIndexDepth);
+        writer.WriteInt32(KEY_ANCESTOR_PATH_LENGTH, ancestorPathLength);
         writer.WriteInt32(KEY_ASSET_COUNT, assetCount);
         writer.WriteInt32(KEY_BUNDLE_ID, bundleId);
         writer.WriteInt32(KEY_UPSTREAMS_COUNT, upstreamBundles.Count);
@@ -398,8 +398,8 @@ public sealed class AssetBundleInfo
                     assetIndexes = (EAssetIndexes)reader.ReadInt32();
                     break;
                 }
-                case KEY_INDEX_DEPTH: {
-                    assetIndexDepth = reader.ReadInt32();
+                case KEY_ANCESTOR_PATH_LENGTH: {
+                    ancestorPathLength = reader.ReadInt32();
                     break;
                 }
                 case KEY_ASSET_COUNT: {

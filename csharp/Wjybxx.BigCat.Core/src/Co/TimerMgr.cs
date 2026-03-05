@@ -227,6 +227,10 @@ internal sealed class TimerMgr : ITimerMgr
         _coroutineMgr.Cancel(timerIds);
     }
 
+    public bool SetOptions(long timerId, int options) {
+        return _coroutineMgr.SetOptions(timerId, options);
+    }
+
     #region internal
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

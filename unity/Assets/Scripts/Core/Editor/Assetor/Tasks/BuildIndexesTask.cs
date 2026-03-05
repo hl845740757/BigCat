@@ -92,10 +92,10 @@ public class BuildIndexesTask : LeafTask<Blackboard>
                         AddIndex(index2AssetDic, subAssetPathNoExt, assetInfo, unique);
                     }
                 }
-                // 多层级目录索引
+                // 相对特定祖先的路径
                 if ((indexes & EAssetIndexes.RelativeToAncestor) != 0) {
                     bool unique = (bundleInfo.uniqueIndexes & EAssetIndexes.RelativeToAncestor) != 0;
-                    string subAssetPath = GetSubAssetPath(assetInfo.assetPath, bundleInfo.indexDepth);
+                    string subAssetPath = assetInfo.assetPath.Substring(bundleInfo.ancestorPath.Length + 1);
                     AddIndex(index2AssetDic, subAssetPath, assetInfo, unique);
                     //
                     if (supportExtensions.Contains(extension)) {

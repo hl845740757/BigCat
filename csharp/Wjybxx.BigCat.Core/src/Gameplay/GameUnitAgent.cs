@@ -23,7 +23,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// 游戏对象的内部代理，辅助管理<see cref="GameUnit"/>
 ///
-/// 注：Agent由Scene创建，而非由用户创建。
+/// 注：游戏的单位的Agent由Scene创建，而非由用户创建。
 /// </summary>
 public interface GameUnitAgent
 {
@@ -44,6 +44,20 @@ public interface GameUnitAgent
     /// 3.可以在这里执行延迟销毁
     /// </summary>
     void Stop(GameUnit gameUnit) {
+    }
+
+    /// <summary>
+    /// 当GameObject加入子场景时调用
+    /// </summary>
+    /// <param name="gameUnit"></param>
+    void OnEnterSubScene(GameUnit gameUnit) {
+    }
+
+    /// <summary>
+    /// 当GameObject离开子场景时调用
+    /// </summary>
+    /// <param name="gameUnit"></param>
+    void OnLeaveSubScene(GameUnit gameUnit) {
     }
 
     /// <summary>

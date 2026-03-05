@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Util;
-using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Logger;
@@ -70,10 +69,6 @@ public sealed class Scene
     /// 激活状态（前后台状态）
     /// </summary>
     [NonSerialized] private bool _active = true;
-    /// <summary>
-    /// 场景特征值
-    /// </summary>
-    private SceneFeatures _features;
 
     /// <summary>
     /// 场景关联的管理器
@@ -87,13 +82,7 @@ public sealed class Scene
     /// <summary>
     /// 用户自定义数据
     /// </summary>
-    [NonSerialized] public object userData;
-#if UNITY_2021_3_OR_NEWER
-    /// <summary>
-    /// 关联的引擎对象
-    /// </summary>
-    [NonSerialized] public UnityScene unityScene;
-#endif
+    [NonSerialized] private object _userData;
 
     /// <summary>
     /// 绑定的组件
@@ -122,7 +111,6 @@ public sealed class Scene
     [NonSerialized] private readonly GTime _time = new GTime();
     /// <summary>
     /// 协程管理器
-    /// (由于管理器存在自定义设置，因此延迟构造)
     /// </summary>
     [NonSerialized] private CoroutineMgr _coroutineMgr;
 #nullable restore
@@ -131,7 +119,6 @@ public sealed class Scene
     }
 
     public Scene(IDsonObjectReader reader) : this() {
-        _features = (SceneFeatures)reader.ReadInt("features");
         // 组件
         List<SComponent> components = reader.ReadObject<List<SComponent>>("components");
         _components.EnsureCapacity(components.Count);
@@ -143,7 +130,6 @@ public sealed class Scene
     }
 
     public void WriteObject(IDsonObjectWriter writer) {
-        writer.WriteInt("features", (int)_features);
         writer.WriteObject("components", _components);
     }
 
@@ -163,10 +149,6 @@ public sealed class Scene
             _instId = value;
         }
     }
-    public SceneFeatures Features {
-        get => _features;
-        set => _features = value;
-    }
 
     public ComponentStatus Status => _status;
 
@@ -177,13 +159,16 @@ public sealed class Scene
             _sceneMgr = value;
         }
     }
-
     public SceneAgent Agent {
         get => _agent;
         set {
             CheckStatus();
             _agent = value;
         }
+    }
+    public object UserData {
+        get => _userData;
+        set => _userData = value;
     }
 
     /// <summary>
@@ -214,7 +199,17 @@ public sealed class Scene
     }
 
     public GTime Time => _time;
-    public CoroutineMgr CoroutineMgr => _coroutineMgr;
+    /// <summary>
+    /// 绑定的协程管理器
+    /// 注：如果未显式设值，则根据默认规则创建。
+    /// </summary>
+    public CoroutineMgr CoroutineMgr {
+        get => _coroutineMgr;
+        set {
+            CheckStatus();
+            _coroutineMgr = value;
+        }
+    }
 
     private void CheckStatus() {
         if (_status != ComponentStatus.New) {
@@ -233,10 +228,7 @@ public sealed class Scene
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
-        _coroutineMgr = CoroutineMgr.CreateFrom(_sceneMgr.CoroutineMgr, _time,
-            (_features & SceneFeatures.EnableUnscaledTimeQueue) != 0,
-            (_features & SceneFeatures.EnableFrameQueue) != 0);
-        //
+        _coroutineMgr ??= CoroutineMgr.CreateFrom(_sceneMgr.CoroutineMgr, _time, true, false);
         _agent ??= (_components.Find(e => e is SceneAgentHolder) as SceneAgentHolder)?.Agent;
         _agent?.Inject(this);
         _status = ComponentStatus.Initialized;
@@ -344,6 +336,7 @@ public sealed class Scene
             _status = ComponentStatus.Initialized;
         }
         _active = true;
+        _userData = null;
         _time.Restart();
     }
 

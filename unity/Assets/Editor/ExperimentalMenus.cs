@@ -22,6 +22,7 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Wjybxx.BigCat.Editor
 {
@@ -47,7 +48,7 @@ public static class ExperimentalMenus
         string sortedText = SortByCodePoint(text);
         Debug.Log(sortedText);
     }
-    
+
     private static string SortByCodePoint(string text) {
         List<int> codePointArray = new List<int>(text.Length);
         for (int i = 0, length = text.Length; i < length; i++) {
@@ -72,6 +73,86 @@ public static class ExperimentalMenus
         }
         string sortedText = sb.ToString();
         return sortedText;
+    }
+
+    /// <summary>
+    /// 创建轴心在左下角的Quad
+    /// </summary>
+    // [MenuItem("Create/TileQuad")]
+    private static void CreateTileQuad() {
+        GameObject quadObj = new GameObject("TileQuad");
+        MeshFilter meshFilter = quadObj.AddComponent<MeshFilter>();
+        Mesh newMesh = CreateMeshWithNewPivot(GetBuiltInQuadMesh(), new Vector3(-0.5f, -0.5f, 0));
+        meshFilter.mesh = newMesh;
+        // 材质手动绑定吧
+        MeshRenderer meshRenderer = quadObj.AddComponent<MeshRenderer>();
+        // meshRenderer.material = ;
+
+        // 4. 添加Box Collider（可选，适配碰撞检测，大小匹配Quad宽高）
+        BoxCollider boxCollider = quadObj.AddComponent<BoxCollider>();
+        boxCollider.size = new Vector3(1, 1, 0.01f); // 极薄的碰撞体，贴合Quad
+        boxCollider.center = new Vector3(0.5f, 0.5f, 0); // 碰撞体中心对齐Quad几何中心
+
+        // 保存到资产目录
+        SaveMeshToAsset(newMesh, newMesh.name);
+
+        // 6. 编辑器聚焦到生成的Quad
+        Selection.activeGameObject = quadObj;
+        EditorGUIUtility.PingObject(quadObj);
+    }
+
+    /// <summary>
+    /// 生成新Mesh，将轴心点移动到目标位置（基于原Mesh的局部坐标）
+    /// </summary>
+    /// <param name="originalMesh">原始Mesh</param>
+    /// <param name="newPivotLocalPos">新轴心在原Mesh局部空间中的坐标</param>
+    /// <returns>轴心点已调整的新Mesh</returns>
+    private static Mesh CreateMeshWithNewPivot(Mesh originalMesh, Vector3 newPivotLocalPos) {
+        Mesh newMesh = new Mesh();
+        newMesh.name = "TileQuad";
+
+        // 1. 计算顶点偏移量：将新轴心点移到模型空间原点
+        Vector3 pivotOffset = -newPivotLocalPos;
+
+        // 2. 偏移所有顶点坐标
+        Vector3[] vertices = originalMesh.vertices;
+        for (int i = 0; i < vertices.Length; i++) {
+            vertices[i] += pivotOffset;
+        }
+
+        // 3. 复制原Mesh的其他数据（三角面、UV、法线等）
+        newMesh.vertices = vertices;
+        newMesh.triangles = originalMesh.triangles;
+        newMesh.uv = originalMesh.uv;
+        newMesh.normals = originalMesh.normals;
+        newMesh.tangents = originalMesh.tangents;
+        newMesh.colors = originalMesh.colors;
+
+        // 4. 重新计算包围盒和绑定信息
+        newMesh.RecalculateBounds();
+        newMesh.RecalculateTangents();
+        newMesh.RecalculateNormals();
+        return newMesh;
+    }
+
+    /// <summary>
+    /// 提取Unity内置的Quad Mesh
+    /// </summary>
+    private static Mesh GetBuiltInQuadMesh() {
+        GameObject tempQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        MeshFilter meshFilter = tempQuad.GetComponent<MeshFilter>();
+        Mesh builtInQuadMesh = meshFilter.sharedMesh; // 使用sharedMesh，以避免拷贝
+        Object.DestroyImmediate(tempQuad);
+        return builtInQuadMesh;
+    }
+
+    private static void SaveMeshToAsset(Mesh mesh, string meshName) {
+        if (!Directory.Exists("Assets/Resources/Meshes")) {
+            Directory.CreateDirectory("Assets/Resources/Meshes");
+        }
+        string meshPath = $"Assets/Resources/Meshes/{meshName}.asset";
+        AssetDatabase.CreateAsset(mesh, meshPath);
+        AssetDatabase.Refresh();
     }
 }
 }

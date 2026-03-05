@@ -32,6 +32,8 @@ namespace Wjybxx.BigCat.Gameplay
 {
 /// <summary>
 /// Scene管理器
+///
+/// 注：Scene管理器是所有World模拟逻辑的容器（驱动器）。
 /// </summary>
 public class SceneMgr
 {
@@ -97,8 +99,10 @@ public class SceneMgr
 
     [Inject]
     public SceneMgr(WorkerHolder workerHolder, SceneMgrCfg cfg) {
-        coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
-            enableFrameQueue: cfg.enableFrameQueue);
+        _injector = workerHolder.Worker.Injector;
+        coroutineMgr = new CoroutineMgr(workerHolder.Worker, time,
+            cfg.minPeriod, cfg.unscaledMinPeriod,
+            cfg.enableUnscaledQueue, cfg.enableFrameQueue);
     }
 
     /// <summary>

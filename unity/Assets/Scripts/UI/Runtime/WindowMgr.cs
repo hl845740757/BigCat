@@ -27,6 +27,7 @@ using Wjybxx.BigCat.MVC;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Fx;
+using Wjybxx.Commons.Inject;
 using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
@@ -69,6 +70,10 @@ public class WindowMgr
     /// 数据模型解析器
     /// </summary>
     private IDataModelResolver _dataModelResolver;
+    /// <summary>
+    /// UI可能用到的外部依赖
+    /// </summary>
+    private IInjector _injector;
 
     /// <summary>
     /// 所有的窗口
@@ -130,8 +135,10 @@ public class WindowMgr
     /// <param name="cfg">管理器配置</param>
     [Inject]
     public WindowMgr(WorkerHolder workerHolder, WindowMgrCfg cfg) {
-        this.coroutineMgr = new CoroutineMgr(workerHolder.Worker, time, cfg.minPeriod, cfg.unscaledMinPeriod,
-            enableFrameQueue: cfg.enableFrameQueue);
+        this._injector = workerHolder.Worker.Injector;
+        this.coroutineMgr = new CoroutineMgr(workerHolder.Worker, time,
+            cfg.minPeriod, cfg.unscaledMinPeriod,
+            cfg.enableUnscaledQueue, cfg.enableFrameQueue);
         // 初始化Desktop
         this._canvas = cfg.canvas ?? throw new Exception("Canvas not found");
         for (int desktopId = 1; desktopId <= WindowCfg.MAX_DESKTOP; desktopId++) {
@@ -156,6 +163,14 @@ public class WindowMgr
     /// UI系统绑定的线程
     /// </summary>
     public Worker Worker => (Worker)coroutineMgr.EventLoop;
+
+    /// <summary>
+    /// 所有UI的依赖
+    /// </summary>
+    public IInjector Injector {
+        get => _injector;
+        set => _injector = value;
+    }
 
     /// <summary>
     /// 窗口加载的超时时间

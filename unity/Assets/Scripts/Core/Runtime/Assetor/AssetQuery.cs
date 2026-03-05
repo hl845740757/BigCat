@@ -20,8 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using UnityEngine;
 using Wjybxx.BigCat.Core;
 using Wjybxx.Commons.Collections;
 
@@ -148,13 +146,13 @@ public sealed class AssetQuery
                         assetIndex2AssetDic[subAssetPathNoExt] = fileInfo;
                     }
                 }
-                // 自定义深度索引：需要唯一性（打包时）
+                // 相对特定祖先的路径索引：需要唯一性（打包时）
                 if ((assetIndexes & EAssetIndexes.RelativeToAncestor) != 0) {
-                    string subAssetPath = GetSubAssetPath(assetPath, bundleInfo.assetIndexDepth);
-                    assetIndex2AssetDic[subAssetPath] = fileInfo;
+                    string relativePath = fileInfo.assetPath.Substring(bundleInfo.ancestorPathLength + 1);
+                    assetIndex2AssetDic[relativePath] = fileInfo;
                     //
                     if (supportExtensions2.Contains(extension)) {
-                        string subAssetPathNoExt = RemoveExtension(subAssetPath, in extension);
+                        string subAssetPathNoExt = RemoveExtension(relativePath, in extension);
                         assetIndex2AssetDic[subAssetPathNoExt] = fileInfo;
                     }
                 }

@@ -480,11 +480,14 @@ public class ResourceManager
         }
         if (!Query.assetIndex2AssetDic.TryGetValue(location, out AssetFileInfo assetInfo)
             && !string.IsNullOrEmpty(assetType)
+            && !location.StartsWith("Assets/")
             && location.LastIndexOf('/') < 0) {
             // Fallback - 尝试按照资产类型索引查询
-            location = location.EndsWith(".asset")
-                ? $"{assetType}:{location.Substring(0, location.Length - 6)}"
-                : $"{assetType}:{location}";
+            int idx = location.LastIndexOf('.');
+            if (idx > 0) {
+                location = location.Substring(0, idx);
+            }
+            location = $"{assetType}:{location}";
             Query.assetIndex2AssetDic.TryGetValue(location, out assetInfo);
         }
         return assetInfo;

@@ -152,7 +152,7 @@ public sealed class BuildBundleInfo
 
             bundleTags = new List<string>(bundleTags),
             assetIndexes = assetIndexes | uniqueIndexes,
-            assetIndexDepth = indexDepth,
+            ancestorPathLength = ancestorPath.Length,
             assetCount = assetList.Count,
             bundleId = bundleId,
             upstreamBundles = new List<int>(upstreamBundles),

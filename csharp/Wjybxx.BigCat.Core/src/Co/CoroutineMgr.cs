@@ -105,7 +105,6 @@ public class CoroutineMgr : ICoroutineMgr
 
     private readonly Action<object> _onCoroutineExit;
     private readonly Action<ICancelToken, object> _onCancelRequest;
-    private long _lastTimerId;
     private bool _isShuttingDown;
 #nullable restore
 
@@ -120,7 +119,7 @@ public class CoroutineMgr : ICoroutineMgr
     /// <param name="enableFrameQueue">是否启用帧时间队列</param>
     public CoroutineMgr(IEventLoop eventLoop, GTime time,
                         double minPeriod = 0.01, double unscaledMinPeriod = 0.01,
-                        bool enableUnscaledQueue = true, bool enableFrameQueue = false) {
+                        bool enableUnscaledQueue = false, bool enableFrameQueue = false) {
         this._eventLoop = eventLoop ?? throw new ArgumentNullException(nameof(eventLoop));
         this._time = time ?? throw new ArgumentNullException(nameof(time));
         this._minPeriod = minPeriod;
@@ -159,21 +158,20 @@ public class CoroutineMgr : ICoroutineMgr
                                           bool? enableUnscaledQueue = null, bool? enableFrameQueue = null) {
         return new CoroutineMgr(coroutineMgr.EventLoop, time,
             coroutineMgr.MinPeriod, coroutineMgr.UnscaledMinPeriod,
-            enableUnscaledQueue: enableUnscaledQueue ?? coroutineMgr.UnscaledTimerMgr != null,
-            enableFrameQueue: enableFrameQueue ?? coroutineMgr.FrameTimerMgr != null);
+            enableUnscaledQueue ?? coroutineMgr.UnscaledTimerMgr != null,
+            enableFrameQueue ?? coroutineMgr.FrameTimerMgr != null);
     }
 
 #nullable disable
     public IEventLoop EventLoop => _eventLoop;
     public ITimerMgr TimerMgr => _timerMgr;
-    public ITimerMgr? UnscaledTimerMgr => _unscaledTimerMgr;
-    public ITimerMgr? FrameTimerMgr => _frameTimerMgr;
+    public ITimerMgr UnscaledTimerMgr => _unscaledTimerMgr;
+    public ITimerMgr FrameTimerMgr => _frameTimerMgr;
 #nullable restore
 
     public GTime Time => _time;
     public double MinPeriod => _minPeriod;
     public double UnscaledMinPeriod => _unscaledMinPeriod;
-    public long LastTimerId => _lastTimerId;
 
     /// <summary>
     /// 理论上可以为用户创建的Timer和协程创建的Timer分配不同的ID段，这样可以让用户的Timer使用Int类型Id
@@ -360,9 +358,11 @@ public class CoroutineMgr : ICoroutineMgr
     }
 
     public void Reset() {
-        _lastTimerId = 0;
-        _isShuttingDown = false;
+        if (id2ObjectDict.Count > 0) {
+            Shutdown();
+        }
         // 不能清理协程字典，否则会导致协程对象无法回收
+        _isShuttingDown = false;
     }
 
     public void Shutdown() {
@@ -492,7 +492,6 @@ public class CoroutineMgr : ICoroutineMgr
         BetterIndexedPriorityQueue<PromiseTask> queue = GetQueue(timingType, phase);
         queue.Add(task);
         id2ObjectDict.Add(task.id, task);
-        _lastTimerId = task.id;
         // 监听取消信号
         ICancelToken cancelToken = task.GetCancelToken();
         if (cancelToken.CanBeCancelled && task.IsEnabled(TaskOptions.LISTEN_CANCEL_TOKEN)) {
@@ -513,6 +512,14 @@ public class CoroutineMgr : ICoroutineMgr
             }
             taskPool.Release(task);
         }
+    }
+
+    internal bool SetOptions(long timerId, int options) {
+        if (id2ObjectDict.TryGetValue(timerId, out object obj) && obj is PromiseTask task) {
+            task.options = options;
+            return true;
+        }
+        return false;
     }
 
     internal double GetTime(TimingType timingType, GameLoopPhase phase) {

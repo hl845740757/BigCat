@@ -112,6 +112,13 @@ public static class UnityEditorUtil
         // "Assets/DNF/Animations",
     };
 
+    public static readonly string[] audioSearchFolders = new[]
+    {
+        "Assets/GameRes/Sounds",
+        "Assets/DNF/Sounds",
+        // "Assets/DNF/Animations",
+    };
+
     /// <summary>
     /// 是否是图片文件(测试文件路径后缀)
     /// </summary>

@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -35,7 +34,7 @@ public class ObjectPathField : BindableElement, INotifyValueChanged<ObjectPath>,
     // TODO 增加ObjectField用于选择对象和展示Icon
     private TextField _collectionField;
     private TextField _localPathField;
-    private IntegerField _localIdField;
+    private IntegerField _localIdField; // 偶尔的long可以用字符串兼容
     private EnumField _typeField;
 
     private Foldout _foldout;

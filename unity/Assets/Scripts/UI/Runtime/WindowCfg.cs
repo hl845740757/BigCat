@@ -131,7 +131,6 @@ public class WindowCfg : MonoBehaviour
 
     #endregion
 
-
 #if UNITY_EDITOR
     private void OnEnable() {
         if (_window != null) {
@@ -161,16 +160,5 @@ public enum WindowDisplayMode
     Fullscreen = 1, // 全屏模式 - 需要获取屏幕大小
     Floating = 2, // 浮动窗口 - 小窗模式
     Minimized = 3, // 最小化 - 即隐藏模式
-}
-
-/// <summary>
-/// 窗口的互斥方式
-///
-/// 1.其实不建议使用互斥逻辑，窗口都打开也没什么问题 -- 因此不设计复杂的互斥规则。
-/// 2.在不使用互斥逻辑的情况下，用户可以在打开窗口前通过Close方法关闭掉具有指定Tags的窗口。
-/// </summary>
-public enum WindowMutexMode
-{
-    None = 0,
 }
 }

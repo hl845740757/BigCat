@@ -39,6 +39,10 @@ public class SceneMgrCfg
     /// </summary>
     public double unscaledMinPeriod = 0.01;
     /// <summary>
+    /// 是否启用非缩放时间队列
+    /// </summary>
+    public bool enableUnscaledQueue = true;
+    /// <summary>
     /// 是否启用帧定时器
     /// </summary>
     public bool enableFrameQueue = false;

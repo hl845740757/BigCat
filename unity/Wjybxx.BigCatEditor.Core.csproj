@@ -111,6 +111,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\BuildBundleInfo.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\IPrefixLabel.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarFloatField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Assetor\Classifiers\ConfigClassifier.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\CollectorPackage.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Codecs\VarEnumSetCodec.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\Assetor\DependencyCache.cs" />
@@ -148,6 +149,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector3Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Codecs\VarEnumSet64Codec.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarNullableField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Menus\AssetMenus.cs" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.uxml" />
     <None Include="Assets\Scripts\Core\Editor\DataScript\GraphView.uss" />

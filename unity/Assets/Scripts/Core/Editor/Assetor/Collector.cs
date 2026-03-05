@@ -94,8 +94,9 @@ public class Collector : LeafTask<Blackboard>
     /// <summary>
     /// 不需要建立索引的资产对象类型
     ///
-    /// 1.不建立索引的类型也不会写为主资产，即不能代码加载；
+    /// 1.不建立索引的类型也不会写为主资产，即不能代码加载。
     /// 2.主要解决主资产Bundle包含大量不需要索引的资产导致的Manifest文件膨胀问题，即允许主资产和依赖资产打包到一起。
+    /// 3.如果是原始文件收集器，则为文件扩展名。
     /// </summary>
     public HashSet<string> noIndexTypes = new HashSet<string>();
 
@@ -120,6 +121,10 @@ public class Collector : LeafTask<Blackboard>
 
     protected override void BeforeEnter() {
         this.classifier ??= this.GetFirstAncestorOfType<CollectorGroup>()!.classifier;
+        this.ancestorPath ??= "";
+        if (ancestorPath.EndsWith('/')) {
+            ancestorPath = ancestorPath.Substring(0, ancestorPath.Length - 1);
+        }
     }
 
     protected override void Execute() {
@@ -159,7 +164,9 @@ public class Collector : LeafTask<Blackboard>
             }
             BuildAssetInfo assetInfo = new BuildAssetInfo(assetPath, category);
             assetInfo.assetIndexes = assetIndexes | uniqueIndexes;
-            assetInfo.disableIndexes = noIndexTypes.Contains(assetInfo.assetType.Name);
+            assetInfo.disableIndexes = category == EAssetCategory.RawFile
+                ? noIndexTypes.Contains(UnityEditorUtil.GetExtension(assetPath))
+                : noIndexTypes.Contains(assetInfo.assetType.Name);
             collectedAssets.Add(assetInfo);
         }
         // 分组
@@ -182,8 +189,7 @@ public class Collector : LeafTask<Blackboard>
                 bundleInfo.bundleTags.AddRange(bundleTags);
                 bundleInfo.assetIndexes = assetIndexes;
                 bundleInfo.uniqueIndexes = uniqueIndexes;
-                bundleInfo.ancestorPath = ancestorPath;
-                bundleInfo.indexDepth = GetIndexDepth(ancestorPath, assetInfo.assetPath);
+                bundleInfo.ancestorPath = ancestorPath ?? "";
                 collectedBundles.Add(bundlePath, bundleInfo);
             }
             assetInfo.bundleInfo = bundleInfo; // 即使当前尚未分配name和id也安全

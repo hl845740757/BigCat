@@ -45,6 +45,10 @@ public sealed class WindowMgrCfg
     /// </summary>
     public double unscaledMinPeriod = 0.01;
     /// <summary>
+    /// 是否启用非缩放时间队列
+    /// </summary>
+    public bool enableUnscaledQueue = true;
+    /// <summary>
     /// 是否启用帧定时器(UI系统通常是不需要的)
     /// </summary>
     [Tooltip("如果UI系统存在按帧Update的逻辑，则需要启用该选项")]

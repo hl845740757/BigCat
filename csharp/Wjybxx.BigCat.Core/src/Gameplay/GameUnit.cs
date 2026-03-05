@@ -96,13 +96,7 @@ public sealed class GameUnit
     /// <summary>
     /// 用户自定义数据
     /// </summary>
-    [NonSerialized] private object? _userData;
-#if UNITY_2021_3_OR_NEWER
-    /// <summary>
-    /// 关联的引擎对象
-    /// </summary>
-    [NonSerialized] public GameObject unityObject;
-#endif
+    [NonSerialized] private object _userData;
 
     /// <summary>
     /// GameUnit上的组件
@@ -150,7 +144,6 @@ public sealed class GameUnit
         get => _configId;
         set => _configId = value;
     }
-
     public long InstId {
         get => _instId;
         set => _instId = value;
@@ -162,13 +155,11 @@ public sealed class GameUnit
         get => _scene;
         set => _scene = value;
     }
-
     public GameUnitAgent Agent {
         get => _agent;
         set => _agent = value;
     }
-
-    public object? UserData {
+    public object UserData {
         get => _userData;
         set => _userData = value;
     }

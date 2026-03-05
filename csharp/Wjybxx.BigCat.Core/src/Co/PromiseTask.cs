@@ -278,11 +278,9 @@ internal sealed class PromiseTask
         }
     }
 
-    private bool CanCaughtException(Exception ex) {
-        if (ScheduleType == SCHEDULE_ONCE) {
-            return false;
-        }
-        return TaskOptions.IsEnabled(options, TaskOptions.CAUGHT_EXCEPTION);
+    private bool CanCaughtException(Exception _) {
+        return ScheduleType != SCHEDULE_ONCE
+               && TaskOptions.IsEnabled(options, TaskOptions.CAUGHT_EXCEPTION);
     }
 
     private void SetNextRunTime(double tickTime, int scheduleType) {

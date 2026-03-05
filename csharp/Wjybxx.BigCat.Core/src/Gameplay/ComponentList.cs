@@ -242,7 +242,7 @@ public sealed class ComponentList<T> where T : class
 
     #region internal
 
-    private const int MAX_CAPACITY = int.MaxValue - 8;
+    private const int MAX_CAPACITY = 200;
 
     public void EnsureCapacity(int minCapacity) {
         int oldCapacity = _elements.Length;
@@ -252,7 +252,6 @@ public sealed class ComponentList<T> where T : class
         if (minCapacity > MAX_CAPACITY) {
             throw new OutOfMemoryException("Required array length " + minCapacity + " is too large");
         }
-
         int grow = Math.Max(8, oldCapacity >> 1);
         int newCapacity = MathCommon.Clamp((long)oldCapacity + grow, minCapacity, MAX_CAPACITY);
         _elements = ArrayUtil.CopyOf(_elements, 0, newCapacity);

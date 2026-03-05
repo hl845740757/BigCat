@@ -28,6 +28,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// 注：
 /// 1.不会在同一类<see cref="GameUnit"/>上出现的组件，其组件Id可以使用相同的index，以节省空间。
 /// 2.重用组件对象时（进入新的生命周期时），建议更新对象的实例id。
+/// 3.未使用<see cref="ComponentDefineAttribute"/>的情况下，默认为数据组件。
 /// </summary>
 public abstract class GComponent
 {
@@ -87,7 +88,11 @@ public abstract class GComponent
     #region Props
 
     public ComponentId Cid {
-        get => _cid ??= ID_POOL.ValueOf(GetType());
+        get => _cid ??= ID_POOL.ValueOf(GetType(), (builder, attribute) => {
+            if (attribute == null) {
+                builder.Kind = ComponentKind.Data;
+            }
+        });
         set {
             CheckStatus();
             _cid = value;

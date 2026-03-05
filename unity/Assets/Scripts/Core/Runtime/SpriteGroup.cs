@@ -191,9 +191,9 @@ public class SpriteGroup : ScriptableObject, IBinaryAssetReceiver
             int index = int.Parse(spriteName);
             sprites[index] = sprite;
         }
-        // 索引映射
+        // 索引映射 - 居然还有无效数据
         foreach (SpriteLink link in softLinks) {
-            if (sprites[link.index] == null) {
+            if (link.index < sprites.Length && sprites[link.index] == null) {
                 sprites[link.index] = sprites[link.dest];
             }
         }

@@ -141,5 +141,12 @@ public interface ITimerMgr
     /// </summary>
     /// <param name="timerIds">定时任务id</param>
     void Cancel(List<long> timerIds);
+
+    /// <summary>
+    /// 设置定时任务的选项
+    /// <see cref="TaskOptions"/>
+    /// </summary>
+    /// <returns></returns>
+    bool SetOptions(long timerId, int options);
 }
 }
