@@ -64,6 +64,7 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\AABBField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MRectIntField.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MDoubleField.cs" />
+    <Compile Include="Assets\Scripts\Core\Editor\Menus\AssetMenus.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarVector2Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\VariableCfg.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarObjectField.cs" />
@@ -149,7 +150,6 @@
     <Compile Include="Assets\Scripts\Core\Editor\UIElements\MVector3Field.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Codecs\VarEnumSet64Codec.cs" />
     <Compile Include="Assets\Scripts\Core\Editor\DataScript\Fields\VarNullableField.cs" />
-    <Compile Include="Assets\Scripts\Core\Editor\Menus\AssetMenus.cs" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\ObjectPathField.uxml" />
     <None Include="Assets\Scripts\Core\Editor\UIElements\Euler32Field.uxml" />
     <None Include="Assets\Scripts\Core\Editor\DataScript\GraphView.uss" />

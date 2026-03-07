@@ -78,7 +78,7 @@ public class BuildDependencyTask : LeafTask<Blackboard>
                 }
             }
         }
-        // 构建Bundle之间依赖 - 理应和Unity构建管线计算的结果一致
+        // 构建Bundle之间依赖 - 理应和Unity构建管线计算的结果一致（TODO 关注图集）
         foreach (BuildBundleInfo bundleInfo in packageInfo.name2BundleDic.Values) {
             foreach (string dependPath in bundleInfo.assetList
                          .SelectMany(assetInfo => dependencyCache.GetDependencies(assetInfo.assetPath))) {
@@ -87,8 +87,7 @@ public class BuildDependencyTask : LeafTask<Blackboard>
                     if (autoIgnoreLibrary && dependPath.StartsWith("Packages/")) {
                         continue; // 自动忽略第三方程序集
                     }
-                    Object dependAsset = AssetDatabase.LoadMainAssetAtPath(dependPath);
-                    if (dependAsset && dependAsset.GetType().Namespace == "UnityEditor") {
+                    if (BuildUtil.IsEditorAsset(dependPath)) {
                         continue; // 自动跳过编辑器资产(如代码脚本)
                     }
                     throw new Exception($"The dependent asset: {dependPath} is missing");

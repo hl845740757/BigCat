@@ -16,15 +16,24 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
+using UnityEditor;
 using Wjybxx.BigCat.Util;
-using Wjybxx.BTree;
-using Blackboard = Wjybxx.BigCat.Util.Blackboard;
 
 namespace Wjybxx.BigCat.Editor.Assetor
 {
 internal static class BuildUtil
 {
+    public static bool IsEditorAsset(string assetPath) {
+        Type assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+        if (string.IsNullOrEmpty(assetType.Namespace)) {
+            return true;
+        }
+        // 通常为文件夹和代码等 DefaultAsset
+        return assetType.Namespace == "UnityEditor"
+               || assetType.Namespace.StartsWith("UnityEditor.");
+    }
 }
 
 /// <summary>

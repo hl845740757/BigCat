@@ -45,6 +45,7 @@ public class ResourceManager
     public static ResourceManager Inst { get; set; }
 
     private readonly TaskScheduler _scheduler;
+    private readonly List<Action<float>> _updateList = new(4);
     private readonly List<IPackageManager> _packageManagers = new List<IPackageManager>();
     private readonly List<IBundleManager> _bundleManagers = new List<IBundleManager>();
     //
@@ -102,6 +103,14 @@ public class ResourceManager
     }
 
     /// <summary>
+    /// 心跳方法回调
+    /// </summary>
+    public event Action<float> OnUpdate {
+        add => _updateList.Add(value);
+        remove => _updateList.Remove(value);
+    }
+
+    /// <summary>
     /// 添加资源包管理器
     /// </summary>
     public void AddPackageManager(IPackageManager packageManager) {
@@ -152,8 +161,21 @@ public class ResourceManager
     /// <summary>
     /// 心跳方法
     /// </summary>
-    public void Update() {
-        _scheduler.Template_Execute(false); // false不影响正确性
+    public void Update(float deltaTime) {
+        // 执行组件更新
+        for (int idx = 0; idx < _updateList.Count; idx++) {
+            Action<float> action = _updateList[idx];
+            if (action == null) continue;
+            try {
+                action(deltaTime);
+            }
+            catch (Exception ex) {
+                logger.Warn(ex, "action.Update caught exception");
+            }
+        }
+        // 执行资源任务更新 - false不影响正确性
+        _scheduler.Template_Execute(false);
+
         // 自动释放资源 - 每秒1次即可，避免不必要的开销
         long frameTime = _scheduler.FrameTime;
         if (frameTime - _lastCheckTime >= 1000) {
@@ -273,7 +295,7 @@ public class ResourceManager
         Provider provider;
         if (assetInfo == null) {
             provider = GetErrorProvider(assetType, loadMethod);
-            logger.LogWarn($"ObjectAsset not found, location: {location}, assetType: {assetType.Name}");
+            logger.Warn($"ObjectAsset not found, location: {location}, assetType: {assetType.Name}");
         } else {
             ProviderId providerId = new ProviderId(assetInfo.assetPath, assetType, loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {
@@ -305,7 +327,7 @@ public class ResourceManager
         Provider provider;
         if (assetInfo == null) {
             provider = GetErrorProvider(assetType, loadMethod);
-            logger.LogWarn($"BinaryAsset not found, location: {location}");
+            logger.Warn($"BinaryAsset not found, location: {location}");
         } else {
             ProviderId providerId = new ProviderId(assetInfo.assetPath, assetType, loadMethod);
             if (!_providers.TryGetValue(providerId, out provider)) {

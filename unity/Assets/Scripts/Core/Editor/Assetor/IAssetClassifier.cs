@@ -16,6 +16,8 @@
 
 #endregion
 
+using UnityEditor;
+
 namespace Wjybxx.BigCat.Editor.Assetor
 {
 /// <summary>
@@ -25,6 +27,8 @@ public interface IAssetClassifier
 {
     /// <summary>
     /// 计算资产的类别
+    ///
+    /// 注意：尽量使用<see cref="AssetDatabase.GetMainAssetTypeAtPath"/>以避免将资产加载到内存。
     /// </summary>
     /// <returns></returns>
     EAssetCategory GetCategory(string assetPath);

@@ -37,6 +37,14 @@ public interface GameUnitAgent
     }
 
     /// <summary>
+    /// 执行GameObject的基础行为Update
+    /// </summary>
+    /// <param name="gameUnit"></param>
+    /// <param name="deltaTime"></param>
+    void Update(GameUnit gameUnit, double deltaTime) {
+    }
+
+    /// <summary>
     /// 停止GameObject
     ///
     /// 1.该方法在游戏对象离开场景时调用。

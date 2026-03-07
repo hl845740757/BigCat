@@ -28,7 +28,6 @@ using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 
 #if UNITY_2021_3_OR_NEWER
-using UnityEngine;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
 #endif
 
@@ -266,6 +265,15 @@ public sealed class GameUnit
 #nullable disable
 
     #region 组件模式
+
+    public void Awake(GComponent comp) {
+        if (!ContainsComponent(comp)) {
+            throw new InvalidOperationException("component not contained");
+        }
+        if (comp.Status == ComponentStatus.New) {
+            comp.SetEntity(this);
+        }
+    }
 
     /// <summary>
     /// 添加组件

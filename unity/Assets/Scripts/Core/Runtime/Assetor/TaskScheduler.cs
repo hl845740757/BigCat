@@ -92,7 +92,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
                 }
             }
             catch (Exception ex) {
-                logger.LogWarn(ex, "task.Execute caught exception");
+                logger.Warn(ex, "task.Execute caught exception");
                 child.SetFailed(); // 强制失败
             }
             if (child.IsCompleted) {
@@ -199,7 +199,7 @@ public sealed class TaskScheduler : BranchTask<Blackboard>
             if (ex is BlockingOperationException || ex is TimeoutException) {
                 throw;
             }
-            logger.LogWarn(ex, "task.Execute caught exception");
+            logger.Warn(ex, "task.Execute caught exception");
             task.SetFailed();
         }
         finally {

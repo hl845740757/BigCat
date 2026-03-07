@@ -93,14 +93,6 @@ public sealed class SpriteAnimationClip : ScriptableObject
     }
 
     /// <summary>
-    /// 最后一帧
-    /// </summary>
-    public SpriteAnimationFrame LastFrame {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => frames[frames.Length - 1];
-    }
-
-    /// <summary>
     /// 刷新动画时长
     /// </summary>
     public void RefreshDuration() {

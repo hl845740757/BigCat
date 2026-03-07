@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Core;
@@ -30,13 +31,11 @@ namespace Wjybxx.BigCat.Editor.Assetor.Classifiers
 public class SpriteClassifier : IAssetClassifier
 {
     public EAssetCategory GetCategory(string assetPath) {
-        Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-        return asset switch
-        {
-            SpriteGroup => EAssetCategory.MainAsset,
-            Texture or Sprite => EAssetCategory.DependAsset,
-            _ => EAssetCategory.None
-        };
+        Type assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+        if (assetType == typeof(SpriteGroup)) return EAssetCategory.MainAsset;
+        if (assetType == typeof(Texture2D)) return EAssetCategory.DependAsset;
+        if (assetType == typeof(Sprite)) return EAssetCategory.DependAsset;
+        return EAssetCategory.None;
     }
 }
 }

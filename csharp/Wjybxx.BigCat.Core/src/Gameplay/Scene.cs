@@ -28,8 +28,6 @@ using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Codec.Attributes;
 
 #if UNITY_2021_3_OR_NEWER
-using UnityEngine;
-using UnityScene = UnityEngine.SceneManagement.Scene;
 using ILogger = Wjybxx.Commons.Logger.ILogger;
 #endif
 
@@ -541,7 +539,19 @@ public sealed class Scene
     #region 组件模式
 
     /// <summary>
-    /// 
+    /// 手动激活组件
+    /// </summary>
+    public void Awake(SComponent comp) {
+        if (!ContainsComponent(comp)) {
+            throw new InvalidOperationException("component not contained");
+        }
+        if (comp.Status == ComponentStatus.New) {
+            comp.SetEntity(this);
+        }
+    }
+
+    /// <summary>
+    /// 添加组件
     /// </summary>
     /// <param name="comp">套添加的组件</param>
     /// <param name="addFirst">是否添加到首部，通常用于插入基础组件</param>

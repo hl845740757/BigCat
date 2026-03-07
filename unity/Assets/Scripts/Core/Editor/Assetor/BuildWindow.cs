@@ -22,9 +22,7 @@ using UnityEditor;
 using UnityEngine;
 using Wjybxx.BigCat.Editor.DataScript;
 using Wjybxx.BigCat.Util;
-using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BTree;
-using Wjybxx.BTreeCodec;
 using Wjybxx.Dson;
 using Wjybxx.Dson.Codec;
 

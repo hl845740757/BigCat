@@ -16,10 +16,8 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
-using Wjybxx.BigCat.Core;
 using Wjybxx.Dson.Codec.Attributes;
 
 namespace Wjybxx.BigCat.Editor.Assetor.Classifiers
@@ -47,11 +45,9 @@ public class ConfigClassifier : IAssetClassifier
         if (ignoreFileExtensions.Contains(extension)) {
             return EAssetCategory.None;
         }
-        Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-        if (asset == null || asset.GetType().Namespace == "UnityEditor") {
-            return EAssetCategory.None; // 通常为文件夹和代码等
-        }
-        return EAssetCategory.MainAsset;
+        return BuildUtil.IsEditorAsset(assetPath)
+            ? EAssetCategory.None // 通常为文件夹和代码等
+            : EAssetCategory.MainAsset;
     }
 }
 }

@@ -60,7 +60,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 5, title: SpriteGroup收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 559}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 547, y: 560}}
   name: "",
   guard: @ptr 0,
   flags: 0,

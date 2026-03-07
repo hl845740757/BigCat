@@ -186,8 +186,8 @@ public class AudioPlayer : MonoBehaviour
             }
             return;
         }
-        // 长音频 - 资源handle由Ctrl管理
-        handle = ResourceManager.Inst.LoadAssetAsync<AudioClip>(audioPath);
+        // 长音频 - 资源handle由Ctrl管理(也可能是AudioGroup类型)
+        handle = LoadClip(audioPath);
         if (handle.IsErrorHandle) {
             return;
         }
@@ -223,6 +223,12 @@ public class AudioPlayer : MonoBehaviour
     }
 
     internal bool HasPrevClip => prevClipCtrl != null;
+
+    private static AssetHandle LoadClip(string audioPath) {
+        return audioPath.StartsWith("AudioGroup") || audioPath.EndsWith(".asset")
+            ? ResourceManager.Inst.LoadAssetAsync<AudioGroup>(audioPath)
+            : ResourceManager.Inst.LoadAssetAsync<AudioClip>(audioPath);
+    }
 
     private void OnLoadCompleted(AssetHandle handle) {
         if (requests.Remove(handle.HandleId, out AudioRequest request)) {

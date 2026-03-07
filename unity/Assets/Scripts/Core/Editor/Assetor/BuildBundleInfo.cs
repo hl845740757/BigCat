@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using Wjybxx.BigCat.Assetor;
-using Wjybxx.Commons.Collections;
 
 namespace Wjybxx.BigCat.Editor.Assetor
 {

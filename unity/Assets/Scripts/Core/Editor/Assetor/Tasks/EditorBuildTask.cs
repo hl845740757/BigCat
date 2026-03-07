@@ -18,8 +18,6 @@
 
 using System;
 using System.IO;
-using System.Text;
-using UnityEditor;
 using Wjybxx.BigCat.Assetor;
 using Wjybxx.BTree;
 using Wjybxx.Commons;

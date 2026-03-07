@@ -60,14 +60,12 @@ public interface SceneAgent
     /// 场景停止（关闭）
     /// </summary>
     void OnStop() {
-
     }
 
     /// <summary>
     /// 清理运行过程中产生的临时数据
     /// </summary>
     void Reset() {
-
     }
 
     /// <summary>
@@ -76,7 +74,6 @@ public interface SceneAgent
     /// 注：可用于销毁/卸载场景资源。
     /// </summary>
     void OnDestroy() {
-
     }
 
     #endregion
@@ -90,7 +87,7 @@ public interface SceneAgent
     /// <summary>
     /// 游戏对象添加到Scene后调用，主要用于维护缓存列表。
     ///
-    /// 注：可以在此时绑定<see cref="GameUnitAgent"/>。
+    /// 注：可以在此时绑定<see cref="GameUnitAgent"/>和Main组件。
     /// </summary>
     /// <param name="gameUnit"></param>
     void OnGameUnitAdded(GameUnit gameUnit) {

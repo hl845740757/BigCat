@@ -207,21 +207,6 @@ public class Collector : LeafTask<Blackboard>
         SetSuccess();
     }
 
-    private static int GetIndexDepth(string ancestorPath, string assetPath) {
-        if (string.IsNullOrEmpty(ancestorPath)) return 0;
-        string relativePath = Path.GetRelativePath(ancestorPath, assetPath).Replace('\\', '/');
-        if (string.IsNullOrEmpty(relativePath)) {
-            throw new ArgumentException($"invalid ancestor: {ancestorPath}, assetPath: {assetPath}");
-        }
-        int depth = 0;
-        for (int idx = 0; idx < relativePath.Length; idx++) {
-            if (relativePath[idx] == '/') {
-                depth++;
-            }
-        }
-        return depth;
-    }
-
     private string GetBundlePath(string assetPath) {
         if (groupBy == EGroupBy.Collector || !recursive) {
             return collectPath;
@@ -241,9 +226,8 @@ public class Collector : LeafTask<Blackboard>
         if (classifier != null) {
             return classifier.GetCategory(assetPath);
         }
-        Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-        if (asset == null || asset.GetType().Namespace == "UnityEditor") {
-            return EAssetCategory.None; // 通常为文件夹和代码等
+        if (BuildUtil.IsEditorAsset(assetPath)) {
+            return EAssetCategory.None;
         }
         return collectorType switch
         {

@@ -36,6 +36,9 @@ public abstract class GComponent
     /// 组件id池
     /// </summary>
     public static readonly ComponentIdPool ID_POOL = ComponentIdPool.NewPool();
+    public static readonly ComponentIdPool.Interceptor ID_INTERCEPTOR = (builder, attribute) => {
+        if (attribute == null) builder.Kind = ComponentKind.Data;
+    };
 #nullable disable
     [NonSerialized] private GameUnit _gameUnit;
     [NonSerialized] private ComponentId _cid;
@@ -88,11 +91,7 @@ public abstract class GComponent
     #region Props
 
     public ComponentId Cid {
-        get => _cid ??= ID_POOL.ValueOf(GetType(), (builder, attribute) => {
-            if (attribute == null) {
-                builder.Kind = ComponentKind.Data;
-            }
-        });
+        get => _cid ??= ID_POOL.ValueOf(GetType(), ID_INTERCEPTOR);
         set {
             CheckStatus();
             _cid = value;
