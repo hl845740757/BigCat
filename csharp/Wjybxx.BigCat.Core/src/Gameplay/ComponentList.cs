@@ -30,7 +30,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// 组件列表辅助类
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public interface ComponentListHelper<T>
+public interface IComponentListHelper<T>
 {
     ComponentId GetCid(T element);
 
@@ -49,10 +49,10 @@ public interface ComponentListHelper<T>
 public sealed class ComponentList<T> where T : class
 {
     private T?[] _elements;
-    private readonly ComponentListHelper<T> _helper;
+    private readonly IComponentListHelper<T> _helper;
     private GBitSet _elementsMask;
 
-    public ComponentList(ComponentListHelper<T> helper, int capacity = 0) {
+    public ComponentList(IComponentListHelper<T> helper, int capacity = 0) {
         _helper = helper;
         _elements = capacity > 0 ? new T[capacity] : Array.Empty<T>();
     }

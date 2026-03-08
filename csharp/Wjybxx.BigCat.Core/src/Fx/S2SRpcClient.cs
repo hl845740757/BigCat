@@ -30,14 +30,14 @@ using Wjybxx.Commons.Pool;
 
 namespace Wjybxx.BigCat.Fx
 {
-public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEventHandler<WorkerEvent>
+public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentEventHandler<WorkerEvent>
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<S2SRpcClient>();
 #nullable disable
-    private Worker worker;
+    private IWorker worker;
     private WorkerAddr selfAddr;
     private TimeModule timeModule;
-    private RpcMethodRegistry _methodRegistry;
+    private IRpcMethodRegistry _methodRegistry;
     private S2SSessionMgr sessionMgr;
     private RpcSupport rpcSupport;
 
@@ -48,19 +48,19 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     /** 本地Session，用于Node内的线程通信 */
     private S2SSession localSession;
     /** 超时信息 -- 所有Session的集中处理 */
-    private readonly IndexedPriorityQueue<RpcRequestStub> stubQueue = new(RpcRequestStub.Comparer);
-    /** Stub池 -- 不共享，没必要 */
-    private readonly ObjectPool<RpcRequestStub> stubPool = new ObjectPool<RpcRequestStub>(
-        () => new RpcRequestStub(), stub => stub.Reset(), 100);
+    private readonly IndexedPriorityQueue<RpcTimeoutContext> timeoutQueue = new(RpcTimeoutContext.Comparer);
+    /** 超时上下文池 -- 不共享，没必要 */
+    private readonly ObjectPool<RpcTimeoutContext> timeoutPool = new ObjectPool<RpcTimeoutContext>(
+        () => new RpcTimeoutContext(), context => context.Reset(), 100);
 
     public override void OnAwake() {
-        this.worker = (Worker)EventLoop;
+        this.worker = (IWorker)EventLoop;
         this.selfAddr = worker.WorkerAddr;
         this.timeModule = worker.Injector.GetInstance<TimeModule>();
-        this._methodRegistry = worker.Injector.GetInstance<RpcMethodRegistry>();
+        this._methodRegistry = worker.Injector.GetInstance<IRpcMethodRegistry>();
         this.sessionMgr = worker.Injector.GetInstance<S2SSessionMgr>();
         // Node上的组件
-        Node node = worker.Node;
+        INode node = worker.Node;
         this.rpcSupport = node.Injector.GetInstance<RpcSupport>();
         // 创建虚拟Session
         this.localSession = new S2SSession(0, selfAddr.nodeId);
@@ -85,16 +85,16 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
     public void RemoveSession(long sessionId) {
         rpcSupport.RemoveSession(sessionId);
 
-        List<RpcRequestStub> list = new List<RpcRequestStub>();
-        foreach (RpcRequestStub stub in stubQueue) {
-            if (stub.sessionId == sessionId) {
-                list.Add(stub);
+        List<RpcTimeoutContext> list = new List<RpcTimeoutContext>();
+        foreach (RpcTimeoutContext context in timeoutQueue) {
+            if (context.sessionId == sessionId) {
+                list.Add(context);
             }
         }
-        foreach (RpcRequestStub stub in list) {
-            stub.promise.TrySetException(stub.rid, RpcClientException.SessionClosed(stub.destAddr));
-            stubQueue.Remove(stub);
-            stubPool.Release(stub);
+        foreach (RpcTimeoutContext context in list) {
+            context.promise.TrySetException(context.rid, RpcClientException.SessionClosed(context.destAddr));
+            timeoutQueue.Remove(context);
+            timeoutPool.Release(context);
         }
     }
 
@@ -147,9 +147,9 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         ValuePromise<object> promise = ValuePromise<object>.Acquire(out int rid, worker);
         // 先保留存根再发送
         {
-            RpcRequestStub stub = NewStub(request, promise, rid, timeModule.Time + timeoutMs);
-            session.stubMap.Add(stub.requestId, stub);
-            stubQueue.Add(stub);
+            RpcTimeoutContext timeoutContext = NewTimeout(request, promise, rid, timeModule.Time + timeoutMs);
+            session.timeoutContexts.Add(timeoutContext.requestId, timeoutContext);
+            timeoutQueue.Add(timeoutContext);
         }
         rpcSupport.SendRequest(request); // send以后不可再访问request，可能已被回收
         return ValueFuture<V>.UnsafeCreate(promise, rid);
@@ -168,9 +168,9 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
         ValuePromise<object> promise = ValuePromise<object>.Acquire(out int rid, worker);
         // 先保留存根再发送
         {
-            RpcRequestStub stub = NewStub(request, promise, rid, timeModule.Time + timeoutMs);
-            session.stubMap.Add(stub.requestId, stub);
-            stubQueue.Add(stub);
+            RpcTimeoutContext timeoutContext = NewTimeout(request, promise, rid, timeModule.Time + timeoutMs);
+            session.timeoutContexts.Add(timeoutContext.requestId, timeoutContext);
+            timeoutQueue.Add(timeoutContext);
         }
         rpcSupport.SendRequest(request); // send以后不可再访问request，可能已被回收
         return promise.Future;
@@ -300,32 +300,32 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     public override void Update() {
         long curTime = timeModule.Time;
-        RpcRequestStub stub;
-        while (stubQueue.TryPeekHead(out stub)) {
-            if (curTime < stub.deadline) {
+        RpcTimeoutContext timeoutContext;
+        while (timeoutQueue.TryPeekHead(out timeoutContext)) {
+            if (curTime < timeoutContext.deadline) {
                 return;
             }
-            stubQueue.Dequeue();
+            timeoutQueue.Dequeue();
             // 从关联Session中删除
-            S2SSession? session = GetSession(stub.sessionId);
+            S2SSession? session = GetSession(timeoutContext.sessionId);
             if (session != null) {
-                session.stubMap.Remove(stub.requestId);
+                session.timeoutContexts.Remove(timeoutContext.requestId);
             }
             logger.Info("rpc timeout, destAddr {0}, requestId {1}, serviceId {2}, methodId {3}",
-                stub.destAddr, stub.requestId, stub.serviceId, stub.methodId);
+                timeoutContext.destAddr, timeoutContext.requestId, timeoutContext.serviceId, timeoutContext.methodId);
 
-            stub.promise.TrySetException(stub.rid, RpcClientException.Timeout(stub.destAddr));
-            stubPool.Release(stub);
+            timeoutContext.promise.TrySetException(timeoutContext.rid, RpcClientException.Timeout(timeoutContext.destAddr));
+            timeoutPool.Release(timeoutContext);
         }
     }
 
     public override void Stop() {
-        localSession.stubMap.Clear();
+        localSession.timeoutContexts.Clear();
         foreach (S2SSession session in sessionMgr.SessionMap.Values) {
-            session.stubMap.Clear();
+            session.timeoutContexts.Clear();
         }
-        stubQueue.Clear();
-        stubPool.Clear();
+        timeoutQueue.Clear();
+        timeoutPool.Clear();
     }
 
     #endregion
@@ -394,20 +394,20 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
             RpcResponse.Release(response);
             return;
         }
-        if (!session.stubMap.Remove(response.RequestId, out RpcRequestStub stub)) {
+        if (!session.timeoutContexts.Remove(response.RequestId, out RpcTimeoutContext context)) {
             LogResponseTimeout(response);
             RpcResponse.Release(response);
             return;
         }
-        stubQueue.Remove(stub);
+        timeoutQueue.Remove(context);
 
         if (response.IsSucceeded) {
-            stub.promise.TrySetResult(stub.rid, response.Data);
+            context.promise.TrySetResult(context.rid, response.Data);
         } else {
             Exception ex = RpcServerException.NewServerException(response.ErrorCode, response.ErrorMsg);
-            stub.promise.TrySetException(stub.rid, ex);
+            context.promise.TrySetException(context.rid, ex);
         }
-        stubPool.Release(stub); // 回收
+        timeoutPool.Release(context); // 回收
         RpcResponse.Release(response);
     }
 
@@ -421,18 +421,18 @@ public class S2SRpcClient : EventLoopModule, RpcClient, RpcClientImpl, IAgentEve
 
     #region factory
 
-    private RpcRequestStub NewStub(RpcRequest request, ValuePromise<object> promise, int rid, long deadline) {
-        RpcRequestStub stub = stubPool.Acquire();
-        stub.deadline = deadline;
-        stub.rid = rid;
-        stub.promise = promise;
+    private RpcTimeoutContext NewTimeout(RpcRequest request, ValuePromise<object> promise, int rid, long deadline) {
+        RpcTimeoutContext context = timeoutPool.Acquire();
+        context.deadline = deadline;
+        context.rid = rid;
+        context.promise = promise;
 
-        stub.sessionId = request.SessionId;
-        stub.destAddr = request.DestAddr;
-        stub.requestId = request.RequestId;
-        stub.serviceId = request.ServiceId;
-        stub.methodId = request.MethodId;
-        return stub;
+        context.sessionId = request.SessionId;
+        context.destAddr = request.DestAddr;
+        context.requestId = request.RequestId;
+        context.serviceId = request.ServiceId;
+        context.methodId = request.MethodId;
+        return context;
     }
 
     private RpcRequest NewRequest(S2SSession session, WorkerAddr destAddr, in RpcMethodSpec methodSpec, int invokeType) {

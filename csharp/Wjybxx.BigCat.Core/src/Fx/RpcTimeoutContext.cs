@@ -16,7 +16,6 @@
 
 #endregion
 
-#nullable restore
 using System.Collections.Generic;
 using Wjybxx.Commons.Attributes;
 using Wjybxx.Commons.Collections;
@@ -25,12 +24,11 @@ using Wjybxx.Commons.Concurrent;
 namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// 请求存根
-/// 新实现下，Stub会拷贝Request的关键数据，以实现生命周期的分离，使得Request可以简单池化。
-/// 该对象仅用于框架层，不可暴露给用户。
+/// 请求超时上下文
+/// 该上下文拷贝Request的关键数据，以实现生命周期的分离，使得Request可以简单池化。
 /// </summary>
 [Internal]
-public sealed class RpcRequestStub : IIndexedElement
+public sealed class RpcTimeoutContext : IIndexedElement
 {
 #nullable disable
     public int qIndex = IIndexedElement.IndexNotFound;
@@ -58,7 +56,7 @@ public sealed class RpcRequestStub : IIndexedElement
     /** 方法id */
     public int methodId;
 
-    public RpcRequestStub() {
+    public RpcTimeoutContext() {
     }
 
     public int CollectionIndex(object collection) {
@@ -81,9 +79,9 @@ public sealed class RpcRequestStub : IIndexedElement
         methodId = 0;
     }
 
-    private sealed class DefaultComparer : IComparer<RpcRequestStub>
+    private sealed class DefaultComparer : IComparer<RpcTimeoutContext>
     {
-        public int Compare(RpcRequestStub lhs, RpcRequestStub rhs) {
+        public int Compare(RpcTimeoutContext lhs, RpcTimeoutContext rhs) {
             if (ReferenceEquals(lhs, rhs)) return 0;
             // if (ReferenceEquals(null, rhs)) return 1;
             // if (ReferenceEquals(null, lhs)) return -1;
@@ -97,6 +95,6 @@ public sealed class RpcRequestStub : IIndexedElement
         }
     }
 
-    public static IComparer<RpcRequestStub> Comparer { get; } = new DefaultComparer();
+    public static IComparer<RpcTimeoutContext> Comparer { get; } = new DefaultComparer();
 }
 }

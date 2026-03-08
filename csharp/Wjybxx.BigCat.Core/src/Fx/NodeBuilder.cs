@@ -33,7 +33,7 @@ public abstract class NodeBuilder : WorkerBuilder
     /** 服务器节点id */
     private int nodeId;
     /// <summary>
-    /// Rpc接口所在的包，用于生成<see cref="RpcMethodRegistry"/>
+    /// Rpc接口所在的包，用于生成<see cref="IRpcMethodRegistry"/>
     ///
     /// 我们通过Type定位指定的程序集和命名空间，我们只会导出Type所在程序集所在命名空间下的Rpc接口。
     /// </summary>
@@ -45,7 +45,7 @@ public abstract class NodeBuilder : WorkerBuilder
     }
 
 #if NET6_0_OR_GREATER
-    public abstract override Node Build();
+    public abstract override INode Build();
 #endif
 
     public int NumberChildren {

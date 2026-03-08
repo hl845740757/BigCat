@@ -22,12 +22,12 @@ using Wjybxx.Commons.Concurrent;
 namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// 1.该接口和<see cref="RpcClient"/>分离，属于关注点分离；以允许<code>PlayerSessionMgr</code>也实现该接口。
+/// 1.该接口和<see cref="IRpcClient"/>属于关注点分离；以允许<code>PlayerSessionMgr</code>也实现该接口。
 /// 2.这里的接口由<see cref="RpcContext{T}"/>调用，
 /// 3.我们这里不再封装额外的方法对象来传输参数，因为用户基本不会手动调用这里的方法。
 /// 4.如果返回结果的线程可能不是当前Worker，要小心多线程问题。
 /// </summary>
-public interface RpcClientImpl
+public interface IRpcClientImpl
 {
     /// <summary>
     /// 

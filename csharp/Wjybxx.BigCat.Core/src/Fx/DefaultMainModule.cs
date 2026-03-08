@@ -20,12 +20,11 @@ using System;
 using System.Collections.Generic;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
-using Wjybxx.Commons.Inject;
 using Wjybxx.Commons.Inject.Attributes;
 
 namespace Wjybxx.BigCat.Fx
 {
-public class DefaultMainModule : EventLoopModule, MainModule
+public class DefaultMainModule : EventLoopModule, IMainModule
 {
 #nullable disable
     /** 时间模块由主模块驱动 */
@@ -42,22 +41,21 @@ public class DefaultMainModule : EventLoopModule, MainModule
     protected long mainLoopTimeSpan;
     //
     /** 事件循环 */
-    protected Worker worker;
+    protected IWorker worker;
     /** 事件循环的事件处理器 */
     protected readonly Dictionary<int, IAgentEventHandler<WorkerEvent>> handlerMap = new(20);
 
     #region 事件
 
     public void Inject(IEventLoop eventLoop, long consumerId) {
-        this.worker = (Worker)eventLoop;
+        this.worker = (IWorker)eventLoop;
     }
 
     public void Subscribe(int type, IAgentEventHandler<WorkerEvent> handler) {
         if (handler == null) throw new ArgumentNullException(nameof(handler));
-        if (handlerMap.ContainsKey(type)) {
+        if (!handlerMap.TryAdd(type, handler)) {
             throw new ArgumentException("type: " + type);
         }
-        handlerMap[type] = handler;
     }
 
     public void OnEvent(long sequence, ref WorkerEvent rawEvent) {

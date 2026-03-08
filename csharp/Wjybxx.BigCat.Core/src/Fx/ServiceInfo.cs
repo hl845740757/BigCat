@@ -28,14 +28,14 @@ namespace Wjybxx.BigCat.Fx
 public sealed class ServiceInfo
 {
     public readonly int serviceId;
-    public readonly IList<Worker> workerList;
+    public readonly IList<IWorker> workerList;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="serviceId">服务id</param>
     /// <param name="workerList">支持服务的Worker</param>
-    public ServiceInfo(int serviceId, IList<Worker> workerList) {
+    public ServiceInfo(int serviceId, IList<IWorker> workerList) {
         this.serviceId = serviceId;
         this.workerList = workerList ?? throw new ArgumentNullException(nameof(workerList));
     }
@@ -44,7 +44,7 @@ public sealed class ServiceInfo
         return new ServiceInfo(serviceId, workerList.ToImmutableList2());
     }
 
-    public void AddWorker(Worker worker) {
+    public void AddWorker(IWorker worker) {
         if (worker == null) throw new ArgumentNullException(nameof(worker));
         workerList.Add(worker);
     }

@@ -45,12 +45,12 @@ public sealed class WorkerControlData
     /// </summary>
     /// <param name="worker"></param>
     /// <param name="unstarted">是否尚未启动</param>
-    internal void Init(Worker worker, bool unstarted) {
+    internal void Init(IWorker worker, bool unstarted) {
         // 如果未设置手动关闭，则在Worker已启动的情况下默认手动关闭
         if (manualClose == null) {
             manualClose = !unstarted;
         }
-        this.rpcClient = (S2SRpcClient)worker.Injector.GetInstance<RpcClient>();
+        this.rpcClient = (S2SRpcClient)worker.Injector.GetInstance<IRpcClient>();
     }
 }
 }

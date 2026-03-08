@@ -12,7 +12,6 @@ namespace Wjybxx.BigCat.Demo
 /// </summary>
 [Generated("Wjybxx.BigCatTool.Generator.Excel.ClassGenerator")]
 [DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "TestCfg" })]
-[SerialVersion(-1073192390)]
 public class TestCfg
 {
     #nullable disable

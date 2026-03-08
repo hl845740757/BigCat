@@ -30,7 +30,7 @@ public class DefaultWorkerBuilder : WorkerBuilder
 
     public new DisruptorEventLoopBuilder<WorkerEvent> Delegated => (DisruptorEventLoopBuilder<WorkerEvent>)delegated;
 
-    public override Worker Build() {
+    public override IWorker Build() {
         if (EventSequencer == null) {
             EventSequencer = new RingBufferEventSequencer<WorkerEvent>.Builder(WorkerEvent.FACTORY)
             {
@@ -41,7 +41,7 @@ public class DefaultWorkerBuilder : WorkerBuilder
         if (ThreadFactory == null) {
             ThreadFactory = new DefaultThreadFactory("Worker");
         }
-        return new WorkerImpl(this);
+        return new Worker(this);
     }
 
     /// <summary>

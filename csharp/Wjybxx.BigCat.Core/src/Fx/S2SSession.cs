@@ -65,7 +65,7 @@ public sealed class S2SSession
     /** 请求id分配器 */
     private long sequencer = 0;
     /** 发出的请求信息 */
-    internal readonly Dictionary<long, RpcRequestStub> stubMap = new(100);
+    internal readonly Dictionary<long, RpcTimeoutContext> timeoutContexts = new(100);
 
     public S2SSession(long sessionId, int nodeId) {
         this.sessionId = sessionId;

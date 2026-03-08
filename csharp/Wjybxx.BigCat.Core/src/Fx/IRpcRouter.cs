@@ -43,7 +43,7 @@ namespace Wjybxx.BigCat.Fx
 /// 接收时，Rpc框架在处理完请求和响应后，会将请求和响应归还到池中。
 /// 暂未实现为引用计数方案，目前来看不太需要 —— Request和Response的声明周期相对简单。
 /// </summary>
-public interface RpcRouter : IEventLoopModule
+public interface IRpcRouter : IEventLoopModule
 {
     /// <summary>
     /// 发送一个协议

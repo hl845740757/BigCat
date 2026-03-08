@@ -91,7 +91,7 @@ public sealed class GameUnit
     /// 1.这里的Agent与游戏对象的生命周期并不绑定，存储在这里仅仅是为了避免频繁查询。
     /// 2.建议使用默认对象代替Null。
     /// </summary>
-    [NonSerialized] private GameUnitAgent _agent;
+    [NonSerialized] private IGameUnitAgent _agent;
     /// <summary>
     /// 用户自定义数据
     /// </summary>
@@ -154,7 +154,7 @@ public sealed class GameUnit
         get => _scene;
         set => _scene = value;
     }
-    public GameUnitAgent Agent {
+    public IGameUnitAgent Agent {
         get => _agent;
         set => _agent = value;
     }

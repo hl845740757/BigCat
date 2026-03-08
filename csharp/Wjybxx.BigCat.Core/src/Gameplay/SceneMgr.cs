@@ -126,7 +126,7 @@ public class SceneMgr
     /// <summary>
     /// 创建循环绑定的线程
     /// </summary>
-    public Worker Worker => (Worker)coroutineMgr.EventLoop;
+    public IWorker Worker => (IWorker)coroutineMgr.EventLoop;
 
     #region 容器管理
 

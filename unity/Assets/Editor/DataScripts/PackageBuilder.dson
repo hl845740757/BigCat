@@ -60,7 +60,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 5, title: SpriteGroup收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 547, y: 560}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 547, y: 558}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -246,7 +246,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 17, title: NPC配置收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 554, y: 137}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 550, y: 136}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -275,7 +275,7 @@
   collectorType: 0,
   provided: false,
   groupBy: 0,
-  groupDepth: 9,
+  groupDepth: 2,
   bundleTags: [],
   assetIndexes: TypeAndFileName,
   uniqueIndexes: RelativeToAncestor,
@@ -342,7 +342,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 22, title: NPC动画收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 733, y: 137}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 742, y: 136}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -351,7 +351,7 @@
   collectorType: 0,
   provided: false,
   groupBy: 0,
-  groupDepth: 9,
+  groupDepth: 2,
   bundleTags: [],
   assetIndexes: TypeAndFileName,
   uniqueIndexes: RelativeToAncestor,
@@ -380,7 +380,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 24, title: MOB动画收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 742, y: 4}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 742, y: 3}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -389,7 +389,7 @@
   collectorType: 0,
   provided: false,
   groupBy: 0,
-  groupDepth: 9,
+  groupDepth: 2,
   bundleTags: [],
   assetIndexes: TypeAndFileName,
   uniqueIndexes: RelativeToAncestor,
@@ -446,7 +446,7 @@
   ignoreFileExtensions: []
 }
 {@{clsName: Collector, localId: 28, title: Town配置收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 551, y: 413}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 546, y: 413}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -475,7 +475,7 @@
   collectorType: 3,
   provided: false,
   groupBy: 1,
-  groupDepth: 9,
+  groupDepth: 2,
   bundleTags: [],
   assetIndexes: 0,
   uniqueIndexes: RelativeToAncestor,
@@ -486,7 +486,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 30, title: Map配置收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 566, y: 273}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 554, y: 272}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -522,7 +522,7 @@
   classifier: @ptr 0
 }
 {@{clsName: Collector, localId: 32, title: Map动画收集器,
-   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 742, y: 273}}
+   typeSymbol: "assetor.Collector", features: @i 0x40, position: {x: 742, y: 272}}
   name: "",
   guard: @ptr 0,
   flags: 0,
@@ -531,7 +531,7 @@
   collectorType: 0,
   provided: false,
   groupBy: 0,
-  groupDepth: 9,
+  groupDepth: 2,
   bundleTags: [],
   assetIndexes: TypeAndFileName,
   uniqueIndexes: RelativeToAncestor,

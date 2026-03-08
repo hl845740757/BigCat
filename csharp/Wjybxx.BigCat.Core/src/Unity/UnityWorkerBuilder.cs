@@ -32,7 +32,7 @@ public class UnityWorkerBuilder : WorkerBuilder
 
     public new UnityEventLoopBuilder<WorkerEvent> Delegated => (UnityEventLoopBuilder<WorkerEvent>)delegated;
 
-    public override Worker Build() {
+    public override IWorker Build() {
         if (EventSequencer == null) {
             EventSequencer = new RingBufferEventSequencer<WorkerEvent>.Builder(WorkerEvent.FACTORY)
             {

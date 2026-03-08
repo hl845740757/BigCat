@@ -83,7 +83,6 @@ public class BeanExample : BaseTypeExample
     [DsonProperty(Name = "_name", EncodeFeatures = SerializeFeatures.StringAutoQuote)]
     private string? name;
 
-    [DsonProperty(EncodeFeatures = SerializeFeatures.NumberUnsigned)]
     private int age;
 
     public string? Name {

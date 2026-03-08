@@ -4,13 +4,9 @@ using System.Linq;
 using System.Threading;
 using UnityEngine;
 using Wjybxx.BigCat.Assetor;
-using Wjybxx.BigCat.Assetor.Tasks;
 using Wjybxx.BigCat.Co;
-using Wjybxx.BigCat.Core;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
-using Wjybxx.BigCat.MVC;
-using Wjybxx.BigCat.Tests;
 using Wjybxx.BigCat.UI;
 using Wjybxx.BigCat.Unity;
 using Wjybxx.Commons.Concurrent;
@@ -42,14 +38,10 @@ public class GameLauncher : MonoBehaviour
             // 初始化模块
             ModuleClasses =
             {
-                typeof(RpcClient),
-                typeof(RpcSupport),
-                typeof(TestRpcRouter)
             },
             // Rpc接口包
             RpcPackages =
             {
-                typeof(TestRpcRouter)
             },
             NumberChildren = 2,
             WorkerFactory = (parent, index, controlData) => {
@@ -64,7 +56,7 @@ public class GameLauncher : MonoBehaviour
                         Parent = parent,
                         ControlData = controlData,
                         Injector = InjectorExtensions.CreateInjector(new WorkerInjectorConfig()),
-                        ModuleClasses = { typeof(RpcClient) }
+                        ModuleClasses = { typeof(IRpcClient) }
                     };
                 } else {
                     workerBuilder = new DefaultWorkerBuilder()
@@ -74,7 +66,7 @@ public class GameLauncher : MonoBehaviour
                         ControlData = controlData,
                         WaitStrategy = new TimeoutSleepingWaitStrategy(5, 2, 5),
                         Injector = InjectorExtensions.CreateInjector(new WorkerInjectorConfig()),
-                        ModuleClasses = { typeof(RpcClient) }
+                        ModuleClasses = { typeof(IRpcClient) }
                     };
                 }
                 // 初始化rpc服务
@@ -151,7 +143,7 @@ public class GameLauncher : MonoBehaviour
 
     private void Update() {
         worker.Internal_Update();
-        ResourceManager.Inst.Update();
+        ResourceManager.Inst.Update(Time.deltaTime);
         //
         sceneMgr.Update();
         windowMgr.Update();
@@ -172,32 +164,26 @@ public class GameLauncher : MonoBehaviour
     private class NodeInjectorConfig : IInjectModule
     {
         public void Configure(IInjectBinder binder) {
-            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(MainModule));
             binder.Bind<TimeModule>();
-            binder.Bind<S2SRpcClient, RpcClient>();
-            binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
+            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IMainModule));
+            binder.Bind<RpcMethodRegistry, IRpcMethodRegistry>();
+            binder.Bind<S2SRpcClient, IRpcClient>();
             binder.Bind<S2SSessionMgr>(); // 具体项目需要绑定子类
-
             // RPC组件
             binder.Bind<RpcSupport>();
-            binder.Bind<TestRpcSerializer, RpcSerializer>();
-            binder.Bind<TestRpcRouter>(InjectScope.Singleton, typeof(TestRpcRouter), typeof(RpcRouter)); // 具体子类也被引用
         }
     }
 
     private class WorkerInjectorConfig : IInjectModule
     {
         public void Configure(IInjectBinder binder) {
-            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(MainModule));
+            binder.Bind<WorkerHolder>(); // 发布Worker引用
             binder.Bind<TimeModule>();
-            binder.Bind<S2SRpcClient, RpcClient>();
-            binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
+            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IMainModule));
+            binder.Bind<RpcMethodRegistry, IRpcMethodRegistry>();
+            binder.Bind<S2SRpcClient, IRpcClient>();
             binder.Bind<S2SSessionMgr>(); // 具体项目需要绑定子类
 
-            binder.Bind<RpcClientExample>(); // worker1
-            binder.Bind<RpcServiceExample>(); // worker2
-
-            binder.Bind<WorkerHolder>(); // 发布Worker引用
             binder.Bind<SceneMgrCfg>(); // 场景管理器配置
             binder.Bind<SceneMgr>(); // 场景管理器
         }

@@ -21,5 +21,5 @@ namespace Wjybxx.BigCat.Fx
 /// <summary>
 /// index和controlData需要设置到<see cref="WorkerBuilder"/>上。
 /// </summary>
-public delegate Worker WorkerFactory(Node parent, int index, WorkerControlData controlData);
+public delegate IWorker WorkerFactory(INode parent, int index, WorkerControlData controlData);
 }

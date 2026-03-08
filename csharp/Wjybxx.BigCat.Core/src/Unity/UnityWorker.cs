@@ -38,9 +38,9 @@ namespace Wjybxx.BigCat.Unity
 /// 在Unity下，用户需要实现一个MonoBehavior来驱动该Worker和UI，以及场景的Update（分情况）。
 /// UIMgr等需要外部驱动的特殊组件，可以实现为<see cref="EventLoopModule"/>，但将类型标记为<see cref="ComponentKind.Behavior"/>。
 /// 
-/// PS：该实现和<see cref="WorkerImpl"/>基本相同，只是超类不同。
+/// PS：该实现和<see cref="Worker"/>基本相同，只是超类不同。
 /// </summary>
-public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
+public class UnityWorker : UnityEventLoop<WorkerEvent>, IWorker
 {
     private readonly WorkerAddr workerAddr;
     private readonly IInjector injector;
@@ -64,7 +64,7 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
     private static UnityEventLoopBuilder<WorkerEvent> Decorate(UnityWorkerBuilder builder) {
         FxUtils.CreateModules(builder);
         if (builder.Agent == null) {
-            builder.Agent = builder.Injector.GetInstance<MainModule>();
+            builder.Agent = builder.Injector.GetInstance<IMainModule>();
         }
         return builder.Delegated;
     }
@@ -78,16 +78,16 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
     public ISet<int> Services => serviceIdSet;
 
     public WorkerControlData ControlData => controlData;
-    public Node Node => (Node)base.Parent!;
+    public INode Node => (INode)base.Parent!;
 
 #if NET6_0_OR_GREATER
-    public override Node? Parent => (Node)base.Parent;
+    public override INode? Parent => (INode)base.Parent;
 
-    public override Worker Select() {
+    public override IWorker Select() {
         return this;
     }
 
-    public override Worker Select(int key) {
+    public override IWorker Select(int key) {
         return this;
     }
 #endif
@@ -114,7 +114,7 @@ public class UnityWorker : UnityEventLoop<WorkerEvent>, Worker
     }
 
     private void ExportServices() {
-        RpcMethodRegistry registry = injector.GetInstance<RpcMethodRegistry>();
+        IRpcMethodRegistry registry = injector.GetInstance<IRpcMethodRegistry>();
         SetServiceIdSet(registry.Export());
     }
 

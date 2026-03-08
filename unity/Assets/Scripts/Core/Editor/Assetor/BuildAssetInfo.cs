@@ -22,6 +22,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
 using Wjybxx.BigCat.Assetor;
+using Wjybxx.BigCat.Core;
 
 namespace Wjybxx.BigCat.Editor.Assetor
 {
@@ -75,14 +76,18 @@ public sealed class BuildAssetInfo
     /// 是否为图集资源
     /// </summary>
     /// <returns></returns>
-    public bool IsSpriteAtlasAsset() => assetType == typeof(SpriteAtlas);
-
+    public bool IsSpriteAtlasAsset => assetType == typeof(SpriteAtlas);
+    /// <summary>
+    /// 是否是自定义图组资源(TODO 压缩包)
+    /// </summary>
+    public bool IsSpriteGroupAsset => assetType == typeof(SpriteGroup);
     /// <summary>
     /// 是否为Shader资源
     /// </summary>
     /// <returns></returns>
-    public bool IsShaderAsset() => assetType == typeof(Shader)
-                                   || assetType == typeof(ShaderVariantCollection);
+    public bool IsShaderAsset => assetType == typeof(Shader)
+                                 || assetType == typeof(ShaderVariantCollection);
+
 
     public AssetFileInfo Build() {
         return new AssetFileInfo()

@@ -40,7 +40,7 @@ namespace Wjybxx.BigCat.Fx
 /// 2.同步调用会导致后到的结果被提前处理，因此打乱了时序，请务必清楚。
 /// 3.和玩家通信时建议使用定制的Client实现(不应该提供同步调用接口，目标地址使用conId)
 /// </summary>
-public interface RpcClient
+public interface IRpcClient
 {
 #nullable disable
     /// <summary>

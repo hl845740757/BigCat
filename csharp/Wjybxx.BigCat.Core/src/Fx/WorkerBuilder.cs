@@ -31,11 +31,11 @@ public abstract class WorkerBuilder
     /// <summary>
     /// Worker上绑定的容器，需要包含：
     /// <see cref="IEventLoopAgent{T}"/>、<see cref="TimeModule"/>
-    /// <see cref="RpcClient"/>、<see cref="RpcMethodRegistry"/>、
+    /// <see cref="IRpcClient"/>、<see cref="IRpcMethodRegistry"/>、
     /// <see cref="S2SSessionMgr"/>
     ///
     /// 如果是Node，则还需要包含：
-    /// <see cref="RpcSupport"/>、<see cref="RpcRouter"/>、<see cref="RpcSerializer"/>、
+    /// <see cref="RpcSupport"/>、<see cref="IRpcRouter"/>、<see cref="IRpcSerializer"/>、
     /// </summary>
     private IInjector injector;
 
@@ -55,7 +55,7 @@ public abstract class WorkerBuilder
 
     /// <summary>
     /// Worker的控制数据
-    /// 在真正构建时由<see cref="Node"/>赋值，用户需要设置到parent上
+    /// 在真正构建时由<see cref="INode"/>赋值，用户需要设置到parent上
     /// </summary>
     private WorkerControlData controlData;
     /// <summary>
@@ -74,7 +74,7 @@ public abstract class WorkerBuilder
 
     public EventLoopBuilder<WorkerEvent> Delegated => delegated;
 
-    public abstract Worker Build();
+    public abstract IWorker Build();
 
     #region worker
 
@@ -125,8 +125,8 @@ public abstract class WorkerBuilder
 
     #region delegated
 
-    public Node Parent {
-        get => (Node)delegated.Parent;
+    public INode Parent {
+        get => (INode)delegated.Parent;
         set => delegated.Parent = value;
     }
     public int Index {

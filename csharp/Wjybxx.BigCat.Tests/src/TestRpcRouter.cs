@@ -21,7 +21,7 @@ using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCat.Tests
 {
-public class TestRpcRouter : EventLoopModule, RpcRouter
+public class TestRpcRouter : EventLoopModule, IRpcRouter
 {
     public void Send(RpcProtocol protocol) {
     }

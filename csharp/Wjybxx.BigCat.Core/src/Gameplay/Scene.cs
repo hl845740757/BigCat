@@ -76,7 +76,7 @@ public sealed class Scene
     /// 内部代理
     /// 注意：该代理由用户创建
     /// </summary>
-    [NonSerialized] private SceneAgent _agent;
+    [NonSerialized] private ISceneAgent _agent;
     /// <summary>
     /// 用户自定义数据
     /// </summary>
@@ -157,7 +157,7 @@ public sealed class Scene
             _sceneMgr = value;
         }
     }
-    public SceneAgent Agent {
+    public ISceneAgent Agent {
         get => _agent;
         set {
             CheckStatus();

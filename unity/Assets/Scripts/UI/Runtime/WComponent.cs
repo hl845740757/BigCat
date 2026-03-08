@@ -156,7 +156,7 @@ public abstract class WComponent
     #endregion
 }
 
-internal class WComponentListHelper : ComponentListHelper<WComponent>
+internal class WComponentListHelper : IComponentListHelper<WComponent>
 {
     public static readonly WComponentListHelper Inst = new WComponentListHelper();
 

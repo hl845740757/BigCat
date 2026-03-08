@@ -165,7 +165,7 @@ public abstract class SComponent
     #endregion
 }
 
-internal class SComponentListHelper : ComponentListHelper<SComponent>
+internal class SComponentListHelper : IComponentListHelper<SComponent>
 {
     public static readonly SComponentListHelper Inst = new SComponentListHelper();
 

@@ -38,7 +38,7 @@ public static class FxUtils
     /// <summary>
     /// 当前线程运行的Worker，Node也会发布到这里
     /// </summary>
-    public static readonly ThreadLocal<Worker> CURRENT_WORKER = new();
+    public static readonly ThreadLocal<IWorker> CURRENT_WORKER = new();
 
     /// <summary>
     /// 当前运行中的所有Node -- 用于未来支持单进程下启动多个服务器。
@@ -49,7 +49,7 @@ public static class FxUtils
     ///
     /// C#居然连CopyOnWrite集合都没有...
     /// </summary>
-    public static readonly ConcurrentDictionary<Node, bool> CURRENT_NODES = new();
+    public static readonly ConcurrentDictionary<INode, bool> CURRENT_NODES = new();
     /// <summary>
     /// Rpc对象池大小
     ///
@@ -96,7 +96,7 @@ public static class FxUtils
     /// </summary>
     public static void ExportService(WorkerBuilder builder) {
         IInjector injector = builder.Injector;
-        RpcMethodRegistry registry = injector.GetInstance<RpcMethodRegistry>();
+        IRpcMethodRegistry registry = injector.GetInstance<IRpcMethodRegistry>();
         foreach (Type clazz in builder.ServiceClasses) {
             object instance = injector.GetInstance(clazz);
             ExportService(registry, clazz, instance);
@@ -104,7 +104,7 @@ public static class FxUtils
     }
 
     /** 导出Rpc服务 */
-    public static void ExportService(RpcMethodRegistry registry, Type serviceInterface, object serviceImpl) {
+    public static void ExportService(IRpcMethodRegistry registry, Type serviceInterface, object serviceImpl) {
         if (!serviceInterface.IsInstanceOfType(serviceImpl)) {
             throw new ArgumentException($"interface: {serviceInterface}, impl: {serviceImpl.GetType()}");
         }
@@ -128,7 +128,7 @@ public static class FxUtils
 
     /** 导出Rpc方法信息 */
     public static void ExportMethodInfo(NodeBuilder builder) {
-        RpcMethodRegistry registry = builder.Injector.GetInstance<RpcMethodRegistry>();
+        IRpcMethodRegistry registry = builder.Injector.GetInstance<IRpcMethodRegistry>();
         foreach (Type pkg in builder.RpcPackages) {
             List<TypeInfo> rpcInterfaces = pkg.Assembly.DefinedTypes
                 .Where(e => e.Namespace == pkg.Namespace)
@@ -140,7 +140,7 @@ public static class FxUtils
         }
     }
 
-    public static void ExportMethodInfo(RpcMethodRegistry registry, TypeInfo serviceInterface) {
+    public static void ExportMethodInfo(IRpcMethodRegistry registry, TypeInfo serviceInterface) {
         RpcServiceAttribute serviceAnno = serviceInterface.GetCustomAttribute<RpcServiceAttribute>();
         if (serviceAnno == null) {
             throw new ArgumentException("target is not RpcService: " + serviceInterface);

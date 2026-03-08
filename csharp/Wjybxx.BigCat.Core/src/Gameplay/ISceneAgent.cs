@@ -23,10 +23,10 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// 场景类的内部代理，辅助管理<see cref="Scene"/>
 ///
-/// 注：<see cref="SceneAgent"/>与<see cref="Scene"/>的生命周期绑定。
+/// 注：<see cref="ISceneAgent"/>与<see cref="Scene"/>的生命周期绑定。
 /// </summary>
 [Immutable]
-public interface SceneAgent
+public interface ISceneAgent
 {
     /// <summary>
     /// 注入场景实例
@@ -87,7 +87,7 @@ public interface SceneAgent
     /// <summary>
     /// 游戏对象添加到Scene后调用，主要用于维护缓存列表。
     ///
-    /// 注：可以在此时绑定<see cref="GameUnitAgent"/>和Main组件。
+    /// 注：可以在此时绑定<see cref="IGameUnitAgent"/>和Main组件。
     /// </summary>
     /// <param name="gameUnit"></param>
     void OnGameUnitAdded(GameUnit gameUnit) {

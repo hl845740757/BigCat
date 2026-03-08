@@ -47,15 +47,15 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
     /** 用于为进程间的Rpc分配RequestId -- 原子更新 */
     private long sequencer = 0;
     /** 用于支持同步调用 -- sessionId到worker的映射 */
-    private readonly ConcurrentDictionary<long, Worker> session2WorkerMap = new();
+    private readonly ConcurrentDictionary<long, IWorker> session2WorkerMap = new();
     /** 用于支持同步调用 -- finally块中删除 */
     private readonly ConcurrentDictionary<Key, IPromise<RpcResult>> watcherMap = new();
 
-    private Node node;
+    private INode node;
     private WorkerAddr nodeAddr;
-    private RpcSerializer serializer;
-    private RpcMethodRegistry methodRegistry;
-    private RpcRouter router;
+    private IRpcSerializer serializer;
+    private IRpcMethodRegistry methodRegistry;
+    private IRpcRouter router;
 #nullable restore
 
     #region 设置
@@ -70,12 +70,12 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
     #region 生命周期
 
     public override void ResolveDependence() {
-        this.node = (Node)EventLoop;
+        this.node = (INode)EventLoop;
         this.nodeAddr = node.NodeAddr;
 
-        this.serializer = node.Injector.GetInstance<RpcSerializer>();
-        this.methodRegistry = node.Injector.GetInstance<RpcMethodRegistry>();
-        this.router = node.Injector.GetInstance<RpcRouter>();
+        this.serializer = node.Injector.GetInstance<IRpcSerializer>();
+        this.methodRegistry = node.Injector.GetInstance<IRpcMethodRegistry>();
+        this.router = node.Injector.GetInstance<IRpcRouter>();
     }
 
     public override void Start() {
@@ -133,7 +133,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
     /// <param name="sessionId">sessionId</param>
     /// <param name="worker">session所在的线程</param>
     /// <exception cref="ArgumentException"></exception>
-    public void AddSession(long sessionId, Worker worker) {
+    public void AddSession(long sessionId, IWorker worker) {
         if (!session2WorkerMap.TryAdd(sessionId, worker)) {
             throw new ArgumentException("sessionId: " + sessionId);
         }
@@ -279,12 +279,12 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
             return;
         }
         // 优先按照SessionId查找，其次按workerId查找，最后随机分配
-        if (session2WorkerMap.TryGetValue(request.SessionId, out Worker worker)) {
+        if (session2WorkerMap.TryGetValue(request.SessionId, out IWorker worker)) {
             OnRcvRequestStep2(worker, request);
             return;
         }
         string? destWorkerId = request.DestAddr.workerId;
-        IList<Worker> workerList = serviceInfo.workerList;
+        IList<IWorker> workerList = serviceInfo.workerList;
         if (!string.IsNullOrWhiteSpace(destWorkerId)) {
             if (destWorkerId == "*") {
                 // 广播 -- 顺序不应该产生影响
@@ -315,9 +315,9 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         }
     }
 
-    private static Worker? FindWorker(IList<Worker> workerList, string workerId) {
+    private static IWorker? FindWorker(IList<IWorker> workerList, string workerId) {
         for (int idx = 0; idx < workerList.Count; idx++) {
-            Worker worker = workerList[idx];
+            IWorker worker = workerList[idx];
             if (workerId == worker.WorkerAddr.workerId) {
                 return worker;
             }
@@ -325,7 +325,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         return null;
     }
 
-    private void OnRcvRequestStep2(Worker worker, RpcRequest request) {
+    private void OnRcvRequestStep2(IWorker worker, RpcRequest request) {
         if (worker == node) {
             worker.ControlData.rpcClient.OnRcvRequestStep3(request);
         } else {
@@ -411,7 +411,7 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
             response.SetFailed(RpcErrorCodes.LOCAL_DESERIALIZE_FAILED, "data error");
         }
         // 优先根据sessionId查询Worker，其次按workerId查找
-        session2WorkerMap.TryGetValue(response.SessionId, out Worker? worker);
+        session2WorkerMap.TryGetValue(response.SessionId, out IWorker? worker);
         if (worker == null && response.DestAddr.workerId != null) {
             worker = node.FindWorker(response.DestAddr.workerId);
         }

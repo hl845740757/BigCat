@@ -25,7 +25,7 @@ using Wjybxx.Dson.Text;
 
 namespace Wjybxx.BigCat.Tests
 {
-public class TestRpcSerializer : RpcSerializer
+public class TestRpcSerializer : IRpcSerializer
 {
     private readonly IDsonConverter converter;
 

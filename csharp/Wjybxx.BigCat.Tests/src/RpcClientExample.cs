@@ -27,21 +27,21 @@ using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject.Attributes;
 using Wjybxx.Commons.Logger;
 using Wjybxx.Commons.Time;
-using static Wjybxx.BigCat.Fx.ExtensibleService;
+using static Wjybxx.BigCat.Fx.IExtensibleService;
 
 namespace Wjybxx.BigCat.Tests
 {
 [RpcService(ServiceId = 12)]
-public class RpcClientExample : EventLoopModule, ExtensibleService
+public class RpcClientExample : EventLoopModule, IExtensibleService
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<RpcClientExample>();
 #nullable disable
     /** worker */
-    private Worker worker;
+    private IWorker worker;
     /** 定时器 */
     private readonly Regulator regulator = Regulator.NewFixedDelay(1, 50);
 
-    [Inject] private RpcClient rpcClient;
+    [Inject] private IRpcClient rpcClient;
     [Inject] private TimeModule timeModule;
 
     // 测试从接口继承的方法
@@ -68,7 +68,7 @@ public class RpcClientExample : EventLoopModule, ExtensibleService
     #region logic
 
     public override void ResolveDependence() {
-        this.worker = (Worker)EventLoop;
+        this.worker = (IWorker)EventLoop;
         this.serverAddr = worker.Node.NodeAddr;
     }
 

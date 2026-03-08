@@ -27,6 +27,6 @@ public sealed class WorkerHolder
     /// <summary>
     /// 建议在在启动Worker前就初始化引用
     /// </summary>
-    public Worker Worker { get; set; }
+    public IWorker Worker { get; set; }
 }
 }

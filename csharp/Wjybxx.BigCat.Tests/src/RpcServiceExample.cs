@@ -24,10 +24,10 @@ using Wjybxx.Commons.Inject.Attributes;
 namespace Wjybxx.BigCat.Tests
 {
 [RpcService(ServiceId = 11)]
-public class RpcServiceExample : EventLoopModule, ExtensibleService
+public class RpcServiceExample : EventLoopModule, IExtensibleService
 {
 #nullable disable
-    [Inject] private RpcClient rpcClient;
+    [Inject] private IRpcClient rpcClient;
     private readonly Dictionary<string, object> extBlackboard = new();
 #nullable restore
 
@@ -92,8 +92,8 @@ public class RpcServiceExample : EventLoopModule, ExtensibleService
 
     public Dictionary<string, object> ExtBlackboard => extBlackboard;
 
-    public ExtensibleService.ExecuteResult Execute(ExtensibleService.ExecuteRequest request) {
-        return new ExtensibleService.ExecuteResult();
+    public IExtensibleService.ExecuteResult Execute(IExtensibleService.ExecuteRequest request) {
+        return new IExtensibleService.ExecuteResult();
     }
 }
 }

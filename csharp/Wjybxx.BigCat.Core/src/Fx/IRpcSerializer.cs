@@ -27,7 +27,7 @@ namespace Wjybxx.BigCat.Fx
 /// TODO 改为返回Bytebuf
 /// </summary>
 [ThreadSafe]
-public interface RpcSerializer
+public interface IRpcSerializer
 {
     /// <summary>
     /// 序列化

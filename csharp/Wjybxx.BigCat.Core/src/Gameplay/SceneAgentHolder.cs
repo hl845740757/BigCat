@@ -19,10 +19,10 @@
 namespace Wjybxx.BigCat.Gameplay
 {
 /// <summary>
-/// 不推荐<see cref="SComponent"/>直接实现<see cref="SceneAgent"/>，以避免方法签名冲突。
+/// 不推荐<see cref="SComponent"/>直接实现<see cref="ISceneAgent"/>，以避免方法签名冲突。
 /// </summary>
 public interface SceneAgentHolder
 {
-    SceneAgent Agent { get; }
+    ISceneAgent Agent { get; }
 }
 }

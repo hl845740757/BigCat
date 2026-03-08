@@ -34,7 +34,7 @@ namespace Wjybxx.BigCat.Fx
 /// </summary>
 public struct RpcContext<T>
 {
-    private readonly RpcClientImpl rpcClient;
+    private readonly IRpcClientImpl rpcClient;
     private readonly long sessionId;
     private readonly WorkerAddr remoteAddr;
     private readonly long requestId;
@@ -43,7 +43,7 @@ public struct RpcContext<T>
     private readonly int invokeType;
     private int options;
 
-    public RpcContext(RpcClientImpl rpcClient,
+    public RpcContext(IRpcClientImpl rpcClient,
                       long sessionId, WorkerAddr remoteAddr,
                       long requestId, int serviceId, int methodId, int invokeType) : this() {
         this.rpcClient = rpcClient ?? throw new ArgumentNullException(nameof(rpcClient));

@@ -18,90 +18,235 @@
 
 using System;
 using System.Collections.Generic;
+using Wjybxx.Commons;
+using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Inject;
 
 namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// Node表示分布式中的一个节点，是分布式架构下的成员 -- 也就是游戏架构中“服”的概念。
-/// Node是一个IO线程，主要负责线程间和分布式进程间的Rpc通信。
-/// Node是特殊的Worker，也支持挂载模块和服务，它挂载的模块称之为路由模块，它挂载的服务称之为路由服务。
-/// Node是Worker的管理者，也是Worker在网络中的门面。
-///
-/// <h3>Select接口</h3>
-/// <see cref="IExecutor.Execute(Action, int)"/>提交的任务都直接进入Node的任务队列，
-/// 如果想提交到Worker，可通过<see cref="IEventLoopGroup.Select"/>提交到指定的Worker。
-/// 
-/// <h3>模块管理</h3>
-/// 1.同Worker一样，Node也通过挂载模块（Module）扩展，
-/// 2.Node的业务应当保持简单，勿在Node上挂在非IO模块。
-/// 3.为保持架构的简单性，我们不支持Node在运行时添加Worker.
-/// 4.Node不可以同步调用Worker上的服务，否则会导致死锁（超时）。
-///
-/// <h3>服务导出</h3>
-/// 1. 当暴露服务到网络时，只能暴露服务支持的并发数，而不能暴露服务关联的Worker。
-/// 2. Rpc客户端不能指定服务由哪个Worker处理 -- 避免不必要的依赖。
+/// 默认的Node实现
 /// </summary>
-public interface Node : Worker
+public class Node : DisruptorEventLoop<WorkerEvent>, INode
 {
-    /// <summary>
-    /// node的Rpc地址 -- workerId为null；
-    /// </summary>
-    WorkerAddr NodeAddr { get; }
+    private readonly IInjector injector;
+    private readonly WorkerAddr workerAddr;
+    private readonly WorkerAddr nodeAddr;
 
-    /// <summary>
-    /// 服务id -> 存在对应服务的Worker -- 限本地使用
-    /// </summary>
-    /// <returns></returns>
-    IDictionary<int, ServiceInfo> ServiceInfoMap { get; }
+    private readonly IWorker[] children;
+    private readonly ImmutableList<IWorker> readonlyChildren;
+    private readonly IEventLoopChooser chooser;
+    private readonly WorkerControlData controlData = new WorkerControlData();
 
-    #region worker管理
+    /** Node自身的服务信息 */
+    private volatile ISet<int> serviceIdSet = ImmutableSet<int>.Empty;
+    /** Node+Worker的服务信息 */
+    private volatile IDictionary<int, ServiceInfo> serviceInfoMap = ImmutableDictionary<int, ServiceInfo>.Empty;
 
-    /** Node挂载的所有Worker */
-    IList<Worker> Workers { get; }
+    public Node(DefaultNodeBuilder builder)
+        : base(Decorate(builder), false) {
+        string workerId = builder.WorkerId ?? throw new NullReferenceException("workerId");
+        int nodeId = builder.NodeId;
+        this.workerAddr = new WorkerAddr(nodeId, workerId);
+        this.nodeAddr = new WorkerAddr(nodeId, null);
+        this.injector = builder.Injector ?? throw new NullReferenceException("injector");
+        // 导出Rpc服务 -- 先注册到Registry但不对外发布
+        FxUtils.ExportService(builder);
+        FxUtils.ExportMethodInfo(builder);
 
-    /** Node挂载的第一个Worker */
-    Worker MainWorker { get; }
+        int numberChildren = builder.NumberChildren;
+        if (numberChildren < 1) {
+            throw new ArgumentException("numberChildren must greater than 0");
+        }
+        WorkerFactory workerFactory = builder.WorkerFactory;
+        if (workerFactory == null) {
+            throw new NullReferenceException("workerFactory");
+        }
+        EventLoopChooserFactory chooserFactory = builder.ChooserFactory;
+        if (chooserFactory == null) {
+            chooserFactory = new EventLoopChooserFactory();
+        }
+        children = new IWorker[numberChildren];
+        for (int idx = 0; idx < numberChildren; idx++) {
+            WorkerControlData controlData = new WorkerControlData();
+            IWorker eventLoop = workerFactory(this, idx, controlData);
+            if (eventLoop.Parent != this) throw new IllegalStateException("the parent of worker is illegal");
+            if (eventLoop.ControlData != controlData)
+                throw new IllegalStateException("the controlData of worker is illegal");
+            if (builder.ManualClose != null) controlData.manualClose = builder.ManualClose;
+            children[idx] = eventLoop;
+        }
+        readonlyChildren = children.ToImmutableList2();
+        chooser = chooserFactory.NewChooser(children);
 
-    /** 根据Worker的名字查找Worker，不存在则返回null */
-    Worker? FindWorker(string workerId);
+        // 构造完成后再初始化模块
+        agent.Inject(this, ConsumerId);
+    }
 
-    #endregion
+    private static DisruptorEventLoopBuilder<WorkerEvent> Decorate(DefaultNodeBuilder builder) {
+        FxUtils.CreateModules(builder);
+        if (builder.Agent == null) {
+            builder.Agent = builder.Injector.GetInstance<IMainModule>();
+        }
+        return builder.Delegated;
+    }
 
-    #region 接口适配
+    private void SetServiceIdSet(ICollection<int> serviceIdSet) {
+        this.serviceIdSet = ImmutableSet<int>.CreateRange(serviceIdSet);
+    }
 
-    /// <summary>
-    /// Node总是返回自己
-    /// </summary>
-    Node Worker.Node => this;
+    private void SetServiceInfoMap(Dictionary<int, ServiceInfo> serviceInfoMap) {
+        Dictionary<int, ServiceInfo> tempMap = new(serviceInfoMap.Count);
+        foreach (ServiceInfo serviceInfo in serviceInfoMap.Values) {
+            tempMap[serviceInfo.serviceId] = serviceInfo.ToImmutable(); // 转不可变
+        }
+        this.serviceInfoMap = tempMap.ToImmutableDictionary2();
+    }
 
-    /// <summary>
-    /// Node没有Parent
-    /// </summary>
-    IEventLoopGroup? IEventLoop.Parent => null;
+    // -----------------------
+    public IInjector Injector => injector;
+    public WorkerAddr WorkerAddr => workerAddr;
+    public WorkerAddr NodeAddr => nodeAddr;
+    public ISet<int> Services => serviceIdSet;
+    public IDictionary<int, ServiceInfo> ServiceInfoMap => serviceInfoMap;
 
-    #endregion
+    public IList<IWorker> Workers => readonlyChildren;
+    public IWorker MainWorker => children[0];
 
-    #region global
+    public IWorker? FindWorker(string workerId) {
+        foreach (IWorker worker in children) {
+            if (workerId == worker.WorkerAddr.workerId) {
+                return worker;
+            }
+        }
+        // 可能是查找自己
+        if (workerId == workerAddr.workerId) {
+            return this;
+        }
+        return null;
+    }
 
-#nullable disable
+    // -----------------
+    public WorkerControlData ControlData => controlData;
 
-    /// <summary>
-    /// 获取当前线程关联的Node
-    ///
-    /// 注：正常业务不应该通过该字段获取引用。
-    /// </summary>
-    public static Node CurrentNode {
-        get {
-            Worker worker = CurrentWorker;
-            return worker != null ? worker.Node : null;
+    INode IWorker.Node => this;
+
+#if NET6_0_OR_GREATER
+    public override IEventLoopGroup? Parent => null;
+
+    public override IWorker Select() {
+        return (IWorker)chooser.Select();
+    }
+
+    public override IWorker Select(int key) {
+        return (IWorker)chooser.Select(key);
+    }
+#else
+    public override IEventLoop Select() {
+        return chooser.Select();
+    }
+
+    public override IEventLoop Select(int key) {
+        return chooser.Select(key);
+    }
+#endif
+
+    #region 生命流程
+
+    protected override void OnStart() {
+        FxUtils.CURRENT_WORKER.Value = (this);
+        FxUtils.CURRENT_NODES[this] = true;
+        InitControlData();
+
+        agent.BeforeEventLoopStart();
+        StartModules(); // 先启动自己的模块和服务，Worker可能需要使用
+        ExportServices(Array.Empty<IWorker>());
+
+        StartWorkers();
+        ExportServices(readonlyChildren); // 再重新导出所有的服务
+        agent.AfterEventLoopStart();
+    }
+
+    protected override void OnShutdown() {
+        agent.BeforeEventLoopShutdown();
+        try {
+            StopWorkers(); // 先停止worker，再停止自己的模块和服务
+            SetServiceIdSet(Array.Empty<int>());
+            SetServiceInfoMap(new Dictionary<int, ServiceInfo>());
+
+            StopModules();
+            DestroyModules();
+            agent.AfterEventLoopShutdown();
+        }
+        finally {
+            FxUtils.CURRENT_WORKER.Value = null;
+            FxUtils.CURRENT_NODES.TryRemove(this, out bool _);
         }
     }
 
-    /// <summary>
-    /// 当前进程上所有的Node
-    /// </summary>
-    public static List<Node> CurrentNodes => new(FxUtils.CURRENT_NODES.Keys);
+    private void InitControlData() {
+        controlData.Init(this, false);
+        foreach (IWorker worker in children) {
+            worker.ControlData.Init(worker, worker.State == EventLoopState.Unstarted);
+        }
+    }
+
+    private void ExportServices(IList<IWorker> workers) {
+        // Node自身的服务
+        HashSet<int> nodeServiceIdSet = injector.GetInstance<IRpcMethodRegistry>().Export();
+        SetServiceIdSet(nodeServiceIdSet);
+
+        Dictionary<int, ServiceInfo> serviceInfoMap = new();
+        // Node自身的服务
+        foreach (int serviceId in nodeServiceIdSet) {
+            serviceInfoMap[serviceId] = new ServiceInfo(serviceId, ImmutableList<IWorker>.Create(this));
+        }
+        // 添加Worker上的服务 -- Worker不可包含Node同名服务
+        foreach (IWorker worker in workers) {
+            foreach (int serviceId in worker.Services) {
+                if (nodeServiceIdSet.Contains(serviceId)) {
+                    throw new IllegalStateException("The service in the worker conflicts with the service in the node, id " + serviceId);
+                }
+                if (!serviceInfoMap.TryGetValue(serviceId, out ServiceInfo serviceInfo)) {
+                    serviceInfo = new ServiceInfo(serviceId, new List<IWorker>(2));
+                    serviceInfoMap[serviceId] = serviceInfo;
+                }
+                serviceInfo.AddWorker(worker);
+            }
+        }
+        SetServiceInfoMap(serviceInfoMap);
+    }
+
+    private void StartWorkers() {
+        FutureCombiner combiner = ExecutorUtil.NewCombiner();
+        foreach (IWorker child in children) {
+            combiner.Add(child.Start());
+        }
+        combiner.SelectAll().Join();
+    }
+
+    private void StopWorkers() {
+        FutureCombiner combiner = ExecutorUtil.NewCombiner();
+        // 逆序关闭 -- 可能存在时序依赖
+        for (int i = children.Length - 1; i >= 0; i--) {
+            IWorker child = children[i];
+            if (child.ControlData.IsManualClose) continue;
+            child.Shutdown();
+            combiner.Add(child.TerminationFuture);
+        }
+        IPromise<object> aggregateFuture = combiner.SelectAll(true);
+        if (aggregateFuture.AwaitUninterruptibly(TimeSpan.FromMinutes(1))) {
+            return;
+        }
+        // 进入快速关闭阶段
+        for (int i = children.Length - 1; i >= 0; i--) {
+            IWorker child = children[i];
+            if (child.ControlData.IsManualClose) continue;
+            child.ShutdownNow();
+        }
+        aggregateFuture.Join();
+    }
 
     #endregion
 }

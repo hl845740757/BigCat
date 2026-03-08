@@ -31,9 +31,9 @@ public class DefaultNodeBuilder : NodeBuilder
     public new DisruptorEventLoopBuilder<WorkerEvent> Delegated => (DisruptorEventLoopBuilder<WorkerEvent>)delegated;
 
 #if NET6_0_OR_GREATER
-    public override Node Build() {
+    public override INode Build() {
 #else
-    public override Worker Build() {
+    public override IWorker Build() {
 #endif
         if (EventSequencer == null) {
             EventSequencer = new MpUnboundedEventSequencer<WorkerEvent>.Builder(WorkerEvent.FACTORY)
@@ -55,7 +55,7 @@ public class DefaultNodeBuilder : NodeBuilder
         if (ThreadFactory == null) {
             ThreadFactory = new DefaultThreadFactory("Worker");
         }
-        return new NodeImpl(this);
+        return new Node(this);
     }
 
     /// <summary>

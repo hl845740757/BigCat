@@ -16,14 +16,14 @@
 
 #endregion
 
-using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 
-namespace Wjybxx.BigCat.Tests
+namespace Wjybxx.BigCat.Fx
 {
-public class TestRpcRouter : EventLoopModule, RpcRouter
+/// <summary>
+/// Worker/Node的主模块
+/// </summary>
+public interface IMainModule : IEventLoopAgent<WorkerEvent>
 {
-    public void Send(RpcProtocol protocol) {
-    }
 }
 }

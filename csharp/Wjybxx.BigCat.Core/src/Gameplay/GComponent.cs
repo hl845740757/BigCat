@@ -156,7 +156,7 @@ public abstract class GComponent
     #endregion
 }
 
-internal class GComponentListHelper : ComponentListHelper<GComponent>
+internal class GComponentListHelper : IComponentListHelper<GComponent>
 {
     public static readonly GComponentListHelper Inst = new GComponentListHelper();
 

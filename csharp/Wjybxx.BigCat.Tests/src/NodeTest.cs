@@ -30,7 +30,7 @@ namespace Wjybxx.BigCat.Tests
 public class NodeTest
 {
 #nullable disable
-    private static Node node;
+    private static INode node;
 #nullable restore
 
     [OneTimeSetUp]
@@ -43,7 +43,7 @@ public class NodeTest
             // 初始化模块
             ModuleClasses =
             {
-                typeof(RpcClient),
+                typeof(IRpcClient),
                 typeof(RpcSupport),
                 typeof(TestRpcRouter)
             },
@@ -61,7 +61,7 @@ public class NodeTest
                     Parent = parent,
                     ControlData = controlData,
                     Injector = InjectorExtensions.CreateInjector(new WorkerInjectorConfig()),
-                    ModuleClasses = { typeof(RpcClient) }
+                    ModuleClasses = { typeof(IRpcClient) }
                 };
                 // 初始化rpc服务
                 if (index == 0) {
@@ -96,26 +96,26 @@ public class NodeTest
     private class NodeInjectorConfig : IInjectModule
     {
         public void Configure(IInjectBinder binder) {
-            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(MainModule));
+            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IMainModule));
             binder.Bind<TimeModule>();
-            binder.Bind<S2SRpcClient, RpcClient>();
-            binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
+            binder.Bind<S2SRpcClient, IRpcClient>();
+            binder.Bind<RpcMethodRegistry, IRpcMethodRegistry>();
             binder.Bind<S2SSessionMgr>(); // 具体项目需要绑定子类
 
             // RPC组件
             binder.Bind<RpcSupport>();
-            binder.Bind<TestRpcSerializer, RpcSerializer>();
-            binder.Bind<TestRpcRouter>(InjectScope.Singleton, typeof(TestRpcRouter), typeof(RpcRouter)); // 具体子类也被引用
+            binder.Bind<TestRpcSerializer, IRpcSerializer>();
+            binder.Bind<TestRpcRouter>(InjectScope.Singleton, typeof(TestRpcRouter), typeof(IRpcRouter)); // 具体子类也被引用
         }
     }
 
     private class WorkerInjectorConfig : IInjectModule
     {
         public void Configure(IInjectBinder binder) {
-            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(MainModule));
+            binder.Bind<DefaultMainModule>(InjectScope.Singleton, typeof(IMainModule));
             binder.Bind<TimeModule>();
-            binder.Bind<S2SRpcClient, RpcClient>();
-            binder.Bind<DefaultRpcProxyRegistry, RpcMethodRegistry>();
+            binder.Bind<S2SRpcClient, IRpcClient>();
+            binder.Bind<RpcMethodRegistry, IRpcMethodRegistry>();
             binder.Bind<S2SSessionMgr>(); // 具体项目需要绑定子类
 
             binder.Bind<RpcClientExample>(); // worker1

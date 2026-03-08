@@ -25,7 +25,7 @@ namespace Wjybxx.BigCat.Gameplay
 ///
 /// 注：游戏的单位的Agent由Scene创建，而非由用户创建。
 /// </summary>
-public interface GameUnitAgent
+public interface IGameUnitAgent
 {
     /// <summary>
     /// 启动GameObject

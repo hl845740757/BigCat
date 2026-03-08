@@ -31,14 +31,14 @@ public struct GRegulator
 {
 #nullable disable
     /** 仅执行一次 */
-    private const byte ONCE = 0;
+    private const int ONCE = 0;
     /** 可变帧率 -- fixedDelay的间隔是前次任务的结束与下次任务的开始 */
-    private const byte FIX_DELAY = 1;
+    private const int FIX_DELAY = 1;
     /** 固定帧率 */
-    private const byte FIX_RATE = 2;
+    private const int FIX_RATE = 2;
 
     /** 其实可以省略，根据{@link #period}的正负判断，但为了提高可读性，还是不那么做 */
-    private readonly byte type;
+    private readonly int type;
     /** 首次执行延迟 */
     private double firstDelay;
     /** 后期执行延迟 */

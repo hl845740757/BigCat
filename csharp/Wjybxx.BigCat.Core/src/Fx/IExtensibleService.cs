@@ -26,7 +26,7 @@ namespace Wjybxx.BigCat.Fx
 /// 可扩展的服务
 /// </summary>
 [StableName]
-public interface ExtensibleService
+public interface IExtensibleService
 {
     /// <summary>
     /// 扩展黑板
