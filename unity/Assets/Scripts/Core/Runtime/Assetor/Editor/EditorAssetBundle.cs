@@ -58,7 +58,8 @@ public class EditorAssetBundle : IAssetBundle
                 string filePath = Application.dataPath + assetInfo.assetPath.Substring(6);
                 FileInfo fileInfo = new FileInfo(filePath);
                 if (!fileInfo.Exists) {
-                    throw new FileNotFoundException(filePath);
+                    Debug.LogWarning("FileNotFound: " + filePath);
+                    continue;
                 }
                 FileItem item = new FileItem(assetInfo.assetPath, fileInfo);
                 _fileItemList.Add(item);

@@ -40,25 +40,25 @@ public struct GRegulator
     /** 其实可以省略，根据{@link #period}的正负判断，但为了提高可读性，还是不那么做 */
     private readonly int type;
     /** 首次执行延迟 */
-    private double firstDelay;
+    private float firstDelay;
     /** 后期执行延迟 */
-    private double period;
+    private float period;
 
     /**
      * 它的真实含义取决于外部，可能是系统时间也可能不是，甚至可能是帧数
      * 在存储已触发次数的情况下还使用上次更新的时间戳，这使得可以在运行的过程中修改间隔，该实现是有状态的。
      * 注意：允许为负数，外部赋值什么就是什么。
      */
-    private double triggerTime;
+    private float triggerTime;
     /** 两次执行之间的间隔 */
-    private double deltaTime;
+    private float deltaTime;
     /** 已触发次数 */
     private int triggerCount;
 
     /** 关联的上下文 -- 用于避免额外的映射 */
     private object context;
 
-    private GRegulator(byte type, double firstDelay, double period, double triggerTime) {
+    private GRegulator(byte type, float firstDelay, float period, float triggerTime) {
         this.type = type;
         this.firstDelay = firstDelay;
         this.period = period;
@@ -69,14 +69,14 @@ public struct GRegulator
         this.context = null;
     }
 
-    private static double CheckFirstDelay(byte type, double firstDelay) {
+    private static float CheckFirstDelay(byte type, float firstDelay) {
         if (type == FIX_RATE && firstDelay < 0) {
             throw new ArgumentException("the firstDelay of fixRate must gte 0, delay " + firstDelay);
         }
         return firstDelay;
     }
 
-    private static double CheckPeriod(double period) {
+    private static float CheckPeriod(float period) {
         if (period <= 0) {
             throw new ArgumentException("period must be positive, period " + period);
         }
@@ -88,7 +88,7 @@ public struct GRegulator
     /// </summary>
     /// <param name="firstDelay">首次执行延迟</param>
     /// <returns></returns>
-    public static GRegulator NewOnce(double firstDelay) {
+    public static GRegulator NewOnce(float firstDelay) {
         return new GRegulator(ONCE, firstDelay, 0, 0);
     }
 
@@ -98,7 +98,7 @@ public struct GRegulator
     /// <param name="firstDelay">首次执行延迟</param>
     /// <param name="period">触发间隔</param>
     /// <returns></returns>
-    public static GRegulator NewFixedDelay(double firstDelay, double period) {
+    public static GRegulator NewFixedDelay(float firstDelay, float period) {
         CheckPeriod(period);
         return new GRegulator(FIX_DELAY, firstDelay, period, 0);
     }
@@ -109,7 +109,7 @@ public struct GRegulator
     /// <param name="firstDelay">首次执行延迟</param>
     /// <param name="period">触发间隔</param>
     /// <returns></returns>
-    public static GRegulator NewFixedRate(double firstDelay, double period) {
+    public static GRegulator NewFixedRate(float firstDelay, float period) {
         CheckPeriod(period);
         CheckFirstDelay(FIX_RATE, firstDelay);
         return new GRegulator(FIX_RATE, firstDelay, period, 0);
@@ -121,7 +121,7 @@ public struct GRegulator
     /// </summary>
     /// <param name="curTime">当前时间</param>
     /// <returns>this</returns>
-    public void Restart(double curTime) {
+    public void Restart(float curTime) {
         triggerTime = curTime;
         deltaTime = 0;
         triggerCount = 0;
@@ -132,7 +132,7 @@ public struct GRegulator
     /// </summary>
     /// <param name="curTime">当前时间</param>
     /// <returns>如果应该执行一次update或者tick，则返回true，否则返回false</returns>
-    public bool IsReady(double curTime) {
+    public bool IsReady(float curTime) {
         bool ready = triggerCount == 0
             ? (curTime - triggerTime >= firstDelay)
             : (period > 0 && (curTime - triggerTime >= period));
@@ -148,12 +148,12 @@ public struct GRegulator
     /// </summary>
     /// <param name="curTime">当前时间</param>
     /// <returns>deltaTime</returns>
-    public double ForceReady(double curTime) {
+    public float ForceReady(float curTime) {
         InternalUpdate(curTime);
         return deltaTime;
     }
 
-    private void InternalUpdate(double curTime) {
+    private void InternalUpdate(float curTime) {
         if (type == FIX_DELAY || type == ONCE) {
             // 使用真实时间计算，但deltaTime也不能小于0
             deltaTime = Math.Max(0, curTime - triggerTime);
@@ -176,7 +176,7 @@ public struct GRegulator
     /// </summary>
     /// <param name="curTime">当前时间</param>
     /// <returns></returns>
-    public double GetDelay(double curTime) {
+    public float GetDelay(float curTime) {
         if (triggerCount == 0) {
             return Math.Max(0, curTime - triggerTime - firstDelay);
         }
@@ -187,7 +187,7 @@ public struct GRegulator
     /// 校准时间
     /// </summary>
     /// <param name="curTime"></param>
-    public void CorrectTime(double curTime) {
+    public void CorrectTime(float curTime) {
         this.triggerTime = curTime;
     }
 
@@ -201,14 +201,14 @@ public struct GRegulator
     /// 它的具体含义取悦于更新时使用的{@code curTime}的含义。
     /// </summary>
     /// <value></value>
-    public double TriggerTime => triggerTime;
+    public float TriggerTime => triggerTime;
 
     /// <summary>
     /// 如果是固定频率的调节器，应该使用<see cref="Period"/>获取更新间隔。
     /// 另外，返回值可能大于{@link #getPeriod()}（其实可以设定最大返回值的，暂时没支持）
     /// </summary>
     /// <value>两次逻辑帧之间的间隔</value>
-    public double DeltaTime => deltaTime;
+    public float DeltaTime => deltaTime;
 
     /// <summary>
     /// 已触发次数
@@ -226,7 +226,7 @@ public struct GRegulator
     /// <summary>
     /// 任务的首次的执行延迟
     /// </summary>
-    public double FirstDelay {
+    public float FirstDelay {
         get => firstDelay;
         set => firstDelay = value;
     }
@@ -234,7 +234,7 @@ public struct GRegulator
     /// <summary>
     /// 任务的执行间隔
     /// </summary>
-    public double Period {
+    public float Period {
         get => period;
         set => period = CheckPeriod(value);
     }

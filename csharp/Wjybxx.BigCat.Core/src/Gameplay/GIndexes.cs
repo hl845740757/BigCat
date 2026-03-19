@@ -108,7 +108,7 @@ public sealed class GIndexHelper : IIndexedElementHelper<GameUnit>
             }
             // 在主列表发生移动时需要通知SceneAgent
             element.indexes.v0 = index;
-            element.Scene.Agent?.OnGameUnitIndexChanged(element, prevIndex);
+            element.Agent?.OnIndexChanged(element, prevIndex);
         } else {
             element.indexes[queueId] = index;
         }

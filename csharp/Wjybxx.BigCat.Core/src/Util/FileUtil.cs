@@ -36,11 +36,12 @@ public static class FileUtil
     /// 删除文件或文件夹
     /// </summary>
     /// <param name="path"></param>
-    public static void DeleteFileOrDirectory(string path) {
+    /// <param name="recursive"></param>
+    public static void DeleteFileOrDirectory(string path, bool recursive = true) {
         if (File.Exists(path)) {
             File.Delete(path);
         } else if (Directory.Exists(path)) {
-            Directory.Delete(path, true);
+            Directory.Delete(path, recursive);
         }
     }
 
@@ -125,10 +126,11 @@ public static class FileUtil
     /// 删除文件夹
     /// </summary>
     /// <param name="dirName"></param>
-    public static void DelectDirectory(string dirName) {
+    /// <param name="recursive"></param>
+    public static void DelectDirectory(string dirName, bool recursive = true) {
         DirectoryInfo directoryInfo = new DirectoryInfo(dirName);
         if (directoryInfo.Exists) {
-            directoryInfo.Delete(true);
+            directoryInfo.Delete(recursive);
         }
     }
 

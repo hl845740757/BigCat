@@ -448,7 +448,7 @@ public class DataGraphHelper
             writer.WritePtr(new ObjectPtr(path.collection, path.localPath, path.localId, path.type));
             return;
         }
-        // Double4
+        // Double4 - TODO 零值跳过
         if (typeCfg.dsonType == DsonType.Double4) {
             SerializeFeatures doubleFeatures = features & SerializeFeatures.MaskDouble4Styles;
             if (doubleFeatures == 0) {

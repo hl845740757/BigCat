@@ -88,7 +88,7 @@ public class BundleProvider : Provider
         if (IsDestroyed) return;
         IsDestroyed = true;
         ReleaseUpstreamBundles();
-        assetBundle?.UnloadBundle(true);
+        assetBundle?.UnloadBundle(bundleInfo.unloadAllLoadedObjects);
         // 取消下载任务
         _downloadTask?.CancelToken.Cancel();
         _importTask?.CancelToken.Cancel();

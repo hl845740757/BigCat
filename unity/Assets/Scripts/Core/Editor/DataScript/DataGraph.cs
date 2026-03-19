@@ -97,8 +97,8 @@ public sealed class DataGraph
     private readonly ObjectPool<DataGraphChange> _graphChangePool = new ObjectPool<DataGraphChange>(
         DataGraphChange.Create, e => e.Clear());
 
-    private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly DataGraphHelper _helper;
+    private readonly Dictionary<DSNamedType, DSNamedType> _pairTypeCache = new();
     private readonly LinkedHashSet<DSNamedType> _typeCreateStack = new(8);
 
     public DataGraph(DSRepository repository) {

@@ -29,6 +29,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// 1.不会在同一类<see cref="GameUnit"/>上出现的组件，其组件Id可以使用相同的index，以节省空间。
 /// 2.重用组件对象时（进入新的生命周期时），建议更新对象的实例id。
 /// 3.未使用<see cref="ComponentDefineAttribute"/>的情况下，默认为数据组件。
+/// 4.避免在组件中定义任何与具体业务挂钩的方法，仅可定义数据结构的维护方法。
 /// </summary>
 public abstract class GComponent
 {

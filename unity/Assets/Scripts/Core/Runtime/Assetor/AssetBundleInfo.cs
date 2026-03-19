@@ -25,6 +25,8 @@ namespace Wjybxx.BigCat.Assetor
 {
 /// <summary>
 /// Bundle文件信息
+///
+/// 注：运行时可通过<see cref="AssetFileInfo"/>获取该实例的引用。
 /// </summary>
 [Serializable]
 public sealed class AssetBundleInfo
@@ -118,6 +120,11 @@ public sealed class AssetBundleInfo
     /// </summary>
     [NonSerialized]
     public HashSet<int> downstreamBundles = new HashSet<int>();
+    /// <summary>
+    /// 卸载Bundle时是否卸载加载的对象
+    /// </summary>
+    [NonSerialized]
+    public bool unloadAllLoadedObjects;
 
     #region 序列化
 

@@ -99,23 +99,5 @@ public interface ISceneAgent
     /// <param name="gameUnit"></param>
     void OnGameUnitRemoved(GameUnit gameUnit) {
     }
-
-    /// <summary>
-    /// 游戏对象在Scene中的索引发生变化时调用。
-    /// 
-    /// 1.添加和移除时也会调用
-    /// 2.主要用于维护缓存数据
-    /// </summary>
-    /// <param name="gameUnit"></param>
-    /// <param name="prevIndex">之前的索引</param>
-    void OnGameUnitIndexChanged(GameUnit gameUnit, int prevIndex) {
-    }
-
-    /// <summary>
-    /// 自定义事件
-    /// </summary>
-    /// <param name="eventData"></param>
-    void OnCustomEvent(object eventData) {
-    }
 }
 }

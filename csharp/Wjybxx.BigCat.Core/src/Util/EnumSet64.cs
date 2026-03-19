@@ -185,6 +185,15 @@ public class EnumSet64<T> where T : struct, Enum
     }
 
     /// <summary>
+    /// 是否相交
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public bool Intersect(long other) {
+        return (this._bits & other) != 0;
+    }
+
+    /// <summary>
     /// 内容取反
     /// </summary>
     public void Not() {

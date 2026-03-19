@@ -23,7 +23,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// 游戏对象的内部代理，辅助管理<see cref="GameUnit"/>
 ///
-/// 注：游戏的单位的Agent由Scene创建，而非由用户创建。
+/// 注：游戏的单位的Agent由Scene或全局创建，因此采用数据和行为分离架构。
 /// </summary>
 public interface IGameUnitAgent
 {
@@ -56,16 +56,31 @@ public interface IGameUnitAgent
 
     /// <summary>
     /// 当GameObject加入子场景时调用
+    /// 注：启动时不会执行该方法，因为Start方法通常包含复杂的初始化流程，可避免更加混乱。
     /// </summary>
-    /// <param name="gameUnit"></param>
-    void OnEnterSubScene(GameUnit gameUnit) {
+    /// <param name="gameUnit">游戏单位</param>
+    /// <param name="prevScene">子场景</param>
+    void OnEnterSubScene(GameUnit gameUnit, object prevScene) {
     }
 
     /// <summary>
     /// 当GameObject离开子场景时调用
+    /// 注：停止时不会执行该方法。
+    /// </summary>
+    /// <param name="gameUnit">游戏单位</param>
+    /// <param name="prevScene">子场景</param>
+    void OnLeaveSubScene(GameUnit gameUnit, object prevScene) {
+    }
+
+    /// <summary>
+    /// 游戏对象在Scene中的索引发生变化时调用。
+    /// 
+    /// 1.添加和移除时也会调用
+    /// 2.主要用于维护缓存数据
     /// </summary>
     /// <param name="gameUnit"></param>
-    void OnLeaveSubScene(GameUnit gameUnit) {
+    /// <param name="prevIndex">之前的索引</param>
+    void OnIndexChanged(GameUnit gameUnit, int prevIndex) {
     }
 
     /// <summary>

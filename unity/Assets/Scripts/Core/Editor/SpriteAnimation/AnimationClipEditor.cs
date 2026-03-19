@@ -404,6 +404,8 @@ public partial class AnimationClipEditor : EditorWindow
         //
         if (_clipContextList.Count == 1) {
             OnMasterClipChanged();
+        } else {
+            SortClipContext();
         }
         RefreshPlayTimeSliderRange();
         RefreshPreviewArea(true);
@@ -453,10 +455,12 @@ public partial class AnimationClipEditor : EditorWindow
         ClipContext context = layerField.FindUserContextInParent<ClipContext>();
         context.container.SetDisplay(evt.newValue >= 0);
         context.layer = Math.Max(0, evt.newValue);
-        //
+        SortClipContext();
+    }
+
+    private void SortClipContext() {
         List<ClipContext> sortList = new(_clipContextList);
         sortList.Sort((lhs, rhs) => lhs.layer.CompareTo(rhs.layer));
-        //
         VisualElement prev = sortList[0].container;
         for (int idx = 1; idx < sortList.Count; idx++) {
             VisualElement current = sortList[idx].container;
@@ -1511,8 +1515,11 @@ public partial class AnimationClipEditor : EditorWindow
             return false;
         }
         OpenWindow();
+        // 立即TryAdd有Bug，不清楚具体的时序问题
         AnimationClipEditor window = GetWindow<AnimationClipEditor>();
-        window.TryAddClip(clip);
+        window.rootVisualElement.schedule.Execute(() => {
+            window.TryAddClip(clip);
+        }).StartingIn(100);
         return true;
     }
 

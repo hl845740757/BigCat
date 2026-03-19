@@ -70,7 +70,7 @@ public class SceneMgr
     private readonly Dictionary<long, Scene> _sceneDic = new Dictionary<long, Scene>(INIT_CAPACITY);
     /// <summary>
     /// 按照场景配置id排序的列表 -- 用于查询指定cid的场景。
-    /// 即使是服务器，场景的数量也不算很多，增删的频率也不高，因此使用简单的插入排序是足够的。
+    /// 注：即使是服务器，即使有上千的元素，但由于增删的频率不高，因此使用SortedList是足够的。
     /// </summary>
     private readonly SortedList<SceneSortKey, Scene> _sortedSceneList = new(INIT_CAPACITY, SceneSortKey.Comparer);
 
@@ -158,7 +158,7 @@ public class SceneMgr
     /// <returns></returns>
     public Scene? FindFirst(int configId) {
         IList<SceneSortKey> keys = _sortedSceneList.Keys;
-        int index = CollectionUtil.BinarySearch(keys, new SceneSortKey(configId, 0), SceneSortKey.Comparer);
+        int index = CollectionUtil.BinarySearch(keys, new SceneSortKey(configId, 0), _sortedSceneList.Comparer);
         if (index >= 0) { // 不应该存在instId为0的对象
             throw new AssertionError();
         }
