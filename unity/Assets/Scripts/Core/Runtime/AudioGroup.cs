@@ -73,7 +73,7 @@ public class AudioGroup : ScriptableObject, IBinaryAssetReceiver
         if (!string.IsNullOrEmpty(localPath)) {
             return GetAudioClip(localPath);
         }
-        int index = (int)audioPath.localId;
+        int index = audioPath.localId;
         if (index < 0 || index >= audioClips.Length) {
             return null;
         }

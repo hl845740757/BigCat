@@ -71,14 +71,7 @@ public sealed class Annotation
 
     /** 解析注解 */
     public static Annotation? TryParseAnnotation(string comment, int ln = -1) {
-        // 允许'//'和'@'符号之间有空格，但'@'符号后面的类名无空格，类名和'{}'可以有空格
-        // 允许 ‘@' 之前出现注释，即@Type{}必须作为行尾注释
-        // '//@RpcService{}'
-        int atIdx = comment.IndexOf('@');
-        if (atIdx < 0) {
-            return null;
-        }
-        if (!TryGetRange(comment, out int startIndex, out int endIndex)) {
+        if (!TryGetRange(comment, out int atIdx, out int startIndex, out int endIndex)) {
             return null;
         }
         string type = comment.Substring2(atIdx + 1, startIndex).Trim();
@@ -99,11 +92,7 @@ public sealed class Annotation
 
     /** 是否是注解类型注释 */
     public static bool IsAnnotationComment(string comment) {
-        int atIdx = comment.IndexOf('@');
-        if (atIdx < 0) {
-            return false;
-        }
-        if (!TryGetRange(comment, out int startIndex, out int endIndex)) {
+        if (!TryGetRange(comment, out int atIdx, out int startIndex, out int endIndex)) {
             return false;
         }
         string type = comment.Substring2(atIdx + 1, startIndex).Trim();
@@ -115,10 +104,19 @@ public sealed class Annotation
 
     private static readonly Regex classNameRegex = new Regex("^[a-zA-Z][a-zA-Z0-9_\\.]*$", RegexOptions.Compiled);
 
-    private static bool TryGetRange(string comment, out int startIndex, out int endIndex) {
+    private static bool TryGetRange(string comment, out int atIdx,
+                                    out int startIndex, out int endIndex) {
+        startIndex = -1;
+        endIndex = -1;
+        // 允许'//'和'@'符号之间有空格，但'@'符号后面的类名无空格，类名和'{}'可以有空格
+        // 允许 ‘@' 之前出现注释，即@Type{}必须作为行尾注释
+        atIdx = comment.IndexOf('@');
+        if (atIdx < 0 || atIdx + 1 >= comment.Length || !char.IsLetter(comment[atIdx + 1])) {
+            return false;
+        }
         // 允许object和array格式 -- 需要判断[和{出现的顺序，不能优先处理其中的某个，否则可能索引到其内部元素
-        int arrIndex = comment.IndexOf('[');
-        int objIndex = comment.IndexOf('{');
+        int arrIndex = comment.IndexOf('[', atIdx);
+        int objIndex = comment.IndexOf('{', atIdx);
         if (arrIndex < 0 && objIndex < 0) {
             startIndex = 0;
             endIndex = 0;

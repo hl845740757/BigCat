@@ -83,10 +83,6 @@ public struct Euler32 : IEquatable<Euler32>
         return new Vector3Int(value.x, value.y, value.z);
     }
 
-    public static implicit operator Vector3(Euler32 value) {
-        return new Vector3Int(value.x, value.y, value.z);
-    }
-
     public static explicit operator Euler32(Vector3Int vector3) {
         return new Euler32(vector3.x, vector3.y, vector3.z);
     }

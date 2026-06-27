@@ -458,7 +458,12 @@ public class ResourceManager
             }
         }
         foreach (Provider provider in removeList) {
-            provider.Destroy();
+            try {
+                provider.Destroy();
+            }
+            catch (Exception ex) {
+                logger.Warn(ex, "provider destroy caught exception, pid: " + provider.pid);
+            }
         }
         removeList.Clear();
     }

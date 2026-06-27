@@ -1,10 +1,14 @@
 ﻿// 角色动画
-option region_types = "region, endregion";
-option csharp_namespace = "Wjybxx.BigCat.Dnf.Trigger";
-
 import public "common.ds";
 import public "btree.ds";
 
+// 文件选项
+option {
+  macro_types: [region, endregion],
+  csharp_namespace: "Wjybxx.BigCat.Dnf.Trigger"
+}
+
+// ---------------------------------------------------------
 // 工具库的黑板类型，避免导出给其它ds文件
 // @Options{nonGenerate: true}
 // @Namespace{cs: "Wjybxx.BigCat.Util"}

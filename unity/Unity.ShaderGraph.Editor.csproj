@@ -157,8 +157,8 @@
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Math\Range\MinimumNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Generation\Enumerations\InstancingOptions.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\NormalMapSpace.cs" />
-    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Generation\TargetResources\StructFields.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Drawing\Views\ReorderableTextListView.cs" />
+    <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Generation\TargetResources\StructFields.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Generation\ShaderGraphVfxAsset.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Data\Nodes\Procedural\Shape\EllipseNode.cs" />
     <Compile Include="Library\PackageCache\com.unity.shadergraph@12.1.16\Editor\Drawing\Inspector\MasterPreviewView.cs" />

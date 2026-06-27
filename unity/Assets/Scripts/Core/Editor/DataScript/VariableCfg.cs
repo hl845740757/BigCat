@@ -364,7 +364,7 @@ public sealed class VariableCfg
     private static Annotation GetBelongRegion(DSElement element) {
         int ln = element.OriginDefine.StartLine;
         Annotation prev = null;
-        foreach (Annotation annotation in element.EnclosingElement.OriginDefine.Annotations) {
+        foreach (Annotation annotation in element.GetEnclosingFile().Annotations) {
             if (annotation.ln > ln) return prev;
             if (annotation.type == DSAnnotations.ENDREGION) {
                 prev = null;

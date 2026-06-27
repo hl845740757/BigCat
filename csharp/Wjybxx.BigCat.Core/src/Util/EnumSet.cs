@@ -95,6 +95,7 @@ public sealed class EnumSet<T> where T : struct, Enum
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(params T[] array) {
         foreach (T e in array) {
             Set(e.GetHashCode());

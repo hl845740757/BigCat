@@ -88,7 +88,6 @@ public sealed class BuildAssetInfo
     public bool IsShaderAsset => assetType == typeof(Shader)
                                  || assetType == typeof(ShaderVariantCollection);
 
-
     public AssetFileInfo Build() {
         return new AssetFileInfo()
         {

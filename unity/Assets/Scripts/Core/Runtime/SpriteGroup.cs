@@ -87,7 +87,7 @@ public class SpriteGroup : ScriptableObject, IBinaryAssetReceiver
         if (!string.IsNullOrEmpty(localPath)) {
             return GetSprite(localPath);
         }
-        int index = (int)spritePath.localId;
+        int index = spritePath.localId;
         if (index < 0 || index >= sprites.Length) {
             return null;
         }

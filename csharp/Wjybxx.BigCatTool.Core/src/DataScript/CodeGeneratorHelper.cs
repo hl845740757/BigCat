@@ -306,9 +306,11 @@ public class CodeGeneratorHelper
     /// 是否是数据类 -- 是否生成equals和hashcode
     /// </summary>
     protected virtual bool IsDataClass(DSNamedType namedType, DsonObject<string> options) {
-        return options.ContainsKey(DSAnnotations.KEY_DATA_CLASS)
-            ? Annotation.GetBool(options, DSAnnotations.KEY_DATA_CLASS)
-            : namedType.GetEnclosingFile().GetOption(DSKeywords.DATA_CLASS) == "true";
+        if (options.ContainsKey(DSAnnotations.KEY_DATA_CLASS)) {
+            return Annotation.GetBool(options, DSAnnotations.KEY_DATA_CLASS);
+        }
+        DsonObject<string> fileOptions = namedType.GetEnclosingFile().GetOptions();
+        return Annotation.GetBool(fileOptions, DSKeywords.DATA_CLASS);
     }
 
     /// <summary>
@@ -1144,7 +1146,7 @@ public class CodeGeneratorHelper
     }
 
     private static string GetNamespace(DSFile dsFile) {
-        string? csharpNamespace = dsFile.GetOption(DSKeywords.CSHARP_NAMESPACE);
+        string? csharpNamespace = Annotation.GetString(dsFile.GetOptions(), DSKeywords.CSHARP_NAMESPACE);
         if (string.IsNullOrEmpty(csharpNamespace)) {
             throw new InvalidOperationException("csharpNamespace is absent: " + dsFile.FileName);
         }

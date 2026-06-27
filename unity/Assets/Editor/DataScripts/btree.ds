@@ -1,8 +1,13 @@
-﻿import public "common.ds";
-//
-option region_types = "region, endregion";
-option csharp_namespace = "Wjybxx.BTree";
+﻿// 行为树节点
+import public "common.ds";
 
+// 文件选项
+option {
+  macro_types: [region, endregion],
+  csharp_namespace: "Wjybxx.BTree"
+}
+
+// ---------------------------------------------------------
 // 行为树编辑器配置文件，行为树实现模块见BTree.Core
 // 行为树基类
 class Task<T> {

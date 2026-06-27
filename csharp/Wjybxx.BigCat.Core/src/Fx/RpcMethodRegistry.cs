@@ -68,7 +68,6 @@ public class RpcMethodRegistry : IRpcMethodRegistry
         return methodInfoMap.TryGetValue(methodKey, out RpcMethodInfo exist) ? exist : null;
     }
 
-
     public void Register<T>(int serviceId, int methodId, RpcMethodProxy<T> proxy) {
         if (proxy == null) throw new ArgumentNullException(nameof(proxy));
         int methodKey = RpcMethodKey.MethodKey(serviceId, methodId);

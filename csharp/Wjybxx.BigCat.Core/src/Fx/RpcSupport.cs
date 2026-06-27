@@ -191,14 +191,13 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
         }
     }
 
-
     /** 收到worker到node的request */
     private void SendRequestStep2(RpcRequest request) {
         if (enableLog) {
             logger.Info("snd rpc request {0}", request);
         }
         if (request.DestAddr.nodeId == nodeAddr.nodeId) {
-            // 进程内包 -- 数据已序列化，或是可共享的；直接触发接收
+            // 进程内包 -- 直接触发接收
             OnRcvRequest(request);
         } else {
             // 网络包 -- router负责回收

@@ -44,8 +44,6 @@ public abstract class DSElement
     private readonly List<string> comments = new();
     /** 注解数据 -- 同一类型允许重复；可能有解析器动态附加的数据 */
     private readonly List<Annotation> annotations = new();
-    /** 可选项 -- 数据脚本中通常不使用该机制，而是使用注解；只建议文件使用options；延迟初始化以减少开销 */
-    private IDictionary<string, string> options = EMPTY_OPTIONS;
 
     /** 定义元素的开始行号 -- -1表示非源码文件定义 */
     private int startLine = -1;
@@ -105,16 +103,6 @@ public abstract class DSElement
     }
 
     /// <summary>
-    /// 添加选项
-    /// </summary>
-    public void AddOption(string name, string value) {
-        if (ReferenceEquals(options, EMPTY_OPTIONS)) {
-            options = new Dictionary<string, string>(4);
-        }
-        options[name] = value;
-    }
-
-    /// <summary>
     /// 获取指定类型注解
     /// </summary>
     public Annotation? GetAnnotation(string type) {
@@ -126,14 +114,6 @@ public abstract class DSElement
     /// </summary>
     public List<Annotation> GetAnnotations(string type) {
         return annotations.Where(e => e.type == type).ToList();
-    }
-
-    /// <summary>
-    /// 获取可选项的值，如果不存在则返回null
-    /// </summary>
-    public string? GetOption(string name) {
-        options.TryGetValue(name, out string? r);
-        return r;
     }
 
     /// <summary>
@@ -159,7 +139,6 @@ public abstract class DSElement
     public List<DSElement> EnclosedElements => enclosedElements;
     public List<string> Comments => comments;
     public List<Annotation> Annotations => annotations;
-    public IDictionary<string, string> Options => options;
 
     public int StartLine {
         get => startLine;

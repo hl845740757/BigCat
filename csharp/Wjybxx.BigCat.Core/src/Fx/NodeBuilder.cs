@@ -34,8 +34,7 @@ public abstract class NodeBuilder : WorkerBuilder
     private int nodeId;
     /// <summary>
     /// Rpc接口所在的包，用于生成<see cref="IRpcMethodRegistry"/>
-    ///
-    /// 我们通过Type定位指定的程序集和命名空间，我们只会导出Type所在程序集所在命名空间下的Rpc接口。
+    /// 注：通过Type定位指定的程序集和命名空间，以避免手动逐个添加。
     /// </summary>
     private readonly HashSet<Type> rpcPackages = new();
 

@@ -140,7 +140,6 @@ public abstract class GComponent
     public virtual void ResolveDependence() {
     }
 
-
     /// <summary>
     /// 重置组件状态
     ///

@@ -27,7 +27,7 @@ namespace Wjybxx.BigCatTool.DataScript
 /// </summary>
 public static class DSKeywords
 {
-    /** 可选项 */
+    /** 可选项（限文件） -- value为Dson */
     public const string OPTION = "option";
     /** 导入文件 */
     public const string IMPORT = "import";
@@ -47,7 +47,7 @@ public static class DSKeywords
     public const string STRUCT = "struct";
     /** 枚举 */
     public const string ENUM = "enum";
-    /** 实例 -- 暂时要求严格的输入格式，以降低解析难度， */
+    /** 实例 -- 暂时要求严格的输入格式，以降低解析难度 */
     public const string INST = "inst";
 
     /** 服务 */
@@ -60,8 +60,8 @@ public static class DSKeywords
 
     #region options-file
 
-    /** 支持的Region系列注解 -- value为字符串，需要加双引号，元素之间通过逗号分隔; */
-    public const string REGION_TYPES = "region_types";
+    /** 支持的宏类型注解 -- 宏类型注解固定属于文件级数据 */
+    public const string MACRO_TYPES = "macro_types";
     /** 生成的java文件的包名 -- value为字符串，需要加双引号 */
     public const string JAVA_PACKAGE = "java_package";
     /** csharp命名空间 -- value为字符串，需要加双引号 */
@@ -70,9 +70,6 @@ public static class DSKeywords
     public const string DATA_CLASS = "data_class";
     /** codec别名的前缀 -- value为字符串类型，需要加双引号；如果为'${fileName}'，则表示自动填充文件名 */
     public const string CODEC_ALIAS_PREFIX = "codec_alias_prefix";
-
-    /** 表示引用文件名 */
-    internal const string VARIABLE_FILENAME = "${fileName}";
 
     #endregion
 
@@ -85,7 +82,7 @@ public static class DSKeywords
     ///
     /// <code>allow_alias = true;</code>
     /// </summary>
-    public const string ALLOW_ALIAS = "allow_alias";
+    private const string ALLOW_ALIAS = "allow_alias";
     /// <summary>
     /// 保留字段编号
     /// (语法同protobuf)
@@ -93,7 +90,7 @@ public static class DSKeywords
     /// <code>reversed 1, 2, 3 to 10;</code>
     /// <code>reversed "age", "env";</code>
     /// </summary>
-    public const string RESERVED = "reserved";
+    private const string RESERVED = "reserved";
 
     #endregion
 

@@ -50,8 +50,8 @@ public class DSFileParser
     private int _recursionDepth;
     /** 当前上下文 */
     private Context _context;
-    /** 文件支持的region注解 */
-    private HashSet<string> regionTypes = new();
+    /** 文件支持的宏注解类型 */
+    private readonly HashSet<string> macroTypes = new(4);
 
     private DSFileParser(FileInfo file, bool isVirtual, IEnumerator<string> lineIterator) {
         this.file = file;
@@ -106,8 +106,8 @@ public class DSFileParser
                 Annotation annotation;
                 if (curLine.IsCommentLine
                     && (annotation = Annotation.TryParseAnnotation(curLine.comment, curLine.ln)) != null
-                    && regionTypes.Contains(annotation.type)) {
-                    _context.container.AddAnnotation(annotation);
+                    && macroTypes.Contains(annotation.type)) {
+                    dsFile.AddAnnotation(annotation); // 宏注解固定为文件级别
                     continue;
                 }
                 switch (_context.contextType) {
@@ -167,10 +167,10 @@ public class DSFileParser
                 return;
             }
             case DSKeywords.INST: {
-                _context.AsFile().AddEnclosedElement(ReadInst(lineInfo));
+                DSInst inst = ReadInst(lineInfo);
+                _context.AsFile().AddEnclosedElement(inst);
                 return;
             }
-            // 各类options
             case DSKeywords.IMPORT: {
                 _context.ClearCommentLines();
                 // import public "common.proto";
@@ -186,15 +186,16 @@ public class DSFileParser
                 return;
             }
             case DSKeywords.OPTION: {
-                _context.ClearCommentLines();
-                // option java_package = "com.example.foo";
-                var pair = ParseOption(content);
-                _context.container.AddOption(pair.Key, pair.Value);
-                // region注解支持
-                if (pair.Key == DSKeywords.REGION_TYPES) {
-                    regionTypes.AddAll(ObjectUtil.SplitAndTrim(pair.Value, ','));
+                string value = ScanDsonValue(content.Substring(DSKeywords.OPTION.Length), lineInfo.ln);
+                DsonObject<string> options = Dsons.FromDson(value).AsObject();
+                dsFile.GetOptions().PutAll(options);
+                // 更新宏注解缓存
+                if (options.TryGetValue(DSKeywords.MACRO_TYPES, out DsonValue dsonValue) && dsonValue is DsonArray<string> array) {
+                    foreach (DsonValue ele in array) {
+                        macroTypes.Add(ele.AsString());
+                    }
                 }
-                return;
+                break;
             }
             default: {
                 _context.ClearCommentLines();
@@ -313,17 +314,6 @@ public class DSFileParser
                 ReadStartContainer(DSContextType.Enum, lineInfo);
                 return;
             }
-            case DSKeywords.OPTION: {
-                _context.ClearCommentLines();
-                var pair = ParseOption(content);
-                _context.container.AddOption(pair.Key, pair.Value);
-                return;
-            }
-            case DSKeywords.RESERVED: {
-                _context.ClearCommentLines();
-                ParseRevered(_context.AsTypeElement(), content);
-                return;
-            }
             // 函数
             case DSKeywords.FUNC: {
                 DSMethod method = ParseMethod(_context.PopCommentLines(), lineInfo);
@@ -394,34 +384,6 @@ public class DSFileParser
         return field;
     }
 
-    /** 解析保留字段信息 */
-    private static void ParseRevered(DSNamedType namedType, string content) {
-        EnsureEndWithSemicolon(content);
-        // 不可在同一行reserved声明中同时声明域名字和tag number。
-        // reversed 1, 2, 3 to 10;
-        // reversed "age", "env";
-        // 去掉reserved和分号，再按逗号分割
-        string[] values = content.Substring2(DSKeywords.RESERVED.Length, content.Length - 1)
-            .Split(',');
-        for (int idx = 0; idx < values.Length; idx++) {
-            string value = values[idx].Trim();
-            if (value[0] == '"') {
-                namedType.AddReservedName(ToolUtil.Unquote(value));
-                continue;
-            }
-            // 判断是否有to关键字 -- 是否是范围
-            int toIdx = value.IndexOf("to", StringComparison.Ordinal);
-            if (toIdx < 0) {
-                int number = int.Parse(value);
-                namedType.AddReservedNumber(number);
-                continue;
-            }
-            int start = int.Parse(value.Substring2(0, toIdx).Trim());
-            int end = int.Parse(value.Substring(toIdx + 2).Trim()); // 跳过to
-            namedType.AddReservedNumber(start, end);
-        }
-    }
-
     #endregion
 
     #region service
@@ -448,12 +410,6 @@ public class DSFileParser
             }
             case DSKeywords.ENUM: {
                 ReadStartContainer(DSContextType.Enum, lineInfo);
-                return;
-            }
-            case DSKeywords.OPTION: {
-                _context.ClearCommentLines();
-                var pair = ParseOption(content);
-                _context.container.AddOption(pair.Key, pair.Value);
                 return;
             }
             // 函数
@@ -546,25 +502,6 @@ public class DSFileParser
         string content = lineInfo.content;
         string firstWord = FirstWord(content);
         switch (firstWord) {
-            case DSKeywords.OPTION: {
-                _context.ClearCommentLines();
-                var pair = ParseOption(content);
-                _context.container.AddOption(pair.Key, pair.Value);
-                return;
-            }
-            case DSKeywords.ALLOW_ALIAS: {
-                // allow_alias = true;
-                // int eqIdx = content.IndexOf('=');
-                // int lastIdx = content.LastIndexOf(';');
-                // string value = content.Substring2(eqIdx + 1, lastIdx).Trim();
-                // _context.AsEnum().AllowAlias = (value == "true");
-                break;
-            }
-            case DSKeywords.RESERVED: {
-                _context.ClearCommentLines();
-                ParseRevered(_context.AsTypeElement(), content);
-                return;
-            }
             case "}": {
                 // 结束行
                 _context.ClearCommentLines();

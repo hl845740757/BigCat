@@ -1,5 +1,11 @@
 ﻿// 公共类型定义
 
+// 文件选项
+option {
+  macro_types: [region, endregion],
+}
+
+// ---------------------------------------------------------
 // @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector2, V2], encodeFeatures: "Double4AsVector | Double4Len2" }
 // @Editor{ displayType: Vector2, dsonType: Double4 }

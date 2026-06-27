@@ -130,17 +130,17 @@ public static class FxUtils
     public static void ExportMethodInfo(NodeBuilder builder) {
         IRpcMethodRegistry registry = builder.Injector.GetInstance<IRpcMethodRegistry>();
         foreach (Type pkg in builder.RpcPackages) {
-            List<TypeInfo> rpcInterfaces = pkg.Assembly.DefinedTypes
+            List<Type> rpcInterfaces = pkg.Assembly.ExportedTypes // 只访问公开类型
                 .Where(e => e.Namespace == pkg.Namespace)
                 .Where(e => e.IsDefined(typeof(RpcServiceAttribute)))
                 .ToList();
-            foreach (TypeInfo serviceInterface in rpcInterfaces) {
+            foreach (Type serviceInterface in rpcInterfaces) {
                 ExportMethodInfo(registry, serviceInterface);
             }
         }
     }
 
-    public static void ExportMethodInfo(IRpcMethodRegistry registry, TypeInfo serviceInterface) {
+    public static void ExportMethodInfo(IRpcMethodRegistry registry, Type serviceInterface) {
         RpcServiceAttribute serviceAnno = serviceInterface.GetCustomAttribute<RpcServiceAttribute>();
         if (serviceAnno == null) {
             throw new ArgumentException("target is not RpcService: " + serviceInterface);

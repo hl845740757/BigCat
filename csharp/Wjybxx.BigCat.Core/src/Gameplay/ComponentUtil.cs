@@ -72,7 +72,9 @@ internal static class ComponentUtil
     /** 是否重写了某个方法 */
     private static bool IsOverride(Type abstractType, Type currentType, string methodName) {
         MethodInfo? methodInfo = currentType.GetMethod(methodName,
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null,
+            Array.Empty<Type>(), Array.Empty<ParameterModifier>());
         if (methodInfo == null) {
             throw new InvalidOperationException($"Method {methodName} not found");
         }

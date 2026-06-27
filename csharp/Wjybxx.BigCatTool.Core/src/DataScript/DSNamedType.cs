@@ -468,11 +468,6 @@ public sealed class DSNamedType : DSTypeElement
         return this;
     }
 
-    public new DSNamedType AddOption(string name, string value) {
-        base.AddOption(name, value);
-        return this;
-    }
-
     #endregion
 
 #nullable disable

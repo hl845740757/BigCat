@@ -37,7 +37,7 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
     private IWorker worker;
     private WorkerAddr selfAddr;
     private TimeModule timeModule;
-    private IRpcMethodRegistry _methodRegistry;
+    private IRpcMethodRegistry methodRegistry;
     private S2SSessionMgr sessionMgr;
     private RpcSupport rpcSupport;
 
@@ -57,7 +57,7 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
         this.worker = (IWorker)EventLoop;
         this.selfAddr = worker.WorkerAddr;
         this.timeModule = worker.Injector.GetInstance<TimeModule>();
-        this._methodRegistry = worker.Injector.GetInstance<IRpcMethodRegistry>();
+        this.methodRegistry = worker.Injector.GetInstance<IRpcMethodRegistry>();
         this.sessionMgr = worker.Injector.GetInstance<S2SSessionMgr>();
         // Node上的组件
         INode node = worker.Node;
@@ -333,8 +333,8 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
     #region rcv-request
 
     public void OnRcvRequestStep3(RpcRequest request) {
-        RpcMethodInvoker? invoker = _methodRegistry.GetInvoker(request.ServiceId, request.MethodId);
-        if (invoker == null || _methodRegistry.IsDisabled(request.ServiceId, request.MethodId)) {
+        RpcMethodInvoker? invoker = methodRegistry.GetInvoker(request.ServiceId, request.MethodId);
+        if (invoker == null || methodRegistry.IsDisabled(request.ServiceId, request.MethodId)) {
             Reject(request, RpcErrorCodes.SERVER_UNSUPPORTED_INTERFACE);
             return;
         }
@@ -423,9 +423,9 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
 
     private RpcTimeoutContext NewTimeout(RpcRequest request, ValuePromise<object> promise, int rid, long deadline) {
         RpcTimeoutContext context = timeoutPool.Acquire();
-        context.deadline = deadline;
-        context.rid = rid;
         context.promise = promise;
+        context.rid = rid;
+        context.deadline = deadline;
 
         context.sessionId = request.SessionId;
         context.destAddr = request.DestAddr;

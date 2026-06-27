@@ -345,7 +345,7 @@ public static class DSUtil
         DsonObject<string> options = GetOptions(element);
         return Annotation.GetBool(options, DSAnnotations.KEY_NON_SERIALIZED);
     }
-    
+
     #region Name工具方法
 
     /// <summary>

@@ -24,6 +24,7 @@ using System.Linq;
 using System.Text;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
+using Wjybxx.Dson;
 
 namespace Wjybxx.BigCatTool.DataScript
 {
@@ -40,6 +41,8 @@ public class DSFile : DSElement
     private readonly LinkedDictionary<string, string?> imports = new(4);
     /** 解析后的所有依赖 -- 包括传递而来的依赖，无法保证解析顺序 */
     private readonly HashSet<string> resolvedImports = new(4);
+    /** 文件可选项 */
+    private readonly DsonObject<string> options = new DsonObject<string>();
 
     /** 文件内的类型缓存 -- A.B.C => Type */
     private readonly LinkedDictionary<string, DSNamedType> typeMap = new(4);
@@ -71,6 +74,12 @@ public class DSFile : DSElement
         this.imports.Add(fileName, modifier);
         this.resolvedImports.Add(fileName);
     }
+
+    /// <summary>
+    /// 文件可选项
+    /// </summary>
+    /// <returns></returns>
+    public DsonObject<string> GetOptions() => options;
 
     /// <summary>
     /// 获取所有的顶层类型

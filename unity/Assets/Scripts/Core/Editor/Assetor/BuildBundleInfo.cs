@@ -156,8 +156,7 @@ public sealed class BuildBundleInfo
             bundleId = bundleId,
             upstreamBundles = new List<int>(upstreamBundles),
         };
-        if (collectorType == ECollectorType.MainAsset
-            || collectorType == ECollectorType.RawFile) {
+        if (collectorType == ECollectorType.MainAsset || collectorType == ECollectorType.RawFile) {
             bundleInfo.mainAssets.Capacity = assetList.Count;
             foreach (BuildAssetInfo assetInfo in assetList) {
                 if (assetInfo.disableIndexes) continue;

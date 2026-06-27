@@ -1,10 +1,14 @@
 import public "common.ds";
 
-// 生成代码的命名空间
-option csharp_namespace = "Wjybxx.BigCatTool.Tests.Generated";
-// 将所有类型默认声明为数据类 -- 生成equals和hashcode
-option data_class = true;
+// 文件选项
+// 所有类型默认声明为数据类，生成equals和hashcode
+option {
+  macro_types: [region, endregion],
+  csharp_namespace: "Wjybxx.BigCatTool.Tests.Generated",
+  data_class: true,
+}
 
+// ---------------------------------------------------------
 // 测试普通类
 class SimpleBean {
     readonly int32 age = 1;

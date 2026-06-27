@@ -666,7 +666,7 @@ public sealed class DataGraph
             displayName = variableCfg.displayName ?? defineInfo.Name,
             isNull = DSUtil.IsNullableType(type)
         };
-        if (variableCfg.initNull || (variableCfg.portCfg != null && !DSUtil.IsCollectionOrMapType(type))) {
+        if (variableCfg.initNull || InitLazy(variableCfg, type)) {
             variable.isNull = true;
             variable.values = new List<Variable>();
         } else {
@@ -692,6 +692,10 @@ public sealed class DataGraph
             }
         }
         return variable;
+    }
+
+    private bool InitLazy(VariableCfg variableCfg, DSNamedType type) {
+        return variableCfg.portCfg != null && !DSUtil.IsCollectionOrMapType(type) && type != GetObjectPathType();
     }
 
     /// <summary>

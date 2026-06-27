@@ -236,12 +236,12 @@ internal sealed class PromiseTask
         }
         // 未被取消的情况下检测超时
         if (HasDeadline && deadline <= tickTime) {
-            TrySetException(StacklessCancellationException.Timeout);
+            TrySetCancelled(CancelCodes.REASON_TIMEOUT);
             return false;
         }
         // 检测次数限制
         if (HasCountdown && (--countdown < 1)) {
-            TrySetException(StacklessCancellationException.CountLimit);
+            TrySetCancelled(CancelCodes.REASON_COUNT_LIMIT);
             return false;
         }
         SetNextRunTime(tickTime, scheduleType);

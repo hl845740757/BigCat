@@ -17,8 +17,9 @@
 #endregion
 
 using System;
+using Wjybxx.BigCat.Gameplay;
 
-namespace Wjybxx.BigCat.Gameplay
+namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// <see cref="GTime"/>的迷你版
@@ -26,8 +27,8 @@ namespace Wjybxx.BigCat.Gameplay
 public sealed class GTimePiece
 {
     private int _frameCount;
-    private float _deltaTime;
-    private float _time;
+    private double _deltaTime;
+    private double _time;
 
     public void Restart() {
         this._time = 0;
@@ -35,7 +36,7 @@ public sealed class GTimePiece
         this._frameCount = 0;
     }
 
-    public void Update(float deltaTime) {
+    public void Update(double deltaTime) {
         if (deltaTime < 0) deltaTime = 0;
         _frameCount++;
         _deltaTime = deltaTime;
@@ -47,12 +48,12 @@ public sealed class GTimePiece
         set => _frameCount = Math.Max(0, value);
     }
 
-    public float DeltaTime {
+    public double DeltaTime {
         get => _deltaTime;
         set => _deltaTime = Math.Max(0, value);
     }
 
-    public float Time {
+    public double Time {
         get => _time;
         set => _time = Math.Max(0, value);
     }

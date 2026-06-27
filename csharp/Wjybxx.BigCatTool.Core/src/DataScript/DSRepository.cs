@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
@@ -624,8 +625,8 @@ public sealed class DSRepository
         DsonObject<string> options = DSUtil.GetOptions(namedType);
         // 用户可能手动指定了别名
         if (namedType.CodecAliases.Count == 0) {
-            string prefix = dsFile.GetOption(DSKeywords.CODEC_ALIAS_PREFIX);
-            if (prefix == DSKeywords.VARIABLE_FILENAME) {
+            string? prefix = Annotation.GetString(dsFile.GetOptions(), DSKeywords.CODEC_ALIAS_PREFIX);
+            if (prefix == "${fileName}") {
                 prefix = dsFile.Name;
             }
             // 是否为手动指定的别名添加前缀?

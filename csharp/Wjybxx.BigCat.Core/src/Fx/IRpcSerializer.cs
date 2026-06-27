@@ -24,7 +24,7 @@ namespace Wjybxx.BigCat.Fx
 /// <summary>
 /// Rpc使用的序列化接口
 ///
-/// TODO 改为返回Bytebuf
+/// TODO RPC完全使用protobuf
 /// </summary>
 [ThreadSafe]
 public interface IRpcSerializer

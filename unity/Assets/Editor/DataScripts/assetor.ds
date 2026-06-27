@@ -2,6 +2,12 @@
 import public "common.ds";
 import public "btree.ds";
 
+// 文件选项
+option {
+  macro_types: [region, endregion],
+}
+
+// ---------------------------------------------------------
 // 工具库的黑板类型，避免导出给其它ds文件
 // @Namespace{ cs: "Wjybxx.BigCat.Util", nonGenerate: true }
 class Blackboard  {

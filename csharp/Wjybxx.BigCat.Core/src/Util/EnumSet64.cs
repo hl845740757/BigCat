@@ -73,6 +73,7 @@ public class EnumSet64<T> where T : struct, Enum
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(params T[] array) {
         foreach (T e in array) {
             Set(e.GetHashCode());
@@ -90,6 +91,7 @@ public class EnumSet64<T> where T : struct, Enum
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Get(int index) {
         CheckIndex(index);
         return (_bits & (1L << index)) != 0;
@@ -104,11 +106,13 @@ public class EnumSet64<T> where T : struct, Enum
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Set(int index) {
         CheckIndex(index);
         _bits |= (1L << index);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Unset(int index) {
         CheckIndex(index);
         _bits &= ~(1L << index);
