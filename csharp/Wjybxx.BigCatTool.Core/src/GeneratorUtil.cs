@@ -77,7 +77,7 @@ public static class GeneratorUtil
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ClassName ClassNameOfCanonicalName(string cname) {
         int index = cname.LastIndexOf('.');
-        return ClassName.Get(cname.Substring2(0, index), cname.Substring2(index + 1));
+        return ClassName.Get(cname.Substring2(0, index), cname.Substring(index + 1));
     }
 
     /// <summary>

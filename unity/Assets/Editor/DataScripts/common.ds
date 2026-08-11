@@ -1,7 +1,7 @@
 ﻿// 公共类型定义
 
 // 文件选项
-option {
+inst @file {
   macro_types: [region, endregion],
 }
 

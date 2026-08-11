@@ -2,7 +2,7 @@
 import public "common.ds";
 
 // 文件选项
-option {
+inst @file {
   macro_types: [region, endregion],
   csharp_namespace: "Wjybxx.BTree"
 }

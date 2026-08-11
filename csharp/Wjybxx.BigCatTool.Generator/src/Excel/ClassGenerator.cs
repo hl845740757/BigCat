@@ -87,7 +87,8 @@ public class ClassGenerator : ISheetProcessor
             if (dsFile == null) {
                 throw new InvalidOperationException("ds file not found: " + fileSimpleName);
             }
-            string? csharpNamespace = dsFile.GetOption(DSKeywords.CSHARP_NAMESPACE);
+
+            string? csharpNamespace = Annotation.GetString(dsFile.GetOptions(), DSKeywords.CSHARP_NAMESPACE);
             if (string.IsNullOrEmpty(csharpNamespace)) {
                 throw new InvalidOperationException("csharpNamespace is absent" + dsFile.FileName);
             }

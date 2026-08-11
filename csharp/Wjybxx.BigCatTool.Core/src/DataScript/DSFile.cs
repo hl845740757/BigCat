@@ -154,7 +154,7 @@ public class DSFile : DSElement
         foreach (DSNamedType namedType in DSUtil.GetAllEnclosedTypes(this)) {
             string fullName = namedType.FullName;
             int idx = fullName.IndexOf('.');
-            string accessName = fullName.Substring2(idx + 1);
+            string accessName = fullName.Substring(idx + 1);
             typeMap.Add(accessName, namedType);
             //
             namedType.BuildCache();

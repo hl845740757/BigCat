@@ -2,7 +2,7 @@ import public "common.ds";
 
 // 文件选项
 // 所有类型默认声明为数据类，生成equals和hashcode
-option {
+inst @file {
   macro_types: [region, endregion],
   csharp_namespace: "Wjybxx.BigCatTool.Tests.Generated",
   data_class: true,

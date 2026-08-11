@@ -27,8 +27,8 @@ namespace Wjybxx.BigCatTool.DataScript
 /// </summary>
 public static class DSKeywords
 {
-    /** 可选项（限文件） -- value为Dson */
-    public const string OPTION = "option";
+    /** 可选项（限文件） */
+    private const string OPTION = "option";
     /** 导入文件 */
     public const string IMPORT = "import";
     /** 导入传递（不传递依赖） */
@@ -47,7 +47,7 @@ public static class DSKeywords
     public const string STRUCT = "struct";
     /** 枚举 */
     public const string ENUM = "enum";
-    /** 实例 -- 暂时要求严格的输入格式，以降低解析难度 */
+    /** 实例 -- 暂时要求严格的输入格式，以降低解析难度；'@file'实例表示文件选项；推荐'@开头'表示特殊实例 */
     public const string INST = "inst";
 
     /** 服务 */

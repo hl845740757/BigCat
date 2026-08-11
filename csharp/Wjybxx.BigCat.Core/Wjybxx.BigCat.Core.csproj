@@ -49,11 +49,11 @@
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.31.0" />
         <PackageReference Include="Wjybxx.Commons.Concurrent" Version="1.6.1" />
-        <PackageReference Include="Wjybxx.Commons.Core" Version="1.6.1" />
+        <PackageReference Include="Wjybxx.Commons.Core" Version="1.6.2" />
         <PackageReference Include="Wjybxx.Commons.Inject" Version="1.6.1" />
-        <PackageReference Include="Wjybxx.Disruptor" Version="1.2.1" />
-        <PackageReference Include="Wjybxx.Dson.Core" Version="2.7.0" />
-        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.7.0" />
+        <PackageReference Include="Wjybxx.Disruptor" Version="1.2.2" />
+        <PackageReference Include="Wjybxx.Dson.Core" Version="2.6.1" />
+        <PackageReference Include="Wjybxx.Dson.Codec" Version="2.6.1" />
     </ItemGroup>
 
     <!-- 没研究明白nuget如何设置，暂时和Unity一样通过显式绑定dll启用代码生成 -->

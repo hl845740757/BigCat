@@ -600,7 +600,7 @@ public static class ExcelConstants
         if (start < end) { // Item.Base.0
             return sheetName.Substring2(start + 1, end);
         }
-        string r = sheetName.Substring2(start + 1);
+        string r = sheetName.Substring(start + 1);
         if (int.TryParse(r, out _)) { // Item.0
             throw new ArgumentException("Sheet name is invalid: " + sheetName);
         }

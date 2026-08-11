@@ -169,6 +169,18 @@ public class DSFileParser
             case DSKeywords.INST: {
                 DSInst inst = ReadInst(lineInfo);
                 _context.AsFile().AddEnclosedElement(inst);
+                // 文件选项
+                if (inst.Name == "@file") {
+                    DsonObject<string> options = inst.DsonValue.AsObject();
+                    dsFile.GetOptions().PutAll(options);
+                    // 更新宏注解缓存
+                    if (options.TryGetValue(DSKeywords.MACRO_TYPES, out DsonValue dsonValue) && dsonValue is DsonArray<string> array) {
+                        foreach (DsonValue ele in array) {
+                            macroTypes.Add(ele.AsString());
+                        }
+                    }
+                    break;
+                }
                 return;
             }
             case DSKeywords.IMPORT: {
@@ -178,24 +190,12 @@ public class DSFileParser
                 int startIdx = content.IndexOf('"');
                 int endIdx = content.LastIndexOf('"');
                 string fileName = content.Substring2(startIdx + 1, endIdx);
-                string? modifier = content.Substring2(firstWord.Length, startIdx)?.Trim();
+                string? modifier = content.Substring2(firstWord.Length, startIdx).Trim();
                 if (string.IsNullOrWhiteSpace(modifier)) {
                     modifier = null;
                 }
                 _context.AsFile().AddImport(fileName, modifier);
                 return;
-            }
-            case DSKeywords.OPTION: {
-                string value = ScanDsonValue(content.Substring(DSKeywords.OPTION.Length), lineInfo.ln);
-                DsonObject<string> options = Dsons.FromDson(value).AsObject();
-                dsFile.GetOptions().PutAll(options);
-                // 更新宏注解缓存
-                if (options.TryGetValue(DSKeywords.MACRO_TYPES, out DsonValue dsonValue) && dsonValue is DsonArray<string> array) {
-                    foreach (DsonValue ele in array) {
-                        macroTypes.Add(ele.AsString());
-                    }
-                }
-                break;
             }
             default: {
                 _context.ClearCommentLines();
@@ -238,7 +238,7 @@ public class DSFileParser
             name = content.Substring2(startIdx, spIdx).Trim();
             templates = ObjectUtil.SplitAndTrim(content.Substring2(spIdx + "from".Length, endIdx), ',');
         }
-        string firstLine = content.Substring2(endIdx);
+        string firstLine = content.Substring(endIdx);
         string value = ScanDsonValue(firstLine, lineInfo.ln);
         return new DSInst(name, value, templates);
     }
@@ -654,7 +654,7 @@ public class DSFileParser
                 baseTypeSymbol = null;
             } else {
                 name = ObjectUtil.DeleteWhitespace(nameAndBaseType.Substring2(0, idx));
-                baseTypeSymbol = ObjectUtil.DeleteWhitespace(nameAndBaseType.Substring2(idx + 1));
+                baseTypeSymbol = ObjectUtil.DeleteWhitespace(nameAndBaseType.Substring(idx + 1));
             }
         }
         // 先拷贝外部类的泛型变量
@@ -689,7 +689,7 @@ public class DSFileParser
             int tpIdx = typeParameters.FindIndex(e => e.Name == tpName);
             if (tpIdx < 0) throw new IOException(content);
 
-            TypeParameterConstraints tpConstraints = ParseConstraints(token.Substring2(spIdx + 1));
+            TypeParameterConstraints tpConstraints = ParseConstraints(token.Substring(spIdx + 1));
             typeParameters[tpIdx] = new DSTypeParameter(tpName, tpConstraints);
         }
         name = name.Substring2(0, tpStart);

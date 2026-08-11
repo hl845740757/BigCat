@@ -70,7 +70,8 @@ public sealed class Annotation
     #region parse
 
     /** 解析注解 */
-    public static Annotation? TryParseAnnotation(string comment, int ln = -1) {
+    public static Annotation? TryParseAnnotation(string? comment, int ln = -1) {
+        if (string.IsNullOrEmpty(comment)) return null;
         if (!TryGetRange(comment, out int atIdx, out int startIndex, out int endIndex)) {
             return null;
         }
@@ -192,7 +193,7 @@ public sealed class Annotation
     /// <param name="key">Key</param>
     /// <param name="defValue">key不存在时的默认值</param>
     /// <returns></returns>
-    public static string GetString(DsonObject<string> options, string key, string defValue = null) {
+    public static string? GetString(DsonObject<string> options, string key, string? defValue = null) {
         if (!options.TryGetValue(key, out DsonValue value)) {
             return defValue;
         }

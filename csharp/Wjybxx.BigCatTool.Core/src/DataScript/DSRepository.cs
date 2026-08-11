@@ -412,7 +412,7 @@ public sealed class DSRepository
             string firstName = spIndex < 0 ? typeName : typeName.Substring2(0, spIndex);
             r = FindFirstType(namedType, firstName);
             if (r != null) {
-                return spIndex < 0 ? r : FindEnclosedType(r, typeName.Substring2(spIndex + 1));
+                return spIndex < 0 ? r : FindEnclosedType(r, typeName.Substring(spIndex + 1));
             }
             enclosingFile = namedType.GetEnclosingFile();
         } else {
@@ -476,7 +476,7 @@ public sealed class DSRepository
             string firstName = accessName.Substring2(0, idx);
             foreach (DSElement enclosedElement in root.EnclosedElements) {
                 if (enclosedElement.Kind.IsNamedType() && enclosedElement.Name == firstName) {
-                    return FindEnclosedType(enclosedElement, accessName.Substring2(idx + 1));
+                    return FindEnclosedType(enclosedElement, accessName.Substring(idx + 1));
                 }
             }
             return null;
