@@ -1,5 +1,8 @@
 ﻿// import "common.ds";
-option csharp_namespace="Wjybxx.BigCat.Demo";
+inst @file {
+    csharp_namespace: "Wjybxx.BigCat.Demo",
+    data_class: true, 
+}
 
 // 物品类型枚举
 enum ItemType {

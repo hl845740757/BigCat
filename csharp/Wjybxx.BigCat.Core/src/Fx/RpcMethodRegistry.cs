@@ -171,7 +171,7 @@ public class RpcMethodRegistry : IRpcMethodRegistry
      * 2.建议执行该方法
      */
     public void MakeImmutable() {
-        mutable = true;
+        mutable = false;
     }
 
     /** 检查是否处于不可变状态(IO线程启动时调用) */

@@ -67,7 +67,7 @@ public class CodeGenerator
             }
             string? csharpNamespace = Annotation.GetString(dsFile.GetOptions(), DSKeywords.CSHARP_NAMESPACE);
             if (string.IsNullOrEmpty(csharpNamespace)) {
-                throw new InvalidOperationException("csharpNamespace is absent" + dsFile.FileName);
+                throw new InvalidOperationException("csharpNamespace is absent: " + dsFile.FileName);
             }
             if (_cfg.combine) {
                 NamespaceSpec.Builder nsBuilder = NamespaceSpec.NewBuilder(csharpNamespace);

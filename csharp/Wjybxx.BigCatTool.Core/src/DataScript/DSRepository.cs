@@ -49,7 +49,7 @@ public sealed class DSRepository
     private readonly LinkedDictionary<string, DSFile> fileMap = new();
     /// <summary>
     /// 逻辑文件映射(包含内建结构所属的虚拟文件)
-    /// key为文件简单名
+    /// key为文件简单名，不含".ds"后缀
     /// </summary>
     private readonly LinkedDictionary<string, DSFile> logicFileMap = new();
 
@@ -424,7 +424,7 @@ public sealed class DSRepository
         }
         // 从导入的文件中查询 -- 提前缓存了import，因此不是递归调用FindType
         foreach (string resolvedImport in enclosingFile.ResolvedImports) {
-            string key = resolvedImport.Substring(0, resolvedImport.LastIndexOf('.'));
+            string key = resolvedImport.Replace(".ds", "");
             if (!logicFileMap.TryGetValue(key, out DSFile importFile)) {
                 continue;
             }
@@ -560,9 +560,9 @@ public sealed class DSRepository
         for (int index = 0; index < typeArgsCount; index++) {
             DsonTypeName typeNameArg = typeName.typeArgs[index]; // 可能是泛型变量
             if (typeNameArg.name == originDefine.TypeParameters[index].Name) {
-                typeArgs[index] = originDefine.TypeParameters[index];
+                typeArgs.Add(originDefine.TypeParameters[index]);
             } else {
-                typeArgs[index] = TypeOfName(typeNameArg);
+                typeArgs.Add(TypeOfName(typeNameArg));
             }
         }
         return MakeGenericType(originDefine, typeArgs);
@@ -755,7 +755,8 @@ public sealed class DSRepository
 
         // 再从导入的文件查询
         foreach (string resolvedImport in scopeEntry.ResolvedImports) {
-            if (!logicFileMap.TryGetValue(resolvedImport, out DSFile importFile)) continue;
+            string key = resolvedImport.Replace(".ds", "");
+            if (!logicFileMap.TryGetValue(key, out DSFile importFile)) continue;
             inst = importFile.GetInst(instName);
             if (inst != null) {
                 return inst;

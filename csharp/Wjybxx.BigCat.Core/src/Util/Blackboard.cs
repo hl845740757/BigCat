@@ -17,6 +17,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Util
@@ -26,9 +27,10 @@ namespace Wjybxx.BigCat.Util
 /// </summary>
 public class Blackboard
 {
+#nullable disable
     private Blackboard shared; // 共享内存区
     private readonly Dictionary<DataKey, UnionValue> dataMap;
-
+#nullable restore
     public Blackboard(int capacity = 0) {
         dataMap = new Dictionary<DataKey, UnionValue>(capacity);
     }
@@ -96,6 +98,7 @@ public class Blackboard
             // 避免值类型测试null产生装箱
             UnionValue unionValue = (typeof(T).IsValueType || value != null) ? key.Box(value) : UnionValue.Null;
             dataMap[key] = unionValue;
+            // CollectionsMarshal.GetValueRefOrAddDefault(dataMap, key, out _) = unionValue;
         } else {
             shared.Set(key, value);
         }
@@ -103,7 +106,7 @@ public class Blackboard
 
     public T Get<T>(DataKey<T> key) {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            return unionValue.IsNull ? default : key.Unbox(unionValue);
+            return unionValue.IsNull ? default : key.Unbox(in unionValue);
         }
         if (shared != null) {
             return shared.Get(key);
@@ -113,7 +116,7 @@ public class Blackboard
 
     public bool Get<T>(DataKey<T> key, out T value) {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? default : key.Unbox(unionValue);
+            value = unionValue.IsNull ? default : key.Unbox(in unionValue);
             return true;
         }
         if (shared != null) {
@@ -135,7 +138,7 @@ public class Blackboard
 
     public bool Remove<T>(DataKey<T> key, out T value) {
         if (dataMap.Remove(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? default : key.Unbox(unionValue);
+            value = unionValue.IsNull ? default : key.Unbox(in unionValue);
             return true;
         }
         if (shared != null) {
@@ -160,7 +163,7 @@ public class Blackboard
 
     public T? Get<T>(DataKey<T?> key) where T : struct {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            return unionValue.IsNull ? null : key.Unbox(unionValue);
+            return unionValue.IsNull ? null : key.Unbox(in unionValue);
         }
         if (shared != null) {
             return shared.Get(key);
@@ -170,7 +173,7 @@ public class Blackboard
 
     public bool Get<T>(DataKey<T?> key, out T? value) where T : struct {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? null : key.Unbox(unionValue);
+            value = unionValue.IsNull ? null : key.Unbox(in unionValue);
             return true;
         }
         if (shared != null) {
@@ -192,7 +195,7 @@ public class Blackboard
 
     public bool Remove<T>(DataKey<T?> key, out T? value) where T : struct {
         if (dataMap.Remove(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? null : key.Unbox(unionValue);
+            value = unionValue.IsNull ? null : key.Unbox(in unionValue);
             return true;
         }
         if (shared != null) {
@@ -216,14 +219,14 @@ public class Blackboard
 
     public T LocalGet<T>(DataKey<T> key) {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            return unionValue.IsNull ? default : key.Unbox(unionValue);
+            return unionValue.IsNull ? default : key.Unbox(in unionValue);
         }
         return default;
     }
 
     public bool LocalGet<T>(DataKey<T> key, out T value) {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? default : key.Unbox(unionValue);
+            value = unionValue.IsNull ? default : key.Unbox(in unionValue);
             return true;
         }
         value = default;
@@ -236,7 +239,7 @@ public class Blackboard
 
     public bool LocalRemove<T>(DataKey<T> key, out T value) {
         if (dataMap.Remove(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? default : key.Unbox(unionValue);
+            value = unionValue.IsNull ? default : key.Unbox(in unionValue);
             return true;
         }
         value = default;
@@ -254,14 +257,14 @@ public class Blackboard
 
     public T? LocalGet<T>(DataKey<T?> key) where T : struct {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            return unionValue.IsNull ? null : key.Unbox(unionValue);
+            return unionValue.IsNull ? null : key.Unbox(in unionValue);
         }
         return null;
     }
 
     public bool LocalGet<T>(DataKey<T?> key, out T? value) where T : struct {
         if (dataMap.TryGetValue(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? null : key.Unbox(unionValue);
+            value = unionValue.IsNull ? null : key.Unbox(in unionValue);
             return true;
         }
         value = null;
@@ -274,7 +277,7 @@ public class Blackboard
 
     public bool LocalRemove<T>(DataKey<T?> key, out T? value) where T : struct {
         if (dataMap.Remove(key, out UnionValue unionValue)) {
-            value = unionValue.IsNull ? null : key.Unbox(unionValue);
+            value = unionValue.IsNull ? null : key.Unbox(in unionValue);
             return true;
         }
         value = null;

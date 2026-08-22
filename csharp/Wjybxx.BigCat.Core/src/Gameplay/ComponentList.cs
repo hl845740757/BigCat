@@ -242,7 +242,7 @@ public sealed class ComponentList<T> where T : class
 
     #region internal
 
-    private const int MAX_CAPACITY = 200;
+    private const int MAX_CAPACITY = 128;
 
     public void EnsureCapacity(int minCapacity) {
         int oldCapacity = _elements.Length;

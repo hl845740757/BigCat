@@ -195,8 +195,8 @@ public class ToolUtil
     public static void CopyFileOrDirectory(string sourcePath, string destPath, bool overwrite = true) {
         if (File.Exists(sourcePath)) {
             CopyFile(sourcePath, destPath, overwrite);
-        } else if (Directory.Exists(destPath)) {
-            CopyDirectory(destPath, sourcePath, overwrite);
+        } else if (Directory.Exists(sourcePath)) {
+            CopyDirectory( sourcePath, destPath, overwrite);
         } else {
             throw new FileNotFoundException(sourcePath);
         }

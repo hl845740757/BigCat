@@ -240,7 +240,12 @@ public class DSFileParser
         }
         string firstLine = content.Substring(endIdx);
         string value = ScanDsonValue(firstLine, lineInfo.ln);
-        return new DSInst(name, value, templates);
+        var inst = new DSInst(name, value, templates);
+        // 统一@开头的实例为特殊实例
+        if (name[0] == '@') {
+            inst.DsonValue = Dsons.FromDson(inst.Value);
+        }
+        return inst;
     }
 
     private string ScanDsonValue(string firstLine, int ln) {
