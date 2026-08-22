@@ -71,9 +71,9 @@ public class Node : DisruptorEventLoop<WorkerEvent>, INode
         for (int idx = 0; idx < numberChildren; idx++) {
             WorkerControlData controlData = new WorkerControlData();
             IWorker eventLoop = workerFactory(this, idx, controlData);
-            if (eventLoop.Parent != this) throw new IllegalStateException("the parent of worker is illegal");
+            if (eventLoop.Parent != this) throw new InvalidOperationException("the parent of worker is illegal");
             if (eventLoop.ControlData != controlData)
-                throw new IllegalStateException("the controlData of worker is illegal");
+                throw new InvalidOperationException("the controlData of worker is illegal");
             if (builder.ManualClose != null) controlData.manualClose = builder.ManualClose;
             children[idx] = eventLoop;
         }
@@ -206,7 +206,7 @@ public class Node : DisruptorEventLoop<WorkerEvent>, INode
         foreach (IWorker worker in workers) {
             foreach (int serviceId in worker.Services) {
                 if (nodeServiceIdSet.Contains(serviceId)) {
-                    throw new IllegalStateException("The service in the worker conflicts with the service in the node, id " + serviceId);
+                    throw new InvalidOperationException("The service in the worker conflicts with the service in the node, id " + serviceId);
                 }
                 if (!serviceInfoMap.TryGetValue(serviceId, out ServiceInfo serviceInfo)) {
                     serviceInfo = new ServiceInfo(serviceId, new List<IWorker>(2));

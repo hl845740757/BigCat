@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -171,7 +172,7 @@ internal class SheetReader
                 return;
             }
             if (rowIndex > expected) {
-                throw new IllegalStateException(
+                throw new InvalidOperationException(
                     $"The number of rows is not continuous, expected: {expected}, found: {rowIndex}");
             }
         }

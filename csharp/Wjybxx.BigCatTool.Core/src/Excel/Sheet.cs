@@ -241,7 +241,7 @@ public sealed class Sheet : IValueProvider
     /// <returns></returns>
     public string? GetValue(string name) {
         if (!IsParamSheet) {
-            throw new IllegalStateException();
+            throw new InvalidOperationException();
         }
         if (!headers.TryGetValue(name, out Header header)) {
             throw new ArgumentException($"param: {name} is absent");
@@ -259,7 +259,7 @@ public sealed class Sheet : IValueProvider
     /// <exception cref="IllegalStateException"></exception>
     public void SetValue(string name, string? value) {
         if (!IsParamSheet) {
-            throw new IllegalStateException();
+            throw new InvalidOperationException();
         }
         if (!headers.TryGetValue(name, out Header header)) {
             throw new ArgumentException($"param: {name} is absent");

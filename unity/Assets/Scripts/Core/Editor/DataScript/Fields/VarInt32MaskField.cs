@@ -17,6 +17,7 @@
 #endregion
 
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 using Wjybxx.BigCatTool.DataScript;
 
@@ -40,17 +41,16 @@ public class VarInt32MaskField : MaskField, IVarField
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         if (variable.type.IsEnum) {
+            // 支持Flags枚举和Indexes枚举
             VariableCfg typeCfg = editor.dataGraph.GetVariableCfg(variable.type);
             choices = typeCfg.maskNames;
+        } else if (variableCfg.targetEnum != null) {
+            // 支持映射到enum
+            DSTypeElement enumType = editor.repository.ResolveTypeSymbol(variable.defineInfo, variableCfg.targetEnum);
+            VariableCfg enumCfg = editor.dataGraph.GetVariableCfg(enumType);
+            choices = enumCfg.maskNames;
         } else {
-            // 支持映射到Indexes枚举
-            if (variableCfg.maskEnum != null) {
-                DSTypeElement enumType = editor.repository.ResolveTypeSymbol(variable.defineInfo, variableCfg.maskEnum);
-                VariableCfg enumCfg = editor.dataGraph.GetVariableCfg(enumType);
-                choices = enumCfg.maskNames;
-            } else {
-                choices = variableCfg.maskNames;
-            }
+            choices = variableCfg.maskNames;
         }
         this.SetValueWithoutNotify(variable.intValue);
     }

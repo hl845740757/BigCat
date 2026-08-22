@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using Wjybxx.Commons;
 
 namespace Wjybxx.BigCat.Fx
@@ -37,7 +38,7 @@ public readonly struct RpcResult
     public string? ErrorMsg {
         get {
             if (errorCode == 0) {
-                throw new IllegalStateException("errorCode == 0");
+                throw new InvalidOperationException("errorCode == 0");
             }
             return (string)data;
         }

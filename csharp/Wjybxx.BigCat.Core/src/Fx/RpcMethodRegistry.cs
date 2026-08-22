@@ -46,14 +46,14 @@ public class RpcMethodRegistry : IRpcMethodRegistry
     /// <exception cref="IllegalStateException"></exception>
     public void Register(RpcMethodInfo methodInfo) {
         if (!mutable) {
-            throw new IllegalStateException("registry is immutable");
+            throw new InvalidOperationException("registry is immutable");
         }
         int methodKey = RpcMethodKey.MethodKey(methodInfo.serviceId, methodInfo.methodId);
         if (!methodInfoMap.TryGetValue(methodKey, out RpcMethodInfo exist)) {
             methodInfoMap[methodKey] = methodInfo;
         } else if (exist != methodInfo) {
             // 同一个方法被重复注入是安全的，主要处理继承来的方法...
-            throw new IllegalStateException($"methodKey: {methodInfo.serviceId}-{methodInfo.methodId}");
+            throw new InvalidOperationException($"methodKey: {methodInfo.serviceId}-{methodInfo.methodId}");
         }
     }
 
@@ -177,14 +177,14 @@ public class RpcMethodRegistry : IRpcMethodRegistry
     /** 检查是否处于不可变状态(IO线程启动时调用) */
     public void EnsureImmutable() {
         if (mutable) {
-            throw new IllegalStateException("registry is mutable");
+            throw new InvalidOperationException("registry is mutable");
         }
     }
 
     /** 检查是否处于可变状态(主线程检测) */
     public void EnsureMutable() {
         if (!mutable) {
-            throw new IllegalStateException("registry is immutable");
+            throw new InvalidOperationException("registry is immutable");
         }
     }
 }

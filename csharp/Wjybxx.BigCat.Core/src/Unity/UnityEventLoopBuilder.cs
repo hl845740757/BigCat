@@ -46,7 +46,7 @@ public class UnityEventLoopBuilder<T> : EventLoopBuilder<T> where T : IAgentEven
             ThreadFactory = new DefaultThreadFactory("DisruptorEventLoop");
         }
         if (eventSequencer == null) {
-            throw new IllegalStateException("eventSequencer is null");
+            throw new InvalidOperationException("eventSequencer is null");
         }
     }
 

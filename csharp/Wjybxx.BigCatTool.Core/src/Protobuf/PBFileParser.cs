@@ -549,7 +549,7 @@ public sealed class PBFileParser
     /// <param name="contextType">新上下文类型</param>
     /// <param name="lineInfo">文件行</param>
     private void ReadStartContainer(PBContextType contextType, LineInfo lineInfo) {
-        if (_recursionDepth > 32) throw new IllegalStateException("proto had too many levels of nesting");
+        if (_recursionDepth > 32) throw new InvalidOperationException("proto had too many levels of nesting");
 
         Context parent = this._context;
         Context context;
@@ -584,7 +584,7 @@ public sealed class PBFileParser
     private void ReadEndContainer(LineInfo lineInfo) {
         Context context = _context;
         if (context.parent == null || !context.started) {
-            throw new IllegalStateException();
+            throw new InvalidOperationException();
         }
         context.container.EndLine = lineInfo.ln;
 

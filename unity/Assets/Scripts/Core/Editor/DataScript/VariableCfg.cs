@@ -93,37 +93,37 @@ public sealed class VariableCfg
     /// <summary>
     /// Pop字段的展示名
     ///
-    /// 注：List和Map字段的Pop信息表示Value的信息。
+    /// 注：List和Map字段的Pop信息表示Value的信息；Enum类型会提前缓存该值。
     /// </summary>
     public List<string> popNames;
     /// <summary>
     /// int值和枚举值的可选值
     ///
-    /// 注：List和Map字段的Pop信息表示Value的信息。
+    /// 注：List和Map字段的Pop信息表示Value的信息；Enum类型会提前缓存该值。
     /// </summary>
     public List<int> intPopValues;
     /// <summary>
-    /// 字符串的可选值
+    /// 字符串的可选值，用于pop类型字段
     ///
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public List<string> stringPopValues;
     /// <summary>
-    /// 字符串候选值
+    /// 字符串候选值，用于普通string字段
     ///
     /// 注：List和Map字段的Pop信息表示Value的信息。
     /// </summary>
     public List<string> candidatesValues;
     /// <summary>
-    /// Mask字段时的展示名
+    /// Mask字段的展示名
     /// 
-    /// 注：List和Map字段的Pop信息表示Value的信息。
+    /// 注：List和Map字段的Pop信息表示Value的信息；Enum类型会提前缓存该值。
     /// </summary>
     public List<string> maskNames;
     /// <summary>
-    /// mask字段关联的索引枚举(symbol)
+    /// pop/mask字段关联的索引枚举(symbol)
     /// </summary>
-    public string maskEnum;
+    public string targetEnum;
     /// <summary>
     /// 标签类字段配置
     ///
@@ -299,7 +299,7 @@ public sealed class VariableCfg
         varCfg.stringPopValues = listCfg.stringPopValues;
         varCfg.candidatesValues = listCfg.candidatesValues;
         varCfg.maskNames = listCfg.maskNames;
-        varCfg.maskEnum = listCfg.maskEnum;
+        varCfg.targetEnum = listCfg.targetEnum;
         varCfg.supportedTypes = listCfg.supportedTypes;
         //
         varCfg.dsonType = listCfg.dsonType;
@@ -340,7 +340,7 @@ public sealed class VariableCfg
             cfg.maskNames = new List<string>(maxIndex + 1);
             for (int index = 0; index <= maxIndex; index++) {
                 if (!maskNames.TryGetValue(index, out string maskName)) {
-                    maskName = ""; // 空字符串显式为横线
+                    maskName = ""; // 空字符串显示为横线
                 }
                 cfg.maskNames.Add(maskName);
             }
@@ -355,7 +355,7 @@ public sealed class VariableCfg
         }
         Annotation region = GetBelongRegion(element);
         if (region != null) {
-            DsonValue regionName = region.dsonValue.AsArray()[0];
+            DsonValue regionName = region.DsonValue.AsArray()[0];
             return regionName.AsString() + "/" + displayName;
         }
         return displayName;
@@ -386,6 +386,11 @@ public sealed class VariableCfg
         }
         for (int index = 0; index < annotations.Count; index++) {
             Annotation annotation = annotations[index];
+            DsonHeader<string> header = Dsons.GetHeader(annotation.DsonValue)!;
+            if (header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue clsName)) {
+                cfg.targetEnum = clsName.AsString();
+                break;
+            }
             DsonObject<string> dsonObject = annotation.AsObject();
             DsonValue dsonValue = dsonObject[DSAnnotations.KEY_VALUE];
             if (cfg.intPopValues != null) {
@@ -445,12 +450,14 @@ public sealed class VariableCfg
     private static void ParseMaskInfo(List<Annotation> annotations, VariableCfg cfg) {
         cfg.maskNames = new List<string>();
         foreach (Annotation annotation in annotations) {
+            DsonHeader<string> header = Dsons.GetHeader(annotation.DsonValue)!;
+            if (header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue clsName)) {
+                cfg.targetEnum = clsName.AsString();
+                break;
+            }
             DsonArray<string> dsonArray = annotation.AsArray();
             foreach (DsonValue dsonValue in dsonArray) {
                 cfg.maskNames.Add(dsonValue.AsString());
-            }
-            if (dsonArray.Header.TryGetValue(DsonHeader.Names_ClassName, out DsonValue clsName)) {
-                cfg.maskEnum = clsName.AsString();
             }
         }
         cfg.maskNames.TrimExcess();

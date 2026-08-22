@@ -361,7 +361,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     public void Subscribe(int type, IAgentEventHandler<T> handler) {
         if (handler == null) throw new ArgumentNullException(nameof(handler));
         if (!InEventLoop()) {
-            throw new IllegalStateException();
+            throw new InvalidOperationException();
         }
         agent.Subscribe(type, handler);
     }

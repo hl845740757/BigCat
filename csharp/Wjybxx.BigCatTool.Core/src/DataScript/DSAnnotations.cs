@@ -150,11 +150,14 @@ public static class DSAnnotations
     /// <summary>
     /// Pop字段(支持多个，自动合并)
     /// 
-    /// 语法：<code>// @PopField{ value: 1, displayName: AABB }</code>
+    /// 语法1：<code>// @PopField{ value: 1, displayName: AABB }</code>
+    /// 语法2：<code>// @PopField{ @{clsName} }</code> - 将关联枚举放在对象头
     /// - value 字段对应的值
     /// - displayName 字段的展示名；如果是string字段，暂无需配置
     ///
-    /// 注：Pop字段通常和分支字段配套使用，实现标签类；也用于IntMask字段。
+    /// 注：
+    /// 1.Pop字段通常和分支字段配套使用，实现标签类；也用于IntMask字段。
+    /// 2.语法2表示将int字段映射到enum类型
     /// </summary>
     public const string POP_FIELD = "PopField";
     /// <summary>

@@ -54,14 +54,14 @@ public sealed class Annotation
         this.ln = ln;
     }
 
-    public DsonValue dsonValue {
+    public DsonValue DsonValue {
         get => _dsonValue ??= Dsons.FromDson(value);
         set => _dsonValue = value; // 用于运行时替换数据
     }
 
-    public DsonObject<string> AsObject() => dsonValue.AsObject();
+    public DsonObject<string> AsObject() => DsonValue.AsObject();
 
-    public DsonArray<string> AsArray() => dsonValue.AsArray();
+    public DsonArray<string> AsArray() => DsonValue.AsArray();
 
     public override string ToString() {
         return $"{nameof(type)}: {type}, {nameof(value)}: {value}, {nameof(ln)}: {ln}";

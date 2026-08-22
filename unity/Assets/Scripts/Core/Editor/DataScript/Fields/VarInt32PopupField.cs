@@ -39,6 +39,13 @@ public class VarInt32PopupField : PopupField<int>, IVarField
             choices = typeCfg.intPopValues;
             formatListItemCallback = typeCfg.intPopNameFunc;
             formatSelectedValueCallback = typeCfg.intPopNameFunc;
+        } else if (variableCfg.targetEnum != null) {
+            // 支持映射到enum
+            DSTypeElement enumType = editor.repository.ResolveTypeSymbol(variable.defineInfo, variableCfg.targetEnum);
+            VariableCfg enumCfg = editor.dataGraph.GetVariableCfg(enumType);
+            choices = enumCfg.intPopValues;
+            formatListItemCallback = enumCfg.intPopNameFunc;
+            formatSelectedValueCallback = enumCfg.intPopNameFunc;
         } else {
             choices = variableCfg.intPopValues;
             formatListItemCallback = variableCfg.intPopNameFunc;

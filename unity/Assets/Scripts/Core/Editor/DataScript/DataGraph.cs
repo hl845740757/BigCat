@@ -133,7 +133,7 @@ public sealed class DataGraph
     /// </summary>
     public void EndModify() {
         if (_modifyStack == 0) {
-            throw new IllegalStateException();
+            throw new InvalidOperationException();
         }
         _modifyStack--;
         if (_modifyStack == 0) {
@@ -1164,7 +1164,7 @@ public sealed class DataGraph
     private DataNode RedoAddNode(DataNode.NodeMemento backup) {
         long localId = backup.localId;
         if (nodeDic.ContainsKey(localId)) {
-            throw new IllegalStateException("localId: " + localId);
+            throw new InvalidOperationException("localId: " + localId);
         }
         DataNode dataNode = new DataNode(backup.localId);
         dataNode.Restore(backup);
@@ -1179,7 +1179,7 @@ public sealed class DataGraph
     private DataNode RedoDeleteNode(DataNode.NodeMemento backup) {
         long localId = backup.localId;
         if (!nodeDic.ContainsKey(localId)) {
-            throw new IllegalStateException("localId: " + localId);
+            throw new InvalidOperationException("localId: " + localId);
         }
         DataNode node = nodeDic[localId];
         node.graph = null;
