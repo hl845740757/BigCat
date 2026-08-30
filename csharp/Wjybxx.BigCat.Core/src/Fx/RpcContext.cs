@@ -18,6 +18,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
 
@@ -32,6 +33,7 @@ namespace Wjybxx.BigCat.Fx
 /// 1.结构体较大，当传递给其它方法时应当使用in或ref修饰。
 /// 2.泛型参数建议使用object代替void，这样在特殊情况下可以传递结果给请求方。
 /// </summary>
+[StructLayout(LayoutKind.Auto)]
 public struct RpcContext<T>
 {
     private readonly IRpcClientImpl rpcClient;

@@ -21,20 +21,23 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
+using Wjybxx.Commons.Pool;
 using static Wjybxx.BigCat.Co.TaskBuilder;
 
 namespace Wjybxx.BigCat.Co
 {
 /// <summary>
-/// 小型异步任务
+/// 异步任务(TimerTask)
 ///
 /// 注：
 /// 1.如果任务包含结果，会产生装箱；通常问题不大，因为包含结果的延时任务占比很小。
-/// 2.该对象不可返回给用户！否则可能导致内存泄漏，复用错误。
-/// 3.Task不可主动调用回收，应当由调度器触发回收。
+/// 2.该对象不可返回给用户！否则可能导致内存泄漏，或池化复用错误。
+/// 3.Task由调度器触发回收，在确定从所有队列中删除后才能执行回收。
 /// 4.由于存在多处修改<see cref="ValuePromise{T}"/>状态的情况，因此需要校验rid -- 但都在EventLoop线程更新Promise。
+/// 5.游戏业务通常不需要注册CTS监听器，延迟响应取消信号通常不影响正确性 -- 延时任务总是不保证即时性。
 /// </summary>
 [StructLayout(LayoutKind.Auto)]
 internal sealed class PromiseTask
@@ -47,13 +50,12 @@ internal sealed class PromiseTask
     private const int OFFSET_TASK_TYPE = 0;
     private const int OFFSET_SCHEDULE_TYPE = 4;
 
-    private const int MASK_BASED_ON_UNSCALED_TIME = 1 << 16; // 基于非缩放时间触发
-    private const int MASK_BASED_ON_FRAME_COUNT = 1 << 17; // 基于帧数触发
     private const int MASK_TRIGGERED = 1 << 18; // 是否已完成首次触发
     private const int MASK_HAS_DEADLINE = 1 << 19; // 是否包含截止时间
     private const int MASK_HAS_COUNTDOWN = 1 << 20; // 延时任务有次数限制
     private const int MASK_STARTED = 1 << 21; // 任务是否已启动
-    private const int MASK_COROUTINE_TASK = 1 << 22; // 协程绑定任务
+    private const int MASK_STOPPED = 1 << 22; // 任务是否已停止
+    private const int MASK_SUSPENDED = 1 << 23; // 任务是否挂起状态
 
     #endregion
 
@@ -74,14 +76,18 @@ internal sealed class PromiseTask
     /// <summary>
     /// 任务的上下文
     /// </summary>
-    public object ctx;
+    public object state;
+    /// <summary>
+    /// 任务关联的取消令牌
+    /// </summary>
+    public CancellationToken cancelToken;
     /// <summary>
     /// 任务选项
     /// </summary>
     public int options;
 
     /// <summary>
-    /// 触发时间 or 触发帧数
+    /// 触发时间（时间或帧数）
     /// </summary>
     public double triggerTime;
     /// <summary>
@@ -94,29 +100,29 @@ internal sealed class PromiseTask
     /// </summary>
     public int gatingFrame;
     /// <summary>
+    /// 剩余触发次数
+    /// </summary>
+    public int countdown;
+    /// <summary>
     /// 截止时间
     /// </summary>
     public double deadline;
     /// <summary>
-    /// 剩余触发次数
+    /// 下次执行延迟(暂停时记录)
     /// </summary>
-    public int countdown;
+    public double nextDelay;
 
     /// <summary>
     /// 关联的Promise
     ///
     /// 1.泛型参数为int或object - 写入结果时会装箱，但有利于对象复用。
-    /// 2.Await任务存在多处赋值，但约定都在EventLoop线程。
+    /// 2.协程的Await任务存在多处赋值，但约定都在EventLoop线程。
     /// </summary>
     public IValuePromise promise;
     /// <summary>
     /// 关联promise的rid
     /// </summary>
     public int promiseRid;
-    /// <summary>
-    /// 接收用户取消信号的句柄
-    /// </summary>
-    internal Registration cancelRegistration;
 
     /// <summary>
     /// 辅助控制标识
@@ -142,7 +148,8 @@ internal sealed class PromiseTask
         id = -1;
         invoker = null;
         task = null;
-        ctx = null;
+        state = null;
+        cancelToken = default;
         options = 0;
         promise = null;
         promiseRid = -1;
@@ -150,33 +157,16 @@ internal sealed class PromiseTask
         triggerTime = 0;
         period = 0;
         gatingFrame = 0;
-        deadline = 0;
         countdown = 0;
-        cancelRegistration = default;
+        deadline = 0;
+        nextDelay = 0;
 
         ctl = 0;
         queueId = -1;
         qIndex = -1;
     }
 
-    /// <summary>
-    /// 获取上下文中的取消令牌
-    /// </summary>
-    /// <returns></returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ICancelToken GetCancelToken() {
-        return ExecutorUtil.GetCancelToken(ctx, options);
-    }
-
-    /// <summary>
-    /// 取消执行
-    ///
-    /// 注：可能是检测到取消信号，也可能是其它原因，调动器主动停止任务。
-    /// </summary>
-    /// <param name="cancelCode"></param>
-    public void Cancel(int cancelCode) {
-        TrySetCancelled(cancelCode);
-    }
+    #region 调度
 
     /// <summary>
     /// 外部确定性触发
@@ -191,21 +181,21 @@ internal sealed class PromiseTask
             ctl |= MASK_TRIGGERED;
         }
         // 存在多处更新Promise的逻辑，因此先检测Promise的有效性 -- Promise可能会被提前回收
-        IValuePromise promise = this.promise;
-        if (IsRecycledOrCompleted(promise, promiseRid)) {
+        // IValuePromise promise = this.promise;
+        if (promise.IsRecycledOrCompleted(promiseRid)) {
             return false;
         }
         // 检测取消
-        ICancelToken cancelToken = GetCancelToken();
-        if (cancelToken.IsRequested) {
-            TrySetCancelled(cancelToken.CancelCode);
+        if (cancelToken.IsCancellationRequested) {
+            TrySetCancelled(cancelToken);
             return false;
         }
         // 一次性任务
         int scheduleType = ScheduleType;
         if (scheduleType == SCHEDULE_ONCE) {
-            if (TaskType == TYPE_AWAIT) {
-                TrySetCancelled(CancelCodes.REASON_TIMEOUT);
+            int type = TaskType;
+            if (type >= TYPE_CANCELLER) {
+                RunTask2(type);
                 return false;
             }
             try {
@@ -229,23 +219,51 @@ internal sealed class PromiseTask
             }
             FutureLogger.LogCause(ex, "periodic task caught exception");
         }
+        // 再次检查Promise的有效性
+        if (promise.IsRecycledOrCompleted(promiseRid)) {
+            return false;
+        }
         // 任务执行后检测取消
-        if (cancelToken.IsRequested || IsRecycledOrCompleted(promise, promiseRid)) {
-            TrySetCancelled(cancelToken, CancelCodes.REASON_DEFAULT);
+        if (cancelToken.IsCancellationRequested) {
+            TrySetCancelled(cancelToken);
             return false;
         }
         // 未被取消的情况下检测超时
         if (HasDeadline && deadline <= tickTime) {
-            TrySetCancelled(CancelCodes.REASON_TIMEOUT);
+            TrySetCancelled(CancellationToken.None);
             return false;
         }
         // 检测次数限制
         if (HasCountdown && (--countdown < 1)) {
-            TrySetCancelled(CancelCodes.REASON_COUNT_LIMIT);
+            TrySetCancelled(CancellationToken.None);
             return false;
         }
         SetNextRunTime(tickTime, scheduleType);
         return true;
+    }
+
+    private void RunTask2(int type) {
+        switch (type) {
+            case TYPE_CANCELLER: {
+                TrySetCancelled(CancellationToken.None);
+                return;
+            }
+            case TYPE_SET_RESULT: {
+                TrySetResult(state);
+                return;
+            }
+            case TYPE_SET_EXCEPTION: {
+                if (state is ExceptionDispatchInfo dispatchInfo) {
+                    TrySetException(dispatchInfo);
+                } else {
+                    TrySetException((Exception)state);
+                }
+                return;
+            }
+            default: {
+                throw new AssertionError("type: " + type);
+            }
+        }
     }
 
     private object? RunTask() {
@@ -259,18 +277,24 @@ internal sealed class PromiseTask
                 task();
                 return null;
             }
-            case TYPE_ACTION_CTX: {
+            case TYPE_ACTION_STATE: {
                 Action<object> task = (Action<object>)this.task;
-                task(ctx);
+                task(state);
                 return null;
             }
             case TYPE_FUNC: {
-                Func<object, object> invoker = (Func<object, object>)this.invoker;
-                return invoker(task);
+                if (this.invoker is Func<object, object> invoker) {
+                    return invoker(task);
+                }
+                Delegate d = (Delegate)this.invoker;
+                return d.DynamicInvoke(task);
             }
-            case TYPE_FUNC_CTX: {
-                Func<object, object, object> invoker = (Func<object, object, object>)this.invoker;
-                return invoker(task, ctx);
+            case TYPE_FUNC_STATE: {
+                if (this.invoker is Func<object, object, object> invoker) {
+                    return invoker(task, state);
+                }
+                Delegate d = (Delegate)this.invoker;
+                return d.DynamicInvoke(task, state);
             }
             default: {
                 throw new AssertionError("type: " + type);
@@ -284,13 +308,14 @@ internal sealed class PromiseTask
     }
 
     private void SetNextRunTime(double tickTime, int scheduleType) {
-        double maxDelay = HasDeadline ? (deadline - tickTime) : (365 * DatetimeUtil.SecondsPerDay);
-        if (scheduleType == SCHEDULE_FIXED_RATE) {
-            triggerTime = triggerTime + Math.Min(period, maxDelay); // 逻辑时间
+        if (scheduleType == ScheduledTaskBuilder.SCHEDULE_FIXED_RATE) {
+            triggerTime = triggerTime + period; // 逻辑时间
         } else {
-            triggerTime = tickTime + Math.Min(period, maxDelay); // 真实时间
+            triggerTime = tickTime + period; // 真实时间
         }
     }
+
+    #endregion
 
     #region props
 
@@ -301,21 +326,12 @@ internal sealed class PromiseTask
         get => (ctl & MASK_TASK_TYPE) >> OFFSET_TASK_TYPE;
         set => ctl = BitFlags.SetField(ctl, MASK_TASK_TYPE, OFFSET_TASK_TYPE, value);
     }
-
     /// <summary>
     /// 调度类型
     /// </summary>
     public int ScheduleType {
         get => (ctl & MASK_SCHEDULE_TYPE) >> OFFSET_SCHEDULE_TYPE;
         set => ctl = BitFlags.SetField(ctl, MASK_SCHEDULE_TYPE, OFFSET_SCHEDULE_TYPE, value);
-    }
-
-    /// <summary>
-    /// 是否是协程关联的任务(双向绑定的任务)
-    /// </summary>
-    public bool IsCoroutineTask {
-        get => (ctl & MASK_COROUTINE_TASK) != 0;
-        set => SetCtlBit(MASK_COROUTINE_TASK, value);
     }
 
     /// <summary>
@@ -328,11 +344,11 @@ internal sealed class PromiseTask
     public bool IsPeriodic => (ctl & MASK_SCHEDULE_TYPE) != 0;
 
     /// <summary>
-    /// 是否包含执行时间限制
+    /// 是否处于挂起状态
     /// </summary>
-    public bool HasDeadline {
-        get => (ctl & MASK_HAS_DEADLINE) != 0;
-        set => SetCtlBit(MASK_HAS_DEADLINE, value);
+    public bool IsSuspended {
+        get => (ctl & MASK_SUSPENDED) != 0;
+        set => SetCtlBit(MASK_SUSPENDED, value);
     }
     /// <summary>
     /// 是否包含执行次数限制
@@ -341,12 +357,20 @@ internal sealed class PromiseTask
         get => (ctl & MASK_HAS_COUNTDOWN) != 0;
         set => SetCtlBit(MASK_HAS_COUNTDOWN, value);
     }
+    /// <summary>
+    /// 是否包含执行时间限制
+    /// </summary>
+    public bool HasDeadline {
+        get => (ctl & MASK_HAS_DEADLINE) != 0;
+        set => SetCtlBit(MASK_HAS_DEADLINE, value);
+    }
 
     /// <summary>
     /// 是否启用了指定选项
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsEnabled(int optionMask) {
-        return (options & optionMask) != 0;
+        return (options & optionMask) == optionMask;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -360,93 +384,120 @@ internal sealed class PromiseTask
 
     #endregion
 
-    #region Set-Result
+    #region internal
 
+    /// <summary>
+    /// 取消执行
+    /// 注：可能是检测到取消信号，也可能是其它原因，调度器主动停止任务。
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsRecycledOrCompleted(IValuePromise promise, int rid) {
-        return promise.IsRecycled(rid) || promise.GetStatus(rid).IsCompleted();
+    public void Cancel(CancellationToken cts = default) {
+        TrySetCancelled(cts);
     }
 
     /// <summary>
-    /// 尝试将Promise置为完成状态
-    ///
-    /// 注：用于设置<see cref="Func{TResult}"/>的执行结果。
+    /// 绑定协程
     /// </summary>
-    /// <param name="value"></param>
-    public bool TrySetResult(object? value) {
-        Unbind();
-        CloseRegistration();
-        // ValuePromise不支持多次设置结果 -- 理论上都在事件循环线程设置Promise结果，先检查后执行不应该出现异常
-        return !promise.IsRecycled(promiseRid) && promise.TrySetResult(promiseRid, value);
-    }
-
-    public bool TrySetResult<T>(T? value) {
-        Unbind();
-        CloseRegistration();
-        return !promise.IsRecycled(promiseRid) && promise.TrySetResult(promiseRid, value);
-    }
-
-    public bool TrySetException(Exception ex) {
-        Unbind();
-        CloseRegistration();
-        return !promise.IsRecycled(promiseRid) && promise.TrySetException(promiseRid, ex);
-    }
-
-    public bool TrySetException(ExceptionDispatchInfo dispatchInfo) {
-        Unbind();
-        CloseRegistration();
-        return !promise.IsRecycled(promiseRid) && promise.TrySetException(promiseRid, dispatchInfo);
-    }
-
-    public bool TrySetCancelled(ICancelToken cancelToken, int def) {
-        Unbind();
-        CloseRegistration();
-        int cancelCode = cancelToken.CancelCode;
-        if (cancelCode == 0) cancelCode = def;
-        return !promise.IsRecycled(promiseRid) && promise.TrySetCancelled(promiseRid, cancelCode);
-    }
-
-    public bool TrySetCancelled(int cancelCode) {
-        Unbind();
-        CloseRegistration();
-        return !promise.IsRecycled(promiseRid) && promise.TrySetCancelled(promiseRid, cancelCode);
+    public void BindCoroutine(Coroutine coroutine) {
+        Debug.Assert(this.invoker == null);
+        this.invoker = coroutine;
+        coroutine.asyncTask = this;
     }
 
     /// <summary>
-    /// 协程对象在任务完成后可能会创建新的任务，因此在唤醒协程之前需要先解除绑定。
+    /// 解绑协程
+    /// 注：协程对象在任务完成后可能会创建新的异步任务，因此在唤醒协程（赋值结果）之前需要先解除绑定。
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Unbind() {
-        if (IsCoroutineTask && this.invoker is Coroutine coroutine) {
-            Debug.Assert(coroutine.asyncTask == this);
+    public void UnbindCoroutine() {
+        if (this.invoker is Coroutine coroutine && coroutine.asyncTask == this) {
             coroutine.asyncTask = null;
             this.invoker = null;
         }
     }
 
+    #endregion
+
+    #region Set-Result
+
     /// <summary>
-    /// 关闭取消令牌的监听
+    /// 尝试将Promise置为完成状态
+    /// 注：用于设置<see cref="Func{TResult}"/>的执行结果。
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void CloseRegistration() {
-        Registration registration = this.cancelRegistration;
-        this.cancelRegistration = default;
-        registration.Dispose();
+    public bool TrySetResult(object? value) {
+        UnbindCoroutine();
+        // ValuePromise不支持多次设置结果 -- 理论上都在事件循环线程设置Promise结果，先检查后执行不应该出现异常
+        return !promise.IsRecycled(promiseRid) && promise.TrySetResult(promiseRid, value);
     }
+
+    public bool TrySetResult<T>(T? value) {
+        UnbindCoroutine();
+        return !promise.IsRecycled(promiseRid) && promise.TrySetResult(promiseRid, value);
+    }
+
+    public bool TrySetException(Exception ex) {
+        UnbindCoroutine();
+        return !promise.IsRecycled(promiseRid) && promise.TrySetException(promiseRid, ex);
+    }
+
+    public bool TrySetException(ExceptionDispatchInfo dispatchInfo) {
+        UnbindCoroutine();
+        return !promise.IsRecycled(promiseRid) && promise.TrySetException(promiseRid, dispatchInfo);
+    }
+
+    public bool TrySetCancelled(CancellationToken cts = default) {
+        UnbindCoroutine();
+        return !promise.IsRecycled(promiseRid) && promise.TrySetCancelled(promiseRid, cts);
+    }
+
+    #endregion
+
+    #region 池化
+
+    /// <summary>
+    /// Task对象池 TODO 抽取环境变量
+    /// </summary>
+    private static readonly ConcurrentObjectPool<PromiseTask> taskPool = new(
+        () => new PromiseTask(), task => task.Reset(), 2048);
+
+    /// <summary>
+    /// 全局ID生成器
+    /// </summary>
+    private static PaddedInt64 _idGenerator = new PaddedInt64(0);
+
+    /// <summary>
+    /// 申请Task对象
+    /// </summary>
+    public static PromiseTask Acquire() {
+        return taskPool.Acquire();
+    }
+
+    /// <summary>
+    /// 将Task归还到对象池
+    /// </summary>
+    public static void Release(PromiseTask task) {
+        taskPool.Release(task);
+    }
+
+    /// <summary>
+    /// 全局ID分配
+    /// </summary>
+    /// <returns></returns>
+    public static long NextId() => _idGenerator.IncrementAndGet();
 
     #endregion
 
     /// <summary>
     /// 用于对需要返回结果的延时任务<see cref="Func{TResult}"/>进行装箱，避免动态反射调用。
+    /// 由于包含结果的延时任务占比极小，因此装箱更有利于池化。
     /// </summary>
-    internal static class FuncInvoker<R>
+    public static class FuncInvoker<R>
     {
         // ReSharper disable InconsistentNaming
-        public static readonly Func<object, object> wrapper0 = (_func) => {
+        public static readonly Func<object, object> invoker1 = (_func) => {
             Func<R> func = (Func<R>)_func;
             return func();
         };
-        public static readonly Func<object, object, object> wrapper1 = (_func, arg) => {
+        public static readonly Func<object, object, object> invoker2 = (_func, arg) => {
             Func<object, R> func = (Func<object, R>)_func;
             return func(arg);
         };

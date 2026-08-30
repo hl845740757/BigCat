@@ -26,7 +26,7 @@ using Wjybxx.Commons.Pool;
 namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// 
+/// rpc响应结构
 /// </summary>
 public sealed class RpcResponse : RpcProtocol
 {

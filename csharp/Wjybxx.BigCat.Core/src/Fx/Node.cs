@@ -223,7 +223,7 @@ public class Node : DisruptorEventLoop<WorkerEvent>, INode
         foreach (IWorker child in children) {
             combiner.Add(child.Start());
         }
-        combiner.SelectAll().Join();
+        combiner.WhenAll().Join();
     }
 
     private void StopWorkers() {
@@ -235,7 +235,7 @@ public class Node : DisruptorEventLoop<WorkerEvent>, INode
             child.Shutdown();
             combiner.Add(child.TerminationFuture);
         }
-        IPromise<object> aggregateFuture = combiner.SelectAll(true);
+        IPromise<object> aggregateFuture = combiner.WhenAll();
         if (aggregateFuture.AwaitUninterruptibly(TimeSpan.FromMinutes(1))) {
             return;
         }

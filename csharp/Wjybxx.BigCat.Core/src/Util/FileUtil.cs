@@ -52,7 +52,7 @@ public static class FileUtil
         if (File.Exists(sourcePath)) {
             CopyFile(sourcePath, destPath, overwrite);
         } else if (Directory.Exists(sourcePath)) {
-            CopyDirectory( sourcePath, destPath, overwrite);
+            CopyDirectory(sourcePath, destPath, overwrite);
         } else {
             throw new FileNotFoundException(sourcePath);
         }

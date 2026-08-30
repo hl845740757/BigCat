@@ -43,7 +43,7 @@ public class RpcMethodRegistry : IRpcMethodRegistry
     /// 注册rpc方法
     /// </summary>
     /// <param name="methodInfo"></param>
-    /// <exception cref="IllegalStateException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public void Register(RpcMethodInfo methodInfo) {
         if (!mutable) {
             throw new InvalidOperationException("registry is immutable");

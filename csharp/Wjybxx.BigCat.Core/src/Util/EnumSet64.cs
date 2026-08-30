@@ -225,9 +225,7 @@ public class EnumSet64<T> where T : struct, Enum
         }
         // 单值字符串数组 [A, B, C]
         if (firstDsonType == DsonType.String) {
-            DsonCodecImpl<T> enumCodec = reader.GetInlinableCodec<T>();
-            if (enumCodec == null) throw new AssertionError();
-            //
+            DsonCodecImpl<T> enumCodec = reader.GetInlinableCodec<T>() ?? throw new AssertionError();
             EnumSet64<T> result = new EnumSet64<T>();
             result.Set(enumCodec.DecodeKey(reader.ReadString()));
             while ((reader.ReadDsonType()) != DsonType.EndOfObject) {

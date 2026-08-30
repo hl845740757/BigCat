@@ -195,8 +195,8 @@
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\ShaderGraph\Targets\UniversalDecalSubTarget.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\SavedParameter.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\2D\Renderer2DAnalytics.cs" />
-    <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\Camera\UniversalRenderPipelineCameraUI.Drawers.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\UpgradeCommon.cs" />
+    <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\Camera\UniversalRenderPipelineCameraUI.Drawers.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\2D\ShapeEditor\View\EditablePathView.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\Converter\ReadonlyMaterialConverter.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.universal@12.1.16\Editor\RendererFeatures\RenderObjectsPassFeatureEditor.cs" />

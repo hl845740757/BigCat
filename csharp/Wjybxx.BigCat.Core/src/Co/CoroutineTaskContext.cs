@@ -18,6 +18,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons.Concurrent;
@@ -30,53 +31,50 @@ namespace Wjybxx.BigCat.Co
 [StructLayout(LayoutKind.Auto)]
 public readonly struct CoroutineTaskContext
 {
-    private readonly CoroutineMgr coroutineMgr;
-    private readonly Coroutine coroutine;
-    private readonly long token;
-    private readonly long entityId;
-    private readonly object startArg1;
-    private readonly object startArg2;
+    private readonly CoroutineMgr _coroutineMgr;
+    private readonly long _coroutineId;
+    private readonly CancellationToken _cancelToken;
+    private readonly object _startArg1;
+    private readonly object _startArg2;
 
-    internal CoroutineTaskContext(CoroutineMgr coroutineMgr, Coroutine coroutine, long token,
-                                  long entityId, object startArg1, object startArg2) {
-        this.coroutineMgr = coroutineMgr;
-        this.coroutine = coroutine;
-        this.token = token;
-        this.entityId = entityId;
-        this.startArg1 = startArg1;
-        this.startArg2 = startArg2;
+    internal CoroutineTaskContext(CoroutineMgr coroutineMgr, long coroutineId,
+                                  CancellationToken cancelToken, object startArg1, object startArg2) {
+        this._coroutineMgr = coroutineMgr;
+        this._coroutineId = coroutineId;
+        this._cancelToken = cancelToken;
+        this._startArg1 = startArg1;
+        this._startArg2 = startArg2;
     }
 
     #region context
 
-    public long CoroutineId => token;
-    public long EntityId => entityId;
-    public object StartArg1 => startArg1;
-    public object StartArg2 => startArg2;
+    public long CoroutineId => _coroutineId;
+    public CancellationToken CancelToken => _cancelToken;
+    public object StartArg1 => _startArg1;
+    public object StartArg2 => _startArg2;
 
     /// <summary>
     /// 协程关联的事件循环
     ///
-    /// 注：
-    /// 1.可通过<code>await EventLoop</code>切换到事件循环线程。
-    /// 2.可跨线程访问。
+    /// 注：可通过<code>await EventLoop</code>切换到事件循环线程。
     /// </summary>
-    public IEventLoop EventLoop => coroutineMgr.EventLoop;
+    public IEventLoop EventLoop => _coroutineMgr.EventLoop;
     /// <summary>
     /// 协程关联的时间轴
     /// </summary>
-    public IReadonlyTime Time => coroutineMgr.Time;
+    public ITime Time => _coroutineMgr.Time;
     /// <summary>
     /// 是否已收到取消信号
     /// </summary>
-    public bool IsCancelRequest => coroutine.GetCancelRequested(token);
+    public bool IsCancellationRequested => _cancelToken.IsCancellationRequested;
 
     /// <summary>
     /// 拆箱上下文
     /// </summary>
     public CoroutineTaskContext<In, Out> Unbox<In, Out>(DataKey<In> inputCodec, DataKey<Out> outputCodec) {
-        return new CoroutineTaskContext<In, Out>(coroutineMgr, coroutine, token,
-            entityId, startArg1, startArg2, inputCodec, outputCodec);
+        return new CoroutineTaskContext<In, Out>(_coroutineMgr, _coroutineId, _cancelToken,
+            _startArg1, _startArg2,
+            inputCodec, outputCodec);
     }
 
     #endregion
@@ -93,26 +91,9 @@ public readonly struct CoroutineTaskContext
     /// </summary>
     /// <param name="time">睡眠时间，秒 or 帧</param>
     /// <param name="extraDelayFrame">额外延迟帧</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture Sleep(double time, int extraDelayFrame = 1, TimingType timingType = TimingType.Time,
-                             GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Sleep(token, time, extraDelayFrame, timingType, phase);
-    }
-
-    /// <summary>
-    /// 睡眠一定帧数
-    ///
-    /// 注：
-    /// 1.如果睡眠帧数为0，且当前帧尚未执行到目标阶段，则会在当前帧醒来。
-    /// 2.该方法其实是<see cref="Sleep"/>的快捷方法。
-    /// </summary>
-    /// <param name="frameCount">睡眠帧首</param>
-    /// <param name="phase">等待队列</param>
-    /// <returns></returns>
-    public ValueFuture SleepFrame(int frameCount, GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Sleep(token, frameCount, 0, TimingType.FrameCount, phase);
+    public ValueFuture Sleep(double time, int extraDelayFrame = 0) {
+        return _coroutineMgr.Sleep(_coroutineId, time, extraDelayFrame);
     }
 
     /// <summary>
@@ -124,13 +105,10 @@ public readonly struct CoroutineTaskContext
     /// </summary>
     /// <param name="future">要等待的future</param>
     /// <param name="timeout">超时时间</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public ValueFuture<T> Await<T>(ValueFuture<T> future, double timeout = 0, TimingType timingType = TimingType.Time,
-                                   GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Await(token, future, timeout, timingType, phase);
+    public ValueFuture<T> Await<T>(ValueFuture<T> future, double timeout = 0) {
+        return _coroutineMgr.Await(_coroutineId, future, timeout);
     }
 
     /// <summary>
@@ -142,12 +120,9 @@ public readonly struct CoroutineTaskContext
     /// </summary>
     /// <param name="future">要等待的future</param>
     /// <param name="timeout">超时时间</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture Await(ValueFuture future, double timeout = 0, TimingType timingType = TimingType.Time,
-                             GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Await(token, future, timeout, timingType, phase);
+    public ValueFuture Await(ValueFuture future, double timeout = 0) {
+        return _coroutineMgr.Await(_coroutineId, future, timeout);
     }
 
     #endregion
@@ -159,34 +134,32 @@ public readonly struct CoroutineTaskContext
 [StructLayout(LayoutKind.Auto)]
 public readonly struct CoroutineTaskContext<In, Out>
 {
-    private readonly CoroutineMgr coroutineMgr;
-    private readonly Coroutine coroutine;
-    private readonly long token;
-    private readonly long entityId;
-    private readonly object startArg1;
-    private readonly object startArg2;
-    private readonly DataKey<In> inputCodec;
-    private readonly DataKey<Out> outputCodec;
+    private readonly CoroutineMgr _coroutineMgr;
+    private readonly long _coroutineId;
+    private readonly CancellationToken _cancelToken;
+    private readonly object _startArg1;
+    private readonly object _startArg2;
+    private readonly DataKey<In> _inputCodec;
+    private readonly DataKey<Out> _outputCodec;
 
-    internal CoroutineTaskContext(CoroutineMgr coroutineMgr, Coroutine coroutine, long token,
-                                  long entityId, object startArg1, object startArg2,
+    internal CoroutineTaskContext(CoroutineMgr coroutineMgr, long coroutineId, CancellationToken cancelToken,
+                                  object startArg1, object startArg2,
                                   DataKey<In> inputCodec, DataKey<Out> outputCodec) {
-        this.coroutineMgr = coroutineMgr;
-        this.coroutine = coroutine;
-        this.token = token;
-        this.entityId = entityId;
-        this.startArg1 = startArg1;
-        this.startArg2 = startArg2;
-        this.inputCodec = inputCodec;
-        this.outputCodec = outputCodec;
+        this._coroutineMgr = coroutineMgr;
+        this._coroutineId = coroutineId;
+        this._cancelToken = cancelToken;
+        this._startArg1 = startArg1;
+        this._startArg2 = startArg2;
+        this._inputCodec = inputCodec;
+        this._outputCodec = outputCodec;
     }
 
     #region context
 
-    public long CoroutineId => token;
-    public long EntityId => entityId;
-    public object StartArg1 => startArg1;
-    public object StartArg2 => startArg2;
+    public long CoroutineId => _coroutineId;
+    public CancellationToken CancelToken => _cancelToken;
+    public object StartArg1 => _startArg1;
+    public object StartArg2 => _startArg2;
 
     /// <summary>
     /// 协程关联的事件循环
@@ -195,22 +168,19 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 1.可通过<code>await EventLoop</code>切换到事件循环线程。
     /// 2.可跨线程访问。
     /// </summary>
-    public IEventLoop EventLoop => coroutineMgr.EventLoop;
+    public IEventLoop EventLoop => _coroutineMgr.EventLoop;
     /// <summary>
     /// 协程关联的时间轴
     /// </summary>
-    public IReadonlyTime Time => coroutineMgr.Time;
-    /// <summary>
-    /// 是否已收到取消信号
-    /// </summary>
-    public bool IsCancelRequest => coroutine.GetCancelRequested(token);
+    public ITime Time => _coroutineMgr.Time;
 
     /// <summary>
     /// 上下文装箱
     /// </summary>
     /// <returns></returns>
     public CoroutineTaskContext Box() {
-        return new CoroutineTaskContext(coroutineMgr, coroutine, token, entityId, startArg1, startArg2);
+        return new CoroutineTaskContext(_coroutineMgr, _coroutineId,
+            _cancelToken, _startArg1, _startArg2);
     }
 
     #endregion
@@ -221,7 +191,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 尝试读取一个用户输入
     /// </summary>
     public bool TryRead(out In cmd) {
-        return coroutine.TryReadCmd(token, inputCodec, out cmd);
+        return _coroutineMgr.TryReadCmd(_coroutineId, _inputCodec, out cmd);
     }
 
     /// <summary>
@@ -231,12 +201,9 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 2.如果当前无可用输入，则在用户写入输入或协程被中断（取消时）醒来，必须显式检测结果的有效性。
     /// </summary>
     /// <param name="timeout">超时时间</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture<TaskResult<In>> ReadAsync(double timeout = 0, TimingType timingType = TimingType.Time,
-                                                 GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.ReadCmdAsync(token, inputCodec, timeout, timingType, phase);
+    public ValueFuture<TaskResult<In>> ReadAsync(double timeout = 0) {
+        return _coroutineMgr.ReadCmdAsync(_coroutineId, _inputCodec, timeout);
     }
 
     /// <summary>
@@ -244,7 +211,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// </summary>
     /// <param name="result"></param>
     public void Write(Out result) {
-        coroutine.WriteResult(token, outputCodec, result);
+        _coroutineMgr.WriteResult(_coroutineId, _outputCodec, result);
     }
 
     #endregion
@@ -261,24 +228,9 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// </summary>
     /// <param name="time">睡眠时间，秒 or 帧</param>
     /// <param name="extraDelayFrame">额外延迟帧</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture Sleep(double time, int extraDelayFrame = 1, TimingType timingType = TimingType.Time,
-                             GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Sleep(token, time, extraDelayFrame, timingType, phase);
-    }
-
-    /// <summary>
-    /// 睡眠一定帧数
-    ///
-    /// 注：是<see cref="Sleep"/>的快捷方法。
-    /// </summary>
-    /// <param name="frameCount">睡眠帧首</param>
-    /// <param name="phase">等待队列</param>
-    /// <returns></returns>
-    public ValueFuture SleepFrame(int frameCount, GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Sleep(token, frameCount, 0, TimingType.FrameCount, phase);
+    public ValueFuture Sleep(double time, int extraDelayFrame = 0) {
+        return _coroutineMgr.Sleep(_coroutineId, time, extraDelayFrame);
     }
 
     /// <summary>
@@ -290,13 +242,10 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// </summary>
     /// <param name="future">要等待的future</param>
     /// <param name="timeout">超时时间</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public ValueFuture<T> Await<T>(ValueFuture<T> future, double timeout = 0, TimingType timingType = TimingType.Time,
-                                   GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Await(token, future, timeout, timingType, phase);
+    public ValueFuture<T> Await<T>(ValueFuture<T> future, double timeout = 0) {
+        return _coroutineMgr.Await(_coroutineId, future, timeout);
     }
 
     /// <summary>
@@ -308,12 +257,9 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// </summary>
     /// <param name="future">要等待的future</param>
     /// <param name="timeout">超时时间</param>
-    /// <param name="timingType">计时类型</param>
-    /// <param name="phase">等待队列</param>
     /// <returns></returns>
-    public ValueFuture Await(ValueFuture future, double timeout = 0, TimingType timingType = TimingType.Time,
-                             GameLoopPhase phase = GameLoopPhase.Update) {
-        return coroutine.Await(token, future, timeout, timingType, phase);
+    public ValueFuture Await(ValueFuture future, double timeout = 0) {
+        return _coroutineMgr.Await(_coroutineId, future, timeout);
     }
 
     #endregion

@@ -17,6 +17,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Wjybxx.Commons;
 
@@ -65,6 +66,7 @@ public class Blackboard
     /// <summary>
     /// 是否包含目标字段
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool ContainsKey(DataKey key) {
         return dataMap.ContainsKey(key) || (shared != null && shared.ContainsKey(key));
     }
@@ -74,6 +76,7 @@ public class Blackboard
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool LocalContainsKey(DataKey key) {
         return dataMap.ContainsKey(key);
     }
@@ -90,6 +93,8 @@ public class Blackboard
         }
         return false;
     }
+
+    #region 递归
 
     #region 泛型key
 
@@ -204,6 +209,8 @@ public class Blackboard
         value = null;
         return false;
     }
+
+    #endregion
 
     #endregion
 

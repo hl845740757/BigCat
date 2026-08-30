@@ -145,8 +145,8 @@
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Lighting\LightUnit\TemperatureSlider.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Debugging\DebugWindow.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Camera\CameraUI.Output.Skin.cs" />
-    <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Lighting\ProbeVolume\ProbeGIBaking.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Lighting\IESReader.cs" />
+    <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Lighting\ProbeVolume\ProbeGIBaking.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Gizmo\GizmoUtility.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Lighting\LightUI.Drawers.cs" />
     <Compile Include="Library\PackageCache\com.unity.render-pipelines.core@12.1.16\Editor\Lighting\ProbeVolume\ProbePlacement.cs" />

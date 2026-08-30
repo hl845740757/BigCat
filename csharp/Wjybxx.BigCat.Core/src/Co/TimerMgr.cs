@@ -17,242 +17,203 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Wjybxx.BigCat.Gameplay;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Concurrent;
-using static Wjybxx.BigCat.Co.CoroutineMgr;
-using static Wjybxx.BigCat.Co.TaskBuilder;
 
 namespace Wjybxx.BigCat.Co
 {
 /// <summary>
-/// 该实现与<see cref="CoroutineMgr"/>绑定。
+/// 游戏World专用Timer管理器
 /// </summary>
-internal sealed class TimerMgr : ITimerMgr
+public sealed class TimerMgr
 {
-    private readonly CoroutineMgr _coroutineMgr;
-    private readonly TimingType _timingType;
+    private static readonly GameLoopPhase[] phaseArray = EnumUtil.GetValues<GameLoopPhase>();
 
-    public TimerMgr(CoroutineMgr coroutineMgr, TimingType timingType) {
-        _coroutineMgr = coroutineMgr;
-        _timingType = timingType;
-    }
+    // 基于非缩放时间等待的队列
+    private readonly TimerQueue unscaledQueue0;
+    private readonly TimerQueue unscaledQueue1;
+    private readonly TimerQueue unscaledQueue2;
+    private readonly TimerQueue unscaledQueue3;
+    private readonly TimerQueue unscaledQueue4;
+    private readonly TimerQueue unscaledQueue5;
+    private readonly TimerQueue unscaledQueue6;
+    private readonly TimerQueue unscaledQueue7;
+    private readonly TimerQueue unscaledQueue8;
+    private readonly TimerQueue unscaledQueue9;
+    // 基于逻辑时间等待的队列
+    private readonly TimerQueue timeQueue1;
+    private readonly TimerQueue timeQueue2;
+    private readonly TimerQueue timeQueue3;
+    private readonly TimerQueue timeQueue4;
+    private readonly TimerQueue timeQueue5;
+    private readonly TimerQueue timeQueue6;
+    private readonly TimerQueue timeQueue7;
+    private readonly TimerQueue timeQueue8;
 
-    public ValueFuture<T> Schedule<T>(in TaskBuilder<T> builder) {
-        GameLoopPhase phase = builder.SchedulePhase;
-        _coroutineMgr.CheckQueue(_timingType, phase);
+    private readonly IEventLoop _eventLoop;
+    private readonly ITime _time;
+
+    public TimerMgr(IEventLoop eventLoop, ITime time) {
+        _eventLoop = eventLoop;
+        _time = time;
         //
-        ValuePromise<T> promise = ValuePromise<T>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = builder.Type;
-        asyncTask.task = builder.Task;
-        asyncTask.ctx = builder.Context;
-        asyncTask.options = builder.Options;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        // func装箱
-        if (builder.Type == TYPE_FUNC) {
-            asyncTask.invoker = PromiseTask.FuncInvoker<T>.wrapper0;
-        } else if (builder.Type == TYPE_FUNC_CTX) {
-            asyncTask.invoker = PromiseTask.FuncInvoker<T>.wrapper1;
-        }
-        // 触发时间
-        asyncTask.ScheduleType = builder.ScheduleType;
-        asyncTask.triggerTime = _coroutineMgr.GetTime(_timingType, phase) + Math.Max(0, builder.InitialDelay);
-        if (builder.IsPeriodic) {
-            asyncTask.period = CorrectPeriod(builder.Period);
-        }
-        if (builder.HasExtraDelayFrame && _timingType != TimingType.FrameCount) {
-            asyncTask.gatingFrame = _coroutineMgr.GetFrameCount(phase) + builder.ExtraDelayFrame;
-        }
-        // 超时信息
-        if (builder.HasTimeout) {
-            asyncTask.HasDeadline = true;
-            asyncTask.deadline = _coroutineMgr.GetTime(_timingType, phase) + Math.Max(0, builder.Timeout);
-        }
-        if (builder.HasCountLimit) {
-            asyncTask.HasCountdown = true;
-            asyncTask.countdown = builder.CountLimit;
-        }
-        _coroutineMgr.AddTimer(asyncTask, _timingType, phase);
-        return promise.Future.WithTaskId(asyncTask.id);
-    }
-
-    public ValueFuture ScheduleAction(Action action, double delay, ICancelToken? cancelToken = null) {
-        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_ACTION;
-        asyncTask.task = action;
-        asyncTask.ctx = cancelToken;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture.WithTaskId(asyncTask.id);
-    }
-
-    public ValueFuture ScheduleAction(Action<object> action, object timerArg, double delay) {
-        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_ACTION_CTX;
-        asyncTask.task = action;
-        asyncTask.ctx = timerArg;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture.WithTaskId(asyncTask.id);
-    }
-
-    public ValueFuture<T> ScheduleFunc<T>(Func<T> action, double delay, ICancelToken? cancelToken = null) {
-        ValuePromise<T> promise = ValuePromise<T>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_FUNC;
-        asyncTask.invoker = PromiseTask.FuncInvoker<T>.wrapper0; // 装箱结果
-        asyncTask.task = action;
-        asyncTask.ctx = cancelToken;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.Future.WithTaskId(asyncTask.id);
-    }
-
-    public ValueFuture<T> ScheduleFunc<T>(Func<object, T> action, object timerArg, double delay) {
-        ValuePromise<T> promise = ValuePromise<T>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_FUNC_CTX;
-        asyncTask.invoker = PromiseTask.FuncInvoker<T>.wrapper1; // 装箱结果
-        asyncTask.task = action;
-        asyncTask.ctx = timerArg;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.Future.WithTaskId(asyncTask.id);
-    }
-
-    public ValueFuture ScheduleWithFixedDelay(Action action, double delay, double period, ICancelToken? cancelToken = null) {
-        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_ACTION;
-        asyncTask.task = action;
-        asyncTask.ctx = cancelToken;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-        asyncTask.period = CorrectPeriod(period);
-        asyncTask.ScheduleType = SCHEDULE_FIXED_DELAY;
+        ITimeProvider unscaledTime = time.GetUnscaledFacade();
+        unscaledQueue0 = new TimerQueue(eventLoop, unscaledTime, 0);
+        unscaledQueue1 = new TimerQueue(eventLoop, unscaledTime, 1);
+        unscaledQueue2 = new TimerQueue(eventLoop, unscaledTime, 2);
+        unscaledQueue3 = new TimerQueue(eventLoop, unscaledTime, 3);
+        unscaledQueue4 = new TimerQueue(eventLoop, unscaledTime, 4);
+        unscaledQueue5 = new TimerQueue(eventLoop, unscaledTime, 5);
+        unscaledQueue6 = new TimerQueue(eventLoop, unscaledTime, 6);
+        unscaledQueue7 = new TimerQueue(eventLoop, unscaledTime, 7);
+        unscaledQueue8 = new TimerQueue(eventLoop, unscaledTime, 8);
+        unscaledQueue9 = new TimerQueue(eventLoop, unscaledTime, 9);
         //
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture.WithTaskId(asyncTask.id);
+        timeQueue1 = new TimerQueue(eventLoop, time, 11);
+        timeQueue2 = new TimerQueue(eventLoop, time, 12);
+        timeQueue3 = new TimerQueue(eventLoop, time, 13);
+        timeQueue4 = new TimerQueue(eventLoop, time, 14);
+        timeQueue5 = new TimerQueue(eventLoop, time, 15);
+        timeQueue6 = new TimerQueue(eventLoop, time, 16);
+        timeQueue7 = new TimerQueue(eventLoop, time, 17);
+        timeQueue8 = new TimerQueue(eventLoop, time, 18);
     }
 
-    public ValueFuture ScheduleWithFixedDelay(Action<object> action, object timerArg, double delay, double period) {
-        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_ACTION_CTX;
-        asyncTask.task = action;
-        asyncTask.ctx = timerArg;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-        asyncTask.period = CorrectPeriod(period);
-        asyncTask.ScheduleType = SCHEDULE_FIXED_DELAY;
-        //
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture.WithTaskId(asyncTask.id);
+    public IEventLoop EventLoop => _eventLoop;
+    public ITime Time => _time;
+
+    /// <summary>
+    /// 启动所有定时器队列
+    /// </summary>
+    public void Start() {
+        foreach (GameLoopPhase phase in phaseArray) {
+            GetQueue(phase, TimingType.Time, false)?.Start();
+        }
+        foreach (GameLoopPhase phase in phaseArray) {
+            GetQueue(phase, TimingType.UnscaledTime, false)?.Start();
+        }
     }
 
-    public ValueFuture ScheduleAtFixedRate(Action action, double delay, double period, ICancelToken? cancelToken = null) {
-        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_ACTION;
-        asyncTask.task = action;
-        asyncTask.ctx = cancelToken;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-        asyncTask.period = CorrectPeriod(period);
-        asyncTask.ScheduleType = SCHEDULE_FIXED_RATE;
-        //
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture.WithTaskId(asyncTask.id);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="quietly"></param>
+    public void Stop(bool quietly = false) {
+        foreach (GameLoopPhase phase in phaseArray) {
+            GetQueue(phase, TimingType.Time, false)?.Stop(quietly);
+        }
+        foreach (GameLoopPhase phase in phaseArray) {
+            GetQueue(phase, TimingType.UnscaledTime, false)?.Stop(quietly);
+        }
     }
 
-    public ValueFuture ScheduleAtFixedRate(Action<object> action, object timerArg, double delay, double period) {
-        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _coroutineMgr.EventLoop);
-        PromiseTask asyncTask = taskPool.Acquire();
-        asyncTask.id = NextId();
-        asyncTask.TaskType = TYPE_ACTION_CTX;
-        asyncTask.task = action;
-        asyncTask.ctx = timerArg;
-        asyncTask.promise = promise;
-        asyncTask.promiseRid = rid;
-        asyncTask.triggerTime = GetTriggerTime(delay);
-        asyncTask.gatingFrame = GetGatingFrame();
-        asyncTask.period = CorrectPeriod(period);
-        asyncTask.ScheduleType = SCHEDULE_FIXED_RATE;
-        //
-        _coroutineMgr.AddTimer(asyncTask, _timingType);
-        return promise.VoidFuture.WithTaskId(asyncTask.id);
+    public void Update(GameLoopPhase phase) {
+        switch (phase) {
+            case GameLoopPhase.BeginOfFrame: {
+                unscaledQueue0.Update();
+                break;
+            }
+            //
+            case GameLoopPhase.EarlyUpdate: {
+                // 非缩放时间，缩放时间，帧数
+                unscaledQueue1.Update();
+                timeQueue1.Update();
+                break;
+            }
+            case GameLoopPhase.PostEarlyUpdate: {
+                // 帧数，缩放时间，非缩放时间
+                timeQueue2.Update();
+                unscaledQueue2.Update();
+                break;
+            }
+            //
+            case GameLoopPhase.FixedUpdate: {
+                unscaledQueue3.Update();
+                timeQueue3.Update();
+                break;
+            }
+            case GameLoopPhase.PostFixedUpdate: {
+                timeQueue4.Update();
+                unscaledQueue4.Update();
+                break;
+            }
+            //
+            case GameLoopPhase.Update: {
+                unscaledQueue5.Update();
+                timeQueue5.Update();
+                break;
+            }
+            case GameLoopPhase.PostUpdate: {
+                timeQueue6.Update();
+                unscaledQueue6.Update();
+                break;
+            }
+            //
+            case GameLoopPhase.LateUpdate: {
+                unscaledQueue7.Update();
+                timeQueue7.Update();
+                break;
+            }
+            case GameLoopPhase.PostLateUpdate: {
+                timeQueue8.Update();
+                unscaledQueue8.Update();
+                break;
+            }
+            //
+            case GameLoopPhase.EndOfFrame: {
+                unscaledQueue9.Update();
+                break;
+            }
+        }
     }
 
-    public void Cancel(long timerId) {
-        _coroutineMgr.Cancel(timerId);
-    }
-
-    public void Cancel(List<long> timerIds) {
-        _coroutineMgr.Cancel(timerIds);
-    }
-
-    public bool SetOptions(long timerId, int options) {
-        return _coroutineMgr.SetOptions(timerId, options);
-    }
-
-    #region internal
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private double GetTriggerTime(double delay) {
-        return _coroutineMgr.GetTime(_timingType, GameLoopPhase.Update) + Math.Max(0, delay);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int GetGatingFrame() {
-        return _coroutineMgr.GetFrameCount(GameLoopPhase.Update) + 1;
-    }
-
-    private double CorrectPeriod(double period) {
-        return _timingType switch
+#nullable disable
+    /// <summary>
+    /// 获取调度队列
+    /// </summary>
+    /// <param name="phase">调度阶段</param>
+    /// <param name="timingType">计时类型</param>
+    /// <param name="throwException">队列不存在时是否抛出异常</param>
+    public TimerQueue GetQueue(GameLoopPhase phase, TimingType timingType = TimingType.Time, bool throwException = true) {
+        int baseId = timingType switch
         {
-            TimingType.Time => Math.Max(_coroutineMgr.MinPeriod, period),
-            TimingType.UnscaledTime => Math.Max(_coroutineMgr.UnscaledMinPeriod, period),
-            TimingType.FrameCount => Math.Max(1, period),
-            _ => throw new ArgumentOutOfRangeException(nameof(_timingType), _timingType, null)
+            TimingType.UnscaledTime => 0,
+            TimingType.Time => 10,
+            TimingType.FrameCount => 20,
+            _ => throw new ArgumentOutOfRangeException(nameof(timingType))
+        };
+        return GetQueue(baseId + (int)phase, throwException);
+    }
+#nullable restore
+
+    private TimerQueue? GetQueue(int queueId, bool throwException = true) {
+        return queueId switch
+        {
+            0 => unscaledQueue0,
+            1 => unscaledQueue1,
+            2 => unscaledQueue2,
+            3 => unscaledQueue3,
+            4 => unscaledQueue4,
+            5 => unscaledQueue5,
+            6 => unscaledQueue6,
+            7 => unscaledQueue7,
+            8 => unscaledQueue8,
+            9 => unscaledQueue9,
+            //
+            11 => timeQueue1,
+            12 => timeQueue2,
+            13 => timeQueue3,
+            14 => timeQueue4,
+            15 => timeQueue5,
+            16 => timeQueue6,
+            17 => timeQueue7,
+            18 => timeQueue8,
+            //
+            _ => throwException
+                ? throw new ArgumentOutOfRangeException(nameof(queueId), null, queueId.ToString())
+                : null
         };
     }
-
-    #endregion
 }
 }

@@ -21,11 +21,9 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Collections;
+using Wjybxx.Commons.Collections; // Unity依赖
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Logger;
-using Wjybxx.Dson.Codec;
-using Wjybxx.Dson.Codec.Attributes;
 
 #if UNITY_2021_3_OR_NEWER
 using ILogger = Wjybxx.Commons.Logger.ILogger;
@@ -57,7 +55,6 @@ namespace Wjybxx.BigCat.Gameplay
 /// 1.为避免和引擎的GameObject命名冲突，我们命名为GameUnit。
 /// 2.没有实现<see cref="IEntity"/>接口，因为没必要。
 /// </summary>
-[DsonSerializable(SkipFields = new[] { "*" })]
 public sealed class GameUnit
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<GameUnit>();
@@ -104,7 +101,8 @@ public sealed class GameUnit
     /// <summary>
     /// 索引后的组件
     /// </summary>
-    [NonSerialized] private readonly ComponentList<GComponent?> _indexedComponents = new(GComponentListHelper.Inst);
+    [NonSerialized]
+    private readonly ComponentList<GComponent?> _indexedComponents = new(GComponentListHelper.Inst);
 
     /// <summary>
     /// 对象在各缓存列表的索引
@@ -120,23 +118,6 @@ public sealed class GameUnit
 
     }
 
-    public GameUnit(IDsonObjectReader reader) {
-        _active = reader.ReadBool("active");
-        // 组件列表
-        List<GComponent> components = reader.ReadObject<List<GComponent>>("components");
-        _components.EnsureCapacity(components.Count);
-        _indexedComponents.EnsureCapacity(components.Count);
-        foreach (GComponent component in components) {
-            _components.Add(component);
-            _indexedComponents.Add(component);
-        }
-    }
-
-    public void WriteObject(IDsonObjectWriter writer) {
-        writer.WriteBool("active", _active);
-        writer.WriteObject("components", _components);
-    }
-
     #region props
 
     public int ConfigId {
@@ -147,8 +128,6 @@ public sealed class GameUnit
         get => _instId;
         set => _instId = value;
     }
-
-    public ComponentStatus Status => _status;
 
     public Scene Scene {
         get => _scene;
@@ -163,19 +142,20 @@ public sealed class GameUnit
         set => _userData = value;
     }
 
-    /// <summary>
-    /// 游戏单位在列表中的下标
-    /// (通常用于外部数据对齐)
-    /// </summary>
-    public int Index => indexes.v0;
-
+    public ComponentStatus Status => _status;
     /// <summary>
     /// 是否处于激活状态
+    /// (由外部/管理器主动检查事件派发)
     /// </summary>
     public bool IsActive {
         get => _active;
         set => _active = value;
     }
+    /// <summary>
+    /// 游戏单位在列表中的下标
+    /// (通常用于外部数据对齐)
+    /// </summary>
+    public int Index => indexes.v0;
 
     #endregion
 
@@ -266,7 +246,10 @@ public sealed class GameUnit
 
     #region 组件模式
 
-    public void Awake(GComponent comp) {
+    /// <summary>
+    /// 提前激活组件
+    /// </summary>
+    public void AwakeComponent(GComponent comp) {
         if (!ContainsComponent(comp)) {
             throw new InvalidOperationException("component not contained");
         }

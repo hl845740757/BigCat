@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Threading;
 using Wjybxx.BigCat.Util;
 
 namespace Wjybxx.BigCat.Co
@@ -27,10 +28,9 @@ namespace Wjybxx.BigCat.Co
 public struct CoroutineStartArgs
 {
     /// <summary>
-    /// 关联的实体id
-    /// (会存储在协程对象上)
+    /// 任务取消令牌
     /// </summary>
-    public long entityId;
+    public CancellationToken cancelToken;
     /// <summary>
     /// 函数启动参数
     /// </summary>
@@ -39,6 +39,10 @@ public struct CoroutineStartArgs
     /// 函数启动参数
     /// </summary>
     public object startArg2;
+    /// <summary>
+    /// 用户上下文参数
+    /// </summary>
+    public object userArg;
 }
 
 /// <summary>
@@ -47,9 +51,9 @@ public struct CoroutineStartArgs
 public struct CoroutineStartArgs<T, R>
 {
     /// <summary>
-    /// 关联的实体id
+    /// 任务取消令牌
     /// </summary>
-    public long entityId;
+    public CancellationToken cancelToken;
     /// <summary>
     /// 函数启动参数
     /// </summary>
@@ -58,7 +62,10 @@ public struct CoroutineStartArgs<T, R>
     /// 函数启动参数
     /// </summary>
     public object startArg2;
-
+    /// <summary>
+    /// 用户上下文参数
+    /// </summary>
+    public object userArg;
     /// <summary>
     /// 输入参数解码器
     /// </summary>

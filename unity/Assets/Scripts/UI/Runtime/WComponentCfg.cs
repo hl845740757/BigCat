@@ -27,7 +27,7 @@ namespace Wjybxx.BigCat.UI
 ///
 /// 注：
 /// 1.为方便策划在编辑器中编辑Window，建议每个组件类型设计一个配置类。
-/// 2.该配置类可以实现<see cref="WindowAgentHolder"/>。
+/// 2.该配置类可以实现<see cref="IWindowAgentHolder"/>，实现Holder后将不被视作组件。
 /// </summary>
 public class WComponentCfg : MonoBehaviour
 {

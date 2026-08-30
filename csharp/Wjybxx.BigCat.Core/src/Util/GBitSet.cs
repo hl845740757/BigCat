@@ -41,7 +41,9 @@ public struct GBitSet : IEquatable<GBitSet>
     }
 
     public bool this[int index] {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => Get(index);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Set(index, value);
     }
 
@@ -81,7 +83,7 @@ public struct GBitSet : IEquatable<GBitSet>
     public void Unset(int index) {
         CheckIndex(index);
         if (index > 63) {
-            _highBits &= ~(1L << (index - 64));
+            _highBits &= ~(1L << index - 64);
         } else {
             _lowBits &= ~(1L << index);
         }

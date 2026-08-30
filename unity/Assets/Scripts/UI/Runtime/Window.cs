@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using Wjybxx.BigCat.Assetor;
@@ -50,7 +51,7 @@ namespace Wjybxx.BigCat.UI
 /// 7.避免操作窗口关联的<see cref="gameObject"/>。
 /// 
 /// TODO
-/// 1.Close、Pause公共按钮支持 -- 可以提一个公共组件
+/// 1.Close、Pause公共按钮支持 -- 可以提一个公共组件(或UINode)
 /// 2.UI音效、特效管理
 /// 
 /// </summary>
@@ -139,13 +140,10 @@ public sealed class Window
     [NonSerialized] internal WIndexes indexes = WIndexes.Create();
     /// <summary>
     /// 窗口的运行时间
+    /// 注：UI通常更适合使用全局时间轴。
     /// </summary>
     [NonSerialized] private readonly GTime _time = new GTime();
-    /// <summary>
-    /// 协程管理器
-    /// (由于管理器存在自定义设置，因此延迟构造)
-    /// </summary>
-    [NonSerialized] private readonly CoroutineMgr _coroutineMgr;
+
     /// <summary>
     /// Window黑板
     /// </summary>
@@ -167,14 +165,11 @@ public sealed class Window
         this.windowMgr = windowMgr;
         this._instId = windowCfg.GetInstanceID();
         this._transform = (RectTransform)windowCfg.transform;
-        this._coroutineMgr = CoroutineMgr.CreateFrom(windowMgr.CoroutineMgr, _time,
-            (windowCfg.features & WindowFeatures.EnableUnscaledTimeQueue) != 0,
-            (windowCfg.features & WindowFeatures.EnableFrameQueue) != 0);
 
         this._canvas = windowCfg.GetComponent<Canvas>();
         // 初始化逻辑组件
         foreach (WComponentCfg componentCfg in windowCfg.GetComponents<WComponentCfg>()) {
-            if (componentCfg is WindowAgentHolder agentHolder) {
+            if (componentCfg is IWindowAgentHolder agentHolder) {
                 _agent = agentHolder.Agent;
             } else {
                 AddComponent(componentCfg.GetComponent());
@@ -183,7 +178,7 @@ public sealed class Window
     }
 
     public GTime Time => _time;
-    public CoroutineMgr CoroutineMgr => _coroutineMgr;
+    public CoroutineMgr CoroutineMgr => windowMgr.CoroutineMgr; // Window不再分配独立的协程管理器
 
     #region 生命周期
 
@@ -194,7 +189,7 @@ public sealed class Window
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
-        _agent ??= (_components.Find(e => e is WindowAgentHolder) as WindowAgentHolder)?.Agent;
+        _agent ??= _components.OfType<IWindowAgentHolder>().Select(e => e.Agent).FirstOrDefault();
         _agent?.Inject(this);
         _status = ComponentStatus.Initialized;
         // 初始化模块
@@ -255,7 +250,6 @@ public sealed class Window
         }
         ClearUpdateList();
         StopComponents();
-        _coroutineMgr.Shutdown();
         ReleaseAssets(assetHandles);
 
         _status = ComponentStatus.Terminated;
@@ -279,15 +273,8 @@ public sealed class Window
             }
             component.InvokeStart();
         }
-        // 初始化Update列表 -- 按照updateOrder排序
-        List<WComponent> components = new List<WComponent>(_components);
-        components.Sort(UIInternal.UpdateOrderComparer);
-        foreach (WComponent component in components) {
-            if (!component.Cid.IsPrivateScript) {
-                continue;
-            }
-            AddToUpdateList(component);
-        }
+        // 初始化Update列表
+        InitUpdateList();
     }
 
     private void StopComponents() {
@@ -331,8 +318,6 @@ public sealed class Window
             component.Reset();
         }
         _agent?.Reset();
-        _coroutineMgr.Reset();
-        ClearUpdateList();
 
         if (_status > ComponentStatus.Initialized) {
             _status = ComponentStatus.Initialized;
@@ -352,7 +337,9 @@ public sealed class Window
     /// 销毁窗口
     /// </summary>
     internal void Destroy() {
-        if (_status == ComponentStatus.Destroyed) return;
+        if (_status == ComponentStatus.Destroyed) {
+            return;
+        }
         Stop();
         _status = ComponentStatus.Destroyed;
         foreach (WComponent component in _components) {
@@ -381,7 +368,6 @@ public sealed class Window
         //
         _components.Clear();
         _indexedComponents.Clear();
-        ClearUpdateList();
         UnityEngine.Object.Destroy(gameObject);
         // 释放预制件
         if (!prefabHandle.IsNullHandle) {
@@ -426,11 +412,11 @@ public sealed class Window
     /// <param name="unscaledDeltaTime"></param>
     internal void EarlyUpdate(double unscaledDeltaTime) {
         _time.Update(unscaledDeltaTime);
-        _coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.EarlyUpdate);
 
         IndexedDynamicArray<WComponent> list = _earlyUpdateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostEarlyUpdate);
             return;
         }
         list.BeginItr();
@@ -447,8 +433,7 @@ public sealed class Window
             }
         }
         list.EndItr();
-
-        _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.PostEarlyUpdate);
     }
 
     /// <summary>
@@ -457,13 +442,14 @@ public sealed class Window
     /// 注：由Manager测试是否处于暂停状态。
     /// </summary>
     internal void Update() {
+        _agent?.OnLoopPhase(GameLoopPhase.Update);
         if ((_ctl & UIInternal.MASK_DIRTY_REPAINT) != 0) {
             Repaint();
         }
-        _coroutineMgr.Update(GameLoopPhase.Update);
+
         IndexedDynamicArray<WComponent> list = _updateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostUpdate);
             return;
         }
         list.BeginItr();
@@ -480,15 +466,15 @@ public sealed class Window
             }
         }
         list.EndItr();
-        _coroutineMgr.Update(GameLoopPhase.PostUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.PostUpdate);
     }
 
     internal void LateUpdate() {
-        _coroutineMgr.Update(GameLoopPhase.LateUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.LateUpdate);
 
         IndexedDynamicArray<WComponent> list = _lateUpdateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostLateUpdate);
             return;
         }
         list.BeginItr();
@@ -505,8 +491,18 @@ public sealed class Window
             }
         }
         list.EndItr();
+        _agent?.OnLoopPhase(GameLoopPhase.PostLateUpdate);
+    }
 
-        _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+    private void InitUpdateList() {
+        List<WComponent> components = new List<WComponent>(_components);
+        components.Sort(UIInternal.UpdateOrderComparer);
+        foreach (WComponent component in components) {
+            if (!component.Cid.IsPrivateScript) {
+                continue;
+            }
+            AddToUpdateList(component);
+        }
     }
 
     internal void AddToUpdateList(WComponent component) {
@@ -614,6 +610,18 @@ public sealed class Window
 #nullable disable
 
     #region 组件模式
+
+    /// <summary>
+    /// 手动激活组件
+    /// </summary>
+    public void AwakeComponent(WComponent comp) {
+        if (!ContainsComponent(comp)) {
+            throw new InvalidOperationException("component not contained");
+        }
+        if (comp.Status == ComponentStatus.New) {
+            comp.SetEntity(this);
+        }
+    }
 
     /// <summary>
     /// 

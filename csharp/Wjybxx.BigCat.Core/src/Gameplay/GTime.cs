@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Wjybxx.BigCat.Gameplay
@@ -24,7 +25,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// World模拟用的计时器
 /// </summary>
-public sealed class GTime : IReadonlyTime
+public sealed class GTime : IReadonlyTime, ITime
 {
     private double timeScale = 1;
 
@@ -60,6 +61,7 @@ public sealed class GTime : IReadonlyTime
     }
 
     public void Update(double unscaledDeltaTime) {
+        Debug.Assert(unscaledDeltaTime >= 0, "unscaledDeltaTime must be >= 0");
         double scaledDeltaTime = (unscaledDeltaTime * timeScale);
         this.frameCount++;
         this.time += scaledDeltaTime;
@@ -69,6 +71,7 @@ public sealed class GTime : IReadonlyTime
     }
 
     public void FixedUpdate(double unscaledDeltaTime) {
+        Debug.Assert(unscaledDeltaTime >= 0, "unscaledDeltaTime must be >= 0");
         double scaledDeltaTime = (unscaledDeltaTime * timeScale);
         this.fixedFrameCount++;
         this.fixedTime += scaledDeltaTime;
@@ -161,7 +164,8 @@ public sealed class GTime : IReadonlyTime
     }
 
     public override string ToString() {
-        return $"{nameof(frameCount)}: {frameCount},"
+        return $"{nameof(timeScale)}: {timeScale},"
+               + $" {nameof(frameCount)}: {frameCount},"
                + $" {nameof(time)}: {time},"
                + $" {nameof(deltaTime)}: {deltaTime},"
                + $" {nameof(unscaledTime)}: {unscaledTime},"

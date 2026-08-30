@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Runtime.InteropServices;
 using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCat.Fx
@@ -25,6 +26,7 @@ namespace Wjybxx.BigCat.Fx
 /// Worker线程上支持的事件
 /// (以后再删除不必要的字段，正式项目会用完的)
 /// </summary>
+[StructLayout(LayoutKind.Auto)]
 public struct WorkerEvent : IAgentEvent
 {
 #nullable disable

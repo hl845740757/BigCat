@@ -250,7 +250,7 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
                                    long requestId, int serviceId, int methodId,
                                    ValueFuture<T> future, bool sharable) {
         SendAsyncResult0(sessionId, destAddr, requestId, serviceId,
-            methodId, future.Box(), sharable).Forget();
+            methodId, future.Box(requireResult: true), sharable).Forget();
     }
 
     public void SendAsyncResult(long sessionId, WorkerAddr destAddr,
@@ -263,10 +263,12 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
     /// <summary>
     /// 全部转为ValueFuture类型，可以减少生成的状态机代码，池化对象的利用率也就更好
     /// </summary>
+    [PooledTask]
     private async ValueFuture SendAsyncResult0(long sessionId, WorkerAddr destAddr,
                                                long requestId, int serviceId, int methodId,
                                                ValueFuture future, bool sharable) {
-        TaskResult r = await future.GetAwaitable(worker, SuppressedTypes.All, TaskOptions.STAGE_TRY_INLINE, true);
+        const int options = TaskOptions.STAGE_TRY_INLINE | TaskOptions.REQUIRE_RESULT | TaskOptions.SUPPRESS_ALL_THROW;
+        TaskResult r = await future.GetAwaitable2(worker, options);
         if (r.IsSucceeded) {
             SendResult(sessionId, destAddr, requestId, serviceId, methodId, r.Result, sharable);
         } else {

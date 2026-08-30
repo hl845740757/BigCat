@@ -16,6 +16,8 @@
 
 #endregion
 
+using Wjybxx.BigCat.Gameplay;
+
 namespace Wjybxx.BigCat.UI
 {
 /// <summary>
@@ -64,19 +66,24 @@ public interface WindowAgent
     /// 清理运行过程中产生的临时数据
     /// </summary>
     void Reset() {
-
     }
 
     /// <summary>
     /// Window销毁时调用
     /// </summary>
     void OnDestroy() {
+    }
 
+    /// <summary>
+    /// 进入指定Update阶段
+    /// (主要用于定时器调度)
+    /// </summary>
+    void OnLoopPhase(GameLoopPhase phase) {
     }
 
     #endregion
 
-    #region 窗口状态
+    #region 业务事件
 
     /// <summary>
     /// 窗体展示模式变更
@@ -100,13 +107,22 @@ public interface WindowAgent
     void OnFocus(bool hasFocus) {
     }
 
-    #endregion
-
     /// <summary>
     /// 自定义事件
     /// </summary>
     /// <param name="eventData"></param>
     void OnCustomEvent(object eventData) {
     }
+
+    #endregion
+}
+
+/// <summary>
+/// WindowAgent的持有者
+/// 注：不推荐<see cref="WComponent"/>直接实现<see cref="WindowAgent"/>，以避免方法签名冲突。
+/// </summary>
+public interface IWindowAgentHolder
+{
+    WindowAgent Agent { get; }
 }
 }

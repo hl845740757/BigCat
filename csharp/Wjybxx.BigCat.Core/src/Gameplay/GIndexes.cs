@@ -29,6 +29,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// 1.不考虑无限的扩展性，使用值类型代替数组。
 /// 2.应当使用<see cref="Create"/>方法创建实例，default构造的实例是非法的
 /// 3.该对象开放给用户，在视野管理等逻辑中也需要缓存索引。
+/// 4.高版本dotnet可以通过<c>InlineArray</c>注解实现。
 /// </summary>
 public struct GIndexes
 {

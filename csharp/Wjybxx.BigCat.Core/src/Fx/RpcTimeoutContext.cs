@@ -26,6 +26,7 @@ namespace Wjybxx.BigCat.Fx
 /// <summary>
 /// 请求超时上下文
 /// 该上下文拷贝Request的关键数据，以实现生命周期的分离，使得Request可以简单池化。
+/// (如果不支持不同的超时时间，固定先发送的先超时，就可以用结构体)
 /// </summary>
 [Internal]
 public sealed class RpcTimeoutContext : IIndexedElement

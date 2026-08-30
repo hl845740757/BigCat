@@ -17,14 +17,10 @@
 #endregion
 
 using System;
-using Wjybxx.BigCat.Gameplay;
 
-namespace Wjybxx.BigCat.Util
+namespace Wjybxx.BigCat.Gameplay
 {
-/// <summary>
-/// <see cref="GTime"/>的迷你版
-/// </summary>
-public sealed class GTimePiece
+public sealed class GTimePiece : ITimeProvider
 {
     private int _frameCount;
     private double _deltaTime;

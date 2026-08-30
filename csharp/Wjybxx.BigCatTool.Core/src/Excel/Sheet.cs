@@ -256,7 +256,7 @@ public sealed class Sheet : IValueProvider
     /// <param name="name"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    /// <exception cref="IllegalStateException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     public void SetValue(string name, string? value) {
         if (!IsParamSheet) {
             throw new InvalidOperationException();

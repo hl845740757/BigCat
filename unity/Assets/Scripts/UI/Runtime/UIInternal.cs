@@ -194,6 +194,10 @@ internal static class UIInternal
 
         public int Compare(WComponent x, WComponent y) {
             // ReSharper disable PossibleNullReferenceException
+            // 分组排序：先排group再排order
+            int r = x.Cid.updateGroup.CompareTo(y.Cid.updateGroup);
+            if (r != 0) return r;
+            
             int lhs = x.Cid.updateOrder;
             int rhs = y.Cid.updateOrder;
             // -1排后面

@@ -45,7 +45,7 @@ public class CoroutineTest
     public static void SetUp() {
         lastUpdateTime = ObjectUtil.SystemTickMillis();
         time.Restart();
-        coroutineMgr = new CoroutineMgr(globalEventLoop, time, enableUnscaledQueue: true, enableFrameQueue: true);
+        coroutineMgr = new CoroutineMgr(globalEventLoop, time);
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class CoroutineTest
         }
         double deltaTime = (ObjectUtil.SystemTickMillis() - lastUpdateTime) / 1000.0;
         time.Update(deltaTime);
-        coroutineMgr.Update(GameLoopPhase.Update);
+        coroutineMgr.Update();
 
         if (time.FrameCount == 1) {
             userContext = coroutineMgr.StartCoroutine(CoroutineLoop, new CoroutineStartArgs<int, int>()

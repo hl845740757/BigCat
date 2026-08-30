@@ -55,7 +55,7 @@ public class LoginView : UINode
             startArg1 = accountText
         }).Dispose();
         // 未调用Forget的情况下为什么没提示？
-        // Window.CoroutineMgr.TimerMgr.ScheduleAction(() => { }, 1);
+        // Window.CoroutineMgr.TimerQueue.ScheduleAction(() => { }, 1);
     }
 
     private async ValueFuture LoginAsync(CoroutineTaskContext context) {

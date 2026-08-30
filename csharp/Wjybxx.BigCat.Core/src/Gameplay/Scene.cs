@@ -18,14 +18,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Util;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Logger;
-using Wjybxx.Dson.Codec;
-using Wjybxx.Dson.Codec.Attributes;
 
 #if UNITY_2021_3_OR_NEWER
 using ILogger = Wjybxx.Commons.Logger.ILogger;
@@ -46,7 +44,6 @@ namespace Wjybxx.BigCat.Gameplay
 /// <h3>资源管理</h3>
 /// 由于该程序集不能依赖下游的资源管理程序集，因此需要通过额外组件来寄存所有需要跟随Scene销毁的资源句柄。
 /// </summary>
-[DsonSerializable(SkipFields = new[] { "*" })]
 public sealed class Scene
 {
     internal static readonly ILogger logger = LoggerFactory.GetLogger<Scene>();
@@ -76,7 +73,7 @@ public sealed class Scene
     /// 内部代理
     /// 注意：该代理由用户创建
     /// </summary>
-    [NonSerialized] private ISceneAgent _agent;
+    [NonSerialized] private ISceneAgent? _agent;
     /// <summary>
     /// 用户自定义数据
     /// </summary>
@@ -107,31 +104,14 @@ public sealed class Scene
     /// 场景自己的时间轴
     /// </summary>
     [NonSerialized] private readonly GTime _time = new GTime();
-    /// <summary>
-    /// 协程管理器
-    /// </summary>
-    [NonSerialized] private CoroutineMgr _coroutineMgr;
 #nullable restore
 
     public Scene() {
     }
 
-    public Scene(IDsonObjectReader reader) : this() {
-        // 组件
-        List<SComponent> components = reader.ReadObject<List<SComponent>>("components");
-        _components.EnsureCapacity(components.Count);
-        _indexedComponents.EnsureCapacity(components.Count);
-        foreach (SComponent component in components) {
-            _components.Add(component);
-            _indexedComponents.Add(component);
-        }
-    }
-
-    public void WriteObject(IDsonObjectWriter writer) {
-        writer.WriteObject("components", _components);
-    }
-
     #region prop
+
+    public GTime Time => _time;
 
     public int ConfigId {
         get => _configId;
@@ -157,7 +137,7 @@ public sealed class Scene
             _sceneMgr = value;
         }
     }
-    public ISceneAgent Agent {
+    public ISceneAgent? Agent {
         get => _agent;
         set {
             CheckStatus();
@@ -196,19 +176,6 @@ public sealed class Scene
         }
     }
 
-    public GTime Time => _time;
-    /// <summary>
-    /// 绑定的协程管理器
-    /// 注：如果未显式设值，则根据默认规则创建。
-    /// </summary>
-    public CoroutineMgr CoroutineMgr {
-        get => _coroutineMgr;
-        set {
-            CheckStatus();
-            _coroutineMgr = value;
-        }
-    }
-
     private void CheckStatus() {
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
@@ -226,8 +193,7 @@ public sealed class Scene
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
-        _coroutineMgr ??= CoroutineMgr.CreateFrom(_sceneMgr.CoroutineMgr, _time, true, false);
-        _agent ??= (_components.Find(e => e is SceneAgentHolder) as SceneAgentHolder)?.Agent;
+        _agent ??= _components.OfType<ISceneAgentHolder>().Select(e => e.Agent).FirstOrDefault();
         _agent?.Inject(this);
         _status = ComponentStatus.Initialized;
         // 初始化模块
@@ -262,15 +228,8 @@ public sealed class Scene
             }
             component.InvokeStart();
         }
-        // 初始化Update列表 -- 按照updateOrder排序
-        List<SComponent> components = new List<SComponent>(_components);
-        components.Sort(ComponentUtil.UpdateOrderComparer);
-        foreach (SComponent component in components) {
-            if (!component.Cid.IsPrivateScript) {
-                continue;
-            }
-            AddToUpdateList(component);
-        }
+        // 初始化Update列表
+        InitUpdateList();
     }
 
     /// <summary>
@@ -306,7 +265,6 @@ public sealed class Scene
         catch (Exception ex) {
             logger.Warn(ex, "agent stop caught exception");
         }
-        _coroutineMgr?.Shutdown();
 
         _status = ComponentStatus.Terminated;
         _sceneMgr?.OnTerminated(this);
@@ -327,8 +285,6 @@ public sealed class Scene
             component.Reset();
         }
         _agent?.Reset();
-        _coroutineMgr?.Reset();
-        ClearUpdateList();
 
         if (_status > ComponentStatus.Initialized) {
             _status = ComponentStatus.Initialized;
@@ -367,7 +323,6 @@ public sealed class Scene
         }
         _components.Clear();
         _indexedComponents.Clear();
-        ClearUpdateList();
     }
 
     /// <summary>
@@ -406,11 +361,11 @@ public sealed class Scene
     /// <param name="unscaledDeltaTime"></param>
     public void EarlyUpdate(double unscaledDeltaTime) {
         _time.Update(unscaledDeltaTime);
-        _coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.EarlyUpdate);
 
         IndexedDynamicArray<SComponent> list = _earlyUpdateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostEarlyUpdate);
             return;
         }
         list.BeginItr();
@@ -427,17 +382,16 @@ public sealed class Scene
             }
         }
         list.EndItr();
-
-        _coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.PostEarlyUpdate);
     }
 
     public void FixedUpdate(double unscaledDeltaTime) {
         _time.FixedUpdate(unscaledDeltaTime);
-        _coroutineMgr.Update(GameLoopPhase.FixedUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.FixedUpdate);
 
         IndexedDynamicArray<SComponent> list = _fixedUpdateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostFixedUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostFixedUpdate);
             return;
         }
         list.BeginItr();
@@ -454,16 +408,15 @@ public sealed class Scene
             }
         }
         list.EndItr();
-
-        _coroutineMgr.Update(GameLoopPhase.PostFixedUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.PostFixedUpdate);
     }
 
     public void Update() {
-        _coroutineMgr.Update(GameLoopPhase.Update);
+        _agent?.OnLoopPhase(GameLoopPhase.Update);
 
         IndexedDynamicArray<SComponent> list = _updateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostUpdate);
             return;
         }
         list.BeginItr();
@@ -480,16 +433,15 @@ public sealed class Scene
             }
         }
         list.EndItr();
-
-        _coroutineMgr.Update(GameLoopPhase.PostUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.PostUpdate);
     }
 
     public void LateUpdate() {
-        _coroutineMgr.Update(GameLoopPhase.LateUpdate);
+        _agent?.OnLoopPhase(GameLoopPhase.LateUpdate);
 
         IndexedDynamicArray<SComponent> list = _lateUpdateList;
         if (list.Length == 0) {
-            _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+            _agent?.OnLoopPhase(GameLoopPhase.PostLateUpdate);
             return;
         }
         list.BeginItr();
@@ -506,8 +458,18 @@ public sealed class Scene
             }
         }
         list.EndItr();
+        _agent?.OnLoopPhase(GameLoopPhase.PostLateUpdate);
+    }
 
-        _coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+    private void InitUpdateList() {
+        List<SComponent> components = new List<SComponent>(_components);
+        components.Sort(ComponentUtil.UpdateOrderComparer);
+        foreach (SComponent component in components) {
+            if (!component.Cid.IsPrivateScript) {
+                continue;
+            }
+            AddToUpdateList(component);
+        }
     }
 
     internal void AddToUpdateList(SComponent component) {
@@ -541,7 +503,7 @@ public sealed class Scene
     /// <summary>
     /// 手动激活组件
     /// </summary>
-    public void Awake(SComponent comp) {
+    public void AwakeComponent(SComponent comp) {
         if (!ContainsComponent(comp)) {
             throw new InvalidOperationException("component not contained");
         }

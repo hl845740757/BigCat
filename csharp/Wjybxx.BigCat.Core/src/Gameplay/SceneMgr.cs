@@ -22,7 +22,6 @@ using Wjybxx.BigCat.Co;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
-using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Fx;
 using Wjybxx.Commons.Inject;
 using Wjybxx.Commons.Inject.Attributes;
@@ -61,6 +60,10 @@ public class SceneMgr
 
 #nullable disable
     /// <summary>
+    /// 关联的Worker线程
+    /// </summary>
+    private readonly IWorker _worker;
+    /// <summary>
     /// Scene可能用到的外部依赖
     /// </summary>
     private IInjector _injector;
@@ -88,23 +91,35 @@ public class SceneMgr
     private readonly IndexedDynamicArray<Scene> _closedSceneList = new IndexedDynamicArray<Scene>(SIndexHelper.GetInst(2), 10);
 
     /// <summary>
-    /// 时间系统
+    /// 时间系统 TODO 考虑使用全局的Time，只需要和UI切割开即可；Timer和协程同理
     /// </summary>
-    private readonly GTime time = new GTime();
+    private readonly GTime _time = new GTime();
+    /// <summary>
+    /// Timer管理器
+    /// </summary>
+    private readonly TimerMgr _timerMgr;
     /// <summary>
     /// 协程管理器
     /// </summary>
-    private readonly CoroutineMgr coroutineMgr;
+    private readonly CoroutineMgr _coroutineMgr;
 #nullable restore
 
     [Inject]
     public SceneMgr(WorkerHolder workerHolder, SceneMgrCfg cfg) {
+        _worker = workerHolder.Worker;
         _injector = workerHolder.Worker.Injector;
-        coroutineMgr = new CoroutineMgr(workerHolder.Worker, time,
-            cfg.minPeriod, cfg.unscaledMinPeriod,
-            cfg.enableUnscaledQueue, cfg.enableFrameQueue);
+        _timerMgr = new TimerMgr(workerHolder.Worker, _time);
+        _coroutineMgr = new CoroutineMgr(workerHolder.Worker, _time);
+        //
+        _timerMgr.Start();
+        _coroutineMgr.Start();
     }
 
+    
+    /// <summary>
+    /// 绑定的Worker线程
+    /// </summary>
+    public IWorker Worker => _worker;
     /// <summary>
     /// 所有场景的依赖
     /// </summary>
@@ -112,21 +127,19 @@ public class SceneMgr
         get => _injector;
         set => _injector = value;
     }
-
+    
     /// <summary>
     /// 场景循环的时间轴
     /// </summary>
-    public GTime Time => time;
-
+    public GTime Time => _time;
+    /// <summary>
+    /// 场景循环的定时器
+    /// </summary>
+    public TimerMgr TimerMgr => _timerMgr;
     /// <summary>
     /// 场景循环关联的协程管理器
     /// </summary>
-    public CoroutineMgr CoroutineMgr => coroutineMgr;
-
-    /// <summary>
-    /// 创建循环绑定的线程
-    /// </summary>
-    public IWorker Worker => (IWorker)coroutineMgr.EventLoop;
+    public CoroutineMgr CoroutineMgr => _coroutineMgr;
 
     #region 容器管理
 
@@ -144,11 +157,8 @@ public class SceneMgr
     /// <summary>
     /// 根据实例id查找场景
     /// </summary>
-    /// <param name="instId"></param>
-    /// <returns></returns>
-    public Scene? GetScene(long instId) {
-        _sceneDic.TryGetValue(instId, out Scene scene);
-        return scene;
+    public bool TryGetScene(long instId, out Scene? scene) {
+        return _sceneDic.TryGetValue(instId, out scene);
     }
 
     /// <summary>
@@ -218,7 +228,7 @@ public class SceneMgr
     /// 关闭Scene
     /// </summary>
     public void Close(Scene scene) {
-        if (scene.Status == ComponentStatus.Destroyed) return;
+        if (scene == null) throw new ArgumentNullException(nameof(scene));
         try {
             scene.Stop();
         }
@@ -269,17 +279,17 @@ public class SceneMgr
     /// </summary>
     /// <param name="unscaledDeltaTime"></param>
     public void BeginOfFrame(double unscaledDeltaTime) {
-        time.Update(unscaledDeltaTime);
-        coroutineMgr.Update(GameLoopPhase.BeginOfFrame);
+        _time.Update(unscaledDeltaTime);
+        _timerMgr.Update(GameLoopPhase.BeginOfFrame);
     }
 
     /// <summary>
     /// 执行场景的EarlyUpdate方法
     /// </summary>
     public void EarlyUpdate() {
-        coroutineMgr.Update(GameLoopPhase.EarlyUpdate);
+        _timerMgr.Update(GameLoopPhase.EarlyUpdate);
 
-        double unscaledDeltaTime = time.UnscaledDeltaTime;
+        double unscaledDeltaTime = _time.UnscaledDeltaTime;
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
         for (int index = 0, len = sceneList.Length; index < len; index++) {
@@ -296,15 +306,15 @@ public class SceneMgr
         }
         sceneList.EndItr();
 
-        coroutineMgr.Update(GameLoopPhase.PostEarlyUpdate);
+        _timerMgr.Update(GameLoopPhase.PostEarlyUpdate);
     }
 
     /// <summary>
     /// 执行场景的FixedUpdate方法
     /// </summary>
     public void FixedUpdate(double unscaledDeltaTime) {
-        time.FixedUpdate(unscaledDeltaTime);
-        coroutineMgr.Update(GameLoopPhase.FixedUpdate);
+        _time.FixedUpdate(unscaledDeltaTime);
+        _timerMgr.Update(GameLoopPhase.FixedUpdate);
 
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
@@ -322,14 +332,15 @@ public class SceneMgr
         }
         sceneList.EndItr();
 
-        coroutineMgr.Update(GameLoopPhase.PostFixedUpdate);
+        _timerMgr.Update(GameLoopPhase.PostFixedUpdate);
     }
 
     /// <summary>
     /// 执行场景的Update方法
     /// </summary>
     public void Update() {
-        coroutineMgr.Update(GameLoopPhase.Update);
+        _timerMgr.Update(GameLoopPhase.Update);
+        _coroutineMgr.Update(); // 默认的协程管理器只在Update阶段执行调度
 
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
@@ -347,14 +358,14 @@ public class SceneMgr
         }
         sceneList.EndItr();
 
-        coroutineMgr.Update(GameLoopPhase.PostUpdate);
+        _timerMgr.Update(GameLoopPhase.PostUpdate);
     }
 
     /// <summary>
     /// 执行场景的LateUpdate方法
     /// </summary>
     public void LateUpdate() {
-        coroutineMgr.Update(GameLoopPhase.LateUpdate);
+        _timerMgr.Update(GameLoopPhase.LateUpdate);
 
         IndexedDynamicArray<Scene> sceneList = _activeSceneList;
         sceneList.BeginItr();
@@ -372,7 +383,7 @@ public class SceneMgr
         }
         sceneList.EndItr();
 
-        coroutineMgr.Update(GameLoopPhase.PostLateUpdate);
+        _timerMgr.Update(GameLoopPhase.PostLateUpdate);
     }
 
     /// <summary>
@@ -393,7 +404,7 @@ public class SceneMgr
         }
         closedSceneList.EndItr();
 
-        coroutineMgr.Update(GameLoopPhase.EndOfFrame);
+        _timerMgr.Update(GameLoopPhase.EndOfFrame);
     }
 
     #endregion

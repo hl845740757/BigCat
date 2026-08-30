@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Attributes;
@@ -44,6 +45,7 @@ namespace Wjybxx.BigCat.Unity
 /// PS：该实现由<see cref="DisruptorEventLoop{T}"/>修改而来，主要变化为：内部线程驱动 => 外部线程驱动。
 /// </summary>
 /// <typeparam name="T"></typeparam>
+[StructLayout(LayoutKind.Sequential)]
 public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where T : IAgentEvent
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger(typeof(UnityEventLoop<T>));
@@ -66,8 +68,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
     /** 线程本地时间 -- 时间的更新频率极高，进行缓存行填充隔离；使用volatile读写 */
     private PaddedInt64 _tickTime;
-    /** 可消费的最大序号 -- 非死循环情况下，需要存储在外部；线程本地变量不填充 */
+    /** 可消费的最大序号 -- 非死循环情况下，需要存储在外部；后向填充以避免影响state字段 */
     private long availableSequence = -1;
+    private Padding56 _padding;
     /** 线程状态 -- 变化频率低，不填充 */
     private volatile int state = ST_UNSTARTED;
 
@@ -100,9 +103,6 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     private readonly IPromise<int> runningPromise;
     /** 进入终止状态的promise */
     private readonly IPromise<int> terminationPromise;
-    /** 只读future - 缓存字段 */
-    private readonly IFuture runningFuture;
-    private readonly IFuture terminationFuture;
 
     public UnityEventLoop(UnityEventLoopBuilder<T> builder, bool bindAgent = true)
         : base(builder.Parent, builder.ModuleList) {
@@ -124,8 +124,6 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
 
         runningPromise = new Promise<int>(this);
         terminationPromise = new Promise<int>(this);
-        runningFuture = runningPromise.AsReadonly();
-        terminationFuture = terminationPromise.AsReadonly();
 
         // worker只依赖生产者屏障
         barrier = eventSequencer.NewSingleConsumerBarrier(builder.WaitStrategy);
@@ -168,8 +166,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     public sealed override bool IsShutdown => state >= ST_SHUTDOWN;
     public sealed override bool IsTerminated => state == ST_TERMINATED;
 
-    public sealed override IFuture RunningFuture => runningFuture;
-    public override IFuture TerminationFuture => terminationFuture;
+    public override IFuture<int> RunningFuture => runningPromise;
+    public override IFuture<int> TerminationFuture => terminationPromise;
 
     public sealed override bool InEventLoop() {
         return this.thread == Thread.CurrentThread;
@@ -291,13 +289,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             return -1;
         }
         if (IsShuttingDown) {
-            // 申请序号期间收到关闭序号
-            if (size == 1) {
-                eventSequencer.Publish(sequence);
-            } else {
-                long lo = sequence - (size - 1);
-                eventSequencer.Publish(lo, sequence);
-            }
+            // 申请序号期间收到关闭序号 - 低频逻辑无需优化
+            long lo = sequence - (size - 1);
+            eventSequencer.Publish(lo, sequence);
             return -1;
         }
         return sequence;
@@ -339,13 +333,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             sequence = eventSequencer.Next(size);
         }
         if (IsShuttingDown) {
-            // 申请序号期间收到关闭序号
-            if (size == 1) {
-                eventSequencer.Publish(sequence);
-            } else {
-                long lo = sequence - (size - 1);
-                eventSequencer.Publish(lo, sequence);
-            }
+            // 申请序号期间收到关闭序号 - 低频逻辑无需优化
+            long lo = sequence - (size - 1);
+            eventSequencer.Publish(lo, sequence);
             return -1;
         }
         return sequence;
@@ -377,15 +367,12 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         }
     }
 
-    public override IFuture Start() {
+    public override IFuture<int> Start() {
         EnsureThreadStarted();
-        return runningFuture;
+        return runningPromise;
     }
 
     public override void Shutdown() {
-        if (!runningPromise.IsCompleted) { // 尚未启动成功就关闭
-            runningPromise.TrySetCancelled(CancelCodes.REASON_SHUTDOWN);
-        }
         int expectedState = state;
         for (;;) {
             if (expectedState >= ST_SHUTTING_DOWN) {
@@ -425,6 +412,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             runningPromise.TrySetException(new StartFailedException("Stillborn"));
             terminationPromise.TrySetResult(0);
         } else {
+            if (!runningPromise.IsCompleted) {
+                runningPromise.TrySetCancelled();
+            }
             // 等待策略是根据alert信号判断EventLoop是否已开始关闭的，因此即使inEventLoop也需要alert，否则可能丢失信号，在waitFor处无法停止
             barrier.Alert();
             // 唤醒线程 - 如果线程可能阻塞在其它地方
@@ -473,7 +463,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /** 启动所有模块 */
     protected void StartModules() {
         // 模块的部分数据初始化
-        foreach (EventLoopModule module in _moduleList) {
+        foreach (EventLoopModule module in moduleList) {
             if (module.Cid.shared) {
                 continue;
             }
@@ -482,14 +472,14 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             }
         }
         // 解决模块之间的依赖
-        foreach (EventLoopModule module in _moduleList) {
+        foreach (EventLoopModule module in moduleList) {
             if (!module.Cid.IsPrivateScript) {
                 continue;
             }
             module.ResolveDependence();
         }
         // 顺序启动 - Start
-        foreach (EventLoopModule module in _moduleList) {
+        foreach (EventLoopModule module in moduleList) {
             if (!module.Cid.IsPrivateScript) {
                 continue;
             }
@@ -500,8 +490,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /** 停止所有模块 */
     protected void StopModules() {
         // 逆序停止
-        for (int index = _moduleList.Count - 1; index >= 0; index--) {
-            EventLoopModule module = _moduleList[index];
+        for (int index = moduleList.Count - 1; index >= 0; index--) {
+            EventLoopModule module = moduleList[index];
             if (!module.Cid.IsPrivateScript) {
                 continue;
             }
@@ -520,7 +510,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /** 销毁所有模块 -- 不删除引用 */
     protected void DestroyModules() {
         // 顺序销毁 -- 组件之间不能有时序依赖
-        foreach (EventLoopModule module in _moduleList) {
+        foreach (EventLoopModule module in moduleList) {
             if (module.Cid.shared) {
                 continue;
             }
@@ -541,8 +531,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
         long tickTime = this.TickTime;
         while (agent.CheckMainLoop(tickTime)) {
             agent.BeforeMainLoop(tickTime);
-            for (int i = 0; i < _earlyUpdateModuleList.Count; i++) {
-                EventLoopModule module = _earlyUpdateModuleList[i];
+            for (int i = 0; i < earlyUpdateModuleList.Count; i++) {
+                EventLoopModule module = earlyUpdateModuleList[i];
                 try {
                     module.EarlyUpdate();
                 }
@@ -550,8 +540,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                     logger.Info(ex, "module.earlyUpdate caught exception");
                 }
             }
-            for (int i = 0; i < _updateModuleList.Count; i++) {
-                EventLoopModule module = _updateModuleList[i];
+            for (int i = 0; i < updateModuleList.Count; i++) {
+                EventLoopModule module = updateModuleList[i];
                 try {
                     module.Update();
                 }
@@ -559,8 +549,8 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                     logger.Info(ex, "module.update caught exception");
                 }
             }
-            for (int i = 0; i < _lateUpdateModuleList.Count; i++) {
-                EventLoopModule module = _lateUpdateModuleList[i];
+            for (int i = 0; i < lateUpdateModuleList.Count; i++) {
+                EventLoopModule module = lateUpdateModuleList[i];
                 try {
                     module.LateUpdate();
                 }
@@ -574,14 +564,12 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void OnInternalEvent(long curSequence, ref T evt) {
+    private void OnInternalEvent(long sequence, ref T evt) {
         int type = evt.Type;
         if (type == TYPE_REMOVE_SCHEDULE) {
             // 删除延时任务
             IScheduledFutureTask futureTask = (IScheduledFutureTask)evt.Obj1;
-            long taskId = evt.LongVal1;
-            int cancelCode = (int)evt.LongVal2;
-            schedulerHelper.Cancel(futureTask, taskId, cancelCode);
+            schedulerHelper.Cancel(futureTask, evt.LongVal1);
         }
     }
 
@@ -603,7 +591,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             || Interlocked.CompareExchange(ref state, ST_STARTING, ST_UNSTARTED) != ST_UNSTARTED) {
             return false;
         }
-        // 
+        if (SynchronizationContext.Current == null) {
+            SynchronizationContext.SetSynchronizationContext(AsSyncContext());
+        }
         try {
             UpdateTickTime();
             if (!runningPromise.TrySetComputing()) {
@@ -665,12 +655,11 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     public void Internal_Update() {
+#if DEBUG
         if (Thread.CurrentThread != thread) {
             throw new InvalidOperationException();
         }
-        // 和DisruptorEventLoop相比，其实就是去除了While循环
-        if (state != ST_RUNNING) return;
-
+#endif
         long nextSequence = sequence.GetVolatile() + 1L;
         try {
             long tickTime = UpdateTickTime();
@@ -733,13 +722,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             int type = eventObj.Type;
             try {
                 if (type == 0) {
-                    if (eventObj.Obj1 == null) {
-                        // 由于c#支持值类型，用户设置错工厂容易导致该问题
-                        logger.Warn("bad event factory");
-                    } else if (eventObj.Obj1 is Action action) {
+                    if (eventObj.Obj1 is Action action) {
                         action();
-                    } else {
-                        ITask task = (ITask)eventObj.Obj1;
+                    } else if (eventObj.Obj1 is ITask task) {
                         task.Run();
                     }
                 } else if (type > 0) {
@@ -804,7 +789,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                 break;
             }
             while (!producerBarrier.IsPublished(nextSequence)) {
-                Thread.Sleep(1); // 等待发布-1ms
+                Thread.Yield(); // 等待发布，Sleep可能抛出中断异常
             }
             ref T eventObj = ref dataProvider.ConsumerGetRef(nextSequence);
             int type = eventObj.Type;
@@ -820,13 +805,9 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
                     continue;
                 }
                 if (type == 0) {
-                    if (eventObj.Obj1 == null) {
-                        // 由于c#支持值类型，用户设置错工厂容易导致该问题
-                        logger.Warn("bad event factory");
-                    } else if (eventObj.Obj1 is Action action) {
+                    if (eventObj.Obj1 is Action action) {
                         action();
-                    } else {
-                        ITask task = (ITask)eventObj.Obj1;
+                    } else if (eventObj.Obj1 is ITask task) {
                         task.Run();
                     }
                 } else if (type > 0) {

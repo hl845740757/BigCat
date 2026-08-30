@@ -117,5 +117,7 @@ public struct UnionValue : IEquatable<UnionValue>
     public static bool operator !=(in UnionValue left, in UnionValue right) {
         return !left.Equals(right);
     }
+
+    // TODO 考虑将ToVector3这类接口定义在结构体内？
 }
 }

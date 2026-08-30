@@ -164,7 +164,7 @@ internal class SheetReader
     /// </summary>
     /// <param name="reader">reader</param>
     /// <param name="expected">期望的行索引(0-based)</param>
-    /// <exception cref="IllegalStateException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
     private static void SkipRowsUtil(IExcelDataReader reader, int expected) {
         while (reader.Read()) {
             int rowIndex = reader.Depth;

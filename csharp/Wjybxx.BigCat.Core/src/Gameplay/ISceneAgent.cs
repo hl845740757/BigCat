@@ -70,13 +70,21 @@ public interface ISceneAgent
 
     /// <summary>
     /// 场景销毁时调用
-    ///
     /// 注：可用于销毁/卸载场景资源。
     /// </summary>
     void OnDestroy() {
     }
 
+    /// <summary>
+    /// 进入指定Update阶段
+    /// (主要用于定时器调度)
+    /// </summary>
+    void OnLoopPhase(GameLoopPhase phase) {
+    }
+
     #endregion
+
+    #region 业务事件
 
     /// <summary>
     /// 场景的激活状态变化
@@ -99,5 +107,16 @@ public interface ISceneAgent
     /// <param name="gameUnit"></param>
     void OnGameUnitRemoved(GameUnit gameUnit) {
     }
+
+    #endregion
+}
+
+/// <summary>
+/// SceneAgent的持有者
+/// 注：不推荐<see cref="SComponent"/>直接实现<see cref="ISceneAgent"/>，以避免方法签名冲突。
+/// </summary>
+public interface ISceneAgentHolder
+{
+    ISceneAgent Agent { get; }
 }
 }

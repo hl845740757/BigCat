@@ -48,7 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\UI\Runtime\WindowFeatures.cs" />
-    <Compile Include="Assets\Scripts\UI\Runtime\WindowAgentHolder.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\Desktop.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\WindowAgent.cs" />
     <Compile Include="Assets\Scripts\UI\Runtime\WindowMgrCfg.cs" />
