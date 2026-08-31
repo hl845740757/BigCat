@@ -45,7 +45,7 @@ class AlwaysCheckGuard<T> : Decorator<T> {
 // 子任务完成后返回失败
 // @Namespace{cs: "Wjybxx.BTree.Decorator"}
 class AlwaysFail<T> : Decorator<T> {
-  int32 failureStatus = 1; // 错误码
+  int32 errorCode = 1; // 错误码
 }
 // 子任务完成后返回成功
 // @Namespace{cs: "Wjybxx.BTree.Decorator"}
@@ -167,22 +167,27 @@ class SimpleParallel<T> : BranchTask<T> {
 class Join<T> : BranchTask<T> {
   // @Editor{initNull: true}
   // @PloyField["JoinMain<T>", "JoinSelector<T>", "JoinSequence<T>", "JoinAnyOf<T>", "JoinWaitAll<T>"]
-  JoinPolicy<T> policy = 1; // 调度策略，多态字段
+  IJoinPolicy<T> policy = 1; // 调度策略，多态字段
 }
 
 // 调度策略接口
 // @Namespace{cs: "Wjybxx.BTree.Branch"}
-class JoinPolicy<T> {
+class IJoinPolicy<T> {
 }
-class JoinMain<T> : JoinPolicy<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch.Join"}
+class JoinMain<T> : IJoinPolicy<T> {
 }
-class JoinSelector<T> : JoinPolicy<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch.Join"}
+class JoinSelector<T> : IJoinPolicy<T> {
 }
-class JoinSequence<T> : JoinPolicy<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch.Join"}
+class JoinSequence<T> : IJoinPolicy<T> {
 }
-class JoinAnyOf<T> : JoinPolicy<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch.Join"}
+class JoinAnyOf<T> : IJoinPolicy<T> {
 }
-class JoinWaitAll<T> : JoinPolicy<T> {
+// @Namespace{cs: "Wjybxx.BTree.Branch.Join"}
+class JoinWaitAll<T> : IJoinPolicy<T> {
 }
 
 // --------------------------------------
@@ -197,7 +202,7 @@ class Success<T> : LeafTask<T> {
 // 返回失败
 // @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class Failure<T> : LeafTask<T> {
-  int32 failureStatus = 1; // 错误码
+  int32 errorCode = 1; // 错误码
 }
 
 // 简单随机节点
@@ -209,6 +214,35 @@ class SimpleRandom<T> : LeafTask<T> {
 // @Namespace{cs: "Wjybxx.BTree.Leaf"}
 class SimpleWaitFrame<T> : LeafTask<T> {
   int32 required = 1; // 需要等待的帧数
+}
+
+// --------------------------------------
+// Condition
+// @Namespace{cs: "Wjybxx.BTree.Condition"}
+class ICondition<T> {
+}
+// 条件翻转 - 上下文错误的情况下翻转结果有一定风险
+// @Namespace{cs: "Wjybxx.BTree.Condition"}
+class ConditionNot<T> : ICondition<T> {
+  ICondition<T> child = 1; // 子节点
+}
+// 条件组
+// @Namespace{cs: "Wjybxx.BTree.Condition"}
+class ConditionGroup<T> : ICondition<T> {
+  List<ICondition<T>> children = 1; // 子节点
+}
+// AND
+// @Namespace{cs: "Wjybxx.BTree.Condition"}
+class ConditionAnd<T> : ConditionGroup<T> {
+}
+// OR
+// @Namespace{cs: "Wjybxx.BTree.Condition"}
+class ConditionOr<T> : ConditionGroup<T> {
+}
+// COUNT
+// @Namespace{cs: "Wjybxx.BTree.Condition"}
+class ConditionCount<T> : ConditionGroup<T> {
+  int32 required = 1; // 需要达成的数量
 }
 
 // -------------------------------------
