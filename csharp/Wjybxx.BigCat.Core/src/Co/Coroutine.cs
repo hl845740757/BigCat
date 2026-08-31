@@ -31,6 +31,7 @@ namespace Wjybxx.BigCat.Co
 ///
 /// 1.协程对象在复用时会更新实例id，表示已被重用
 /// 2.当输入输出类型都是引用类型时，全部转为object
+/// TODO 可能还需要支持协程退出通知
 /// </summary>
 internal sealed class Coroutine
 {
@@ -44,11 +45,6 @@ internal sealed class Coroutine
     private const int MASK_USER_CONTEXT_DISPOSED = 0x08; // 用户上下文已销毁
 
 #nullable disable
-    /// <summary>
-    /// 关联的协程管理器
-    /// (避免暴露给用户，否则可能导致封装泄漏)
-    /// </summary>
-    public CoroutineMgr coroutineMgr;
     /// <summary>
     /// 协程id
     /// </summary>
@@ -107,7 +103,6 @@ internal sealed class Coroutine
 
     public void Reset() {
         id = -1;
-        coroutineMgr = null;
         ctl = 0;
         cmdBuffer.Clear();
         resultBuffer.Clear();
@@ -125,14 +120,22 @@ internal sealed class Coroutine
     }
 
     /// <summary>
-    /// 协程是否已收到取消信号
+    /// 否已收到取消信号
     /// </summary>
-    public bool IsCancelRequested {
+    public bool IsCancellationRequested {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (ctl & MASK_CANCEL_REQUESTED) != 0;
         set => SetCtlBit(MASK_CANCEL_REQUESTED, value);
     }
 
+    /// <summary>
+    /// 是否已被中断
+    /// </summary>
+    public bool IsInterrupted {
+        get => (ctl & MASK_INTERRUPTED) != 0;
+        set => SetCtlBit(MASK_INTERRUPTED, value);
+    }
+    
     /// <summary>
     /// 协程是否已执行结束
     /// </summary>

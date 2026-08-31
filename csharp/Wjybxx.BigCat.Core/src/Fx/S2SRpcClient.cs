@@ -324,7 +324,7 @@ public class S2SRpcClient : EventLoopModule, IRpcClient, IRpcClientImpl, IAgentE
     public override void Stop() {
         localSession.timeoutContexts.Clear();
         foreach (S2SSession session in sessionMgr.SessionMap.Values) {
-            session.timeoutContexts.Clear();
+            session.timeoutContexts.Clear(); // 无需置为取消状态，考虑如何静默回收
         }
         timeoutQueue.Clear();
         timeoutPool.Clear();

@@ -21,6 +21,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Wjybxx.Commons;
@@ -112,13 +113,13 @@ public static class FxUtils
         // Exporter默认在同命名空间下
         Type exporter = serviceInterface.Assembly.GetType(serviceInterface.FullName + "Proxy", false);
         if (exporter == null) {
-            throw new Exception("Proxy is absent, service:" + serviceInterface);
+            throw new ArgumentException("Proxy is absent, service: " + serviceInterface.FullName);
+        }
+        MethodInfo? methodInfo = exporter.GetMethod("Export", BindingFlags.Public | BindingFlags.Static);
+        if (methodInfo == null) {
+            throw new ArgumentException($"Export method is absent, proxy: {exporter.FullName}, service: {serviceInterface.FullName}");
         }
         try {
-            MethodInfo? methodInfo = exporter.GetMethod("Export", BindingFlags.Public | BindingFlags.Static);
-            if (methodInfo == null) {
-                throw new AssertionError();
-            }
             methodInfo.Invoke(null, new[] { registry, serviceImpl });
         }
         catch (Exception e) {
@@ -128,14 +129,18 @@ public static class FxUtils
 
     /** 导出Rpc方法信息 */
     public static void ExportMethodInfo(NodeBuilder builder) {
+        // 按程序集分组，避免对同一程序集重复扫描
         IRpcMethodRegistry registry = builder.Injector.GetInstance<IRpcMethodRegistry>();
-        foreach (Type pkg in builder.RpcPackages) {
-            List<Type> rpcInterfaces = pkg.Assembly.ExportedTypes // 只访问公开类型
-                .Where(e => e.Namespace == pkg.Namespace)
-                .Where(e => e.IsDefined(typeof(RpcServiceAttribute)))
-                .ToList();
-            foreach (Type serviceInterface in rpcInterfaces) {
-                ExportMethodInfo(registry, serviceInterface);
+        foreach (var grouping in builder.RpcPackages.GroupBy(type => type.Assembly, type => type.Namespace)) {
+            HashSet<string> namespaces = grouping.ToHashSet();
+            foreach (var type in grouping.Key.ExportedTypes) { // 只访问公开类型
+                if (!namespaces.Contains(type.Namespace)) {
+                    continue;
+                }
+                if (!type.IsDefined(typeof(RpcServiceAttribute))) {
+                    continue;
+                }
+                ExportMethodInfo(registry, type);
             }
         }
     }
@@ -145,49 +150,74 @@ public static class FxUtils
         if (serviceAnno == null) {
             throw new ArgumentException("target is not RpcService: " + serviceInterface);
         }
-        try {
-            MethodInfo[] methods = serviceInterface.GetMethods(); // 全部的public方法
-            foreach (MethodInfo method in methods) {
-                RpcMethodAttribute methodAnno = method.GetCustomAttribute<RpcMethodAttribute>();
-                if (methodAnno == null) {
-                    continue;
+        foreach (MethodInfo method in CollectRpcMethods(serviceInterface)) {
+            RpcMethodAttribute methodAnno = method.GetCustomAttribute<RpcMethodAttribute>();
+            if (methodAnno == null) {
+                continue;
+            }
+            // 获取RpcContext的类型和方法参数类型
+            Type? ctxType;
+            Type? pType;
+            ParameterInfo[] parameters = method.GetParameters();
+            if (parameters.Length > 0 && IsRpcContextType(parameters[0].ParameterType)) {
+                ctxType = parameters[0].ParameterType;
+                pType = parameters.Length > 1 ? parameters[1].ParameterType : null;
+                if (ctxType.IsByRef) { // ref RpcContext
+                    ctxType = ctxType.GetElementType();
                 }
-                // 获取RpcContext的类型和方法参数类型
-                Type ctxType;
-                Type pType;
-                ParameterInfo[] parameters = method.GetParameters();
-                if (parameters.Length > 0 && IsRpcContextType(parameters[0].ParameterType)) {
-                    ctxType = parameters[0].ParameterType;
-                    pType = parameters.Length > 1 ? parameters[1].ParameterType : null;
-                    if (ctxType.IsByRef) { // ref RpcContext
-                        ctxType = ctxType.GetElementType();
-                    }
-                } else {
-                    ctxType = null;
-                    pType = parameters.Length > 0 ? parameters[0].ParameterType : null;
+                if (parameters.Length > 2) {
+                    throw new ArgumentException(FormatMethod(serviceInterface, method)
+                                                + ": rpc method supports at most one parameter besides RpcContext");
                 }
-                // 返回值类型可能在Future和RpcContext的泛型参数中
-                Type rType;
-                if (ctxType != null) {
-                    rType = ctxType.GenericTypeArguments[0]; // TypeArguments是类型实参
-                } else {
-                    rType = method.ReturnType;
-                    if (IsFutureType(rType)) { // 声明类型可能是无泛型的Future
-                        rType = rType.IsGenericType ? rType.GenericTypeArguments[0] : null;
-                    }
+            } else {
+                ctxType = null;
+                pType = parameters.Length > 0 ? parameters[0].ParameterType : null;
+                if (parameters.Length > 1) {
+                    throw new ArgumentException(FormatMethod(serviceInterface, method)
+                                                + ": rpc method supports at most one parameter");
                 }
-                rType = VoidToObject(rType);
-                // 注册方法
-                RpcMethodInfo methodInfo = new RpcMethodInfo(
-                    serviceInterface.Name, method.Name,
-                    serviceAnno.ServiceId, methodAnno.MethodId,
-                    pType, rType);
-                registry.Register(methodInfo);
+            }
+            // 参数可能声明为in/ref/out，需要剥离ByRef才能用于序列化
+            if (pType != null && pType.IsByRef) {
+                pType = pType.GetElementType();
+            }
+            // 返回值类型可能在Future和RpcContext的泛型参数中
+            Type? rType;
+            if (ctxType != null) {
+                rType = ctxType.GenericTypeArguments[0]; // TypeArguments是类型实参
+            } else {
+                rType = method.ReturnType;
+                if (IsFutureType(rType)) { // 声明类型可能是无泛型的Future
+                    rType = rType.IsGenericType ? rType.GenericTypeArguments[0] : null;
+                }
+            }
+            rType = VoidToObject(rType);
+            RpcMethodInfo methodInfo =  new RpcMethodInfo(
+                serviceInterface.Name, method.Name,
+                serviceAnno.ServiceId, methodAnno.MethodId,
+                pType, rType);
+            registry.Register(methodInfo);
+        }
+    }
+
+    /// <summary>
+    /// 收集服务上的所有候选方法。
+    ///
+    /// 注：接口类型的<see cref="Type.GetMethods()"/>不返回父接口的方法（与class语义不同），因此需要显式合并父接口；
+    /// 重复的方法由<see cref="IRpcMethodRegistry.Register"/>按值去重。
+    /// </summary>
+    private static List<MethodInfo> CollectRpcMethods(Type serviceType) {
+        List<MethodInfo> result = new List<MethodInfo>(serviceType.GetMethods());
+        if (serviceType.IsInterface) {
+            foreach (Type parent in serviceType.GetInterfaces()) {
+                result.AddRange(parent.GetMethods());
             }
         }
-        catch (Exception e) {
-            throw new Exception("service:" + serviceInterface.FullName, e);
-        }
+        return result;
+    }
+    
+    private static string FormatMethod(Type serviceInterface, MethodInfo method) {
+        return serviceInterface.FullName + "." + method.Name;
     }
 
     private static Type? VoidToObject(Type? clazz) {
@@ -204,16 +234,19 @@ public static class FxUtils
         return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(RpcContext<>);
     }
 
+    /// <summary>
+    /// 测试类型是否是Future类型
+    /// 注：RPC返回值只能使用常见的Future类型。
+    /// </summary>
     private static bool IsFutureType(Type type) {
         if (!type.IsGenericType) {
-            return type == typeof(ValueFuture) || type == typeof(Task)
-                                               || type == typeof(IFuture) // 可能就是Future类型
-                                               || type.GetInterface(typeof(IFuture).FullName!) != null;
+            return type == typeof(Task) || type == typeof(ValueTask) 
+                   || type == typeof(ValueFuture) || type == typeof(IFuture);
         }
-        type = type.GetGenericTypeDefinition();
-        return type == typeof(ValueFuture<>) || type == typeof(Task<>)
-                                             || type == typeof(IFuture<>)
-                                             || type.GetInterface(typeof(IFuture<>).FullName!) != null;
+        Type genericDefine = type.GetGenericTypeDefinition();
+        return genericDefine == typeof(Task<>) || type == typeof(ValueTask<>) 
+                                               || genericDefine == typeof(ValueFuture<>)
+                                               || genericDefine == typeof(IFuture<>);
     }
 }
 }

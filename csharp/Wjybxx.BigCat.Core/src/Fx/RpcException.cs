@@ -38,7 +38,7 @@ public abstract class RpcException : Exception
     }
 
     protected RpcException(int errorCode, string? message, Exception? innerException)
-        : base(FormatMessage(message, errorCode)) {
+        : base(FormatMessage(message, errorCode), innerException) {
         this.errorCode = errorCode;
     }
 

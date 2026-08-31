@@ -42,7 +42,7 @@ public interface IRpcMethodRegistry
     /// <param name="serviceId">服务id</param>
     /// <param name="methodId">方法id</param>
     /// <returns></returns>
-    RpcMethodInfo GetMethodInfo(int serviceId, int methodId);
+    RpcMethodInfo? GetMethodInfo(int serviceId, int methodId);
 
     /// <summary>
     /// 注册一个rpc方法代理

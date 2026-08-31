@@ -71,6 +71,7 @@ public sealed class RpcTimeoutContext : IIndexedElement
     public void Reset() {
         qIndex = -1;
         promise = null;
+        rid = 0;
         deadline = 0;
 
         sessionId = 0;

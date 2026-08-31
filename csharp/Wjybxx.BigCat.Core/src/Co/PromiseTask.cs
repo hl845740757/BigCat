@@ -194,8 +194,8 @@ internal sealed class PromiseTask
         int scheduleType = ScheduleType;
         if (scheduleType == SCHEDULE_ONCE) {
             int type = TaskType;
-            if (type >= TYPE_CANCELLER) {
-                RunTask2(type);
+            if (type == TYPE_CANCELLER) {
+                TrySetCancelled();
                 return false;
             }
             try {
@@ -240,30 +240,6 @@ internal sealed class PromiseTask
         }
         SetNextRunTime(tickTime, scheduleType);
         return true;
-    }
-
-    private void RunTask2(int type) {
-        switch (type) {
-            case TYPE_CANCELLER: {
-                TrySetCancelled(CancellationToken.None);
-                return;
-            }
-            case TYPE_SET_RESULT: {
-                TrySetResult(state);
-                return;
-            }
-            case TYPE_SET_EXCEPTION: {
-                if (state is ExceptionDispatchInfo dispatchInfo) {
-                    TrySetException(dispatchInfo);
-                } else {
-                    TrySetException((Exception)state);
-                }
-                return;
-            }
-            default: {
-                throw new AssertionError("type: " + type);
-            }
-        }
     }
 
     private object? RunTask() {

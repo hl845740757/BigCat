@@ -89,11 +89,11 @@ public readonly struct CoroutineTaskContext
     /// 2.如果时间和额外延迟帧数都为0，且当前帧尚未执行到目标阶段，则会在当前帧醒来。
     /// 3.额外延迟帧用于强制Sleep0下一帧才醒来。
     /// </summary>
-    /// <param name="time">睡眠时间，秒 or 帧</param>
-    /// <param name="extraDelayFrame">额外延迟帧</param>
+    /// <param name="time">睡眠时间，秒</param>
+    /// <param name="delayFrame">额外延迟帧</param>
     /// <returns></returns>
-    public ValueFuture Sleep(double time, int extraDelayFrame = 0) {
-        return _coroutineMgr.Sleep(_coroutineId, time, extraDelayFrame);
+    public ValueFuture Sleep(double time, int delayFrame = 0) {
+        return _coroutineMgr.Sleep(_coroutineId, time, delayFrame);
     }
 
     /// <summary>
@@ -131,7 +131,6 @@ public readonly struct CoroutineTaskContext
 /// <summary>
 /// 协程任务上下文
 /// </summary>
-[StructLayout(LayoutKind.Auto)]
 public readonly struct CoroutineTaskContext<In, Out>
 {
     private readonly CoroutineMgr _coroutineMgr;
@@ -198,12 +197,24 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 异步读取一个用户输入
     /// 
     /// 1.如果当前有可用输入，则立即返回。
-    /// 2.如果当前无可用输入，则在用户写入输入或协程被中断（取消时）醒来，必须显式检测结果的有效性。
+    /// 2.如果当前无可用输入，则在用户写入输入或协程被中断醒来。
     /// </summary>
     /// <param name="timeout">超时时间</param>
     /// <returns></returns>
-    public ValueFuture<TaskResult<In>> ReadAsync(double timeout = 0) {
+    public ValueFuture<In> ReadAsync(double timeout = 0) {
         return _coroutineMgr.ReadCmdAsync(_coroutineId, _inputCodec, timeout);
+    }
+    
+    /// <summary>
+    /// 异步读取一个用户输入（压制异步结果的异常抛出，性能更好）
+    /// 
+    /// 1.如果当前有可用输入，则立即返回。
+    /// 2.如果当前无可用输入，则在用户写入输入或协程被中断醒来，必须显式检测结果的有效性。
+    /// </summary>
+    /// <param name="timeout">超时时间</param>
+    /// <returns></returns>
+    public ValueFuture<TaskResult<In>> ReadAsync2(double timeout = 0) {
+        return _coroutineMgr.ReadCmdAsync2(_coroutineId, _inputCodec, timeout);
     }
 
     /// <summary>
@@ -226,11 +237,11 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 2.如果时间和额外延迟帧数都为0，且当前帧尚未执行到目标阶段，则会在当前帧醒来。
     /// 3.额外延迟帧用于强制Sleep0下一帧才醒来。
     /// </summary>
-    /// <param name="time">睡眠时间，秒 or 帧</param>
-    /// <param name="extraDelayFrame">额外延迟帧</param>
+    /// <param name="time">睡眠时间，秒</param>
+    /// <param name="delayFrame">额外延迟帧</param>
     /// <returns></returns>
-    public ValueFuture Sleep(double time, int extraDelayFrame = 0) {
-        return _coroutineMgr.Sleep(_coroutineId, time, extraDelayFrame);
+    public ValueFuture Sleep(double time, int delayFrame = 0) {
+        return _coroutineMgr.Sleep(_coroutineId, time, delayFrame);
     }
 
     /// <summary>
@@ -238,7 +249,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 
     /// 注：
     /// 1.返回的future固定在事件循环线程通知。
-    /// 2.返回的Future会在协程被关闭时进入取消状态。
+    /// 2.返回的Future会在协程被关闭时进入失败状态（被中断）。
     /// </summary>
     /// <param name="future">要等待的future</param>
     /// <param name="timeout">超时时间</param>
@@ -253,7 +264,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// 
     /// 注：
     /// 1.返回的future固定在事件循环线程通知。
-    /// 2.返回的Future会在协程被关闭时进入取消状态。
+    /// 2.返回的Future会在协程被关闭时进入失败状态（被中断）。
     /// </summary>
     /// <param name="future">要等待的future</param>
     /// <param name="timeout">超时时间</param>

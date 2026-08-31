@@ -44,7 +44,6 @@ namespace Wjybxx.BigCat.Unity
 /// 
 /// PS：该实现由<see cref="DisruptorEventLoop{T}"/>修改而来，主要变化为：内部线程驱动 => 外部线程驱动。
 /// </summary>
-/// <typeparam name="T"></typeparam>
 [StructLayout(LayoutKind.Sequential)]
 public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where T : IAgentEvent
 {

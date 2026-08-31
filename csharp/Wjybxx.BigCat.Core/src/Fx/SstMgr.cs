@@ -28,7 +28,6 @@ using Wjybxx.Commons;
 using Wjybxx.Commons.Attributes;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.IO;
-using Wjybxx.Commons.Pool;
 
 namespace Wjybxx.BigCat.Fx
 {
@@ -236,14 +235,13 @@ public static class SstMgr
     /// <summary>
     /// 注意：由于是Struct，加载后需要覆盖所有ssti相同的Item
     /// </summary>
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Auto)]
     private readonly struct Item
     {
 #nullable disable
         /// <summary>
         /// 字符串索引
         /// </summary>
-        [FieldOffset(0)]
         public readonly int ssti;
         /// <summary>
         /// 文件中的偏移 -- len + data；
@@ -251,12 +249,10 @@ public static class SstMgr
         /// -1表示已加载，value为string
         /// 非负表示尚未加载，value为stream
         /// </summary>
-        [FieldOffset(4)]
         public readonly int offset;
         /// <summary>
         /// 关联的stream或最终字符串值
         /// </summary>
-        [FieldOffset(8)]
         public readonly object streamOrValue;
 
         public Item(int ssti, int offset, object streamOrValue) {

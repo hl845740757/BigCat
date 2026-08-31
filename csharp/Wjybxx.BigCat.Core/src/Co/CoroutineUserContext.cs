@@ -121,7 +121,6 @@ public readonly struct CoroutineUserContext : IDisposable
 /// 1.必须调用<see cref="Dispose"/>方法，否则会导致内存泄漏。
 /// 2.用户如果不需要追踪协程信息，可启动协程后就Dispose。
 /// </summary>
-[StructLayout(LayoutKind.Auto)]
 public readonly struct CoroutineUserContext<T, R> : IDisposable
 {
     private readonly CoroutineMgr _coroutineMgr;
@@ -202,15 +201,27 @@ public readonly struct CoroutineUserContext<T, R> : IDisposable
         return _coroutineMgr.TryReadResult(_coroutineId, _resultCodec, out result);
     }
 
+    
     /// <summary>
     /// 异步读取一个结果
+    ///
+    /// 1.如果当前有可用结果，则立即返回。
+    /// 2.如果当前无可用结果，则在任务写入结果或协程退出时醒来。
+    /// </summary>
+    /// <returns></returns>
+    public ValueFuture<R> ReadAsync(double timeout = 0) {
+        return _coroutineMgr.ReadResultAsync(_coroutineId, _resultCodec, timeout);
+    }
+    
+    /// <summary>
+    /// 异步读取一个结果（压制异步结果的异常抛出，性能更好）
     ///
     /// 1.如果当前有可用结果，则立即返回。
     /// 2.如果当前无可用结果，则在任务写入结果或协程退出时醒来，必须显式检测结果的有效性。
     /// </summary>
     /// <returns></returns>
-    public ValueFuture<TaskResult<R>> ReadAsync(double timeout = 0) {
-        return _coroutineMgr.ReadResultAsync(_coroutineId, _resultCodec, timeout);
+    public ValueFuture<TaskResult<R>> ReadAsync2(double timeout = 0) {
+        return _coroutineMgr.ReadResultAsync2(_coroutineId, _resultCodec, timeout);
     }
 
     /// <summary>

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.Util;
@@ -40,8 +41,7 @@ namespace Wjybxx.BigCat.Co
 /// 默认的协程管理器
 ///
 /// 注：由于EventLoop的引用不可变更，因此CoroutineMgr对象池需要按EventLoop管理。
-/// (Coroutine只有在协程退出，且用户销毁上下文的情况下才被回收，因此协程字典在Stop/Reset时不能被清理)
-/// (CoroutineMgr似乎是可以永远不关闭的，或者只需要支持全局协程)
+/// (Coroutine只有在协程退出，且用户销毁上下文的情况下才被回收，因此协程字典在Stop/Reset时不能直接清理 TODO 再考虑池化问题)
 /// </summary>
 [NotThreadSafe]
 public class CoroutineMgr : ICoroutineMgr
@@ -124,6 +124,11 @@ public class CoroutineMgr : ICoroutineMgr
             return;
         }
         _status = Status.ShuttingDown;
+        // 中断协程
+        foreach (var coroutine in _coroutineDic.Values.ToArray()) {
+            InterruptTask(coroutine);
+            InterruptUser(coroutine);
+        }
         _timerQueue.Stop(quietly);
         _status = Status.Shutdown;
     }
@@ -132,11 +137,7 @@ public class CoroutineMgr : ICoroutineMgr
     /// 重置数据
     /// </summary>
     public void Reset() {
-        if (_status == Status.Unstarted) {
-            return;
-        }
-        _status = Status.Unstarted;
-        _timerQueue.Reset();
+        // TODO
     }
 
     #endregion
@@ -147,7 +148,7 @@ public class CoroutineMgr : ICoroutineMgr
         if (func == null) throw new ArgumentNullException(nameof(func));
         Coroutine coroutine = Coroutine.Acquire();
         coroutine.id = Coroutine.NextId();
-        coroutine.coroutineMgr = this;
+        coroutine.cancelToken = startArgs.cancelToken;
 
         CoroutineUserContext userContext = new CoroutineUserContext(this, coroutine.id, startArgs.cancelToken, startArgs.userArg);
         CoroutineTaskContext taskContext = new CoroutineTaskContext(this, coroutine.id, startArgs.cancelToken,
@@ -156,7 +157,9 @@ public class CoroutineMgr : ICoroutineMgr
         _coroutineDic.Add(coroutine.id, coroutine);
         try {
             ValueFuture future = func.Invoke(taskContext);
+            coroutine.coResult = future;
             if (future.IsCompleted) {
+                coroutine.IsTerminated = true;
                 coroutine.coResult = future.Memorize();
                 InterruptTask(coroutine);
             } else {
@@ -183,7 +186,7 @@ public class CoroutineMgr : ICoroutineMgr
         if (func == null) throw new ArgumentNullException(nameof(func));
         Coroutine coroutine = Coroutine.Acquire();
         coroutine.id = Coroutine.NextId();
-        coroutine.coroutineMgr = this;
+        coroutine.cancelToken = startArgs.cancelToken;
 
         CoroutineUserContext<T, R> userContext = new CoroutineUserContext<T, R>(this, coroutine.id, startArgs.cancelToken, startArgs.userArg,
             startArgs.inputCodec, startArgs.outputCodec);
@@ -194,8 +197,10 @@ public class CoroutineMgr : ICoroutineMgr
         _coroutineDic.Add(coroutine.id, coroutine);
         try {
             ValueFuture future = func.Invoke(taskContext);
+            coroutine.coResult = future;
             if (future.IsCompleted) {
                 coroutine.coResult = future.Memorize();
+                coroutine.IsTerminated = true;
                 InterruptTask(coroutine);
             } else {
                 future.GetAwaitable(_eventLoop, TaskOptions.STAGE_TRY_INLINE)
@@ -298,7 +303,7 @@ public class CoroutineMgr : ICoroutineMgr
         if (!_coroutineDic.TryGetValue(coroutineId, out Coroutine coroutine)) {
             return;
         }
-        coroutine.IsCancelRequested = true;
+        coroutine.IsCancellationRequested = true;
         if (interruptIfRunning) {
             InterruptTask(coroutine);
         }
@@ -309,31 +314,37 @@ public class CoroutineMgr : ICoroutineMgr
     /// </summary>
     /// <param name="state"></param>
     private void OnCancellationRequest(object state) {
+        if (!_eventLoop.InEventLoop()) {
+            _eventLoop.Execute(() => OnCancellationRequest(state));
+            return;
+        }
         long coroutineId = (long)state;
-        Cancel(coroutineId, true); // 由于系统的取消令牌不能传递信息，因此默认中断协程，否则协程可能长期无法性能
+        Cancel(coroutineId); // 默认不中断协程
     }
 
     /// <summary>
     /// 中断协程
     /// </summary>
     private void InterruptTask(Coroutine coroutine) {
+        coroutine.IsInterrupted = true;
+        // 优先进入被中断状态
+        ValuePromise<int> cmdPromise = coroutine.cmdReaderPromise;
+        if (cmdPromise != null) {
+            cmdPromise.TrySetException(coroutine.cmdReaderPromiseRid, new ThreadInterruptedException());
+        }
         PromiseTask asyncTask = coroutine.asyncTask;
         if (asyncTask != null) {
             _timerQueue.Cancel(asyncTask.id);
-        }
-        ValuePromise<int> cmdPromise = coroutine.cmdReaderPromise;
-        if (cmdPromise != null) {
-            cmdPromise.TrySetCancelled(coroutine.cmdReaderPromiseRid);
         }
     }
 
     /// <summary>
     /// 中断用户
     /// </summary>
-    internal void InterruptUser(Coroutine coroutine) {
+    private void InterruptUser(Coroutine coroutine) {
         ValuePromise<int> resultPromise = coroutine.resultReaderPromise;
         if (resultPromise != null) {
-            resultPromise.TrySetCancelled(coroutine.resultReaderPromiseRid);
+            resultPromise.TrySetException(coroutine.resultReaderPromiseRid, new ThreadInterruptedException());
         }
     }
 
@@ -376,7 +387,50 @@ public class CoroutineMgr : ICoroutineMgr
     }
 
     [PooledTask(10)]
-    internal async ValueFuture<TaskResult<T>> ReadResultAsync<T>(long coroutineId, DataKey<T> codec, double timeout) {
+    internal async ValueFuture<T> ReadResultAsync<T>(long coroutineId, DataKey<T> codec, double timeout) {
+        CheckEventLoop();
+        if (!_coroutineDic.TryGetValue(coroutineId, out Coroutine coroutine)) {
+            throw new InvalidOperationException("coroutine disposed");
+        }
+        if (coroutine.resultBuffer.TryDequeue(out UnionValue unionValue)) {
+            T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
+            return value;
+        }
+        if (coroutine.resultReaderPromise != null) {
+            throw new InvalidOperationException("read result task already exists");
+        }
+        if (coroutine.IsTerminated) { // 协程终止属于正常情况
+            throw new OperationCanceledException("coroutine is terminated");
+        }
+        // 等待被唤醒
+        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _eventLoop);
+        coroutine.resultReaderPromise = promise;
+        coroutine.resultReaderPromiseRid = rid;
+        long cancellerTaskId = 0;
+        if (timeout > 0) {
+            PromiseTask asyncTask = AddCanceller(promise, rid, timeout, coroutine.cancelToken);
+            cancellerTaskId = asyncTask.id;
+        }
+
+        try {
+            await promise.Future;
+            unionValue = coroutine.resultBuffer.Dequeue();
+            T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
+            return value;
+        }
+        finally {
+            // 醒来先清理字段，因此它处无需校验promise字段的有效性
+            Debug.Assert(coroutine.resultReaderPromise == promise);
+            coroutine.resultReaderPromise = null;
+            coroutine.resultReaderPromiseRid = 0;
+            if (cancellerTaskId > 0) {
+                _timerQueue.Cancel(cancellerTaskId);
+            }
+        }
+    }
+
+    [PooledTask(10)]
+    internal async ValueFuture<TaskResult<T>> ReadResultAsync2<T>(long coroutineId, DataKey<T> codec, double timeout) {
         CheckEventLoop();
         if (!_coroutineDic.TryGetValue(coroutineId, out Coroutine coroutine)) {
             throw new InvalidOperationException("coroutine disposed");
@@ -385,25 +439,30 @@ public class CoroutineMgr : ICoroutineMgr
             T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
             return TaskResult<T>.FromResult(value);
         }
-        if (coroutine.IsTerminated) {
-            return TaskResult<T>.FromCancelled();
-        }
         if (coroutine.resultReaderPromise != null) {
             throw new InvalidOperationException("read result task already exists");
+        }
+        if (coroutine.IsTerminated) { // 协程终止属于正常情况，传入协程的取消令牌并无意义
+            return TaskResult<T>.FromCancelled();
         }
         // 等待被唤醒
         ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _eventLoop);
         coroutine.resultReaderPromise = promise;
         coroutine.resultReaderPromiseRid = rid;
+        long cancellerTaskId = 0;
         if (timeout > 0) {
-            AddCanceller(promise, rid, timeout, coroutine.cancelToken);
+            PromiseTask asyncTask = AddCanceller(promise, rid, timeout, coroutine.cancelToken);
+            cancellerTaskId = asyncTask.id;
         }
         TaskResult<int> result = await promise.Future.GetAwaitable2();
         // 醒来先清理字段，因此它处无需校验promise字段的有效性
         Debug.Assert(coroutine.resultReaderPromise == promise);
         coroutine.resultReaderPromise = null;
         coroutine.resultReaderPromiseRid = 0;
-        //
+        if (cancellerTaskId > 0) {
+            _timerQueue.Cancel(cancellerTaskId);
+        }
+        // 解析结果
         if (result.IsSucceeded) {
             unionValue = coroutine.resultBuffer.Dequeue();
             T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
@@ -419,7 +478,7 @@ public class CoroutineMgr : ICoroutineMgr
         }
         UnionValue unionValue = (ObjectUtil.IsNullableType<T>() && value == null) ? UnionValue.Null : codec.Box(value);
         coroutine.cmdBuffer.Enqueue(unionValue);
-        // 唤醒Task
+        // 唤醒Task TODO 可能要延迟唤醒？
         ValuePromise<int> promise = coroutine.cmdReaderPromise;
         if (promise != null) {
             promise.TrySetResult(coroutine.cmdReaderPromiseRid, 0);
@@ -439,7 +498,51 @@ public class CoroutineMgr : ICoroutineMgr
         return false;
     }
 
-    internal async ValueFuture<TaskResult<T>> ReadCmdAsync<T>(long coroutineId, DataKey<T> codec, double timeout) {
+    [PooledTask(10)]
+    internal async ValueFuture<T> ReadCmdAsync<T>(long coroutineId, DataKey<T> codec, double timeout) {
+        CheckEventLoop();
+        if (!_coroutineDic.TryGetValue(coroutineId, out Coroutine coroutine)) {
+            throw new InvalidOperationException("coroutine disposed");
+        }
+        if (coroutine.cmdBuffer.TryDequeue(out UnionValue unionValue)) {
+            T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
+            return value;
+        }
+        if (coroutine.cmdReaderPromise != null) {
+            throw new InvalidOperationException("read cmd task already exists");
+        }
+        if (coroutine.IsCancellationRequested) { // 用户已取消任务
+            throw new OperationCanceledException(coroutine.cancelToken);
+        }
+        // 等待被唤醒
+        ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _eventLoop);
+        coroutine.cmdReaderPromise = promise;
+        coroutine.cmdReaderPromiseRid = rid;
+        long cancellerTaskId = 0;
+        if (timeout > 0) {
+            PromiseTask asyncTask = AddCanceller(promise, rid, timeout, coroutine.cancelToken);
+            cancellerTaskId = asyncTask.id;
+        }
+
+        try {
+            await promise.Future;
+            unionValue = coroutine.cmdBuffer.Dequeue();
+            T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
+            return value;
+        }
+        finally {
+            // 醒来先清理字段，因此它处无需校验promise字段的有效性
+            Debug.Assert(coroutine.cmdReaderPromise == promise);
+            coroutine.cmdReaderPromise = null;
+            coroutine.cmdReaderPromiseRid = 0;
+            if (cancellerTaskId > 0) {
+                _timerQueue.Cancel(cancellerTaskId);
+            }
+        }
+    }
+
+    [PooledTask(10)]
+    internal async ValueFuture<TaskResult<T>> ReadCmdAsync2<T>(long coroutineId, DataKey<T> codec, double timeout) {
         CheckEventLoop();
         if (!_coroutineDic.TryGetValue(coroutineId, out Coroutine coroutine)) {
             throw new InvalidOperationException("coroutine disposed");
@@ -448,25 +551,30 @@ public class CoroutineMgr : ICoroutineMgr
             T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
             return TaskResult<T>.FromResult(value);
         }
-        if (coroutine.IsCancelRequested) { // 用户已取消任务
-            return TaskResult<T>.FromCancelled();
-        }
         if (coroutine.cmdReaderPromise != null) {
             throw new InvalidOperationException("read cmd task already exists");
+        }
+        if (coroutine.IsCancellationRequested) { // 用户已取消任务
+            return TaskResult<T>.FromCancelled(coroutine.cancelToken);
         }
         // 等待被唤醒
         ValuePromise<int> promise = ValuePromise<int>.Acquire(out int rid, _eventLoop);
         coroutine.cmdReaderPromise = promise;
         coroutine.cmdReaderPromiseRid = rid;
+        long cancellerTaskId = 0;
         if (timeout > 0) {
-            AddCanceller(promise, rid, timeout, coroutine.cancelToken);
+            PromiseTask asyncTask = AddCanceller(promise, rid, timeout, coroutine.cancelToken);
+            cancellerTaskId = asyncTask.id;
         }
         TaskResult<int> result = await promise.Future.GetAwaitable2();
         // 醒来先清理字段，因此它处无需校验promise字段的有效性
         Debug.Assert(coroutine.cmdReaderPromise == promise);
         coroutine.cmdReaderPromise = null;
         coroutine.cmdReaderPromiseRid = 0;
-        //
+        if (cancellerTaskId > 0) {
+            _timerQueue.Cancel(cancellerTaskId);
+        }
+        // 解析结果
         if (result.IsSucceeded) {
             unionValue = coroutine.cmdBuffer.Dequeue();
             T value = unionValue.IsNull ? default : codec.Unbox(unionValue);
@@ -563,15 +671,15 @@ public class CoroutineMgr : ICoroutineMgr
         if (timeoutTask.id != taskId) {
             return; // Task已完成或被回收
         }
-        // 等待内部任务时可以立即唤醒协程，等待外部任务时需先加入TimerQueue，然后再协程管理器Update的时候再唤醒协程
         if (taskResult.IsSucceeded) {
-            timeoutTask.TaskType = TaskBuilder.TYPE_SET_RESULT;
-            timeoutTask.state = taskResult.Result;
+            timeoutTask.TrySetResult(taskResult.Result);
+        } else if (taskResult.IsFailed) {
+            timeoutTask.TrySetException(taskResult.Exception!);
         } else {
-            timeoutTask.TaskType = TaskBuilder.TYPE_SET_EXCEPTION;
-            timeoutTask.state = (object)taskResult.ExceptionDispatchInfo ?? taskResult.Exception;
+            timeoutTask.TrySetException(taskResult.ExceptionDispatchInfo!);
         }
-        coroutineMgr._timerQueue.SetNextDelay(taskId, 0);
+        // 取消超时任务
+        coroutineMgr._timerQueue.Cancel(taskId);
     }
 
     private PromiseTask AddCanceller<T>(ValuePromise<T> promise, int rid, double timeout, CancellationToken cancelToken = default) {

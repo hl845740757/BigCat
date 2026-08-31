@@ -134,7 +134,7 @@ public sealed class TimerQueue : ITimerQueue
     /// <summary>
     /// 停止定时器
     /// </summary>
-    /// <param name="quietly">是否静默关闭，不使运行中的任务进入取消状态</param>
+    /// <param name="quietly">是否静默关闭，不使运行中的任务进入取消状态，可能导致Promise无法被回收</param>
     public void Stop(bool quietly = false) {
         if (IsShuttingDown) {
             return;
@@ -244,9 +244,9 @@ public sealed class TimerQueue : ITimerQueue
 
     /// <summary>
     /// 取消定时器
+    /// 注：任务不存在时忽略
     /// </summary>
     /// <param name="timerId">任务id</param>
-    /// <returns>任务存在且取消成功时返回true</returns>
     public void Cancel(long timerId) {
         if (!_taskDic.TryGetValue(timerId, out PromiseTask task)) {
             return;
@@ -311,7 +311,7 @@ public sealed class TimerQueue : ITimerQueue
         asyncTask.id = PromiseTask.NextId();
         asyncTask.TaskType = TYPE_ACTION;
         asyncTask.task = action;
-        asyncTask.state = cancelToken;
+        asyncTask.cancelToken = cancelToken;
         asyncTask.promise = promise;
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
@@ -349,7 +349,7 @@ public sealed class TimerQueue : ITimerQueue
         asyncTask.TaskType = TYPE_FUNC;
         asyncTask.invoker = PromiseTask.FuncInvoker<T>.invoker1; // 装箱结果
         asyncTask.task = action;
-        asyncTask.state = cancelToken;
+        asyncTask.cancelToken = cancelToken;
         asyncTask.promise = promise;
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
@@ -387,7 +387,7 @@ public sealed class TimerQueue : ITimerQueue
         asyncTask.id = PromiseTask.NextId();
         asyncTask.TaskType = TYPE_ACTION;
         asyncTask.task = action;
-        asyncTask.state = cancelToken;
+        asyncTask.cancelToken = cancelToken;
         asyncTask.promise = promise;
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);
@@ -428,7 +428,7 @@ public sealed class TimerQueue : ITimerQueue
         asyncTask.id = PromiseTask.NextId();
         asyncTask.TaskType = TYPE_ACTION;
         asyncTask.task = action;
-        asyncTask.state = cancelToken;
+        asyncTask.cancelToken = cancelToken;
         asyncTask.promise = promise;
         asyncTask.promiseRid = rid;
         asyncTask.triggerTime = GetTriggerTime(delay);

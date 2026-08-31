@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Wjybxx.BigCat.Util;
@@ -110,6 +111,9 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
     }
 
     public override void Stop() {
+        foreach (var promise in watcherMap.Values.ToArray()) {
+            promise.TrySetCancelled();
+        }
         session2WorkerMap.Clear();
         watcherMap.Clear();
     }
@@ -542,8 +546,9 @@ public class RpcSupport : EventLoopModule, IAgentEventHandler<WorkerEvent>
             request.ServiceId = src.ServiceId;
             request.MethodId = src.MethodId;
             request.InvokeType = src.InvokeType;
+            request.CreateTime = src.CreateTime;
 
-            request.Data = bytesParameters;
+            request.Data = bytesParameters; // sharable属性不拷贝
             DecodeParameter(request);
             list.Add(request);
         }

@@ -57,23 +57,23 @@ public static class TaskBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TaskBuilder<int> NewAction(Action action, CancellationToken cancelToken = default) {
-        return new TaskBuilder<int>(TYPE_ACTION, action, null, cancelToken);
+    public static TaskBuilder<int> NewAction(Action action) {
+        return new TaskBuilder<int>(TYPE_ACTION, action, state: null);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TaskBuilder<int> NewAction(Action<object> action, object? state, CancellationToken cancelToken = default) {
-        return new TaskBuilder<int>(TYPE_ACTION_STATE, action, state, cancelToken);
+    public static TaskBuilder<int> NewAction(Action<object> action, object? state) {
+        return new TaskBuilder<int>(TYPE_ACTION_STATE, action, state);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TaskBuilder<T> NewFunc<T>(Func<T> func, CancellationToken cancelToken = default) {
-        return new TaskBuilder<T>(TYPE_FUNC, func, cancelToken);
+    public static TaskBuilder<T> NewFunc<T>(Func<T> func) {
+        return new TaskBuilder<T>(TYPE_FUNC, func, state: null);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TaskBuilder<T> NewFunc<T>(Func<object, T> func, object state, CancellationToken cancelToken = default) {
-        return new TaskBuilder<T>(TYPE_FUNC_STATE, func, state, cancelToken);
+    public static TaskBuilder<T> NewFunc<T>(Func<object, T> func, object state) {
+        return new TaskBuilder<T>(TYPE_FUNC_STATE, func, state);
     }
 
     #endregion
@@ -103,7 +103,6 @@ public static class TaskBuilder
 /// 2.由于静态工厂方法会导致冗余拷贝，因此我们开放<code>SetAction</code>等方法。
 /// </summary>
 /// <typeparam name="T"></typeparam>
-[StructLayout(LayoutKind.Auto)]
 public struct TaskBuilder<T>
 {
 #nullable disable
@@ -122,21 +121,19 @@ public struct TaskBuilder<T>
     private int _extraDelayFrame;
     private int _priority;
 
-    internal TaskBuilder(int type, object task, object? state, CancellationToken cancelToken = default) : this() {
+    internal TaskBuilder(int type, object task, object? state) : this() {
         this._type = type;
         this._task = task ?? throw new ArgumentNullException(nameof(task));
         this._state = state;
-        this._cancelToken = cancelToken;
         this._options = 0;
     }
 #nullable restore
 
     #region factory
 
-    public void SetAction(Action action, CancellationToken cancelToken = default) {
+    public void SetAction(Action action) {
         _type = TaskBuilder.TYPE_ACTION;
         this._task = action ?? throw new ArgumentNullException(nameof(action));
-        this._state = cancelToken;
     }
 
     public void SetAction(Action<object> action, object ctx) {
@@ -145,10 +142,9 @@ public struct TaskBuilder<T>
         this._state = ctx;
     }
 
-    public void SetFunc(Func<T> func, CancellationToken cancelToken = default) {
+    public void SetFunc(Func<T> func) {
         _type = TaskBuilder.TYPE_FUNC;
         this._task = func ?? throw new ArgumentNullException(nameof(func));
-        this._state = cancelToken;
     }
 
     public void SetFunc(Func<object, T> func, object ctx) {
