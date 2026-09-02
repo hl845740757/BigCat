@@ -5,6 +5,7 @@ using System.Threading;
 using UnityEngine;
 using Wjybxx.BigCat.Assetor;
 using Wjybxx.BigCat.Co;
+using Wjybxx.BigCat.Control;
 using Wjybxx.BigCat.Fx;
 using Wjybxx.BigCat.Gameplay;
 using Wjybxx.BigCat.UI;
@@ -23,12 +24,19 @@ public class GameLauncher : MonoBehaviour
     [NonSerialized] private Node node;
     [NonSerialized] private UnityWorker worker;
     [NonSerialized] private SceneMgr sceneMgr;
+    [NonSerialized] private InputManager inputMgr;
 
     [NonSerialized] private GameObject uiRoot;
     [NonSerialized] private WindowMgr windowMgr;
     [NonSerialized] private int lastFrame;
 
     private void Awake() {
+        // 初始化输入管理器 - 无外部依赖，最先初始化
+        // 注：具体项目需要在此之后创建ActionMap和InputContext并压栈，参考InputManager的类注释
+        inputMgr = new InputManager();
+        InputManager.Inst = inputMgr;
+        inputMgr.Start();
+
         var nodeBuilder = new DefaultNodeBuilder()
         {
             NodeId = NodeId.MakeNodeId(1, 1),
@@ -133,6 +141,8 @@ public class GameLauncher : MonoBehaviour
         if (lastFrame < Time.frameCount) {
             lastFrame = Time.frameCount;
             //
+            // 输入必须在所有读取输入的逻辑之前交付
+            inputMgr.BeginOfFrame(Time.unscaledDeltaTime);
             sceneMgr.BeginOfFrame(Time.unscaledDeltaTime);
             windowMgr.BeginOfFrame(Time.unscaledDeltaTime);
             sceneMgr.EarlyUpdate();
@@ -155,9 +165,12 @@ public class GameLauncher : MonoBehaviour
         //
         sceneMgr.EndOfFrame();
         windowMgr.EndOfFrame();
+        // 输入最后清理，确保所有消费者都读到了本帧的输入
+        inputMgr.EndOfFrame();
     }
 
     private void OnDestroy() {
+        inputMgr.Stop();
         worker.Internal_Stop();
     }
 

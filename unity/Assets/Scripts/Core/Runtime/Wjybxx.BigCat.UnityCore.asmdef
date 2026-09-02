@@ -7,7 +7,8 @@
         "Wjybxx.Commons.Inject",
         "Wjybxx.Dson.Core",
         "Wjybxx.Dson.Codec",
-        "Wjybxx.BTree.Core"
+        "Wjybxx.BTree.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
