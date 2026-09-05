@@ -34,24 +34,21 @@ public readonly struct CoroutineTaskContext
     private readonly CoroutineMgr _coroutineMgr;
     private readonly long _coroutineId;
     private readonly CancellationToken _cancelToken;
-    private readonly object _startArg1;
-    private readonly object _startArg2;
+    private readonly object _startArg;
 
     internal CoroutineTaskContext(CoroutineMgr coroutineMgr, long coroutineId,
-                                  CancellationToken cancelToken, object startArg1, object startArg2) {
+                                  CancellationToken cancelToken, object startArg) {
         this._coroutineMgr = coroutineMgr;
         this._coroutineId = coroutineId;
         this._cancelToken = cancelToken;
-        this._startArg1 = startArg1;
-        this._startArg2 = startArg2;
+        this._startArg = startArg;
     }
 
     #region context
 
     public long CoroutineId => _coroutineId;
     public CancellationToken CancelToken => _cancelToken;
-    public object StartArg1 => _startArg1;
-    public object StartArg2 => _startArg2;
+    public object StartArg => _startArg;
 
     /// <summary>
     /// 协程关联的事件循环
@@ -72,8 +69,7 @@ public readonly struct CoroutineTaskContext
     /// 拆箱上下文
     /// </summary>
     public CoroutineTaskContext<In, Out> Unbox<In, Out>(DataKey<In> inputCodec, DataKey<Out> outputCodec) {
-        return new CoroutineTaskContext<In, Out>(_coroutineMgr, _coroutineId, _cancelToken,
-            _startArg1, _startArg2,
+        return new CoroutineTaskContext<In, Out>(_coroutineMgr, _coroutineId, _cancelToken, _startArg,
             inputCodec, outputCodec);
     }
 
@@ -136,19 +132,16 @@ public readonly struct CoroutineTaskContext<In, Out>
     private readonly CoroutineMgr _coroutineMgr;
     private readonly long _coroutineId;
     private readonly CancellationToken _cancelToken;
-    private readonly object _startArg1;
-    private readonly object _startArg2;
+    private readonly object _startArg;
     private readonly DataKey<In> _inputCodec;
     private readonly DataKey<Out> _outputCodec;
 
     internal CoroutineTaskContext(CoroutineMgr coroutineMgr, long coroutineId, CancellationToken cancelToken,
-                                  object startArg1, object startArg2,
-                                  DataKey<In> inputCodec, DataKey<Out> outputCodec) {
+                                  object startArg, DataKey<In> inputCodec, DataKey<Out> outputCodec) {
         this._coroutineMgr = coroutineMgr;
         this._coroutineId = coroutineId;
         this._cancelToken = cancelToken;
-        this._startArg1 = startArg1;
-        this._startArg2 = startArg2;
+        this._startArg = startArg;
         this._inputCodec = inputCodec;
         this._outputCodec = outputCodec;
     }
@@ -157,8 +150,7 @@ public readonly struct CoroutineTaskContext<In, Out>
 
     public long CoroutineId => _coroutineId;
     public CancellationToken CancelToken => _cancelToken;
-    public object StartArg1 => _startArg1;
-    public object StartArg2 => _startArg2;
+    public object StartArg => _startArg;
 
     /// <summary>
     /// 协程关联的事件循环
@@ -178,8 +170,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     /// </summary>
     /// <returns></returns>
     public CoroutineTaskContext Box() {
-        return new CoroutineTaskContext(_coroutineMgr, _coroutineId,
-            _cancelToken, _startArg1, _startArg2);
+        return new CoroutineTaskContext(_coroutineMgr, _coroutineId, _cancelToken, _startArg);
     }
 
     #endregion
@@ -204,7 +195,7 @@ public readonly struct CoroutineTaskContext<In, Out>
     public ValueFuture<In> ReadAsync(double timeout = 0) {
         return _coroutineMgr.ReadCmdAsync(_coroutineId, _inputCodec, timeout);
     }
-    
+
     /// <summary>
     /// 异步读取一个用户输入（压制异步结果的异常抛出，性能更好）
     /// 

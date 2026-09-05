@@ -48,7 +48,7 @@ public sealed class LineInfo
     /// <summary>
     /// 是否是空白行
     /// </summary>
-    public bool IsEmptyLine => string.IsNullOrWhiteSpace(rawLine);
+    public bool IsBlankLine => string.IsNullOrWhiteSpace(rawLine);
     /// <summary>
     /// 是否是注释行
     /// </summary>

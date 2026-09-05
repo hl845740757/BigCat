@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
@@ -171,14 +172,7 @@ public class DSFileParser
                 _context.AsFile().AddEnclosedElement(inst);
                 // 文件选项
                 if (inst.Name == "@file") {
-                    DsonObject<string> options = inst.DsonValue.AsObject();
-                    dsFile.GetOptions().PutAll(options);
-                    // 更新宏注解缓存
-                    if (options.TryGetValue(DSKeywords.MACRO_TYPES, out DsonValue dsonValue) && dsonValue is DsonArray<string> array) {
-                        foreach (DsonValue ele in array) {
-                            macroTypes.Add(ele.AsString());
-                        }
-                    }
+                    InitFileOptions(inst);
                     break;
                 }
                 return;
@@ -200,6 +194,17 @@ public class DSFileParser
             default: {
                 _context.ClearCommentLines();
                 return;
+            }
+        }
+    }
+
+    private void InitFileOptions(DSInst inst) {
+        DsonObject<string> options = inst.DsonValue.AsObject();
+        dsFile.GetOptions().PutAll(options);
+        // 更新宏注解缓存
+        if (options.TryGetValue(DSKeywords.MACRO_TYPES, out DsonValue dsonValue) && dsonValue is DsonArray<string> array) {
+            foreach (DsonValue ele in array) {
+                macroTypes.Add(ele.AsString());
             }
         }
     }
@@ -538,7 +543,9 @@ public class DSFileParser
             string numberString = opIdx > 0
                 ? content.Substring2(eqIdx + 1, opIdx)
                 : content.Substring2(eqIdx + 1, content.Length - 1); // -1去掉 ';'
-            number = DsonTexts.ParseInt32(numberString.Trim()); // 支持16进制
+            number = ipNumberRegex.IsMatch(numberString)
+                ? ParseIpNumber(numberString) // 支持RGBA或IP样式
+                : DsonTexts.ParseInt32(numberString.Trim()); // 支持16进制
         }
         DSEnumValue enumValue = new DSEnumValue(name, number)
         {
@@ -548,6 +555,20 @@ public class DSFileParser
         // 追加注释
         DrainCommentLine(enumValue, commentLines, lineInfo.comment);
         return enumValue;
+    }
+
+    private static readonly Regex ipNumberRegex = new Regex(@"^(?:\d{1,3}\.){3}\d{1,3}$", RegexOptions.Compiled);
+
+    private static int ParseIpNumber(string strValue) {
+        string[] parts = ObjectUtil.SplitAndTrim(strValue, '.');
+        uint value = (byte.Parse(parts[0]) & 0xFFU) << 24
+                     | (byte.Parse(parts[1]) & 0xFFU) << 16
+                     | (byte.Parse(parts[2]) & 0xFFU) << 8
+                     | (byte.Parse(parts[3]) & 0xFFU);
+        // 枚举只能是int，因此首个byte不能超过127
+        int v = (int)value;
+        if (v < 0) throw new IOException($"invalid enum number: {strValue}");
+        return v;
     }
 
     #endregion

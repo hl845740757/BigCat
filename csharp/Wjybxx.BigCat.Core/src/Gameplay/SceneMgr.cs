@@ -115,7 +115,7 @@ public class SceneMgr
         _coroutineMgr.Start();
     }
 
-    
+
     /// <summary>
     /// 绑定的Worker线程
     /// </summary>
@@ -127,7 +127,7 @@ public class SceneMgr
         get => _injector;
         set => _injector = value;
     }
-    
+
     /// <summary>
     /// 场景循环的时间轴
     /// </summary>

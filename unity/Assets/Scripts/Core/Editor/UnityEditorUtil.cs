@@ -496,7 +496,8 @@ public static class UnityEditorUtil
     }
 
     internal static void SetVectorFieldFlexBasis(VisualElement field, float flexBasis) {
-        VisualElement values = field.childCount == 1 ? field[0] : field[1]; // label为空会从层次中删除
+        // label为空会从层次中删除，也可通过Query查询
+        VisualElement values = field.childCount == 1 ? field[0] : field[1]; 
         for (int i = 0; i < values.childCount; i++) {
             values[i].style.flexGrow = 1;
             values[i].style.flexShrink = 1;

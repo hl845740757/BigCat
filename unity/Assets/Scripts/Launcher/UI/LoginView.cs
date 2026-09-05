@@ -52,7 +52,7 @@ public class LoginView : UINode
         }
         Window.CoroutineMgr.StartCoroutine(LoginAsync, new CoroutineStartArgs()
         {
-            startArg1 = accountText
+            startArg = accountText
         }).Dispose();
         // 未调用Forget的情况下为什么没提示？
         // Window.CoroutineMgr.TimerQueue.ScheduleAction(() => { }, 1);
@@ -63,7 +63,7 @@ public class LoginView : UINode
         await context.Sleep(1);
 
         float timeAfter = Time.time;
-        string accountText = (string)context.StartArg1;
+        string accountText = (string)context.StartArg;
         Debug.Log($"Login, timeElapsed: {timeAfter - timeBefore}, account: {accountText}");
         //
         Window.Close();

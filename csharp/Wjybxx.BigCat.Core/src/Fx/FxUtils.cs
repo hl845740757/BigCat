@@ -192,7 +192,7 @@ public static class FxUtils
                 }
             }
             rType = VoidToObject(rType);
-            RpcMethodInfo methodInfo =  new RpcMethodInfo(
+            RpcMethodInfo methodInfo = new RpcMethodInfo(
                 serviceInterface.Name, method.Name,
                 serviceAnno.ServiceId, methodAnno.MethodId,
                 pType, rType);
@@ -215,7 +215,7 @@ public static class FxUtils
         }
         return result;
     }
-    
+
     private static string FormatMethod(Type serviceInterface, MethodInfo method) {
         return serviceInterface.FullName + "." + method.Name;
     }
@@ -240,11 +240,11 @@ public static class FxUtils
     /// </summary>
     private static bool IsFutureType(Type type) {
         if (!type.IsGenericType) {
-            return type == typeof(Task) || type == typeof(ValueTask) 
-                   || type == typeof(ValueFuture) || type == typeof(IFuture);
+            return type == typeof(Task) || type == typeof(ValueTask)
+                                        || type == typeof(ValueFuture) || type == typeof(IFuture);
         }
         Type genericDefine = type.GetGenericTypeDefinition();
-        return genericDefine == typeof(Task<>) || type == typeof(ValueTask<>) 
+        return genericDefine == typeof(Task<>) || type == typeof(ValueTask<>)
                                                || genericDefine == typeof(ValueFuture<>)
                                                || genericDefine == typeof(IFuture<>);
     }

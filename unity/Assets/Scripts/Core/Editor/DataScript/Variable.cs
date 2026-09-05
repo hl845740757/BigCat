@@ -511,8 +511,9 @@ public sealed class Variable : IDisposable
             return null;
         }
         int length = path.Length;
+        // 项目统一使用'{name}'表示变量 - {0}表示数组0号元素；编辑器下此处不支持查询字典元素
         if (path[0] == '{' && path[length - 1] == '}') {
-            string indexString = path.Substring(0, length - 1).Trim();
+            string indexString = path.Substring(1, length - 2).Trim();
             int index = int.Parse(indexString);
             return values[index];
         }

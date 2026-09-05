@@ -13,7 +13,7 @@ inst @file {
 class Task<T> {
   string name = 1;
   // @PortField{side: left}
-  Task<T> guard = 2; // 条件节点
+  Object guard = 2; // 条件节点，支持Task和ICondition
   int32 flags = 3; // 自定义特征值
 } 
 

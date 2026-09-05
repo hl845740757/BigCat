@@ -72,7 +72,7 @@ internal sealed class Coroutine
     /// <summary>
     /// 关联的异步任务
     ///
-    /// 注：为了避免额外的查询，固存储在协程对象上，由协程管理器维护。
+    /// 注：为了避免额外的查询，故存储在协程对象上，由协程管理器维护。
     /// </summary>
     internal PromiseTask asyncTask;
     /// <summary>
@@ -135,7 +135,7 @@ internal sealed class Coroutine
         get => (ctl & MASK_INTERRUPTED) != 0;
         set => SetCtlBit(MASK_INTERRUPTED, value);
     }
-    
+
     /// <summary>
     /// 协程是否已执行结束
     /// </summary>

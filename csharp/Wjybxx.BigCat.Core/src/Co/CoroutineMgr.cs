@@ -41,7 +41,8 @@ namespace Wjybxx.BigCat.Co
 /// 默认的协程管理器
 ///
 /// 注：由于EventLoop的引用不可变更，因此CoroutineMgr对象池需要按EventLoop管理。
-/// (Coroutine只有在协程退出，且用户销毁上下文的情况下才被回收，因此协程字典在Stop/Reset时不能直接清理 TODO 再考虑池化问题)
+/// (Coroutine只有在协程退出，且用户销毁上下文的情况下才被回收，因此协程字典在Stop/Reset时直接清理是不安全的)
+/// TODO 再考虑池化问题
 /// </summary>
 [NotThreadSafe]
 public class CoroutineMgr : ICoroutineMgr
@@ -151,8 +152,7 @@ public class CoroutineMgr : ICoroutineMgr
         coroutine.cancelToken = startArgs.cancelToken;
 
         CoroutineUserContext userContext = new CoroutineUserContext(this, coroutine.id, startArgs.cancelToken, startArgs.userArg);
-        CoroutineTaskContext taskContext = new CoroutineTaskContext(this, coroutine.id, startArgs.cancelToken,
-            startArgs.startArg1, startArgs.startArg2);
+        CoroutineTaskContext taskContext = new CoroutineTaskContext(this, coroutine.id, startArgs.cancelToken, startArgs.startArg);
 
         _coroutineDic.Add(coroutine.id, coroutine);
         try {
@@ -190,8 +190,7 @@ public class CoroutineMgr : ICoroutineMgr
 
         CoroutineUserContext<T, R> userContext = new CoroutineUserContext<T, R>(this, coroutine.id, startArgs.cancelToken, startArgs.userArg,
             startArgs.inputCodec, startArgs.outputCodec);
-        CoroutineTaskContext<T, R> taskContext = new CoroutineTaskContext<T, R>(this, coroutine.id, startArgs.cancelToken,
-            startArgs.startArg1, startArgs.startArg2,
+        CoroutineTaskContext<T, R> taskContext = new CoroutineTaskContext<T, R>(this, coroutine.id, startArgs.cancelToken, startArgs.startArg,
             startArgs.inputCodec, startArgs.outputCodec);
 
         _coroutineDic.Add(coroutine.id, coroutine);
@@ -264,6 +263,9 @@ public class CoroutineMgr : ICoroutineMgr
         if (!_coroutineDic.TryGetValue(coroutineId, out Coroutine coroutine)) {
             throw new InvalidOperationException("coroutine disposed");
         }
+        if (!coroutine.IsTerminated) {
+            throw new InvalidOperationException("coroutine not terminated");
+        }
         return coroutine.coResult.GetResult(TaskOptions.SUPPRESS_ALL_THROW, true);
     }
 
@@ -279,7 +281,7 @@ public class CoroutineMgr : ICoroutineMgr
     }
 
     /// <summary>
-    /// 销毁用户上下文
+    /// 销毁用户上下文(允许重复调用)
     /// </summary>
     internal void DisposeUserContext(long coroutineId) {
         CheckEventLoop();

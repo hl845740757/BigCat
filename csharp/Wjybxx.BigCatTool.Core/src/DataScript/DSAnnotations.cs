@@ -161,7 +161,7 @@ public static class DSAnnotations
     /// </summary>
     public const string POP_FIELD = "PopField";
     /// <summary>
-    /// 分支字段（标签类字段）(支持多个，自动合并)
+    /// 分支字段（标签类字段）(支持多个，自动合并) TODO 可能需要支持多个控制字段
     ///
     /// 语法：<code>// @BranchField{ ctrl: type, value: 1, displayName: radius, tooltip: "半径" }</code>
     /// - ctrl 控制字段的名字，通常为PopField或枚举字段

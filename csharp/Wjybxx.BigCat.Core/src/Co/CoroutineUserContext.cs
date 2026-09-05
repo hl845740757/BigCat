@@ -71,6 +71,7 @@ public readonly struct CoroutineUserContext : IDisposable
     /// <summary>
     /// 取消协程的执行
     /// 注：如果协程当前正在协程管理器上等待某个任务完成，则可以中断等待，从而立即响应取消信号。
+    /// (还是优先建议使用取消令牌发起取消，因为协程任务无法主动检测该信号)
     /// </summary>
     /// <param name="interruptIfRunning">是否中断协程</param>
     public void Cancel(bool interruptIfRunning = false) {
@@ -154,6 +155,7 @@ public readonly struct CoroutineUserContext<T, R> : IDisposable
     /// <summary>
     /// 取消协程的执行
     /// 注：如果协程当前正在协程管理器上等待某个任务完成，则可以中断等待，从而立即响应取消信号。
+    /// (还是优先建议使用取消令牌发起取消，因为协程任务无法主动检测该信号)
     /// </summary>
     /// <param name="interruptIfRunning">是否中断协程</param>
     public void Cancel(bool interruptIfRunning = false) {
@@ -201,7 +203,7 @@ public readonly struct CoroutineUserContext<T, R> : IDisposable
         return _coroutineMgr.TryReadResult(_coroutineId, _resultCodec, out result);
     }
 
-    
+
     /// <summary>
     /// 异步读取一个结果
     ///
@@ -212,7 +214,7 @@ public readonly struct CoroutineUserContext<T, R> : IDisposable
     public ValueFuture<R> ReadAsync(double timeout = 0) {
         return _coroutineMgr.ReadResultAsync(_coroutineId, _resultCodec, timeout);
     }
-    
+
     /// <summary>
     /// 异步读取一个结果（压制异步结果的异常抛出，性能更好）
     ///

@@ -34,11 +34,7 @@ public struct CoroutineStartArgs
     /// <summary>
     /// 函数启动参数
     /// </summary>
-    public object startArg1;
-    /// <summary>
-    /// 函数启动参数
-    /// </summary>
-    public object startArg2;
+    public object startArg;
     /// <summary>
     /// 用户上下文参数
     /// </summary>
@@ -57,11 +53,7 @@ public struct CoroutineStartArgs<T, R>
     /// <summary>
     /// 函数启动参数
     /// </summary>
-    public object startArg1;
-    /// <summary>
-    /// 函数启动参数
-    /// </summary>
-    public object startArg2;
+    public object startArg;
     /// <summary>
     /// 用户上下文参数
     /// </summary>
