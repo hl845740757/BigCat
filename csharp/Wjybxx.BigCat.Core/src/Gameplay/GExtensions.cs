@@ -21,7 +21,7 @@ using System;
 namespace Wjybxx.BigCat.Gameplay
 {
 /// <summary>
-/// GamePlay部分的扩展逻辑
+/// Gameplay部分的扩展逻辑
 /// </summary>
 public static class GExtensions
 {

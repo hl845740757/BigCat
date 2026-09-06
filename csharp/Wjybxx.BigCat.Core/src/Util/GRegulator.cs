@@ -27,6 +27,7 @@ namespace Wjybxx.BigCat.Util
 /// 它使用Timer的调度算法，但Timer是回调式的，Regulator是轮询式的。
 ///
 /// 该实现是<see cref="Regulator"/>的特化实现，时间是double类型，类型是值类型。
+/// (调节器通常是不需要共享的，因此可以使用值类型)
 /// </summary>
 [StructLayout(LayoutKind.Auto)]
 public struct GRegulator

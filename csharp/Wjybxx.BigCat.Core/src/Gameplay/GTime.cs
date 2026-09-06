@@ -25,7 +25,7 @@ namespace Wjybxx.BigCat.Gameplay
 /// <summary>
 /// World模拟用的计时器
 /// </summary>
-public sealed class GTime : IReadonlyTime, ITime
+public class GTime : IReadonlyTime, ITime
 {
     private double timeScale = 1;
 

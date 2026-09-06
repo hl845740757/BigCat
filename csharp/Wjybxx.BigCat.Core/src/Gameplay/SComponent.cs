@@ -112,6 +112,7 @@ public abstract class SComponent
 
     public Scene Scene => _scene;
     public ComponentStatus Status => _status;
+    public GTime Time => Scene.Time;
 
     #endregion
 

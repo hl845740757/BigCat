@@ -20,6 +20,10 @@ using System;
 
 namespace Wjybxx.BigCat.Gameplay
 {
+/// <summary>
+/// 计时器
+/// 注：计时器通常是需要共享的，因此避免使用结构体。
+/// </summary>
 public sealed class GTimePiece : ITimeProvider
 {
     private int _frameCount;

@@ -17,7 +17,6 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Threading;
 using Wjybxx.Commons.Concurrent;
 using Wjybxx.Commons.Inject;
 
@@ -81,7 +80,7 @@ public interface IWorker : IDisruptorEventLoop<WorkerEvent>
     /// <summary>
     /// 返回node设置的数据。
     /// node为管理worker，需要保存Worker的一些上下文。
-    /// 这些数据只应该node读写，用户不应该访问，不保证对外的可见性。
+    /// 存储在Worker上已避免额外的映射，用户不应该访问，不保证对外的可见性。
     /// </summary>
     WorkerControlData ControlData { get; }
 

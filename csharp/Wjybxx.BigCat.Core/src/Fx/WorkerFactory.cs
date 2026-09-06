@@ -19,7 +19,7 @@
 namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
-/// index和controlData需要设置到<see cref="WorkerBuilder"/>上。
+/// index和controlData需要设置到<see cref="WorkerBuilder"/>上，传递给Worker的构造函数。
 /// </summary>
 public delegate IWorker WorkerFactory(INode parent, int index, WorkerControlData controlData);
 }

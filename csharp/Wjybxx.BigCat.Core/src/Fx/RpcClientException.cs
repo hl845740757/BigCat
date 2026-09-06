@@ -17,9 +17,7 @@
 #endregion
 
 using System;
-using System.Threading;
 using Wjybxx.Commons.Concurrent;
-using Wjybxx.Commons.Ex;
 
 namespace Wjybxx.BigCat.Fx
 {

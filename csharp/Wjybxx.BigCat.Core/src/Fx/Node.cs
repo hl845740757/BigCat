@@ -69,12 +69,15 @@ public class Node : DisruptorEventLoop<WorkerEvent>, INode
         }
         children = new IWorker[numberChildren];
         for (int idx = 0; idx < numberChildren; idx++) {
-            WorkerControlData controlData = new WorkerControlData();
+            WorkerControlData controlData = new WorkerControlData()
+            {
+                manualClose = builder.ManualClose
+            };
             IWorker eventLoop = workerFactory(this, idx, controlData);
-            if (eventLoop.Parent != this) throw new InvalidOperationException("the parent of worker is illegal");
+            if (eventLoop.Parent != this)
+                throw new InvalidOperationException("the parent of worker is illegal");
             if (eventLoop.ControlData != controlData)
                 throw new InvalidOperationException("the controlData of worker is illegal");
-            if (builder.ManualClose != null) controlData.manualClose = builder.ManualClose;
             children[idx] = eventLoop;
         }
         readonlyChildren = children.ToImmutableList2();

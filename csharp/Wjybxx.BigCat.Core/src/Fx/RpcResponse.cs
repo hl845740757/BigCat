@@ -19,8 +19,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using Wjybxx.Commons;
-using Wjybxx.Commons.Concurrent;
-using Wjybxx.Commons.Ex;
 using Wjybxx.Commons.Pool;
 
 namespace Wjybxx.BigCat.Fx
