@@ -87,16 +87,16 @@ public class Fixed64Test
         Assert.That((Fixed64.One / Fixed64.FromRaw(-30_000)).RawValue, Is.EqualTo(-3_333));
         Assert.That((Fixed64.FromRaw(-10_000) / Fixed64.FromRaw(30_000)).RawValue, Is.EqualTo(-3_333));
         Assert.That((Fixed64.FromRaw(-10_000) / Fixed64.FromRaw(-30_000)).RawValue, Is.EqualTo(3_333));
-        Assert.That((Fixed64.FromRaw(-1) * Fixed64.FromRaw(5_000)).RawValue, Is.EqualTo(0));
-        Assert.That((Fixed64.FromRaw(-3) * Fixed64.FromRaw(5_000)).RawValue, Is.EqualTo(-1));
-        Assert.That((Fixed64.MaxValue * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale));
-        Assert.That((Fixed64.MinValue * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MinValue / Fixed64.Scale));
+        Assert.That((Fixed64.FromRaw(-1) * Fixed64.FromRaw(5_000)).RawValue, Is.EqualTo(-1));
+        Assert.That((Fixed64.FromRaw(-3) * Fixed64.FromRaw(5_000)).RawValue, Is.EqualTo(-2));
+        Assert.That((Fixed64.MaxValue * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale + 1));
+        Assert.That((Fixed64.MinValue * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MinValue / Fixed64.Scale - 1));
         Assert.That((Fixed64.FromRaw(4_294_967_296L) * Fixed64.FromRaw(4_294_967_296L)).RawValue,
             Is.EqualTo(1_844_674_407_370_955L));
         Assert.Throws<DivideByZeroException>(() => _ = Fixed64.One / Fixed64.Zero);
 
         Fixed64 large = Fixed64.FromRaw(long.MaxValue);
-        Assert.That((large * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale));
+        Assert.That((large * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale + 1));
         Assert.That((Fixed64.MaxValue / Fixed64.One).RawValue, Is.EqualTo(long.MaxValue));
         Assert.That((Fixed64.MaxValue * Fixed64.One).RawValue, Is.EqualTo(long.MaxValue));
         Assert.Throws<OverflowException>(() => _ = Fixed64.MaxValue * Fixed64.FromRaw(Fixed64.Scale + 1));
@@ -144,6 +144,39 @@ public class Fixed64Test
         AssertSigns(long.MaxValue, Fixed64.Scale + 1, AssertMultiply);
     }
 
+    [TestCase(1L, 5_000L, 0L, 1L, 1L)]
+    [TestCase(4_294_970_001L, 5_000L, 2_147_055_503L, 2_147_485_001L, 2_147_914_498L)]
+    [TestCase(5_000_000_001L, 5_000_005_000L, 2_500_002_500_000_000L, 2_500_002_500_500_001L, 2_500_002_501_000_001L)]
+    public void TestMultiplyRounding(long leftRaw, long midpoint, long below, long tie, long above) {
+        // 覆盖快路径、宽乘法高半部为零及非零，余数分别为4999、5000和5001。
+        long[] expectedValues = { below, tie, above };
+        for (int offset = -1; offset <= 1; offset++) {
+            long expected = expectedValues[offset + 1];
+            AssertSigns(leftRaw, midpoint + offset, (left, right) => {
+                long signedExpected = (left < 0) != (right < 0) ? -expected : expected;
+                Assert.That((Fixed64.FromRaw(left) * Fixed64.FromRaw(right)).RawValue,
+                    Is.EqualTo(signedExpected), $"multiply({left}, {right})");
+                AssertMultiply(left, right);
+            });
+        }
+    }
+
+    [Test]
+    public void TestMultiplyRoundingOverflow() {
+        const long leftRaw = 9_222_449_791_875_588_249L;
+        const long rightRaw = 10_001;
+        // 截断商恰为MaxValue，余数8249触发进位溢出。
+        AssertSigns(leftRaw, rightRaw, (left, right) => {
+            Assert.Throws<OverflowException>(() => _ = Fixed64.FromRaw(left) * Fixed64.FromRaw(right));
+            AssertMultiply(left, right);
+        });
+        AssertSigns(leftRaw - 1, rightRaw, (left, right) => {
+            Fixed64 expected = (left < 0) != (right < 0) ? Fixed64.MinValue : Fixed64.MaxValue;
+            Assert.That(Fixed64.FromRaw(left) * Fixed64.FromRaw(right), Is.EqualTo(expected));
+            AssertMultiply(left, right);
+        });
+    }
+
     [Test]
     public void TestDivideMagnitudeBoundaries() {
         const long b = 1L << 32;
@@ -156,6 +189,40 @@ public class Fixed64Test
                 AssertSigns(dividend, divisor, AssertDivide);
             }
         }
+    }
+
+    [TestCase(2L, 40_000L, 0L)]
+    [TestCase(2_000_000_000_000_002L, 40_000L, 500_000_000_000_000L)]
+    [TestCase(2_251_799_813_947_392L, 5_242_880_000L, 4_294_967_296L)]
+    [TestCase(2_000_400_000_000_000_000L, 8_000_000_000_000_000_000L, 2_500L)]
+    public void TestDivideRounding(long midpoint, long divisor, long truncated) {
+        // 覆盖快路径、宽分子单字除法及Knuth归一化左移31位和1位。
+        for (int offset = -1; offset <= 1; offset++) {
+            long expected = offset < 0 ? truncated : truncated + 1;
+            AssertSigns(midpoint + offset, divisor, (left, right) => {
+                long signedExpected = (left < 0) != (right < 0) ? -expected : expected;
+                Assert.That((Fixed64.FromRaw(left) / Fixed64.FromRaw(right)).RawValue,
+                    Is.EqualTo(signedExpected), $"divide({left}, {right})");
+                AssertDivide(left, right);
+            });
+        }
+    }
+
+    [Test]
+    public void TestDivideRoundingOverflow() {
+        const long leftRaw = 9_222_449_699_651_090_330L;
+        const long divisor = 9_999;
+        // 截断商恰为MaxValue，但余数超过半数，进位后越界。
+        AssertSigns(leftRaw, divisor, (left, right) => {
+            Assert.Throws<OverflowException>(() => _ = Fixed64.FromRaw(left) / Fixed64.FromRaw(right));
+            AssertDivide(left, right);
+        });
+        // 相邻输入进位后恰好到达合法幅值上界。
+        AssertSigns(leftRaw - 1, divisor, (left, right) => {
+            Fixed64 expected = (left < 0) != (right < 0) ? Fixed64.MinValue : Fixed64.MaxValue;
+            Assert.That(Fixed64.FromRaw(left) / Fixed64.FromRaw(right), Is.EqualTo(expected));
+            AssertDivide(left, right);
+        });
     }
 
     [Test]
@@ -227,7 +294,7 @@ public class Fixed64Test
             AssertSigns(wideDividend, 1 + right % (b - 1), AssertDivide);
             AssertSigns(wideDividend, b + right % ((1L << 45) - b), AssertDivide);
             AssertSigns(wideDividend, (1L << 45) + right % (long.MaxValue - (1L << 45)), AssertDivide);
-            // 小商和小除数同时采样，补充截断至零与结果溢出的情况。
+            // 小商和小除数同时采样，补充舍入至零与结果溢出的情况。
             AssertSigns(left % Fixed64.Scale, b + right % (long.MaxValue - b), AssertDivide);
             AssertSigns(wideDividend, 1 + right % Fixed64.Scale, AssertDivide);
         }
@@ -286,11 +353,14 @@ public class Fixed64Test
     }
 
     /// <summary>
-    /// 先以无限精度运算并向零截断，仅最终结果越界时才应抛出异常。
+    /// 先以无限精度运算并按半数远离零舍入，仅最终结果越界时才应抛出异常。
     /// </summary>
     private static void AssertMultiply(long leftRaw, long rightRaw) {
         string message = $"multiply({leftRaw}, {rightRaw})";
-        BigInteger product = (BigInteger)leftRaw * rightRaw / Fixed64.Scale;
+        BigInteger product = BigInteger.DivRem((BigInteger)leftRaw * rightRaw, Fixed64.Scale, out BigInteger remainder);
+        if (BigInteger.Abs(remainder) * 2 >= Fixed64.Scale) {
+            product += (leftRaw < 0) != (rightRaw < 0) ? -1 : 1;
+        }
         if (product > long.MinValue && product <= long.MaxValue) {
             Assert.That((Fixed64.FromRaw(leftRaw) * Fixed64.FromRaw(rightRaw)).RawValue, Is.EqualTo((long)product), message);
         } else {
@@ -307,7 +377,10 @@ public class Fixed64Test
             Assert.Throws<DivideByZeroException>(() => _ = Fixed64.FromRaw(leftRaw) / Fixed64.FromRaw(rightRaw), message);
             return;
         }
-        BigInteger quotient = (BigInteger)leftRaw * Fixed64.Scale / rightRaw;
+        BigInteger quotient = BigInteger.DivRem((BigInteger)leftRaw * Fixed64.Scale, rightRaw, out BigInteger remainder);
+        if (BigInteger.Abs(remainder) * 2 >= BigInteger.Abs(rightRaw)) {
+            quotient += (leftRaw < 0) != (rightRaw < 0) ? -1 : 1;
+        }
         if (quotient > long.MinValue && quotient <= long.MaxValue) {
             Assert.That((Fixed64.FromRaw(leftRaw) / Fixed64.FromRaw(rightRaw)).RawValue, Is.EqualTo((long)quotient), message);
         } else {

@@ -136,7 +136,7 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     }
 
     public static Fixed64 operator -(Fixed64 value) {
-        return new Fixed64(-value.RawValue); // MinValue和MaxValue对称
+        return new Fixed64(-value.RawValue);
     }
 
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
@@ -150,7 +150,7 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     }
 
     /// <summary>
-    /// 计算两个定点数的乘积，小数部分向零截断。
+    /// 计算两个定点数的乘积，舍入到最接近的定点数，半数远离零。
     /// </summary>
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
     public static Fixed64 operator *(Fixed64 left, Fixed64 right) {
@@ -159,14 +159,23 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
         ulong x = GetMagnitude(left.RawValue);
         ulong y = GetMagnitude(right.RawValue);
         // 常用数值无需构造完整的128位乘积。
-        ulong quotient = (x | y) <= uint.MaxValue
-            ? x * y / (ulong)Scale
-            : UInt128Parts.DivideByScale(UInt128Parts.Multiply(x, y));
+        ulong quotient;
+        ulong remainder;
+        if ((x | y) <= uint.MaxValue) {
+            ulong product = x * y;
+            quotient = product / (ulong)Scale;
+            remainder = product - quotient * (ulong)Scale;
+        } else {
+            quotient = UInt128Parts.Divide(UInt128Parts.Multiply(x, y), (ulong)Scale, out remainder);
+        }
+        if (remainder >= (ulong)Scale / 2) {
+            quotient = checked(quotient + 1UL);
+        }
         return new Fixed64(FromMagnitude(quotient, negative));
     }
 
     /// <summary>
-    /// 计算两个定点数的商，小数部分向零截断。
+    /// 计算两个定点数的商，舍入到最接近的定点数，半数远离零。
     /// </summary>
     /// <exception cref="DivideByZeroException">right为零。</exception>
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
@@ -176,9 +185,19 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
         bool negative = (left.RawValue < 0) != (right.RawValue < 0);
         ulong x = GetMagnitude(left.RawValue);
         ulong divisor = GetMagnitude(right.RawValue);
-        ulong quotient = x <= ulong.MaxValue / (ulong)Scale
-            ? x * (ulong)Scale / divisor
-            : UInt128Parts.Divide(UInt128Parts.Multiply(x, (ulong)Scale), divisor);
+        ulong quotient;
+        ulong remainder;
+        if (x <= ulong.MaxValue / (ulong)Scale) {
+            ulong numerator = x * (ulong)Scale;
+            quotient = numerator / divisor;
+            remainder = numerator - quotient * divisor;
+        } else {
+            quotient = UInt128Parts.Divide(UInt128Parts.Multiply(x, (ulong)Scale), divisor, out remainder);
+        }
+        // 幅值按半数进位，再恢复符号；避免计算两倍余数。
+        if (remainder >= divisor - remainder) {
+            quotient = checked(quotient + 1UL);
+        }
         return new Fixed64(FromMagnitude(quotient, negative));
     }
 
@@ -233,7 +252,8 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong GetMagnitude(long value) {
-        return (ulong)Math.Abs(value);
+        if (value == long.MinValue) throw new OverflowException();
+        return value < 0 ? (ulong)(-value) : (ulong)value;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -283,32 +303,22 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
         }
 
         /// <summary>
-        /// 计算无符号128位整数除以缩放因子的64位商。
+        /// 计算无符号128位整数除以非零除数的64位商和余数，商超出范围时抛出异常。
         /// </summary>
-        public static ulong DivideByScale(UInt128Parts dividend) {
-            if (dividend.High == 0) return dividend.Low / (ulong)Scale;
-            if (dividend.High >= (ulong)Scale) throw new OverflowException();
-
-            // 高半部小于除数，最高两个商位必为零，只需计算低两个32位商位。
-            ulong partial = (dividend.High << 32) | (dividend.Low >> 32);
-            ulong q1 = partial / (ulong)Scale;
-            ulong remainder = partial - q1 * (ulong)Scale;
-            partial = (remainder << 32) | (dividend.Low & Mask32);
-            ulong q0 = partial / (ulong)Scale;
-            return (q1 << 32) | q0;
-        }
-
-        /// <summary>
-        /// 计算缩放后的原始值幅值除以非零除数的64位商，超出范围时抛出异常。
-        /// </summary>
-        public static ulong Divide(UInt128Parts dividend, ulong divisor) {
+        public static ulong Divide(UInt128Parts dividend, ulong divisor, out ulong remainder) {
+            if (dividend.High == 0) {
+                ulong quotient = dividend.Low / divisor;
+                remainder = dividend.Low - quotient * divisor;
+                return quotient;
+            }
             if (dividend.High >= divisor) throw new OverflowException();
             if (divisor <= Mask32) {
                 ulong partial = (dividend.High << 32) | (dividend.Low >> 32);
                 ulong q1 = partial / divisor;
-                ulong remainder = partial - q1 * divisor;
+                remainder = partial - q1 * divisor;
                 partial = (remainder << 32) | (dividend.Low & Mask32);
                 ulong q0 = partial / divisor;
+                remainder = partial - q0 * divisor;
                 return (q1 << 32) | q0;
             }
 
@@ -329,6 +339,9 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
             // 数学余数小于除数；中间的96位乘减按模2^64计算即可得到完整余数。
             ulong middle = unchecked((high << 32) + (low >> 32) - quotientHigh * normalizedDivisor);
             ulong quotientLow = DivideDigit(middle, low & Mask32, divisorHigh, divisorLow);
+            // 最终余数仍按模2^64计算，再撤销归一化左移。
+            ulong normalizedRemainder = unchecked((middle << 32) + (low & Mask32) - quotientLow * normalizedDivisor);
+            remainder = normalizedRemainder >> shift;
             return (quotientHigh << 32) | quotientLow;
         }
 
@@ -360,5 +373,4 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
         }
     }
 }
-
 }
