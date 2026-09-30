@@ -26,13 +26,12 @@ namespace Wjybxx.BigCat.Editor.DataScript
 public class VarAABBCodec : IVarCodec
 {
     public void WriteVariable(IDsonWriter<string> writer, Variable variable, DataGraphHelper helper) {
-        const Double4Style style = Double4Style.Vector | Double4Style.Len3;
         Vector3 min = variable[0].vector3Value;
         Vector3 size = variable[1].vector3Value - min;
         // min + size的可维护性更高
         writer.WriteStartObject();
-        writer.WriteDouble4("min", min.ToDouble4(), style);
-        writer.WriteDouble4("size", size.ToDouble4(), style);
+        writer.WriteDouble4("min", min.ToDouble4(), "xyz");
+        writer.WriteDouble4("size", size.ToDouble4(), "xyz");
         writer.WriteEndObject();
     }
 

@@ -887,8 +887,7 @@ public class CoroutineTest
     /// </summary>
     [Test]
     public void TestStartArgs() {
-        object arg1 = new object();
-        object arg2 = "arg2";
+        object taskArg = new object();
         object userArg = 42;
         object observedArg1 = null;
         object observedArg2 = null;
@@ -899,14 +898,12 @@ public class CoroutineTest
             switch (frame) {
                 case 1: {
                     ctx = _coroutineMgr.StartCoroutine(async context => {
-                        observedArg1 = context.StartArg1;
-                        observedArg2 = context.StartArg2;
+                        observedArg1 = context.StartArg;
                         observedId = context.CoroutineId;
                         await context.ReadAsync();
                     }, new CoroutineStartArgs<int, int>()
                     {
-                        startArg1 = arg1,
-                        startArg2 = arg2,
+                        startArg = taskArg,
                         userArg = userArg,
                         inputCodec = IntInputCodec,
                         outputCodec = IntOutputCodec,
@@ -914,8 +911,7 @@ public class CoroutineTest
                     break;
                 }
                 case 2: {
-                    Assert.AreSame(arg1, observedArg1, "startArg1应传递到协程上下文");
-                    Assert.AreEqual(arg2, observedArg2, "startArg2应传递到协程上下文");
+                    Assert.AreSame(taskArg, observedArg1, "startArg1应传递到协程上下文");
                     Assert.AreEqual(userArg, ctx.UserData, "userArg应传递到用户上下文");
                     Assert.AreEqual(ctx.CoroutineId, observedId, "两侧上下文的协程ID应一致");
                     ctx.Cancel(true);

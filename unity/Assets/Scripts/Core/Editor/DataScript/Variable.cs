@@ -122,6 +122,11 @@ public sealed class Variable : IDisposable
         set => longValue = value ? 1 : 0;
     }
 
+    public Fxp64 fxp64Value {
+        get => new Fxp64(longValue);
+        set => longValue = value.rawValue;
+    }
+
     #region struct
 
     // Debug窗口默认不展示，以避免异常
@@ -335,6 +340,38 @@ public sealed class Variable : IDisposable
             values[1].intValue = value.v1;
             if (values.Count > 2) values[2].intValue = value[2];
             if (values.Count > 3) values[3].intValue = value[3];
+        }
+    }
+    
+    public Long4 long4Value {
+        get {
+            long x = values[0].longValue;
+            long y = values[1].longValue;
+            long z = values.Count > 2 ? values[2].longValue : 0;
+            long w = values.Count > 3 ? values[3].longValue : 0;
+            return new Long4(x, y, z, w);
+        }
+        set {
+            values[0].longValue = value.v0;
+            values[1].longValue = value.v1;
+            if (values.Count > 2) values[2].longValue = value[2];
+            if (values.Count > 3) values[3].longValue = value[3];
+        }
+    }
+    
+    public Fxp4 fxp4Value {
+        get {
+            Fxp64 x = values[0].fxp64Value;
+            Fxp64 y = values[1].fxp64Value;
+            Fxp64 z = values.Count > 2 ? values[2].fxp64Value : Fxp64.Zero;
+            Fxp64 w = values.Count > 3 ? values[3].fxp64Value : Fxp64.Zero;
+            return new Fxp4(x, y, z, w);
+        }
+        set {
+            values[0].fxp64Value = value.v0;
+            values[1].fxp64Value = value.v1;
+            if (values.Count > 2) values[2].fxp64Value = value[2];
+            if (values.Count > 3) values[3].fxp64Value = value[3];
         }
     }
 

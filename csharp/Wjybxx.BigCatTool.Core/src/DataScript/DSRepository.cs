@@ -85,8 +85,9 @@ public sealed class DSRepository
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT32).AddCodecAliases("i", "int32"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_INT64).AddCodecAliases("L", "int64"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FLOAT).AddCodecAliases("f", "float"));
-
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_DOUBLE).AddCodecAliases("d", "double"));
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_FXP64).AddCodecAliases("fx", "fxp64"));
+
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_BOOL).AddCodecAliases("b", "bool"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_STRING).AddCodecAliases("s", "string"));
         AddBuiltinType(DSNamedType.NewClassType(DSKeywords.TYPE_NAME_BYTES).AddCodecAliases("bin", "binary"));

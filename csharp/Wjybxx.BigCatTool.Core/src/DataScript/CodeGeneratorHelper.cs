@@ -247,19 +247,6 @@ public class CodeGeneratorHelper
         if (NeedClearSstiMethod(namedType, options)) {
             typeBuilder.AddSpec(BuildClearSstiCacheMethod(namedType, options, sstiFieldList));
         }
-        // 编解码钩子在属性后
-        // 所有字段都在reader构造函数中解码，可以降低生成代码的复杂度 -- 尤其是有字段读写代理的时候
-        // 为保证代码的正确性，所有的类都生成BeforeEncode和AfterDecode方法，否则子类无法确定超类是否包含该方法
-        if (NeedCodecMethod(namedType, options)) {
-            typeBuilder.AddSpec(MacroSpec.Get("region", "codec"));
-            CodeGeneratorCfg.ClassCodecCfg? classCfg = GetClassCfg(namedType);
-            typeBuilder.AddSpec(BuildReaderConstructor(namedType, classCfg));
-            typeBuilder.AddSpec(BuildReadFieldsMethod(namedType, classCfg));
-            typeBuilder.AddSpec(BuildReadFieldMethod(namedType, classCfg));
-            typeBuilder.AddSpec(BuildWriteFieldsMethod(namedType, classCfg));
-            BuildCodecHookMethods(namedType, classCfg, typeBuilder);
-            typeBuilder.AddSpec(MacroSpec.Get("endregion"));
-        }
 
         // 允许在Copy方法前插入代码
         BeforeGenerateCopyMethod(namedType, typeBuilder, options);
@@ -378,6 +365,9 @@ public class CodeGeneratorHelper
         if (IsNonSerializedField(field, fieldOptions)) {
             fieldBuilder.AddAttribute(ATTRIBUTE_NON_SERIALIZED);
         }
+        if (field.GetAnnotation("SerializeReference") != null) {
+            fieldBuilder.AddAttribute(ATTRIBUTE_SERIALIZE_REFERENCE);
+        }
         CodeBlock initializer = GetFieldInitializer(field, fieldOptions, fieldTypeName);
         if (initializer != null) {
             fieldBuilder.Initializer(initializer);
@@ -428,7 +418,8 @@ public class CodeGeneratorHelper
     /// 是否是不需要序列化的字段
     /// </summary>
     private static bool IsNonSerializedField(DSField field, DsonObject<string> fieldOptions) {
-        return Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED);
+        return field.GetAnnotation(DSAnnotations.NON_SERIALIZED) != null
+               || Annotation.GetBool(fieldOptions, DSAnnotations.KEY_NON_SERIALIZED);
     }
 
     /// <summary>
@@ -472,11 +463,12 @@ public class CodeGeneratorHelper
     /// 获取ssti字段的名字和关联的属性名
     ///
     /// 如果返回的属性名和原字段的属性名相同，则删除原字段的属性 -- 默认相同
+    /// (为避免序列化冲突，不再覆盖字段的属性名)
     /// </summary>
     protected virtual void GetSstiFieldAndPropertyName(string fieldName, string propertyName,
                                                        out string sstiFieldName, out string sstiPropertyName) {
-        sstiFieldName = fieldName + "Cache";
-        sstiPropertyName = propertyName;
+        sstiFieldName = fieldName + "Text";
+        sstiPropertyName = propertyName + "Text";
     }
 
     #endregion
@@ -508,204 +500,6 @@ public class CodeGeneratorHelper
             if (codecCfg.name == fullName) return codecCfg;
         }
         return null;
-    }
-
-    private static CodeGeneratorCfg.FieldCodecCfg? GetFieldCodecCfg(CodeGeneratorCfg.ClassCodecCfg? classCfg, string fieldName) {
-        if (classCfg == null) return null;
-        foreach (CodeGeneratorCfg.FieldCodecCfg fieldCodecCfg in classCfg.fieldProxies) {
-            if (fieldCodecCfg.name == fieldName) return fieldCodecCfg;
-        }
-        return null;
-    }
-
-    private ClassName? GetCodecProxyTypeName(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        ClassName typeName = (ClassName)GetTypeName(namedType);
-        // CodecProxy需要和原类型保持相同的泛型参数
-        return classCfg != null && !string.IsNullOrWhiteSpace(classCfg.proxy)
-            ? ClassName.Get(generatorCfg.codecProxyNs, classCfg.proxy, typeName.typeArguments)
-            : null;
-    }
-
-    /// <summary>
-    /// 1.为保证代码的正确性，所有的类都生成BeforeEncode和AfterDecode方法 -- 子类无法确定超类是否包含该方法
-    /// 2.不调用基类的钩子方法，因为钩子方法是委托给外部静态类的；若有需要，可手动调用基类静态代理的代码；这可以减少大量的空方法调用
-    /// </summary>
-    private void BuildCodecHookMethods(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCodecCfg, TypeSpec.Builder typeBuilder) {
-        if (namedType.IsValueType && (classCodecCfg == null || classCodecCfg.hooks.Count == 0)) {
-            return;
-        }
-        ClassName codecProxy = GetCodecProxyTypeName(namedType, classCodecCfg);
-        {
-            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_BEFORE_ENCODE)
-                .AddModifiers(Modifiers.Public)
-                .AddParameter(TYPE_NAME_CONVERTER_OPTIONS, "options");
-            if (namedType.BaseType != null) {
-                methodBuilder.AddModifiers(Modifiers.Override);
-                // methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_BEFORE_ENCODE);
-            } else if (!namedType.IsValueType) {
-                methodBuilder.AddModifiers(Modifiers.Virtual);
-            }
-            if (classCodecCfg != null && classCodecCfg.hooks.TryGetValue(METHOD_BEFORE_ENCODE, out string methodName)) {
-                methodBuilder.codeBuilder.AddStatement("$T.$L(this, options)", codecProxy, methodName);
-            }
-            typeBuilder.AddSpec(methodBuilder.Build(true));
-        }
-        {
-            MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_AFTER_DECODE)
-                .AddModifiers(Modifiers.Public)
-                .AddParameter(TYPE_NAME_CONVERTER_OPTIONS, "options");
-            if (namedType.BaseType != null) {
-                methodBuilder.AddModifiers(Modifiers.Override);
-                // methodBuilder.codeBuilder.AddStatement("base.$L(options)", METHOD_AFTER_DECODE);
-            } else if (!namedType.IsValueType) {
-                methodBuilder.AddModifiers(Modifiers.Virtual);
-            }
-            if (classCodecCfg != null && classCodecCfg.hooks.TryGetValue(METHOD_AFTER_DECODE, out string methodName)) {
-                methodBuilder.codeBuilder.AddStatement("$T.$L(this, options)", codecProxy, methodName);
-            }
-            typeBuilder.AddSpec(methodBuilder.Build(true));
-        }
-    }
-
-    /// <summary>
-    /// 由于要支持读写代理，我们重写WriteObject方法
-    ///
-    /// 这里的Writer就不像APT那般还支持Style了，非必须功能，避免增加维护工作量...
-    /// </summary>
-    private MethodSpec BuildWriteFieldsMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_WRITE_FIELDS)
-            .AddModifiers(Modifiers.Public)
-            .AddParameter(TYPE_NAME_WRITER, "writer");
-        if (namedType.BaseType != null) {
-            methodBuilder.AddModifiers(Modifiers.Override);
-            methodBuilder.codeBuilder.AddStatement("base.$L(writer)", methodBuilder.name);
-        } else if (!namedType.IsValueType) {
-            methodBuilder.AddModifiers(Modifiers.Virtual);
-        }
-        //
-        ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
-        foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
-            if (IsNonSerializedField(field, fieldOptions)) {
-                continue;
-            }
-            CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.Name);
-            if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.writeProxy)) {
-                // 由用户编码 ItemCodecProxy.WriteType(inst, writer)
-                methodBuilder.codeBuilder.AddStatement("$T.$L(this, writer, $S)", codecProxy, fieldCodecCfg.writeProxy, field.Name);
-                continue;
-            }
-            string fieldName = GetFieldName(field.Name);
-            TypeName fieldTypeName = GetTypeName(field.Type);
-            string writeMethodName = GetWriteMethodName(field.Type, fieldTypeName);
-
-            if (writeMethodName == METHOD_NAME_WRITE_OBJECT || writeMethodName == METHOD_NAME_WRITE_ENUM) {
-                // 写Object时传入类型信息和Style -- 会自动匹配泛型方法
-                methodBuilder.codeBuilder.AddStatement("writer.$L($S, this.$L, ($T)$L)",
-                    writeMethodName, field.Name, fieldName,
-                    TYPE_NAME_SERIALIZE_FEATURES, (int)GetEncodeFeatures(fieldOptions));
-            } else {
-                methodBuilder.codeBuilder.AddStatement("writer.$L($S, this.$L)",
-                    writeMethodName, field.Name, fieldName);
-            }
-        }
-        return methodBuilder.Build(true);
-    }
-
-    private MethodSpec BuildReaderConstructor(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? _) {
-        MethodSpec.Builder constructorBuilder = MethodSpec.NewConstructorBuilder()
-            .AddModifiers(Modifiers.Public)
-            .AddParameter(TYPE_NAME_READER, "reader");
-        if (namedType.BaseType != null) {
-            constructorBuilder.ConstructorInvoker(CodeBlock.Of("base(reader)"));
-        } else if (namedType.IsValueType) {
-            constructorBuilder.ConstructorInvoker(CodeBlock.Of("this()")); // 结构体在使用前必须完成基础的初始化
-        }
-        return constructorBuilder.Build();
-    }
-
-    private MethodSpec BuildReadFieldsMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_READ_FIELDS)
-            .AddModifiers(Modifiers.Public)
-            .AddParameter(TYPE_NAME_READER, "reader");
-        if (namedType.BaseType != null) {
-            methodBuilder.AddModifiers(Modifiers.Override);
-            methodBuilder.codeBuilder.AddStatement("base.$L(reader)", methodBuilder.name);
-        } else if (!namedType.IsValueType) {
-            methodBuilder.AddModifiers(Modifiers.Virtual);
-        }
-        // Array格式顺序解码 - 由APT负责调用该方法
-        ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
-        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
-        foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
-            if (IsNonSerializedField(field, fieldOptions)) {
-                continue;
-            }
-            string fieldName = GetFieldName(field.Name);
-            TypeName fieldTypeName = GetTypeName(field.Type);
-            string readMethodName = GetReadMethodName(field.Type, fieldTypeName);
-            //
-            CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.Name);
-            if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
-                codeBuilder.AddStatement("$T.$L(this, reader, $S)", codecProxy, fieldCodecCfg.readProxy, field.Name);
-                continue;
-            }
-            // Enum/Object需要传入类型参数
-            if (readMethodName == METHOD_NAME_READ_OBJECT || readMethodName == METHOD_NAME_READ_ENUM) {
-                codeBuilder.AddStatement("this.$L = reader.$L<$T>(($T)$L)", fieldName, readMethodName, fieldTypeName,
-                    TYPE_NAME_DESERIALIZE_FEATURES, (int)GetDecodeFeatures(fieldOptions));
-            } else {
-                codeBuilder.AddStatement("this.$L = reader.$L()", fieldName, readMethodName);
-            }
-        }
-        return methodBuilder.Build(true);
-    }
-
-    private MethodSpec BuildReadFieldMethod(DSNamedType namedType, CodeGeneratorCfg.ClassCodecCfg? classCfg) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder(METHOD_NAME_READ_FIELD)
-            .AddModifiers(Modifiers.Public)
-            .Returns(TypeName.BOOL)
-            .AddParameter(TYPE_NAME_READER, "reader")
-            .AddParameter(TypeName.STRING, "name");
-
-        CodeBlock.Builder codeBuilder = methodBuilder.codeBuilder;
-        if (namedType.BaseType != null) {
-            methodBuilder.AddModifiers(Modifiers.Override);
-            codeBuilder.AddStatement("if (base.$L(reader, name)) return true", methodBuilder.name);
-        } else if (!namedType.IsValueType) {
-            methodBuilder.AddModifiers(Modifiers.Virtual);
-        }
-        codeBuilder.BeginControlFlow("switch (name)");
-
-        ClassName? codecProxy = GetCodecProxyTypeName(namedType, classCfg);
-        foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
-            DsonObject<string> fieldOptions = GetOptions(field);
-            if (IsNonSerializedField(field, fieldOptions)) {
-                continue;
-            }
-            string fieldName = GetFieldName(field.Name);
-            TypeName fieldTypeName = GetTypeName(field.Type);
-            string readMethodName = GetReadMethodName(field.Type, fieldTypeName);
-
-            codeBuilder.Add("case $S: ", field.Name);
-            // 外部读写代理 -- 不能操作private字段（伪readonly字段）
-            CodeGeneratorCfg.FieldCodecCfg? fieldCodecCfg = GetFieldCodecCfg(classCfg, field.Name);
-            if (fieldCodecCfg != null && !string.IsNullOrWhiteSpace(fieldCodecCfg.readProxy)) {
-                codeBuilder.AddStatement("$T.$L(this, reader, $S); return true", codecProxy, fieldCodecCfg.readProxy, field.Name);
-                continue;
-            }
-            // Enum/Object需要传入类型参数
-            if (readMethodName == METHOD_NAME_READ_OBJECT || readMethodName == METHOD_NAME_READ_ENUM) {
-                codeBuilder.AddStatement("this.$L = reader.$L<$T>(($T)$L); return true", fieldName, readMethodName, fieldTypeName,
-                    TYPE_NAME_DESERIALIZE_FEATURES, (int)GetDecodeFeatures(fieldOptions));
-            } else {
-                codeBuilder.AddStatement("this.$L = reader.$L(); return true", fieldName, readMethodName);
-            }
-        }
-        codeBuilder.AddStatement("default: return false");
-        codeBuilder.EndControlFlow();
-        return methodBuilder.Build();
     }
 
     #endregion
@@ -1167,10 +961,6 @@ public class CodeGeneratorHelper
 
     public static readonly ClassName TYPE_NAME_IEQUATABLE = ClassName.Get(typeof(IEquatable<>));
     public static readonly ClassName TYPE_NAME_COLLECTION_UTIL = ClassName.Get(typeof(CollectionUtil));
-
-    public static readonly ClassName TYPE_NAME_WRITER = ClassName.Get(typeof(IDsonObjectWriter));
-    public static readonly ClassName TYPE_NAME_READER = ClassName.Get(typeof(IDsonObjectReader));
-    public static readonly ClassName TYPE_NAME_CONVERTER_OPTIONS = ClassName.Get(typeof(ConverterOptions));
     // ssti
     private static readonly ClassName TYPE_NAME_SST_MGR = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.SstMgr");
     private static readonly ClassName TYPE_NAME_IMMUTABLE_LIST_STRING = ClassName.Get(typeof(ImmutableList<string>));
@@ -1188,9 +978,6 @@ public class CodeGeneratorHelper
 
     public static AttributeSpec BuildCodecAttribute(DSNamedType namedType, StringBuilder sb) {
         var attributeBuilder = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZABLE);
-        if (!namedType.IsEnum) {
-            attributeBuilder.AddMember("SkipFields", "new[] { $S }", "*");
-        }
         DsonObject<string> options = GetOptions(namedType);
         if (options.ContainsKey(DSAnnotations.KEY_ALIAS)) {
             sb.Append("new[] { ");
@@ -1227,72 +1014,6 @@ public class CodeGeneratorHelper
             attributeBuilder.AddMember("DecodeFeatures", "($T)$L", TYPE_NAME_DESERIALIZE_FEATURES, (int)decodeFeatures);
         }
         return attributeBuilder.Build();
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
-    // 这些方法名有特殊类逻辑 -- 外部需要测试
-    private const string METHOD_NEW_INSTANCE = "NewInstance";
-    private const string METHOD_AFTER_DECODE = "AfterDecode";
-    private const string METHOD_BEFORE_ENCODE = "BeforeEncode";
-    private const string METHOD_NAME_WRITE_OBJECT = "WriteObject";
-    private const string METHOD_NAME_WRITE_FIELDS = "WriteFields";
-    private const string METHOD_NAME_READ_OBJECT = "ReadObject";
-    private const string METHOD_NAME_READ_FIELDS = "ReadFields";
-    private const string METHOD_NAME_READ_FIELD = "ReadField";
-
-    private const string METHOD_NAME_WRITE_ENUM = "WriteEnum";
-    private const string METHOD_NAME_READ_ENUM = "ReadEnum";
-
-    /** 获取read字段的方法名 */
-    private static string GetReadMethodName(DSTypeElement fieldType, TypeName typeName) {
-        if (typeName == TypeName.INT) return "ReadInt";
-        if (typeName == TypeName.LONG) return "ReadLong";
-        if (typeName == TypeName.FLOAT) return "ReadFloat";
-        if (typeName == TypeName.DOUBLE) return "ReadDouble";
-        if (typeName == TypeName.BOOL) return "ReadBool";
-        if (typeName == TypeName.STRING) return "ReadString";
-
-        if (typeName == TypeName.UINT) return "ReadUInt";
-        if (typeName == TypeName.ULONG) return "ReadULong";
-        if (typeName == TypeName.BYTE) return "ReadByte";
-        if (typeName == TypeName.SBYTE) return "ReadSByte";
-        if (typeName == TypeName.SHORT) return "ReadShort";
-        if (typeName == TypeName.USHORT) return "ReadUShort";
-        if (typeName == TypeName.CHAR) return "ReadChar";
-
-        if (fieldType.IsEnum) return "ReadEnum";
-        if (typeName == TYPE_NAME_BYTE_ARRAY) return "ReadBytes";
-        if (typeName == TYPE_NAME_BINARY) return "ReadBinary";
-        if (typeName == TYPE_NAME_PTR) return "ReadPtr";
-        if (typeName == TYPE_NAME_DATETIME) return "ReadDateTime";
-        if (typeName == TYPE_NAME_TIMESTAMP) return "ReadTimestamp";
-        return "ReadObject";
-    }
-
-    /** 获取write字段的方法名 */
-    private static string GetWriteMethodName(DSTypeElement fieldType, TypeName typeName) {
-        if (typeName == TypeName.INT) return "WriteInt";
-        if (typeName == TypeName.LONG) return "WriteLong";
-        if (typeName == TypeName.FLOAT) return "WriteFloat";
-        if (typeName == TypeName.DOUBLE) return "WriteDouble";
-        if (typeName == TypeName.BOOL) return "WriteBool";
-        if (typeName == TypeName.STRING) return "WriteString";
-
-        if (typeName == TypeName.UINT) return "WriteUInt";
-        if (typeName == TypeName.ULONG) return "WriteULong";
-        if (typeName == TypeName.BYTE) return "WriteByte";
-        if (typeName == TypeName.SBYTE) return "WriteSByte";
-        if (typeName == TypeName.SHORT) return "WriteShort";
-        if (typeName == TypeName.USHORT) return "WriteUShort";
-        if (typeName == TypeName.CHAR) return "WriteChar";
-
-        if (fieldType.IsEnum) return "WriteEnum";
-        if (typeName == TYPE_NAME_BYTE_ARRAY) return "WriteBytes";
-        if (typeName == TYPE_NAME_BINARY) return "WriteBinary";
-        if (typeName == TYPE_NAME_PTR) return "WritePtr";
-        if (typeName == TYPE_NAME_DATETIME) return "WriteDateTime";
-        if (typeName == TYPE_NAME_TIMESTAMP) return "WriteTimestamp";
-        return "WriteObject";
     }
 
     #endregion

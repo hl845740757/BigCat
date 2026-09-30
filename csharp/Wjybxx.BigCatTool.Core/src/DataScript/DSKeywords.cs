@@ -109,6 +109,7 @@ public static class DSKeywords
     public const string TYPE_BOOL = "bool";
     public const string TYPE_STRING = "string";
     public const string TYPE_BYTES = "bytes";
+    public const string TYPE_FXP64 = "fxp64"; // 64位定点数(万分比)
     // 内建结构
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
@@ -130,6 +131,7 @@ public static class DSKeywords
     public static readonly ClassName TYPE_NAME_BOOL = ClassName.Get(GLOBAL, TYPE_BOOL);
     public static readonly ClassName TYPE_NAME_STRING = ClassName.Get(GLOBAL, TYPE_STRING);
     public static readonly ClassName TYPE_NAME_BYTES = ClassName.Get(GLOBAL, TYPE_BYTES);
+    public static readonly ClassName TYPE_NAME_FXP64 = ClassName.Get(GLOBAL, TYPE_FXP64);
     // 内建结构
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(GLOBAL, TYPE_DATETIME);
     public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(GLOBAL, TYPE_TIMESTAMP);

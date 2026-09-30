@@ -73,6 +73,7 @@ public static class DSAnnotations
     /// - encodeFeatures 序列化特征值，使用枚举名配置，忽略大小写 - <see cref="SerializeFeatures"/>
     /// - decodeFeatures 反序列化特征值，使用枚举名配置，忽略大小写 - <see cref="DeserializeFeatures"/>
     /// - projection 类型投影，将自定义数据结构投影到其它数据结构，以覆盖数据结构的编辑器属性；投影类型在生成代码时自动跳过
+    /// - elementNames double4/long4/fxp4的每个分量的名字
     ///
     /// <h3>用于字段时</h3>
     /// <code>// @Options{ nonSerialized: true, nonEqual: true, ssti: true, encodeFeatures: [NumberHex] }</code>
@@ -207,6 +208,9 @@ public static class DSAnnotations
     /// </summary>
     public const string CANDIDATES = "Candidates";
 
+    public const string SERIALIZE_REFERENCE = "SerializeReference";
+    public const string NON_SERIALIZED = "NonSerialized";
+
     #region 注解属性的键
 
     public const string KEY_CS = "cs";
@@ -227,6 +231,7 @@ public static class DSAnnotations
     public const string KEY_ENCODE_FEATURES = "encodeFeatures";
     public const string KEY_DECODE_FEATURES = "decodeFeatures";
     public const string KEY_PROJECTION = "projection";
+    public const string KEY_ELEMENT_NAMES = "elementNames";
     public const string KEY_NAME = "name";
 
     // Editor

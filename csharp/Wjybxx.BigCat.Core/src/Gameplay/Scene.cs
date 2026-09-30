@@ -237,10 +237,10 @@ public sealed class Scene
     /// 注：由场景的组件(System/Manager)销毁或回收所有的游戏对象。
     /// </summary>
     public void Stop() {
-        if (_status < ComponentStatus.Running || _status >= ComponentStatus.Shutdown) {
+        if (_status < ComponentStatus.Running || _status >= ComponentStatus.Stopping) {
             return;
         }
-        _status = ComponentStatus.Shutdown;
+        _status = ComponentStatus.Stopping;
         ClearUpdateList();
         // Stop - 逆序
         for (int index = _components.Count - 1; index >= 0; index--) {
@@ -266,7 +266,7 @@ public sealed class Scene
             logger.Warn(ex, "agent stop caught exception");
         }
 
-        _status = ComponentStatus.Terminated;
+        _status = ComponentStatus.Stopped;
         _sceneMgr?.OnTerminated(this);
     }
 

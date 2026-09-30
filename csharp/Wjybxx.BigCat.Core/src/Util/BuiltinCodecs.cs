@@ -33,13 +33,12 @@ public class BuiltinCodecs
     public class EnumSetCodec<T> : IDsonCodec<EnumSet<T>> where T : struct, Enum
     {
         public void WriteObject(IDsonObjectWriter writer, EnumSet<T> inst, Type declaredType, SerializeFeatures features) {
-            const SerializeFeatures style = SerializeFeatures.WriteAsArray | SerializeFeatures.ObjectFlow;
-            writer.WriteStartArray(typeof(EnumSet<T>), declaredType, style);
+            writer.WriteStartArray(typeof(EnumSet<T>), declaredType, SerializeFeatures.ObjectFlow);
             inst.WriteObject(writer, features);
             writer.WriteEndArray();
         }
 
-        public EnumSet<T> ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+        public EnumSet<T> ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
             reader.ReadStartArray(typeof(EnumSet<T>));
             EnumSet<T> result = EnumSet<T>.NewInstance(reader);
             reader.ReadEndArray();
@@ -50,13 +49,12 @@ public class BuiltinCodecs
     public class EnumSet64Codec<T> : IDsonCodec<EnumSet64<T>> where T : struct, Enum
     {
         public void WriteObject(IDsonObjectWriter writer, EnumSet64<T> inst, Type declaredType, SerializeFeatures features) {
-            const SerializeFeatures style = SerializeFeatures.WriteAsArray | SerializeFeatures.ObjectFlow;
-            writer.WriteStartArray(typeof(EnumSet64<T>), declaredType, style);
+            writer.WriteStartArray(typeof(EnumSet64<T>), declaredType, SerializeFeatures.ObjectFlow);
             inst.WriteObject(writer, features);
             writer.WriteEndArray();
         }
 
-        public EnumSet64<T> ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+        public EnumSet64<T> ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
             reader.ReadStartArray(typeof(EnumSet64<T>));
             EnumSet64<T> result = EnumSet64<T>.NewInstance(reader);
             reader.ReadEndArray();

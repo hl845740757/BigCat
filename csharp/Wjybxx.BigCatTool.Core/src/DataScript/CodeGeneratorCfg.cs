@@ -81,10 +81,7 @@ public class CodeGeneratorCfg
         public List<FieldCodecCfg> fieldProxies = new();
         /// <summary>
         /// 对象解码钩子 -- 详细可阅读<see cref="DsonSerializableAttribute"/>
-        ///
-        /// 目前支持：
-        /// 1. BeforeEncode 解码前的钩子
-        /// 2. AfterDecode 解码后的钩子
+        /// （新版序列化删除了Before/After钩子函数，可考虑自定义func扩展）
         /// </summary>
         public Dictionary<string, string> hooks = new();
     }

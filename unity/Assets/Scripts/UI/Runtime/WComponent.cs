@@ -81,12 +81,12 @@ public abstract class WComponent
 
     /** 调用{@link #stop()}方法 */
     internal void InvokeStop() {
-        _status = ComponentStatus.Shutdown;
+        _status = ComponentStatus.Stopping;
         try {
             Stop();
         }
         finally {
-            _status = ComponentStatus.Terminated;
+            _status = ComponentStatus.Stopped;
         }
     }
 

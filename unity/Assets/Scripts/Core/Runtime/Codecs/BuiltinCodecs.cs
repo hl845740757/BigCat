@@ -32,16 +32,15 @@ public static class BuiltinCodecs
     public class AABBCodec : IDsonCodec<MinMaxAABB>
     {
         public void WriteObject(IDsonObjectWriter writer, MinMaxAABB inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector | SerializeFeatures.Double4Len3;
             writer.WriteStartObject(typeof(MinMaxAABB));
-            writer.WriteDouble4("min", inst.min.ToDouble4(), features);
-            writer.WriteDouble4("size", inst.Size.ToDouble4(), features);
+            writer.WriteDouble4("min", inst.min.ToDouble4(), "xyz");
+            writer.WriteDouble4("size", inst.Size.ToDouble4(), "xyz");
             writer.WriteEndObject();
         }
 
-        public MinMaxAABB ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
+        public MinMaxAABB ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
             // 支持Min+Max、Min+Size
-            reader.ReadStartObject(typeof(MinMaxAABB), DeserializeFeatures.PassiveReading);
+            reader.ReadStartObject(typeof(MinMaxAABB), features);
             Vector3 min = reader.ReadDouble4("min").ToVector3();
             Vector3 max = reader.ReadName() switch
             {
@@ -57,14 +56,11 @@ public static class BuiltinCodecs
     public class Euler32Codec : IDsonCodec<Euler32>
     {
         public void WriteObject(IDsonObjectWriter writer, Euler32 inst, Type declaredType, SerializeFeatures _) {
-            const SerializeFeatures features = SerializeFeatures.Double4AsVector
-                                               | SerializeFeatures.Double4AsInt
-                                               | SerializeFeatures.Double4Len3;
-            writer.WriteDouble4(new Double4(inst.x, inst.y, inst.z), features);
+            writer.WriteLong4(new Long4(inst.x, inst.y, inst.z), "xyz");
         }
 
-        public Euler32 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features, Func<object> factory = null) {
-            Double4 quad = reader.ReadDouble4();
+        public Euler32 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
+            Long4 quad = reader.ReadLong4();
             return new Euler32((int)quad.v0, (int)quad.v1, (int)quad.v2);
         }
     }

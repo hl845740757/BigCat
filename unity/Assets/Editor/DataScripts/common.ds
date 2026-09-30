@@ -7,14 +7,14 @@ inst @file {
 
 // ---------------------------------------------------------
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector2, V2], encodeFeatures: "Double4AsVector | Double4Len2" }
+// @Options{ alias: [Vector2, V2], encodeFeatures: "Double4Len2", elementNames: "xy" }
 // @Editor{ displayType: Vector2, dsonType: Double4 }
 struct Vector2 {
     float x = 1;
     float y = 2;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector3, V3], encodeFeatures: "Double4AsVector | Double4Len3" }
+// @Options{ alias: [Vector3, V3], encodeFeatures: "Double4Len3", elementNames: "xyz" }
 // @Editor{ displayType: Vector3, dsonType: Double4 }
 struct Vector3 {
     float x = 1;
@@ -22,7 +22,7 @@ struct Vector3 {
     float z = 3;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector4, V4], encodeFeatures: "Double4AsVector" }
+// @Options{ alias: [Vector4, V4], elementNames: "xyzw" }
 // @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Vector4 {
     float x = 1;
@@ -31,7 +31,7 @@ struct Vector4 {
     float w = 4;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Quaternion, Quat], encodeFeatures: "Double4AsVector" }
+// @Options{ alias: [Quaternion, Quat], elementNames: "xyzw" }
 // @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Quaternion {
     float x = 1;
@@ -40,22 +40,22 @@ struct Quaternion {
     float w = 4;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector2Int, VInt2], encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len2" }
-// @Editor{ displayType: Vector2Int, dsonType: Double4 }
+// @Options{ alias: [Vector2Int, VInt2], encodeFeatures: "Double4Len2", elementNames: "xy" }
+// @Editor{ displayType: Vector2Int, dsonType: Long4 }
 struct Vector2Int {
     int32 x = 1;
     int32 y = 2;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector3Int, VInt3], encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len3" }
-// @Editor{ displayType: Vector3Int, dsonType: Double4 }
+// @Options{ alias: [Vector3Int, VInt3], encodeFeatures: "Double4Len3", elementNames: "xyz" }
+// @Editor{ displayType: Vector3Int, dsonType: Long4 }
 struct Vector3Int {
     int32 x = 1;
     int32 y = 2;
     int32 z = 3;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ encodeFeatures: "Double4AsArray" }
+// @Options{ elementNames: "xywh" }
 // @Editor{ displayType: Rect, dsonType: Double4 }
 struct Rect {
   float x = 1;
@@ -64,8 +64,8 @@ struct Rect {
   float h = 4;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ encodeFeatures: "Double4AsArray | Double4AsInt" }
-// @Editor{ displayType: RectInt, dsonType: Double4 }
+// @Options{ elementNames: "xywh" }
+// @Editor{ displayType: RectInt, dsonType: Long4 }
 struct RectInt {
   int32 x = 1;
   int32 y = 2;
@@ -74,7 +74,7 @@ struct RectInt {
 }
 
 // @Namespace{cs: "UnityEngine"}
-// @Options{ encodeFeatures: "Double4AsRgba" }
+// @Options{ elementNames: "rgba" }
 // @Editor { displayType : Color, dsonType: Double4 }
 struct Color {
   float r = 1;
@@ -84,8 +84,8 @@ struct Color {
 }
 // Color32编辑器下输出为4个整数的可维护性更好，Euler32同理 - 二进制下也不会占用太多开销
 // @Namespace{cs: "UnityEngine"}
-// @Options{ style: flow, encodeFeatures: "Double4AsRgba | Double4AsInt"  }
-// @Editor { displayType : Color32, dsonType: Double4 }
+// @Options{ elementNames: "rgba" }
+// @Editor { displayType : Color32, dsonType: Long4 }
 struct Color32 {
   int32 r = 1;
   int32 g = 2;
@@ -93,8 +93,8 @@ struct Color32 {
   int32 a = 4;
 }
 // @Namespace{cs: "Wjybxx.BigCat.Core"}
-// @Options{ style: flow, encodeFeatures: "Double4AsVector | Double4AsInt | Double4Len3" }
-// @Editor { displayType : Euler32 }
+// @Options{ encodeFeatures: "Double4Len3", elementNames: "xyz" }
+// @Editor { displayType : Euler32, dsonType: Long4 }
 struct Euler32 {
   int32 x = 1;
   int32 y = 2;

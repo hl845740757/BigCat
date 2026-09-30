@@ -237,10 +237,10 @@ public sealed class Window
     /// (即关闭窗口)
     /// </summary>
     internal void Stop() {
-        if (_status < ComponentStatus.Running || _status >= ComponentStatus.Shutdown) {
+        if (_status < ComponentStatus.Running || _status >= ComponentStatus.Stopping) {
             return;
         }
-        _status = ComponentStatus.Shutdown;
+        _status = ComponentStatus.Stopping;
         _reentryId++;
         try {
             Hide();
@@ -252,7 +252,7 @@ public sealed class Window
         StopComponents();
         ReleaseAssets(assetHandles);
 
-        _status = ComponentStatus.Terminated;
+        _status = ComponentStatus.Stopped;
         windowMgr?.OnTerminated(this);
     }
 

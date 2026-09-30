@@ -421,6 +421,7 @@ public class DsonGenerator : ISheetProcessor
             DSKeywords.TYPE_FLOAT => new DsonFloat(DsonTexts.ParseFloat(rawValue)),
             DSKeywords.TYPE_DOUBLE => new DsonDouble(DsonTexts.ParseDouble(rawValue)),
             DSKeywords.TYPE_BOOL => new DsonBool(DsonTexts.ParseBool(rawValue)),
+            DSKeywords.TYPE_FXP64 => new DsonFxp64(DsonTexts.ParseFx4(rawValue)),
 
             DSKeywords.TYPE_DATETIME => new DsonDateTime(ParseDateTime(rawValue)),
             DSKeywords.TYPE_TIMESTAMP => new DsonTimestamp(Timestamp.Parse(rawValue)),
@@ -664,7 +665,7 @@ public class DsonGenerator : ISheetProcessor
     private static ObjectPtr ParsePointer(string rawValue) {
         if (rawValue.StartsWith("@ptr")) { // 缩写形式
             rawValue = rawValue.Substring(4).Trim();
-            return new ObjectPtr(long.Parse(rawValue));
+            return new ObjectPtr(int.Parse(rawValue));
         }
         // 对象形式，替换字符串转换为普通DsonObject
         rawValue = rawValue.Replace("@ptr", "");
@@ -672,7 +673,7 @@ public class DsonGenerator : ISheetProcessor
         //
         string? collection = null;
         string? localPath = null;
-        long localId = 0;
+        int localId = 0;
         int type = 0;
         DsonValue dsonValue;
         if (dsonObject.TryGetValue(ObjectPtr.NamesCollection, out dsonValue)) {
@@ -682,7 +683,7 @@ public class DsonGenerator : ISheetProcessor
             localPath = dsonValue.AsString();
         }
         if (dsonObject.TryGetValue(ObjectPtr.NamesLocalId, out dsonValue)) {
-            localId = dsonValue.AsNumber().LongValue;
+            localId = dsonValue.AsNumber().IntValue;
         }
         if (dsonObject.TryGetValue(ObjectPtr.NamesType, out dsonValue)) {
             type = dsonValue.AsNumber().IntValue;

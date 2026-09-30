@@ -179,13 +179,17 @@ public sealed class VariableCfg
     /// </summary>
     public DsonType dsonType = DsonType.EndOfObject;
     /// <summary>
-    /// 数据节点的特征值，用于搜索栏字段
-    /// </summary>
-    public Features nodeFeatures = Features.EnablePort;
-    /// <summary>
     /// 序列化特征值（缓存，以避免频繁解析）
     /// </summary>
     public SerializeFeatures encodeFeatures;
+    /// <summary>
+    /// Double4/Long4/Fxp4的每个分量名
+    /// </summary>
+    public string elementNames;
+    /// <summary>
+    /// 数据节点的特征值，用于搜索栏字段
+    /// </summary>
+    public Features nodeFeatures = Features.EnablePort;
     /// <summary>
     /// List/Map/Nullable元素的展示配置
     /// </summary>
@@ -219,7 +223,9 @@ public sealed class VariableCfg
             throw new Exception("element must be OriginDefine");
         }
         VariableCfg cfg = new VariableCfg();
-        cfg.encodeFeatures = DSUtil.GetEncodeFeatures(DSUtil.GetOptions(element));
+        DsonObject<string> options = DSUtil.GetOptions(element);
+        cfg.encodeFeatures = DSUtil.GetEncodeFeatures(options);
+        cfg.elementNames = Annotation.GetString(options, DSAnnotations.KEY_ELEMENT_NAMES);
         //
         Annotation annotation = element.GetAnnotation(DSAnnotations.EDITOR);
         if (annotation != null) {

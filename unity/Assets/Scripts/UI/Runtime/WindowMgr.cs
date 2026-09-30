@@ -341,7 +341,7 @@ public class WindowMgr
     public void Open(string windowAddr, WindowOpenArgs openArgs) {
         openArgs ??= new WindowOpenArgs();
         if (_addr2WindowMap.TryGetValue(windowAddr, out Window window)) {
-            if (window.Status != ComponentStatus.Terminated && !openArgs.reopen) {
+            if (window.Status != ComponentStatus.Stopped && !openArgs.reopen) {
                 return; // 拒绝请求
             }
             Reopen(window, openArgs);

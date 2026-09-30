@@ -80,7 +80,7 @@ public class BaseTypeExample
 [DsonSerializable]
 public class BeanExample : BaseTypeExample
 {
-    [DsonProperty(Name = "_name", EncodeFeatures = SerializeFeatures.StringAutoQuote)]
+    [DsonProperty(Name = "_name", EncodeFeatures = SerializeFeatures.StringUnquote)]
     private string? name;
 
     private int age;
@@ -108,7 +108,7 @@ public class BeanExample : BaseTypeExample
     /// <summary>
     /// 测试泛型集合
     /// </summary>
-    [DsonProperty(Impl = typeof(HashSet<>), EncodeFeatures = SerializeFeatures.ObjectFlow)]
+    [DsonProperty(EncodeFeatures = SerializeFeatures.ObjectFlow)]
     public ISet<string>? hashSet2;
 
     /// <summary>

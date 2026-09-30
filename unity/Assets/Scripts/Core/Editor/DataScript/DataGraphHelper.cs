@@ -160,6 +160,14 @@ public class DataGraphHelper
                 }
                 return;
             }
+            case DSKeywords.TYPE_FXP64: {
+                if (dsonValue.DsonType == DsonType.Fxp64) {
+                    variable.fxp64Value = dsonValue.AsFxp64();
+                } else if (dsonValue.DsonType == DsonType.Double) {
+                    variable.longValue = Fxp64.FromDouble(dsonValue.AsDouble()).rawValue;
+                }
+                return;
+            }
             case DSKeywords.TYPE_BOOL: {
                 if (dsonValue.DsonType == DsonType.String) {
                     variable.boolValue = dsonValue.AsString() == "true"; // 不测试0和1
@@ -173,10 +181,6 @@ public class DataGraphHelper
             case DSKeywords.TYPE_STRING: {
                 variable.stringValue = dsonValue.DsonType switch
                 {
-                    DsonType.Int32 => dsonValue.AsInt32().ToString(),
-                    DsonType.Int64 => dsonValue.AsInt64().ToString(),
-                    DsonType.Float => dsonValue.AsFloat().ToString(CultureInfo.InvariantCulture),
-                    DsonType.Double => dsonValue.AsDouble().ToString(CultureInfo.InvariantCulture),
                     DsonType.String => dsonValue.AsString(),
                     DsonType.Binary => dsonValue.AsBinary().ToHexString(),
                     _ => null
@@ -214,19 +218,26 @@ public class DataGraphHelper
         // ObjectPtr/ObjectPath
         if (typeCfg.dsonType == DsonType.Pointer) {
             ObjectPtr pointer = dsonValue.AsPointer();
-            variable.objectPathValue = new ObjectPath(pointer.Collection, pointer.LocalPath, (int)pointer.LocalId, pointer.Type);
+            variable.objectPathValue = new ObjectPath(pointer.Collection, pointer.LocalPath, pointer.LocalId, pointer.Type);
             return;
         }
         // Double4 - 逻辑层可能是Integer4
         if (typeCfg.dsonType == DsonType.Double4) {
             Double4 quad = dsonValue.AsDouble4();
-            if (IsInteger4(variable)) {
-                variable.integer4Value = new Integer4((int)quad[0], (int)quad[1], (int)quad[2], (int)quad[3]);
-            } else {
-                variable.double4Value = quad;
-            }
+            variable.double4Value = quad;
             return;
         }
+        if (typeCfg.dsonType == DsonType.Long4) {
+            Long4 quad = dsonValue.AsLong4();
+            variable.long4Value = quad;
+            return;
+        }
+        if (typeCfg.dsonType == DsonType.Fxp4) {
+            Fxp4 quad = dsonValue.AsFxp4();
+            variable.fxp4Value = quad;
+            return;
+        }
+
         // Nullable
         if (DSUtil.IsNullableType(varType)) {
             // ResetVariable(variable); // 强制清理，确保正确覆盖 - Nullable的路径是稳定的，可不清理
@@ -448,20 +459,20 @@ public class DataGraphHelper
             writer.WritePtr(new ObjectPtr(path.collection, path.localPath, path.localId, path.type));
             return;
         }
-        // Double4 - TODO 零值跳过
+        // Double4
         if (typeCfg.dsonType == DsonType.Double4) {
-            SerializeFeatures doubleFeatures = features & SerializeFeatures.MaskDouble4Styles;
-            if (doubleFeatures == 0) {
-                doubleFeatures = typeCfg.encodeFeatures;
-            }
-            if (IsInteger4(variable)) {
-                Integer4 quad = variable.integer4Value;
-                writer.WriteDouble4(new Double4(quad[0], quad[1], quad[2], quad[3]), doubleFeatures.ToDouble4Style());
-            } else {
-                writer.WriteDouble4(variable.double4Value, doubleFeatures.ToDouble4Style());
-            }
+            writer.WriteDouble4(variable.double4Value, typeCfg.elementNames);
             return;
         }
+        if (typeCfg.dsonType == DsonType.Long4) {
+            writer.WriteLong4(variable.long4Value, typeCfg.elementNames);
+            return;
+        }
+        if (typeCfg.dsonType == DsonType.Fxp4) {
+            writer.WriteFxp4(variable.fxp4Value, typeCfg.elementNames);
+            return;
+        }
+
         // Nullable - 导出时拆箱
         if (DSUtil.IsNullableType(varType)) {
             WriteVariable(writer, variable[0], name);
@@ -510,25 +521,15 @@ public class DataGraphHelper
         if (variable.isRoot && objectStyle == ObjectStyle.Flow) {
             textWriter = writer as DsonTextWriter;
         }
-        if (IsWriteAsArray(variable)) {
-            writer.WriteStartArray(objectStyle);
-            WriteHeader(writer, variable);
-            foreach (Variable nestedVar in variable.values) {
-                string fieldName = nestedVar.defineInfo.Name;
-                WriteVariable(writer, nestedVar, fieldName);
-            }
-            writer.WriteEndArray();
-        } else {
-            writer.WriteStartObject(objectStyle);
-            WriteHeader(writer, variable);
-            textWriter?.PrintBeforeName("\n  ");
-            foreach (Variable nestedVar in variable.values) {
-                string fieldName = nestedVar.defineInfo.Name;
-                WriteVariable(writer, nestedVar, fieldName);
-            }
-            textWriter?.Println();
-            writer.WriteEndObject();
+        writer.WriteStartObject(objectStyle);
+        WriteHeader(writer, variable);
+        textWriter?.PrintBeforeName("\n  ");
+        foreach (Variable nestedVar in variable.values) {
+            string fieldName = nestedVar.defineInfo.Name;
+            WriteVariable(writer, nestedVar, fieldName);
         }
+        textWriter?.Println();
+        writer.WriteEndObject();
     }
 
     private void WriteMap(IDsonWriter<string> writer, Variable variable) {
@@ -668,10 +669,6 @@ public class DataGraphHelper
         return (features & SerializeFeatures.ObjectFlow) != 0
             ? ObjectStyle.Flow
             : ObjectStyle.Indent;
-    }
-
-    private static bool IsWriteAsArray(Variable variable) {
-        return (variable.cfg.encodeFeatures & SerializeFeatures.WriteAsArray) != 0;
     }
 
     private static bool IsInteger4(Variable variable) {
