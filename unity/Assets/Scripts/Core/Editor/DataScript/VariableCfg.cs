@@ -162,15 +162,20 @@ public sealed class VariableCfg
     /// 最大高度
     /// </summary>
     public DsonNumber maxHeight;
+    
     /// <summary>
     /// 标签边距 - 表单模式下生效
     /// </summary>
     public DsonNumber labelMargin;
     /// <summary>
-    /// Vector等原子结构的标签编辑，也适用于Pair
+    /// Vector等原子结构的标签边距，也适用于Pair
     /// </summary>
     public List<DsonNumber> labelMargins;
-
+    /// <summary>
+    /// Vector等原子结构的标签
+    /// </summary>
+    public List<string> labels;
+    
     /// <summary>
     /// 投影Dson类型
     /// 
@@ -299,6 +304,7 @@ public sealed class VariableCfg
         varCfg.isFolder = listCfg.isFolder;
         varCfg.pathType = listCfg.pathType;
         varCfg.labelMargins = listCfg.labelMargins;
+        varCfg.labels = listCfg.labels;
 
         varCfg.popNames = listCfg.popNames;
         varCfg.intPopValues = listCfg.intPopValues;
@@ -552,6 +558,12 @@ public sealed class VariableCfg
             foreach (DsonValue value in dsonValue.AsArray()) {
                 DsonNumber margin = value.IsNumber ? value.AsNumber() : null; // 可能null
                 cfg.labelMargins.Add(margin);
+            }
+        }
+        if (dsonObject.TryGetValue(DSAnnotations.KEY_LABELS, out dsonValue)) {
+            cfg.labels = new List<string>();
+            foreach (DsonValue value in dsonValue.AsArray()) {
+                cfg.labels.Add(value.AsString());
             }
         }
     }

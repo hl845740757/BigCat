@@ -35,6 +35,7 @@ public class VarVector3IntField : MVector3IntField, IVarField
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
         DataEditorUtil.SetVectorFieldMargin(this, variableCfg);
+        DataEditorUtil.SetVectorFieldLabels(this, variableCfg);
         this.SetValueWithoutNotify(variable.vector3IntValue);
         this.isDelayed = variableCfg.isDelayed;
     }

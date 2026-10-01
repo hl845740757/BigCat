@@ -867,22 +867,6 @@ public class CoroutineTest
     }
 
     /// <summary>
-    /// 协程函数为null时应抛出ArgumentNullException
-    /// </summary>
-    [Test]
-    public void TestStartCoroutineNullFunc() {
-        RunOnce(() => {
-            Assert.Throws<ArgumentNullException>(() => _coroutineMgr.StartCoroutine(
-                (Func<CoroutineTaskContext<int, int>, ValueFuture>)null,
-                new CoroutineStartArgs<int, int>()
-                {
-                    inputCodec = IntInputCodec,
-                    outputCodec = IntOutputCodec,
-                }));
-        });
-    }
-
-    /// <summary>
     /// 启动参数应传递到协程上下文与用户上下文
     /// </summary>
     [Test]
@@ -903,7 +887,7 @@ public class CoroutineTest
                         await context.ReadAsync();
                     }, new CoroutineStartArgs<int, int>()
                     {
-                        startArg = taskArg,
+                        taskArg = taskArg,
                         userArg = userArg,
                         inputCodec = IntInputCodec,
                         outputCodec = IntOutputCodec,

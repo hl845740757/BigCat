@@ -38,6 +38,10 @@ class SimpleBean {
     // 测试矩形
     Rect rect = 14;
     RectInt rect2 = 15;
+    
+    // 测试万分比定点数
+    int32 attrType = 16;
+    fxp64 attrValue = 17;
 }
 
 // 测试普通类继承

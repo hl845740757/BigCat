@@ -40,14 +40,14 @@ struct Quaternion {
     float w = 4;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector2Int, VInt2], encodeFeatures: "Double4Len2", elementNames: "xy" }
+// @Options{ alias: [Vector2Int, IntV2], encodeFeatures: "Double4Len2", elementNames: "xy" }
 // @Editor{ displayType: Vector2Int, dsonType: Long4 }
 struct Vector2Int {
     int32 x = 1;
     int32 y = 2;
 }
 // @Namespace{cs: "UnityEngine"}
-// @Options{ alias: [Vector3Int, VInt3], encodeFeatures: "Double4Len3", elementNames: "xyz" }
+// @Options{ alias: [Vector3Int, IntV3], encodeFeatures: "Double4Len3", elementNames: "xyz" }
 // @Editor{ displayType: Vector3Int, dsonType: Long4 }
 struct Vector3Int {
     int32 x = 1;

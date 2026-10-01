@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -54,18 +55,16 @@ public class BuildWindow : DataEditor
 
         string filePath = UnityEditorUtil.ConvertToFilePath(buildConfigPath);
         DsonArray<string> collection = Dsons.FromFlatDson(File.ReadAllText(filePath));
-        // 查找执行节点
+        // 查找执行节点 -- TODO 考虑根据PackageBuilder的属性(或name)来查找
         int index = DataEditorUtil.IndexOf(collection, buildNodeName);
         if (index < 0) {
             Debug.LogError($"Node {buildNodeName} does not exist");
             return;
         }
-        DsonValue root = collection[index];
-        collection.RemoveAt(index);
-        collection.Insert(0, root); // 插到首部，只解码第一个对象及其引用的对象
 
         IDsonConverter converter = UnityEditorUtil.Converter;
-        PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
+        List<object> objects = converter.ReadCollectionFromDsonCollection<object>(collection);
+        PackageBuilder builder = objects[index] as PackageBuilder;
         TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
         {
             RootTask = builder,
@@ -88,13 +87,10 @@ public class BuildWindow : DataEditor
         DsonArray<string> collection = Dsons.FromFlatDson(File.ReadAllText(filePath));
         // 查找执行节点
         int index = DataEditorUtil.IndexOf(collection, nodeView.dataNode.localId);
-        DsonValue root = collection[index];
-        collection.RemoveAt(index);
-        collection.Insert(0, root); // 插到首部，只解码第一个对象及其引用的对象
 
         converter ??= UnityEditorUtil.Converter;
-        // 泛型参数需要为所有节点的超类
-        PackageBuilder builder = converter.ReadFromDsonCollection<object>(collection) as PackageBuilder;
+        List<object> objects = converter.ReadCollectionFromDsonCollection<object>(collection);
+        PackageBuilder builder = objects[index] as PackageBuilder;
         TaskEntry<Blackboard> taskEntry = new TaskEntry<Blackboard>()
         {
             RootTask = builder,

@@ -46,7 +46,7 @@ public abstract class SComponent
     [NonSerialized] private ComponentStatus _status = ComponentStatus.New;
 
     [NonSerialized] private SComponent _next; // 索引用，避免为每个组件创建一个List
-    [NonSerialized] internal GIndexes indexes = GIndexes.Create(); // 索引缓存
+    [NonSerialized] internal SIndexes indexes = SIndexes.Create(); // 索引缓存
 #nullable restore
 
     protected SComponent() {
@@ -83,15 +83,9 @@ public abstract class SComponent
         Start();
     }
 
-    /** 调用{@link #stop()}方法 */
     internal void InvokeStop() {
-        _status = ComponentStatus.Stopping;
-        try {
-            Stop();
-        }
-        finally {
-            _status = ComponentStatus.Stopped;
-        }
+        _status = ComponentStatus.Stopped;
+        Stop();
     }
 
     #endregion

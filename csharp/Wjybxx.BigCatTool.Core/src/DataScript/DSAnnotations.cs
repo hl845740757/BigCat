@@ -112,6 +112,7 @@ public static class DSAnnotations
     /// - minWidth 最小宽度
     /// - maxWidth 最大宽度
     /// - maxHeight 最大高度
+    /// - labels 字段的显示标签
     /// - labelMargin label和value的边距
     /// - labelMargins 原子结构内嵌字段的label和value的边距；数组类型，允许null值
     /// 
@@ -264,6 +265,7 @@ public static class DSAnnotations
     public const string KEY_MAX_HEIGHT = "maxHeight";
     public const string KEY_LABEL_MARGIN = "labelMargin";
     public const string KEY_LABEL_MARGINS = "labelMargins";
+    public const string KEY_LABELS = "labels";
 
     #endregion
 }

@@ -285,7 +285,7 @@ public class DataGraphHelper
     }
 
     private void ReadObject(Variable variable, DsonValue dsonValue, bool applySerializedType) {
-        // 如果输入是Object，则按照字段名进行匹配，选择性覆盖；如果输入是Array，则顺序解码
+        // 如果输入是Object，则按照字段名进行匹配，选择性覆盖；如果输入是Array，则顺序解码（兼容）
         if (dsonValue.DsonType == DsonType.Object) {
             DsonObject<string> dsonObject = dsonValue.AsObject();
             foreach (Variable nestedVar in variable.values) {
@@ -411,6 +411,11 @@ public class DataGraphHelper
                 writer.WriteDouble(variable.doubleValue, features.ToNumberStyle());
                 return;
             }
+            case DSKeywords.TYPE_FXP64: {
+                if (variable.longValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
+                writer.WriteFxp64(variable.fxp64Value);
+                return;
+            }
             case DSKeywords.TYPE_BOOL: {
                 if (variable.longValue == 0 && writer.IsAtName && !IsWriteZeroValue(variable)) return;
                 writer.WriteBool(variable.boolValue);
@@ -459,7 +464,7 @@ public class DataGraphHelper
             writer.WritePtr(new ObjectPtr(path.collection, path.localPath, path.localId, path.type));
             return;
         }
-        // Double4
+        // Double4 - 只读取类型设置，不读取字段设置（有特殊需求的就定义特殊类型）
         if (typeCfg.dsonType == DsonType.Double4) {
             writer.WriteDouble4(variable.double4Value, typeCfg.elementNames);
             return;
@@ -547,8 +552,8 @@ public class DataGraphHelper
             if (isStringKey) {
                 keyString = keyVar.stringValue ?? "";
             } else if (enumKeyAsString) {
-                DSEnumValue tempQualifier = keyVar.type.GetEnumValue(keyVar.intValue)!;
-                keyString = tempQualifier.Name;
+                DSEnumValue enumValue = keyVar.type.GetEnumValue(keyVar.intValue)!;
+                keyString = enumValue.Name;
             } else {
                 keyString = keyVar.longValue.ToString();
             }
@@ -671,16 +676,7 @@ public class DataGraphHelper
             : ObjectStyle.Indent;
     }
 
-    private static bool IsInteger4(Variable variable) {
-        for (int idx = 0; idx < variable.Count; idx++) {
-            if (variable[idx].type.Name != DSKeywords.TYPE_INT32
-                && variable[idx].type.Name != DSKeywords.TYPE_INT64) {
-                return false;
-            }
-        }
-        return true;
-    }
-
+    // 枚举只查询字段和枚举类型注解，不查询容器特征值
     public bool IsWriteEnumAsString(Variable variable, bool isKey = false) {
         SerializeFeatures features = variable.cfg.encodeFeatures;
         if (isKey) {
@@ -692,32 +688,33 @@ public class DataGraphHelper
         return (typeFeatures & SerializeFeatures.EnumAsString) != 0;
     }
 
+    // 默认写入零值(0、false、null)，只有启用特性的情况下跳过
     private bool IsWriteNullValue(Variable variable) {
         SerializeFeatures features = variable.cfg.encodeFeatures;
-        if ((features & SerializeFeatures.WriteNullValue) != 0) return true;
         if ((features & SerializeFeatures.SkipNullValue) != 0) return false;
+        if ((features & SerializeFeatures.WriteNullValue) != 0) return true;
         //
         if (variable.defineInfo is DSField field) {
             DSElement typeElement = field.OriginDefine.EnclosingElement;
             features = _graph.GetVariableCfg(typeElement).encodeFeatures;
-            if ((features & SerializeFeatures.WriteNullValue) != 0) return true;
             if ((features & SerializeFeatures.SkipNullValue) != 0) return false;
+            if ((features & SerializeFeatures.WriteNullValue) != 0) return true;
         }
-        return false;
+        return true;
     }
 
     private bool IsWriteZeroValue(Variable variable) {
         SerializeFeatures features = variable.cfg.encodeFeatures;
-        if ((features & SerializeFeatures.WriteZeroValue) != 0) return true;
         if ((features & SerializeFeatures.SkipZeroValue) != 0) return false;
+        if ((features & SerializeFeatures.WriteZeroValue) != 0) return true;
         //
         if (variable.defineInfo is DSField field) {
             DSElement typeElement = field.OriginDefine.EnclosingElement;
             features = _graph.GetVariableCfg(typeElement).encodeFeatures;
-            if ((features & SerializeFeatures.WriteZeroValue) != 0) return true;
             if ((features & SerializeFeatures.SkipZeroValue) != 0) return false;
+            if ((features & SerializeFeatures.WriteZeroValue) != 0) return true;
         }
-        return false;
+        return true;
     }
 
     #endregion

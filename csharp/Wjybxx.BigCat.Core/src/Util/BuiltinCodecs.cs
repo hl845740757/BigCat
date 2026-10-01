@@ -18,6 +18,7 @@
 
 using System;
 using Wjybxx.Dson.Codec;
+using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.Util
 {
@@ -26,6 +27,18 @@ namespace Wjybxx.BigCat.Util
 /// </summary>
 public class BuiltinCodecs
 {
+    public class Fixed64Codec : IDsonCodec<Fixed64>
+    {
+        public void WriteObject(IDsonObjectWriter writer, Fixed64 inst, Type declaredType, SerializeFeatures features) {
+            writer.WriteFxp64(Fxp64.FromRaw(inst.RawValue));
+        }
+
+        public Fixed64 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
+            Fxp64 fxp64 = reader.ReadFxp64();
+            return Fixed64.FromRaw(fxp64.rawValue);
+        }
+    }
+
     /// <summary>
     /// APT无法正确解析泛型枚举约束，以后再处理...
     /// </summary>

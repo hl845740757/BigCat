@@ -215,7 +215,7 @@ public class SceneMgr
         try {
             scene.SceneMgr = this;
             if (scene.Status == ComponentStatus.New) {
-                scene.SetInitialized();
+                scene.OnInited();
             }
             scene.Start();
         }

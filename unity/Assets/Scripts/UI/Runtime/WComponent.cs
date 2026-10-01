@@ -79,15 +79,9 @@ public abstract class WComponent
         Start();
     }
 
-    /** 调用{@link #stop()}方法 */
     internal void InvokeStop() {
-        _status = ComponentStatus.Stopping;
-        try {
-            Stop();
-        }
-        finally {
-            _status = ComponentStatus.Stopped;
-        }
+        _status = ComponentStatus.Stopped;
+        Stop();
     }
 
     #endregion

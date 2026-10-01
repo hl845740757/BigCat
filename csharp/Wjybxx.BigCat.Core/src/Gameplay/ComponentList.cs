@@ -252,7 +252,7 @@ public sealed class ComponentList<T> where T : class
         if (minCapacity > MAX_CAPACITY) {
             throw new OutOfMemoryException("Required array length " + minCapacity + " is too large");
         }
-        int grow = Math.Max(8, oldCapacity >> 1);
+        int grow = Math.Max(4, oldCapacity >> 1);
         int newCapacity = MathCommon.Clamp((long)oldCapacity + grow, minCapacity, MAX_CAPACITY);
         _elements = ArrayUtil.CopyOf(_elements, 0, newCapacity);
     }

@@ -59,8 +59,8 @@ public sealed class Window
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger<Window>();
 
-    public readonly WindowCfg windowCfg;
     public readonly string windowAddr;
+    public readonly WindowCfg windowCfg;
     public readonly WindowMgr windowMgr;
     private readonly int _instId;
     private readonly RectTransform _transform;
@@ -159,7 +159,7 @@ public sealed class Window
     /// </summary>
     [NonSerialized] internal AssetHandle prefabHandle;
 
-    internal Window(WindowCfg windowCfg, string windowAddr, WindowMgr windowMgr) {
+    internal Window(string windowAddr, WindowCfg windowCfg, WindowMgr windowMgr) {
         this.windowCfg = windowCfg;
         this.windowAddr = windowAddr;
         this.windowMgr = windowMgr;
@@ -185,7 +185,7 @@ public sealed class Window
     /// <summary>
     /// 将Window标记为已完成初始化
     /// </summary>
-    internal void SetInitialized() {
+    internal void OnInited() {
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
@@ -240,6 +240,7 @@ public sealed class Window
         if (_status < ComponentStatus.Running || _status >= ComponentStatus.Stopping) {
             return;
         }
+
         _status = ComponentStatus.Stopping;
         _reentryId++;
         try {
@@ -253,7 +254,7 @@ public sealed class Window
         ReleaseAssets(assetHandles);
 
         _status = ComponentStatus.Stopped;
-        windowMgr?.OnTerminated(this);
+        windowMgr.OnTerminated(this);
     }
 
     private static void ReleaseAssets(List<AssetHandle> handles) {
@@ -385,7 +386,6 @@ public sealed class Window
             _status = ComponentStatus.Suspended;
             windowMgr.OnPause(this);
             _agent?.OnPaused(extraInfo);
-            // 从Mgr调度队列中删除？影响不大
         }
     }
 
@@ -610,18 +610,6 @@ public sealed class Window
 #nullable disable
 
     #region 组件模式
-
-    /// <summary>
-    /// 手动激活组件
-    /// </summary>
-    public void AwakeComponent(WComponent comp) {
-        if (!ContainsComponent(comp)) {
-            throw new InvalidOperationException("component not contained");
-        }
-        if (comp.Status == ComponentStatus.New) {
-            comp.SetEntity(this);
-        }
-    }
 
     /// <summary>
     /// 

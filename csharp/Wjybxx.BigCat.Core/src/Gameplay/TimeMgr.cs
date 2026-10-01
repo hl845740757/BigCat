@@ -51,7 +51,7 @@ public sealed class TimeMgr : GTime
     /// 更新服务器时间
     /// </summary>
     public void ServerUpdate() {
-        _timeElapsed = (long)(UnityEngine.Time.realtimeSinceStartupAsDouble * 1000f);
+        _timeElapsed = (long)(UnityEngine.Time.realtimeSinceStartupAsDouble * 1000);
     }
 #endif
 }

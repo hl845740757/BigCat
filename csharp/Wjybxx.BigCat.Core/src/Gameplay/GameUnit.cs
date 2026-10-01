@@ -165,26 +165,15 @@ public sealed class GameUnit
     /// 将游戏对象标记为已初始化完成
     /// 注：应当在加入场景前调用。
     /// </summary>
-    public void SetInitialized() {
+    public void OnInited() {
         if (_status == ComponentStatus.Destroyed) {
             throw new InvalidOperationException("already destroyed");
         }
         _status = ComponentStatus.Initialized;
-        // 初始化模块
+        // 初始化模块 - 注入实体引用
         foreach (GComponent component in _components) {
-            if (component.Cid.shared) {
-                continue;
-            }
-            if (component.Status == ComponentStatus.New) {
-                component.SetEntity(this);
-            }
-        }
-        // 解决模块之间的依赖
-        foreach (GComponent component in _components) {
-            if (component.Cid.shared) {
-                continue;
-            }
-            component.ResolveDependence();
+            if (component.Cid.shared) continue;
+            component.SetEntity(this);
         }
     }
 
@@ -198,7 +187,6 @@ public sealed class GameUnit
         }
         foreach (GComponent component in _components) {
             if (component.Cid.shared) continue;
-            if (component.Status == ComponentStatus.New) continue;
             component.Reset();
         }
         indexes.Clear();
@@ -225,13 +213,7 @@ public sealed class GameUnit
         _status = ComponentStatus.Destroyed;
         foreach (GComponent component in _components) {
             if (component.Cid.shared) continue;
-            if (component.Status == ComponentStatus.New) continue;
-            try {
-                component.InvokeDestroy();
-            }
-            catch (Exception ex) {
-                logger.Warn(ex, "component.Destroy caught exception");
-            }
+            component.SetEntity(null); // 清理引用
         }
         _scene = null;
         _agent = null;
@@ -245,18 +227,6 @@ public sealed class GameUnit
 #nullable disable
 
     #region 组件模式
-
-    /// <summary>
-    /// 提前激活组件
-    /// </summary>
-    public void AwakeComponent(GComponent comp) {
-        if (!ContainsComponent(comp)) {
-            throw new InvalidOperationException("component not contained");
-        }
-        if (comp.Status == ComponentStatus.New) {
-            comp.SetEntity(this);
-        }
-    }
 
     /// <summary>
     /// 添加组件

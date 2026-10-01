@@ -189,7 +189,7 @@ public sealed class Scene
     /// <summary>
     /// 将场景标记为已完成初始化
     /// </summary>
-    public void SetInitialized() {
+    public void OnInited() {
         if (_status != ComponentStatus.New) {
             throw new InvalidOperationException();
         }
@@ -240,6 +240,7 @@ public sealed class Scene
         if (_status < ComponentStatus.Running || _status >= ComponentStatus.Stopping) {
             return;
         }
+
         _status = ComponentStatus.Stopping;
         ClearUpdateList();
         // Stop - 逆序
@@ -499,18 +500,6 @@ public sealed class Scene
 #nullable disable
 
     #region 组件模式
-
-    /// <summary>
-    /// 手动激活组件
-    /// </summary>
-    public void AwakeComponent(SComponent comp) {
-        if (!ContainsComponent(comp)) {
-            throw new InvalidOperationException("component not contained");
-        }
-        if (comp.Status == ComponentStatus.New) {
-            comp.SetEntity(this);
-        }
-    }
 
     /// <summary>
     /// 添加组件

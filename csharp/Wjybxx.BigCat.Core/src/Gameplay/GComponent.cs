@@ -43,10 +43,7 @@ public abstract class GComponent
 #nullable disable
     [NonSerialized] private GameUnit _gameUnit;
     [NonSerialized] private ComponentId _cid;
-    [NonSerialized] private ComponentStatus _status = ComponentStatus.New;
     private bool _enabled = true; // 启用状态，需要持久化
-
-    [NonSerialized] private GComponent? _next; // 索引用，避免为每个组件创建一个List
 #nullable restore
 
     protected GComponent() {
@@ -54,35 +51,11 @@ public abstract class GComponent
 
     #region internal
 
-    internal GComponent? Next {
-        get => _next;
-        set => _next = value;
-    }
-
     /// <summary>
     /// 绑定实体
     /// </summary>
     internal void SetEntity(GameUnit gameUnit) {
-        if (this._status != ComponentStatus.New) {
-            throw new InvalidOperationException("already bind");
-        }
-        this._gameUnit = gameUnit ?? throw new ArgumentNullException(nameof(gameUnit));
-        this._status = ComponentStatus.Initialized;
-        this.OnAwake();
-    }
-
-    /// <summary>
-    /// 销毁组件
-    /// </summary>
-    /// <returns></returns>
-    internal void InvokeDestroy() {
-        _status = ComponentStatus.Destroyed;
-        try {
-            OnDestroy();
-        }
-        finally {
-            _gameUnit = null;
-        }
+        this._gameUnit = gameUnit;
     }
 
     #endregion
@@ -94,7 +67,9 @@ public abstract class GComponent
     public ComponentId Cid {
         get => _cid ??= ID_POOL.ValueOf(GetType(), ID_INTERCEPTOR);
         set {
-            CheckStatus();
+            if (_cid != null) {
+                throw new InvalidOperationException();
+            }
             _cid = value;
         }
     }
@@ -107,49 +82,18 @@ public abstract class GComponent
         set => _enabled = value;
     }
 
-    private void CheckStatus() {
-        if (_status != ComponentStatus.New) {
-            throw new InvalidOperationException();
-        }
-    }
-
     public GameUnit GameUnit => _gameUnit;
-    public ComponentStatus Status => _status;
 
     #endregion
 
     #region 接口行为
 
     /// <summary>
-    /// 注意：
-    /// 与Unity中的Awake不同，此时游戏对象可能尚未加入到场景 -- 取决于用户调用<see cref="GameUnit.SetInitialized"/>的时机；
-    /// 因此该方法只可访问<see cref="GameUnit"/>自身的数据，不可访问外部（Scene）数据。
-    /// </summary>
-    protected virtual void OnAwake() {
-    }
-
-    /// <summary>
-    /// 注：只有执行了<see cref="OnAwake"/>方法的情况下，才会执行该方法。
-    /// </summary>
-    protected virtual void OnDestroy() {
-    }
-
-    /// <summary>
-    /// 注：如果遵循数据与行为分离架构，游戏对象通常不需要实现该方法。
-    /// </summary>
-    public virtual void ResolveDependence() {
-    }
-
-    /// <summary>
     /// 重置组件状态
     ///
-    /// 1.清理运行过程中产生的临时数据，以支持跨场景复用；Reset后会重新start，但不会再执行onAwake。
-    /// 2.Scene的Reset是为了重新Start，不会清理所有缓存；而GameUnit的Reset是为了跨场景复用，需要清理所有缓存。
+    /// 注；将组件重置为内存初始状态（正常构造的空实体），后续复用实体时需重新填充数据。
     /// </summary>
     public virtual void Reset() {
-        if (_status > ComponentStatus.Initialized) {
-            _status = ComponentStatus.Initialized;
-        }
         _enabled = true;
     }
 
@@ -165,11 +109,11 @@ internal class GComponentListHelper : IComponentListHelper<GComponent>
     }
 
     public GComponent? GetNext(GComponent element) {
-        return element.Next;
+        return null;
     }
 
     public void SetNext(GComponent element, GComponent? next) {
-        element.Next = next;
+        throw new NotSupportedException();
     }
 }
 }

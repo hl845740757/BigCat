@@ -43,6 +43,8 @@ namespace Wjybxx.BigCatTool.DataScript
 /// 4.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
 /// 5.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
 /// 6.已改用private/internal模拟字段的readonly，可以简化反序列化逻辑。
+/// 7.已删除Codec相关代码，即不再支持字段读写代理，可有效降低复杂度；以前考虑的太多，正常配置应该是不需要的。
+/// 8.可通过func
 ///
 /// <h3>关于集合</h3>
 /// 1.用户果需要使用不可变集合，请将不可变集合注册到<see cref="DSRepository"/>，默认为Commons库中的不可变集合。
@@ -236,11 +238,18 @@ public class CodeGeneratorHelper
             }
         }
         typeBuilder.AddSpecs(fieldSpecs);
-        // 构造函数在字段后 -- 没有readonly字段时生成空构造函数，因为存在reader构造器
+        // 构造函数在字段后 -- 显式构造函数用于手动构造实例，初始化readonly字段
         MethodSpec constructor = BuildExplicitConstructor(namedType);
-        if (namedType.IsReferenceType || constructor.parameters.Count > 0) {
+        if (constructor.parameters.Count > 0) {
             typeBuilder.AddSpec(constructor);
         }
+        // 默认构造函数用于反序列化 -- 低版本值类型不支持空构造函数
+        if (namedType.IsReferenceType && constructor.parameters.Count == 0) {
+            typeBuilder.AddSpec(MethodSpec.NewConstructorBuilder()
+                .AddModifiers(Modifiers.Public)
+                .Build());
+        }
+
         // 属性在构造函数后面
         typeBuilder.AddSpecs(propertySpecs);
         //
@@ -715,6 +724,7 @@ public class CodeGeneratorHelper
                 DSKeywords.TYPE_INT64 => true,
                 DSKeywords.TYPE_FLOAT => true,
                 DSKeywords.TYPE_DOUBLE => true,
+                DSKeywords.TYPE_FXP64 => true,
                 DSKeywords.TYPE_BOOL => true,
                 DSKeywords.TYPE_STRING => true,
                 DSKeywords.TYPE_DATETIME => true,

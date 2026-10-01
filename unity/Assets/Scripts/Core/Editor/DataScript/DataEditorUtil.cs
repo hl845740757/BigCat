@@ -158,8 +158,19 @@ public static class DataEditorUtil
             DsonNumber margin = cfg.labelMargins[idx];
             if (margin == null) continue;
             //
-            VisualElement labelElement = GetVectorFieldLabel(field, idx);
+            Label labelElement = GetVectorFieldLabel(field, idx);
             labelElement.style.marginRight = margin.FloatValue;
+        }
+    }
+    
+    internal static void SetVectorFieldLabels(VisualElement field, VariableCfg cfg) {
+        if (cfg.labels == null) {
+            return;
+        }
+        for (int idx = 0; idx < cfg.labels.Count; idx++) {
+            string label = cfg.labels[idx];
+            Label labelElement = GetVectorFieldLabel(field, idx);
+            labelElement.text = label;
         }
     }
 
@@ -263,6 +274,7 @@ public static class DataEditorUtil
             }
             case DSKeywords.TYPE_FLOAT: return CreateFloatField(variable, editor);
             case DSKeywords.TYPE_DOUBLE: return CreateDoubleField(variable, editor);
+            case DSKeywords.TYPE_FXP64: return CreateFxp64Field(variable, editor);
             case DSKeywords.TYPE_BOOL: return CreateBoolField(variable, editor);
             case DSKeywords.TYPE_DATETIME: return CreateDateTimeField(variable, editor);
             case DSKeywords.TYPE_TIMESTAMP: return CreateTimestampField(variable, editor);
@@ -353,6 +365,12 @@ public static class DataEditorUtil
         return field;
     }
 
+    public static VarFxp64Field CreateFxp64Field(Variable variable, DataEditor editor) {
+        VarFxp64Field field = new VarFxp64Field();
+        field.Bind(editor, variable);
+        return field;
+    }
+    
     public static Toggle CreateBoolField(Variable variable, DataEditor editor) {
         VarBoolField field = new VarBoolField();
         field.Bind(editor, variable);

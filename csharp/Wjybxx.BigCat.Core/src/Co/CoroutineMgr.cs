@@ -152,7 +152,7 @@ public class CoroutineMgr : ICoroutineMgr
         coroutine.cancelToken = startArgs.cancelToken;
 
         CoroutineUserContext userContext = new CoroutineUserContext(this, coroutine.id, startArgs.cancelToken, startArgs.userArg);
-        CoroutineTaskContext taskContext = new CoroutineTaskContext(this, coroutine.id, startArgs.cancelToken, startArgs.startArg);
+        CoroutineTaskContext taskContext = new CoroutineTaskContext(this, coroutine.id, startArgs.cancelToken, startArgs.taskArg);
 
         _coroutineDic.Add(coroutine.id, coroutine);
         try {
@@ -190,7 +190,7 @@ public class CoroutineMgr : ICoroutineMgr
 
         CoroutineUserContext<T, R> userContext = new CoroutineUserContext<T, R>(this, coroutine.id, startArgs.cancelToken, startArgs.userArg,
             startArgs.inputCodec, startArgs.outputCodec);
-        CoroutineTaskContext<T, R> taskContext = new CoroutineTaskContext<T, R>(this, coroutine.id, startArgs.cancelToken, startArgs.startArg,
+        CoroutineTaskContext<T, R> taskContext = new CoroutineTaskContext<T, R>(this, coroutine.id, startArgs.cancelToken, startArgs.taskArg,
             startArgs.inputCodec, startArgs.outputCodec);
 
         _coroutineDic.Add(coroutine.id, coroutine);

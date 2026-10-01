@@ -248,7 +248,7 @@ public class WindowMgr
         }
         try {
             if (window.Status == ComponentStatus.New) {
-                window.SetInitialized();
+                window.OnInited();
             }
             window.Start();
         }
@@ -324,7 +324,7 @@ public class WindowMgr
         }
 #endif
         openArgs ??= new WindowOpenArgs();
-        Window window = new Window(windowCfg, windowAddr, this);
+        Window window = new Window(windowAddr, windowCfg, this);
         windowCfg.SetWindow(window); // 双向绑定
         window.OpenArgs = openArgs;
         window.ParentInstId = openArgs.pInstId;

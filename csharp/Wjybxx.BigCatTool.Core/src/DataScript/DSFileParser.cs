@@ -173,6 +173,7 @@ public class DSFileParser
                 // 文件选项
                 if (inst.Name == "@file") {
                     InitFileOptions(inst);
+                    _context.ClearCommentLines();
                     break;
                 }
                 return;

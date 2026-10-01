@@ -16,17 +16,21 @@
 
 #endregion
 
-using UnityEngine;
+using System;
 using UnityEngine.UIElements;
 using Wjybxx.BigCat.Editor.UIElements;
+using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.Editor.DataScript
 {
-public class VarVector4Field : MVector4Field, IVarField
+/// <summary>
+/// 暂时没有很好的解决方案，先用字符串框顶一段时间
+/// </summary>
+public class VarFxp64Field : MTextField, IVarField
 {
     private Variable _variable;
 
-    public VarVector4Field() {
+    public VarFxp64Field() {
         labelElement.name = DataEditorUtil.LABEL_ELEMENT_NAME;
         this.RegisterValueChangedCallback(OnValueChanged);
     }
@@ -34,9 +38,7 @@ public class VarVector4Field : MVector4Field, IVarField
     public void Bind(DataEditor editor, Variable variable) {
         _variable = variable;
         VariableCfg variableCfg = variable.cfg;
-        DataEditorUtil.SetVectorFieldMargin(this, variableCfg);
-        DataEditorUtil.SetVectorFieldLabels(this, variableCfg);
-        this.SetValueWithoutNotify(variable.vector4Value);
+        this.SetValueWithoutNotify(variable.fxp64Value.ToString());
         this.isDelayed = variableCfg.isDelayed;
     }
 
@@ -44,17 +46,40 @@ public class VarVector4Field : MVector4Field, IVarField
         _variable = null;
     }
 
-    private void OnValueChanged(ChangeEvent<Vector4> evt) {
-        if (_variable != null) {
-            _variable.vector4Value = evt.newValue;
+    private void OnValueChanged(ChangeEvent<string> evt) {
+        if (_variable == null) {
+            return;
+        }
+        string newValue = evt.newValue;
+        if (newValue.Length == 0) {
+            _variable.fxp64Value = default;
             _variable.ApplyModifiedProperties();
+            return;
+        }
+        int index = newValue.IndexOf('.');
+        if (index + 1 == newValue.Length) {
+            return;
+        }
+        if (IsParsable(newValue)) {
+            _variable.fxp64Value = Fxp64.Parse(newValue);
+            _variable.ApplyModifiedProperties();
+        } else {
+            SetValueWithoutNotify(evt.previousValue);
         }
     }
 
     public void Refresh(bool rebuild = false) {
         if (_variable != null) {
-            SetValueWithoutNotify(_variable.vector4Value);
+            SetValueWithoutNotify(_variable.fxp64Value.ToString());
         }
+    }
+
+    private static bool IsParsable(string text) {
+        if (!double.TryParse(text, out _)) return false;
+        int index = text.IndexOf('.');
+        if (index == -1) return true;
+        return index + 1 != text.Length
+               && index + 5 >= text.Length;
     }
 }
 }
