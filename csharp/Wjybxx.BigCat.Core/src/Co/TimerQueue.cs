@@ -181,24 +181,20 @@ public sealed class TimerQueue : ITimerQueue
     /// <summary>
     /// 设置任务的调度选项
     /// </summary>
-    public bool SetOptions(long timerId, int options) {
+    public void SetOptions(long timerId, int options) {
         if (_taskDic.TryGetValue(timerId, out PromiseTask task)) {
             task.options = options;
-            return true;
         }
-        return false;
     }
 
     /// <summary>
     /// 设置Timer的下次执行延迟
     /// </summary>
-    public bool SetNextDelay(long timerId, double nextDelay) {
+    public void SetNextDelay(long timerId, double nextDelay) {
         if (_taskDic.TryGetValue(timerId, out PromiseTask task)) {
             task.triggerTime = GetTriggerTime(nextDelay);
             _taskQueue.PriorityChanged(task);
-            return true;
         }
-        return false;
     }
 
     /// <summary>

@@ -113,7 +113,7 @@ public static class DSKeywords
     // 内建结构
     public const string TYPE_DATETIME = "DateTime";
     public const string TYPE_TIMESTAMP = "Timestamp";
-    public const string TYPE_POINTER = "ObjectPtr";
+    public const string TYPE_REF_ID = "RefId";
     public const string TYPE_PAIR = "Pair";
     // 容器类型
     public const string TYPE_LIST = "List";
@@ -135,7 +135,7 @@ public static class DSKeywords
     // 内建结构
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.Get(GLOBAL, TYPE_DATETIME);
     public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(GLOBAL, TYPE_TIMESTAMP);
-    public static readonly ClassName TYPE_NAME_POINTER = ClassName.Get(GLOBAL, TYPE_POINTER);
+    public static readonly ClassName TYPE_NAME_REF_ID = ClassName.Get(GLOBAL, TYPE_REF_ID);
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(GLOBAL, TYPE_PAIR, new List<TypeName>()
     {
         TypeParameterName.Get("K"),

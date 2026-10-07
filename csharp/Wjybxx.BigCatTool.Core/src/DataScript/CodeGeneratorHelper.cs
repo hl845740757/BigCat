@@ -37,14 +37,12 @@ namespace Wjybxx.BigCatTool.DataScript
 /// <summary>
 /// 用于负责代码的生成，用于支持继承扩展
 ///
-/// 1.如果配置了字段的解码代理，则会调度到对应的代码上。
-/// 2.如果是ssti字段，则会生成辅助属性，将字符串缓存到辅助字段。
-/// 3.如果是数据类，则会生成Equals、GetHashCode、ToString三个方法。
-/// 4.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
-/// 5.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
-/// 6.已改用private/internal模拟字段的readonly，可以简化反序列化逻辑。
-/// 7.已删除Codec相关代码，即不再支持字段读写代理，可有效降低复杂度；以前考虑的太多，正常配置应该是不需要的。
-/// 8.可通过func
+/// 1.如果是数据类，则会生成Equals、GetHashCode、ToString三个方法。
+/// 2.默认的CopyFrom是浅拷贝，且不拷贝readonly字段。
+/// 3.Equals、GetHashCode、ToString、CopyFrom都不是递归的，因此慎用二维List和字典。
+/// 4.已改用private/internal模拟字段的readonly，可以简化反序列化逻辑。
+/// 5.已删除Codec相关代码，即不再支持字段读写代理，可有效降低复杂度；以前考虑的太多，正常配置应该是不需要的。
+/// 6.已删除ssti的特殊处理，最近方案是上游生成scheme时将ssti定义为结构体。
 ///
 /// <h3>关于集合</h3>
 /// 1.用户果需要使用不可变集合，请将不可变集合注册到<see cref="DSRepository"/>，默认为Commons库中的不可变集合。
@@ -57,13 +55,12 @@ public class CodeGeneratorHelper
     protected readonly CodeGeneratorCfg generatorCfg;
     private readonly AttributeSpec processorInfo;
     // 缓存
-    private readonly Dictionary<string, ClassName> _metaTypeNameCache = new(200);
-    private readonly Dictionary<ClassName, ClassName> _genericTypeNameCache = new(200);
+    private readonly Dictionary<string, ClassName> _metaTypeNameCache = new(200); // ds类型名 => c#类型名
+    private readonly Dictionary<ClassName, ClassName> _genericTypeNameCache = new(200); // ds类型名 => c#类型名
 
     private readonly List<FieldSpec> _fieldListCache = new(20);
     private readonly List<PropertySpec> _propertyListCache = new(20);
     private readonly List<FieldSpec> _copyFieldListCache = new(20);
-    private readonly List<FieldSpec> _sstiFieldListCache = new(20);
 
     private readonly List<DSField> _dsFieldListCache = new(20);
     private readonly List<DSMethod> _dsMethodListCache = new(20);
@@ -208,7 +205,6 @@ public class CodeGeneratorHelper
         List<FieldSpec> fieldSpecs = _fieldListCache.ClearAndReturn();
         List<PropertySpec> propertySpecs = _propertyListCache.ClearAndReturn();
         List<FieldSpec> copyFieldList = _copyFieldListCache.ClearAndReturn();
-        List<FieldSpec> sstiFieldList = _sstiFieldListCache.ClearAndReturn();
         // 原生字段
         foreach (DSField field in namedType.GetFields(false, _dsFieldListCache.ClearAndReturn())) {
             if (string.IsNullOrEmpty(field.Name)) {
@@ -222,20 +218,6 @@ public class CodeGeneratorHelper
             if (!field.IsReadonly) {
                 copyFieldList.Add(fieldSpec);
             }
-            // 如果是指向共享字符串表的索引，则增加缓存字段 + 属性
-            if (Annotation.GetBool(fieldOptions, DSAnnotations.KEY_SSTI)) {
-                BuildSstiFieldAndProperty(field, fieldSpec.name, propertySpec.name, out FieldSpec? sstiFiledSpec, out PropertySpec sstiPropertySpec);
-                if (sstiFiledSpec != null) {
-                    fieldSpecs.Add(sstiFiledSpec);
-                    copyFieldList.Add(sstiFiledSpec);
-                    sstiFieldList.Add(sstiFiledSpec);
-                }
-                // 如果ssti属性和原字段属性名相同，则覆盖原字段的属性
-                if (sstiPropertySpec.name == propertySpec.name) {
-                    propertySpecs.TryRemoveLast(out _);
-                }
-                propertySpecs.Add(sstiPropertySpec);
-            }
         }
         typeBuilder.AddSpecs(fieldSpecs);
         // 构造函数在字段后 -- 显式构造函数用于手动构造实例，初始化readonly字段
@@ -244,7 +226,7 @@ public class CodeGeneratorHelper
             typeBuilder.AddSpec(constructor);
         }
         // 默认构造函数用于反序列化 -- 低版本值类型不支持空构造函数
-        if (namedType.IsReferenceType && constructor.parameters.Count == 0) {
+        if (namedType.IsReferenceType && constructor.parameters.Count > 0) {
             typeBuilder.AddSpec(MethodSpec.NewConstructorBuilder()
                 .AddModifiers(Modifiers.Public)
                 .Build());
@@ -252,10 +234,6 @@ public class CodeGeneratorHelper
 
         // 属性在构造函数后面
         typeBuilder.AddSpecs(propertySpecs);
-        //
-        if (NeedClearSstiMethod(namedType, options)) {
-            typeBuilder.AddSpec(BuildClearSstiCacheMethod(namedType, options, sstiFieldList));
-        }
 
         // 允许在Copy方法前插入代码
         BeforeGenerateCopyMethod(namedType, typeBuilder, options);
@@ -293,7 +271,7 @@ public class CodeGeneratorHelper
     /// 初始化Class的注解
     /// </summary>
     protected virtual void InitAttributes(DSNamedType namedType, DsonObject<string> options, TypeSpec.Builder typeBuilder) {
-        if (NeedCodecMethod(namedType, options)) {
+        if (IsSerializableType(namedType, options)) {
             typeBuilder.AddAttribute(BuildCodecAttribute(namedType, _sb.Clear()));
         }
     }
@@ -310,22 +288,15 @@ public class CodeGeneratorHelper
     }
 
     /// <summary>
-    /// 是否需要清理ssti缓存数据的方法
+    /// 是否是可序列化类型 -- 是否生成注解以自动生成Codec
     /// </summary>
-    /// <returns></returns>
-    protected virtual bool NeedClearSstiMethod(DSNamedType namedType, DsonObject<string> options) {
-        return false;
-    }
-
-    /// <summary>
-    /// 是否需要生成DsonCodec相关支持
-    /// </summary>
-    protected virtual bool NeedCodecMethod(DSNamedType namedType, DsonObject<string> options) {
+    protected virtual bool IsSerializableType(DSNamedType namedType, DsonObject<string> options) {
         return true;
     }
 
     /// <summary>
     /// 是否生成CopyFrom方法
+    /// (所有的钩子方法都可以通过定义Method来表达需要生成)
     /// </summary>
     /// <returns></returns>
     protected virtual bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {
@@ -333,7 +304,8 @@ public class CodeGeneratorHelper
     }
 
     /// <summary>
-    /// 是否需要生成ToString方法 -- DataClass一定会生成ToString
+    /// 是否需要生成ToString方法
+    /// (DataClass一定会生成ToString)
     /// </summary>
     /// <returns></returns>
     protected virtual bool NeedToStringMethod(DSNamedType namedType, DsonObject<string> options) {
@@ -373,6 +345,8 @@ public class CodeGeneratorHelper
         // 序列化注解
         if (IsNonSerializedField(field, fieldOptions)) {
             fieldBuilder.AddAttribute(ATTRIBUTE_NON_SERIALIZED);
+        } else if (field.IsReadonly) {
+            fieldBuilder.AddAttribute(ATTRIBUTE_DSON_PROPERTY);
         }
         if (field.GetAnnotation("SerializeReference") != null) {
             fieldBuilder.AddAttribute(ATTRIBUTE_SERIALIZE_REFERENCE);
@@ -385,9 +359,7 @@ public class CodeGeneratorHelper
         //
         PropertySpec.Builder propertyBuilder = PropertySpec.NewBuilder(fieldSpec.type, GetPropertyName(field.Name), Modifiers.Public);
         propertyBuilder.Getter(CodeBlock.Of("$L", fieldSpec.name).WithExpressionStyle());
-        if (field.IsReadonly) {
-            propertyBuilder.RemoveSetter();
-        } else {
+        {
             Modifiers setterModifiers = GetSetterModifiers(field, fieldOptions);
             if (setterModifiers != Modifiers.Public) {
                 propertyBuilder.AddSetterModifiers(setterModifiers);
@@ -395,32 +367,6 @@ public class CodeGeneratorHelper
             propertyBuilder.Setter(CodeBlock.Of("this.$L = value", fieldSpec.name).WithExpressionStyle());
         }
         propertySpec = propertyBuilder.Build();
-    }
-
-    /// <summary>
-    /// 构建sst字符串字段和属性
-    /// </summary>
-    private void BuildSstiFieldAndProperty(DSField field, string fieldName, string propertyName,
-                                           out FieldSpec? sstiFieldSpec, out PropertySpec sstiPropertySpec) {
-        GetSstiFieldAndPropertyName(fieldName, propertyName, out string sstiFieldName, out string sstiPropertyName);
-        if (IsListType(field.Type)) {
-            // List类型增加缓存字段
-            TypeName sstiFieldTypeName = TYPE_NAME_IMMUTABLE_LIST_STRING;
-            sstiFieldSpec = FieldSpec.NewBuilder(sstiFieldTypeName, sstiFieldName, Modifiers.Private)
-                .AddAttribute(ATTRIBUTE_NON_SERIALIZED) // 避免被其它框架序列化
-                .Build();
-
-            sstiPropertySpec = PropertySpec.NewBuilder(sstiFieldTypeName, sstiPropertyName, Modifiers.Public)
-                .Getter(CodeBlock.Of("$L ??= $T.GetStringList($L)", sstiFieldName, TYPE_NAME_SST_MGR, fieldName).WithExpressionStyle())
-                .RemoveSetter()
-                .Build();
-        } else {
-            sstiFieldSpec = null;
-            sstiPropertySpec = PropertySpec.NewBuilder(TypeName.STRING, sstiPropertyName, Modifiers.Public)
-                .Getter(CodeBlock.Of("$T.GetString($L)", TYPE_NAME_SST_MGR, fieldName).WithExpressionStyle())
-                .RemoveSetter()
-                .Build();
-        }
     }
 
     /// <summary>
@@ -465,50 +411,7 @@ public class CodeGeneratorHelper
     /// 获取setter属性的修饰符
     /// </summary>
     protected virtual Modifiers GetSetterModifiers(DSField field, DsonObject<string> fieldOptions) {
-        return Modifiers.Public;
-    }
-
-    /// <summary>
-    /// 获取ssti字段的名字和关联的属性名
-    ///
-    /// 如果返回的属性名和原字段的属性名相同，则删除原字段的属性 -- 默认相同
-    /// (为避免序列化冲突，不再覆盖字段的属性名)
-    /// </summary>
-    protected virtual void GetSstiFieldAndPropertyName(string fieldName, string propertyName,
-                                                       out string sstiFieldName, out string sstiPropertyName) {
-        sstiFieldName = fieldName + "Text";
-        sstiPropertyName = propertyName + "Text";
-    }
-
-    #endregion
-
-    #region clear-cache
-
-    private MethodSpec BuildClearSstiCacheMethod(DSNamedType namedType, DsonObject<string> options, List<FieldSpec> sstiFieldList) {
-        MethodSpec.Builder methodBuilder = MethodSpec.NewMethodBuilder("ClearSstiCache")
-            .AddModifiers(Modifiers.Public);
-        if (namedType.BaseType != null) {
-            methodBuilder.AddModifiers(Modifiers.Override);
-            methodBuilder.codeBuilder.AddStatement("base.ClearSstiCache()");
-        } else {
-            methodBuilder.AddModifiers(Modifiers.Virtual);
-        }
-        foreach (FieldSpec fieldSpec in sstiFieldList) {
-            methodBuilder.codeBuilder.AddStatement("this.$L = null", fieldSpec.name);
-        }
-        return methodBuilder.Build(true);
-    }
-
-    #endregion
-
-    #region 编解码方法
-
-    private CodeGeneratorCfg.ClassCodecCfg? GetClassCfg(DSNamedType namedType) {
-        string fullName = DSUtil.RemoveFirstName(namedType.FullName);
-        foreach (CodeGeneratorCfg.ClassCodecCfg codecCfg in generatorCfg.codecCfgs) {
-            if (codecCfg.name == fullName) return codecCfg;
-        }
-        return null;
+        return field.IsReadonly ? Modifiers.Internal : Modifiers.Public;
     }
 
     #endregion
@@ -729,7 +632,7 @@ public class CodeGeneratorHelper
                 DSKeywords.TYPE_STRING => true,
                 DSKeywords.TYPE_DATETIME => true,
                 DSKeywords.TYPE_TIMESTAMP => true,
-                DSKeywords.TYPE_POINTER => true,
+                DSKeywords.TYPE_REF_ID => true,
                 DSKeywords.TYPE_NULLABLE => UsingEqualsOperator(((DSNamedType)typeElement).TypeArguments[0]), // Nullable需要检测Value
                 _ => false
             };
@@ -820,9 +723,10 @@ public class CodeGeneratorHelper
     public static readonly ArrayTypeName TYPE_NAME_BYTE_ARRAY = ArrayTypeName.BYTE_ARRAY;
     public static readonly ClassName TYPE_NAME_DATETIME = ClassName.DATETIME;
     public static readonly ClassName TYPE_NAME_PAIR = ClassName.Get(typeof(KeyValuePair<,>));
+    public static readonly ClassName TYPE_NAME_FXP64 = ClassName.Get(typeof(Fxp64));
 
     public static readonly ClassName TYPE_NAME_BINARY = ClassName.Get(typeof(Binary));
-    public static readonly ClassName TYPE_NAME_PTR = ClassName.Get(typeof(ObjectPtr));
+    public static readonly ClassName TYPE_NAME_REF_ID = ClassName.Get(typeof(RefId));
     public static readonly ClassName TYPE_NAME_TIMESTAMP = ClassName.Get(typeof(Timestamp));
     // 集合接口
     public static readonly ClassName TYPE_NAME_ICOLLECTION = ClassName.Get(typeof(ICollection<>));
@@ -913,11 +817,12 @@ public class CodeGeneratorHelper
             DSKeywords.TYPE_DOUBLE => TypeName.DOUBLE,
             DSKeywords.TYPE_BOOL => TypeName.BOOL,
             DSKeywords.TYPE_STRING => TypeName.STRING,
+            DSKeywords.TYPE_FXP64 => TYPE_NAME_FXP64,
             DSKeywords.TYPE_BYTES => TYPE_NAME_BINARY,
             //
             DSKeywords.TYPE_DATETIME => TYPE_NAME_DATETIME,
             DSKeywords.TYPE_TIMESTAMP => TYPE_NAME_TIMESTAMP,
-            DSKeywords.TYPE_POINTER => TYPE_NAME_PTR,
+            DSKeywords.TYPE_REF_ID => TYPE_NAME_REF_ID,
             DSKeywords.TYPE_PAIR => TYPE_NAME_PAIR,
             //
             DSKeywords.TYPE_NULLABLE => ClassName.NULLABLE,
@@ -971,9 +876,6 @@ public class CodeGeneratorHelper
 
     public static readonly ClassName TYPE_NAME_IEQUATABLE = ClassName.Get(typeof(IEquatable<>));
     public static readonly ClassName TYPE_NAME_COLLECTION_UTIL = ClassName.Get(typeof(CollectionUtil));
-    // ssti
-    private static readonly ClassName TYPE_NAME_SST_MGR = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Fx.SstMgr");
-    private static readonly ClassName TYPE_NAME_IMMUTABLE_LIST_STRING = ClassName.Get(typeof(ImmutableList<string>));
 
     /** 注解：Flags枚举 */
     public static readonly AttributeSpec ATTRIBUTE_FLAGS = AttributeSpec.NewBuilder(typeof(FlagsAttribute)).Build();
@@ -983,6 +885,8 @@ public class CodeGeneratorHelper
     public static readonly AttributeSpec ATTRIBUTE_NON_SERIALIZED = AttributeSpec.NewBuilder(ClassName.NON_SERIALIZED).Build();
     /** 注解：序列化为引用 */
     public static readonly AttributeSpec ATTRIBUTE_SERIALIZE_REFERENCE = AttributeSpec.NewBuilder(TYPE_NAME_SERIALIZE_REFERENCE).Build();
+    /** 注解：需要序列化 */
+    public static readonly AttributeSpec ATTRIBUTE_DSON_PROPERTY = AttributeSpec.NewBuilder(TYPE_NAME_DSON_PROPERTY).Build();
     /** 用于在文件中插入换行符 */
     private static readonly CodeBlockSpec CODE_NEW_LINE = new CodeBlockSpec(CodeBlock.Of("\n"));
 
@@ -1009,6 +913,7 @@ public class CodeGeneratorHelper
         if (decodeFeatures != 0) {
             attributeBuilder.AddMember("DecodeFeatures", "($T)$L", TYPE_NAME_DESERIALIZE_FEATURES, (int)decodeFeatures);
         }
+        attributeBuilder.AddMember("NameStyle", "DsonNameStyle.CamelCaseNoPrefix");
         return attributeBuilder.Build();
     }
 

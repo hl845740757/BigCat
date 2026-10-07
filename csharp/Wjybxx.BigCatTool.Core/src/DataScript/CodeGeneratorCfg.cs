@@ -23,6 +23,7 @@ namespace Wjybxx.BigCatTool.DataScript
 {
 /// <summary>
 /// 代码生成器配置
+/// 注：已不再支持自定义Codec代理。
 /// </summary>
 [DsonSerializable]
 public class CodeGeneratorCfg
@@ -49,7 +50,6 @@ public class CodeGeneratorCfg
     public string codecProxyNs;
     /// <summary>
     /// 所有的配置
-    /// (这个数据类通常很小，暂不建立缓存)
     /// </summary>
     public List<ClassCodecCfg> codecCfgs = new List<ClassCodecCfg>();
 

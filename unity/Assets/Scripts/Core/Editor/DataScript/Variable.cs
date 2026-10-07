@@ -528,7 +528,7 @@ public sealed class Variable : IDisposable
             return null;
         }
         if (!path.Contains('.')) {
-            return FindValueHelper(path.Trim());
+            return FindValueHelper(path);
         }
         Variable current = this;
         foreach (string part in ObjectUtil.SplitAndTrim(path, '.')) {

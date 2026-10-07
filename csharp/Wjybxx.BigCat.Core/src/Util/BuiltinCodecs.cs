@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Wjybxx.BigCat.Fx;
 using Wjybxx.Dson.Codec;
 using Wjybxx.Dson.Types;
 
@@ -30,12 +31,24 @@ public class BuiltinCodecs
     public class Fixed64Codec : IDsonCodec<Fixed64>
     {
         public void WriteObject(IDsonObjectWriter writer, Fixed64 inst, Type declaredType, SerializeFeatures features) {
-            writer.WriteFxp64(Fxp64.FromRaw(inst.RawValue));
+            writer.WriteFxp64(Fxp64.FromRaw(inst.rawValue));
         }
 
         public Fixed64 ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
             Fxp64 fxp64 = reader.ReadFxp64();
             return Fixed64.FromRaw(fxp64.rawValue);
+        }
+    }
+    
+    public class SstStringCodec : IDsonCodec<SstString>
+    {
+        public void WriteObject(IDsonObjectWriter writer, SstString inst, Type declaredType, SerializeFeatures features) {
+            writer.WriteInt(inst.locationId);
+        }
+
+        public SstString ReadObject(IDsonObjectReader reader, Type declaredType, DeserializeFeatures features) {
+            int locationId = reader.ReadInt();
+            return new SstString(locationId);
         }
     }
 

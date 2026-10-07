@@ -159,10 +159,12 @@ public static class DataEditorUtil
             if (margin == null) continue;
             //
             Label labelElement = GetVectorFieldLabel(field, idx);
-            labelElement.style.marginRight = margin.FloatValue;
+            if (labelElement != null) { // 此时第二个字段可能尚未初始化？
+                labelElement.style.marginRight = margin.FloatValue;
+            }
         }
     }
-    
+
     internal static void SetVectorFieldLabels(VisualElement field, VariableCfg cfg) {
         if (cfg.labels == null) {
             return;
@@ -170,7 +172,9 @@ public static class DataEditorUtil
         for (int idx = 0; idx < cfg.labels.Count; idx++) {
             string label = cfg.labels[idx];
             Label labelElement = GetVectorFieldLabel(field, idx);
-            labelElement.text = label;
+            if (labelElement != null) { // 此时第二个字段可能尚未初始化？
+                labelElement.text = label;
+            }
         }
     }
 
@@ -278,7 +282,7 @@ public static class DataEditorUtil
             case DSKeywords.TYPE_BOOL: return CreateBoolField(variable, editor);
             case DSKeywords.TYPE_DATETIME: return CreateDateTimeField(variable, editor);
             case DSKeywords.TYPE_TIMESTAMP: return CreateTimestampField(variable, editor);
-            case DSKeywords.TYPE_POINTER: return CreateObjectPathField(variable, editor);
+            case DSKeywords.TYPE_REF_ID: return CreateObjectPathField(variable, editor);
         }
         // 枚举
         if (varType.Kind == DSElementKind.Enum) {

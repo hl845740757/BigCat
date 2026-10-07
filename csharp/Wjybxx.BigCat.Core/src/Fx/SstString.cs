@@ -22,29 +22,32 @@ namespace Wjybxx.BigCat.Fx
 {
 /// <summary>
 /// 共享字符串表中的字符串
+/// (考虑结构化代替int值，int值只适合Excel表字段导出时生成，不适合直接定义引用)
 /// </summary>
 public readonly struct SstString : IEquatable<SstString>
 {
-    private readonly int id;
+    /// <summary>
+    /// 字符串在表格中的坐标Id
+    /// </summary>
+    public readonly int locationId;
 
-    public SstString(int id) {
-        this.id = id;
+    public SstString(int locationId) {
+        this.locationId = locationId;
     }
 
     /// <summary>
     /// 获取字符串值
     /// </summary>
-    public string Value => SstMgr.GetString(id);
+    public string Value => SstMgr.GetString(locationId);
 
-    /// <summary>
-    /// 隐式转换为string
-    /// </summary>
-    /// <param name="sstString"></param>
-    /// <returns></returns>
-    public static implicit operator string(SstString sstString) => SstMgr.GetString(sstString.id);
+    public static explicit operator string(SstString sstString) => SstMgr.GetString(sstString.locationId);
+
+    public static implicit operator int(SstString sstString) => sstString.locationId;
+
+    public static explicit operator SstString(int locationId) => new SstString(locationId);
 
     public bool Equals(SstString other) {
-        return id == other.id;
+        return locationId == other.locationId;
     }
 
     public override bool Equals(object? obj) {
@@ -52,11 +55,11 @@ public readonly struct SstString : IEquatable<SstString>
     }
 
     public override int GetHashCode() {
-        return id;
+        return locationId;
     }
 
     public override string ToString() {
-        return $"{nameof(id)}: {id}";
+        return $"{nameof(locationId)}: {locationId}";
     }
 }
 }

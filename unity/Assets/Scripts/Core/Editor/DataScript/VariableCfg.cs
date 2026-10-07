@@ -142,7 +142,7 @@ public sealed class VariableCfg
     public List<DSInst> supportedInsts;
 
     /// <summary>
-    /// 端口名
+    /// 端口重映射（属性path => 端口名）
     /// </summary>
     public List<KeyValuePair<string, string>> portNameRemap;
     /// <summary>
@@ -590,6 +590,7 @@ public sealed class FieldPortCfg
     public Side side = Side.Right; // 端口的显示位置
     public bool distinct; // 是否去重
     public bool expanded; // 是否默认展开 - 同侧只能出现一个默认展开端口
+    public string remap; // 端口重映射 - 该路径指向的字段才是真正的端口字段；选中端口时，可以直接配置该字段的属性
 }
 
 /// <summary>

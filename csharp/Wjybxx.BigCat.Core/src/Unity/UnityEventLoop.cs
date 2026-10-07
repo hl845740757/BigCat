@@ -44,7 +44,7 @@ namespace Wjybxx.BigCat.Unity
 /// 
 /// PS：该实现由<see cref="DisruptorEventLoop{T}"/>修改而来，主要变化为：内部线程驱动 => 外部线程驱动。
 /// </summary>
-[StructLayout(LayoutKind.Sequential)]
+// [StructLayout(LayoutKind.Sequential)] // 泛型类使用StructLayout可能导致卡类型无法加载
 public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where T : IAgentEvent
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger(typeof(UnityEventLoop<T>));
@@ -68,8 +68,7 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
     /** 线程本地时间 -- 时间的更新频率极高，进行缓存行填充隔离；使用volatile读写 */
     private PaddedInt64 _tickTime;
     /** 可消费的最大序号 -- 非死循环情况下，需要存储在外部；后向填充以避免影响state字段 */
-    private long availableSequence = -1;
-    private Padding56 _padding;
+    private PaddedInt64 _availableSequence = new PaddedInt64(-1);
     /** 线程状态 -- 变化频率低，不填充 */
     private volatile int state = ST_UNSTARTED;
 
@@ -666,11 +665,13 @@ public class UnityEventLoop<T> : AbstractEventLoop, IDisruptorEventLoop<T> where
             if (IsShutdown) {
                 return; // 前面的任务可能未执行首次逻辑，后续的任务也不能执行
             }
+            long availableSequence = _availableSequence.GetPlain();
             if (availableSequence < nextSequence
                 && (availableSequence = barrier.WaitFor(nextSequence)) < nextSequence) {
                 UpdateModules();
                 return; // 等待超时
             }
+            _availableSequence.SetPlain(availableSequence);
 
             long batchEndSequence = Math.Min(availableSequence, nextSequence + batchSize - 1);
             long curSequence = RunTaskBatch(nextSequence, batchEndSequence);

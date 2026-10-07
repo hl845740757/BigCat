@@ -425,7 +425,7 @@ public class DsonGenerator : ISheetProcessor
 
             DSKeywords.TYPE_DATETIME => new DsonDateTime(ParseDateTime(rawValue)),
             DSKeywords.TYPE_TIMESTAMP => new DsonTimestamp(Timestamp.Parse(rawValue)),
-            DSKeywords.TYPE_POINTER => new DsonPointer(ParsePointer(rawValue)),
+            DSKeywords.TYPE_REF_ID => new DsonRefId(ParseRefId(rawValue)),
             DSKeywords.TYPE_PAIR => ParsePair(rawValue),
             _ => namedType.IsEnum ? ParseEnum(namedType, rawValue) : ParseDefault(namedType, rawValue)
         };
@@ -452,7 +452,7 @@ public class DsonGenerator : ISheetProcessor
     /// <param name="namedType"></param>
     /// <param name="container"></param>
     private DsonValue RepairFieldValue(DSNamedType namedType, DsonValue container) {
-        if (container.DsonType == DsonType.Pointer) {
+        if (container.DsonType == DsonType.RefId) {
             return container; // 允许引用其它地方对象
         }
         if (DSUtil.IsPairType(namedType)) {
@@ -662,13 +662,13 @@ public class DsonGenerator : ISheetProcessor
         return ExtDateTime.OfDateTime(dateTime);
     }
 
-    private static ObjectPtr ParsePointer(string rawValue) {
-        if (rawValue.StartsWith("@ptr")) { // 缩写形式
+    private static RefId ParseRefId(string rawValue) {
+        if (rawValue.StartsWith("@ref")) { // 缩写形式
             rawValue = rawValue.Substring(4).Trim();
-            return new ObjectPtr(int.Parse(rawValue));
+            return new RefId(int.Parse(rawValue));
         }
         // 对象形式，替换字符串转换为普通DsonObject
-        rawValue = rawValue.Replace("@ptr", "");
+        rawValue = rawValue.Replace("@ref", "");
         DsonObject<string> dsonObject = (DsonObject<string>)Dsons.FromDson(rawValue);
         //
         string? collection = null;
@@ -676,19 +676,19 @@ public class DsonGenerator : ISheetProcessor
         int localId = 0;
         int type = 0;
         DsonValue dsonValue;
-        if (dsonObject.TryGetValue(ObjectPtr.NamesCollection, out dsonValue)) {
+        if (dsonObject.TryGetValue(RefId.NamesCollection, out dsonValue)) {
             collection = dsonValue.AsString();
         }
-        if (dsonObject.TryGetValue(ObjectPtr.NamesLocalPath, out dsonValue)) {
+        if (dsonObject.TryGetValue(RefId.NamesLocalPath, out dsonValue)) {
             localPath = dsonValue.AsString();
         }
-        if (dsonObject.TryGetValue(ObjectPtr.NamesLocalId, out dsonValue)) {
+        if (dsonObject.TryGetValue(RefId.NamesLocalId, out dsonValue)) {
             localId = dsonValue.AsNumber().IntValue;
         }
-        if (dsonObject.TryGetValue(ObjectPtr.NamesType, out dsonValue)) {
+        if (dsonObject.TryGetValue(RefId.NamesType, out dsonValue)) {
             type = dsonValue.AsNumber().IntValue;
         }
-        return new ObjectPtr(collection, localPath, localId, type);
+        return new RefId(collection, localPath, localId, type);
     }
 
     private static DsonObject<string> ParsePair(string rawValue) {

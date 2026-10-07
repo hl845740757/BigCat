@@ -100,12 +100,12 @@ public sealed class DSRepository
             .AddEnclosedElement(new DSField("seconds", "int64", 1))
             .AddEnclosedElement(new DSField("nanos", "int32", 2))
             .AddCodecAliases("Timestamp"));
-        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_POINTER)
+        AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_REF_ID)
             .AddEnclosedElement(new DSField("collection", "string", 1))
             .AddEnclosedElement(new DSField("localPath", "string", 2))
             .AddEnclosedElement(new DSField("localId", "int64", 3))
             .AddEnclosedElement(new DSField("type", "int32", 4))
-            .AddCodecAliases("ObjectPtr"));
+            .AddCodecAliases("RefId"));
         AddBuiltinType(DSNamedType.NewStructType(DSKeywords.TYPE_NAME_PAIR)
             .AddEnclosedElement(new DSField("key", "K", 1))
             .AddEnclosedElement(new DSField("value", "V", 2))

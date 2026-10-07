@@ -47,6 +47,18 @@ public interface ITimerQueue
     ValueFuture ScheduleAtFixedRate(Action<object> action, object state, double delay, double period, CancellationToken cancelToken = default);
 
     /// <summary>
+    /// 设置Timer的调度选项(比如抑制异常)
+    /// </summary>
+    void SetOptions(long timerId, int options);
+
+    /// <summary>
+    /// 设置Timer下次触发的延迟
+    /// </summary>
+    /// <param name="timerId"></param>
+    /// <param name="nextDelay"></param>
+    void SetNextDelay(long timerId, double nextDelay);
+
+    /// <summary>
     /// 暂停Timer
     /// </summary>
     /// <param name="timerId"></param>

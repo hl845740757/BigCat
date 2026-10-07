@@ -211,12 +211,12 @@ public static class DSUtil
     }
 
     /// <summary>
-    /// 是否是对象指针类型
+    /// 是否是ID引用类型
     /// </summary>
     /// <param name="typeElement"></param>
     /// <returns></returns>
-    public static bool IsPointerType(DSElement typeElement) {
-        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_POINTER;
+    public static bool IsRefIdType(DSElement typeElement) {
+        return typeElement.Kind.IsNamedType() && typeElement.Name == DSKeywords.TYPE_REF_ID;
     }
 
     /// <summary>

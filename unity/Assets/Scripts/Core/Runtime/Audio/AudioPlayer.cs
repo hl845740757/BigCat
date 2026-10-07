@@ -162,7 +162,7 @@ public class AudioPlayer : MonoBehaviour
         if (string.IsNullOrEmpty(audioPath)) {
             return;
         }
-        // 短音效 - 资源handle在心跳方法中释放
+        // 短音效 - 资源handle在心跳方法中释放；后台状态下，短音效可不播放
         AssetHandle handle;
         if (request.playMode != AudioPlayMode.PlayClip) {
 #if !UNITY_EDITOR
@@ -255,12 +255,12 @@ public class AudioPlayer : MonoBehaviour
     }
 
     private void Update() {
-        float tickTime = Time.time;
+        float tickTime = Time.unscaledTime;
         if (tickTime - _lastCheckTime >= 0.1f) {
             _lastCheckTime = tickTime;
             CheckShotContexts(tickTime);
         }
-        // 同步音量设置 - PlayOneShot也需要同步
+        // 同步音量设置 - PlayOneShot也需要同步；音量同步也可以低频进行
         AudioPlayerSettings parentSettings = settings.parent;
         if (parentSettings != null) {
             settings.realMute = parentSettings.realMute || settings.mute;

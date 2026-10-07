@@ -29,14 +29,14 @@ public class Fixed64Test
     public void TestFactoryAndCompare() {
         Assert.That(Fixed64.Scale, Is.EqualTo(10_000));
         Fixed64 value = Fixed64.FromRaw(12_345);
-        Assert.That(value.RawValue, Is.EqualTo(12_345));
+        Assert.That(value.rawValue, Is.EqualTo(12_345));
         Assert.That(value.ToInt64(), Is.EqualTo(1));
-        Assert.That(Fixed64.FromInt64(-12).RawValue, Is.EqualTo(-120_000));
-        Assert.That(Fixed64.One.RawValue, Is.EqualTo(Fixed64.Scale));
+        Assert.That(Fixed64.FromInt64(-12).rawValue, Is.EqualTo(-120_000));
+        Assert.That(Fixed64.One.rawValue, Is.EqualTo(Fixed64.Scale));
         Assert.That(Fixed64.FromRaw(-12_345).ToString(), Is.EqualTo("-1.2345"));
         Assert.That(Fixed64.MinValue.ToString(), Is.EqualTo("-922337203685477.5807"));
-        Assert.That(Fixed64.MinValue.RawValue, Is.EqualTo(long.MinValue + 1));
-        Assert.That(Math.Abs(Fixed64.MinValue.RawValue), Is.EqualTo(Fixed64.MaxValue.RawValue));
+        Assert.That(Fixed64.MinValue.rawValue, Is.EqualTo(long.MinValue + 1));
+        Assert.That(Math.Abs(Fixed64.MinValue.rawValue), Is.EqualTo(Fixed64.MaxValue.rawValue));
         Assert.Throws<OverflowException>(() => Fixed64.FromRaw(long.MinValue));
 
         Fixed64 left = Fixed64.FromRaw(-1);
@@ -68,10 +68,10 @@ public class Fixed64Test
     public void TestAddSubtractAndNegate() {
         Fixed64 left = Fixed64.FromRaw(12_345);
         Fixed64 right = Fixed64.FromRaw(-2_345);
-        Assert.That((left + right).RawValue, Is.EqualTo(10_000));
-        Assert.That((left - right).RawValue, Is.EqualTo(14_690));
-        Assert.That((-left).RawValue, Is.EqualTo(-12_345));
-        Assert.That((+left).RawValue, Is.EqualTo(12_345));
+        Assert.That((left + right).rawValue, Is.EqualTo(10_000));
+        Assert.That((left - right).rawValue, Is.EqualTo(14_690));
+        Assert.That((-left).rawValue, Is.EqualTo(-12_345));
+        Assert.That((+left).rawValue, Is.EqualTo(12_345));
 
         Assert.Throws<OverflowException>(() => _ = Fixed64.MaxValue + Fixed64.FromRaw(1));
         Assert.Throws<OverflowException>(() => _ = Fixed64.MinValue - Fixed64.FromRaw(1));
@@ -82,23 +82,23 @@ public class Fixed64Test
 
     [Test]
     public void TestMultiplyAndDivide() {
-        Assert.That((Fixed64.FromRaw(12_500) * Fixed64.FromRaw(18_000)).RawValue, Is.EqualTo(22_500));
-        Assert.That((Fixed64.One / Fixed64.FromRaw(30_000)).RawValue, Is.EqualTo(3_333));
-        Assert.That((Fixed64.One / Fixed64.FromRaw(-30_000)).RawValue, Is.EqualTo(-3_333));
-        Assert.That((Fixed64.FromRaw(-10_000) / Fixed64.FromRaw(30_000)).RawValue, Is.EqualTo(-3_333));
-        Assert.That((Fixed64.FromRaw(-10_000) / Fixed64.FromRaw(-30_000)).RawValue, Is.EqualTo(3_333));
-        Assert.That((Fixed64.FromRaw(-1) * Fixed64.FromRaw(5_000)).RawValue, Is.EqualTo(-1));
-        Assert.That((Fixed64.FromRaw(-3) * Fixed64.FromRaw(5_000)).RawValue, Is.EqualTo(-2));
-        Assert.That((Fixed64.MaxValue * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale + 1));
-        Assert.That((Fixed64.MinValue * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MinValue / Fixed64.Scale - 1));
-        Assert.That((Fixed64.FromRaw(4_294_967_296L) * Fixed64.FromRaw(4_294_967_296L)).RawValue,
+        Assert.That((Fixed64.FromRaw(12_500) * Fixed64.FromRaw(18_000)).rawValue, Is.EqualTo(22_500));
+        Assert.That((Fixed64.One / Fixed64.FromRaw(30_000)).rawValue, Is.EqualTo(3_333));
+        Assert.That((Fixed64.One / Fixed64.FromRaw(-30_000)).rawValue, Is.EqualTo(-3_333));
+        Assert.That((Fixed64.FromRaw(-10_000) / Fixed64.FromRaw(30_000)).rawValue, Is.EqualTo(-3_333));
+        Assert.That((Fixed64.FromRaw(-10_000) / Fixed64.FromRaw(-30_000)).rawValue, Is.EqualTo(3_333));
+        Assert.That((Fixed64.FromRaw(-1) * Fixed64.FromRaw(5_000)).rawValue, Is.EqualTo(-1));
+        Assert.That((Fixed64.FromRaw(-3) * Fixed64.FromRaw(5_000)).rawValue, Is.EqualTo(-2));
+        Assert.That((Fixed64.MaxValue * Fixed64.FromRaw(1)).rawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale + 1));
+        Assert.That((Fixed64.MinValue * Fixed64.FromRaw(1)).rawValue, Is.EqualTo(long.MinValue / Fixed64.Scale - 1));
+        Assert.That((Fixed64.FromRaw(4_294_967_296L) * Fixed64.FromRaw(4_294_967_296L)).rawValue,
             Is.EqualTo(1_844_674_407_370_955L));
         Assert.Throws<DivideByZeroException>(() => _ = Fixed64.One / Fixed64.Zero);
 
         Fixed64 large = Fixed64.FromRaw(long.MaxValue);
-        Assert.That((large * Fixed64.FromRaw(1)).RawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale + 1));
-        Assert.That((Fixed64.MaxValue / Fixed64.One).RawValue, Is.EqualTo(long.MaxValue));
-        Assert.That((Fixed64.MaxValue * Fixed64.One).RawValue, Is.EqualTo(long.MaxValue));
+        Assert.That((large * Fixed64.FromRaw(1)).rawValue, Is.EqualTo(long.MaxValue / Fixed64.Scale + 1));
+        Assert.That((Fixed64.MaxValue / Fixed64.One).rawValue, Is.EqualTo(long.MaxValue));
+        Assert.That((Fixed64.MaxValue * Fixed64.One).rawValue, Is.EqualTo(long.MaxValue));
         Assert.Throws<OverflowException>(() => _ = Fixed64.MaxValue * Fixed64.FromRaw(Fixed64.Scale + 1));
         Assert.Throws<OverflowException>(() => _ = Fixed64.MaxValue / Fixed64.FromRaw(1));
         Assert.Throws<DivideByZeroException>(() => _ = Fixed64.Zero / Fixed64.Zero);
@@ -154,7 +154,7 @@ public class Fixed64Test
             long expected = expectedValues[offset + 1];
             AssertSigns(leftRaw, midpoint + offset, (left, right) => {
                 long signedExpected = (left < 0) != (right < 0) ? -expected : expected;
-                Assert.That((Fixed64.FromRaw(left) * Fixed64.FromRaw(right)).RawValue,
+                Assert.That((Fixed64.FromRaw(left) * Fixed64.FromRaw(right)).rawValue,
                     Is.EqualTo(signedExpected), $"multiply({left}, {right})");
                 AssertMultiply(left, right);
             });
@@ -201,7 +201,7 @@ public class Fixed64Test
             long expected = offset < 0 ? truncated : truncated + 1;
             AssertSigns(midpoint + offset, divisor, (left, right) => {
                 long signedExpected = (left < 0) != (right < 0) ? -expected : expected;
-                Assert.That((Fixed64.FromRaw(left) / Fixed64.FromRaw(right)).RawValue,
+                Assert.That((Fixed64.FromRaw(left) / Fixed64.FromRaw(right)).rawValue,
                     Is.EqualTo(signedExpected), $"divide({left}, {right})");
                 AssertDivide(left, right);
             });
@@ -253,7 +253,7 @@ public class Fixed64Test
 
     [Test]
     public void TestMinValueSignBoundaries() {
-        long minRaw = Fixed64.MinValue.RawValue;
+        long minRaw = Fixed64.MinValue.rawValue;
         long[] values = { minRaw, minRaw + 1, -10_001, -10_000, -9_999, -1, 0, 1, 9_999, 10_000, 10_001, long.MaxValue };
         foreach (long value in values) {
             AssertOperation(minRaw, value);
@@ -303,11 +303,11 @@ public class Fixed64Test
     [Test]
     public void TestSqrt() {
         Assert.That(Fixed64.Sqrt(Fixed64.Zero), Is.EqualTo(Fixed64.Zero));
-        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(10_000)).RawValue, Is.EqualTo(10_000));
-        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(40_000)).RawValue, Is.EqualTo(20_000));
-        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(22_500)).RawValue, Is.EqualTo(15_000));
-        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(20_000)).RawValue, Is.EqualTo(14_142));
-        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(1)).RawValue, Is.EqualTo(100));
+        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(10_000)).rawValue, Is.EqualTo(10_000));
+        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(40_000)).rawValue, Is.EqualTo(20_000));
+        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(22_500)).rawValue, Is.EqualTo(15_000));
+        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(20_000)).rawValue, Is.EqualTo(14_142));
+        Assert.That(Fixed64.Sqrt(Fixed64.FromRaw(1)).rawValue, Is.EqualTo(100));
         Assert.Throws<ArgumentOutOfRangeException>(() => Fixed64.Sqrt(Fixed64.FromRaw(-1)));
 
         long[] values = { 0, 1, 2, 3, 9_999, 10_000, 20_000, 22_500, 40_000, long.MaxValue };
@@ -324,7 +324,7 @@ public class Fixed64Test
     }
 
     private static void AssertSqrt(long rawValue) {
-        long root = Fixed64.Sqrt(Fixed64.FromRaw(rawValue)).RawValue;
+        long root = Fixed64.Sqrt(Fixed64.FromRaw(rawValue)).rawValue;
         BigInteger number = (BigInteger)rawValue * Fixed64.Scale;
         BigInteger nextRoot = (BigInteger)root + 1;
         Assert.That(root, Is.GreaterThanOrEqualTo(0), $"sqrt({rawValue})");
@@ -362,7 +362,7 @@ public class Fixed64Test
             product += (leftRaw < 0) != (rightRaw < 0) ? -1 : 1;
         }
         if (product > long.MinValue && product <= long.MaxValue) {
-            Assert.That((Fixed64.FromRaw(leftRaw) * Fixed64.FromRaw(rightRaw)).RawValue, Is.EqualTo((long)product), message);
+            Assert.That((Fixed64.FromRaw(leftRaw) * Fixed64.FromRaw(rightRaw)).rawValue, Is.EqualTo((long)product), message);
         } else {
             Assert.Throws<OverflowException>(() => _ = Fixed64.FromRaw(leftRaw) * Fixed64.FromRaw(rightRaw), message);
         }
@@ -382,7 +382,7 @@ public class Fixed64Test
             quotient += (leftRaw < 0) != (rightRaw < 0) ? -1 : 1;
         }
         if (quotient > long.MinValue && quotient <= long.MaxValue) {
-            Assert.That((Fixed64.FromRaw(leftRaw) / Fixed64.FromRaw(rightRaw)).RawValue, Is.EqualTo((long)quotient), message);
+            Assert.That((Fixed64.FromRaw(leftRaw) / Fixed64.FromRaw(rightRaw)).rawValue, Is.EqualTo((long)quotient), message);
         } else {
             Assert.Throws<OverflowException>(() => _ = Fixed64.FromRaw(leftRaw) / Fixed64.FromRaw(rightRaw), message);
         }

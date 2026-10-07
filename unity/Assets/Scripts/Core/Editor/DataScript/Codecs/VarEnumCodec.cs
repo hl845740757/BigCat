@@ -49,7 +49,7 @@ public class VarEnumCodec : IVarCodec
             writer.WriteString(enumValue.Name, StringStyle.Unquote);
             return;
         }
-        // 尝试输出位既有枚举
+        // 尝试输出为既有枚举
         {
             DSEnumValue enumValue = varType.GetEnumValue(variable.intValue);
             if (enumValue != null) {

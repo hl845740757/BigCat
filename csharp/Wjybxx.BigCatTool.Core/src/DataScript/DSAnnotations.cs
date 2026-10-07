@@ -116,7 +116,7 @@ public static class DSAnnotations
     /// - labelMargin label和value的边距
     /// - labelMargins 原子结构内嵌字段的label和value的边距；数组类型，允许null值
     /// 
-    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如ObjectPtr、Pointer、Double4。
+    /// - dsonType dson类型投影，可将自定义数据结构导出为Dson内建结构，如RefId、Pointer、Double4。
     /// - nodeFeatures node的特征值，是否启用Port端口等
     /// </summary>
     public const string EDITOR = "Editor";

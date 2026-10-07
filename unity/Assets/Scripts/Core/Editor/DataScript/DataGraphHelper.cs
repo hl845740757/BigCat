@@ -215,9 +215,9 @@ public class DataGraphHelper
             }
             return;
         }
-        // ObjectPtr/ObjectPath
-        if (typeCfg.dsonType == DsonType.Pointer) {
-            ObjectPtr pointer = dsonValue.AsPointer();
+        // RefId/ObjectPath
+        if (typeCfg.dsonType == DsonType.RefId) {
+            RefId pointer = dsonValue.AsRefId();
             variable.objectPathValue = new ObjectPath(pointer.Collection, pointer.LocalPath, pointer.LocalId, pointer.Type);
             return;
         }
@@ -458,10 +458,10 @@ public class DataGraphHelper
             writer.WriteTimestamp(variable.timestampValue);
             return;
         }
-        // ObjectPtr
-        if (typeCfg.dsonType == DsonType.Pointer || DSUtil.IsPointerType(varType)) {
+        // RefId/ObjectPath
+        if (typeCfg.dsonType == DsonType.RefId || DSUtil.IsRefIdType(varType)) {
             ObjectPath path = variable.objectPathValue;
-            writer.WritePtr(new ObjectPtr(path.collection, path.localPath, path.localId, path.type));
+            writer.WriteRefId(new RefId(path.collection, path.localPath, path.localId, path.type));
             return;
         }
         // Double4 - 只读取类型设置，不读取字段设置（有特殊需求的就定义特殊类型）

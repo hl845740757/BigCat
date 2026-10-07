@@ -3,13 +3,15 @@ using Wjybxx.BigCat.Fx;
 using Wjybxx.Commons.Concurrent;
 
 namespace Wjybxx.BigCatTool.Tests.Generated
-{/// <summary>
+{
+/// <summary>
 /// @Rpc{id: 1}
 /// </summary>
 [Generated("Wjybxx.BigCatTool.Generator.Protobuf.ServiceGenerator")]
 [RpcService(ServiceId = 1)]
 public interface SearchService
 {
+
     /// <summary>
     /// @Rpc {id: 1}
     /// </summary>

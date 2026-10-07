@@ -1,19 +1,19 @@
 using Wjybxx.Commons.Attributes;
 using Wjybxx.Dson.Codec.Attributes;
-using Wjybxx.BigCat.Util;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
-using System;
-using Wjybxx.BigCat.Fx;
-using Wjybxx.Dson.Codec;
 
 namespace Wjybxx.BigCat.Demo
-{/// <summary>
+{
+/// <summary>
 /// @SheetInfo {name: "Test", type: 0}
 /// </summary>
 [Generated("Wjybxx.BigCatTool.Generator.Excel.ClassGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "TestCfg" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
+[SerializeVersion(877673664)]
 public class TestCfg
 {
+
     #nullable disable
     // ReSharper disable All
     /// <summary>
@@ -37,18 +37,17 @@ public class TestCfg
     /// 测试字符串池化
     /// </summary>
     private ImmutableList<int> _list1 = ImmutableList<int>.Empty;
-    [NonSerialized]
-    private ImmutableList<string> _list1Cache;
     /// <summary>
     /// @Options{ssti: true, nonSerialized: false}
     /// 测试字符串池化
     /// </summary>
     private ImmutableList<int> _list2 = ImmutableList<int>.Empty;
-    [NonSerialized]
-    private ImmutableList<string> _list2Cache;
 
     public TestCfg(int itemId) {
         this._itemId = itemId;
+    }
+
+    public TestCfg() {
     }
 
     public int itemId => _itemId;
@@ -67,55 +66,15 @@ public class TestCfg
         internal set => this._v3orV4 = value;
     }
 
-    public ImmutableList<string> list1 => _list1Cache ??= SstMgr.GetStringList(_list1);
-    public ImmutableList<string> list2 => _list2Cache ??= SstMgr.GetStringList(_list2);
-    public virtual void ClearSstiCache() {
-        this._list1Cache = null;
-        this._list2Cache = null;
+    public ImmutableList<int> list1 {
+        get => _list1;
+        internal set => this._list1 = value;
     }
 
-    #region codec
-
-    public TestCfg(IDsonObjectReader reader) {
+    public ImmutableList<int> list2 {
+        get => _list2;
+        internal set => this._list2 = value;
     }
-
-    public virtual void ReadFields(IDsonObjectReader reader) {
-        this._itemId = reader.ReadInt();
-        this._rate = reader.ReadDouble();
-        this._rate2 = reader.ReadDouble();
-        this._v3orV4 = reader.ReadObject<object>(default);
-        this._list1 = reader.ReadObject<ImmutableList<int>>(default);
-        this._list2 = reader.ReadObject<ImmutableList<int>>(default);
-    }
-
-    public virtual bool ReadField(IDsonObjectReader reader, string name) {
-        switch (name) {
-            case "itemId": this._itemId = reader.ReadInt(); return true;
-            case "rate": this._rate = reader.ReadDouble(); return true;
-            case "rate2": this._rate2 = reader.ReadDouble(); return true;
-            case "v3orV4": this._v3orV4 = reader.ReadObject<object>(default); return true;
-            case "list1": this._list1 = reader.ReadObject<ImmutableList<int>>(default); return true;
-            case "list2": this._list2 = reader.ReadObject<ImmutableList<int>>(default); return true;
-            default: return false;
-        }
-    }
-
-    public virtual void WriteFields(IDsonObjectWriter writer) {
-        writer.WriteInt("itemId", this._itemId);
-        writer.WriteDouble("rate", this._rate);
-        writer.WriteDouble("rate2", this._rate2);
-        writer.WriteObject("v3orV4", this._v3orV4);
-        writer.WriteObject("list1", this._list1);
-        writer.WriteObject("list2", this._list2);
-    }
-
-    public virtual void BeforeEncode(ConverterOptions options) {
-    }
-
-    public virtual void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region copy
 
@@ -124,9 +83,7 @@ public class TestCfg
         this._rate2 = src._rate2;
         this._v3orV4 = src._v3orV4;
         this._list1 = src._list1;
-        this._list1Cache = src._list1Cache;
         this._list2 = src._list2;
-        this._list2Cache = src._list2Cache;
     }
 
     #endregion

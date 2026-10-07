@@ -22,6 +22,7 @@ using System.IO;
 using Wjybxx.BigCatTool.Core;
 using Wjybxx.BigCatTool.DataScript;
 using Wjybxx.BigCatTool.Excel;
+using Wjybxx.Commons;
 using Wjybxx.Commons.Collections;
 using Wjybxx.Commons.Poet;
 using Wjybxx.Commons.Pool;
@@ -53,7 +54,7 @@ namespace Wjybxx.BigCatTool.Generator.Excel
 /// </summary>
 public class ClassGenerator : ISheetProcessor
 {
-    private static readonly ClassName TYPE_NAME_SERIAL_VERSION = GeneratorUtil.ClassNameOfCanonicalName("Wjybxx.BigCat.Util.SerialVersionAttribute");
+    private static readonly ClassName TYPE_NAME_SERIAL_VERSION = ClassName.Get(typeof(SerializeVersion));
     private static readonly AttributeSpec processorInfo = GeneratorUtil.NewProcessorInfoAnnotation(typeof(ClassGenerator));
 
     private readonly DSRepository _dsRepository;
@@ -140,14 +141,6 @@ public class ClassGenerator : ISheetProcessor
 
         protected override bool IsDataClass(DSNamedType namedType, DsonObject<string> options) {
             return false;
-        }
-
-        protected override bool NeedClearSstiMethod(DSNamedType namedType, DsonObject<string> options) {
-            return true;
-        }
-
-        protected override bool NeedCodecMethod(DSNamedType namedType, DsonObject<string> options) {
-            return true;
         }
 
         protected override bool NeedCopyMethod(DSNamedType namedType, DsonObject<string> options) {

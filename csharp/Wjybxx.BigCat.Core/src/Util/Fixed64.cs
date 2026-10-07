@@ -19,12 +19,13 @@
 using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Wjybxx.Dson.Types;
 
 namespace Wjybxx.BigCat.Util
 {
 /// <summary>
 /// 基于Int64的十进制定点数。
-/// <para>真实值等于<see cref="RawValue"/>除以<see cref="Scale"/>，固定保留4位小数。</para>
+/// <para>真实值等于<see cref="rawValue"/>除以<see cref="Scale"/>，固定保留4位小数。</para>
 /// </summary>
 public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
 {
@@ -42,9 +43,13 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     /// </summary>
     public static readonly Fixed64 One = new Fixed64(Scale);
     /// <summary>
+    /// 负一值
+    /// </summary>
+    public static readonly Fixed64 MinusOne = new Fixed64(-Scale);
+    /// <summary>
     /// 最小值，与最大值互为相反数。
     /// </summary>
-    public static readonly Fixed64 MinValue = new Fixed64(long.MinValue + 1);
+    public static readonly Fixed64 MinValue = new Fixed64(-long.MaxValue);
     /// <summary>
     /// 最大值。
     /// </summary>
@@ -53,11 +58,11 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     /// <summary>
     /// 定点数的原始整数值。
     /// </summary>
-    public readonly long RawValue;
+    public readonly long rawValue;
 
-    private Fixed64(long rawValue) {
+    public Fixed64(long rawValue) {
         if (rawValue == long.MinValue) throw new OverflowException();
-        RawValue = rawValue;
+        this.rawValue = rawValue;
     }
 
     /// <summary>
@@ -77,34 +82,59 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     }
 
     /// <summary>
+    /// 通过浮点数构造，将超过四位的小数向零截断。
+    /// </summary>
+    public static Fixed64 FromDouble(double value) {
+        if (double.IsNaN(value) || double.IsInfinity(value)) {
+            throw new OverflowException();
+        }
+        long rawValue = checked((long)(value * Scale));
+        return new Fixed64(rawValue);
+    }
+
+    /// <summary>
     /// 转换为整数，小数部分向零截断。
     /// </summary>
     public long ToInt64() {
-        return RawValue / Scale;
+        return rawValue / Scale;
+    }
+
+    /// <summary>
+    /// 转换为浮点数
+    /// </summary>
+    /// <returns></returns>
+    public double ToDouble() {
+        return rawValue / (double)Scale;
     }
 
     /// <summary>
     /// 返回较小值。
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 Min(Fixed64 x, Fixed64 y) {
-        return x.RawValue <= y.RawValue ? x : y;
+        return x.rawValue <= y.rawValue ? x : y;
     }
 
     /// <summary>
     /// 返回较大值。
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 Max(Fixed64 x, Fixed64 y) {
-        return x.RawValue >= y.RawValue ? x : y;
+        return x.rawValue >= y.rawValue ? x : y;
     }
 
     /// <summary>
     /// 将值限制在指定区间内。
     /// </summary>
     /// <exception cref="ArgumentException">min大于max。</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 Clamp(Fixed64 value, Fixed64 min, Fixed64 max) {
-        if (min > max) throw new ArgumentException("min不能大于max");
-        if (value < min) return min;
-        return value > max ? max : value;
+        if (min.rawValue > max.rawValue) {
+            throw new ArgumentException("min不能大于max");
+        }
+        if (value.rawValue < min.rawValue) return min;
+        if (value.rawValue > max.rawValue) return max;
+        return value;
     }
 
     /// <summary>
@@ -112,10 +142,10 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">value为负数。</exception>
     public static Fixed64 Sqrt(Fixed64 value) {
-        if (value.RawValue < 0) throw new ArgumentOutOfRangeException(nameof(value), "不能计算负数的平方根");
-        if (value.RawValue == 0) return Zero;
+        if (value.rawValue < 0) throw new ArgumentOutOfRangeException(nameof(value), "不能计算负数的平方根");
+        if (value.rawValue == 0) return Zero;
 
-        UInt128Parts number = UInt128Parts.Multiply((ulong)value.RawValue, (ulong)Scale);
+        UInt128Parts number = UInt128Parts.Multiply((ulong)value.rawValue, (ulong)Scale);
         ulong low = 0;
         // sqrt(long.MaxValue * Scale)小于2^40
         ulong high = 1UL << 40;
@@ -131,22 +161,26 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
         return new Fixed64((long)low);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 operator +(Fixed64 value) {
         return value;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 operator -(Fixed64 value) {
-        return new Fixed64(-value.RawValue);
+        return new Fixed64(-value.rawValue);
     }
 
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 operator +(Fixed64 left, Fixed64 right) {
-        return new Fixed64(checked(left.RawValue + right.RawValue));
+        return new Fixed64(checked(left.rawValue + right.rawValue));
     }
 
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Fixed64 operator -(Fixed64 left, Fixed64 right) {
-        return new Fixed64(checked(left.RawValue - right.RawValue));
+        return new Fixed64(checked(left.rawValue - right.rawValue));
     }
 
     /// <summary>
@@ -154,10 +188,10 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     /// </summary>
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
     public static Fixed64 operator *(Fixed64 left, Fixed64 right) {
-        if (left.RawValue == 0 || right.RawValue == 0) return Zero;
-        bool negative = (left.RawValue < 0) != (right.RawValue < 0);
-        ulong x = GetMagnitude(left.RawValue);
-        ulong y = GetMagnitude(right.RawValue);
+        if (left.rawValue == 0 || right.rawValue == 0) return Zero;
+        bool negative = (left.rawValue < 0) != (right.rawValue < 0);
+        ulong x = GetMagnitude(left.rawValue);
+        ulong y = GetMagnitude(right.rawValue);
         // 常用数值无需构造完整的128位乘积。
         ulong quotient;
         ulong remainder;
@@ -180,11 +214,11 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     /// <exception cref="DivideByZeroException">right为零。</exception>
     /// <exception cref="OverflowException">结果超出可表示范围。</exception>
     public static Fixed64 operator /(Fixed64 left, Fixed64 right) {
-        if (right.RawValue == 0) throw new DivideByZeroException();
-        if (left.RawValue == 0) return Zero;
-        bool negative = (left.RawValue < 0) != (right.RawValue < 0);
-        ulong x = GetMagnitude(left.RawValue);
-        ulong divisor = GetMagnitude(right.RawValue);
+        if (right.rawValue == 0) throw new DivideByZeroException();
+        if (left.rawValue == 0) return Zero;
+        bool negative = (left.rawValue < 0) != (right.rawValue < 0);
+        ulong x = GetMagnitude(left.rawValue);
+        ulong divisor = GetMagnitude(right.rawValue);
         ulong quotient;
         ulong remainder;
         if (x <= ulong.MaxValue / (ulong)Scale) {
@@ -202,11 +236,11 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     }
 
     public bool Equals(Fixed64 other) {
-        return RawValue == other.RawValue;
+        return rawValue == other.rawValue;
     }
 
     public int CompareTo(Fixed64 other) {
-        return RawValue.CompareTo(other.RawValue);
+        return rawValue.CompareTo(other.rawValue);
     }
 
     public override bool Equals(object? obj) {
@@ -214,40 +248,47 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
     }
 
     public override int GetHashCode() {
-        return RawValue.GetHashCode();
+        return rawValue.GetHashCode();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(Fixed64 left, Fixed64 right) {
-        return left.RawValue == right.RawValue;
+        return left.rawValue == right.rawValue;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(Fixed64 left, Fixed64 right) {
-        return left.RawValue != right.RawValue;
+        return left.rawValue != right.rawValue;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <(Fixed64 left, Fixed64 right) {
-        return left.RawValue < right.RawValue;
+        return left.rawValue < right.rawValue;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <=(Fixed64 left, Fixed64 right) {
-        return left.RawValue <= right.RawValue;
+        return left.rawValue <= right.rawValue;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >(Fixed64 left, Fixed64 right) {
-        return left.RawValue > right.RawValue;
+        return left.rawValue > right.rawValue;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >=(Fixed64 left, Fixed64 right) {
-        return left.RawValue >= right.RawValue;
+        return left.rawValue >= right.rawValue;
     }
 
     public override string ToString() {
-        ulong magnitude = GetMagnitude(RawValue);
+        ulong magnitude = GetMagnitude(rawValue);
         ulong integer = magnitude / (ulong)Scale;
         ulong fraction = magnitude % (ulong)Scale;
-        string value = integer.ToString(CultureInfo.InvariantCulture) + "."
+        string value = integer.ToString(CultureInfo.InvariantCulture)
+                       + "."
                        + fraction.ToString("D4", CultureInfo.InvariantCulture);
-        return RawValue < 0 ? "-" + value : value;
+        return rawValue < 0 ? "-" + value : value;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -364,13 +405,70 @@ public readonly struct Fixed64 : IEquatable<Fixed64>, IComparable<Fixed64>
         /// </summary>
         private static int LeadingZeroCount(uint value) {
             int count = 0;
-            if (value < 0x10000) { count += 16; value <<= 16; }
-            if (value < 0x1000000) { count += 8; value <<= 8; }
-            if (value < 0x10000000) { count += 4; value <<= 4; }
-            if (value < 0x40000000) { count += 2; value <<= 2; }
+            if (value < 0x10000) {
+                count += 16;
+                value <<= 16;
+            }
+            if (value < 0x1000000) {
+                count += 8;
+                value <<= 8;
+            }
+            if (value < 0x10000000) {
+                count += 4;
+                value <<= 4;
+            }
+            if (value < 0x40000000) {
+                count += 2;
+                value <<= 2;
+            }
             if (value < 0x80000000) count++;
             return count;
         }
+    }
+
+    public static implicit operator Fxp64(Fixed64 fixed64) => new Fxp64(fixed64.rawValue);
+
+    public static implicit operator Fixed64(Fxp64 fixed64) => new Fixed64(fixed64.rawValue);
+
+    /// <summary>
+    /// 解析普通十进制文本，小数部分最多四位。
+    /// </summary>
+    public static Fixed64 Parse(string value) {
+        return TryParse(value, out Fixed64 r) ? r : throw new FormatException(value);
+    }
+
+    public static bool TryParse(string strValue, out Fixed64 r) {
+        if (string.IsNullOrEmpty(strValue)) {
+            r = default;
+            return false;
+        }
+        ReadOnlySpan<char> text = strValue.AsSpan();
+        bool negative = text[0] == '-';
+        if (text[0] == '-' || text[0] == '+') {
+            text = text.Slice(1);
+        }
+
+        int index = text.IndexOf('.');
+        ReadOnlySpan<char> integerPart = index == -1 ? text : text.Slice(0, index);
+        if (!long.TryParse(integerPart, out long p0) || p0 > long.MaxValue / Scale) {
+            r = default;
+            return false;
+        }
+        long p1 = 0;
+        if (index != -1) {
+            ReadOnlySpan<char> fractionPart = text.Slice(index + 1);
+            if (!long.TryParse(fractionPart, out p1) || (p1 < 0 || p1 > Scale)) {
+                r = default;
+                return false;
+            }
+            for (int i = fractionPart.Length; i < 4; i++) {
+                p1 *= 10;
+            }
+        }
+
+        long rawValue = checked(p0 * Scale + p1);
+        r = new Fixed64(negative ? -rawValue : rawValue);
+        return true;
     }
 }
 }

@@ -4,18 +4,19 @@ using System;
 using Wjybxx.Dson.Types;
 using System.Collections.Generic;
 using Wjybxx.Commons.Collections;
-using Wjybxx.BigCat.Fx;
-using Wjybxx.Dson.Codec;
 using System.Text;
+using Wjybxx.Dson.Codec;
 
 namespace Wjybxx.BigCatTool.Tests.Generated
-{/// <summary>
+{
+/// <summary>
 /// 测试普通类
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "SimpleBean" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class SimpleBean
 {
+
     #nullable disable
     // ReSharper disable All
     private int _age;
@@ -49,21 +50,22 @@ public class SimpleBean
     /// </summary>
     private List<List<int>> _listX;
     /// <summary>
-    /// @Options {ssti: true}
+    /// @Options {ssti: true, encodeFeatures: NumberHex}
     /// 测试ssti
     /// </summary>
     private int _strLink;
     /// <summary>
-    /// @Options {ssti: true}    
+    /// @Options {ssti: true, encodeFeatures: NumberHex}
     /// 测试sstiList
     /// </summary>
     private List<int> _strLinkList;
-    [NonSerialized]
-    private ImmutableList<string> _strLinkListCache;
 
     public SimpleBean(int age, string name) {
         this._age = age;
         this._name = name;
+    }
+
+    public SimpleBean() {
     }
 
     public int age => _age;
@@ -103,65 +105,15 @@ public class SimpleBean
         set => this._listX = value;
     }
 
-    public string strLink => SstMgr.GetString(_strLink);
-    public ImmutableList<string> strLinkList => _strLinkListCache ??= SstMgr.GetStringList(_strLinkList);
-    #region codec
-
-    public SimpleBean(IDsonObjectReader reader) {
+    public int strLink {
+        get => _strLink;
+        set => this._strLink = value;
     }
 
-    public virtual void ReadFields(IDsonObjectReader reader) {
-        this._age = reader.ReadInt();
-        this._name = reader.ReadString();
-        this._opt = reader.ReadObject<int?>(default);
-        this._dt = reader.ReadDateTime();
-        this._data1 = reader.ReadBinary();
-        this._list = reader.ReadObject<List<int>>(default);
-        this._hashset = reader.ReadObject<HashSet<int>>(default);
-        this._dic = reader.ReadObject<Dictionary<int, string>>(default);
-        this._listX = reader.ReadObject<List<List<int>>>(default);
-        this._strLink = reader.ReadInt();
-        this._strLinkList = reader.ReadObject<List<int>>(default);
+    public List<int> strLinkList {
+        get => _strLinkList;
+        set => this._strLinkList = value;
     }
-
-    public virtual bool ReadField(IDsonObjectReader reader, string name) {
-        switch (name) {
-            case "age": this._age = reader.ReadInt(); return true;
-            case "name": this._name = reader.ReadString(); return true;
-            case "opt": this._opt = reader.ReadObject<int?>(default); return true;
-            case "dt": this._dt = reader.ReadDateTime(); return true;
-            case "data1": this._data1 = reader.ReadBinary(); return true;
-            case "list": this._list = reader.ReadObject<List<int>>(default); return true;
-            case "hashset": this._hashset = reader.ReadObject<HashSet<int>>(default); return true;
-            case "dic": this._dic = reader.ReadObject<Dictionary<int, string>>(default); return true;
-            case "listX": this._listX = reader.ReadObject<List<List<int>>>(default); return true;
-            case "strLink": this._strLink = reader.ReadInt(); return true;
-            case "strLinkList": this._strLinkList = reader.ReadObject<List<int>>(default); return true;
-            default: return false;
-        }
-    }
-
-    public virtual void WriteFields(IDsonObjectWriter writer) {
-        writer.WriteInt("age", this._age);
-        writer.WriteString("name", this._name);
-        writer.WriteObject("opt", this._opt);
-        writer.WriteDateTime("dt", this._dt);
-        writer.WriteBinary("data1", this._data1);
-        writer.WriteObject("list", this._list);
-        writer.WriteObject("hashset", this._hashset);
-        writer.WriteObject("dic", this._dic);
-        writer.WriteObject("listX", this._listX);
-        writer.WriteInt("strLink", this._strLink);
-        writer.WriteObject("strLinkList", this._strLinkList);
-    }
-
-    public virtual void BeforeEncode(ConverterOptions options) {
-    }
-
-    public virtual void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -239,13 +191,15 @@ public class SimpleBean
 
     #endregion
 }
+
 /// <summary>
 /// 测试普通类继承
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "SimpleChildBean" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class SimpleChildBean : SimpleBean
 {
+
     #nullable disable
     // ReSharper disable All
     private List<string> _addresses;
@@ -254,42 +208,13 @@ public class SimpleChildBean : SimpleBean
         : base(age, name) {
     }
 
+    public SimpleChildBean() {
+    }
+
     public List<string> addresses {
         get => _addresses;
         set => this._addresses = value;
     }
-
-    #region codec
-
-    public SimpleChildBean(IDsonObjectReader reader)
-        : base(reader) {
-    }
-
-    public override void ReadFields(IDsonObjectReader reader) {
-        base.ReadFields(reader);
-        this._addresses = reader.ReadObject<List<string>>(default);
-    }
-
-    public override bool ReadField(IDsonObjectReader reader, string name) {
-        if (base.ReadField(reader, name)) return true;
-        switch (name) {
-            case "addresses": this._addresses = reader.ReadObject<List<string>>(default); return true;
-            default: return false;
-        }
-    }
-
-    public override void WriteFields(IDsonObjectWriter writer) {
-        base.WriteFields(writer);
-        writer.WriteObject("addresses", this._addresses);
-    }
-
-    public override void BeforeEncode(ConverterOptions options) {
-    }
-
-    public override void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -328,15 +253,17 @@ public class SimpleChildBean : SimpleBean
 
     #endregion
 }
+
 /// <summary>
 /// 测试结构体，顺便测试codec注解解析
-/// @Options{ alias: [Vector3, V3], style: flow }
+/// @Options{ alias: [Vector3, V3], encodeFeatures: ObjectFlow }
 /// @Editor{ displayType: Vector3 }
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "Vector3", "V3" }, EncodeFeatures = (SerializeFeatures)2097152)]
+[DsonSerializable(Names = new[] { "Vector3", "V3" }, EncodeFeatures = (SerializeFeatures)2097152, NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public struct Vector3 : IEquatable<Vector3>
 {
+
     #nullable disable
     // ReSharper disable All
     private float _x;
@@ -352,35 +279,6 @@ public struct Vector3 : IEquatable<Vector3>
     public float x => _x;
     public float y => _y;
     public float z => _z;
-    #region codec
-
-    public Vector3(IDsonObjectReader reader)
-        : this() {
-    }
-
-    public void ReadFields(IDsonObjectReader reader) {
-        this._x = reader.ReadFloat();
-        this._y = reader.ReadFloat();
-        this._z = reader.ReadFloat();
-    }
-
-    public bool ReadField(IDsonObjectReader reader, string name) {
-        switch (name) {
-            case "x": this._x = reader.ReadFloat(); return true;
-            case "y": this._y = reader.ReadFloat(); return true;
-            case "z": this._z = reader.ReadFloat(); return true;
-            default: return false;
-        }
-    }
-
-    public void WriteFields(IDsonObjectWriter writer) {
-        writer.WriteFloat("x", this._x);
-        writer.WriteFloat("y", this._y);
-        writer.WriteFloat("z", this._z);
-    }
-
-    #endregion
-
     #region equals
 
     public override bool Equals(object? obj) {
@@ -425,6 +323,7 @@ public struct Vector3 : IEquatable<Vector3>
 
     #endregion
 }
+
 /// <summary>
 /// 测试枚举
 /// </summary>
@@ -435,22 +334,21 @@ public enum Color
     Red = 1,
     Green = 2,
 }
+
 /// <summary>
 /// 测试泛型类
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "GenericBean" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class GenericBean<T, U> 
         where T : struct
         where U : class 
 {
+
     #nullable disable
     // ReSharper disable All
     private T? _key;
     private U _value;
-
-    public GenericBean() {
-    }
 
     public T? key {
         get => _key;
@@ -461,37 +359,6 @@ public class GenericBean<T, U>
         get => _value;
         set => this._value = value;
     }
-
-    #region codec
-
-    public GenericBean(IDsonObjectReader reader) {
-    }
-
-    public virtual void ReadFields(IDsonObjectReader reader) {
-        this._key = reader.ReadObject<T?>(default);
-        this._value = reader.ReadObject<U>(default);
-    }
-
-    public virtual bool ReadField(IDsonObjectReader reader, string name) {
-        switch (name) {
-            case "key": this._key = reader.ReadObject<T?>(default); return true;
-            case "value": this._value = reader.ReadObject<U>(default); return true;
-            default: return false;
-        }
-    }
-
-    public virtual void WriteFields(IDsonObjectWriter writer) {
-        writer.WriteObject("key", this._key);
-        writer.WriteObject("value", this._value);
-    }
-
-    public virtual void BeforeEncode(ConverterOptions options) {
-    }
-
-    public virtual void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -528,58 +395,25 @@ public class GenericBean<T, U>
 
     #endregion
 }
+
 /// <summary>
 /// 测试泛型继承
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "GenericChildBean" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class GenericChildBean<T, U> : GenericBean<T, U> 
         where T : struct
         where U : class 
 {
+
     #nullable disable
     // ReSharper disable All
     private List<string> _addresses;
-
-    public GenericChildBean() {
-    }
 
     public List<string> addresses {
         get => _addresses;
         set => this._addresses = value;
     }
-
-    #region codec
-
-    public GenericChildBean(IDsonObjectReader reader)
-        : base(reader) {
-    }
-
-    public override void ReadFields(IDsonObjectReader reader) {
-        base.ReadFields(reader);
-        this._addresses = reader.ReadObject<List<string>>(default);
-    }
-
-    public override bool ReadField(IDsonObjectReader reader, string name) {
-        if (base.ReadField(reader, name)) return true;
-        switch (name) {
-            case "addresses": this._addresses = reader.ReadObject<List<string>>(default); return true;
-            default: return false;
-        }
-    }
-
-    public override void WriteFields(IDsonObjectWriter writer) {
-        base.WriteFields(writer);
-        writer.WriteObject("addresses", this._addresses);
-    }
-
-    public override void BeforeEncode(ConverterOptions options) {
-    }
-
-    public override void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -618,58 +452,25 @@ public class GenericChildBean<T, U> : GenericBean<T, U>
 
     #endregion
 }
+
 /// <summary>
 /// 测试泛型继承2
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "GenericChildBean2" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class GenericChildBean2<T, U> : GenericBean<T, List<string>> 
         where T : struct
         where U : class 
 {
+
     #nullable disable
     // ReSharper disable All
     private List<string> _addresses;
-
-    public GenericChildBean2() {
-    }
 
     public List<string> addresses {
         get => _addresses;
         set => this._addresses = value;
     }
-
-    #region codec
-
-    public GenericChildBean2(IDsonObjectReader reader)
-        : base(reader) {
-    }
-
-    public override void ReadFields(IDsonObjectReader reader) {
-        base.ReadFields(reader);
-        this._addresses = reader.ReadObject<List<string>>(default);
-    }
-
-    public override bool ReadField(IDsonObjectReader reader, string name) {
-        if (base.ReadField(reader, name)) return true;
-        switch (name) {
-            case "addresses": this._addresses = reader.ReadObject<List<string>>(default); return true;
-            default: return false;
-        }
-    }
-
-    public override void WriteFields(IDsonObjectWriter writer) {
-        base.WriteFields(writer);
-        writer.WriteObject("addresses", this._addresses);
-    }
-
-    public override void BeforeEncode(ConverterOptions options) {
-    }
-
-    public override void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -708,14 +509,16 @@ public class GenericChildBean2<T, U> : GenericBean<T, List<string>>
 
     #endregion
 }
+
 /// <summary>
 /// 测试内部类 
 /// 测试内部类定义
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "OuterClass" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class OuterClass
 {
+
     #nullable disable
     // ReSharper disable All
     private float _x;
@@ -725,9 +528,6 @@ public class OuterClass
     private List<Vector3> _vecList;
     private Dictionary<int, Color> _colorMap;
     private Dictionary<int, Vector3> _posMap;
-
-    public OuterClass() {
-    }
 
     public float x {
         get => _x;
@@ -763,52 +563,6 @@ public class OuterClass
         get => _posMap;
         set => this._posMap = value;
     }
-
-    #region codec
-
-    public OuterClass(IDsonObjectReader reader) {
-    }
-
-    public virtual void ReadFields(IDsonObjectReader reader) {
-        this._x = reader.ReadFloat();
-        this._y = reader.ReadFloat();
-        this._request = reader.ReadObject<OuterClass.Request>(default);
-        this._result = reader.ReadObject<OuterClass.Result>(default);
-        this._vecList = reader.ReadObject<List<Vector3>>(default);
-        this._colorMap = reader.ReadObject<Dictionary<int, Color>>(default);
-        this._posMap = reader.ReadObject<Dictionary<int, Vector3>>(default);
-    }
-
-    public virtual bool ReadField(IDsonObjectReader reader, string name) {
-        switch (name) {
-            case "x": this._x = reader.ReadFloat(); return true;
-            case "y": this._y = reader.ReadFloat(); return true;
-            case "request": this._request = reader.ReadObject<OuterClass.Request>(default); return true;
-            case "result": this._result = reader.ReadObject<OuterClass.Result>(default); return true;
-            case "vecList": this._vecList = reader.ReadObject<List<Vector3>>(default); return true;
-            case "colorMap": this._colorMap = reader.ReadObject<Dictionary<int, Color>>(default); return true;
-            case "posMap": this._posMap = reader.ReadObject<Dictionary<int, Vector3>>(default); return true;
-            default: return false;
-        }
-    }
-
-    public virtual void WriteFields(IDsonObjectWriter writer) {
-        writer.WriteFloat("x", this._x);
-        writer.WriteFloat("y", this._y);
-        writer.WriteObject("request", this._request);
-        writer.WriteObject("result", this._result);
-        writer.WriteObject("vecList", this._vecList);
-        writer.WriteObject("colorMap", this._colorMap);
-        writer.WriteObject("posMap", this._posMap);
-    }
-
-    public virtual void BeforeEncode(ConverterOptions options) {
-    }
-
-    public virtual void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -868,17 +622,15 @@ public class OuterClass
 
     #endregion
 
-    [DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "OuterClass.Request" })]
+    [DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
     public class Request
     {
+
         #nullable disable
         // ReSharper disable All
         private int _a;
         private long _b;
         private string _str;
-
-        public Request() {
-        }
 
         public int a {
             get => _a;
@@ -894,40 +646,6 @@ public class OuterClass
             get => _str;
             set => this._str = value;
         }
-
-        #region codec
-
-        public Request(IDsonObjectReader reader) {
-        }
-
-        public virtual void ReadFields(IDsonObjectReader reader) {
-            this._a = reader.ReadInt();
-            this._b = reader.ReadLong();
-            this._str = reader.ReadString();
-        }
-
-        public virtual bool ReadField(IDsonObjectReader reader, string name) {
-            switch (name) {
-                case "a": this._a = reader.ReadInt(); return true;
-                case "b": this._b = reader.ReadLong(); return true;
-                case "str": this._str = reader.ReadString(); return true;
-                default: return false;
-            }
-        }
-
-        public virtual void WriteFields(IDsonObjectWriter writer) {
-            writer.WriteInt("a", this._a);
-            writer.WriteLong("b", this._b);
-            writer.WriteString("str", this._str);
-        }
-
-        public virtual void BeforeEncode(ConverterOptions options) {
-        }
-
-        public virtual void AfterDecode(ConverterOptions options) {
-        }
-
-        #endregion
 
         #region equals
 
@@ -969,17 +687,15 @@ public class OuterClass
         #endregion
     }
 
-    [DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "OuterClass.Result" })]
+    [DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
     public class Result
     {
+
         #nullable disable
         // ReSharper disable All
         private int _a;
         private long _b;
         private string _str;
-
-        public Result() {
-        }
 
         public int a {
             get => _a;
@@ -995,40 +711,6 @@ public class OuterClass
             get => _str;
             set => this._str = value;
         }
-
-        #region codec
-
-        public Result(IDsonObjectReader reader) {
-        }
-
-        public virtual void ReadFields(IDsonObjectReader reader) {
-            this._a = reader.ReadInt();
-            this._b = reader.ReadLong();
-            this._str = reader.ReadString();
-        }
-
-        public virtual bool ReadField(IDsonObjectReader reader, string name) {
-            switch (name) {
-                case "a": this._a = reader.ReadInt(); return true;
-                case "b": this._b = reader.ReadLong(); return true;
-                case "str": this._str = reader.ReadString(); return true;
-                default: return false;
-            }
-        }
-
-        public virtual void WriteFields(IDsonObjectWriter writer) {
-            writer.WriteInt("a", this._a);
-            writer.WriteLong("b", this._b);
-            writer.WriteString("str", this._str);
-        }
-
-        public virtual void BeforeEncode(ConverterOptions options) {
-        }
-
-        public virtual void AfterDecode(ConverterOptions options) {
-        }
-
-        #endregion
 
         #region equals
 
@@ -1070,20 +752,19 @@ public class OuterClass
         #endregion
     }
 }
+
 /// <summary>
 /// 测试访问其它类型的内部类
 /// </summary>
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
-[DsonSerializable(SkipFields = new[] { "*" }, Names = new[] { "PeerClass" })]
+[DsonSerializable(NameStyle = DsonNameStyle.CamelCaseNoPrefix)]
 public class PeerClass
 {
+
     #nullable disable
     // ReSharper disable All
     private OuterClass.Request _request;
     private OuterClass.Result _result;
-
-    public PeerClass() {
-    }
 
     public OuterClass.Request request {
         get => _request;
@@ -1094,37 +775,6 @@ public class PeerClass
         get => _result;
         set => this._result = value;
     }
-
-    #region codec
-
-    public PeerClass(IDsonObjectReader reader) {
-    }
-
-    public virtual void ReadFields(IDsonObjectReader reader) {
-        this._request = reader.ReadObject<OuterClass.Request>(default);
-        this._result = reader.ReadObject<OuterClass.Result>(default);
-    }
-
-    public virtual bool ReadField(IDsonObjectReader reader, string name) {
-        switch (name) {
-            case "request": this._request = reader.ReadObject<OuterClass.Request>(default); return true;
-            case "result": this._result = reader.ReadObject<OuterClass.Result>(default); return true;
-            default: return false;
-        }
-    }
-
-    public virtual void WriteFields(IDsonObjectWriter writer) {
-        writer.WriteObject("request", this._request);
-        writer.WriteObject("result", this._result);
-    }
-
-    public virtual void BeforeEncode(ConverterOptions options) {
-    }
-
-    public virtual void AfterDecode(ConverterOptions options) {
-    }
-
-    #endregion
 
     #region equals
 
@@ -1161,6 +811,7 @@ public class PeerClass
 
     #endregion
 }
+
 /// <summary>
 /// 测试实例 -- {}和[]暂时需要严格缩进
 /// 大写名字表示关联类型的默认值
@@ -1173,6 +824,7 @@ public class PeerClass
 [Generated("Wjybxx.BigCatTool.DataScript.CodeGenerator")]
 public interface FirstService
 {
+
     Vector3 Echo(Vector3 v3);
 
     List<Vector3> Echo(List<Vector3> list);

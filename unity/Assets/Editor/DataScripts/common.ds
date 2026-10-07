@@ -10,49 +10,49 @@ inst @file {
 // @Options{ alias: [Vector2, V2], encodeFeatures: "Double4Len2", elementNames: "xy" }
 // @Editor{ displayType: Vector2, dsonType: Double4 }
 struct Vector2 {
-    float x = 1;
-    float y = 2;
+  float x = 1;
+  float y = 2;
 }
 // @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector3, V3], encodeFeatures: "Double4Len3", elementNames: "xyz" }
 // @Editor{ displayType: Vector3, dsonType: Double4 }
 struct Vector3 {
-    float x = 1;
-    float y = 2;
-    float z = 3;
+  float x = 1;
+  float y = 2;
+  float z = 3;
 }
 // @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector4, V4], elementNames: "xyzw" }
 // @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Vector4 {
-    float x = 1;
-    float y = 2;
-    float z = 3;
-    float w = 4;
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
 }
 // @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Quaternion, Quat], elementNames: "xyzw" }
 // @Editor{ displayType: Vector4, dsonType: Double4 }
 struct Quaternion {
-    float x = 1;
-    float y = 2;
-    float z = 3;
-    float w = 4;
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
 }
 // @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector2Int, IntV2], encodeFeatures: "Double4Len2", elementNames: "xy" }
 // @Editor{ displayType: Vector2Int, dsonType: Long4 }
 struct Vector2Int {
-    int32 x = 1;
-    int32 y = 2;
+  int32 x = 1;
+  int32 y = 2;
 }
 // @Namespace{cs: "UnityEngine"}
 // @Options{ alias: [Vector3Int, IntV3], encodeFeatures: "Double4Len3", elementNames: "xyz" }
 // @Editor{ displayType: Vector3Int, dsonType: Long4 }
 struct Vector3Int {
-    int32 x = 1;
-    int32 y = 2;
-    int32 z = 3;
+  int32 x = 1;
+  int32 y = 2;
+  int32 z = 3;
 }
 // @Namespace{cs: "UnityEngine"}
 // @Options{ elementNames: "xywh" }
@@ -110,10 +110,10 @@ struct MinMaxAABB {
 // @Options{ style: flow }
 // @Editor { displayType : ObjectPath, dsonType: Pointer }
 struct ObjectPath {
-	string colletion = 1;
-	string localPath = 2;
-	int32 localId = 3;
-	int32 type = 4;
+  string colletion = 1;
+  string localPath = 2;
+  int32 localId = 3;
+  int32 type = 4;
 }
 
 // 不可变内置集合
